@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.1.1...v0.2.0) (2026-09-04)
+
+
+### Features
+
+* notify BoxVault and the catalog with a dependency-update dispatch on every release ([dcee8da](https://github.com/STARTcloud/startcloud-ui/commit/dcee8da74347861c386b66466a1e355392e7ee5c))
+
 ## [0.1.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.1.0...v0.1.1) (2026-09-04)
 
 
