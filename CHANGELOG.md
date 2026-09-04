@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.1.0...v0.1.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* open release PRs as the STARTcloud bot ([b1faaeb](https://github.com/STARTcloud/startcloud-ui/commit/b1faaebc80eae346701df2dcfd69bdd2c2112978))
+
 ## 0.1.0 (2026-09-04)
 
 
