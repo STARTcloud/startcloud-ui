@@ -44,6 +44,7 @@ const OrgConsoleTabs = ({
 }) => {
   const { t } = useTranslation();
   const showJoinRequests = !isExternalOrg || orgAccessMode === 'request_to_join';
+  const showInvitations = !isExternalOrg;
 
   return (
     <ul className="nav nav-tabs">
@@ -70,17 +71,32 @@ const OrgConsoleTabs = ({
           </button>
         </li>
       )}
-      <li className="nav-item">
-        <button
-          type="button"
-          className={`nav-link ${activeTab === 'invitations' ? 'active' : ''}`}
-          onClick={() => setActiveTab('invitations')}
-        >
-          {t('orgConsole.tabs.invitations')}
-        </button>
-      </li>
+      {showInvitations && (
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${activeTab === 'invitations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('invitations')}
+          >
+            {t('orgConsole.tabs.invitations')}
+          </button>
+        </li>
+      )}
     </ul>
   );
+};
+
+const visibleTab = (tab, isExternalOrg, orgAccessMode) => {
+  if (!isExternalOrg) {
+    return tab;
+  }
+  if (tab === 'invitations') {
+    return 'organization';
+  }
+  if (tab === 'joinRequests' && orgAccessMode !== 'request_to_join') {
+    return 'organization';
+  }
+  return tab;
 };
 
 OrgConsoleTabs.propTypes = {
@@ -754,6 +770,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
   });
 
   const canManageMembership = canManageRoles && !isExternalOrg;
+  const currentTab = visibleTab(activeTab, isExternalOrg, orgAccessMode);
 
   return (
     <div className="list row">
@@ -762,7 +779,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
       </header>
 
       <OrgConsoleTabs
-        activeTab={activeTab}
+        activeTab={currentTab}
         setActiveTab={setActiveTab}
         isExternalOrg={isExternalOrg}
         orgAccessMode={orgAccessMode}
@@ -779,7 +796,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
         <p>{t('loading')}</p>
       ) : (
         <div className="tab-content mt-3">
-          {activeTab === 'organization' && (
+          {currentTab === 'organization' && (
             <div className="row">
               <div className="col-md-12 mb-4">
                 <div className="card mt-2 mb-2">
@@ -965,7 +982,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
             </div>
           )}
 
-          {activeTab === 'joinRequests' && (
+          {currentTab === 'joinRequests' && (
             <JoinRequestsTab
               joinRequests={joinRequests}
               onApprove={handleApproveJoinRequest}
@@ -973,7 +990,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
             />
           )}
 
-          {activeTab === 'invitations' && (
+          {currentTab === 'invitations' && (
             <div className="card">
               <div className="card-header">
                 <div className="d-flex justify-content-between align-items-center">
