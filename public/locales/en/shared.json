@@ -32,6 +32,10 @@
     "title": "You were signed out.",
     "body": "Your session ended. Sign in again to continue where you were."
   },
+  "notAvailable": {
+    "title": "Not available on this host",
+    "body": "{{title}} is not available here — this host does not advertise the <code>{{token}}</code> feature."
+  },
   "notice": {
     "dismiss": "Dismiss"
   },

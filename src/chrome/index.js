@@ -1,3 +1,8 @@
+export { default as NotAvailableStub } from '../components/common/NotAvailableStub';
+export { StatusProvider, probeStatus, statusShape, useStatus } from '../contexts/StatusContext';
+export { useFavicon } from '../hooks/useFavicon';
+export { authMethod, hasCollection, hasFeature, hasFeatureStrict } from '../utils/capabilities';
+export { ticketUrl } from '../utils/ticketUrl';
 export {
   default as AppChrome,
   footerShape,
@@ -59,6 +64,5 @@ export {
   providerPath,
   versionPath,
 } from './routeCrumbs';
-export { StatusProvider, probeStatus, statusShape, useStatus } from './status';
 export { default as UserMenu, SignInButton } from './UserMenu';
 export { isThemePreference, useTheme } from './useTheme';

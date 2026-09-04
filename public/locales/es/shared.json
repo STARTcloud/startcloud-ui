@@ -32,6 +32,10 @@
     "title": "Se cerró tu sesión.",
     "body": "Tu sesión terminó. Inicia sesión de nuevo para continuar donde estabas."
   },
+  "notAvailable": {
+    "title": "No disponible en este host",
+    "body": "{{title}} no está disponible aquí — este host no anuncia la función <code>{{token}}</code>."
+  },
   "notice": {
     "dismiss": "Descartar"
   },

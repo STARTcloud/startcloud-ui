@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { BrowserRouter } from 'react-router-dom';
 
+import { StatusProvider } from '../contexts/StatusContext';
+
 import ErrorBoundary from './ErrorBoundary';
 import { NavbarSearchProvider } from './NavbarSearch';
 import { NoticeProvider } from './notices';
-import { StatusProvider } from './status';
 
 /**
  * Mount an estate app once its i18n is ready, inside the providers every
