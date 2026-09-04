@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  workflow_call:
+  pull_request:
+    branches: ['main']
+
+permissions:
+  contents: read
+  security-events: write
+  packages: read
+  actions: read
+
+jobs:
+  lint-and-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check Prettier formatting
+        run: npx prettier --check .
+
+  locale-parity:
+    name: Locale Parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Check locale key parity against en
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'fs';
+          const flat = (obj, prefix = '') =>
+            Object.entries(obj).flatMap(([key, value]) =>
+              value && typeof value === 'object' ? flat(value, `${prefix}${key}.`) : [`${prefix}${key}`]
+            );
+          const read = (lang, file) => new Set(flat(JSON.parse(fs.readFileSync(`public/locales/${lang}/${file}`, 'utf8'))));
+          const files = fs.readdirSync('public/locales/en').filter(name => name.endsWith('.json'));
+          const langs = fs.readdirSync('public/locales').filter(dir => dir !== 'en' && dir !== 'cimode');
+          let failed = false;
+          for (const lang of langs) {
+            for (const file of files) {
+              const en = read('en', file);
+              const keys = read(lang, file);
+              const missing = [...en].filter(key => !keys.has(key));
+              const extra = [...keys].filter(key => !en.has(key));
+              if (missing.length > 0) {
+                failed = true;
+                console.error(`${lang}/${file} is MISSING ${missing.length} keys:\n  ${missing.join('\n  ')}`);
+              }
+              if (extra.length > 0) {
+                failed = true;
+                console.error(`${lang}/${file} has ${extra.length} keys en lacks:\n  ${extra.join('\n  ')}`);
+              }
+              if (missing.length === 0 && extra.length === 0) {
+                console.log(`${lang}/${file}: parity OK (${keys.size} keys)`);
+              }
+            }
+          }
+          process.exit(failed ? 1 : 0);
+          EOF
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  codeql-analysis:
+    name: CodeQL
+    needs: [lint-and-format, build]
+    uses: ./.github/workflows/codeql.yml
