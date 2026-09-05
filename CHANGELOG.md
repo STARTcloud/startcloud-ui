@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.2.0...v0.3.0) (2026-09-05)
+
+
+### Features
+
+* add the status capabilities, session factory and stub the one-app tree builds on ([85b1bba](https://github.com/STARTcloud/startcloud-ui/commit/85b1bba99e42008ba3428681c2554125041fc63a))
+* one status-driven app in a feature-first tree, no per-backend folders ([8b85769](https://github.com/STARTcloud/startcloud-ui/commit/8b85769f7dbcefe0923361847ef09e1435021d10))
+
 ## [0.2.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.1.1...v0.2.0) (2026-09-04)
 
 
