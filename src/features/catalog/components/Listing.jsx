@@ -235,7 +235,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
       <ItemsTable
         {...shared}
         sort={sort[collection.key]}
-        onSort={column => setSort(collection.key, column)}
+        onSort={(column, options) => setSort(collection.key, column, options)}
         hiddenColumns={hiddenColumns[collection.key]}
       />
     );

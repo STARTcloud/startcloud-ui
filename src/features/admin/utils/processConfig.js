@@ -3,24 +3,26 @@ import PropTypes from 'prop-types';
 import { generateLabel } from '../../../utils/configLabel';
 
 /**
- * The app's side of the shared admin page: the organizations with their
- * members and the suspend, resume, rename, edit and delete calls over
- * them, the configuration files with restart, SMTP test and SSL upload,
- * the storage usage and the update check.
+ * The app's side of the shared admin page: the configuration files with
+ * restart, SMTP test and SSL upload and the update check on every host;
+ * the organizations with their members and the suspend, resume, rename,
+ * edit and delete calls over them on a host with accounts of its own
+ * (`organizationsWithUsers` present); the storage usage on a host that
+ * answers it (`storage` present).
  */
 export const adminShape = PropTypes.shape({
-  organizationsWithUsers: PropTypes.func.isRequired,
-  organization: PropTypes.func.isRequired,
-  updateOrganization: PropTypes.func.isRequired,
-  accessMode: PropTypes.func.isRequired,
-  suspendOrganization: PropTypes.func.isRequired,
-  resumeOrganization: PropTypes.func.isRequired,
-  removeOrganization: PropTypes.func.isRequired,
-  removeMember: PropTypes.func.isRequired,
-  removeUser: PropTypes.func.isRequired,
-  suspendUser: PropTypes.func.isRequired,
-  resumeUser: PropTypes.func.isRequired,
-  gravatarProfile: PropTypes.func.isRequired,
+  organizationsWithUsers: PropTypes.func,
+  organization: PropTypes.func,
+  updateOrganization: PropTypes.func,
+  accessMode: PropTypes.func,
+  suspendOrganization: PropTypes.func,
+  resumeOrganization: PropTypes.func,
+  removeOrganization: PropTypes.func,
+  removeMember: PropTypes.func,
+  removeUser: PropTypes.func,
+  suspendUser: PropTypes.func,
+  resumeUser: PropTypes.func,
+  gravatarProfile: PropTypes.func,
   config: PropTypes.shape({
     get: PropTypes.func.isRequired,
     update: PropTypes.func.isRequired,
@@ -28,7 +30,7 @@ export const adminShape = PropTypes.shape({
     testSmtp: PropTypes.func.isRequired,
     uploadSsl: PropTypes.func.isRequired,
   }).isRequired,
-  storage: PropTypes.func.isRequired,
+  storage: PropTypes.func,
   updateStatus: PropTypes.func.isRequired,
 });
 

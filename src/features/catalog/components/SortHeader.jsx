@@ -4,10 +4,17 @@ import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa6';
 import { sortShape } from '../utils/itemShape';
 
 const SortIcon = ({ column, sort }) => {
-  if (sort.column !== column) {
+  const index = sort.findIndex(entry => entry.column === column);
+  if (index === -1) {
     return <FaSort />;
   }
-  return sort.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
+  const Icon = sort[index].direction === 'asc' ? FaSortUp : FaSortDown;
+  return (
+    <>
+      <Icon />
+      {sort.length > 1 ? <sup className="text-success">{index + 1}</sup> : null}
+    </>
+  );
 };
 
 SortIcon.propTypes = {
@@ -17,14 +24,15 @@ SortIcon.propTypes = {
 
 /**
  * A table header cell's content for a sortable column: the given label as a
- * button that cycles the column's sort, followed by the icon of its current
- * direction.
+ * button that cycles the column's sort, a Shift-click adding it to the
+ * stack instead, followed by the icon of its current direction and, while
+ * the stack holds more than one entry, its position in it.
  */
 const SortHeader = ({ column, sort, onSort, children }) => (
   <button
     type="button"
     className="btn btn-link btn-sm p-0 fw-bold text-body text-decoration-none text-nowrap"
-    onClick={() => onSort(column)}
+    onClick={event => onSort(column, { append: event.shiftKey })}
   >
     {children} <SortIcon column={column} sort={sort} />
   </button>

@@ -40,9 +40,25 @@ const UNIVERSAL_ROUTES = [
   'schema',
   'private',
   'push',
+  'search',
+  'vm',
 ];
 
 const SESSION_ENDED_KEY = 'session-ended';
+
+const utilityLinks = (status, t) => {
+  const links = [{ key: 'about', label: t('navbar.about'), to: '/about' }];
+  if (status.links.contact) {
+    links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
+  }
+  if (status.links.docs) {
+    links.push({ key: 'docs', label: t('navbar.docs'), href: status.links.docs });
+  }
+  return links;
+};
+
+const logoResolver = primary => name =>
+  primary ? primary.adapter.getOrganization(name).then(org => org.logo || '') : Promise.resolve('');
 
 const useRouteOrgLogo = (routeOrg, signedIn, logoFor) => {
   const [resolved, setResolved] = useState({ name: '', logo: '' });
@@ -186,6 +202,7 @@ const AppShell = ({
   const scrollRef = useRef(null);
   const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
   const signedIn = Boolean(user);
+  const anonymous = authMethod(status) === 'none';
   const reserved = [
     ...UNIVERSAL_ROUTES,
     ...collections.map(collection => collection.segment).filter(Boolean),
@@ -198,10 +215,10 @@ const AppShell = ({
     load: loadOrganizations,
     mark: <BrandLogo theme={theme} className="logo-md icon-with-margin" />,
     crumbMark: <BrandLogo theme={theme} className="logo-sm" />,
-    logoFor: name => primary.adapter.getOrganization(name).then(org => org.logo || ''),
+    logoFor: logoResolver(primary),
   };
   const crumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
-  useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn);
+  useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn && !anonymous);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
@@ -226,13 +243,7 @@ const AppShell = ({
   const onAuthPage = returnTo.onAuthPage(pathname);
   const returnPath = account.sessionEnded?.returnTo || (onAuthPage ? '' : `${pathname}${search}`);
 
-  const links = [{ key: 'about', label: t('navbar.about'), to: '/about' }];
-  if (status.links.contact) {
-    links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
-  }
-  if (status.links.docs) {
-    links.push({ key: 'docs', label: t('navbar.docs'), href: status.links.docs });
-  }
+  const links = utilityLinks(status, t);
 
   const userMenu = signedIn
     ? {
@@ -280,8 +291,8 @@ const AppShell = ({
         theme={{ preference: themePreference, onToggle: toggleTheme }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
-        onSignIn={account.signIn}
-        signInTo={returnTo.signInTo(returnPath)}
+        onSignIn={anonymous ? null : account.signIn}
+        signInTo={anonymous ? '' : returnTo.signInTo(returnPath)}
         userMenu={userMenu}
       />
       <NoticeCards LinkComponent={Link} />

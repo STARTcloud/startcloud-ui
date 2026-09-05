@@ -7,6 +7,7 @@ const groupSignature = group => [
   group.label,
   Object.entries(group.entries),
   [...group.activeSet],
+  [...(group.excludeSet || [])],
 ];
 
 const bindingSignature = binding =>

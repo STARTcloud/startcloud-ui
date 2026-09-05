@@ -78,10 +78,12 @@ import {
   serviceAccounts,
   setPrimaryOrganization,
 } from '../features/profile';
+import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
+import { FleetPage, VmPage } from '../features/vdi';
 import { sessionStateShape } from '../hooks/useSession';
 import { events, returnTo, session } from '../lib/runtime';
-import { authMethod, hasFeature } from '../utils/capabilities';
+import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
 import { gravatarProfile } from '../utils/gravatar';
 import { isMember } from '../utils/membership';
 
@@ -128,7 +130,7 @@ const organizationsAdapter = {
   gravatarProfile,
 };
 
-const adminAdapter = {
+const backendAdminMembers = {
   organizationsWithUsers,
   organization: getOrganization,
   updateOrganization,
@@ -141,10 +143,14 @@ const adminAdapter = {
   suspendUser,
   resumeUser,
   gravatarProfile,
-  config: adminConfig,
   storage,
-  updateStatus,
 };
+
+const adminAdapterFor = backend => ({
+  ...(backend ? backendAdminMembers : {}),
+  config: adminConfig,
+  updateStatus,
+});
 
 const Stub = ({ titleKey, token }) => {
   const { t } = useTranslation();
@@ -229,6 +235,16 @@ VersionRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
+const VmRoute = ({ theme, user }) => {
+  const { instance } = useParams();
+  return <VmPage instance={instance} theme={theme} user={user} />;
+};
+
+VmRoute.propTypes = {
+  theme: PropTypes.string.isRequired,
+  user: PropTypes.object,
+};
+
 const ProviderRoute = ({ collection, context }) => {
   const { org, name, version, provider } = useParams();
   return (
@@ -303,11 +319,13 @@ const collectionRoutes = ({ collection, collections, organizations, context }) =
 };
 
 /**
- * Every route the app serves: the collection routes from the registry in
- * the host's order, the setup gate while the host advertises `setup` and
- * setup is incomplete, and each feature route gated by its feature token or
- * by the host's first `auth` token, a route the host lacks rendering
- * `NotAvailableStub` instead.
+ * Every route the app serves: the fleet page at `/` and the VM page at
+ * `/vm/:instance` while the host advertises `fleet`, else the home page
+ * and the collection routes from the registry in the host's order, the
+ * setup gate while the host advertises `setup` and setup is incomplete,
+ * and each feature route gated by its feature token or by the host's
+ * first `auth` token, a route the host lacks rendering `NotAvailableStub`
+ * instead.
  */
 const AppRoutes = ({
   account,
@@ -320,6 +338,7 @@ const AppRoutes = ({
 }) => {
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
+  const fleet = hasFeatureStrict(status, 'fleet');
   const { activeOrgUuid, organizations, oidc, issuerUrl } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
     <Route
@@ -337,7 +356,9 @@ const AppRoutes = ({
     );
   }
 
-  const homeElement = (
+  const homeElement = fleet ? (
+    <FleetPage context={context} theme={theme} />
+  ) : (
     <HomePage
       collections={collections}
       context={context}
@@ -349,7 +370,18 @@ const AppRoutes = ({
     <Routes>
       {setupRoute}
       <Route path="/" element={homeElement} />
+      <Route
+        path="/vm/:instance"
+        element={
+          fleet ? (
+            <VmRoute theme={theme} user={account.user} />
+          ) : (
+            <Stub titleKey="vdi.vm.title" token="fleet" />
+          )
+        }
+      />
       <Route path="/about" element={<AboutRoute theme={theme} oidc={oidc} />} />
+      <Route path="/search" element={<SearchPage context={context} />} />
       <Route
         path="/organizations/discover"
         element={
@@ -442,9 +474,9 @@ const AppRoutes = ({
               session={session}
               returnTo={returnTo}
               allowed={globalAdmin}
-              admin={adminAdapter}
+              admin={adminAdapterFor(backend)}
               activeOrgKey={ACTIVE_ORG_KEY}
-              updateCommand={UPDATE_COMMAND}
+              updateCommand={UPDATE_COMMAND(status.role)}
             />
           ) : (
             <Stub titleKey="admin.pageTitle" token="admin" />

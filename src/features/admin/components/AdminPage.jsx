@@ -12,19 +12,26 @@ import AdminOrganizations from './AdminOrganizations';
 import AdminStorage from './AdminStorage';
 import UpdateNotice from './UpdateNotice';
 
-const TABS = ['organizations', 'config', 'system'];
 const TAB_KEYS = {
   organizations: 'admin.tabs.orgsAndUsers',
   config: 'admin.tabs.configManagement',
   system: 'admin.tabs.system',
 };
 
+const tabsOf = admin => [
+  ...(admin.organizationsWithUsers ? ['organizations'] : []),
+  'config',
+  ...(admin.storage ? ['system'] : []),
+];
+
 /**
- * The admin page of an app with accounts and configuration of its own:
- * the update notice when the app's `updateStatus` reports one, then the
- * Organizations and users, Configuration and System tabs, every call
- * through the app's `admin` adapter; a visitor is sent to sign in and a
- * signed-in non-admin home, `allowed` being the app's global-admin flag.
+ * The admin page of an app with configuration of its own: the update
+ * notice when the app's `updateStatus` reports one, then the
+ * Organizations and users tab while the adapter carries
+ * `organizationsWithUsers`, the Configuration tab, and the System tab
+ * while the adapter carries `storage`, every call through the app's
+ * `admin` adapter; a visitor is sent to sign in and a signed-in non-admin
+ * home, `allowed` being the app's global-admin flag.
  */
 const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateCommand }) => {
   const { t } = useTranslation();
@@ -33,7 +40,8 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
   }, [t]);
 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('organizations');
+  const tabs = tabsOf(admin);
+  const [activeTab, setActiveTab] = useState(tabs[0]);
   const [updateInfo, setUpdateInfo] = useState(null);
 
   useEffect(() => {
@@ -64,7 +72,7 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
       </header>
       {updateInfo && <UpdateNotice updateInfo={updateInfo} command={updateCommand} />}
       <ul className="nav nav-tabs">
-        {TABS.map(tab => (
+        {tabs.map(tab => (
           <li className="nav-item" key={tab}>
             <button
               type="button"
@@ -77,11 +85,11 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
         ))}
       </ul>
       <div className="tab-content mt-2">
-        {activeTab === 'organizations' && (
+        {activeTab === 'organizations' && admin.organizationsWithUsers ? (
           <AdminOrganizations session={session} activeOrgKey={activeOrgKey} admin={admin} />
-        )}
-        {activeTab === 'config' && <AdminConfig config={admin.config} />}
-        {activeTab === 'system' && <AdminStorage storage={admin.storage} />}
+        ) : null}
+        {activeTab === 'config' ? <AdminConfig config={admin.config} /> : null}
+        {activeTab === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
       </div>
     </div>
   );

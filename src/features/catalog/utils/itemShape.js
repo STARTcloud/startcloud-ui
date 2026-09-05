@@ -116,10 +116,12 @@ export const filterGroupsOf = collection =>
 
 export const isPrivate = item => item.isPublic === false;
 
-export const sortShape = PropTypes.shape({
-  column: PropTypes.string,
-  direction: PropTypes.string,
-});
+export const sortShape = PropTypes.arrayOf(
+  PropTypes.shape({
+    column: PropTypes.string.isRequired,
+    direction: PropTypes.string.isRequired,
+  })
+);
 
 export const detailSearchShape = PropTypes.shape({
   rows: PropTypes.array.isRequired,

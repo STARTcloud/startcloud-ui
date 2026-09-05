@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 
 import { PROFILE_RELOAD_MS } from '../config/constants';
-import { subscribeTerminateStream } from '../lib/events';
-import { events, session } from '../lib/runtime';
+import { useStatus } from '../contexts/StatusContext';
+import { connectEventStream, disconnectEventStream, eventHub, events } from '../lib/runtime';
+import { authMethod, hasFeature } from '../utils/capabilities';
 
 /**
- * What a backend session keeps running while signed in: the profile
- * reload on its interval and the server-sent terminate stream that ends
- * the session when the backend revokes it.
+ * What a session keeps running: the profile reload on its interval for a
+ * backend session, and the tab's event stream while the host advertises
+ * `events` and either needs no session or has one, with the stream's
+ * `session-terminated` event ending the session on the bus.
  *
  * @param {Object} options - The session
  * @param {boolean} options.enabled - Whether the session is the app's own backend
@@ -15,6 +17,9 @@ import { events, session } from '../lib/runtime';
  * @param {() => Promise<Object>} options.reload - The session's profile reload
  */
 export const useSessionKeepalive = ({ enabled, user, reload }) => {
+  const status = useStatus();
+  const streaming = hasFeature(status, 'events') && Boolean(status.events);
+  const connected = streaming && (authMethod(status) === 'none' || Boolean(user));
   const accessToken = user?.accessToken || '';
 
   useEffect(() => {
@@ -28,14 +33,12 @@ export const useSessionKeepalive = ({ enabled, user, reload }) => {
   }, [enabled, user, reload]);
 
   useEffect(() => {
-    if (!enabled || !accessToken) {
+    if (!connected) {
       return undefined;
     }
-    const url = `${window.location.origin}/api/notifications/events`;
-    return subscribeTerminateStream({
-      url,
-      headers: () => session.headers('GET', url),
-      onEnded: () => events.endSession(),
-    });
-  }, [enabled, accessToken]);
+    connectEventStream(status);
+    return disconnectEventStream;
+  }, [connected, status, accessToken]);
+
+  useEffect(() => eventHub.subscribe('session-terminated', () => events.endSession()), []);
 };

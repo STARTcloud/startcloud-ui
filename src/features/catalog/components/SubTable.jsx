@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { Fragment } from 'react';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
@@ -15,13 +16,16 @@ import SortHeader from './SortHeader';
 export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
 
 /**
- * The one table behind the item, version and provider detail pages: draws
- * the given columns in order, each only when it is not in `hiddenColumns`
- * and its `when` is absent or true for the rows, a sort header for each
- * column carrying a `sortValue`, one `td.col-<key>` per column, an actions
- * column when `RowActions` is given (rendered with `actionsProps` plus the
- * row under `rowProp`), and one full-width `emptyText` row when there are
- * no rows.
+ * The one table behind the item, version and provider detail pages and the
+ * fleet page: draws the given columns in order, each only when it is not in
+ * `hiddenColumns` and its `when` is absent or true for the rows, a sort
+ * header for each column carrying a `sortValue`, one `td.col-<key>` per
+ * column, an actions column when `RowActions` is given (rendered with
+ * `actionsProps` plus the row under `rowProp`), the class `rowClass`
+ * answers on each row, one full-width detail row under every row whose key
+ * is in `expandedKeys` (rendering `Detail` with `detailProps` plus the row
+ * under `rowProp`), and one full-width `emptyText` row when there are no
+ * rows.
  */
 const SubTable = ({
   columns,
@@ -30,6 +34,10 @@ const SubTable = ({
   RowActions = null,
   actionsProps = {},
   rowProp = 'row',
+  rowClass = null,
+  Detail = null,
+  detailProps = {},
+  expandedKeys = null,
   sort,
   onSort,
   hiddenColumns,
@@ -43,6 +51,7 @@ const SubTable = ({
   const columnCount = drawn.length + (RowActions ? 1 : 0);
   const cellClass = column =>
     column.className ? `col-${column.key} ${column.className}` : `col-${column.key}`;
+  const expanded = row => Boolean(Detail && expandedKeys && expandedKeys.has(rowKey(row)));
   return (
     <Table striped className="table items-table">
       <thead>
@@ -70,18 +79,27 @@ const SubTable = ({
           </tr>
         ) : (
           rows.map(row => (
-            <tr key={rowKey(row)}>
-              {drawn.map(column => (
-                <td key={column.key} className={cellClass(column)}>
-                  {column.render(row, ctx)}
-                </td>
-              ))}
-              {RowActions ? (
-                <td className="col-actions">
-                  <RowActions {...actionsProps} {...{ [rowProp]: row }} />
-                </td>
+            <Fragment key={rowKey(row)}>
+              <tr className={rowClass ? rowClass(row) : undefined}>
+                {drawn.map(column => (
+                  <td key={column.key} className={cellClass(column)}>
+                    {column.render(row, ctx)}
+                  </td>
+                ))}
+                {RowActions ? (
+                  <td className="col-actions">
+                    <RowActions {...actionsProps} {...{ [rowProp]: row }} />
+                  </td>
+                ) : null}
+              </tr>
+              {expanded(row) ? (
+                <tr className="detail-row">
+                  <td colSpan={columnCount}>
+                    <Detail {...detailProps} {...{ [rowProp]: row }} />
+                  </td>
+                </tr>
               ) : null}
-            </tr>
+            </Fragment>
           ))
         )}
       </tbody>
@@ -106,6 +124,10 @@ SubTable.propTypes = {
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
   rowProp: PropTypes.string,
+  rowClass: PropTypes.func,
+  Detail: PropTypes.elementType,
+  detailProps: PropTypes.object,
+  expandedKeys: PropTypes.instanceOf(Set),
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,

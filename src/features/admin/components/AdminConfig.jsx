@@ -14,14 +14,18 @@ import {
 
 import ConfigField from '../../../components/common/ConfigField';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { CONFIG_NAMES } from '../../../utils/configValidation';
 import { responseMessage } from '../../../utils/responseMessage';
 import { processConfig } from '../utils/processConfig';
 
 import OidcProviders from './OidcProviders';
 
 const SMTP_TEST_KEY = 'smtp-test';
+
+const NO_FILTERS = [];
+const clearNothing = () => undefined;
 
 const SECTION_ICONS = {
   authentication: FaShieldHalved,
@@ -117,6 +121,50 @@ const shouldShowSubsection = (subsection, subsectionName) => {
   }
   return subsection.fields.length > 0;
 };
+
+const matchesField = (field, term) =>
+  !term ||
+  (field.label || '').toLowerCase().includes(term) ||
+  field.key.toLowerCase().includes(term);
+
+const filterSection = (section, term) => {
+  const subsections = {};
+  Object.entries(section.subsections || {}).forEach(([name, subsection]) => {
+    if (name === 'oidcProviders') {
+      subsections[name] = subsection;
+      return;
+    }
+    const fields = subsection.fields.filter(field => matchesField(field, term));
+    if (shouldShowSubsection(subsection, name) && fields.length > 0) {
+      subsections[name] = { ...subsection, fields };
+    }
+  });
+  return {
+    ...section,
+    fields: section.fields.filter(field => matchesField(field, term)),
+    subsections,
+  };
+};
+
+const filterSections = (sections, term) =>
+  Object.fromEntries(
+    Object.entries(sections)
+      .map(([name, section]) => [name, filterSection(section, term)])
+      .filter(
+        ([, section]) => section.fields.length > 0 || Object.keys(section.subsections).length > 0
+      )
+  );
+
+const countFields = sections =>
+  Object.values(sections).reduce(
+    (count, section) =>
+      count +
+      section.fields.length +
+      Object.entries(section.subsections)
+        .filter(([name]) => name !== 'oidcProviders')
+        .reduce((sum, [, subsection]) => sum + subsection.fields.length, 0),
+    0
+  );
 
 const ConfigSection = ({ section, values, onFieldChange, onUpload, oidc }) => {
   const { t } = useTranslation();
@@ -250,18 +298,22 @@ SmtpTest.propTypes = {
 
 /**
  * The Configuration tab of the admin page: one tab per configuration file
- * (app, auth, db, mail), its sections and foldable subsections of fields,
- * the OIDC providers block inside auth, update and restart, the SSL upload
- * on upload fields and the SMTP test on mail, every call through the app's
- * `config` adapter.
+ * the host's status names in `config` (`app` alone when it names none),
+ * its sections and foldable subsections of fields searched from the navbar
+ * by label or key, the OIDC providers block inside auth, update and
+ * restart, the SSL upload on upload fields and the SMTP test on mail,
+ * every call through the app's `config` adapter.
  */
 const AdminConfig = ({ config: configApi }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [selectedConfig, setSelectedConfig] = useState('app');
+  const status = useStatus();
+  const configNames = status.config || ['app'];
+  const [selectedConfig, setSelectedConfig] = useState(configNames[0]);
   const [config, setConfig] = useState({});
   const [sections, setSections] = useState({});
   const [values, setValues] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchConfig = useCallback(
     configName => {
@@ -369,10 +421,22 @@ const AdminConfig = ({ config: configApi }) => {
 
   const oidc = selectedConfig === 'auth' ? { config, onConfigUpdate: handleConfigUpdate } : null;
 
+  const visibleSections = filterSections(sections, searchTerm.toLowerCase());
+
+  useNavbarSearchBinding({
+    query: searchTerm,
+    onQueryChange: setSearchTerm,
+    placeholder: t('configManager.search'),
+    matched: countFields(visibleSections),
+    total: countFields(filterSections(sections, '')),
+    groups: NO_FILTERS,
+    onClearFilters: clearNothing,
+  });
+
   return (
     <div className="mt-5">
       <ul className="nav nav-tabs d-flex">
-        {CONFIG_NAMES.map(configName => (
+        {configNames.map(configName => (
           <li className="nav-item" key={configName}>
             <button
               type="button"
@@ -395,7 +459,10 @@ const AdminConfig = ({ config: configApi }) => {
         </li>
       </ul>
       <div className="config-container mt-3">
-        {Object.entries(sections).map(([sectionName, section]) => (
+        {searchTerm !== '' && Object.keys(visibleSections).length === 0 && (
+          <div className="alert alert-info">{t('pages.noMatches')}</div>
+        )}
+        {Object.entries(visibleSections).map(([sectionName, section]) => (
           <ConfigSection
             key={sectionName}
             section={section}

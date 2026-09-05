@@ -89,6 +89,10 @@
       "security": "Security",
       "serviceAccounts": "Service Accounts"
     },
+    "search": {
+      "organizations": "Search organizations and requests",
+      "serviceAccounts": "Search service accounts"
+    },
     "fields": {
       "fullName": "Full Name",
       "displayName": "Display name",
@@ -275,6 +279,7 @@
     "testingSmtp": "Sending test email...",
     "testSmtpSuccess": "Test email sent successfully! Check the recipient's inbox.",
     "testSmtpError": "Failed to send test email",
+    "search": "Search settings",
     "smtpTest": {
       "title": "Test SMTP Configuration",
       "recipient": "Recipient Email",
@@ -325,7 +330,14 @@
       "frontendLogging": "Frontend Logging",
       "frontendLoggingCategories": "Frontend Logging Categories",
       "oidcSettings": "OIDC Settings",
-      "s2sSettings": "S2S Delegation"
+      "s2sSettings": "S2S Delegation",
+      "vdiSettings": "VDI Health Settings",
+      "database": "Database",
+      "agents": "Agents",
+      "udsDb": "UDS Database",
+      "grafana": "Grafana",
+      "authentication": "Authentication",
+      "internationalization": "Internationalization"
     }
   },
   "configField": {
@@ -485,6 +497,10 @@
       "organization": "Organization",
       "joinRequests": "Join Requests",
       "invitations": "Invitations"
+    },
+    "search": {
+      "joinRequests": "Search join requests",
+      "invitations": "Search invitations"
     },
     "buttons": {
       "delete": "Delete",
@@ -652,7 +668,51 @@
     "clear": "Clear search and filters",
     "clearFilters": "Clear filters",
     "activeFilters_one": "{{count}} filter active",
-    "activeFilters_other": "{{count}} filters active"
+    "activeFilters_other": "{{count}} filters active",
+    "appPlaceholder": "Search {{app}}",
+    "elsewhere": "Elsewhere in {{app}}",
+    "inApp": "In {{app}}",
+    "showAll": "Show all {{count}} results",
+    "noHits": "Nothing found.",
+    "loading": "Searching…",
+    "unavailable": "Search is not available on this host.",
+    "page": {
+      "title": "Search",
+      "count_one": "{{count}} result for “{{query}}”",
+      "count_other": "{{count}} results for “{{query}}”"
+    },
+    "kinds": {
+      "organization": "Organizations",
+      "item": "Items",
+      "version": "Versions",
+      "provider": "Providers",
+      "architecture": "Architectures",
+      "artifact": "Artifacts",
+      "user": "Users"
+    },
+    "columns": {
+      "title": "Title",
+      "where": "Where",
+      "matched": "Matched"
+    },
+    "matched": {
+      "name": "Name",
+      "description": "Description",
+      "shortDescription": "Short description",
+      "readme": "README",
+      "githubRepo": "Repository",
+      "metadata": "Metadata",
+      "versionNumber": "Version number",
+      "releaseNotes": "Release notes",
+      "deprecationReason": "Deprecation reason",
+      "fileName": "File name",
+      "checksum": "Checksum",
+      "username": "Username",
+      "email": "Email",
+      "display_name": "Display name",
+      "label": "Label",
+      "os": "OS"
+    }
   },
   "footer": {
     "health": {
@@ -668,7 +728,9 @@
       "worker": "Worker",
       "idp": "Identity provider",
       "pages": "Public catalog",
-      "store": "Private store"
+      "store": "Private store",
+      "uds": "UDS database",
+      "events": "Event stream"
     }
   },
   "collections": {
@@ -681,6 +743,240 @@
     "isos": "ISOs",
     "isosCount_one": "{{count}} ISO",
     "isosCount_other": "{{count}} ISOs"
+  },
+  "vdi": {
+    "search": {
+      "placeholder": "Search hostname, user, IP, MAC, pool…"
+    },
+    "vm": {
+      "title": "VM",
+      "notFound": "No VM instance with that id."
+    },
+    "fleet": {
+      "loadError": "The fleet could not be loaded; the page fills in as the stream delivers it.",
+      "signIn": "Sign in to see the fleet."
+    },
+    "empty": {
+      "title": "Waiting for VMs to check in…",
+      "body": "VMs appear here as they report their health."
+    },
+    "cards": {
+      "healthy": {
+        "label": "Healthy",
+        "description": "All drives connected and desktop icons present"
+      },
+      "cifs_broken": {
+        "label": "CIFS broken",
+        "description": "Mapped network drives are disconnected or unreachable"
+      },
+      "icons_missing": {
+        "label": "Icons missing",
+        "description": "Desktop shortcuts are below the expected threshold"
+      },
+      "stale": {
+        "label": "Stale",
+        "description": "Agent has not reported in over 10 minutes"
+      },
+      "no_user": {
+        "label": "VDIs without a user session",
+        "part": "{{n}} {{level}}",
+        "empty": "No VMs without a user session"
+      }
+    },
+    "pools": {
+      "title": "Pool overview",
+      "in_use": "{{n}} in use",
+      "assigned": "{{n}} assigned",
+      "available": "{{n}} available",
+      "standby": "{{n}} standby",
+      "agentsHealthy": "{{healthy}} / {{total}} agents healthy",
+      "publication": "Publication {{revision}}",
+      "capacity": "{{total}} / {{max}} max",
+      "stale": "{{n}} stale"
+    },
+    "toolbar": {
+      "exportJson": "Export JSON",
+      "exportCsv": "Export CSV",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "resetSort": "Reset sort"
+    },
+    "count": {
+      "all_one": "{{count}} VM",
+      "all_other": "{{count}} VMs",
+      "filtered_one": "{{count}} / {{total}} VM",
+      "filtered_other": "{{count}} / {{total}} VMs",
+      "lastEvent": "last event {{time}}"
+    },
+    "stream": {
+      "connecting": "Connecting…",
+      "live": "Live",
+      "reconnecting": "Reconnecting…",
+      "paused": "Paused",
+      "stopped": "Disconnected"
+    },
+    "table": {
+      "hostname": "Hostname",
+      "pool": "Pool",
+      "user": "User",
+      "session": "Session",
+      "drives": "Drives",
+      "icons": "Icons",
+      "seen": "Last seen",
+      "cycle": "Cycle"
+    },
+    "filter": {
+      "status": "Status",
+      "pool": "Pool",
+      "session": "Session",
+      "cache": "Cache level",
+      "drives": "Drives",
+      "publication": "Publication"
+    },
+    "status": {
+      "healthy": "Healthy",
+      "cifs_broken": "CIFS broken",
+      "icons_missing": "Icons missing",
+      "stale": "Stale",
+      "no_user": "No user",
+      "standby": "Standby",
+      "decommissioned": "Decommissioned",
+      "unknown": "Unknown",
+      "poweredOff": "Powered off",
+      "noCheckin": "No check-in",
+      "recycled": "Recycled",
+      "removed": "Removed"
+    },
+    "session": {
+      "active": "Active",
+      "idle": "Idle",
+      "idleFor": "Idle ({{time}})",
+      "no_session": "No session",
+      "standby": "Standby"
+    },
+    "cache": {
+      "in_use": "In use",
+      "assigned": "Assigned",
+      "available": "Available",
+      "standby": "Standby",
+      "level": "Level {{level}}"
+    },
+    "publication": {
+      "current": "Current",
+      "stale": "Stale image",
+      "staleImage": "Not on the latest image revision"
+    },
+    "drives": {
+      "share": "Network share: {{path}}",
+      "local": "Local drive (no network path)"
+    },
+    "seen": {
+      "startupStale": "Startup agent stale",
+      "userStale": "User agent stale"
+    },
+    "duration": {
+      "daysHours": "{{days}}d {{hours}}h",
+      "hours": "{{hours}}h",
+      "hoursMinutes": "{{hours}}h {{minutes}}m",
+      "minutes": "{{minutes}}m"
+    },
+    "detail": {
+      "overview": "Overview",
+      "metrics": "Metrics",
+      "history": "History",
+      "stats": "Stats"
+    },
+    "overview": {
+      "system": "System",
+      "uuid": "Machine UUID",
+      "os": "OS",
+      "uptime": "Uptime",
+      "lastBoot": "Last boot",
+      "ip": "IP",
+      "mac": "MAC",
+      "userAgent": "User agent",
+      "startupAgent": "Startup agent",
+      "checkins": "Agent check-ins",
+      "userAgentShort": "User",
+      "startupAgentShort": "Startup",
+      "never": "never",
+      "desktop": "Desktop",
+      "localDesktop": "local",
+      "fullName": "Full name",
+      "udsPool": "UDS pool",
+      "pool": "Pool",
+      "status": "Status",
+      "publication": "Publication",
+      "clientIp": "Client IP",
+      "clientHost": "Client host",
+      "udsUser": "UDS user",
+      "timings": "Timings",
+      "noTimings": "No timing data"
+    },
+    "history": {
+      "window": "History window",
+      "since": {
+        "1h": "Last hour",
+        "6h": "Last 6 hours",
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days"
+      },
+      "refresh": "Refresh",
+      "loading": "Loading history…",
+      "failed": "The history could not be loaded."
+    },
+    "stats": {
+      "loading": "Loading stats…",
+      "healthScore": "Health score",
+      "currentStatus": "Current status",
+      "checkins": "Check-ins",
+      "problems": "Problems",
+      "recoveries": "Recoveries",
+      "breakdown": "Event breakdown"
+    },
+    "metrics": {
+      "open": "Open in Grafana",
+      "panel": "Grafana panel {{id}}",
+      "noPanels": "No panels configured yet; add panel ids to the grafana block of the app configuration to embed graphs here."
+    },
+    "events": {
+      "session_login": "Login",
+      "session_logout": "Logout",
+      "session_idle": "Went idle",
+      "session_active": "Became active",
+      "user_changed": "User changed",
+      "drive_failed": "Drive failed",
+      "drive_recovered": "Drive recovered",
+      "drive_appeared": "Drive appeared",
+      "drive_disappeared": "Drive gone",
+      "icons_missing": "Icons missing",
+      "icons_recovered": "Icons OK",
+      "status_changed": "Status changed",
+      "agent_first_seen": "First seen",
+      "vm_decommissioned": "Decommissioned",
+      "vm_rebooted": "VM rebooted",
+      "session_disconnected": "Disconnected",
+      "session_reconnected": "Reconnected",
+      "none": "No events recorded yet; events appear as state changes occur.",
+      "was": "was: {{value}}",
+      "initiatedBy": "Initiated by: {{process}}"
+    },
+    "export": {
+      "hostname": "Hostname",
+      "pool": "Pool",
+      "cache": "Cache Level",
+      "user": "User",
+      "displayName": "Display Name",
+      "session": "Session",
+      "status": "Status",
+      "drives": "Drives",
+      "icons": "Icons",
+      "seen": "Last Seen",
+      "ip": "IP",
+      "agentVersion": "Agent Version",
+      "publication": "Publication"
+    }
   },
   "pages": {
     "loading": "Loading…",
@@ -737,7 +1033,6 @@
       "providers": "Providers",
       "architectures": "Architectures",
       "actions": "Actions",
-      "size": "Size",
       "checksum": "Checksum",
       "version": "Version",
       "details": "Details",
@@ -902,6 +1197,45 @@
         "repository": "Repository",
         "issues": "Report an issue",
         "contact": "Contact STARTcloud"
+      }
+    },
+    "vdi": {
+      "description": "The VDI Health Monitor watches a fleet of Windows virtual desktops: mapped network drives, desktop icons, user sessions, VM identity and UDS pools, reported by two agents on every VM.",
+      "goal": "One live page that tells an administrator which desktops are broken, stale or idle before a user calls.",
+      "features": {
+        "drives": "CIFS/SMB drive health per mapped letter, with latency",
+        "icons": "Desktop icon counts against a per-pool threshold",
+        "sessions": "Active, idle and signed-out sessions with the user's name",
+        "identity": "IP, MAC, last boot, OS version and uptime per VM",
+        "pools": "UDS pool, cache level, publication and thin-client data",
+        "agents": "Stale detection per agent and the full event history of every VM"
+      },
+      "components": {
+        "agents": {
+          "title": "Agents",
+          "user": "The user agent runs at logon and reports drives, icons and the session",
+          "startup": "The startup agent runs as SYSTEM and reports identity, uptime and sessions"
+        },
+        "server": {
+          "title": "Server",
+          "api": "A FastAPI service that takes the check-ins and answers the fleet under /api",
+          "events": "One event stream per tab that keeps every open page live",
+          "storage": "State and events in SQLite, pools from the UDS database"
+        },
+        "ui": {
+          "title": "Web UI",
+          "shared": "The shared STARTcloud UI, the same chrome as every estate app",
+          "fleet": "The fleet page and one page per VM with history, stats and Grafana panels"
+        }
+      },
+      "docs": {
+        "intro": "Read how the agents are deployed and what the server records.",
+        "guide": "Guide"
+      },
+      "support": {
+        "intro": "The monitor is maintained privately; report issues in its repository.",
+        "repository": "Repository",
+        "issues": "Report an issue"
       }
     }
   },

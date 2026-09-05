@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Avatar from '../../../components/common/Avatar';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { responseMessage } from '../../../utils/responseMessage';
@@ -41,6 +42,38 @@ export const accountShape = PropTypes.shape({
 const isAbort = error => error?.name?.includes('Cancel') || error?.name?.includes('Abort');
 
 const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
+
+const NO_FILTERS = [];
+const clearNothing = () => undefined;
+
+const SEARCH_PLACEHOLDER_KEYS = {
+  organizations: 'profile.search.organizations',
+  serviceAccounts: 'profile.search.serviceAccounts',
+};
+
+const includesTerm = (term, ...fields) =>
+  !term || fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
+
+const PageSearch = ({ query, onQueryChange, placeholder, matched, total }) => {
+  useNavbarSearchBinding({
+    query,
+    onQueryChange,
+    placeholder,
+    matched,
+    total,
+    groups: NO_FILTERS,
+    onClearFilters: clearNothing,
+  });
+  return null;
+};
+
+PageSearch.propTypes = {
+  query: PropTypes.string.isRequired,
+  onQueryChange: PropTypes.func.isRequired,
+  placeholder: PropTypes.string.isRequired,
+  matched: PropTypes.number.isRequired,
+  total: PropTypes.number.isRequired,
+};
 
 const isValidEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -87,7 +120,8 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
  * only while the host advertises `local-accounts` and the account is not
  * signed in through the identity provider, whose accounts get a link to
  * manage themselves at the provider instead) and Service accounts
- * (create, the one-time token, select and delete), every call through the
+ * (create, the one-time token, select and delete), the Organizations and
+ * Service accounts lists searched from the navbar, every call through the
  * app's `account` adapter and the session's own `reload` and
  * `signOutEverywhere`.
  */
@@ -117,6 +151,7 @@ const ProfilePage = ({
   const [newEmail, setNewEmail] = useState('');
   const [displayName, setDisplayName] = useState(() => nameOf(currentUser));
   const [activeTab, setActiveTab] = useState('profile');
+  const [searchTerm, setSearchTerm] = useState('');
   const [passwordErrors, setPasswordErrors] = useState({});
   const [emailErrors, setEmailErrors] = useState({});
   const [serviceAccounts, setServiceAccounts] = useState([]);
@@ -209,6 +244,7 @@ const ProfilePage = ({
       } else {
         resetFormStates();
       }
+      setSearchTerm('');
       setActiveTab(tab);
     },
     [resetFormStates, resetServiceAccountStates]
@@ -694,6 +730,34 @@ const ProfilePage = ({
     </div>
   );
 
+  const term = searchTerm.toLowerCase();
+  const filteredOrganizations = userOrganizations.filter(org =>
+    includesTerm(
+      term,
+      org.name || org.organization?.name,
+      org.description || org.organization?.description
+    )
+  );
+  const filteredJoinRequests = joinRequests.filter(request =>
+    includesTerm(term, request.organization.name)
+  );
+  const filteredServiceAccounts = serviceAccounts.filter(entry =>
+    includesTerm(term, entry.username, entry.description, entry.organization?.name)
+  );
+  const searchCounts = {
+    organizations: {
+      matched: filteredOrganizations.length + filteredJoinRequests.length,
+      total: userOrganizations.length + joinRequests.length,
+    },
+    serviceAccounts: {
+      matched: filteredServiceAccounts.length,
+      total: serviceAccounts.length,
+    },
+  }[activeTab];
+  const emptyOrganizationsText = searchTerm
+    ? t('pages.noMatches')
+    : t('profile.organizations.noOrgs');
+
   const renderOrganizationsTab = () => (
     <div className="tab-pane fade show active">
       <h3>{t('profile.organizations.title')}</h3>
@@ -711,11 +775,11 @@ const ProfilePage = ({
               <h5>{t('profile.organizations.belongToTitle')}</h5>
             </div>
             <div className="card-body">
-              {userOrganizations.length === 0 ? (
-                <div className="alert alert-info">{t('profile.organizations.noOrgs')}</div>
+              {filteredOrganizations.length === 0 ? (
+                <div className="alert alert-info">{emptyOrganizationsText}</div>
               ) : (
                 <ul className="list-group">
-                  {userOrganizations.map(org => {
+                  {filteredOrganizations.map(org => {
                     const orgName = org.name || org.organization?.name;
                     const orgDesc = org.description || org.organization?.description;
                     const isPrimary = !!org.isPrimary;
@@ -783,36 +847,44 @@ const ProfilePage = ({
                 <h5>{t('profile.organizations.pendingRequestsTitle')}</h5>
               </div>
               <div className="card-body">
-                <ul className="list-group">
-                  {joinRequests.map(request => (
-                    <li key={request.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>{request.organization.name}</strong>
-                          <br />
-                          {request.organization.description && (
-                            <small className="text-muted">{request.organization.description}</small>
-                          )}
-                          <br />
-                          <small className="text-muted">
-                            {t('profile.organizations.requested')}:{' '}
-                            {new Date(request.created_at).toLocaleDateString()}
-                          </small>
+                {filteredJoinRequests.length === 0 ? (
+                  <div className="alert alert-info mb-0">{t('pages.noMatches')}</div>
+                ) : (
+                  <ul className="list-group">
+                    {filteredJoinRequests.map(request => (
+                      <li key={request.id} className="list-group-item">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <strong>{request.organization.name}</strong>
+                            <br />
+                            {request.organization.description && (
+                              <small className="text-muted">
+                                {request.organization.description}
+                              </small>
+                            )}
+                            <br />
+                            <small className="text-muted">
+                              {t('profile.organizations.requested')}:{' '}
+                              {new Date(request.created_at).toLocaleDateString()}
+                            </small>
+                          </div>
+                          <div>
+                            <span className="badge bg-warning me-3">
+                              {t('pages.status.pending')}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary btn-sm"
+                              onClick={() => handleCancelJoinRequest(request.id)}
+                            >
+                              {t('profile.buttons.cancel')}
+                            </button>
+                          </div>
                         </div>
-                        <div>
-                          <span className="badge bg-warning me-3">{t('pages.status.pending')}</span>
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => handleCancelJoinRequest(request.id)}
-                          >
-                            {t('profile.buttons.cancel')}
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           )}
@@ -895,7 +967,10 @@ const ProfilePage = ({
           {t('profile.serviceAccounts.deleteSelected', { count: selectedAccounts.length })}
         </button>
       </div>
-      {groupByOrganization(serviceAccounts, t('profile.unknown')).map(group => (
+      {serviceAccounts.length > 0 && filteredServiceAccounts.length === 0 && (
+        <div className="alert alert-info">{t('pages.noMatches')}</div>
+      )}
+      {groupByOrganization(filteredServiceAccounts, t('profile.unknown')).map(group => (
         <div key={group.name} className="card mb-3">
           <div className="card-header d-flex align-items-center gap-2">
             <h5 className="mb-0">{group.name}</h5>
@@ -964,6 +1039,15 @@ const ProfilePage = ({
               </div>
             )}
             <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
+            {searchCounts && (
+              <PageSearch
+                query={searchTerm}
+                onQueryChange={setSearchTerm}
+                placeholder={t(SEARCH_PLACEHOLDER_KEYS[activeTab])}
+                matched={searchCounts.matched}
+                total={searchCounts.total}
+              />
+            )}
             <div className="tab-content mt-3">
               {activeTab === 'profile' && renderProfileTab()}
               {activeTab === 'organizations' && renderOrganizationsTab()}

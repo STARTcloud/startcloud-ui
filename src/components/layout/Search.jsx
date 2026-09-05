@@ -4,13 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { FaGear, FaMagnifyingGlass, FaXmark } from 'react-icons/fa6';
 
 import {
+  APP_SEARCH_LIMIT,
   NavbarSearchContext,
   activeFilterCount,
   navbarSearchBindingShape,
   useNavbarSearch,
 } from '../../contexts/SearchContext';
+import { useStatus } from '../../contexts/StatusContext';
 
 const HOVER_DWELL_MS = 400;
+const DEBOUNCE_MS = 250;
+const MIN_QUERY = 2;
 
 const SearchIconButton = ({ filtersOn, onOpen, onMouseEnter, onMouseLeave }) => {
   const { t } = useTranslation();
@@ -38,18 +42,32 @@ SearchIconButton.propTypes = {
   onMouseLeave: PropTypes.func.isRequired,
 };
 
-const SearchBox = ({ binding, live, panelOpen, onTogglePanel, onClear, onCollapse }) => {
+const SearchBox = ({
+  binding = null,
+  query,
+  placeholder,
+  inputRef,
+  panelOpen,
+  onQueryChange,
+  onTogglePanel,
+  onClear,
+  onEscape,
+  onDown,
+}) => {
   const { t } = useTranslation();
-  const inputRef = useRef(null);
-  const filters = activeFilterCount(binding);
+  const filters = binding ? activeFilterCount(binding) : 0;
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  }, [inputRef]);
 
   const onKeyDown = event => {
-    if (event.key === 'Escape' && !live().query) {
-      onCollapse();
+    if (event.key === 'Escape') {
+      onEscape();
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      onDown();
     }
   };
 
@@ -60,18 +78,18 @@ const SearchBox = ({ binding, live, panelOpen, onTogglePanel, onClear, onCollaps
         <input
           ref={inputRef}
           type="search"
-          value={binding.query}
-          placeholder={binding.placeholder}
+          value={query}
+          placeholder={placeholder}
           aria-label={t('search.open')}
-          onChange={event => live().onQueryChange(event.target.value)}
+          onChange={event => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
         />
-        {binding.total > 0 ? (
+        {binding && binding.total > 0 ? (
           <span className="navbar-search-count">
             {binding.matched} / {binding.total}
           </span>
         ) : null}
-        {binding.groups.length > 0 ? (
+        {binding && binding.groups.length > 0 ? (
           <button
             type="button"
             className={`navbar-search-tool${panelOpen || filters > 0 ? ' on' : ''}`}
@@ -98,37 +116,111 @@ const SearchBox = ({ binding, live, panelOpen, onTogglePanel, onClear, onCollaps
 };
 
 SearchBox.propTypes = {
-  binding: navbarSearchBindingShape.isRequired,
-  live: PropTypes.func.isRequired,
+  binding: navbarSearchBindingShape,
+  query: PropTypes.string.isRequired,
+  placeholder: PropTypes.string.isRequired,
+  inputRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
   panelOpen: PropTypes.bool.isRequired,
+  onQueryChange: PropTypes.func.isRequired,
   onTogglePanel: PropTypes.func.isRequired,
   onClear: PropTypes.func.isRequired,
-  onCollapse: PropTypes.func.isRequired,
+  onEscape: PropTypes.func.isRequired,
+  onDown: PropTypes.func.isRequired,
 };
 
+const useAppResults = ({ context, expanded, query }) => {
+  const appSearch = context?.appSearch;
+  const setAppResults = context?.setAppResults;
+  const needle = query.trim();
+
+  const active =
+    Boolean(setAppResults && expanded && appSearch?.available) && needle.length >= MIN_QUERY;
+
+  useEffect(() => {
+    if (!active) {
+      return undefined;
+    }
+    let live = true;
+    const timer = setTimeout(() => {
+      appSearch
+        .search(needle, APP_SEARCH_LIMIT)
+        .then(answer => {
+          if (live) {
+            setAppResults({
+              query: needle,
+              results: answer.results || [],
+              truncated: answer.truncated || {},
+              loading: false,
+            });
+          }
+        })
+        .catch(() => {
+          if (live) {
+            setAppResults({ query: needle, results: [], truncated: {}, loading: false });
+          }
+        });
+    }, DEBOUNCE_MS);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [active, appSearch, setAppResults, needle]);
+};
+
+/**
+ * The navbar search module: the icon, then on click or hover the box. With
+ * a page binding the box drives the page's search and filters and, from two
+ * characters on, the app-wide search too; with none it drives only the
+ * app-wide search under the brand's placeholder. The app-wide answer lands
+ * in the context for the panel to draw.
+ */
 export const NavbarSearchControl = () => {
+  const { t } = useTranslation();
+  const status = useStatus();
   const context = useContext(NavbarSearchContext);
   const binding = useNavbarSearch(context?.store);
+  const expanded = Boolean(context?.expanded);
+  const query = binding ? binding.query : context?.appQuery || '';
   const dwell = useRef(null);
 
   useEffect(() => () => clearTimeout(dwell.current), []);
+  useAppResults({ context, expanded, query });
 
-  if (!context || !binding) {
+  if (!context || (!binding && !context.appSearch.available)) {
     return null;
   }
 
-  const { store, expanded, setExpanded, panelOpen, setPanelOpen } = context;
+  const { store, setExpanded, panelOpen, setPanelOpen, setAppQuery, inputRef, resultsRef } =
+    context;
   const live = () => store.get() || binding;
+
+  const setQuery = value => {
+    if (binding) {
+      live().onQueryChange(value);
+      return;
+    }
+    setAppQuery(value);
+  };
 
   const collapse = () => {
     setPanelOpen(false);
     setExpanded(false);
+    setAppQuery('');
   };
 
   const clearAll = () => {
-    const current = live();
-    current.onQueryChange('');
-    current.onClearFilters();
+    setQuery('');
+    if (binding) {
+      live().onClearFilters();
+    }
+    collapse();
+  };
+
+  const onEscape = () => {
+    if (query) {
+      setQuery('');
+      return;
+    }
     collapse();
   };
 
@@ -142,7 +234,7 @@ export const NavbarSearchControl = () => {
   if (!expanded) {
     return (
       <SearchIconButton
-        filtersOn={activeFilterCount(binding) > 0}
+        filtersOn={Boolean(binding) && activeFilterCount(binding) > 0}
         onOpen={() => setExpanded(true)}
         onMouseEnter={startDwell}
         onMouseLeave={stopDwell}
@@ -153,11 +245,17 @@ export const NavbarSearchControl = () => {
   return (
     <SearchBox
       binding={binding}
-      live={live}
+      query={query}
+      placeholder={
+        binding ? binding.placeholder : t('search.appPlaceholder', { app: status.brand.name })
+      }
+      inputRef={inputRef}
       panelOpen={panelOpen}
+      onQueryChange={setQuery}
       onTogglePanel={() => setPanelOpen(open => !open)}
       onClear={clearAll}
-      onCollapse={collapse}
+      onEscape={onEscape}
+      onDown={() => resultsRef.current?.querySelector('a')?.focus()}
     />
   );
 };

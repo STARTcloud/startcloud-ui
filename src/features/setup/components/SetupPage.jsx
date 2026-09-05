@@ -5,9 +5,10 @@ import { FaCircleInfo, FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
 import { generateLabel } from '../../../utils/configLabel';
-import { CONFIG_NAMES, validateConfigValue } from '../../../utils/configValidation';
+import { validateConfigValue } from '../../../utils/configValidation';
 
 const SETUP_KEY = 'setup';
 const REDIRECT_DELAY_MS = 5000;
@@ -50,8 +51,8 @@ const validateTree = (tree, t, errors = {}, path = []) => {
   return errors;
 };
 
-const hasErrors = errors =>
-  CONFIG_NAMES.some(configName =>
+const hasErrors = (errors, configNames) =>
+  configNames.some(configName =>
     Object.values(errors[configName] || {}).some(error => error !== null)
   );
 
@@ -277,7 +278,8 @@ SetupFields.propTypes = {
 
 /**
  * The first-run setup page of an app that configures itself in the
- * browser: the setup token gate, then one tab per configuration file with
+ * browser: the setup token gate, then one tab per configuration file the
+ * host's status names in `config` (`app` alone when it names none) with
  * every field validated by its type, the SQLite storage path in place of
  * the SQL block when SQLite is chosen, the SSL upload on upload fields,
  * and Submit all, which writes every file through the app's `setup`
@@ -287,11 +289,13 @@ const SetupPage = ({ setup }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
-  const [configs, setConfigs] = useState({ db: {}, app: {}, auth: {}, mail: {} });
+  const status = useStatus();
+  const configNames = status.config || ['app'];
+  const [configs, setConfigs] = useState({});
   const [setupComplete, setSetupComplete] = useState(false);
   const [setupToken, setSetupToken] = useState('');
   const [authorizedSetupToken, setAuthorizedSetupToken] = useState('');
-  const [activeTab, setActiveTab] = useState('db');
+  const [activeTab, setActiveTab] = useState(configNames[0]);
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
@@ -301,13 +305,13 @@ const SetupPage = ({ setup }) => {
   useEffect(() => {
     setup
       .status()
-      .then(status => setSetupComplete(status.setupComplete))
+      .then(setupStatus => setSetupComplete(setupStatus.setupComplete))
       .catch(error => {
         log.api.error('Error checking setup status', { error: error.message });
       });
   }, [setup]);
 
-  const isFormValid = !hasErrors(validationErrors);
+  const isFormValid = !hasErrors(validationErrors, configNames);
 
   const adoptConfigs = data => {
     const next = fillDialect(data.configs);
@@ -445,11 +449,11 @@ const SetupPage = ({ setup }) => {
         </div>
       );
     }
-    const databaseType = configs.db.database_type?.value || 'mysql';
+    const databaseType = configs.db?.database_type?.value || 'mysql';
     return (
       <div>
         <ul className="nav nav-tabs mb-4 d-flex">
-          {CONFIG_NAMES.map(configName => (
+          {configNames.map(configName => (
             <li className="nav-item" key={configName}>
               <button
                 type="button"
@@ -473,7 +477,7 @@ const SetupPage = ({ setup }) => {
         </ul>
 
         <div className="tab-content">
-          {CONFIG_NAMES.map(configName => (
+          {configNames.map(configName => (
             <div
               key={configName}
               className={`tab-pane ${activeTab === configName ? 'active' : ''}`}
@@ -481,7 +485,7 @@ const SetupPage = ({ setup }) => {
               <div className="row">
                 <SetupFields
                   configName={configName}
-                  tree={configs[configName]}
+                  tree={configs[configName] || {}}
                   path={[]}
                   errors={validationErrors[configName] || {}}
                   databaseType={databaseType}

@@ -18,38 +18,65 @@ const compare = (left, right) => {
 };
 
 /**
- * Sorts items by the column named in `sort` when that column is among the
- * given ones and carries a `sortValue`; a `sortValue` may return an array,
- * compared element by element. Returns the items untouched otherwise.
+ * Sorts items by every entry of the sort stack in order, each entry naming
+ * a column among the given ones that carries a `sortValue`; an entry whose
+ * column is absent is skipped, so a sort on a hidden column is dropped. A
+ * `sortValue` may return an array, compared element by element. Returns
+ * the items untouched when no entry applies.
  *
  * @param {Array} items - The items to sort
- * @param {{ column: string, direction: string }} sort - The active sort
+ * @param {Array<{ column: string, direction: string }>} stack - The active sort, first entry first
  * @param {Array} columns - The columns a sort may target
  * @returns {Array} The sorted items
  */
-export const sortItems = (items, sort, columns) => {
-  const column = columns.find(entry => entry.key === sort.column);
-  if (!column || !column.sortValue) {
+export const sortItems = (items, stack, columns) => {
+  const entries = stack
+    .map(entry => ({
+      column: columns.find(column => column.key === entry.column),
+      direction: entry.direction === 'desc' ? -1 : 1,
+    }))
+    .filter(entry => entry.column && entry.column.sortValue);
+  if (entries.length === 0) {
     return items;
   }
-  const direction = sort.direction === 'desc' ? -1 : 1;
-  return [...items].sort((a, b) => direction * compare(column.sortValue(a), column.sortValue(b)));
+  return [...items].sort((a, b) => {
+    for (const { column, direction } of entries) {
+      const result = direction * compare(column.sortValue(a), column.sortValue(b));
+      if (result !== 0) {
+        return result;
+      }
+    }
+    return 0;
+  });
+};
+
+const advance = (stack, index) => {
+  const entry = stack[index];
+  if (entry.direction === 'asc') {
+    return stack.map((other, at) => (at === index ? { ...other, direction: 'desc' } : other));
+  }
+  return [...stack.slice(0, index), ...stack.slice(index + 1)];
 };
 
 /**
- * The sort after one click on `column`: ascending on a new column, then
- * descending, then off.
+ * The sort stack after one click on `column`: a plain click sorts by that
+ * column alone, ascending on a new column, then descending, then off; an
+ * appending click (Shift) adds the column as the next entry, or advances
+ * the entry it already has the same way.
  *
- * @param {{ column: string, direction: string }} current - The active sort
+ * @param {Array<{ column: string, direction: string }>} stack - The active sort
  * @param {string} column - The clicked column key
- * @returns {{ column: string, direction: string }} The next sort
+ * @param {Object} [options] - The click
+ * @param {boolean} [options.append] - Whether the click adds to the stack
+ * @returns {Array<{ column: string, direction: string }>} The next sort
  */
-export const nextSort = (current, column) => {
-  if (current.column !== column) {
-    return { column, direction: 'asc' };
+export const nextSort = (stack, column, { append = false } = {}) => {
+  const index = stack.findIndex(entry => entry.column === column);
+  if (append) {
+    return index === -1 ? [...stack, { column, direction: 'asc' }] : advance(stack, index);
   }
-  if (current.direction === 'asc') {
-    return { column, direction: 'desc' };
+  if (stack.length === 1 && index === 0) {
+    return advance(stack, 0);
   }
-  return { column: '', direction: 'asc' };
+  return [{ column, direction: 'asc' }];
 };

@@ -12,6 +12,23 @@ const parse = key => {
 
 const setOf = values => new Set(Array.isArray(values) ? values : []);
 
+const isSortEntry = entry =>
+  Boolean(entry) && typeof entry.column === 'string' && entry.column !== '';
+
+/**
+ * The stored sort as a stack: a saved array of entries, a saved single
+ * entry as a one-entry stack, anything else as no sort.
+ *
+ * @param {*} saved - The stored value
+ * @returns {Array<{ column: string, direction: string }>} The stack
+ */
+export const sortStackOf = saved => {
+  if (Array.isArray(saved)) {
+    return saved.filter(isSortEntry);
+  }
+  return isSortEntry(saved) ? [{ column: saved.column, direction: saved.direction }] : [];
+};
+
 const defaultHidden = columns =>
   columns.filter(column => column.defaultHidden).map(column => column.key);
 
@@ -30,7 +47,7 @@ export const readPrefs = (key, collections) => {
         setOf(saved.filters?.[collection.key]?.[group.key]),
       ])
     );
-    sort[collection.key] = saved.sort?.[collection.key] || { column: '', direction: 'asc' };
+    sort[collection.key] = sortStackOf(saved.sort?.[collection.key]);
     hiddenColumns[collection.key] = setOf(
       saved.hiddenColumns?.[collection.key] ?? defaultHidden(collection.columns)
     );
@@ -71,7 +88,7 @@ export const writePrefs = (
 export const readDetailPrefs = (key, columns) => {
   const saved = parse(key);
   return {
-    sort: saved.sort || { column: '', direction: 'asc' },
+    sort: sortStackOf(saved.sort),
     hiddenColumns: setOf(saved.hiddenColumns ?? defaultHidden(columns)),
   };
 };

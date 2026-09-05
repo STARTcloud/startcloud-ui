@@ -89,6 +89,10 @@
       "security": "Seguridad",
       "serviceAccounts": "Cuentas de Servicio"
     },
+    "search": {
+      "organizations": "Buscar organizaciones y solicitudes",
+      "serviceAccounts": "Buscar cuentas de servicio"
+    },
     "fields": {
       "fullName": "Nombre Completo",
       "displayName": "Nombre visible",
@@ -275,6 +279,7 @@
     "testingSmtp": "Enviando correo de prueba...",
     "testSmtpSuccess": "¡Correo de prueba enviado con éxito! Revisa la bandeja de entrada del destinatario.",
     "testSmtpError": "Error al enviar el correo de prueba",
+    "search": "Buscar configuraciones",
     "smtpTest": {
       "title": "Probar la configuración SMTP",
       "recipient": "Correo del destinatario",
@@ -325,7 +330,14 @@
       "frontendLogging": "Registro Frontend",
       "frontendLoggingCategories": "Categorías de Registro Frontend",
       "oidcSettings": "Configuración OIDC",
-      "s2sSettings": "Delegación S2S"
+      "s2sSettings": "Delegación S2S",
+      "vdiSettings": "Configuración VDI Health",
+      "database": "Base de Datos",
+      "agents": "Agentes",
+      "udsDb": "Base de Datos UDS",
+      "grafana": "Grafana",
+      "authentication": "Autenticación",
+      "internationalization": "Internacionalización"
     }
   },
   "configField": {
@@ -485,6 +497,10 @@
       "organization": "Organización",
       "joinRequests": "Solicitudes de Unión",
       "invitations": "Invitaciones"
+    },
+    "search": {
+      "joinRequests": "Buscar solicitudes de unión",
+      "invitations": "Buscar invitaciones"
     },
     "buttons": {
       "delete": "Eliminar",
@@ -652,7 +668,51 @@
     "clear": "Borrar búsqueda y filtros",
     "clearFilters": "Quitar filtros",
     "activeFilters_one": "{{count}} filtro activo",
-    "activeFilters_other": "{{count}} filtros activos"
+    "activeFilters_other": "{{count}} filtros activos",
+    "appPlaceholder": "Buscar en {{app}}",
+    "elsewhere": "En otras partes de {{app}}",
+    "inApp": "En {{app}}",
+    "showAll": "Mostrar los {{count}} resultados",
+    "noHits": "No se encontró nada.",
+    "loading": "Buscando…",
+    "unavailable": "La búsqueda no está disponible en este host.",
+    "page": {
+      "title": "Búsqueda",
+      "count_one": "{{count}} resultado para «{{query}}»",
+      "count_other": "{{count}} resultados para «{{query}}»"
+    },
+    "kinds": {
+      "organization": "Organizaciones",
+      "item": "Elementos",
+      "version": "Versiones",
+      "provider": "Proveedores",
+      "architecture": "Arquitecturas",
+      "artifact": "Artefactos",
+      "user": "Usuarios"
+    },
+    "columns": {
+      "title": "Título",
+      "where": "Dónde",
+      "matched": "Coincidencia"
+    },
+    "matched": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "shortDescription": "Descripción corta",
+      "readme": "README",
+      "githubRepo": "Repositorio",
+      "metadata": "Metadatos",
+      "versionNumber": "Número de versión",
+      "releaseNotes": "Notas de la versión",
+      "deprecationReason": "Motivo de obsolescencia",
+      "fileName": "Nombre de archivo",
+      "checksum": "Suma de comprobación",
+      "username": "Nombre de usuario",
+      "email": "Correo",
+      "display_name": "Nombre visible",
+      "label": "Etiqueta",
+      "os": "SO"
+    }
   },
   "footer": {
     "health": {
@@ -668,7 +728,9 @@
       "worker": "Worker",
       "idp": "Proveedor de identidad",
       "pages": "Catálogo público",
-      "store": "Almacén privado"
+      "store": "Almacén privado",
+      "uds": "Base de datos UDS",
+      "events": "Flujo de eventos"
     }
   },
   "collections": {
@@ -681,6 +743,240 @@
     "isos": "ISOs",
     "isosCount_one": "{{count}} ISO",
     "isosCount_other": "{{count}} ISOs"
+  },
+  "vdi": {
+    "search": {
+      "placeholder": "Buscar por hostname, usuario, IP, MAC, pool…"
+    },
+    "vm": {
+      "title": "VM",
+      "notFound": "No hay ninguna instancia de VM con ese id."
+    },
+    "fleet": {
+      "loadError": "No se pudo cargar la flota; la página se completa a medida que el flujo la entrega.",
+      "signIn": "Inicia sesión para ver la flota."
+    },
+    "empty": {
+      "title": "Esperando a que las VMs se registren…",
+      "body": "Las VMs aparecen aquí a medida que informan de su estado."
+    },
+    "cards": {
+      "healthy": {
+        "label": "Sanas",
+        "description": "Todas las unidades conectadas y los iconos del escritorio presentes"
+      },
+      "cifs_broken": {
+        "label": "CIFS roto",
+        "description": "Las unidades de red asignadas están desconectadas o inaccesibles"
+      },
+      "icons_missing": {
+        "label": "Faltan iconos",
+        "description": "Los accesos directos del escritorio están por debajo del umbral esperado"
+      },
+      "stale": {
+        "label": "Obsoletas",
+        "description": "El agente no ha informado en más de 10 minutos"
+      },
+      "no_user": {
+        "label": "VDIs sin sesión de usuario",
+        "part": "{{n}} {{level}}",
+        "empty": "Ninguna VM sin sesión de usuario"
+      }
+    },
+    "pools": {
+      "title": "Resumen de pools",
+      "in_use": "{{n}} en uso",
+      "assigned": "{{n}} asignadas",
+      "available": "{{n}} disponibles",
+      "standby": "{{n}} en espera",
+      "agentsHealthy": "{{healthy}} / {{total}} agentes sanos",
+      "publication": "Publicación {{revision}}",
+      "capacity": "{{total}} / {{max}} máx.",
+      "stale": "{{n}} obsoletas"
+    },
+    "toolbar": {
+      "exportJson": "Exportar JSON",
+      "exportCsv": "Exportar CSV",
+      "expandAll": "Expandir todo",
+      "collapseAll": "Contraer todo",
+      "resetSort": "Quitar orden"
+    },
+    "count": {
+      "all_one": "{{count}} VM",
+      "all_other": "{{count}} VMs",
+      "filtered_one": "{{count}} / {{total}} VM",
+      "filtered_other": "{{count}} / {{total}} VMs",
+      "lastEvent": "último evento {{time}}"
+    },
+    "stream": {
+      "connecting": "Conectando…",
+      "live": "En vivo",
+      "reconnecting": "Reconectando…",
+      "paused": "En pausa",
+      "stopped": "Desconectado"
+    },
+    "table": {
+      "hostname": "Hostname",
+      "pool": "Pool",
+      "user": "Usuario",
+      "session": "Sesión",
+      "drives": "Unidades",
+      "icons": "Iconos",
+      "seen": "Última vez",
+      "cycle": "Ciclo"
+    },
+    "filter": {
+      "status": "Estado",
+      "pool": "Pool",
+      "session": "Sesión",
+      "cache": "Nivel de caché",
+      "drives": "Unidades",
+      "publication": "Publicación"
+    },
+    "status": {
+      "healthy": "Sana",
+      "cifs_broken": "CIFS roto",
+      "icons_missing": "Faltan iconos",
+      "stale": "Obsoleta",
+      "no_user": "Sin usuario",
+      "standby": "En espera",
+      "decommissioned": "Retirada",
+      "unknown": "Desconocido",
+      "poweredOff": "Apagada",
+      "noCheckin": "Sin registro",
+      "recycled": "Reciclada",
+      "removed": "Eliminada"
+    },
+    "session": {
+      "active": "Activa",
+      "idle": "Inactiva",
+      "idleFor": "Inactiva ({{time}})",
+      "no_session": "Sin sesión",
+      "standby": "En espera"
+    },
+    "cache": {
+      "in_use": "En uso",
+      "assigned": "Asignada",
+      "available": "Disponible",
+      "standby": "En espera",
+      "level": "Nivel {{level}}"
+    },
+    "publication": {
+      "current": "Actual",
+      "stale": "Imagen obsoleta",
+      "staleImage": "No está en la última revisión de la imagen"
+    },
+    "drives": {
+      "share": "Recurso de red: {{path}}",
+      "local": "Unidad local (sin ruta de red)"
+    },
+    "seen": {
+      "startupStale": "Agente de arranque obsoleto",
+      "userStale": "Agente de usuario obsoleto"
+    },
+    "duration": {
+      "daysHours": "{{days}}d {{hours}}h",
+      "hours": "{{hours}}h",
+      "hoursMinutes": "{{hours}}h {{minutes}}m",
+      "minutes": "{{minutes}}m"
+    },
+    "detail": {
+      "overview": "Resumen",
+      "metrics": "Métricas",
+      "history": "Historial",
+      "stats": "Estadísticas"
+    },
+    "overview": {
+      "system": "Sistema",
+      "uuid": "UUID de la máquina",
+      "os": "SO",
+      "uptime": "Tiempo encendida",
+      "lastBoot": "Último arranque",
+      "ip": "IP",
+      "mac": "MAC",
+      "userAgent": "Agente de usuario",
+      "startupAgent": "Agente de arranque",
+      "checkins": "Registros de los agentes",
+      "userAgentShort": "Usuario",
+      "startupAgentShort": "Arranque",
+      "never": "nunca",
+      "desktop": "Escritorio",
+      "localDesktop": "local",
+      "fullName": "Nombre completo",
+      "udsPool": "Pool UDS",
+      "pool": "Pool",
+      "status": "Estado",
+      "publication": "Publicación",
+      "clientIp": "IP del cliente",
+      "clientHost": "Host del cliente",
+      "udsUser": "Usuario UDS",
+      "timings": "Tiempos",
+      "noTimings": "Sin datos de tiempos"
+    },
+    "history": {
+      "window": "Ventana del historial",
+      "since": {
+        "1h": "Última hora",
+        "6h": "Últimas 6 horas",
+        "24h": "Últimas 24 horas",
+        "7d": "Últimos 7 días",
+        "30d": "Últimos 30 días"
+      },
+      "refresh": "Actualizar",
+      "loading": "Cargando el historial…",
+      "failed": "No se pudo cargar el historial."
+    },
+    "stats": {
+      "loading": "Cargando las estadísticas…",
+      "healthScore": "Puntuación de salud",
+      "currentStatus": "Estado actual",
+      "checkins": "Registros",
+      "problems": "Problemas",
+      "recoveries": "Recuperaciones",
+      "breakdown": "Desglose de eventos"
+    },
+    "metrics": {
+      "open": "Abrir en Grafana",
+      "panel": "Panel de Grafana {{id}}",
+      "noPanels": "Aún no hay paneles configurados; añade ids de panel al bloque grafana de la configuración de la aplicación para incrustar gráficas aquí."
+    },
+    "events": {
+      "session_login": "Inicio de sesión",
+      "session_logout": "Cierre de sesión",
+      "session_idle": "Pasó a inactiva",
+      "session_active": "Pasó a activa",
+      "user_changed": "Cambio de usuario",
+      "drive_failed": "Unidad fallida",
+      "drive_recovered": "Unidad recuperada",
+      "drive_appeared": "Unidad aparecida",
+      "drive_disappeared": "Unidad desaparecida",
+      "icons_missing": "Faltan iconos",
+      "icons_recovered": "Iconos OK",
+      "status_changed": "Cambio de estado",
+      "agent_first_seen": "Vista por primera vez",
+      "vm_decommissioned": "Retirada",
+      "vm_rebooted": "VM reiniciada",
+      "session_disconnected": "Desconectada",
+      "session_reconnected": "Reconectada",
+      "none": "Aún no hay eventos registrados; aparecen a medida que cambia el estado.",
+      "was": "antes: {{value}}",
+      "initiatedBy": "Iniciado por: {{process}}"
+    },
+    "export": {
+      "hostname": "Hostname",
+      "pool": "Pool",
+      "cache": "Nivel de caché",
+      "user": "Usuario",
+      "displayName": "Nombre visible",
+      "session": "Sesión",
+      "status": "Estado",
+      "drives": "Unidades",
+      "icons": "Iconos",
+      "seen": "Última vez",
+      "ip": "IP",
+      "agentVersion": "Versión del agente",
+      "publication": "Publicación"
+    }
   },
   "pages": {
     "loading": "Cargando…",
@@ -737,7 +1033,6 @@
       "providers": "Proveedores",
       "architectures": "Arquitecturas",
       "actions": "Acciones",
-      "size": "Tamaño",
       "checksum": "Suma de comprobación",
       "version": "Versión",
       "details": "Detalles",
@@ -902,6 +1197,45 @@
         "repository": "Repositorio",
         "issues": "Informar de un problema",
         "contact": "Contactar con STARTcloud"
+      }
+    },
+    "vdi": {
+      "description": "El VDI Health Monitor vigila una flota de escritorios virtuales Windows: unidades de red asignadas, iconos del escritorio, sesiones de usuario, identidad de la VM y pools UDS, informados por dos agentes en cada VM.",
+      "goal": "Una página en vivo que le dice a un administrador qué escritorios están rotos, obsoletos o inactivos antes de que llame un usuario.",
+      "features": {
+        "drives": "Salud de las unidades CIFS/SMB por letra asignada, con latencia",
+        "icons": "Recuento de iconos del escritorio contra un umbral por pool",
+        "sessions": "Sesiones activas, inactivas y cerradas con el nombre del usuario",
+        "identity": "IP, MAC, último arranque, versión del SO y tiempo encendida por VM",
+        "pools": "Pool UDS, nivel de caché, publicación y datos del cliente ligero",
+        "agents": "Detección de agentes obsoletos y el historial completo de eventos de cada VM"
+      },
+      "components": {
+        "agents": {
+          "title": "Agentes",
+          "user": "El agente de usuario se ejecuta al iniciar sesión e informa de unidades, iconos y la sesión",
+          "startup": "El agente de arranque se ejecuta como SYSTEM e informa de identidad, tiempo encendida y sesiones"
+        },
+        "server": {
+          "title": "Servidor",
+          "api": "Un servicio FastAPI que recibe los registros y responde la flota bajo /api",
+          "events": "Un flujo de eventos por pestaña que mantiene en vivo cada página abierta",
+          "storage": "Estado y eventos en SQLite, pools desde la base de datos UDS"
+        },
+        "ui": {
+          "title": "Interfaz web",
+          "shared": "La UI compartida de STARTcloud, la misma barra que cada aplicación del entorno",
+          "fleet": "La página de la flota y una página por VM con historial, estadísticas y paneles de Grafana"
+        }
+      },
+      "docs": {
+        "intro": "Lee cómo se despliegan los agentes y qué registra el servidor.",
+        "guide": "Guía"
+      },
+      "support": {
+        "intro": "El monitor se mantiene de forma privada; informa de problemas en su repositorio.",
+        "repository": "Repositorio",
+        "issues": "Informar de un problema"
       }
     }
   },

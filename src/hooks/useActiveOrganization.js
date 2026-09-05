@@ -18,11 +18,11 @@ export const useActiveOrganization = ({ collections, memberships, user, activeOr
   const [activeOrg, setActiveOrg] = useState(null);
 
   useEffect(() => {
-    if (!user || !activeOrgUuid) {
+    const [primary] = collections;
+    if (!user || !activeOrgUuid || !primary) {
       return undefined;
     }
     let mounted = true;
-    const [primary] = collections;
     primary.adapter
       .getOrganization(activeOrgUuid)
       .then(organization => {

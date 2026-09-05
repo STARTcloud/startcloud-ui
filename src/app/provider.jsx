@@ -5,14 +5,13 @@ import { BrowserRouter } from 'react-router-dom';
 
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import { NoticeProvider } from '../contexts/NoticeContext';
-import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { StatusProvider, statusShape } from '../contexts/StatusContext';
 import { reportRenderError } from '../lib/logger';
 
 /**
  * The providers the app renders through: i18n, the status the app booted
  * with, Suspense for the lazy locale loads, the shared error boundary, the
- * notice store, the navbar search binding and the router.
+ * notice store and the router.
  */
 const AppProvider = ({ i18n, status, children }) => (
   <I18nextProvider i18n={i18n}>
@@ -20,9 +19,7 @@ const AppProvider = ({ i18n, status, children }) => (
       <Suspense fallback={i18n.t('loading')}>
         <ErrorBoundary showErrorDetails={import.meta.env.DEV} onError={reportRenderError}>
           <NoticeProvider>
-            <NavbarSearchProvider>
-              <BrowserRouter>{children}</BrowserRouter>
-            </NavbarSearchProvider>
+            <BrowserRouter>{children}</BrowserRouter>
           </NoticeProvider>
         </ErrorBoundary>
       </Suspense>

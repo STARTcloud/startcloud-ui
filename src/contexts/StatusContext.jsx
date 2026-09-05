@@ -8,8 +8,8 @@ const StatusContext = createContext(null);
  * The hosting backend's answer to `GET /api/status`, asked of the origin
  * that served the page before anything is rendered: `role` names the host,
  * `version` is the backend's own version, `brand`, `auth`, `idp`,
- * `collections`, `features`, `links` and `ticket` carry the rest of the
- * status contract.
+ * `collections`, `config`, `events`, `features`, `links` and `ticket`
+ * carry the rest of the status contract.
  *
  * @returns {Promise<Object>} The status payload
  */
@@ -31,6 +31,11 @@ export const statusShape = PropTypes.shape({
     storagePrefix: PropTypes.string.isRequired,
   }),
   collections: PropTypes.arrayOf(PropTypes.string),
+  config: PropTypes.arrayOf(PropTypes.string),
+  events: PropTypes.shape({
+    path: PropTypes.string.isRequired,
+    topics: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }),
   features: PropTypes.arrayOf(PropTypes.string),
   links: PropTypes.shape({
     docs: PropTypes.string.isRequired,

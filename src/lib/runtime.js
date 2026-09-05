@@ -2,6 +2,7 @@ import { authMethod } from '../utils/capabilities';
 
 import { createApiClient } from './apiClient';
 import { createSession } from './createSession';
+import { createEventHub } from './eventHub';
 import { createSessionEvents } from './events';
 import { log } from './logger';
 
@@ -19,12 +20,35 @@ const onError = error =>
 
 export const events = createSessionEvents();
 
+export const eventHub = createEventHub();
+
 export let session = null;
 export let returnTo = null;
 export let client = null;
 export let hubClient = null;
 
+let apiOrigin = '';
+
 export const fetchHealth = () => client.get('/api/health', PUBLIC);
+
+/**
+ * Open the tab's one event stream at the path the host's status names,
+ * subscribed to every topic it advertises, the session's headers on the
+ * request; a 401 ends the session on the bus.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ */
+export const connectEventStream = status => {
+  const { path, topics } = status.events;
+  eventHub.connect({
+    url: `${requestOriginFor(apiOrigin)}${path}`,
+    topics,
+    headers: () => session.headers('GET', `${apiOrigin}${path}`),
+    onUnauthorized: () => session.endSession(),
+  });
+};
+
+export const disconnectEventStream = () => eventHub.disconnect();
 
 /**
  * Create the singletons every feature calls through once the host's status
@@ -37,7 +61,7 @@ export const fetchHealth = () => client.get('/api/health', PUBLIC);
  * @param {Object} status - The payload from `probeStatus`
  */
 export const initRuntime = status => {
-  const apiOrigin = __API_ORIGIN__ || window.location.origin;
+  apiOrigin = __API_ORIGIN__ || window.location.origin;
   ({ session, returnTo } = createSession(status, events));
   client = createApiClient({
     baseUrl: apiOrigin,

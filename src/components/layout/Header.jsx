@@ -123,11 +123,10 @@ const Header = ({
             </button>
           </li>
           <LanguageButton languages={language.languages} onPick={language.onPick} />
-          {signedIn && userMenu ? (
-            <UserMenu {...userMenu} />
-          ) : (
+          {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
+          {!signedIn && (onSignIn || signInTo) ? (
             <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
-          )}
+          ) : null}
         </ul>
       </div>
       <NoticeBanners LinkComponent={LinkComponent} />

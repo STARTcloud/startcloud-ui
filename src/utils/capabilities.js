@@ -37,9 +37,16 @@ export const hasCollection = (status, token) =>
 
 /**
  * The session the UI creates for the host behind `status`: the first
- * entry of `auth`, `backend` when the array is missing or empty.
+ * entry of `auth`, `none` when the array is empty (everyone sees
+ * everything, no session), `backend` when the array is missing.
  *
  * @param {Object} status - The payload from `probeStatus`
- * @returns {string} 'backend' or 'idp'
+ * @returns {string} 'backend', 'idp' or 'none'
  */
-export const authMethod = status => status?.auth?.[0] || 'backend';
+export const authMethod = status => {
+  const auth = status?.auth;
+  if (!Array.isArray(auth)) {
+    return 'backend';
+  }
+  return auth[0] || 'none';
+};

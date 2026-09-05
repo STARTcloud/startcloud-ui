@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
 
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
-import { collectionShape, itemShape } from '../utils/itemShape';
+import { collectionShape, itemShape, sortShape } from '../utils/itemShape';
 
 import SortHeader from './SortHeader';
 
@@ -166,7 +166,7 @@ ItemsTable.propTypes = {
   groups: PropTypes.arrayOf(groupShape),
   collapsed: PropTypes.object.isRequired,
   onToggleGroup: PropTypes.func.isRequired,
-  sort: PropTypes.shape({ column: PropTypes.string, direction: PropTypes.string }).isRequired,
+  sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
   watches: PropTypes.shape({
     ids: PropTypes.instanceOf(Set).isRequired,

@@ -255,10 +255,13 @@ export const useCatalogSearch = ({
       Object.values(groupsOfCollection).some(set => set.size > 0)
     );
 
-  const setSort = (collectionKey, column) =>
+  const setSort = (collectionKey, column, options) =>
     setPrefs(current => ({
       ...current,
-      sort: { ...current.sort, [collectionKey]: nextSort(current.sort[collectionKey], column) },
+      sort: {
+        ...current.sort,
+        [collectionKey]: nextSort(current.sort[collectionKey], column, options),
+      },
     }));
 
   const setView = view => setPrefs(current => ({ ...current, view }));

@@ -34,6 +34,13 @@ const CATALOG_COMPONENTS = [
   { key: 'worker', details: ['gate', 'push', 'config'] },
 ];
 
+const VDI_FEATURES = ['drives', 'icons', 'sessions', 'identity', 'pools', 'agents'];
+const VDI_COMPONENTS = [
+  { key: 'agents', details: ['user', 'startup'] },
+  { key: 'server', details: ['api', 'events', 'storage'] },
+  { key: 'ui', details: ['shared', 'fleet'] },
+];
+
 const componentsOf = (t, prefix, components) =>
   components.map(component => ({
     title: t(`${prefix}.${component.key}.title`),
@@ -85,6 +92,24 @@ const PROFILES = {
       goal: t('about.catalog.goal'),
       features: CATALOG_FEATURES.map(key => t(`about.catalog.features.${key}`)),
       components: componentsOf(t, 'about.catalog.components', CATALOG_COMPONENTS),
+    }),
+  },
+  'vdi-health': {
+    docs: status => [{ key: 'guide', href: status.links.docs || '/docs', Icon: FaBook }],
+    docsLabel: key => `about.vdi.docs.${key}`,
+    docsIntro: 'about.vdi.docs.intro',
+    support: status => [
+      { key: 'repository', href: status.brand.repo, Icon: FaGithub },
+      { key: 'issues', href: `${status.brand.repo}/issues/new`, Icon: FaBug },
+    ],
+    supportLabel: key => `about.vdi.support.${key}`,
+    supportIntro: 'about.vdi.support.intro',
+    content: (t, status) => ({
+      title: status.brand.name,
+      description: t('about.vdi.description'),
+      goal: t('about.vdi.goal'),
+      features: VDI_FEATURES.map(key => t(`about.vdi.features.${key}`)),
+      components: componentsOf(t, 'about.vdi.components', VDI_COMPONENTS),
     }),
   },
 };
@@ -144,7 +169,7 @@ const AboutRoute = ({ theme, oidc }) => {
     }
   };
 
-  const content = profile.content(t);
+  const content = profile.content(t, status);
 
   return (
     <AboutPage

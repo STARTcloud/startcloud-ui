@@ -17,12 +17,16 @@ import { responseMessage } from '../../../utils/responseMessage';
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 
-const MembersSearch = ({ query, onQueryChange, matched, total }) => {
-  const { t } = useTranslation();
+const matchesTerm = (fields, term) =>
+  fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
+
+const emptyTextFor = (t, query, key) => (query ? t('pages.noMatches') : t(key));
+
+const TabSearch = ({ query, onQueryChange, placeholder, matched, total }) => {
   useNavbarSearchBinding({
     query,
     onQueryChange,
-    placeholder: t('search.open'),
+    placeholder,
     matched,
     total,
     groups: NO_FILTERS,
@@ -31,9 +35,10 @@ const MembersSearch = ({ query, onQueryChange, matched, total }) => {
   return null;
 };
 
-MembersSearch.propTypes = {
+TabSearch.propTypes = {
   query: PropTypes.string.isRequired,
   onQueryChange: PropTypes.func.isRequired,
+  placeholder: PropTypes.string.isRequired,
   matched: PropTypes.number.isRequired,
   total: PropTypes.number.isRequired,
 };
@@ -316,7 +321,7 @@ InvitationLinkCell.propTypes = {
   orgIdpLink: PropTypes.string,
 };
 
-const JoinRequestsTab = ({ joinRequests, onApprove, onDeny }) => {
+const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny }) => {
   const { t } = useTranslation();
 
   return (
@@ -326,7 +331,7 @@ const JoinRequestsTab = ({ joinRequests, onApprove, onDeny }) => {
       </div>
       <div className="card-body">
         {joinRequests.length === 0 ? (
-          <div className="alert alert-info">{t('orgConsole.joinRequest.noRequests')}</div>
+          <div className="alert alert-info">{emptyText}</div>
         ) : (
           <div className="table-responsive">
             <table className="table">
@@ -386,15 +391,16 @@ const JoinRequestsTab = ({ joinRequests, onApprove, onDeny }) => {
 
 JoinRequestsTab.propTypes = {
   joinRequests: PropTypes.array.isRequired,
+  emptyText: PropTypes.string.isRequired,
   onApprove: PropTypes.func.isRequired,
   onDeny: PropTypes.func.isRequired,
 };
 
-const InvitationsTable = ({ invitations, orgIdpLink, onDelete }) => {
+const InvitationsTable = ({ invitations, emptyText, orgIdpLink, onDelete }) => {
   const { t } = useTranslation();
 
   if (invitations.length === 0) {
-    return <div className="alert alert-info">{t('orgConsole.invitation.noActive')}</div>;
+    return <div className="alert alert-info">{emptyText}</div>;
   }
 
   return (
@@ -446,6 +452,7 @@ const InvitationsTable = ({ invitations, orgIdpLink, onDelete }) => {
 
 InvitationsTable.propTypes = {
   invitations: PropTypes.array.isRequired,
+  emptyText: PropTypes.string.isRequired,
   orgIdpLink: PropTypes.string,
   onDelete: PropTypes.func.isRequired,
 };
@@ -456,8 +463,9 @@ InvitationsTable.propTypes = {
  * organization, the read-only profile and the provider link of an
  * IdP-managed one, the members with role and removal controls), Join
  * requests (approve as member or admin, deny) and Invitations (send, list,
- * delete, when the host advertises `invitations`), every call through the
- * app's `organizations` adapter; `admin` is the app's global-admin flag,
+ * delete, when the host advertises `invitations`), each tab's list
+ * searched from the navbar, every call through the app's `organizations`
+ * adapter; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
  */
@@ -773,12 +781,21 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const term = searchTerm.toLowerCase();
-    return [user.name, user.username, user.email].some(
-      field => typeof field === 'string' && field.toLowerCase().includes(term)
-    );
-  });
+  const selectTab = tab => {
+    setSearchTerm('');
+    setActiveTab(tab);
+  };
+
+  const term = searchTerm.toLowerCase();
+  const filteredUsers = users.filter(user =>
+    matchesTerm([user.name, user.username, user.email], term)
+  );
+  const filteredJoinRequests = joinRequests.filter(request =>
+    matchesTerm([request.user.username, request.user.email, request.message], term)
+  );
+  const filteredInvitations = activeInvitations.filter(invitation =>
+    matchesTerm([invitation.email], term)
+  );
 
   const canManageMembership = canManageRoles && !isExternalOrg;
   const currentTab = visibleTab(activeTab, isExternalOrg, orgAccessMode, invitationsEnabled);
@@ -791,7 +808,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
 
       <OrgConsoleTabs
         activeTab={currentTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={selectTab}
         isExternalOrg={isExternalOrg}
         orgAccessMode={orgAccessMode}
         joinRequestCount={joinRequests.length}
@@ -963,9 +980,10 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
                     </h4>
                   </div>
                   <div className="card-body">
-                    <MembersSearch
+                    <TabSearch
                       query={searchTerm}
                       onQueryChange={setSearchTerm}
+                      placeholder={t('search.open')}
                       matched={filteredUsers.length}
                       total={users.length}
                     />
@@ -995,15 +1013,32 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
           )}
 
           {currentTab === 'joinRequests' && (
-            <JoinRequestsTab
-              joinRequests={joinRequests}
-              onApprove={handleApproveJoinRequest}
-              onDeny={handleDenyJoinRequest}
-            />
+            <>
+              <TabSearch
+                query={searchTerm}
+                onQueryChange={setSearchTerm}
+                placeholder={t('orgConsole.search.joinRequests')}
+                matched={filteredJoinRequests.length}
+                total={joinRequests.length}
+              />
+              <JoinRequestsTab
+                joinRequests={filteredJoinRequests}
+                emptyText={emptyTextFor(t, searchTerm, 'orgConsole.joinRequest.noRequests')}
+                onApprove={handleApproveJoinRequest}
+                onDeny={handleDenyJoinRequest}
+              />
+            </>
           )}
 
           {currentTab === 'invitations' && (
             <div className="card">
+              <TabSearch
+                query={searchTerm}
+                onQueryChange={setSearchTerm}
+                placeholder={t('orgConsole.search.invitations')}
+                matched={filteredInvitations.length}
+                total={activeInvitations.length}
+              />
               <div className="card-header">
                 <div className="d-flex justify-content-between align-items-center">
                   <h4>{t('orgConsole.invitation.manageTitle')}</h4>
@@ -1052,7 +1087,8 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
 
                 <h5>{t('orgConsole.invitation.activeTitle')}</h5>
                 <InvitationsTable
-                  invitations={activeInvitations}
+                  invitations={filteredInvitations}
+                  emptyText={emptyTextFor(t, searchTerm, 'orgConsole.invitation.noActive')}
                   orgIdpLink={orgIdpLink}
                   onDelete={handleDeleteClick}
                 />

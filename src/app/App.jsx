@@ -7,6 +7,7 @@ import BrandLogo from '../components/common/BrandLogo';
 import AppShell from '../components/layout/AppShell';
 import { brandLogoUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
+import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { useStatus } from '../contexts/StatusContext';
 import {
   RebuildItem,
@@ -20,6 +21,7 @@ import {
   hasNotificationsScope,
 } from '../features/notifications';
 import { loadOrganizations } from '../features/organizations';
+import { useAppSearch } from '../features/search';
 import { setupApi } from '../features/setup';
 import { useAccountAvatar } from '../hooks/useAccountAvatar';
 import { useAccountPreferences } from '../hooks/useAccountPreferences';
@@ -106,7 +108,8 @@ const App = ({ getSupportedLanguages }) => {
     activeOrgUuid,
   });
   const avatarUrl = useAccountAvatar({ backend, user, claims });
-  const ticket = useTicketUrl({ backend, status, user, claims, activeOrgCode: orgCode });
+  const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
+  const appSearch = useAppSearch(collections);
 
   useFavicon(theme, {
     light: brandLogoUrl(status.brand, 'light'),
@@ -139,31 +142,33 @@ const App = ({ getSupportedLanguages }) => {
   };
 
   return (
-    <AppShell
-      account={account}
-      avatarUrl={avatarUrl}
-      theme={theme}
-      themePreference={themePreference}
-      toggleTheme={toggleTheme}
-      onSignOut={handleSignOut}
-      getSupportedLanguages={getSupportedLanguages}
-      collections={collections}
-      organizations={organizations}
-      ticketUrl={ticket}
-      notifications={notificationsFor({ status, claims, user, notifications })}
-      push={pushAdapter}
-      {...flags}
-    >
-      <AppRoutes
+    <NavbarSearchProvider appSearch={appSearch}>
+      <AppShell
         account={account}
-        collections={collections}
-        context={context}
+        avatarUrl={avatarUrl}
         theme={theme}
-        setupComplete={Boolean(setupComplete)}
-        globalAdmin={globalAdmin}
-        afterSignIn={afterSignIn}
-      />
-    </AppShell>
+        themePreference={themePreference}
+        toggleTheme={toggleTheme}
+        onSignOut={handleSignOut}
+        getSupportedLanguages={getSupportedLanguages}
+        collections={collections}
+        organizations={organizations}
+        ticketUrl={ticket}
+        notifications={notificationsFor({ status, claims, user, notifications })}
+        push={pushAdapter}
+        {...flags}
+      >
+        <AppRoutes
+          account={account}
+          collections={collections}
+          context={context}
+          theme={theme}
+          setupComplete={Boolean(setupComplete)}
+          globalAdmin={globalAdmin}
+          afterSignIn={afterSignIn}
+        />
+      </AppShell>
+    </NavbarSearchProvider>
   );
 };
 
