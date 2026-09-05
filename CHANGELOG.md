@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.3.0...v0.4.0) (2026-09-05)
+
+
+### Features
+
+* give ISOs the versioned box tree minus providers and sort the sub-page tables ([5e8581d](https://github.com/STARTcloud/startcloud-ui/commit/5e8581d83fe46cd7b26004499246770b7c0f2940))
+
+
+### Bug Fixes
+
+* fold the app locales into shared and settle the storage-key and route grammar ([5b610d8](https://github.com/STARTcloud/startcloud-ui/commit/5b610d8d9ec2c13ca461459f95407f992a6482ce))
+
 ## [0.3.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.2.0...v0.3.0) (2026-09-05)
 
 
