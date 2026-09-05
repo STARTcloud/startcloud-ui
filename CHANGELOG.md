@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.4.0...v0.5.0) (2026-09-05)
+
+
+### Features
+
+* become a role of the STARTcloud UI with the events contract, YAML config and a Debian package ([b95d008](https://github.com/STARTcloud/startcloud-ui/commit/b95d008ed2d2818f692235560236f4fcdda5a09f))
+* one validation pattern and schema-driven config forms for every host ([d52cb0f](https://github.com/STARTcloud/startcloud-ui/commit/d52cb0f263e2c7a90f3ba22c74bc0775c294974c))
+
 ## [0.4.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.3.0...v0.4.0) (2026-09-05)
 
 
