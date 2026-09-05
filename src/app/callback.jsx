@@ -18,10 +18,7 @@ probeStatus()
   .then(status => {
     initRuntime(status);
     configureLogger({});
-    const { i18n, ready } = createI18n({
-      namespace: status.role,
-      loadSupportedLanguages: () => __SUPPORTED_LOCALES__,
-    });
+    const { i18n, ready } = createI18n({ loadSupportedLanguages: () => __SUPPORTED_LOCALES__ });
     return ready.then(() => {
       createRoot(document.getElementById('root')).render(
         <I18nextProvider i18n={i18n}>

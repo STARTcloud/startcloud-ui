@@ -21,7 +21,18 @@
     "preferences": "Preferences",
     "favorites": "Favorites",
     "help": "Help",
-    "profileModeTitle": "Switch between identity provider and local profile"
+    "profileModeTitle": "Switch between identity provider and local profile",
+    "about": "About",
+    "docs": "Docs",
+    "contact": "Contact",
+    "admin": "Admin",
+    "orgConsole": "Organization console",
+    "rebuild": "Rebuild catalog data",
+    "boxvault": "BoxVault",
+    "catalog": "Provisioner Catalog"
+  },
+  "user": {
+    "unknownUser": "Unknown User"
   },
   "theme": {
     "auto": "Theme: follow system",
@@ -790,6 +801,382 @@
       "addToFavorites": "Add to Favorites",
       "removeFromFavorites": "Remove from Favorites",
       "runningVersion": "Running version {{version}}"
+    }
+  },
+  "about": {
+    "boxvault": {
+      "documentation": {
+        "description": "Learn how to use BoxVault and integrate it with your workflow.",
+        "fullDocs": "Full Documentation",
+        "apiExplorer": "API Explorer (Swagger UI)",
+        "gettingStarted": "Getting Started Guide"
+      },
+      "support": {
+        "description": "Support the project and stay connected with the community.",
+        "patreon": "Support on Patreon",
+        "githubProfile": "GitHub Profile",
+        "repository": "Project Repository"
+      },
+      "fallbackTitle": "BoxVault Project",
+      "fallbackDescription": "A self-hosted solution for managing VM templates.",
+      "fallbackGoal": "Providing a robust platform for Vagrant boxes."
+    },
+    "catalog": {
+      "description": "The public catalog of provisioner packages for hyperweaver-agent and zoneweaver-agent, with per-organization private catalogs behind STARTcloud sign-in.",
+      "goal": "One place to find, trust and deploy every provisioner an organization publishes.",
+      "features": {
+        "catalogs": "Public catalog plus private catalogs per organization",
+        "tiers": "Quality tiers measured on every data run",
+        "artifacts": "Versioned artifacts with sha256 sidecars",
+        "watches": "Watch provisioners and get notified of releases",
+        "deploy": "Deploy a provisioner straight into Hyperweaver"
+      },
+      "components": {
+        "data": {
+          "title": "Data job",
+          "releases": "Publishes catalog.json from each repository's GitHub releases",
+          "validation": "Validation action authors run in their own CI",
+          "tiers": "Measures quality tiers and health every run"
+        },
+        "web": {
+          "title": "Web UI",
+          "pages": "React app served from GitHub Pages",
+          "signIn": "STARTcloud sign-in with PKCE and DPoP",
+          "shared": "Navbar and pages shared byte for byte with BoxVault"
+        },
+        "worker": {
+          "title": "Worker",
+          "gate": "Gates private catalogs behind the organization's token",
+          "push": "Holds browser push subscriptions",
+          "config": "Serves health and estate settings"
+        }
+      },
+      "docs": {
+        "intro": "Learn how the catalog is built, how to publish a provisioner and how to consume it.",
+        "docs": "Documentation",
+        "api": "API reference",
+        "gettingStarted": "Getting started"
+      },
+      "support": {
+        "intro": "The catalog is open source; issues and contributions are welcome.",
+        "repository": "Repository",
+        "issues": "Report an issue",
+        "contact": "Contact STARTcloud"
+      }
+    }
+  },
+  "boxes": {
+    "buttons": {
+      "leave": "Leave Organization",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "suspend": "Suspend",
+      "delete": "Delete",
+      "save": "Save",
+      "close": "Close",
+      "confirm": "Confirm",
+      "copy": "Copy",
+      "rename": "Rename",
+      "resume": "Resume",
+      "download": "Download",
+      "back": "Back",
+      "removeFromOrg": "Remove from Org",
+      "deleteUser": "Delete User",
+      "upload": "Upload"
+    },
+    "status": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "suspended": "Suspended"
+    },
+    "actions": {
+      "backToFiles": "Back to Files",
+      "search": "Search",
+      "back": "Back"
+    },
+    "messages": {
+      "uploadFailed": "Upload failed",
+      "deleteFailed": "Delete failed",
+      "copyFailed": "Copy failed",
+      "operationSuccessful": "Operation completed successfully",
+      "operationFailed": "Operation failed",
+      "addedToFavorites": "Added BoxVault to favorites!",
+      "removedFromFavorites": "Removed BoxVault from favorites",
+      "failedToUpdateFavorites": "Failed to update favorites"
+    },
+    "errors": {
+      "upload": {
+        "noFile": "No file provided for upload.",
+        "chunkFailed": "A part of the file failed to upload. Please try again.",
+        "sizeMismatch": "File assembly failed due to a size mismatch. Please try uploading again.",
+        "assemblyTimeout": "File assembly timed out. Please try again.",
+        "streamError": "A stream handling error occurred during upload. Please try again."
+      }
+    },
+    "validation": {
+      "required": "This field is required!",
+      "invalidName": "Invalid name. Only alphanumeric characters, hyphens, underscores, and periods are allowed.",
+      "invalidUrl": "Invalid URL format.",
+      "invalidHost": "Invalid host. Must be a valid IP address, FQDN, or 'localhost'.",
+      "integerRequired": "The value must be an integer.",
+      "booleanRequired": "The value must be a boolean.",
+      "passwordLength": "The password must be at least 6 characters.",
+      "invalidEmail": "Invalid email address.",
+      "portRange": "The port must be between 1 and 65535.",
+      "valueRequired": "The value cannot be empty.",
+      "invalidFieldStructure": "Invalid field structure",
+      "fixErrors": "Please fix the errors in the form.",
+      "unsupportedChecksum": "Unsupported checksum type!",
+      "invalidChecksumFormat": "Invalid {{type}} checksum format!",
+      "invalidOrgName": "Invalid organization name. Only alphanumeric characters, hyphens, underscores, and periods are allowed."
+    },
+    "iso": {
+      "upload": {
+        "drop": "Drop an ISO here or click to choose one",
+        "uploading": "Uploading… {{percent}}%"
+      },
+      "deleteTitle": "Delete ISO",
+      "deleteMessage": "Are you sure you want to delete {{name}}?",
+      "makePublic": "Make public",
+      "makePrivate": "Make private",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "copyChecksum": "Copy checksum"
+    },
+    "search": {
+      "boxes": "Search boxes",
+      "isos": "Search ISOs"
+    },
+    "provider": {
+      "deleted": "Provider deleted successfully!",
+      "deleteError": "Error deleting provider. Please try again.",
+      "created": "Provider created successfully!",
+      "createError": "An error occurred while creating the provider.",
+      "exists": "A provider with this name already exists. Please choose a different name.",
+      "updated": "Provider updated successfully!",
+      "updateError": "Could not update provider",
+      "name": "Provider Name",
+      "description": "Description",
+      "add": "Add Provider"
+    },
+    "version": {
+      "deleted": "Version deleted successfully!",
+      "deleteError": "Error deleting version. Please try again.",
+      "exists": "A version with this number already exists. Please choose a different version number.",
+      "updated": "Version updated successfully!",
+      "updateError": "An error occurred while updating the version.",
+      "added": "Version added successfully!",
+      "addError": "An error occurred while adding the version.",
+      "number": "Version Number",
+      "add": "Add Version",
+      "releaseNotes": "Release notes",
+      "editReleaseNotes": "Edit release notes",
+      "deprecate": "Deprecate",
+      "undeprecate": "Undeprecate",
+      "deprecationReason": "Deprecation reason"
+    },
+    "architecture": {
+      "deleted": "Architecture deleted successfully!",
+      "deleteError": "Could not delete architecture",
+      "name": "Architecture Name",
+      "add": "Add Architecture",
+      "selectFile": "Please select a file before adding an architecture.",
+      "enterName": "Please enter an architecture name.",
+      "uploadStarting": "Starting file upload...",
+      "uploadAssembling": "File chunks uploaded successfully. Now assembling into final box file.\nThis process may take several minutes depending on file size.\nPlease keep this page open until assembly is complete.",
+      "assembling": "Assembling file chunks into final box file, this may take several minutes...",
+      "uploadComplete": "File upload and assembly completed successfully!",
+      "defaultBox": "Default Box",
+      "chooseFile": "Choose Box File",
+      "selected": "Selected: {{name}} ({{size}})",
+      "fileSize": "File Size",
+      "uploaded": "Uploaded",
+      "remaining": "Remaining",
+      "checksumType": "Checksum Type",
+      "checksum": "Checksum"
+    },
+    "box": {
+      "updated": "Box updated successfully!",
+      "updateError": "An error occurred while updating the box.",
+      "deleteError": "An error occurred while deleting the box.",
+      "name": "Box Name",
+      "status": "Status",
+      "visibility": "Visibility",
+      "description": "Description",
+      "optional": "(Optional)",
+      "shortDescription": "Short description is used to describe the box.",
+      "visibilityHint": "Making a box private prevents users from accessing it unless given permission.",
+      "cicd": {
+        "title": "CI/CD Integration",
+        "connect": "Connect your box to GitHub Actions for automated build status badges.",
+        "buildStatus": "Build Status",
+        "repository": "Repository",
+        "repositoryPlaceholder": "owner/repo-name",
+        "repositoryHint": "Format: owner/repo-name (e.g., myorg/my-vagrant-box)",
+        "workflow": "Workflow File",
+        "workflowPlaceholder": "build.yml",
+        "workflowHint": "Name of the GitHub Actions workflow file (e.g., build.yml, ci.yaml)",
+        "pipelineUrl": "CI/CD URL",
+        "pipelinePlaceholder": "https://github.com/owner/repo/actions",
+        "pipelineHint": "Direct link to your CI/CD pipeline or GitHub Actions page",
+        "viewPipeline": "View Pipeline"
+      },
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "useThisBox": {
+        "title": "Use this box",
+        "version": "Version",
+        "copied": "Copied!",
+        "option2": "Option 2: use a Vagrantfile pinned to this version",
+        "starterKit": "Starter kit (self-bootstrapping Vagrantfile + Hosts.yml)",
+        "starterStep1": "Step 1: add the box"
+      },
+      "organization": {
+        "errors": {
+          "removeAll": "Error removing all boxes.",
+          "boxCreate": "An error occurred while creating the box."
+        },
+        "messages": {
+          "removeAllSuccess": "All boxes removed successfully.",
+          "boxCreated": "Box created successfully."
+        },
+        "buttons": {
+          "createBox": "Create Box",
+          "joinAsAdmin": "Join as Owner"
+        },
+        "headers": {
+          "createNewBox": "Create New Box"
+        },
+        "visibility": {
+          "public": "Public",
+          "private": "Private"
+        }
+      }
+    }
+  },
+  "provisioners": {
+    "app": {
+      "title": "STARTcloud Provisioner Catalog"
+    },
+    "rebuild": {
+      "queued": "Rebuild queued.",
+      "running": "Rebuild running…",
+      "done": "Rebuild finished.",
+      "failed": "Rebuild failed: {{message}}",
+      "unknown": "unknown"
+    },
+    "search": {
+      "placeholder": "Search provisioners by name, description, or repository…",
+      "tier": "Tier"
+    },
+    "card": {
+      "version_one": "{{count}} version",
+      "version_other": "{{count}} versions",
+      "download": "download",
+      "showAll": "Show all {{count}} versions",
+      "showFewer": "Show fewer versions",
+      "released": "released {{count}}d ago",
+      "downloads_one": "{{count}} download",
+      "downloads_other": "{{count}} downloads",
+      "homepage": "Homepage",
+      "viewOnGithub": "View on GitHub",
+      "reportIssue": "Report an issue",
+      "quality": "Quality: {{tier}}",
+      "qualityHeading": "Quality",
+      "unmetCount_one": "{{count}} unmet rule",
+      "unmetCount_other": "{{count}} unmet rules",
+      "allRulesPass": "All quality rules pass.",
+      "unmetRules": "Unmet rules:",
+      "tierTooltip": "Measured quality tier — recomputed every data run",
+      "providerCoverage": "Verified image in {{count}} of {{total}} versions"
+    },
+    "tiers": {
+      "unrated": "Unrated",
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
+    },
+    "rules": {
+      "bronze": {
+        "description": {
+          "label": "Description",
+          "requirement": "Add a non-empty description to provisioner.yml."
+        },
+        "label": {
+          "label": "Display label",
+          "requirement": "Add a non-empty label to provisioner.yml; name stays the slug."
+        },
+        "semver_versions": {
+          "label": "Semantic versions",
+          "requirement": "Name every versioned asset name-major.minor.patch.tar.gz and drop releases whose version is not semver-shaped."
+        },
+        "latest_alias": {
+          "label": "Latest alias",
+          "requirement": "Upload name.tar.gz beside the versioned archive on each release."
+        }
+      },
+      "silver": {
+        "changelog": {
+          "label": "Changelog shipped",
+          "requirement": "Ship CHANGELOG.md at the package root so it lands in the archive."
+        },
+        "readme": {
+          "label": "README shipped",
+          "requirement": "Ship README.md at the package root so it lands in the archive."
+        },
+        "release_within_12_months": {
+          "label": "Released within a year",
+          "requirement": "Publish a release; the newest one is older than 365 days."
+        },
+        "lint_ci": {
+          "label": "Lint in CI",
+          "requirement": "Add an ansible/ansible-lint step to a workflow under .github/workflows."
+        }
+      },
+      "gold": {
+        "config_fields_documented": {
+          "label": "Configuration fields documented",
+          "requirement": "Give every configuration field a label and a tooltip, and declare at least one."
+        },
+        "roles_documented": {
+          "label": "Roles documented",
+          "requirement": "Give every role a label and a description, and declare at least one."
+        },
+        "example_hosts": {
+          "label": "Example Hosts file",
+          "requirement": "Ship Hosts.example.yml at the package root, or examples/Hosts.yml."
+        }
+      },
+      "platinum": {
+        "automated_tests": {
+          "label": "Automated tests",
+          "requirement": "Ship molecule scenarios for at least half of the declared roles and run them green in CI as Molecule jobs before cutting the release."
+        },
+        "multi_provider": {
+          "label": "Verified images for two providers",
+          "requirement": "Make Hosts.template.yml render for at least two listed providers, each naming an image the box catalog serves."
+        },
+        "release_cadence": {
+          "label": "Release cadence",
+          "requirement": "Publish at least two releases in a rolling year, at least 30 days apart."
+        }
+      },
+      "diamond": {
+        "booted_providers": {
+          "label": "Booted on every verified provider",
+          "requirement": "Add a CI job per verified provider that boots a machine from the rendered Hosts.yml and reports a green Boot check run on the release commit."
+        }
+      }
+    },
+    "health": {
+      "stale": "stale — last release {{count}}d ago",
+      "artifactErrors": "artifact errors this run",
+      "sidecarGaps": "checksum sidecars incomplete"
+    },
+    "errors": {
+      "accessDenied": "Access denied by the catalog gate."
     }
   }
 }

@@ -42,7 +42,7 @@ const ProviderEditForm = ({ draft, error, onChange }) => {
   return (
     <form>
       <div className="form-group col-md-3">
-        <label htmlFor="name">{t('provider.name')}</label>
+        <label htmlFor="name">{t('boxes.provider.name')}</label>
         <input
           type="text"
           className="form-control"
@@ -55,7 +55,7 @@ const ProviderEditForm = ({ draft, error, onChange }) => {
         {error ? <div className="text-danger">{error}</div> : null}
       </div>
       <div className="form-group">
-        <label htmlFor="description">{t('provider.description')}</label>
+        <label htmlFor="description">{t('boxes.provider.description')}</label>
         <textarea
           className="form-control"
           id="description"
@@ -95,7 +95,7 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
       const { name, value } = event.target;
       setDraft(current => ({ ...current, [name]: value }));
       if (name === 'name') {
-        setError(value && NAME_RE.test(value) ? '' : t('validation.invalidName'));
+        setError(value && NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
       }
     },
     [t]
@@ -121,14 +121,14 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
         .then(Boolean)
         .catch(() => false);
       if (exists) {
-        notify('danger', t('provider.exists'));
+        notify('danger', t('boxes.provider.exists'));
         return;
       }
     }
     api.providers
       .update(org, item.name, version, provider.name, draft)
       .then(() => {
-        notify('success', t('provider.updated'));
+        notify('success', t('boxes.provider.updated'));
         setEditing(false);
         if (renamed) {
           navigate(`/${org}/${item.name}/${version}/${draft.name}`);
@@ -141,7 +141,7 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
           providerName: draft.name,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('provider.updateError')));
+        notify('danger', responseMessage(requestError, t('boxes.provider.updateError')));
       });
   };
 
@@ -154,13 +154,13 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
           providerName: provider.name,
           error: requestError.message,
         });
-        notify('danger', t('provider.deleteError'));
+        notify('danger', t('boxes.provider.deleteError'));
       });
   };
 
   const back = (
     <Link className="btn btn-dark me-2" to={`/${org}/${item.name}/${version}`}>
-      {t('actions.back')}
+      {t('boxes.actions.back')}
     </Link>
   );
 
@@ -177,10 +177,10 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
           onClick={save}
           disabled={Boolean(error)}
         >
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
         <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
-          {t('buttons.cancel')}
+          {t('boxes.buttons.cancel')}
         </button>
         {back}
       </>
@@ -190,10 +190,10 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
   return (
     <>
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
-        {t('buttons.edit')}
+        {t('boxes.buttons.edit')}
       </button>
       <button type="button" className="btn btn-danger me-2" onClick={() => setShowDelete(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
       {back}
       <ConfirmModal
@@ -225,14 +225,14 @@ const UploadProgress = ({ file, progress }) => {
       </div>
       <div className="text-muted upload-stats d-flex justify-content-between">
         <small>
-          <strong>{t('architecture.fileSize')}:</strong> {formatFileSize(file.size)}
+          <strong>{t('boxes.architecture.fileSize')}:</strong> {formatFileSize(file.size)}
         </small>
         <small>
-          <strong>{t('architecture.uploaded')}:</strong>{' '}
+          <strong>{t('boxes.architecture.uploaded')}:</strong>{' '}
           {formatFileSize(Math.round((progress / 100) * file.size))} ({progress}%)
         </small>
         <small>
-          <strong>{t('architecture.remaining')}:</strong>{' '}
+          <strong>{t('boxes.architecture.remaining')}:</strong>{' '}
           {formatFileSize(Math.round(((100 - progress) / 100) * file.size))}
         </small>
       </div>
@@ -260,7 +260,7 @@ const AddArchitectureForm = ({ draft, errors, file, progress, onChange, onFile }
             onChange={onChange}
           />
           <label className="form-check-label" htmlFor="defaultBoxSwitch">
-            {t('architecture.defaultBox')}
+            {t('boxes.architecture.defaultBox')}
           </label>
         </div>
         <div className="mb-3">
@@ -271,19 +271,22 @@ const AddArchitectureForm = ({ draft, errors, file, progress, onChange, onFile }
               className="d-none"
               accept=".box,application/octet-stream"
             />
-            {t('architecture.chooseFile')}
+            {t('boxes.architecture.chooseFile')}
           </label>
           {file ? (
             <div className="mt-2">
               <small className="text-muted">
-                {t('architecture.selected', { name: file.name, size: formatFileSize(file.size) })}
+                {t('boxes.architecture.selected', {
+                  name: file.name,
+                  size: formatFileSize(file.size),
+                })}
               </small>
             </div>
           ) : null}
         </div>
         {file ? <UploadProgress file={file} progress={progress} /> : null}
         <div className="form-group col-md-3">
-          <label htmlFor="architectureName">{t('architecture.name')}</label>
+          <label htmlFor="architectureName">{t('boxes.architecture.name')}</label>
           <input
             type="text"
             className="form-control"
@@ -296,7 +299,7 @@ const AddArchitectureForm = ({ draft, errors, file, progress, onChange, onFile }
           {errors.name ? <div className="text-danger">{errors.name}</div> : null}
         </div>
         <div className="form-group col-md-3">
-          <label htmlFor="checksumType">{t('architecture.checksumType')}</label>
+          <label htmlFor="checksumType">{t('boxes.architecture.checksumType')}</label>
           <select
             className="form-control"
             id="checksumType"
@@ -313,7 +316,7 @@ const AddArchitectureForm = ({ draft, errors, file, progress, onChange, onFile }
         </div>
         {draft.checksumType !== 'NULL' ? (
           <div className="form-group">
-            <label htmlFor="checksum">{t('architecture.checksum')}</label>
+            <label htmlFor="checksum">{t('boxes.architecture.checksum')}</label>
             <input
               type="text"
               className="form-control"
@@ -351,13 +354,13 @@ const checksumError = (checksum, type, t) => {
     return '';
   }
   if (!checksum) {
-    return t('validation.required');
+    return t('boxes.validation.required');
   }
   const pattern = CHECKSUM_PATTERNS[type];
   if (!pattern) {
-    return t('validation.unsupportedChecksum');
+    return t('boxes.validation.unsupportedChecksum');
   }
-  return pattern.test(checksum) ? '' : t('validation.invalidChecksumFormat', { type });
+  return pattern.test(checksum) ? '' : t('boxes.validation.invalidChecksumFormat', { type });
 };
 
 const EMPTY_ERRORS = { name: '', checksum: '' };
@@ -374,7 +377,7 @@ const useArchitectureDraft = t => {
         return {
           draft,
           errors: {
-            name: draft.name && NAME_RE.test(draft.name) ? '' : t('validation.invalidName'),
+            name: draft.name && NAME_RE.test(draft.name) ? '' : t('boxes.validation.invalidName'),
             checksum: checksumError(draft.checksum, draft.checksumType, t),
           },
         };
@@ -423,10 +426,10 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
   const onProgress = event => {
     if (event.status === 'assembling') {
       setProgress(100);
-      notify('info', t('architecture.assembling'));
+      notify('info', t('boxes.architecture.assembling'));
     } else if (event.status === 'complete') {
       setProgress(100);
-      notify('success', t('architecture.uploadComplete'));
+      notify('success', t('boxes.architecture.uploadComplete'));
     } else if (event.progress !== undefined) {
       setProgress(event.progress);
     }
@@ -434,14 +437,14 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
 
   const save = async () => {
     if (!file) {
-      notify('danger', t('architecture.selectFile'));
+      notify('danger', t('boxes.architecture.selectFile'));
       return;
     }
     if (!draft.name) {
-      notify('danger', t('architecture.enterName'));
+      notify('danger', t('boxes.architecture.enterName'));
       return;
     }
-    notify('info', t('architecture.uploadStarting'));
+    notify('info', t('boxes.architecture.uploadStarting'));
     setProgress(0);
     try {
       await api.architectures.create(org, item.name, version, provider.name, draft);
@@ -459,7 +462,7 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
         onProgress
       );
       if (result.details?.status === 'assembling') {
-        notify('info', t('architecture.uploadAssembling'));
+        notify('info', t('boxes.architecture.uploadAssembling'));
       }
       setShow(false);
       setFile(null);
@@ -482,11 +485,11 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
         onClick={() => setShow(current => !current)}
       >
-        {show ? t('buttons.cancel') : t('architecture.add')}
+        {show ? t('boxes.buttons.cancel') : t('boxes.architecture.add')}
       </button>
       {show ? (
         <button type="button" className="btn btn-success" onClick={save} disabled={disabled}>
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
       ) : null}
     </div>
@@ -508,7 +511,7 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
     api.architectures
       .remove(org, item.name, version, provider.name, architecture.name)
       .then(() => {
-        notify('success', t('architecture.deleted'));
+        notify('success', t('boxes.architecture.deleted'));
         reload();
       })
       .catch(error => {
@@ -516,14 +519,14 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
           architectureName: architecture.name,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('architecture.deleteError')));
+        notify('danger', responseMessage(error, t('boxes.architecture.deleteError')));
       });
   };
 
   return (
     <>
       <button type="button" className="btn btn-danger me-2" onClick={() => setShow(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
     </>

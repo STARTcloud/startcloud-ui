@@ -31,19 +31,19 @@ const PROFILES = {
       { key: 'fullDocs', href: '/docs', Icon: FaBook },
       { key: 'apiExplorer', href: '/api-docs', Icon: FaCode },
     ],
-    docsLabel: key => `about.documentation.${key}`,
-    docsIntro: 'about.documentation.description',
+    docsLabel: key => `about.boxvault.documentation.${key}`,
+    docsIntro: 'about.boxvault.documentation.description',
     support: () => [
       { key: 'patreon', href: 'https://www.patreon.com/Philotic', Icon: FaHeart },
       { key: 'githubProfile', href: 'https://github.com/makr91', Icon: FaGithub },
       { key: 'repository', href: 'https://github.com/makr91/BoxVault', Icon: FaCode },
     ],
-    supportLabel: key => `about.support.${key}`,
-    supportIntro: 'about.support.description',
+    supportLabel: key => `about.boxvault.support.${key}`,
+    supportIntro: 'about.boxvault.support.description',
     content: (t, data) => ({
-      title: data.title || t('about.fallbackTitle'),
-      description: data.description || t('about.fallbackDescription'),
-      goal: data.goal || t('about.fallbackGoal'),
+      title: data.title || t('about.boxvault.fallbackTitle'),
+      description: data.description || t('about.boxvault.fallbackDescription'),
+      goal: data.goal || t('about.boxvault.fallbackGoal'),
       features: data.features,
       components: data.components,
     }),
@@ -55,23 +55,25 @@ const PROFILES = {
       { key: 'docs', href: '/docs/', Icon: FaBook },
       { key: 'api', href: '/docs/api/', Icon: FaCode },
     ],
-    docsLabel: key => `about.docs.${key}`,
-    docsIntro: 'about.docs.intro',
+    docsLabel: key => `about.catalog.docs.${key}`,
+    docsIntro: 'about.catalog.docs.intro',
     support: status => [
       { key: 'repository', href: status.brand.repo, Icon: FaGithub },
       { key: 'issues', href: `${status.brand.repo}/issues/new`, Icon: FaBug },
       { key: 'contact', href: status.links.contact, Icon: FaEnvelope },
     ],
-    supportLabel: key => `about.support.${key}`,
-    supportIntro: 'about.support.intro',
+    supportLabel: key => `about.catalog.support.${key}`,
+    supportIntro: 'about.catalog.support.intro',
     content: t => ({
-      title: t('app.title'),
-      description: t('about.description'),
-      goal: t('about.goal'),
-      features: CATALOG_FEATURES.map(key => t(`about.features.${key}`)),
+      title: t('provisioners.app.title'),
+      description: t('about.catalog.description'),
+      goal: t('about.catalog.goal'),
+      features: CATALOG_FEATURES.map(key => t(`about.catalog.features.${key}`)),
       components: CATALOG_COMPONENTS.map(component => ({
-        title: t(`about.components.${component.key}.title`),
-        details: component.details.map(detail => t(`about.components.${component.key}.${detail}`)),
+        title: t(`about.catalog.components.${component.key}.title`),
+        details: component.details.map(detail =>
+          t(`about.catalog.components.${component.key}.${detail}`)
+        ),
       })),
     }),
   },
@@ -133,7 +135,7 @@ const AboutRoute = ({ theme, oidc }) => {
         : [...current, { clientId, customLabel: null, order: current.length }];
       notify(
         'success',
-        t(favorited ? 'messages.removedFromFavorites' : 'messages.addedToFavorites'),
+        t(favorited ? 'boxes.messages.removedFromFavorites' : 'boxes.messages.addedToFavorites'),
         { key: FAVORITE_KEY }
       );
 
@@ -144,7 +146,7 @@ const AboutRoute = ({ theme, oidc }) => {
         clientId,
         error: error.message,
       });
-      notify('danger', t('messages.failedToUpdateFavorites'), { key: FAVORITE_KEY });
+      notify('danger', t('boxes.messages.failedToUpdateFavorites'), { key: FAVORITE_KEY });
     }
   };
 

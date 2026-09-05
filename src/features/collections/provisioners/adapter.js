@@ -37,11 +37,13 @@ const fetchOrg = uuid => {
   return privatePromises.get(uuid);
 };
 
-const NOTICE_TYPES = { 'errors.accessDenied': 'warning' };
+const NOTICES = {
+  'errors.accessDenied': { type: 'warning', key: 'provisioners.errors.accessDenied' },
+};
 
-const noticeKeyOf = error => (NOTICE_TYPES[error.messageKey] ? error.messageKey : '');
+const noticeKeyOf = error => (NOTICES[error.messageKey] ? error.messageKey : '');
 
-const noticeFor = key => ({ type: NOTICE_TYPES[key], key });
+const noticeFor = key => NOTICES[key];
 
 const ownerOf = repo => repo.split('/')[0];
 const ownerLogo = owner => `https://github.com/${owner}.png?size=64`;

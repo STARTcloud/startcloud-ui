@@ -44,7 +44,7 @@ const CoverageChips = ({ item }) => {
         <Badge
           key={provider}
           className={`provider-chip ${coverageClass(counts[provider], total)}`}
-          title={t('card.providerCoverage', { count: counts[provider], total })}
+          title={t('provisioners.card.providerCoverage', { count: counts[provider], total })}
         >
           {provider}
         </Badge>
@@ -60,8 +60,11 @@ CoverageChips.propTypes = {
 const TierBadge = ({ item }) => {
   const { t } = useTranslation();
   return (
-    <Badge className={`tier-badge tier-${item.extras.tier}`} title={t('card.tierTooltip')}>
-      {t(`tiers.${item.extras.tier}`)}
+    <Badge
+      className={`tier-badge tier-${item.extras.tier}`}
+      title={t('provisioners.card.tierTooltip')}
+    >
+      {t(`provisioners.tiers.${item.extras.tier}`)}
     </Badge>
   );
 };
@@ -84,19 +87,23 @@ const ItemChips = ({ item }) => {
     <>
       <TierBadge item={item} />
       {item.versions[0] ? <Badge bg="primary">v{item.versions[0].version}</Badge> : null}
-      {days !== null ? <Badge bg="secondary">{t('card.released', { count: days })}</Badge> : null}
+      {days !== null ? (
+        <Badge bg="secondary">{t('provisioners.card.released', { count: days })}</Badge>
+      ) : null}
       {typeof item.downloads === 'number' ? (
-        <Badge bg="secondary">{t('card.downloads', { count: item.downloads })}</Badge>
+        <Badge bg="secondary">{t('provisioners.card.downloads', { count: item.downloads })}</Badge>
       ) : null}
       {days !== null && days > 365 ? (
         <Badge bg="warning" text="dark">
-          {t('health.stale', { count: days })}
+          {t('provisioners.health.stale', { count: days })}
         </Badge>
       ) : null}
-      {item.extras.artifactsOk ? null : <Badge bg="danger">{t('health.artifactErrors')}</Badge>}
+      {item.extras.artifactsOk ? null : (
+        <Badge bg="danger">{t('provisioners.health.artifactErrors')}</Badge>
+      )}
       {item.extras.sidecarsOk ? null : (
         <Badge bg="warning" text="dark">
-          {t('health.sidecarGaps')}
+          {t('provisioners.health.sidecarGaps')}
         </Badge>
       )}
     </>
@@ -129,7 +136,7 @@ const ItemActions = ({ item, ctx }) => {
         className="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
       >
         <FaGithub />
-        {t('card.viewOnGithub')}
+        {t('provisioners.card.viewOnGithub')}
       </a>
       {item.links.homepage ? (
         <a
@@ -139,7 +146,7 @@ const ItemActions = ({ item, ctx }) => {
           className="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
         >
           <FaHouse />
-          {t('card.homepage')}
+          {t('provisioners.card.homepage')}
         </a>
       ) : null}
       <a
@@ -149,7 +156,7 @@ const ItemActions = ({ item, ctx }) => {
         className="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
       >
         <FaBug />
-        {t('card.reportIssue')}
+        {t('provisioners.card.reportIssue')}
       </a>
     </>
   );
@@ -163,17 +170,17 @@ ItemActions.propTypes = {
 const QualityRules = ({ item }) => {
   const { t } = useTranslation();
   if (item.extras.failedRules.length === 0) {
-    return <p className="mb-0">{t('card.allRulesPass')}</p>;
+    return <p className="mb-0">{t('provisioners.card.allRulesPass')}</p>;
   }
   return (
     <>
-      <p className="mb-1">{t('card.unmetRules')}</p>
+      <p className="mb-1">{t('provisioners.card.unmetRules')}</p>
       <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
         {item.extras.failedRules.map(rule => {
           const [tier] = rule.split('.');
           return (
             <li key={rule} className="d-flex align-items-start gap-2">
-              <Badge className={`tier-badge tier-${tier}`}>{t(`tiers.${tier}`)}</Badge>
+              <Badge className={`tier-badge tier-${tier}`}>{t(`provisioners.tiers.${tier}`)}</Badge>
               <span>
                 <a
                   href={`${RULES_GUIDE}#${tier}-rules`}
@@ -181,10 +188,10 @@ const QualityRules = ({ item }) => {
                   rel="noreferrer"
                   className="fw-semibold"
                 >
-                  {t(`rules.${rule}.label`, { defaultValue: rule })}
+                  {t(`provisioners.rules.${rule}.label`, { defaultValue: rule })}
                 </a>
                 <span className="d-block small text-body-secondary">
-                  {t(`rules.${rule}.requirement`, { defaultValue: '' })}
+                  {t(`provisioners.rules.${rule}.requirement`, { defaultValue: '' })}
                 </span>
               </span>
             </li>
@@ -206,10 +213,10 @@ const QualitySection = ({ item }) => {
     <div className="list-table">
       <div className="d-flex align-items-center gap-2 mb-3">
         <CollapseButton collapsed={!open} onToggle={() => setOpen(current => !current)} />
-        <h4 className="mb-0">{t('card.qualityHeading')}</h4>
+        <h4 className="mb-0">{t('provisioners.card.qualityHeading')}</h4>
         <TierBadge item={item} />
         <span className="badge bg-secondary bg-opacity-50">
-          {t('card.unmetCount', { count: item.extras.failedRules.length })}
+          {t('provisioners.card.unmetCount', { count: item.extras.failedRules.length })}
         </span>
       </div>
       {open ? <QualityRules item={item} /> : null}
@@ -231,7 +238,9 @@ const CardExtras = ({ item, ctx }) => {
       <CoverageChips item={item} />
       <Accordion flush>
         <Accordion.Item eventKey="versions">
-          <Accordion.Header>{t('card.version', { count: item.versions.length })}</Accordion.Header>
+          <Accordion.Header>
+            {t('provisioners.card.version', { count: item.versions.length })}
+          </Accordion.Header>
           <Accordion.Body className="p-0">
             <ListGroup variant="flush" className="version-list">
               {versions.map(version => (
@@ -253,7 +262,7 @@ const CardExtras = ({ item, ctx }) => {
                     <span>
                       {version.artifacts.map(artifact => (
                         <a key={artifact.downloadUrl} href={artifact.downloadUrl}>
-                          {t('card.download')}
+                          {t('provisioners.card.download')}
                         </a>
                       ))}
                     </span>
@@ -274,8 +283,8 @@ const CardExtras = ({ item, ctx }) => {
                     onClick={() => setShowAll(current => !current)}
                   >
                     {showAll
-                      ? t('card.showFewer')
-                      : t('card.showAll', { count: item.versions.length })}
+                      ? t('provisioners.card.showFewer')
+                      : t('provisioners.card.showAll', { count: item.versions.length })}
                   </Button>
                 </ListGroup.Item>
               ) : null}
@@ -284,7 +293,9 @@ const CardExtras = ({ item, ctx }) => {
         </Accordion.Item>
         <Accordion.Item eventKey="quality">
           <Accordion.Header>
-            {t('card.quality', { tier: t(`tiers.${item.extras.tier}`) })}
+            {t('provisioners.card.quality', {
+              tier: t(`provisioners.tiers.${item.extras.tier}`),
+            })}
           </Accordion.Header>
           <Accordion.Body>
             <QualityRules item={item} />
@@ -302,7 +313,7 @@ CardExtras.propTypes = {
 
 const tierColumn = {
   key: 'tier',
-  labelKey: 'search.tier',
+  labelKey: 'provisioners.search.tier',
   sortValue: item => TIER_ORDER.indexOf(item.extras.tier),
   render: item => <TierBadge item={item} />,
 };
@@ -323,17 +334,17 @@ export const provisioners = {
   segment: '',
   hasVersions: true,
   itemRoute: true,
-  searchKey: 'search.placeholder',
+  searchKey: 'provisioners.search.placeholder',
   defaultView: 'cards',
   adapter: catalogAdapter,
   filterGroups: [
     {
       key: 'tier',
-      labelKey: 'search.tier',
+      labelKey: 'provisioners.search.tier',
       values: item => [item.extras.tier],
       activeClass: 'bg-primary',
       pillClass: tier => `tier-badge tier-${tier}`,
-      labelFor: (tier, t) => t(`tiers.${tier}`),
+      labelFor: (tier, t) => t(`provisioners.tiers.${tier}`),
       order: TIER_ORDER,
     },
     {

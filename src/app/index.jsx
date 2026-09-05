@@ -33,10 +33,7 @@ probeStatus()
       reportUrl: authMethod(status) === 'backend' ? '/api/client-errors' : '',
     });
     log.app.info('STARTcloud UI starting', { role: status.role, version: status.version });
-    const { i18n, ready, getSupportedLanguages } = createI18n({
-      namespace: status.role,
-      loadSupportedLanguages,
-    });
+    const { i18n, ready, getSupportedLanguages } = createI18n({ loadSupportedLanguages });
     return ready.then(() => {
       createRoot(document.getElementById('root')).render(
         <AppProvider i18n={i18n} status={status}>

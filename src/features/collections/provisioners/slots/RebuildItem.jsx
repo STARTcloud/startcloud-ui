@@ -41,10 +41,13 @@ const RebuildItem = () => {
     if (data.status === 'completed' && sawRunRef.current) {
       stopPolling();
       if (data.conclusion === 'success') {
-        notify('success', t('rebuild.done'), { key: REBUILD_KEY, sticky: true });
+        notify('success', t('provisioners.rebuild.done'), { key: REBUILD_KEY, sticky: true });
       } else {
-        const message = data.conclusion || t('rebuild.unknown');
-        notify('danger', t('rebuild.failed', { message }), { key: REBUILD_KEY, sticky: true });
+        const message = data.conclusion || t('provisioners.rebuild.unknown');
+        notify('danger', t('provisioners.rebuild.failed', { message }), {
+          key: REBUILD_KEY,
+          sticky: true,
+        });
       }
     }
   };
@@ -65,13 +68,13 @@ const RebuildItem = () => {
   const rebuild = async () => {
     try {
       await api.rebuild.start();
-      notify('info', t('rebuild.running'), { key: REBUILD_KEY, sticky: true });
+      notify('info', t('provisioners.rebuild.running'), { key: REBUILD_KEY, sticky: true });
       setRunning(true);
       sawRunRef.current = false;
       pollCountRef.current = 0;
       pollRef.current = setInterval(pollOnce, POLL_INTERVAL_MS);
     } catch (rebuildError) {
-      notify('danger', t('rebuild.failed', { message: rebuildError.message }), {
+      notify('danger', t('provisioners.rebuild.failed', { message: rebuildError.message }), {
         key: REBUILD_KEY,
         sticky: true,
       });

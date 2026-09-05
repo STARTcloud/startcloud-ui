@@ -30,7 +30,7 @@ const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
   api.versions
     .update(org, item.name, version.version, fields)
     .then(() => {
-      notify('success', t('version.updated'));
+      notify('success', t('boxes.version.updated'));
       reload();
       return true;
     })
@@ -39,7 +39,7 @@ const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
         versionNumber: version.version,
         error: error.message,
       });
-      notify('danger', responseMessage(error, t('version.updateError')));
+      notify('danger', responseMessage(error, t('boxes.version.updateError')));
       return false;
     });
 
@@ -48,7 +48,7 @@ const VersionEditForm = ({ draft, error, onChange }) => {
   return (
     <form>
       <div className="form-group col-md-3">
-        <label htmlFor="versionNumber">{t('version.number')}</label>
+        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
         <input
           type="text"
           className="form-control"
@@ -61,7 +61,7 @@ const VersionEditForm = ({ draft, error, onChange }) => {
         {error ? <div className="text-danger">{error}</div> : null}
       </div>
       <div className="form-group">
-        <label htmlFor="description">{t('provider.description')}</label>
+        <label htmlFor="description">{t('boxes.provider.description')}</label>
         <textarea
           className="form-control"
           id="description"
@@ -101,7 +101,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
       const { name, value } = event.target;
       setDraft(current => ({ ...current, [name]: value }));
       if (name === 'versionNumber') {
-        setError(NAME_RE.test(value) ? '' : t('validation.invalidName'));
+        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
       }
     },
     [t]
@@ -122,13 +122,13 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
     }
     const renamed = draft.versionNumber !== version.version;
     if (renamed && (item.versions || []).some(entry => entry.version === draft.versionNumber)) {
-      notify('danger', t('version.exists'));
+      notify('danger', t('boxes.version.exists'));
       return;
     }
     api.versions
       .update(org, item.name, version.version, draft)
       .then(() => {
-        notify('success', t('version.updated'));
+        notify('success', t('boxes.version.updated'));
         setEditing(false);
         if (renamed) {
           navigate(`/${org}/${item.name}/${draft.versionNumber}`);
@@ -137,7 +137,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
         }
       })
       .catch(requestError => {
-        notify('danger', responseMessage(requestError, t('version.updateError')));
+        notify('danger', responseMessage(requestError, t('boxes.version.updateError')));
       });
   };
 
@@ -149,13 +149,13 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('version.deleteError')));
+        notify('danger', responseMessage(requestError, t('boxes.version.deleteError')));
       });
   };
 
   const back = (
     <Link className="btn btn-dark me-2" to={`/${org}/${item.name}`}>
-      {t('actions.back')}
+      {t('boxes.actions.back')}
     </Link>
   );
 
@@ -172,10 +172,10 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
           onClick={save}
           disabled={Boolean(error)}
         >
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
         <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
-          {t('buttons.cancel')}
+          {t('boxes.buttons.cancel')}
         </button>
         {back}
       </>
@@ -185,10 +185,10 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
   return (
     <>
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
-        {t('buttons.edit')}
+        {t('boxes.buttons.edit')}
       </button>
       <button type="button" className="btn btn-danger me-2" onClick={() => setShowDelete(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
       {back}
       <ConfirmModal
@@ -224,7 +224,7 @@ export const BoxVersionBannerActions = ({ item, version, ctx }) => {
         })
       }
     >
-      {t('version.undeprecate')}
+      {t('boxes.version.undeprecate')}
     </button>
   );
 };
@@ -243,7 +243,7 @@ const DeprecateButton = ({ onDeprecate }) => {
         className="btn btn-sm btn-outline-danger"
         onClick={() => setAsking(true)}
       >
-        {t('version.deprecate')}
+        {t('boxes.version.deprecate')}
       </button>
     );
   }
@@ -255,7 +255,7 @@ const DeprecateButton = ({ onDeprecate }) => {
         className="form-control form-control-sm w-auto"
         value={reason}
         onChange={event => setReason(event.target.value)}
-        placeholder={t('version.deprecationReason')}
+        placeholder={t('boxes.version.deprecationReason')}
       />
       <button
         type="button"
@@ -269,10 +269,10 @@ const DeprecateButton = ({ onDeprecate }) => {
           }
         }}
       >
-        {t('version.deprecate')}
+        {t('boxes.version.deprecate')}
       </button>
       <button type="button" className="btn btn-sm btn-secondary" onClick={() => setAsking(false)}>
-        {t('buttons.cancel')}
+        {t('boxes.buttons.cancel')}
       </button>
     </div>
   );
@@ -315,17 +315,17 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
           rows="4"
           value={draft}
           onChange={event => setDraft(event.target.value)}
-          placeholder={t('version.releaseNotes')}
+          placeholder={t('boxes.version.releaseNotes')}
         />
         <button type="button" className="btn btn-sm btn-success me-2" onClick={save}>
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
         <button
           type="button"
           className="btn btn-sm btn-secondary"
           onClick={() => setEditing(false)}
         >
-          {t('buttons.cancel')}
+          {t('boxes.buttons.cancel')}
         </button>
       </div>
     );
@@ -338,7 +338,7 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
         className="btn btn-sm btn-outline-primary"
         onClick={() => setEditing(true)}
       >
-        {t('version.editReleaseNotes')}
+        {t('boxes.version.editReleaseNotes')}
       </button>
       {version.deprecated ? null : (
         <DeprecateButton
@@ -367,7 +367,7 @@ const AddProviderForm = ({ draft, error, onChange }) => {
     <form>
       <div className="add-provider-form">
         <div className="form-group col-md-3">
-          <label htmlFor="providerName">{t('provider.name')}</label>
+          <label htmlFor="providerName">{t('boxes.provider.name')}</label>
           <input
             type="text"
             className="form-control"
@@ -380,7 +380,7 @@ const AddProviderForm = ({ draft, error, onChange }) => {
           {error ? <div className="text-danger">{error}</div> : null}
         </div>
         <div className="form-group">
-          <label htmlFor="providerDescription">{t('provider.description')}</label>
+          <label htmlFor="providerDescription">{t('boxes.provider.description')}</label>
           <textarea
             className="form-control"
             id="providerDescription"
@@ -417,7 +417,7 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
       const { name, value } = event.target;
       setDraft(current => ({ ...current, [name]: value }));
       if (name === 'name') {
-        setError(NAME_RE.test(value) ? '' : t('validation.invalidName'));
+        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
       }
     },
     [t]
@@ -437,23 +437,23 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
 
   const save = () => {
     if (!draft.name || error) {
-      notify('danger', t('validation.fixErrors'));
+      notify('danger', t('boxes.validation.fixErrors'));
       return;
     }
     if ((version.providers || []).some(provider => provider.name === draft.name)) {
-      notify('danger', t('provider.exists'));
+      notify('danger', t('boxes.provider.exists'));
       return;
     }
     api.providers
       .create(org, item.name, version.version, draft)
       .then(() => {
-        notify('success', t('provider.created'));
+        notify('success', t('boxes.provider.created'));
         setShow(false);
         setDraft(EMPTY_PROVIDER);
         reload();
       })
       .catch(requestError => {
-        notify('danger', responseMessage(requestError, t('provider.createError')));
+        notify('danger', responseMessage(requestError, t('boxes.provider.createError')));
       });
   };
 
@@ -464,7 +464,7 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
         onClick={() => setShow(current => !current)}
       >
-        {show ? t('buttons.cancel') : t('provider.add')}
+        {show ? t('boxes.buttons.cancel') : t('boxes.provider.add')}
       </button>
       {show ? (
         <button
@@ -473,7 +473,7 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
           onClick={save}
           disabled={!draft.name || Boolean(error)}
         >
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
       ) : null}
     </div>
@@ -494,7 +494,7 @@ export const BoxProviderRowActions = ({ item, version, provider, ctx }) => {
   const remove = () => {
     deleteProviderCascade(org, item.name, version.version, provider.name)
       .then(() => {
-        notify('success', t('provider.deleted'));
+        notify('success', t('boxes.provider.deleted'));
         reload();
       })
       .catch(error => {
@@ -502,14 +502,14 @@ export const BoxProviderRowActions = ({ item, version, provider, ctx }) => {
           providerName: provider.name,
           error: error.message,
         });
-        notify('danger', t('provider.deleteError'));
+        notify('danger', t('boxes.provider.deleteError'));
       });
   };
 
   return (
     <>
       <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
     </>

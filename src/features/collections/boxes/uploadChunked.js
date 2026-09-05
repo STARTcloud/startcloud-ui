@@ -59,7 +59,7 @@ const sendChunk = async (options, index, uploaded) => {
     if (error.serverMessage) {
       throw error;
     }
-    throw new Error('errors.upload.chunkFailed');
+    throw new Error('boxes.errors.upload.chunkFailed');
   }
 };
 
@@ -81,7 +81,7 @@ const sendFrom = async (options, index, uploaded) => {
 
 const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay, attempt }) => {
   if (Date.now() - startedAt >= ASSEMBLY_TIMEOUT_MS) {
-    throw new Error('errors.upload.assemblyTimeout');
+    throw new Error('boxes.errors.upload.assemblyTimeout');
   }
   const elapsed = Math.round((Date.now() - startedAt) / 1000);
   log.file.debug('Assembly check attempt', {
@@ -105,7 +105,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
         difference,
         maxAllowedDiff: maxDifference,
       });
-      throw new Error('errors.upload.sizeMismatch');
+      throw new Error('boxes.errors.upload.sizeMismatch');
     }
     log.file.info('Assembly completed successfully', {
       finalSize: assembledSize,
@@ -163,7 +163,7 @@ export const uploadChunked = async ({
   onUploadProgress,
 }) => {
   if (!file) {
-    throw new Error('errors.upload.noFile');
+    throw new Error('boxes.errors.upload.noFile');
   }
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   log.file.info('Starting chunked upload', {

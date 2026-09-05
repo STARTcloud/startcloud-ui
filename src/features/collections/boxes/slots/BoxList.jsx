@@ -18,11 +18,11 @@ const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
-      <h4>{t('box.organization.headers.createNewBox')}</h4>
+      <h4>{t('boxes.box.organization.headers.createNewBox')}</h4>
       <form>
         <div className="form-group">
           <label htmlFor="boxName">
-            <strong>{t('box.name')}:</strong>
+            <strong>{t('boxes.box.name')}:</strong>
           </label>
           <div className="form-group row align-items-center">
             <div className="col-auto pe-0">
@@ -44,11 +44,11 @@ const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
             </div>
           </div>
           {nameError ? <div className="text-danger">{nameError}</div> : null}
-          <small className="form-text text-muted">{t('box.shortDescription')}</small>
+          <small className="form-text text-muted">{t('boxes.box.shortDescription')}</small>
         </div>
         <div className="form-group mt-2">
           <label htmlFor="description">
-            <strong>{t('box.description')}:</strong>
+            <strong>{t('boxes.box.description')}:</strong>
           </label>
           <textarea
             className="form-control"
@@ -61,7 +61,7 @@ const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
         </div>
         <div className="form-group mt-2">
           <label htmlFor="visibilityPrivate">
-            <strong>{t('box.visibility')}:</strong>
+            <strong>{t('boxes.box.visibility')}:</strong>
           </label>
           <div>
             <div className="form-check">
@@ -75,7 +75,7 @@ const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPrivate">
-                {t('box.organization.visibility.private')}
+                {t('boxes.box.organization.visibility.private')}
               </label>
             </div>
             <div className="form-check">
@@ -89,11 +89,11 @@ const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPublic">
-                {t('box.organization.visibility.public')}
+                {t('boxes.box.organization.visibility.public')}
               </label>
             </div>
           </div>
-          <small className="form-text text-muted">{t('box.visibilityHint')}</small>
+          <small className="form-text text-muted">{t('boxes.box.visibilityHint')}</small>
         </div>
       </form>
     </div>
@@ -121,12 +121,12 @@ const JoinAsOwner = ({ org, notify }) => {
       })
       .catch(error => {
         log.api.error('Error joining organization as admin', { org, error: error.message });
-        notify('danger', responseMessage(error, t('messages.operationFailed')));
+        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
       });
   };
   return (
     <button type="button" className="btn btn-sm btn-outline-warning" onClick={join}>
-      {t('box.organization.buttons.joinAsAdmin')}
+      {t('boxes.box.organization.buttons.joinAsAdmin')}
     </button>
   );
 };
@@ -143,12 +143,12 @@ const RemoveAll = ({ org, reload, notify }) => {
     api.boxes
       .removeAll(org)
       .then(() => {
-        notify('success', t('box.organization.messages.removeAllSuccess'));
+        notify('success', t('boxes.box.organization.messages.removeAllSuccess'));
         reload();
       })
       .catch(error => {
         log.api.error('Error removing all boxes', { org, error: error.message });
-        notify('danger', t('box.organization.errors.removeAll'));
+        notify('danger', t('boxes.box.organization.errors.removeAll'));
       });
   };
   return (
@@ -183,7 +183,7 @@ export const BoxListActions = ({ ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
     if (name === 'name') {
-      setNameError(NAME_RE.test(value) ? '' : t('validation.invalidName'));
+      setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
     }
   };
 
@@ -201,13 +201,13 @@ export const BoxListActions = ({ ctx }) => {
     api.boxes
       .create(org, { ...draft, organization: org })
       .then(() => {
-        notify('success', t('box.organization.messages.boxCreated'));
+        notify('success', t('boxes.box.organization.messages.boxCreated'));
         cancel();
         navigate(`/${org}/${draft.name}`);
       })
       .catch(error => {
         log.api.error('Error creating box', { boxName: draft.name, error: error.message });
-        notify('danger', responseMessage(error, t('box.organization.errors.boxCreate')));
+        notify('danger', responseMessage(error, t('boxes.box.organization.errors.boxCreate')));
       });
   };
 
@@ -224,11 +224,11 @@ export const BoxListActions = ({ ctx }) => {
             onClick={create}
             disabled={creating && (!draft.name || Boolean(nameError))}
           >
-            {creating ? t('box.organization.buttons.createBox') : t('pages.addNew')}
+            {creating ? t('boxes.box.organization.buttons.createBox') : t('pages.addNew')}
           </button>
           {creating ? (
             <button type="button" className="btn btn-sm btn-secondary" onClick={cancel}>
-              {t('buttons.cancel')}
+              {t('boxes.buttons.cancel')}
             </button>
           ) : null}
         </>

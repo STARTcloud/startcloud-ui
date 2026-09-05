@@ -4,24 +4,23 @@ import HttpApi from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 
 /**
- * The i18next instance every estate app renders through: the app's own
- * namespace first, the `shared` namespace behind it for every chrome and
- * pages key, `auth` beside them, language detection from localStorage then
- * the browser, and `<html lang>` stamped on change.
+ * The i18next instance the app renders through: the `shared` namespace
+ * as the default and the fallback for every chrome, pages and collection
+ * key, `auth` beside it, language detection from localStorage then the
+ * browser, and `<html lang>` stamped on change.
  *
  * @param {Object} options - The app's side of the setup
- * @param {string} options.namespace - The app's own namespace, `public/locales/<lang>/<namespace>.json`
  * @param {() => (string[]|Promise<string[]>)} options.loadSupportedLanguages - Resolves the languages the app ships
  * @param {boolean} [options.debug] - i18next debug logging
  * @returns {{ i18n: Object, ready: Promise<void>, getSupportedLanguages: () => string[] }} The instance, the init promise that gates the first render, and the resolved language list
  */
-export const createI18n = ({ namespace, loadSupportedLanguages, debug = false }) => {
+export const createI18n = ({ loadSupportedLanguages, debug = false }) => {
   let supportedLngs = ['en'];
 
   const i18n = createInstance({
     fallbackLng: 'en',
-    ns: [namespace, 'shared', 'auth'],
-    defaultNS: namespace,
+    ns: ['shared', 'auth'],
+    defaultNS: 'shared',
     fallbackNS: 'shared',
     debug,
     interpolation: {

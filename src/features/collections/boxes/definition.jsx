@@ -47,7 +47,7 @@ export const boxes = {
   segment: '',
   hasVersions: true,
   itemRoute: true,
-  searchKey: 'search.boxes',
+  searchKey: 'boxes.search.boxes',
   defaultView: 'table',
   adapter: boxesAdapter,
   canManage: (item, user) => canManageBox(user, item.organization.name, item.extras.raw),

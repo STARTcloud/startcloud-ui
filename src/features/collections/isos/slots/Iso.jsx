@@ -81,8 +81,8 @@ const UploadZone = ({ uploading, progress, onFile }) => {
         className="navbar-search-tool upload-zone-close"
         onClick={() => setOpen(false)}
         disabled={uploading}
-        title={t('buttons.close')}
-        aria-label={t('buttons.close')}
+        title={t('boxes.buttons.close')}
+        aria-label={t('boxes.buttons.close')}
       >
         <FaXmark />
       </button>
@@ -99,7 +99,9 @@ const UploadZone = ({ uploading, progress, onFile }) => {
       >
         <FaUpload className="upload-zone-icon" aria-hidden />
         <span>
-          {uploading ? t('iso.upload.uploading', { percent: progress }) : t('iso.upload.drop')}
+          {uploading
+            ? t('boxes.iso.upload.uploading', { percent: progress })
+            : t('boxes.iso.upload.drop')}
         </span>
       </button>
       <input
@@ -160,12 +162,12 @@ const RemoveAll = ({ org, reload, notify }) => {
     api.isos
       .removeAll(org)
       .then(() => {
-        notify('success', t('messages.operationSuccessful'));
+        notify('success', t('boxes.messages.operationSuccessful'));
         reload();
       })
       .catch(error => {
         log.api.error('Error removing all ISOs', { org, error: error.message });
-        notify('danger', t('messages.deleteFailed'));
+        notify('danger', t('boxes.messages.deleteFailed'));
       });
   };
   return (
@@ -204,12 +206,12 @@ export const IsoListActions = ({ ctx }) => {
         setProgress(Math.round((100 * event.loaded) / event.total));
       })
       .then(() => {
-        notify('success', t('messages.operationSuccessful'), { key: UPLOAD_KEY });
+        notify('success', t('boxes.messages.operationSuccessful'), { key: UPLOAD_KEY });
         reload();
       })
       .catch(error => {
         log.api.error('Error uploading ISO', { error: error.message });
-        notify('danger', t('messages.uploadFailed'), { key: UPLOAD_KEY });
+        notify('danger', t('boxes.messages.uploadFailed'), { key: UPLOAD_KEY });
       })
       .finally(() => setUploading(false));
   };
@@ -244,12 +246,12 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
     api.isos
       .update(org, iso.id, { name: next })
       .then(() => {
-        notify('success', t('messages.operationSuccessful'));
+        notify('success', t('boxes.messages.operationSuccessful'));
         onSaved(next);
       })
       .catch(error => {
         log.api.error('Error updating ISO name', { error: error.message });
-        notify('danger', t('messages.operationFailed'));
+        notify('danger', t('boxes.messages.operationFailed'));
       });
   };
   return (
@@ -259,13 +261,13 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
         className="form-control form-control-sm w-auto"
         value={name}
         onChange={event => setName(event.target.value)}
-        aria-label={t('buttons.rename')}
+        aria-label={t('boxes.buttons.rename')}
       />
       <button
         type="button"
         className="btn btn-sm btn-success"
         onClick={save}
-        title={t('buttons.save')}
+        title={t('boxes.buttons.save')}
       >
         <FaCheck />
       </button>
@@ -273,7 +275,7 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
         type="button"
         className="btn btn-sm btn-secondary"
         onClick={onDone}
-        title={t('buttons.cancel')}
+        title={t('boxes.buttons.cancel')}
       >
         <FaXmark />
       </button>
@@ -305,7 +307,7 @@ export const IsoItemActions = ({ item, ctx }) => {
       .then(downloadUrl => window.location.assign(downloadUrl))
       .catch(error => {
         log.api.error('Error getting download link', { error: error.message });
-        notify('danger', t('messages.operationFailed'));
+        notify('danger', t('boxes.messages.operationFailed'));
       });
   };
 
@@ -313,7 +315,7 @@ export const IsoItemActions = ({ item, ctx }) => {
     navigator.clipboard
       .writeText(iso.checksum)
       .then(() => notify('success', t('pages.provider.checksumCopied')))
-      .catch(() => notify('danger', t('messages.copyFailed')));
+      .catch(() => notify('danger', t('boxes.messages.copyFailed')));
   };
 
   const toggleVisibility = () => {
@@ -322,7 +324,7 @@ export const IsoItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error('Error updating ISO visibility', { error: error.message });
-        notify('danger', t('messages.operationFailed'));
+        notify('danger', t('boxes.messages.operationFailed'));
       });
   };
 
@@ -332,7 +334,7 @@ export const IsoItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error('Error updating ISO release status', { error: error.message });
-        notify('danger', t('messages.operationFailed'));
+        notify('danger', t('boxes.messages.operationFailed'));
       });
   };
 
@@ -342,7 +344,7 @@ export const IsoItemActions = ({ item, ctx }) => {
       .then(() => navigate(`/${org}/isos`))
       .catch(error => {
         log.api.error('Error deleting ISO', { error: error.message });
-        notify('danger', t('messages.deleteFailed'));
+        notify('danger', t('boxes.messages.deleteFailed'));
       });
   };
 
@@ -365,14 +367,14 @@ export const IsoItemActions = ({ item, ctx }) => {
       <>
         <button type="button" className="btn btn-outline-secondary me-2" onClick={toggleVisibility}>
           {iso.isPublic ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
-          {t(iso.isPublic ? 'iso.makePrivate' : 'iso.makePublic')}
+          {t(iso.isPublic ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
         </button>
         <button
           type="button"
           className={`btn ${iso.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
           onClick={togglePublished}
         >
-          {t(iso.published ? 'iso.unpublish' : 'iso.publish')}
+          {t(iso.published ? 'boxes.iso.unpublish' : 'boxes.iso.publish')}
         </button>
         <button
           type="button"
@@ -380,11 +382,11 @@ export const IsoItemActions = ({ item, ctx }) => {
           onClick={() => setRenaming(true)}
         >
           <FaPen className="me-2" />
-          {t('buttons.rename')}
+          {t('boxes.buttons.rename')}
         </button>
         <button type="button" className="btn btn-danger me-2" onClick={() => setShowDelete(true)}>
           <FaTrash className="me-2" />
-          {t('buttons.delete')}
+          {t('boxes.buttons.delete')}
         </button>
       </>
     );
@@ -394,22 +396,22 @@ export const IsoItemActions = ({ item, ctx }) => {
     <>
       <button type="button" className="btn btn-primary me-2" onClick={download}>
         <FaDownload className="me-2" />
-        {t('buttons.download')}
+        {t('boxes.buttons.download')}
       </button>
       <button type="button" className="btn btn-outline-secondary me-2" onClick={copyChecksum}>
         <FaCopy className="me-2" />
-        {t('iso.copyChecksum')}
+        {t('boxes.iso.copyChecksum')}
       </button>
       {manageControls()}
       <Link className="btn btn-dark me-2" to={`/${org}/isos`}>
-        {t('buttons.back')}
+        {t('boxes.buttons.back')}
       </Link>
       <ConfirmModal
         show={showDelete}
         handleClose={() => setShowDelete(false)}
         handleConfirm={remove}
-        title={t('iso.deleteTitle')}
-        message={t('iso.deleteMessage', { name: iso.name })}
+        title={t('boxes.iso.deleteTitle')}
+        message={t('boxes.iso.deleteMessage', { name: iso.name })}
       />
     </>
   );

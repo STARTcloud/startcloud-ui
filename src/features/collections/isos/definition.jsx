@@ -22,7 +22,7 @@ export const isos = {
   segment: 'isos',
   hasVersions: false,
   itemRoute: true,
-  searchKey: 'search.isos',
+  searchKey: 'boxes.search.isos',
   defaultView: 'table',
   adapter: isosAdapter,
   filterGroups: [

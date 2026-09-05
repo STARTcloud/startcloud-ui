@@ -152,7 +152,7 @@ const CopyButton = ({ text }) => {
       className={`btn btn-sm ${copied ? 'btn-success' : 'btn-outline-light'}`}
       onClick={copy}
     >
-      {copied ? t('box.useThisBox.copied') : t('buttons.copy')}
+      {copied ? t('boxes.box.useThisBox.copied') : t('boxes.buttons.copy')}
     </button>
   );
 };
@@ -176,7 +176,7 @@ const CodeBlock = ({ code, downloadFileName = '' }) => {
             className="btn btn-sm btn-outline-light"
             onClick={() => downloadTextFile(downloadFileName, code)}
           >
-            {t('buttons.download')}
+            {t('boxes.buttons.download')}
           </button>
         ) : null}
       </div>
@@ -218,14 +218,14 @@ export const BoxItemExtras = ({ item, ctx }) => {
     <div className="bg-dark text-light rounded p-3 mb-4">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
         <span className="text-uppercase small fw-semibold text-white-50">
-          {t('box.useThisBox.title')}
+          {t('boxes.box.useThisBox.title')}
         </span>
         <span className="d-flex align-items-center gap-3">
           <label
             className="mb-0 small text-white-50 d-flex align-items-center gap-2"
             htmlFor="useThisBoxVersion"
           >
-            {t('box.useThisBox.version')}
+            {t('boxes.box.useThisBox.version')}
             <select
               id="useThisBoxVersion"
               className="form-select form-select-sm w-auto"
@@ -245,15 +245,15 @@ export const BoxItemExtras = ({ item, ctx }) => {
       </div>
       <CodeBlock code={initCommand} />
       <details className="mb-2">
-        <summary>{t('box.useThisBox.option2')}</summary>
+        <summary>{t('boxes.box.useThisBox.option2')}</summary>
         <div className="mt-2">
           <CodeBlock code={pinnedVagrantfile} />
         </div>
       </details>
       <details>
-        <summary>{t('box.useThisBox.starterKit')}</summary>
+        <summary>{t('boxes.box.useThisBox.starterKit')}</summary>
         <div className="mt-2">
-          <p className="mb-1">{t('box.useThisBox.starterStep1')}</p>
+          <p className="mb-1">{t('boxes.box.useThisBox.starterStep1')}</p>
           <CodeBlock code={`vagrant box add ${boxTag} ${metadataUrl}`} />
           <p className="mb-1">
             <code>Vagrantfile</code>
@@ -284,7 +284,7 @@ export const BoxCicdBar = ({ item }) => {
     <div className="d-flex align-items-center gap-2 mt-2 small">
       {badge ? (
         <a href={pipeline || `${repo}/actions`} target="_blank" rel="noopener noreferrer">
-          <img src={badge} alt={t('box.cicd.buildStatus')} className="badge-max-height" />
+          <img src={badge} alt={t('boxes.box.cicd.buildStatus')} className="badge-max-height" />
         </a>
       ) : null}
       {repo ? (
@@ -294,7 +294,7 @@ export const BoxCicdBar = ({ item }) => {
       ) : null}
       {!repo && pipeline ? (
         <a href={pipeline} target="_blank" rel="noopener noreferrer">
-          {t('box.cicd.viewPipeline')}
+          {t('boxes.box.cicd.viewPipeline')}
         </a>
       ) : null}
     </div>
@@ -318,7 +318,7 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
     <div className="edit-form">
       <form>
         <div className="mb-1">
-          <strong>{t('box.name')}:</strong>
+          <strong>{t('boxes.box.name')}:</strong>
         </div>
         <div className="form-group row align-items-center">
           <div className="col-auto pe-0">
@@ -340,14 +340,14 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
           </div>
         </div>
         {nameError ? <div className="text-danger">{nameError}</div> : null}
-        <small className="form-text text-muted">{t('box.shortDescription')}</small>
+        <small className="form-text text-muted">{t('boxes.box.shortDescription')}</small>
         <div className="form-group mt-2">
-          <strong>{t('box.status')}: </strong>
-          {published ? t('status.completed') : t('status.pending')}
+          <strong>{t('boxes.box.status')}: </strong>
+          {published ? t('boxes.status.completed') : t('boxes.status.pending')}
         </div>
         <div className="form-group mt-2">
           <label htmlFor="visibilityPrivate">
-            <strong>{t('box.visibility')}:</strong>
+            <strong>{t('boxes.box.visibility')}:</strong>
           </label>
           <div className="d-flex">
             <div className="form-check me-3">
@@ -361,7 +361,7 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPrivate">
-                {t('box.organization.visibility.private')}
+                {t('boxes.box.organization.visibility.private')}
               </label>
             </div>
             <div className="form-check">
@@ -375,15 +375,15 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPublic">
-                {t('box.organization.visibility.public')}
+                {t('boxes.box.organization.visibility.public')}
               </label>
             </div>
           </div>
-          <small className="form-text text-muted">{t('box.visibilityHint')}</small>
+          <small className="form-text text-muted">{t('boxes.box.visibilityHint')}</small>
         </div>
         <div className="form-group mt-2">
           <label className="mb-1" htmlFor="description">
-            <strong>{t('box.description')}:</strong> {t('box.optional')}
+            <strong>{t('boxes.box.description')}:</strong> {t('boxes.box.optional')}
           </label>
           <textarea
             className="form-control"
@@ -392,17 +392,17 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
             value={draft.description}
             onChange={onChange}
             rows="4"
-            placeholder={t('box.shortDescription')}
+            placeholder={t('boxes.box.shortDescription')}
           />
         </div>
         <div className="form-group mt-3">
           <h5>
-            <strong>{t('box.cicd.title')}</strong> {t('box.optional')}
+            <strong>{t('boxes.box.cicd.title')}</strong> {t('boxes.box.optional')}
           </h5>
-          <small className="form-text text-muted mb-3">{t('box.cicd.connect')}</small>
+          <small className="form-text text-muted mb-3">{t('boxes.box.cicd.connect')}</small>
           <div className="form-group mt-2">
             <label className="mb-1" htmlFor="githubRepo">
-              <strong>{t('box.cicd.repository')}:</strong> {t('box.optional')}
+              <strong>{t('boxes.box.cicd.repository')}:</strong> {t('boxes.box.optional')}
             </label>
             <input
               type="text"
@@ -411,13 +411,13 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
               name="githubRepo"
               value={draft.githubRepo}
               onChange={onChange}
-              placeholder={t('box.cicd.repositoryPlaceholder')}
+              placeholder={t('boxes.box.cicd.repositoryPlaceholder')}
             />
-            <small className="form-text text-muted">{t('box.cicd.repositoryHint')}</small>
+            <small className="form-text text-muted">{t('boxes.box.cicd.repositoryHint')}</small>
           </div>
           <div className="form-group mt-2">
             <label className="mb-1" htmlFor="workflowFile">
-              <strong>{t('box.cicd.workflow')}:</strong> {t('box.optional')}
+              <strong>{t('boxes.box.cicd.workflow')}:</strong> {t('boxes.box.optional')}
             </label>
             <input
               type="text"
@@ -426,13 +426,13 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
               name="workflowFile"
               value={draft.workflowFile}
               onChange={onChange}
-              placeholder={t('box.cicd.workflowPlaceholder')}
+              placeholder={t('boxes.box.cicd.workflowPlaceholder')}
             />
-            <small className="form-text text-muted">{t('box.cicd.workflowHint')}</small>
+            <small className="form-text text-muted">{t('boxes.box.cicd.workflowHint')}</small>
           </div>
           <div className="form-group mt-2">
             <label className="mb-1" htmlFor="cicdUrl">
-              <strong>{t('box.cicd.pipelineUrl')}:</strong> {t('box.optional')}
+              <strong>{t('boxes.box.cicd.pipelineUrl')}:</strong> {t('boxes.box.optional')}
             </label>
             <input
               type="url"
@@ -441,9 +441,9 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
               name="cicdUrl"
               value={draft.cicdUrl}
               onChange={onChange}
-              placeholder={t('box.cicd.pipelinePlaceholder')}
+              placeholder={t('boxes.box.cicd.pipelinePlaceholder')}
             />
-            <small className="form-text text-muted">{t('box.cicd.pipelineHint')}</small>
+            <small className="form-text text-muted">{t('boxes.box.cicd.pipelineHint')}</small>
           </div>
         </div>
       </form>
@@ -475,7 +475,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       const { name, value } = event.target;
       setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
       if (name === 'name') {
-        setNameError(NAME_RE.test(value) ? '' : t('validation.invalidName'));
+        setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
       }
     },
     [t]
@@ -507,7 +507,7 @@ export const BoxItemActions = ({ item, ctx }) => {
     api.boxes
       .update(org, box.name, { ...box, ...draft, isPublic: draft.isPublic ? 1 : 0 })
       .then(() => {
-        notify('success', t('box.updated'));
+        notify('success', t('boxes.box.updated'));
         setEditing(false);
         if (draft.name !== box.name) {
           navigate(`/${org}/${draft.name}`);
@@ -517,7 +517,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       })
       .catch(error => {
         log.api.error('Error updating box', { boxName: box.name, error: error.message });
-        notify('danger', responseMessage(error, t('box.updateError')));
+        notify('danger', responseMessage(error, t('boxes.box.updateError')));
       });
   };
 
@@ -533,7 +533,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error('Error updating box release status', { error: error.message });
-        notify('danger', responseMessage(error, t('box.updateError')));
+        notify('danger', responseMessage(error, t('boxes.box.updateError')));
       });
   };
 
@@ -543,7 +543,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       .then(() => navigate(`/${org}`))
       .catch(error => {
         log.api.error('Error deleting box', { boxName: box.name, error: error.message });
-        notify('danger', t('box.deleteError'));
+        notify('danger', t('boxes.box.deleteError'));
       });
   };
 
@@ -555,30 +555,30 @@ export const BoxItemActions = ({ item, ctx }) => {
         onClick={save}
         disabled={Boolean(nameError)}
       >
-        {t('buttons.save')}
+        {t('boxes.buttons.save')}
       </button>
       <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
-        {t('buttons.cancel')}
+        {t('boxes.buttons.cancel')}
       </button>
     </>
   ) : (
     <>
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
-        {t('buttons.edit')}
+        {t('boxes.buttons.edit')}
       </button>
       <button type="button" className="btn btn-danger me-2" onClick={() => setShowDelete(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
     </>
   );
 
   const publishButton = box.published ? (
     <button type="button" className="btn btn-warning me-2" onClick={() => publish(false)}>
-      {t('box.unpublish')}
+      {t('boxes.box.unpublish')}
     </button>
   ) : (
     <button type="button" className="btn btn-outline-primary me-2" onClick={() => publish(true)}>
-      {t('box.publish')}
+      {t('boxes.box.publish')}
     </button>
   );
 
@@ -588,7 +588,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       {manage ? editButtons : null}
       {manage ? publishButton : null}
       <Link className="btn btn-dark me-2" to={`/${org}`}>
-        {t('actions.backToFiles')}
+        {t('boxes.actions.backToFiles')}
       </Link>
       <ConfirmModal
         show={showDelete}
@@ -615,7 +615,7 @@ const AddVersionForm = ({ draft, error, onChange }) => {
   return (
     <form>
       <div className="form-group col-md-3">
-        <label htmlFor="versionNumber">{t('version.number')}</label>
+        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
         <input
           type="text"
           className="form-control"
@@ -628,7 +628,7 @@ const AddVersionForm = ({ draft, error, onChange }) => {
         {error ? <div className="text-danger">{error}</div> : null}
       </div>
       <div className="form-group">
-        <label htmlFor="versionDescription">{t('provider.description')}</label>
+        <label htmlFor="versionDescription">{t('boxes.provider.description')}</label>
         <textarea
           className="form-control"
           id="versionDescription"
@@ -666,7 +666,7 @@ export const BoxVersionsActions = ({ item, ctx }) => {
       const { name, value } = event.target;
       setDraft(current => ({ ...current, [name]: value }));
       if (name === 'versionNumber') {
-        setError(NAME_RE.test(value) ? '' : t('validation.invalidName'));
+        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
       }
     },
     [t]
@@ -686,23 +686,23 @@ export const BoxVersionsActions = ({ item, ctx }) => {
 
   const save = () => {
     if (!draft.versionNumber || error) {
-      notify('danger', error || t('validation.required'));
+      notify('danger', error || t('boxes.validation.required'));
       return;
     }
     if ((item.versions || []).some(version => version.version === draft.versionNumber)) {
-      notify('danger', t('version.exists'));
+      notify('danger', t('boxes.version.exists'));
       return;
     }
     api.versions
       .create(org, item.name, draft)
       .then(() => {
-        notify('success', t('version.added'));
+        notify('success', t('boxes.version.added'));
         setShow(false);
         setDraft(EMPTY_VERSION);
         reload();
       })
       .catch(requestError => {
-        notify('danger', responseMessage(requestError, t('version.addError')));
+        notify('danger', responseMessage(requestError, t('boxes.version.addError')));
       });
   };
 
@@ -713,7 +713,7 @@ export const BoxVersionsActions = ({ item, ctx }) => {
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
         onClick={() => setShow(current => !current)}
       >
-        {show ? t('buttons.cancel') : t('version.add')}
+        {show ? t('boxes.buttons.cancel') : t('boxes.version.add')}
       </button>
       {show ? (
         <button
@@ -722,7 +722,7 @@ export const BoxVersionsActions = ({ item, ctx }) => {
           onClick={save}
           disabled={!draft.versionNumber || Boolean(error)}
         >
-          {t('buttons.save')}
+          {t('boxes.buttons.save')}
         </button>
       ) : null}
     </div>
@@ -752,7 +752,7 @@ export const BoxVersionRowActions = ({ item, version, ctx }) => {
   const remove = () => {
     deleteVersionCascade(org, item.name, version.version)
       .then(() => {
-        notify('success', t('version.deleted'));
+        notify('success', t('boxes.version.deleted'));
         reload();
       })
       .catch(error => {
@@ -760,14 +760,14 @@ export const BoxVersionRowActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('version.deleteError')));
+        notify('danger', responseMessage(error, t('boxes.version.deleteError')));
       });
   };
 
   return (
     <>
       <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
-        {t('buttons.delete')}
+        {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
     </>
