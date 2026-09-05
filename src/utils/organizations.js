@@ -25,6 +25,4 @@ export const organizationsShape = PropTypes.shape({
   gravatarProfile: PropTypes.func.isRequired,
 });
 
-export const ORG_NAME_PATTERN = /^[0-9a-zA-Z-._]+$/;
-
 export const membershipsOf = current => current?.organizations || [];

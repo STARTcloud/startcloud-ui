@@ -1,190 +1,47 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCircleInfo, FaEye, FaEyeSlash } from 'react-icons/fa6';
+import { FaCircleInfo } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
+import ConfigSections from '../../../components/common/ConfigSections';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
-import { generateLabel } from '../../../utils/configLabel';
-import { validateConfigValue } from '../../../utils/configValidation';
+import { schemaSections, setValueAt } from '../../admin/utils/schemaSections';
 
 const SETUP_KEY = 'setup';
 const REDIRECT_DELAY_MS = 5000;
+const PROVIDERS_POINTER = '/auth/oidc/providers';
+const EMPTY = {};
+const EMPTY_SCHEMA = { properties: {} };
 
 /**
  * The app's side of the shared setup page: the setup token check, the
- * configuration read and write under that token, the setup status and
- * the SSL upload.
+ * configuration files and their schemas read under that token, the write,
+ * the setup status and the SSL upload.
  */
 export const setupShape = PropTypes.shape({
   status: PropTypes.func.isRequired,
   verifyToken: PropTypes.func.isRequired,
   configs: PropTypes.func.isRequired,
+  schemas: PropTypes.func.isRequired,
   update: PropTypes.func.isRequired,
   uploadSsl: PropTypes.func.isRequired,
 });
 
-const isField = value =>
-  typeof value === 'object' && value !== null && 'type' in value && 'value' in value;
-
-const validationError = (entry, value, t) => {
-  if (entry.readonly) {
-    return null;
-  }
-  if (value === null || value === undefined || value === '') {
-    return t('setup.validation.valueRequired');
-  }
-  return validateConfigValue(entry.type, value, t);
-};
-
-const validateTree = (tree, t, errors = {}, path = []) => {
-  Object.entries(tree).forEach(([key, value]) => {
-    const currentPath = [...path, key];
-    if (isField(value)) {
-      errors[currentPath.join('.')] = validationError(value, value.value, t);
-    } else if (typeof value === 'object' && value !== null) {
-      validateTree(value, t, errors, currentPath);
-    }
-  });
-  return errors;
-};
-
-const hasErrors = (errors, configNames) =>
-  configNames.some(configName =>
-    Object.values(errors[configName] || {}).some(error => error !== null)
-  );
-
-const fillDialect = configs => {
-  const { db } = configs;
-  const dbType = db?.database_type?.value;
-  if (dbType && db.sql?.dialect && !(db.sql.dialect.value || '').trim()) {
-    db.sql.dialect.value = dbType;
-  }
-  return configs;
-};
-
-const FieldShell = ({ id, label, description, error, children }) => (
-  <div className="form-group">
-    <label htmlFor={id}>{label}</label>
-    {children}
-    <small className="form-text text-muted">{description}</small>
-    {error && <div className="invalid-feedback">{error}</div>}
-  </div>
-);
-
-FieldShell.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  description: PropTypes.string,
-  error: PropTypes.string,
-  children: PropTypes.node.isRequired,
-};
-
-const SetupField = ({ configName, path, entry, error, onChange, onUpload }) => {
-  const { t } = useTranslation();
-  const [showPassword, setShowPassword] = useState(false);
-  const errorKey = path.join('.');
-  const fieldId = `field-${errorKey}`;
-  const label = generateLabel(path[path.length - 1]);
-  const inputValue = entry.value === null || entry.value === undefined ? '' : entry.value;
-  const invalid = error ? 'is-invalid' : '';
-  const change = e => onChange(configName, path, e.target.value);
-
-  if (entry.type === 'select') {
-    return (
-      <FieldShell id={fieldId} label={label} description={entry.description} error={error}>
-        <select
-          id={fieldId}
-          className={`form-control ${invalid}`}
-          value={inputValue}
-          onChange={change}
-        >
-          {(entry.options || []).map(option => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </FieldShell>
-    );
-  }
-
-  if (entry.type === 'password') {
-    return (
-      <FieldShell id={fieldId} label={label} description={entry.description} error={error}>
-        <div className="input-group">
-          <input
-            id={fieldId}
-            type={showPassword ? 'text' : 'password'}
-            className={`form-control ${invalid}`}
-            value={inputValue}
-            onChange={change}
-          />
-          <button
-            className="btn btn-outline-secondary"
-            type="button"
-            onClick={() => setShowPassword(current => !current)}
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
-        </div>
-      </FieldShell>
-    );
-  }
-
-  if (entry.upload) {
-    return (
-      <FieldShell id={fieldId} label={label} description={entry.description} error={error}>
-        <div className="input-group">
-          <input
-            id={fieldId}
-            type="text"
-            className={`form-control ${invalid}`}
-            value={inputValue}
-            onChange={change}
-          />
-          <label className="btn btn-outline-secondary">
-            {t('admin.buttons.upload')}
-            <input
-              type="file"
-              hidden
-              onChange={e => onUpload(configName, path, e.target.files[0])}
-            />
-          </label>
-        </div>
-      </FieldShell>
-    );
-  }
-
-  return (
-    <FieldShell id={fieldId} label={label} description={entry.description} error={error}>
-      <input
-        id={fieldId}
-        type="text"
-        className={`form-control ${invalid} ${entry.readonly ? 'readonly-input' : ''}`}
-        value={inputValue}
-        onChange={change}
-        readOnly={entry.readonly}
-      />
-    </FieldShell>
-  );
-};
-
-SetupField.propTypes = {
-  configName: PropTypes.string.isRequired,
-  path: PropTypes.arrayOf(PropTypes.string).isRequired,
-  entry: PropTypes.object.isRequired,
-  error: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func.isRequired,
-};
+const combinedSchema = schemas => ({
+  properties: Object.fromEntries(
+    Object.entries(schemas).map(([name, schema]) => [name, { ...schema, type: 'object' }])
+  ),
+});
 
 const OidcInfo = () => {
   const { t } = useTranslation();
   return (
-    <div className="col-md-12 mb-3">
+    <div className="col-12 mb-3">
       <div className="alert alert-info" role="status">
         <h6>
           <FaCircleInfo className="me-2" />
@@ -196,94 +53,34 @@ const OidcInfo = () => {
   );
 };
 
-const SetupFields = ({ configName, tree, path, errors, databaseType, onChange, onUpload }) => {
-  const { t } = useTranslation();
-  return Object.entries(tree).map(([key, entry]) => {
-    const currentPath = [...path, key];
-    const errorKey = currentPath.join('.');
+const renderMap = field =>
+  field.pointer === PROVIDERS_POINTER ? <OidcInfo key={field.pointer} /> : null;
 
-    if (configName === 'db' && key === 'sql' && databaseType === 'sqlite') {
-      if (!entry.storage) {
-        return null;
-      }
-      return (
-        <FieldShell
-          key="sql.storage"
-          id="sql-storage"
-          label={t('setup.sqlitePath')}
-          description={entry.storage.description}
-          error={errors['sql.storage']}
-        >
-          <input
-            id="sql-storage"
-            type="text"
-            className={`form-control ${errors['sql.storage'] ? 'is-invalid' : ''}`}
-            value={entry.storage.value || ''}
-            onChange={e => onChange(configName, ['sql', 'storage'], e.target.value)}
-          />
-        </FieldShell>
-      );
-    }
-    if (configName === 'db' && key === 'mysql_pool' && databaseType === 'sqlite') {
-      return null;
-    }
-    if (key === 'oidc_providers' && entry.type === 'object') {
-      return <OidcInfo key={errorKey} />;
-    }
-    if (typeof entry === 'object' && entry !== null && !isField(entry)) {
-      return (
-        <div key={errorKey} className="col-md-6 mb-3">
-          <div className="card">
-            <div className="card-header">
-              <h5>{generateLabel(key)}</h5>
-            </div>
-            <div className="card-body">
-              <SetupFields
-                configName={configName}
-                tree={entry}
-                path={currentPath}
-                errors={errors}
-                databaseType={databaseType}
-                onChange={onChange}
-                onUpload={onUpload}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <SetupField
-        key={errorKey}
-        configName={configName}
-        path={currentPath}
-        entry={entry}
-        error={errors[errorKey]}
-        onChange={onChange}
-        onUpload={onUpload}
-      />
-    );
-  });
-};
+const withoutConfigsPrefix = error => ({
+  fieldErrors: (error.fieldErrors || []).map(entry => ({
+    ...entry,
+    pointer: String(entry.pointer || '').replace(/^\/configs/, ''),
+  })),
+});
 
-SetupFields.propTypes = {
-  configName: PropTypes.string.isRequired,
-  tree: PropTypes.object.isRequired,
-  path: PropTypes.arrayOf(PropTypes.string).isRequired,
-  errors: PropTypes.object.isRequired,
-  databaseType: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func.isRequired,
+const tabStatusClass = ({ configName, errors, summary }) => {
+  const failing = Object.keys(errors).some(name => name.startsWith(`${configName}/`));
+  if (failing) {
+    return 'text-danger';
+  }
+  return summary.length > 0 ? 'text-success' : '';
 };
 
 /**
  * The first-run setup page of an app that configures itself in the
  * browser: the setup token gate, then one tab per configuration file the
- * host's status names in `config` (`app` alone when it names none) with
- * every field validated by its type, the SQLite storage path in place of
- * the SQL block when SQLite is chosen, the SSL upload on upload fields,
- * and Submit all, which writes every file through the app's `setup`
- * adapter and sends the visitor to register.
+ * host's status names in `config` (`app` alone when it names none), each
+ * drawn from its schema and validated through it on blur and on Submit
+ * all, the summary above the tabs listing every file's errors and the
+ * tab carrying one marked, a refused write's `/configs/<name>/…` pointers
+ * landing on the fields they name, the SSL upload on upload fields, and
+ * Submit all, which writes every file through the app's `setup` adapter
+ * and sends the visitor to register.
  */
 const SetupPage = ({ setup }) => {
   const { t } = useTranslation();
@@ -291,12 +88,21 @@ const SetupPage = ({ setup }) => {
   const navigate = useNavigate();
   const status = useStatus();
   const configNames = status.config || ['app'];
-  const [configs, setConfigs] = useState({});
+  const [configs, setConfigs] = useState(EMPTY);
+  const [schemas, setSchemas] = useState(null);
   const [setupComplete, setSetupComplete] = useState(false);
   const [setupToken, setSetupToken] = useState('');
   const [authorizedSetupToken, setAuthorizedSetupToken] = useState('');
   const [activeTab, setActiveTab] = useState(configNames[0]);
-  const [validationErrors, setValidationErrors] = useState({});
+  const schema = useMemo(() => (schemas ? combinedSchema(schemas) : EMPTY_SCHEMA), [schemas]);
+  const sectionsByName = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(schemas || {}).map(([name, entry]) => [name, schemaSections(entry)])
+      ),
+    [schemas]
+  );
+  const rules = useFormRules({ schema, values: configs, idPrefix: 'setup' });
 
   useEffect(() => {
     document.title = t('setup.title');
@@ -311,79 +117,40 @@ const SetupPage = ({ setup }) => {
       });
   }, [setup]);
 
-  const isFormValid = !hasErrors(validationErrors, configNames);
-
-  const adoptConfigs = data => {
-    const next = fillDialect(data.configs);
-    setConfigs(next);
-    const errors = {};
-    Object.keys(next).forEach(configName => {
-      errors[configName] = validateTree(next[configName], t);
-    });
-    setValidationErrors(errors);
-  };
-
   const handleVerifyToken = () => {
     setup
       .verifyToken(setupToken)
-      .then(verified => {
-        setAuthorizedSetupToken(verified.authorizedSetupToken);
-        return setup.configs(verified.authorizedSetupToken).then(adoptConfigs);
-      })
+      .then(verified =>
+        Promise.all([
+          setup.configs(verified.authorizedSetupToken),
+          setup.schemas(verified.authorizedSetupToken),
+        ]).then(([data, schemaData]) => {
+          setAuthorizedSetupToken(verified.authorizedSetupToken);
+          setConfigs(data.configs);
+          setSchemas(schemaData.schemas);
+        })
+      )
       .catch(error => {
         log.api.error('Error verifying setup token', { error: error.message });
         notify('danger', t('setup.invalidToken'));
       });
   };
 
-  const validateField = (configName, path, value) => {
-    const field = path.reduce((acc, key) => acc && acc[key], configs[configName]);
-    const error =
-      field && field.type
-        ? validationError(field, value, t)
-        : t('setup.validation.invalidFieldStructure');
-    setValidationErrors(previous => ({
+  const handleConfigChange = (configName, pointer, value) => {
+    setConfigs(previous => ({
       ...previous,
-      [configName]: { ...previous[configName], [path.join('.')]: error },
+      [configName]: setValueAt(previous[configName], pointer, value),
     }));
   };
 
-  const handleConfigChange = (configName, path, value) => {
-    setConfigs(previous => {
-      const next = { ...previous };
-      let current = next[configName];
-      for (let i = 0; i < path.length - 1; i++) {
-        if (current[path[i]] === null) {
-          current[path[i]] = {};
-        }
-        current = current[path[i]];
-      }
-      const last = path[path.length - 1];
-      if (current[last] === null) {
-        current[last] = { value };
-      } else {
-        current[last].value = value;
-      }
-      if (configName === 'db' && path.join('.') === 'database_type' && next.db.sql?.dialect) {
-        next.db.sql.dialect.value = value;
-      }
-      return next;
-    });
-
-    validateField(configName, path, value);
-    if (configName === 'db' && path.join('.') === 'database_type') {
-      validateField(configName, ['sql', 'dialect'], value);
-    }
-  };
-
-  const handleFileUpload = (configName, path, file) => {
+  const handleFileUpload = (configName, pointer, file) => {
     if (!file) {
       return;
     }
     setup
       .uploadSsl(authorizedSetupToken, file)
       .then(({ path: storedPath }) => {
-        handleConfigChange(configName, path, storedPath);
+        handleConfigChange(configName, pointer, storedPath);
         notify('success', t('admin.messages.operationSuccessful'));
       })
       .catch(error => {
@@ -393,8 +160,7 @@ const SetupPage = ({ setup }) => {
   };
 
   const handleSubmit = () => {
-    if (!isFormValid) {
-      notify('danger', t('setup.validation.fixErrors'));
+    if (!rules.validateAll()) {
       return;
     }
     setup
@@ -407,17 +173,12 @@ const SetupPage = ({ setup }) => {
         }, REDIRECT_DELAY_MS);
       })
       .catch(error => {
+        if (rules.applyServerErrors(withoutConfigsPrefix(error))) {
+          return;
+        }
         log.api.error('Error updating configuration', { error: error.message });
         notify('danger', t('setup.updateError'));
       });
-  };
-
-  const tabStatusClass = configName => {
-    const errors = validationErrors[configName];
-    if (!errors) {
-      return '';
-    }
-    return Object.values(errors).some(error => error !== null) ? '' : 'text-success';
   };
 
   const renderBody = () => {
@@ -449,7 +210,6 @@ const SetupPage = ({ setup }) => {
         </div>
       );
     }
-    const databaseType = configs.db?.database_type?.value || 'mysql';
     return (
       <div>
         <ul className="nav nav-tabs mb-4 d-flex">
@@ -457,7 +217,11 @@ const SetupPage = ({ setup }) => {
             <li className="nav-item" key={configName}>
               <button
                 type="button"
-                className={`nav-link ${activeTab === configName ? 'active' : ''} ${tabStatusClass(configName)}`}
+                className={`nav-link ${activeTab === configName ? 'active' : ''} ${tabStatusClass({
+                  configName,
+                  errors: rules.errors,
+                  summary: rules.summary,
+                })}`}
                 onClick={() => setActiveTab(configName)}
               >
                 {t(`configManager.tabs.${configName}`)}
@@ -465,16 +229,13 @@ const SetupPage = ({ setup }) => {
             </li>
           ))}
           <li className="nav-item ms-auto">
-            <button
-              type="button"
-              className={`nav-link ${isFormValid ? 'cursor-pointer' : 'disabled'}`}
-              onClick={handleSubmit}
-              disabled={!isFormValid}
-            >
+            <button type="button" className="nav-link cursor-pointer" onClick={handleSubmit}>
               {t('setup.submitAll')}
             </button>
           </li>
         </ul>
+
+        <FormErrorSummary errors={rules.summary} />
 
         <div className="tab-content">
           {configNames.map(configName => (
@@ -482,17 +243,15 @@ const SetupPage = ({ setup }) => {
               key={configName}
               className={`tab-pane ${activeTab === configName ? 'active' : ''}`}
             >
-              <div className="row">
-                <SetupFields
-                  configName={configName}
-                  tree={configs[configName] || {}}
-                  path={[]}
-                  errors={validationErrors[configName] || {}}
-                  databaseType={databaseType}
-                  onChange={handleConfigChange}
-                  onUpload={handleFileUpload}
-                />
-              </div>
+              <ConfigSections
+                sections={sectionsByName[configName] || []}
+                config={configs[configName] || EMPTY}
+                rules={rules}
+                nameFor={pointer => `${configName}${pointer}`}
+                onChange={(pointer, value) => handleConfigChange(configName, pointer, value)}
+                onUpload={(pointer, file) => handleFileUpload(configName, pointer, file)}
+                renderMap={renderMap}
+              />
             </div>
           ))}
         </div>

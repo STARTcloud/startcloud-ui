@@ -5,17 +5,27 @@ import { FaUpload, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { architectureShape, itemShape, versionShape } from '../../../catalog/utils/itemShape';
 import { isOrgManager } from '../../boxes';
+import {
+  DEPRECATION_LABELS,
+  DEPRECATION_SCHEMA,
+  ISO_ARCHITECTURE_LABELS,
+  ISO_ARCHITECTURE_SCHEMA,
+} from '../../boxes/forms';
 import { deleteVersionCascade } from '../adapter';
 import { api } from '../api';
 
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
 const HOVER_DWELL_MS = 400;
+const EMPTY_ARCHITECTURE = { name: '' };
+const EMPTY_DEPRECATION = { deprecationReason: '' };
 const UPLOAD_KEY = 'iso-upload';
 
 const slotShape = {
@@ -188,7 +198,31 @@ IsoVersionBannerActions.propTypes = slotShape;
 const DeprecateButton = ({ onDeprecate }) => {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
-  const [reason, setReason] = useState('');
+  const [draft, setDraft] = useState(EMPTY_DEPRECATION);
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: DEPRECATION_SCHEMA,
+    values: draft,
+    labels: DEPRECATION_LABELS,
+    idPrefix: 'iso-deprecate',
+  });
+
+  const close = () => {
+    setAsking(false);
+    setDraft(EMPTY_DEPRECATION);
+    rules.reset();
+  };
+
+  const submit = async event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    const ok = await onDeprecate(draft.deprecationReason.trim());
+    if (ok) {
+      close();
+    }
+  };
 
   if (!asking) {
     return (
@@ -203,32 +237,32 @@ const DeprecateButton = ({ onDeprecate }) => {
   }
 
   return (
-    <div className="d-flex gap-2 align-items-start flex-wrap">
-      <input
-        type="text"
-        className="form-control form-control-sm w-auto"
-        value={reason}
-        onChange={event => setReason(event.target.value)}
-        placeholder={t('boxes.version.deprecationReason')}
-      />
-      <button
-        type="button"
-        className="btn btn-sm btn-danger"
-        disabled={!reason.trim()}
-        onClick={async () => {
-          const ok = await onDeprecate(reason.trim());
-          if (ok) {
-            setAsking(false);
-            setReason('');
-          }
-        }}
+    <form className="flex-grow-1" onSubmit={submit} noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('deprecationReason')}
+        label={t('boxes.version.deprecationReason')}
+        error={rules.errors.deprecationReason || ''}
+        className="mb-2"
       >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control form-control-sm"
+            value={draft.deprecationReason}
+            onChange={event => setDraft({ deprecationReason: event.target.value })}
+            onBlur={() => rules.onBlur('deprecationReason')}
+          />
+        )}
+      </Field>
+      <button type="submit" className="btn btn-sm btn-danger me-2">
         {t('boxes.version.deprecate')}
       </button>
-      <button type="button" className="btn btn-sm btn-secondary" onClick={() => setAsking(false)}>
+      <button type="button" className="btn btn-sm btn-secondary" onClick={close}>
         {t('boxes.buttons.cancel')}
       </button>
-    </div>
+    </form>
   );
 };
 
@@ -315,15 +349,12 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
 
 IsoVersionNotesActions.propTypes = slotShape;
 
-const UploadZone = ({ uploading, progress, onFile }) => {
+const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [over, setOver] = useState(false);
-  const [architecture, setArchitecture] = useState('');
   const dwell = useRef(null);
   const inputRef = useRef(null);
-  const nameError =
-    architecture && !NAME_RE.test(architecture) ? t('boxes.validation.invalidName') : '';
 
   useEffect(() => () => clearTimeout(dwell.current), []);
 
@@ -336,7 +367,7 @@ const UploadZone = ({ uploading, progress, onFile }) => {
 
   const pick = file => {
     if (file) {
-      onFile(file, architecture.trim());
+      onFile(file);
     }
   };
 
@@ -379,19 +410,25 @@ const UploadZone = ({ uploading, progress, onFile }) => {
       >
         <FaXmark />
       </button>
-      <div className="form-group col-md-3">
-        <label htmlFor="isoArchitecture">{t('boxes.architecture.name')}</label>
-        <input
-          type="text"
-          className="form-control form-control-sm"
-          id="isoArchitecture"
-          value={architecture}
-          disabled={uploading}
-          onChange={event => setArchitecture(event.target.value)}
-          required
-        />
-        {nameError ? <div className="text-danger">{nameError}</div> : null}
-      </div>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('name')}
+        label={t('boxes.architecture.name')}
+        error={rules.errors.name || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control form-control-sm"
+            value={form.name}
+            disabled={uploading}
+            onChange={event => onName(event.target.value)}
+            onBlur={() => rules.onBlur('name')}
+          />
+        )}
+      </Field>
       <button
         type="button"
         className="upload-zone-target"
@@ -440,20 +477,10 @@ const UploadZone = ({ uploading, progress, onFile }) => {
 UploadZone.propTypes = {
   uploading: PropTypes.bool.isRequired,
   progress: PropTypes.number.isRequired,
+  form: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
+  rules: formRulesShape.isRequired,
+  onName: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
-};
-
-const uploadError = ({ architecture, version, t }) => {
-  if (!architecture) {
-    return t('boxes.architecture.enterName');
-  }
-  if (!NAME_RE.test(architecture)) {
-    return t('boxes.validation.invalidName');
-  }
-  if ((version.artifacts || []).some(artifact => artifact.name === architecture)) {
-    return t('boxes.iso.upload.exists');
-  }
-  return '';
 };
 
 export const IsoArtifactsActions = ({ item, version, ctx }) => {
@@ -462,17 +489,24 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
   const { user, org, reload, notify } = ctx;
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [form, setForm] = useState(EMPTY_ARCHITECTURE);
+  const rules = useFormRules({
+    formKey: 'architecture',
+    schema: ISO_ARCHITECTURE_SCHEMA,
+    values: form,
+    labels: ISO_ARCHITECTURE_LABELS,
+    idPrefix: 'iso-architecture',
+  });
 
   if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
   }
 
-  const upload = (file, architecture) => {
-    const error = uploadError({ architecture, version, t });
-    if (error) {
-      notify('danger', error);
+  const upload = file => {
+    if (!rules.validateAll()) {
       return;
     }
+    const architecture = form.name.trim();
     setUploading(true);
     setProgress(0);
     notify('', '', { key: UPLOAD_KEY });
@@ -482,9 +516,14 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
       })
       .then(() => {
         notify('success', t('boxes.messages.operationSuccessful'), { key: UPLOAD_KEY });
+        setForm(EMPTY_ARCHITECTURE);
+        rules.reset();
         reload();
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         log.api.error('Error uploading ISO file', {
           architectureName: architecture,
           error: requestError.message,
@@ -496,7 +535,16 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
       .finally(() => setUploading(false));
   };
 
-  return <UploadZone uploading={uploading} progress={progress} onFile={upload} />;
+  return (
+    <UploadZone
+      uploading={uploading}
+      progress={progress}
+      form={form}
+      rules={rules}
+      onName={name => setForm({ name })}
+      onFile={upload}
+    />
+  );
 };
 
 IsoArtifactsActions.propTypes = slotShape;

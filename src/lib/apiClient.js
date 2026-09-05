@@ -5,12 +5,23 @@ const MESSAGE_KEYS = {
   401: 'errors.accessDenied',
   403: 'errors.accessDenied',
   404: 'errors.notFound',
+  409: 'errors.conflict',
+  422: 'errors.validation',
 };
+const PROBLEM_TYPE = 'application/problem+json';
 
 const textOf = value => (typeof value === 'string' ? value : '');
 
 const isAbort = error =>
   isCancel(error) || error?.name === 'AbortError' || error?.name === 'CanceledError';
+
+const problemOf = (response, fields) => {
+  const contentType = textOf(response?.headers?.['content-type']);
+  if (contentType.startsWith(PROBLEM_TYPE) || (fields.type && fields.status)) {
+    return fields;
+  }
+  return null;
+};
 
 /**
  * Build a path from raw segments, each URL-encoded, so a name carrying a
@@ -24,7 +35,8 @@ export const encodePath = (...segments) =>
 /**
  * The one error shape every request of the client fails with: the HTTP
  * status (0 for a network failure), the server's own message, an i18n key
- * for the status, the parsed body, and the request that failed.
+ * for the status, the parsed body, the RFC 9457 problem when the body is
+ * one with its `errors[]` as `fieldErrors`, and the request that failed.
  */
 export class ApiError extends Error {
   constructor({ method, url, cause, messageKeys }) {
@@ -32,7 +44,10 @@ export class ApiError extends Error {
     const body = response?.data;
     const fields = body && typeof body === 'object' ? body : {};
     const serverMessage =
-      textOf(fields.message) || textOf(fields.error_description) || textOf(fields.error);
+      textOf(fields.message) ||
+      textOf(fields.error_description) ||
+      textOf(fields.error) ||
+      textOf(fields.title);
     super(serverMessage || cause.message);
     this.name = 'ApiError';
     this.status = response?.status || 0;
@@ -40,6 +55,8 @@ export class ApiError extends Error {
     this.messageKey = ApiError.keyFor(this.status, cause, messageKeys);
     this.serverMessage = serverMessage;
     this.data = body ?? null;
+    this.problem = problemOf(response, fields);
+    this.fieldErrors = Array.isArray(this.problem?.errors) ? this.problem.errors : [];
     this.response = response
       ? { status: response.status, data: body, headers: response.headers }
       : null;

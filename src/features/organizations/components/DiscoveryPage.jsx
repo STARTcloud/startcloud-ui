@@ -5,7 +5,10 @@ import { useTranslation, Trans } from 'react-i18next';
 import { FaBuilding, FaUsers, FaBox } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
@@ -14,6 +17,10 @@ import { responseMessage } from '../../../utils/responseMessage';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
+
+const JOIN_SCHEMA = { required: ['message'], properties: { message: { type: 'string' } } };
+const JOIN_LABELS = { message: 'discovery.modal.messageLabel' };
+const EMPTY_JOIN = { message: '' };
 
 const ACCESS_MODE_KEYS = {
   invite_only: 'discovery.buttons.inviteOnly',
@@ -139,9 +146,15 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [joinRequestMessage, setJoinRequestMessage] = useState('');
+  const [joinForm, setJoinForm] = useState(EMPTY_JOIN);
   const [requestingOrg, setRequestingOrg] = useState(null);
   const [orgGravatars, setOrgGravatars] = useState({});
+  const joinRules = useFormRules({
+    formKey: 'joinRequest',
+    schema: JOIN_SCHEMA,
+    values: joinForm,
+    labels: JOIN_LABELS,
+  });
 
   const fetchOrgGravatars = useCallback(
     async orgList => {
@@ -210,20 +223,25 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
 
   const closeRequest = () => {
     setRequestingOrg(null);
-    setJoinRequestMessage('');
+    setJoinForm(EMPTY_JOIN);
+    joinRules.reset();
   };
 
-  const handleJoinRequest = async orgName => {
-    if (!joinRequestMessage.trim()) {
-      notify('warning', t('discovery.errors.emptyMessage'));
+  const handleJoinRequest = async e => {
+    e.preventDefault();
+    if (!joinRules.validateAll()) {
       return;
     }
+    const orgName = requestingOrg.name;
 
     try {
-      await organizations.join(orgName, joinRequestMessage);
+      await organizations.join(orgName, joinForm.message);
       notify('success', t('discovery.messages.requestSent', { orgName }));
       closeRequest();
     } catch (error) {
+      if (joinRules.applyServerErrors(error)) {
+        return;
+      }
       log.api.error('Error creating join request', {
         orgName,
         error: error.message,
@@ -300,39 +318,49 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
       </div>
 
       <Modal show={Boolean(requestingOrg)} onHide={closeRequest}>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">
-            {t('discovery.modal.title', { orgName: requestingName })}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            <Trans
-              i18nKey="discovery.modal.description"
-              values={{ orgName: requestingName }}
-              components={{ strong: <strong /> }}
-            />
-          </p>
-          <textarea
-            className="form-control"
-            rows="4"
-            value={joinRequestMessage}
-            onChange={e => setJoinRequestMessage(e.target.value)}
-            placeholder={t('discovery.modal.placeholder')}
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={closeRequest}>
-            {t('pages.confirm.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => handleJoinRequest(requestingOrg.name)}
-            disabled={!joinRequestMessage.trim()}
-          >
-            {t('discovery.buttons.sendRequest')}
-          </Button>
-        </Modal.Footer>
+        <form onSubmit={handleJoinRequest} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">
+              {t('discovery.modal.title', { orgName: requestingName })}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              <Trans
+                i18nKey="discovery.modal.description"
+                values={{ orgName: requestingName }}
+                components={{ strong: <strong /> }}
+              />
+            </p>
+            <FormErrorSummary errors={joinRules.summary} />
+            <Field
+              id={joinRules.idFor('message')}
+              label={t('discovery.modal.messageLabel')}
+              error={joinRules.errors.message || ''}
+              className="mb-0"
+            >
+              {aria => (
+                <textarea
+                  {...aria}
+                  className="form-control"
+                  rows="4"
+                  value={joinForm.message}
+                  onChange={e => setJoinForm({ message: e.target.value })}
+                  onBlur={() => joinRules.onBlur('message')}
+                  placeholder={t('discovery.modal.placeholder')}
+                />
+              )}
+            </Field>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={closeRequest}>
+              {t('pages.confirm.cancel')}
+            </Button>
+            <Button variant="primary" type="submit">
+              {t('discovery.buttons.sendRequest')}
+            </Button>
+          </Modal.Footer>
+        </form>
       </Modal>
     </div>
   );

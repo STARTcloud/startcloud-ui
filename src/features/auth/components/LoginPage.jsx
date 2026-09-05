@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
 import {
   authShape,
@@ -16,6 +19,12 @@ import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner } from './AuthShell';
 import ProviderButtons from './ProviderButtons';
+
+const LOGIN_SCHEMA = {
+  required: ['username', 'password'],
+  properties: { username: { type: 'string' }, password: { type: 'string' } },
+};
+const LOGIN_LABELS = { username: 'auth:login.username', password: 'auth:login.password' };
 
 const rememberReturn = (returnTo, urlParams) => {
   const fromPage = window.location.pathname === '/login' ? '' : window.location.pathname;
@@ -97,76 +106,71 @@ const deriveLoginView = ({
   };
 };
 
-const LocalLoginForm = ({ formValues, errors, onChange, onSubmit, loading }) => {
+const LocalLoginForm = ({ formValues, rules, onChange, onSubmit, loading }) => {
   const { t } = useTranslation(['auth']);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form className="auth-form" onSubmit={onSubmit} noValidate>
-      <div className="auth-field">
-        <label className="auth-field-label" htmlFor="login-username">
-          {t('login.username')}
-        </label>
-        <div className={`auth-input-wrap${errors.username ? ' has-error' : ''}`}>
-          <input
-            id="login-username"
-            name="username"
-            type="text"
-            autoComplete="username"
-            value={formValues.username}
-            onChange={onChange}
-            aria-invalid={Boolean(errors.username)}
-            aria-describedby={errors.username ? 'login-username-error' : undefined}
-          />
-        </div>
-        {errors.username && (
-          <p id="login-username-error" className="auth-field-error">
-            {errors.username}
-          </p>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('username')}
+        label={t('login.username')}
+        error={rules.errors.username || ''}
+        className="auth-field"
+      >
+        {aria => (
+          <div className="auth-input-wrap">
+            <input
+              {...aria}
+              name="username"
+              type="text"
+              autoComplete="username"
+              value={formValues.username}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('username')}
+            />
+          </div>
         )}
-      </div>
+      </Field>
 
-      <div className="auth-field">
-        <label className="auth-field-label" htmlFor="login-password">
-          {t('login.password')}
-        </label>
-        <div
-          className={`auth-input-wrap auth-input-wrap--password${errors.password ? ' has-error' : ''}`}
-        >
-          <input
-            id="login-password"
-            name="password"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="current-password"
-            value={formValues.password}
-            onChange={onChange}
-            aria-invalid={Boolean(errors.password)}
-            aria-describedby={errors.password ? 'login-password-error' : undefined}
-          />
-          <button
-            type="button"
-            className="auth-reveal"
-            onClick={() => setShowPassword(visible => !visible)}
-            aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
-        </div>
-        {errors.password && (
-          <p id="login-password-error" className="auth-field-error">
-            {errors.password}
-          </p>
+      <Field
+        id={rules.idFor('password')}
+        label={t('login.password')}
+        error={rules.errors.password || ''}
+        className="auth-field"
+      >
+        {aria => (
+          <div className="auth-input-wrap auth-input-wrap--password">
+            <input
+              {...aria}
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={formValues.password}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('password')}
+            />
+            <button
+              type="button"
+              className="auth-reveal"
+              onClick={() => setShowPassword(visible => !visible)}
+              aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
         )}
-        <label className="auth-check">
-          <input
-            type="checkbox"
-            name="stayLoggedIn"
-            checked={formValues.stayLoggedIn}
-            onChange={onChange}
-          />
-          <span>{t('login.stayLoggedIn')}</span>
-        </label>
-      </div>
+      </Field>
+      <label className="auth-check">
+        <input
+          type="checkbox"
+          name="stayLoggedIn"
+          checked={formValues.stayLoggedIn}
+          onChange={onChange}
+        />
+        <span>{t('login.stayLoggedIn')}</span>
+      </label>
 
       <button
         type="submit"
@@ -185,7 +189,7 @@ LocalLoginForm.propTypes = {
     password: PropTypes.string.isRequired,
     stayLoggedIn: PropTypes.bool.isRequired,
   }).isRequired,
-  errors: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
@@ -198,7 +202,7 @@ const LoginMethods = ({
   loading,
   loadingProvider,
   formValues,
-  errors,
+  rules,
   onChange,
   onSubmit,
   onSelectProvider,
@@ -213,7 +217,7 @@ const LoginMethods = ({
       {view.showLocalForm && (
         <LocalLoginForm
           formValues={formValues}
-          errors={errors}
+          rules={rules}
           onChange={onChange}
           onSubmit={onSubmit}
           loading={loading}
@@ -275,7 +279,7 @@ LoginMethods.propTypes = {
   loading: PropTypes.bool.isRequired,
   loadingProvider: PropTypes.string,
   formValues: PropTypes.object.isRequired,
-  errors: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onSelectProvider: PropTypes.func.isRequired,
@@ -305,8 +309,13 @@ const LoginPage = ({ session, returnTo, auth, appName }) => {
   });
   const [loading, setLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
   const [statusMessage, setStatusMessage] = useState(location.state?.error || '');
+  const rules = useFormRules({
+    formKey: 'login',
+    schema: LOGIN_SCHEMA,
+    values: formValues,
+    labels: LOGIN_LABELS,
+  });
   const [authMethods, setAuthMethods] = useState([]);
   const [methodsLoading, setMethodsLoading] = useState(true);
   const [defaultProvider, setDefaultProvider] = useState(null);
@@ -465,16 +474,7 @@ const LoginPage = ({ session, returnTo, auth, appName }) => {
 
   const handleLogin = event => {
     event.preventDefault();
-
-    const errors = {};
-    if (!formValues.username) {
-      errors.username = t('errors.fieldRequired');
-    }
-    if (!formValues.password) {
-      errors.password = t('errors.fieldRequired');
-    }
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) {
+    if (!rules.validateAll()) {
       return;
     }
 
@@ -488,7 +488,9 @@ const LoginPage = ({ session, returnTo, auth, appName }) => {
       })
       .catch(error => {
         setLoading(false);
-        setStatusMessage(responseMessage(error, error.message || error.toString()));
+        if (!rules.applyServerErrors(error)) {
+          setStatusMessage(responseMessage(error, error.message || error.toString()));
+        }
       });
   };
 
@@ -514,7 +516,7 @@ const LoginPage = ({ session, returnTo, auth, appName }) => {
           loading={loading}
           loadingProvider={loadingProvider}
           formValues={formValues}
-          errors={fieldErrors}
+          rules={rules}
           onChange={handleInputChange}
           onSubmit={handleLogin}
           onSelectProvider={handleOidcLogin}

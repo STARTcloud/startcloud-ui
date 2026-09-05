@@ -5,7 +5,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
@@ -75,7 +78,40 @@ PageSearch.propTypes = {
   total: PropTypes.number.isRequired,
 };
 
-const isValidEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
+const NAME_LABELS = { name: 'profile.fields.displayName' };
+const PASSWORD_SCHEMA = {
+  required: ['newPassword', 'confirmPassword'],
+  properties: {
+    newPassword: { type: 'string' },
+    confirmPassword: { type: 'string', equals: 'newPassword' },
+  },
+};
+const PASSWORD_LABELS = {
+  newPassword: 'profile.security.changePassword.newPasswordPlaceholder',
+  confirmPassword: 'profile.security.changePassword.confirmPasswordPlaceholder',
+};
+const EMAIL_SCHEMA = {
+  required: ['newEmail'],
+  properties: { newEmail: { type: 'string' } },
+};
+const EMAIL_LABELS = { newEmail: 'profile.security.changeEmail.newEmailPlaceholder' };
+const SERVICE_ACCOUNT_SCHEMA = {
+  required: ['organization', 'description'],
+  properties: {
+    organization: { type: 'string' },
+    description: { type: 'string' },
+    expirationDays: { type: 'integer' },
+  },
+};
+const SERVICE_ACCOUNT_LABELS = {
+  organization: 'profile.serviceAccounts.organization',
+  description: 'profile.serviceAccounts.descriptionPlaceholder',
+  expirationDays: 'profile.serviceAccounts.expires',
+};
+const EMPTY_PASSWORD = { newPassword: '', confirmPassword: '' };
+const EMPTY_EMAIL = { newEmail: '' };
+const EXPIRATIONS = [30, 60, 90, 365];
 
 const userOf = current => current?.user || null;
 
@@ -146,20 +182,43 @@ const ProfilePage = ({
   const showSecurity = localAccounts && !oidc;
   const tabs = tabsFor({ showSecurity, oidc, issuerUrl });
   const [gravatarProfile, setGravatarProfile] = useState({});
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [displayName, setDisplayName] = useState(() => nameOf(currentUser));
+  const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD);
+  const [emailForm, setEmailForm] = useState(EMPTY_EMAIL);
+  const [nameForm, setNameForm] = useState(() => ({ name: nameOf(currentUser) }));
   const [activeTab, setActiveTab] = useState('profile');
   const [searchTerm, setSearchTerm] = useState('');
-  const [passwordErrors, setPasswordErrors] = useState({});
-  const [emailErrors, setEmailErrors] = useState({});
   const [serviceAccounts, setServiceAccounts] = useState([]);
   const [serviceAccountOrgs, setServiceAccountOrgs] = useState([]);
-  const [newServiceAccountOrg, setNewServiceAccountOrg] = useState(activeOrgUuid);
-  const [newServiceAccountDescription, setNewServiceAccountDescription] = useState('');
-  const [newServiceAccountExpiration, setNewServiceAccountExpiration] = useState(30);
+  const [serviceAccountForm, setServiceAccountForm] = useState(() => ({
+    organization: activeOrgUuid,
+    description: '',
+    expirationDays: 30,
+  }));
   const [newServiceAccountToken, setNewServiceAccountToken] = useState(null);
+  const nameRules = useFormRules({
+    formKey: 'displayName',
+    schema: NAME_SCHEMA,
+    values: nameForm,
+    labels: NAME_LABELS,
+  });
+  const passwordRules = useFormRules({
+    formKey: 'password',
+    schema: PASSWORD_SCHEMA,
+    values: passwordForm,
+    labels: PASSWORD_LABELS,
+  });
+  const emailRules = useFormRules({
+    formKey: 'email',
+    schema: EMAIL_SCHEMA,
+    values: emailForm,
+    labels: EMAIL_LABELS,
+  });
+  const serviceAccountRules = useFormRules({
+    formKey: 'serviceAccount',
+    schema: SERVICE_ACCOUNT_SCHEMA,
+    values: serviceAccountForm,
+    labels: SERVICE_ACCOUNT_LABELS,
+  });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
@@ -198,44 +257,22 @@ const ProfilePage = ({
     }
   };
 
-  const validatePasswordForm = () => {
-    const errors = {};
-    if (!newPassword) {
-      errors.newPassword = t('errors.fieldRequired', { ns: 'auth' });
-    } else if (newPassword.length < 6 || newPassword.length > 40) {
-      errors.newPassword = t('errors.passwordLength', { ns: 'auth' });
-    }
-    if (!confirmPassword) {
-      errors.confirmPassword = t('errors.fieldRequired', { ns: 'auth' });
-    } else if (confirmPassword !== newPassword) {
-      errors.confirmPassword = t('profile.errors.passwordsDoNotMatch');
-    }
-    return errors;
-  };
-
-  const validateEmailForm = () => {
-    const errors = {};
-    if (!newEmail) {
-      errors.newEmail = t('errors.fieldRequired', { ns: 'auth' });
-    } else if (!isValidEmail(newEmail)) {
-      errors.newEmail = t('errors.invalidEmail', { ns: 'auth' });
-    }
-    return errors;
-  };
+  const resetPasswordRules = passwordRules.reset;
+  const resetEmailRules = emailRules.reset;
+  const resetServiceAccountRules = serviceAccountRules.reset;
 
   const resetFormStates = useCallback(() => {
-    setPasswordErrors({});
-    setEmailErrors({});
-    setNewPassword('');
-    setConfirmPassword('');
-    setNewEmail('');
-  }, []);
+    setPasswordForm(EMPTY_PASSWORD);
+    setEmailForm(EMPTY_EMAIL);
+    resetPasswordRules();
+    resetEmailRules();
+  }, [resetPasswordRules, resetEmailRules]);
 
   const resetServiceAccountStates = useCallback(() => {
     setNewServiceAccountToken(null);
-    setNewServiceAccountDescription('');
-    setNewServiceAccountExpiration(30);
-  }, []);
+    setServiceAccountForm(previous => ({ ...previous, description: '', expirationDays: 30 }));
+    resetServiceAccountRules();
+  }, [resetServiceAccountRules]);
 
   const handleTabChange = useCallback(
     tab => {
@@ -429,9 +466,14 @@ const ProfilePage = ({
 
   const handleCreateServiceAccount = async e => {
     e.preventDefault();
+    if (!serviceAccountRules.validateAll()) {
+      return;
+    }
     const controller = new AbortController();
     try {
-      const targetOrg = serviceAccountOrgs.find(org => org.name === newServiceAccountOrg);
+      const targetOrg = serviceAccountOrgs.find(
+        org => org.name === serviceAccountForm.organization
+      );
 
       if (!targetOrg) {
         notify('danger', t('profile.errors.activeOrgNotFound'));
@@ -439,17 +481,16 @@ const ProfilePage = ({
       }
 
       const created = await account.serviceAccounts.create(
-        newServiceAccountDescription,
-        newServiceAccountExpiration,
+        serviceAccountForm.description,
+        serviceAccountForm.expirationDays,
         targetOrg.id
       );
       await loadServiceAccounts(controller.signal);
-      setNewServiceAccountDescription('');
-      setNewServiceAccountExpiration(30);
+      resetServiceAccountStates();
       setNewServiceAccountToken(created?.token || null);
       notify('success', t('profile.messages.serviceAccountCreated'));
     } catch (error) {
-      if (!isAbort(error)) {
+      if (!isAbort(error) && !serviceAccountRules.applyServerErrors(error)) {
         log.api.error('Error creating service account', {
           error: error.message,
         });
@@ -548,17 +589,16 @@ const ProfilePage = ({
 
   const handlePasswordChange = async e => {
     e.preventDefault();
+    if (!passwordRules.validateAll()) {
+      return;
+    }
     const controller = new AbortController();
-    const errors = validatePasswordForm();
-    setPasswordErrors(errors);
-    if (Object.keys(errors).length === 0) {
-      try {
-        await account.changePassword(currentUser.id, newPassword, controller.signal);
-        notify('success', t('profile.messages.passwordChanged'));
-      } catch (error) {
-        if (!isAbort(error)) {
-          notify('danger', t('profile.errors.changePasswordFailed', { error: error.message }));
-        }
+    try {
+      await account.changePassword(currentUser.id, passwordForm.newPassword, controller.signal);
+      notify('success', t('profile.messages.passwordChanged'));
+    } catch (error) {
+      if (!isAbort(error) && !passwordRules.applyServerErrors(error)) {
+        notify('danger', t('profile.errors.changePasswordFailed', { error: error.message }));
       }
     }
     controller.abort();
@@ -566,18 +606,17 @@ const ProfilePage = ({
 
   const handleEmailChange = async e => {
     e.preventDefault();
+    if (!emailRules.validateAll()) {
+      return;
+    }
     const controller = new AbortController();
-    const errors = validateEmailForm();
-    setEmailErrors(errors);
-    if (Object.keys(errors).length === 0) {
-      try {
-        await account.changeEmail(currentUser.id, newEmail, controller.signal);
-        notify('success', t('profile.messages.emailChanged'));
-        await refreshUserData();
-      } catch (error) {
-        if (!isAbort(error)) {
-          notify('danger', t('profile.errors.changeEmailFailed', { error: error.message }));
-        }
+    try {
+      await account.changeEmail(currentUser.id, emailForm.newEmail, controller.signal);
+      notify('success', t('profile.messages.emailChanged'));
+      await refreshUserData();
+    } catch (error) {
+      if (!isAbort(error) && !emailRules.applyServerErrors(error)) {
+        notify('danger', t('profile.errors.changeEmailFailed', { error: error.message }));
       }
     }
     controller.abort();
@@ -585,13 +624,16 @@ const ProfilePage = ({
 
   const handleDisplayNameChange = async e => {
     e.preventDefault();
+    if (!nameRules.validateAll()) {
+      return;
+    }
     const controller = new AbortController();
     try {
-      await account.changeName(currentUser.id, displayName, controller.signal);
+      await account.changeName(currentUser.id, nameForm.name, controller.signal);
       notify('success', t('profile.messages.nameChanged'));
       await refreshUserData();
     } catch (error) {
-      if (!isAbort(error)) {
+      if (!isAbort(error) && !nameRules.applyServerErrors(error)) {
         notify(
           'danger',
           responseMessage(error, t('profile.errors.changeNameFailed', { error: error.message }))
@@ -603,23 +645,27 @@ const ProfilePage = ({
 
   const renderProfileTab = () => (
     <div className="tab-pane fade show active">
-      <form onSubmit={handleDisplayNameChange} className="mb-4">
-        <label htmlFor="displayName" className="form-label">
-          <strong>{t('profile.fields.displayName')}</strong>
-        </label>
+      <form onSubmit={handleDisplayNameChange} className="mb-4" noValidate>
         <div className="col-md-4">
-          <input
-            type="text"
-            id="displayName"
-            className="form-control mb-2"
-            maxLength={255}
-            value={displayName}
-            onChange={event => setDisplayName(event.target.value)}
-            placeholder={currentUser.username}
-          />
-          <small className="form-text text-body-secondary d-block mb-2">
-            {t('profile.fields.displayNameHint')}
-          </small>
+          <FormErrorSummary errors={nameRules.summary} />
+          <Field
+            id={nameRules.idFor('name')}
+            label={<strong>{t('profile.fields.displayName')}</strong>}
+            hint={t('profile.fields.displayNameHint')}
+            error={nameRules.errors.name || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                value={nameForm.name}
+                onChange={event => setNameForm({ name: event.target.value })}
+                onBlur={() => nameRules.onBlur('name')}
+                placeholder={currentUser.username}
+              />
+            )}
+          </Field>
           <button className="btn btn-primary" type="submit">
             {t('profile.buttons.save')}
           </button>
@@ -674,31 +720,46 @@ const ProfilePage = ({
 
   const renderSecurityTab = () => (
     <div className="tab-pane fade show active">
-      <form onSubmit={handlePasswordChange}>
+      <form onSubmit={handlePasswordChange} noValidate>
         <h5>{t('profile.security.changePassword.title')}</h5>
-        <div className="form-group col-md-3 mb-3">
-          <input
-            type="password"
-            className="form-control"
-            placeholder={t('profile.security.changePassword.newPasswordPlaceholder')}
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-          />
-          {passwordErrors.newPassword && (
-            <div className="text-danger small">{passwordErrors.newPassword}</div>
-          )}
-        </div>
-        <div className="form-group col-md-3 mb-3">
-          <input
-            type="password"
-            className="form-control"
-            placeholder={t('profile.security.changePassword.confirmPasswordPlaceholder')}
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-          />
-          {passwordErrors.confirmPassword && (
-            <div className="text-danger small">{passwordErrors.confirmPassword}</div>
-          )}
+        <div className="col-md-3">
+          <FormErrorSummary errors={passwordRules.summary} />
+          <Field
+            id={passwordRules.idFor('newPassword')}
+            label={t('profile.security.changePassword.newPasswordPlaceholder')}
+            error={passwordRules.errors.newPassword || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="password"
+                className="form-control"
+                autoComplete="new-password"
+                value={passwordForm.newPassword}
+                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                onBlur={() => passwordRules.onBlur('newPassword')}
+              />
+            )}
+          </Field>
+          <Field
+            id={passwordRules.idFor('confirmPassword')}
+            label={t('profile.security.changePassword.confirmPasswordPlaceholder')}
+            error={passwordRules.errors.confirmPassword || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="password"
+                className="form-control"
+                autoComplete="new-password"
+                value={passwordForm.confirmPassword}
+                onChange={e =>
+                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                }
+                onBlur={() => passwordRules.onBlur('confirmPassword')}
+              />
+            )}
+          </Field>
         </div>
         <button className="btn btn-primary mb-3" type="submit">
           {t('profile.security.changePassword.button')}
@@ -706,15 +767,25 @@ const ProfilePage = ({
       </form>
       <form onSubmit={handleEmailChange} noValidate>
         <h5>{t('profile.security.changeEmail.title')}</h5>
-        <div className="form-group col-md-3 mb-3">
-          <input
-            type="email"
-            className="form-control"
-            placeholder={t('profile.security.changeEmail.newEmailPlaceholder')}
-            value={newEmail}
-            onChange={e => setNewEmail(e.target.value)}
-          />
-          {emailErrors.newEmail && <div className="text-danger small">{emailErrors.newEmail}</div>}
+        <div className="col-md-3">
+          <FormErrorSummary errors={emailRules.summary} />
+          <Field
+            id={emailRules.idFor('newEmail')}
+            label={t('profile.security.changeEmail.newEmailPlaceholder')}
+            error={emailRules.errors.newEmail || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="email"
+                className="form-control"
+                autoComplete="email"
+                value={emailForm.newEmail}
+                onChange={e => setEmailForm({ newEmail: e.target.value })}
+                onBlur={() => emailRules.onBlur('newEmail')}
+              />
+            )}
+          </Field>
         </div>
         <button className="btn btn-primary mb-3" type="submit">
           {t('profile.security.changeEmail.button')}
@@ -896,42 +967,76 @@ const ProfilePage = ({
   const renderServiceAccountsTab = () => (
     <div className="tab-pane fade show active">
       <h3>{t('profile.serviceAccounts.title')}</h3>
-      <form onSubmit={handleCreateServiceAccount}>
-        <div className="form-group col-md-3 mb-3">
-          <select
-            className="form-control"
-            value={newServiceAccountOrg}
-            onChange={e => setNewServiceAccountOrg(e.target.value)}
-            aria-label={t('profile.serviceAccounts.organization')}
+      <form onSubmit={handleCreateServiceAccount} noValidate>
+        <div className="col-md-3">
+          <FormErrorSummary errors={serviceAccountRules.summary} />
+          <Field
+            id={serviceAccountRules.idFor('organization')}
+            label={t('profile.serviceAccounts.organization')}
+            error={serviceAccountRules.errors.organization || ''}
           >
-            {serviceAccountOrgs.map(org => (
-              <option key={org.id} value={org.name}>
-                {org.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group col-md-3 mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder={t('profile.serviceAccounts.descriptionPlaceholder')}
-            value={newServiceAccountDescription}
-            onChange={e => setNewServiceAccountDescription(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group col-md-3 mb-3">
-          <select
-            className="form-control"
-            value={newServiceAccountExpiration}
-            onChange={e => setNewServiceAccountExpiration(Number(e.target.value))}
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                value={serviceAccountForm.organization}
+                onChange={e =>
+                  setServiceAccountForm({ ...serviceAccountForm, organization: e.target.value })
+                }
+                onBlur={() => serviceAccountRules.onBlur('organization')}
+              >
+                {serviceAccountOrgs.map(org => (
+                  <option key={org.id} value={org.name}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field
+            id={serviceAccountRules.idFor('description')}
+            label={t('profile.serviceAccounts.descriptionPlaceholder')}
+            error={serviceAccountRules.errors.description || ''}
           >
-            <option value={30}>{t('profile.serviceAccounts.expiration.30')}</option>
-            <option value={60}>{t('profile.serviceAccounts.expiration.60')}</option>
-            <option value={90}>{t('profile.serviceAccounts.expiration.90')}</option>
-            <option value={365}>{t('profile.serviceAccounts.expiration.365')}</option>
-          </select>
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                value={serviceAccountForm.description}
+                onChange={e =>
+                  setServiceAccountForm({ ...serviceAccountForm, description: e.target.value })
+                }
+                onBlur={() => serviceAccountRules.onBlur('description')}
+              />
+            )}
+          </Field>
+          <Field
+            id={serviceAccountRules.idFor('expirationDays')}
+            label={t('profile.serviceAccounts.expires')}
+            error={serviceAccountRules.errors.expirationDays || ''}
+          >
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                value={serviceAccountForm.expirationDays}
+                onChange={e =>
+                  setServiceAccountForm({
+                    ...serviceAccountForm,
+                    expirationDays: Number(e.target.value),
+                  })
+                }
+                onBlur={() => serviceAccountRules.onBlur('expirationDays')}
+              >
+                {EXPIRATIONS.map(days => (
+                  <option key={days} value={days}>
+                    {t(`profile.serviceAccounts.expiration.${days}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
         </div>
         <button className="btn btn-primary mb-3" type="submit">
           {t('profile.serviceAccounts.createButton')}

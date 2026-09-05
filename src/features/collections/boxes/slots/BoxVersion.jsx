@@ -4,14 +4,25 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { itemShape, providerShape, versionShape } from '../../../catalog/utils/itemShape';
 import { deleteProviderCascade, deleteVersionCascade } from '../adapter';
 import { api } from '../api';
+import {
+  DEPRECATION_LABELS,
+  DEPRECATION_SCHEMA,
+  PROVIDER_LABELS,
+  PROVIDER_SCHEMA,
+  VERSION_LABELS,
+  VERSION_SCHEMA,
+} from '../forms';
 import { canManageBox } from '../permissions';
 
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
+const EMPTY_DEPRECATION = { deprecationReason: '' };
 
 const slotShape = {
   item: itemShape.isRequired,
@@ -43,33 +54,46 @@ const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
       return false;
     });
 
-const VersionEditForm = ({ draft, error, onChange }) => {
+const VersionEditForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group col-md-3">
-        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
-        <input
-          type="text"
-          className="form-control"
-          id="versionNumber"
-          name="versionNumber"
-          value={draft.versionNumber}
-          onChange={onChange}
-          required
-        />
-        {error ? <div className="text-danger">{error}</div> : null}
-      </div>
-      <div className="form-group">
-        <label htmlFor="description">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="description"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-        />
-      </div>
+    <form noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('versionNumber')}
+        label={t('boxes.version.number')}
+        error={rules.errors.versionNumber || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            name="versionNumber"
+            value={draft.versionNumber}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('versionNumber')}
+          />
+        )}
+      </Field>
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+          />
+        )}
+      </Field>
     </form>
   );
 };
@@ -79,7 +103,7 @@ VersionEditForm.propTypes = {
     versionNumber: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
-  error: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -93,38 +117,38 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
     versionNumber: version.version,
     description: version.description || '',
   });
-  const [error, setError] = useState('');
   const [showDelete, setShowDelete] = useState(false);
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: VERSION_SCHEMA,
+    values: draft,
+    labels: VERSION_LABELS,
+    idPrefix: 'version-edit',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: value }));
-      if (name === 'versionNumber') {
-        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
 
   useEffect(() => {
     if (!editing) {
       return undefined;
     }
-    setEditor(<VersionEditForm draft={draft} error={error} onChange={onChange} />);
+    setEditor(<VersionEditForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setEditor(null);
-  }, [editing, draft, error, onChange, setEditor]);
+  }, [editing, draft, rules, onChange, setEditor]);
+
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
+  };
 
   const save = () => {
-    if (error) {
-      notify('danger', error);
+    if (!rules.validateAll()) {
       return;
     }
     const renamed = draft.versionNumber !== version.version;
-    if (renamed && (item.versions || []).some(entry => entry.version === draft.versionNumber)) {
-      notify('danger', t('boxes.version.exists'));
-      return;
-    }
     api.versions
       .update(org, item.name, version.version, draft)
       .then(() => {
@@ -137,6 +161,9 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
         }
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         notify('danger', responseMessage(requestError, t('boxes.version.updateError')));
       });
   };
@@ -166,15 +193,10 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
   if (editing) {
     return (
       <>
-        <button
-          type="button"
-          className="btn btn-success me-2"
-          onClick={save}
-          disabled={Boolean(error)}
-        >
+        <button type="button" className="btn btn-success me-2" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
-        <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
+        <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
           {t('boxes.buttons.cancel')}
         </button>
         {back}
@@ -234,7 +256,31 @@ BoxVersionBannerActions.propTypes = slotShape;
 const DeprecateButton = ({ onDeprecate }) => {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
-  const [reason, setReason] = useState('');
+  const [draft, setDraft] = useState(EMPTY_DEPRECATION);
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: DEPRECATION_SCHEMA,
+    values: draft,
+    labels: DEPRECATION_LABELS,
+    idPrefix: 'box-deprecate',
+  });
+
+  const close = () => {
+    setAsking(false);
+    setDraft(EMPTY_DEPRECATION);
+    rules.reset();
+  };
+
+  const submit = async event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    const ok = await onDeprecate(draft.deprecationReason.trim());
+    if (ok) {
+      close();
+    }
+  };
 
   if (!asking) {
     return (
@@ -249,32 +295,32 @@ const DeprecateButton = ({ onDeprecate }) => {
   }
 
   return (
-    <div className="d-flex gap-2 align-items-start flex-wrap">
-      <input
-        type="text"
-        className="form-control form-control-sm w-auto"
-        value={reason}
-        onChange={event => setReason(event.target.value)}
-        placeholder={t('boxes.version.deprecationReason')}
-      />
-      <button
-        type="button"
-        className="btn btn-sm btn-danger"
-        disabled={!reason.trim()}
-        onClick={async () => {
-          const ok = await onDeprecate(reason.trim());
-          if (ok) {
-            setAsking(false);
-            setReason('');
-          }
-        }}
+    <form className="flex-grow-1" onSubmit={submit} noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('deprecationReason')}
+        label={t('boxes.version.deprecationReason')}
+        error={rules.errors.deprecationReason || ''}
+        className="mb-2"
       >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control form-control-sm"
+            value={draft.deprecationReason}
+            onChange={event => setDraft({ deprecationReason: event.target.value })}
+            onBlur={() => rules.onBlur('deprecationReason')}
+          />
+        )}
+      </Field>
+      <button type="submit" className="btn btn-sm btn-danger me-2">
         {t('boxes.version.deprecate')}
       </button>
-      <button type="button" className="btn btn-sm btn-secondary" onClick={() => setAsking(false)}>
+      <button type="button" className="btn btn-sm btn-secondary" onClick={close}>
         {t('boxes.buttons.cancel')}
       </button>
-    </div>
+    </form>
   );
 };
 
@@ -361,34 +407,47 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
 
 BoxVersionNotesActions.propTypes = slotShape;
 
-const AddProviderForm = ({ draft, error, onChange }) => {
+const AddProviderForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
+    <form noValidate>
       <div className="add-provider-form">
-        <div className="form-group col-md-3">
-          <label htmlFor="providerName">{t('boxes.provider.name')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="providerName"
-            name="name"
-            value={draft.name}
-            onChange={onChange}
-            required
-          />
-          {error ? <div className="text-danger">{error}</div> : null}
-        </div>
-        <div className="form-group">
-          <label htmlFor="providerDescription">{t('boxes.provider.description')}</label>
-          <textarea
-            className="form-control"
-            id="providerDescription"
-            name="description"
-            value={draft.description}
-            onChange={onChange}
-          />
-        </div>
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('name')}
+          label={t('boxes.provider.name')}
+          error={rules.errors.name || ''}
+          className="form-group col-md-3"
+        >
+          {aria => (
+            <input
+              {...aria}
+              type="text"
+              className="form-control"
+              name="name"
+              value={draft.name}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('name')}
+            />
+          )}
+        </Field>
+        <Field
+          id={rules.idFor('description')}
+          label={t('boxes.provider.description')}
+          error={rules.errors.description || ''}
+          className="form-group"
+        >
+          {aria => (
+            <textarea
+              {...aria}
+              className="form-control"
+              name="description"
+              value={draft.description}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('description')}
+            />
+          )}
+        </Field>
       </div>
     </form>
   );
@@ -399,7 +458,7 @@ AddProviderForm.propTypes = {
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
-  error: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -410,38 +469,41 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
   const { user, org, reload, notify, setForm } = ctx;
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_PROVIDER);
-  const [error, setError] = useState('');
+  const rules = useFormRules({
+    formKey: 'provider',
+    schema: PROVIDER_SCHEMA,
+    values: draft,
+    labels: PROVIDER_LABELS,
+    idPrefix: 'provider-add',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: value }));
-      if (name === 'name') {
-        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
 
   useEffect(() => {
     if (!show) {
       return undefined;
     }
-    setForm(<AddProviderForm draft={draft} error={error} onChange={onChange} />);
+    setForm(<AddProviderForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setForm(null);
-  }, [show, draft, error, onChange, setForm]);
+  }, [show, draft, rules, onChange, setForm]);
 
   if (!canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
-  const save = () => {
-    if (!draft.name || error) {
-      notify('danger', t('boxes.validation.fixErrors'));
-      return;
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_PROVIDER);
+      rules.reset();
     }
-    if ((version.providers || []).some(provider => provider.name === draft.name)) {
-      notify('danger', t('boxes.provider.exists'));
+    setShow(!show);
+  };
+
+  const save = () => {
+    if (!rules.validateAll()) {
       return;
     }
     api.providers
@@ -450,9 +512,13 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
         notify('success', t('boxes.provider.created'));
         setShow(false);
         setDraft(EMPTY_PROVIDER);
+        rules.reset();
         reload();
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         notify('danger', responseMessage(requestError, t('boxes.provider.createError')));
       });
   };
@@ -462,17 +528,12 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
       <button
         type="button"
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
-        onClick={() => setShow(current => !current)}
+        onClick={toggle}
       >
         {show ? t('boxes.buttons.cancel') : t('boxes.provider.add')}
       </button>
       {show ? (
-        <button
-          type="button"
-          className="btn btn-success me-2"
-          onClick={save}
-          disabled={!draft.name || Boolean(error)}
-        >
+        <button type="button" className="btn btn-success me-2" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
       ) : null}

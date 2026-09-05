@@ -54,7 +54,50 @@
     "accessDenied": "Acceso denegado.",
     "notFound": "No encontrado.",
     "network": "No se pudo contactar con el servidor.",
-    "request": "La solicitud falló."
+    "request": "La solicitud falló.",
+    "validation": "La solicitud no pasó la validación.",
+    "conflict": "Un valor ya está en uso."
+  },
+  "validation": {
+    "errorPrefix": "Error:",
+    "summaryTitle": "Hay un problema",
+    "required": "Introduce {{label}}.",
+    "type": {
+      "string": "Introduce {{label}} como texto.",
+      "integer": "Introduce un número entero para {{label}}.",
+      "number": "Introduce un número para {{label}}.",
+      "boolean": "Elige activado o desactivado para {{label}}.",
+      "array": "Introduce {{label}} como una lista separada por comas.",
+      "object": "Introduce {{label}} como un conjunto de valores."
+    },
+    "minLength": "Introduce {{label}} de al menos {{minLength}} caracteres.",
+    "maxLength": "Introduce {{label}} de {{maxLength}} caracteres o menos.",
+    "pattern": {
+      "slug": "Usa solo letras, dígitos, guiones y puntos en {{label}}.",
+      "identifier": "Usa solo letras, dígitos, guiones, guiones bajos y puntos en {{label}}, sin empezar por guion ni punto.",
+      "hex": "Usa solo dígitos hexadecimales en {{label}}.",
+      "orgCode": "Introduce {{label}} como 6 caracteres hexadecimales (0-9, A-F).",
+      "providerName": "Usa solo letras minúsculas, dígitos y guiones bajos en {{label}}."
+    },
+    "minimum": "Introduce {{label}} de al menos {{minimum}}.",
+    "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
+    "range": "Introduce {{label}} entre {{minimum}} y {{maximum}}.",
+    "enum": "Elige uno de {{enum}} para {{label}}.",
+    "format": {
+      "email": "Introduce {{label}} con la forma nombre@ejemplo.com.",
+      "uri": "Introduce {{label}} como una URL completa, como https://ejemplo.com.",
+      "hostname": "Introduce {{label}} como un nombre de host.",
+      "ipv4": "Introduce {{label}} como una dirección IPv4, como 192.168.1.10."
+    },
+    "minItems": "Introduce al menos {{minItems}} entradas para {{label}}.",
+    "maxItems": "Introduce como máximo {{maxItems}} entradas para {{label}}.",
+    "unique": "{{value}} ya está en uso en {{scope}}; introduce otro valor para {{label}}.",
+    "equals": "{{label}} debe coincidir con {{other}}.",
+    "checksum": "Introduce un checksum {{type}} de {{length}} caracteres hexadecimales.",
+    "blocklist": "Introduce otra {{label}}; esta es demasiado común.",
+    "writable": "Introduce un directorio en el que el servicio pueda escribir para {{label}}.",
+    "reachable": "Introduce un host y un puerto que respondan para {{label}}.",
+    "unknown": "Revisa {{label}}."
   },
   "session": {
     "completing": "Completando el inicio de sesión…",
@@ -176,7 +219,6 @@
       "emailNotVerified": "Tu correo electrónico no está verificado."
     },
     "errors": {
-      "passwordsDoNotMatch": "¡Las contraseñas no coinciden!",
       "deleteAccountFailed": "Error al eliminar la cuenta. Por favor intenta de nuevo.",
       "verificationFailed": "Error al verificar el correo. Por favor intenta de nuevo o contacta soporte.",
       "activeOrgNotFound": "Error: No se pudo encontrar la organización activa",
@@ -244,10 +286,8 @@
     "totalBoxes": "Boxes Totales: {{count}}",
     "ssoManaged": "Gestionada por SSO",
     "ssoManagedHint": "Esta organización está gestionada por tu proveedor de identidad. La membresía, los roles, el renombrado y la eliminación se gestionan allí y se sincronizan automáticamente.",
-    "invalidOrgName": "Nombre de organización inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y puntos.",
     "rename": {
-      "sameNameError": "El nuevo nombre es el mismo que el anterior. Por favor ingresa un nombre diferente.",
-      "orgExistsError": "Ya existe una organización con este nombre. Por favor elige un nombre diferente.",
+      "name": "Nuevo nombre",
       "success": "¡Organización renombrada exitosamente!",
       "error": "Error al renombrar la organización. Por favor intenta de nuevo."
     },
@@ -276,6 +316,8 @@
     "updateError": "Error al actualizar la configuración.",
     "restartInitiated": "Reinicio del servidor iniciado",
     "restartFailed": "Error al reiniciar el servidor",
+    "restartNeeded": "Reinicia el servidor para aplicar los valores cambiados.",
+    "restartBadge": "reinicio",
     "testingSmtp": "Enviando correo de prueba...",
     "testSmtpSuccess": "¡Correo de prueba enviado con éxito! Revisa la bandeja de entrada del destinatario.",
     "testSmtpError": "Error al enviar el correo de prueba",
@@ -285,8 +327,7 @@
       "recipient": "Correo del destinatario",
       "placeholder": "Introduce una dirección de correo",
       "send": "Enviar correo de prueba",
-      "hint": "Envía un correo de prueba para verificar que tu configuración SMTP es correcta.",
-      "emailRequired": "Por favor indica una dirección de correo para la prueba."
+      "hint": "Envía un correo de prueba para verificar que tu configuración SMTP es correcta."
     },
     "settingsCount_one": "{{count}} configuración",
     "settingsCount_other": "{{count}} configuraciones",
@@ -353,20 +394,7 @@
     "oidcNote": "La configuración del proveedor OIDC se gestiona a través de la interfaz de Administración después de completar la configuración. Ve a Admin → Gestión de Configuración → Config Auth para añadir proveedores OIDC.",
     "updateSuccess": "Configuración actualizada exitosamente. Redirigiendo a la página de registro en 5 segundos...",
     "updateError": "Error al actualizar la configuración.",
-    "invalidToken": "Token de configuración inválido.",
-    "sqlitePath": "Ruta del Archivo de Base de Datos SQLite",
-    "validation": {
-      "invalidUrl": "Formato de URL inválido.",
-      "invalidHost": "Host inválido. Debe ser una dirección IP válida, FQDN o 'localhost'.",
-      "integerRequired": "El valor debe ser un entero.",
-      "booleanRequired": "El valor debe ser un booleano.",
-      "passwordLength": "La contraseña debe tener al menos 6 caracteres.",
-      "invalidEmail": "Dirección de correo electrónico inválida.",
-      "portRange": "El puerto debe estar entre 1 y 65535.",
-      "valueRequired": "El valor no puede estar vacío.",
-      "invalidFieldStructure": "Estructura de campo inválida",
-      "fixErrors": "Por favor corrige los errores en el formulario."
-    }
+    "invalidToken": "Token de configuración inválido."
   },
   "oidc": {
     "title": "Proveedores OIDC",
@@ -395,59 +423,7 @@
         "label": "Nombre del Proveedor",
         "placeholder": "p. ej., miempresa, enterprise, provider1",
         "hint": "Identificador interno (minúsculas, letras, números y guiones bajos solamente)"
-      },
-      "displayName": {
-        "label": "Nombre para Mostrar",
-        "placeholder": "p. ej., Iniciar sesión con el SSO de la empresa",
-        "hint": "Nombre mostrado a los usuarios en la página de inicio de sesión"
-      },
-      "issuer": {
-        "label": "URL del Emisor",
-        "placeholder": "https://tu-proveedor.com o https://tu-dominio.auth0.com",
-        "hint": "La URL del emisor OIDC (consulta la documentación de tu proveedor para la URL correcta)"
-      },
-      "clientId": {
-        "label": "ID de Cliente",
-        "placeholder": "Tu ID de cliente OAuth",
-        "hint": "ID de Cliente del registro de tu aplicación OAuth"
-      },
-      "clientSecret": {
-        "label": "Secreto de Cliente",
-        "placeholder": "Tu secreto de cliente OAuth",
-        "hint": "Secreto de cliente del registro de tu aplicación OAuth"
-      },
-      "scope": {
-        "label": "Alcance",
-        "hint": "Alcances OAuth (separados por espacios). El predeterminado suele ser suficiente."
-      },
-      "responseType": {
-        "label": "Tipo de Respuesta",
-        "options": {
-          "code": "Código de Autorización (Recomendado)",
-          "id_token": "Token ID",
-          "code_id_token": "Código + Token ID"
-        },
-        "hint": "Tipo de flujo OAuth. Usa \"code\" para la mayoría de los proveedores."
-      },
-      "iconUrl": {
-        "label": "URL del icono",
-        "placeholder": "https://example.com/logo.svg",
-        "hint": "Imagen opcional mostrada en el botón de inicio de sesión de este proveedor"
-      },
-      "enabled": {
-        "label": "Habilitar este proveedor para autenticación de usuarios"
       }
-    },
-    "config": {
-      "enabled": "Habilitar la autenticación OIDC de {{displayName}}",
-      "displayName": "Nombre mostrado en el botón de inicio de sesión",
-      "issuer": "URL del emisor OIDC de {{displayName}}",
-      "clientId": "ID de cliente OAuth de {{displayName}}",
-      "clientSecret": "Secreto de cliente OAuth de {{displayName}}",
-      "scope": "Alcances OAuth a solicitar",
-      "responseType": "Tipo de respuesta OAuth 2.0",
-      "prompt": "Parámetro prompt opcional",
-      "iconUrl": "Icono mostrado en el botón de inicio de sesión"
     },
     "instructions": {
       "title": "Instrucciones de Configuración",
@@ -463,9 +439,6 @@
       "message": "¿Estás seguro de que quieres eliminar el proveedor OIDC '{{providerName}}'? Esto no se puede deshacer."
     },
     "errors": {
-      "requiredFields": "Nombre del proveedor, nombre para mostrar, emisor, ID de cliente y secreto de cliente son obligatorios",
-      "invalidName": "El nombre del proveedor debe contener solo letras, números y guiones bajos",
-      "providerExists": "El proveedor OIDC '{{name}}' ya existe",
       "apiError": "Error {{action}} proveedor OIDC: {{error}}",
       "deleteError": "Error al eliminar proveedor OIDC: {{error}}"
     },
@@ -487,10 +460,6 @@
     "pageTitle": "Consola de Org",
     "title": "Consola de la Organización",
     "noActiveOrganization": "No hay una organización activa seleccionada. Elige una en el selector de organizaciones para administrarla.",
-    "orgNameRequired": "El nombre de la organización es obligatorio.",
-    "invalidOrgName": "Nombre de organización inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y puntos.",
-    "orgEmailRequired": "El correo de la organización es obligatorio.",
-    "orgExists": "Ya existe una organización con este nombre. Por favor elige un nombre diferente.",
     "orgUpdateSuccess": "¡Organización actualizada exitosamente!",
     "orgUpdateError": "Error al actualizar la organización. Por favor intenta de nuevo.",
     "tabs": {
@@ -610,11 +579,11 @@
     "modal": {
       "title": "Solicitar Unirse a {{orgName}}",
       "description": "Cuéntale a <strong>{{orgName}}</strong> por qué quieres unirte.",
+      "messageLabel": "Mensaje",
       "placeholder": "Ingresa tu razón para querer unirte a esta organización..."
     },
     "errors": {
       "load": "Error al cargar organizaciones",
-      "emptyMessage": "Por favor ingresa un mensaje explicando por qué quieres unirte",
       "requestFailed": "Error al solicitar unirse a {{orgName}}"
     },
     "messages": {
@@ -1287,28 +1256,10 @@
         "streamError": "Ocurrió un error de manejo de flujo durante la carga. Por favor intenta de nuevo."
       }
     },
-    "validation": {
-      "required": "¡Este campo es obligatorio!",
-      "invalidName": "Nombre inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y puntos.",
-      "invalidUrl": "Formato de URL inválido.",
-      "invalidHost": "Host inválido. Debe ser una dirección IP válida, FQDN o 'localhost'.",
-      "integerRequired": "El valor debe ser un entero.",
-      "booleanRequired": "El valor debe ser un booleano.",
-      "passwordLength": "La contraseña debe tener al menos 6 caracteres.",
-      "invalidEmail": "Dirección de correo electrónico inválida.",
-      "portRange": "El puerto debe estar entre 1 y 65535.",
-      "valueRequired": "El valor no puede estar vacío.",
-      "invalidFieldStructure": "Estructura de campo inválida",
-      "fixErrors": "Por favor corrige los errores en el formulario.",
-      "unsupportedChecksum": "¡Tipo de checksum no soportado!",
-      "invalidChecksumFormat": "¡Formato de checksum {{type}} inválido!",
-      "invalidOrgName": "Nombre de organización inválido. Solo se permiten caracteres alfanuméricos, guiones, guiones bajos y puntos."
-    },
     "iso": {
       "upload": {
         "drop": "Suelta una ISO aquí o haz clic para elegir una",
-        "uploading": "Subiendo… {{percent}}%",
-        "exists": "Ya existe un archivo para esta arquitectura."
+        "uploading": "Subiendo… {{percent}}%"
       },
       "file": {
         "deleted": "¡El archivo fue eliminado exitosamente!",
@@ -1336,7 +1287,6 @@
       "deleteError": "Error al eliminar proveedor. Por favor intenta de nuevo.",
       "created": "¡El proveedor fue creado exitosamente!",
       "createError": "Ocurrió un error al crear el proveedor.",
-      "exists": "Ya existe un proveedor con este nombre. Por favor elige un nombre diferente.",
       "updated": "¡El proveedor fue actualizado exitosamente!",
       "updateError": "No se pudo actualizar el proveedor",
       "name": "Nombre del Proveedor",
@@ -1346,7 +1296,6 @@
     "version": {
       "deleted": "¡La versión fue eliminada exitosamente!",
       "deleteError": "Error al eliminar versión. Por favor intenta de nuevo.",
-      "exists": "Ya existe una versión con este número. Por favor elige un número de versión diferente.",
       "updated": "¡La versión fue actualizada exitosamente!",
       "updateError": "Ocurrió un error al actualizar la versión.",
       "added": "¡La versión fue añadida exitosamente!",
@@ -1364,8 +1313,7 @@
       "deleteError": "No se pudo eliminar la arquitectura",
       "name": "Nombre de Arquitectura",
       "add": "Añadir Arquitectura",
-      "selectFile": "Por favor selecciona un archivo antes de añadir una arquitectura.",
-      "enterName": "Por favor ingresa un nombre de arquitectura.",
+      "file": "Archivo de box",
       "uploadStarting": "Iniciando carga de archivo...",
       "uploadAssembling": "Fragmentos de archivo subidos exitosamente. Ahora ensamblando en archivo final de box.\nEste proceso puede tomar varios minutos dependiendo del tamaño del archivo.\nPor favor mantén esta página abierta hasta que el ensamblaje esté completo.",
       "assembling": "Ensamblando fragmentos de archivo en archivo final de box, esto puede tomar varios minutos...",

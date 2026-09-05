@@ -6,7 +6,7 @@ import '../css/fonts.css';
 import { probeStatus } from '../contexts/StatusContext';
 import { createI18n } from '../lib/i18n';
 import { configureLogger, log } from '../lib/logger';
-import { fetchHealth, initRuntime } from '../lib/runtime';
+import { fetchHealth, initRuntime, loadRules } from '../lib/runtime';
 import { authMethod } from '../utils/capabilities';
 
 import App from './App';
@@ -34,7 +34,7 @@ probeStatus()
     });
     log.app.info('STARTcloud UI starting', { role: status.role, version: status.version });
     const { i18n, ready, getSupportedLanguages } = createI18n({ loadSupportedLanguages });
-    return ready.then(() => {
+    return Promise.all([ready, loadRules()]).then(() => {
       createRoot(document.getElementById('root')).render(
         <AppProvider i18n={i18n} status={status}>
           <App getSupportedLanguages={getSupportedLanguages} />

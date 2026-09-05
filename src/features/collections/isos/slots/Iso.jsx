@@ -5,63 +5,79 @@ import { FaCheck, FaGlobe, FaLock, FaPen, FaTrash, FaXmark } from 'react-icons/f
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { session } from '../../../../lib/runtime';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { itemShape, versionShape } from '../../../catalog/utils/itemShape';
 import { joinAsAdmin } from '../../../organizations/api/organizations';
 import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../boxes';
+import {
+  ISO_LABELS,
+  ISO_RENAME_SCHEMA,
+  ISO_SCHEMA,
+  VERSION_LABELS,
+  VERSION_SCHEMA,
+} from '../../boxes/forms';
 import { deleteVersionCascade } from '../adapter';
 import { api } from '../api';
 
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
 const EMPTY_ISO = { name: '', description: '', isPublic: false };
 const EMPTY_VERSION = { versionNumber: '', description: '' };
 
-const CreateIsoForm = ({ org, draft, nameError, onChange }) => {
+const CreateIsoForm = ({ org, draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
       <h4>{t('boxes.iso.createTitle')}</h4>
-      <form>
-        <div className="form-group">
-          <label htmlFor="isoName">
-            <strong>{t('boxes.iso.name')}:</strong>
-          </label>
-          <div className="form-group row align-items-center">
-            <div className="col-auto pe-0">
-              <input type="text" className="form-control" id="organization" value={org} disabled />
+      <form noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('name')}
+          label={<strong>{t('boxes.iso.name')}:</strong>}
+          error={rules.errors.name || ''}
+        >
+          {aria => (
+            <div className="row align-items-center g-0">
+              <div className="col-auto pe-0">
+                <input type="text" className="form-control" value={org} disabled />
+              </div>
+              <div className="col-auto px-1">
+                <span className="font-size-xl font-weight-bolder">/</span>
+              </div>
+              <div className="col-auto ps-0">
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  name="name"
+                  value={draft.name}
+                  onChange={onChange}
+                  onBlur={() => rules.onBlur('name')}
+                />
+              </div>
             </div>
-            <div className="col-auto px-1">
-              <span className="font-size-xl font-weight-bolder">/</span>
-            </div>
-            <div className="col-auto ps-0">
-              <input
-                type="text"
-                className="form-control"
-                id="isoName"
-                name="name"
-                value={draft.name}
-                onChange={onChange}
-                required
-              />
-            </div>
-          </div>
-          {nameError ? <div className="text-danger">{nameError}</div> : null}
-        </div>
-        <div className="form-group mt-2">
-          <label htmlFor="description">
-            <strong>{t('boxes.box.description')}:</strong>
-          </label>
-          <textarea
-            className="form-control"
-            id="description"
-            name="description"
-            value={draft.description}
-            onChange={onChange}
-            rows="3"
-          />
-        </div>
+          )}
+        </Field>
+        <Field
+          id={rules.idFor('description')}
+          label={<strong>{t('boxes.box.description')}:</strong>}
+          error={rules.errors.description || ''}
+        >
+          {aria => (
+            <textarea
+              {...aria}
+              className="form-control"
+              name="description"
+              value={draft.description}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('description')}
+              rows="3"
+            />
+          )}
+        </Field>
         <div className="form-group mt-2">
           <label htmlFor="visibilityPrivate">
             <strong>{t('boxes.box.visibility')}:</strong>
@@ -110,7 +126,7 @@ CreateIsoForm.propTypes = {
     description: PropTypes.string.isRequired,
     isPublic: PropTypes.bool.isRequired,
   }).isRequired,
-  nameError: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -176,7 +192,12 @@ export const IsoListActions = ({ ctx }) => {
   const { user, org, reload, notify } = ctx;
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_ISO);
-  const [nameError, setNameError] = useState('');
+  const rules = useFormRules({
+    formKey: 'iso',
+    schema: ISO_SCHEMA,
+    values: draft,
+    labels: ISO_LABELS,
+  });
 
   if (!org || !user) {
     return null;
@@ -185,20 +206,20 @@ export const IsoListActions = ({ ctx }) => {
   const onChange = event => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
-    if (name === 'name') {
-      setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-    }
   };
 
   const cancel = () => {
     setCreating(false);
     setDraft(EMPTY_ISO);
-    setNameError('');
+    rules.reset();
   };
 
   const create = () => {
     if (!creating) {
       setCreating(true);
+      return;
+    }
+    if (!rules.validateAll()) {
       return;
     }
     api.isos
@@ -209,6 +230,9 @@ export const IsoListActions = ({ ctx }) => {
         navigate(`/${org}/isos/${draft.name}`);
       })
       .catch(error => {
+        if (rules.applyServerErrors(error)) {
+          return;
+        }
         log.api.error('Error creating ISO', { isoName: draft.name, error: error.message });
         notify('danger', responseMessage(error, t('boxes.iso.createError')));
       });
@@ -221,12 +245,7 @@ export const IsoListActions = ({ ctx }) => {
       ) : null}
       {isOrgMember(user, org) ? (
         <>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-success"
-            onClick={create}
-            disabled={creating && (!draft.name || Boolean(nameError))}
-          >
+          <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.iso.create') : t('pages.addNew')}
           </button>
           {creating ? (
@@ -238,7 +257,7 @@ export const IsoListActions = ({ ctx }) => {
       ) : null}
       {isOrgManager(user, org) ? <RemoveAll org={org} reload={reload} notify={notify} /> : null}
       {creating ? (
-        <CreateIsoForm org={org} draft={draft} nameError={nameError} onChange={onChange} />
+        <CreateIsoForm org={org} draft={draft} rules={rules} onChange={onChange} />
       ) : null}
     </>
   );
@@ -255,13 +274,20 @@ IsoListActions.propTypes = {
 
 const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
   const { t } = useTranslation();
-  const [name, setName] = useState(iso.name);
-  const save = () => {
-    const next = name.trim();
-    if (!next || !NAME_RE.test(next)) {
-      notify('danger', t('boxes.validation.invalidName'));
+  const [form, setForm] = useState({ name: iso.name });
+  const rules = useFormRules({
+    formKey: 'iso',
+    schema: ISO_RENAME_SCHEMA,
+    values: form,
+    labels: ISO_LABELS,
+    idPrefix: 'iso-rename',
+  });
+  const save = event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
       return;
     }
+    const next = form.name.trim();
     api.isos
       .update(org, iso.name, { name: next })
       .then(() => {
@@ -269,36 +295,51 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
         onSaved(next);
       })
       .catch(error => {
+        if (rules.applyServerErrors(error)) {
+          return;
+        }
         log.api.error('Error updating ISO name', { error: error.message });
         notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
       });
   };
   return (
-    <span className="d-inline-flex align-items-center gap-1 me-2">
-      <input
-        type="text"
-        className="form-control form-control-sm w-auto"
-        value={name}
-        onChange={event => setName(event.target.value)}
-        aria-label={t('boxes.buttons.rename')}
-      />
-      <button
-        type="button"
-        className="btn btn-sm btn-success"
-        onClick={save}
-        title={t('boxes.buttons.save')}
+    <form className="d-inline-block me-2" onSubmit={save} noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('name')}
+        label={<span className="visually-hidden">{t('boxes.iso.name')}</span>}
+        error={rules.errors.name || ''}
+        className="mb-0"
       >
-        <FaCheck />
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-secondary"
-        onClick={onDone}
-        title={t('boxes.buttons.cancel')}
-      >
-        <FaXmark />
-      </button>
-    </span>
+        {aria => (
+          <span className="d-inline-flex align-items-center gap-1">
+            <input
+              {...aria}
+              type="text"
+              className="form-control form-control-sm w-auto"
+              value={form.name}
+              onChange={event => setForm({ name: event.target.value })}
+              onBlur={() => rules.onBlur('name')}
+            />
+            <button
+              type="submit"
+              className="btn btn-sm btn-success"
+              title={t('boxes.buttons.save')}
+            >
+              <FaCheck />
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={onDone}
+              title={t('boxes.buttons.cancel')}
+            >
+              <FaXmark />
+            </button>
+          </span>
+        )}
+      </Field>
+    </form>
   );
 };
 
@@ -414,34 +455,47 @@ IsoItemActions.propTypes = {
   }).isRequired,
 };
 
-const AddVersionForm = ({ draft, error, onChange }) => {
+const AddVersionForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group col-md-3">
-        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
-        <input
-          type="text"
-          className="form-control"
-          id="versionNumber"
-          name="versionNumber"
-          value={draft.versionNumber}
-          onChange={onChange}
-          required
-        />
-        {error ? <div className="text-danger">{error}</div> : null}
-      </div>
-      <div className="form-group">
-        <label htmlFor="versionDescription">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="versionDescription"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-          rows="3"
-        />
-      </div>
+    <form noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('versionNumber')}
+        label={t('boxes.version.number')}
+        error={rules.errors.versionNumber || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            name="versionNumber"
+            value={draft.versionNumber}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('versionNumber')}
+          />
+        )}
+      </Field>
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+            rows="3"
+          />
+        )}
+      </Field>
     </form>
   );
 };
@@ -451,7 +505,7 @@ AddVersionForm.propTypes = {
     versionNumber: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
-  error: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -461,38 +515,41 @@ export const IsoVersionsActions = ({ item, ctx }) => {
   const manage = isOrgManager(user, org);
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_VERSION);
-  const [error, setError] = useState('');
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: VERSION_SCHEMA,
+    values: draft,
+    labels: VERSION_LABELS,
+    idPrefix: 'iso-version',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: value }));
-      if (name === 'versionNumber') {
-        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
 
   useEffect(() => {
     if (!show) {
       return undefined;
     }
-    setForm(<AddVersionForm draft={draft} error={error} onChange={onChange} />);
+    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setForm(null);
-  }, [show, draft, error, onChange, setForm]);
+  }, [show, draft, rules, onChange, setForm]);
 
   if (!manage) {
     return null;
   }
 
-  const save = () => {
-    if (!draft.versionNumber || error) {
-      notify('danger', error || t('boxes.validation.required'));
-      return;
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_VERSION);
+      rules.reset();
     }
-    if ((item.versions || []).some(version => version.version === draft.versionNumber)) {
-      notify('danger', t('boxes.version.exists'));
+    setShow(!show);
+  };
+
+  const save = () => {
+    if (!rules.validateAll()) {
       return;
     }
     api.versions
@@ -501,9 +558,13 @@ export const IsoVersionsActions = ({ item, ctx }) => {
         notify('success', t('boxes.version.added'));
         setShow(false);
         setDraft(EMPTY_VERSION);
+        rules.reset();
         reload();
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         notify('danger', responseMessage(requestError, t('boxes.version.addError')));
       });
   };
@@ -513,17 +574,12 @@ export const IsoVersionsActions = ({ item, ctx }) => {
       <button
         type="button"
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
-        onClick={() => setShow(current => !current)}
+        onClick={toggle}
       >
         {show ? t('boxes.buttons.cancel') : t('boxes.version.add')}
       </button>
       {show ? (
-        <button
-          type="button"
-          className="btn btn-success"
-          onClick={save}
-          disabled={!draft.versionNumber || Boolean(error)}
-        >
+        <button type="button" className="btn btn-success" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
       ) : null}

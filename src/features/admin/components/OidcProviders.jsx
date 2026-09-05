@@ -1,87 +1,88 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCircleInfo, FaOpenid, FaPlus, FaShieldHalved, FaTrash } from 'react-icons/fa6';
 
+import ConfigField from '../../../components/common/ConfigField';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { fieldOf } from '../utils/schemaSections';
 
 const OIDC_PROVIDER_KEY = 'oidc-provider';
-const REQUIRED_FIELDS = ['name', 'displayName', 'issuer', 'clientId', 'clientSecret'];
-const EMPTY_FORM = {
-  name: '',
-  displayName: '',
-  issuer: '',
-  clientId: '',
-  clientSecret: '',
-  scope: 'openid profile email',
-  responseType: 'code',
-  iconUrl: '',
-  enabled: true,
+const LABELS = { name: 'oidc.form.name.label' };
+
+const defaultOf = property => {
+  if (property.default !== undefined) {
+    return property.default;
+  }
+  return property.type === 'boolean' ? false : '';
 };
 
-const providerConfigOf = (form, t) => {
-  const describe = key => t(`oidc.config.${key}`, { displayName: form.displayName });
+const emptyForm = schema => ({
+  name: '',
+  ...Object.fromEntries(
+    Object.entries(schema.properties || {}).map(([key, property]) => [key, defaultOf(property)])
+  ),
+});
+
+const formOf = (providerName, provider, schema) => ({
+  ...emptyForm(schema),
+  ...provider,
+  name: providerName,
+});
+
+const itemOf = form => Object.fromEntries(Object.entries(form).filter(([key]) => key !== 'name'));
+
+const itemErrors = (error, providerName) => {
+  const prefix = `/auth/oidc/providers/${providerName}`;
   return {
-    enabled: { type: 'boolean', value: form.enabled, description: describe('enabled') },
-    display_name: { type: 'string', value: form.displayName, description: describe('displayName') },
-    issuer: { type: 'string', value: form.issuer, description: describe('issuer') },
-    client_id: { type: 'string', value: form.clientId, description: describe('clientId') },
-    client_secret: {
-      type: 'password',
-      value: form.clientSecret,
-      description: describe('clientSecret'),
-    },
-    scope: { type: 'string', value: form.scope, description: describe('scope') },
-    response_type: {
-      type: 'select',
-      value: form.responseType,
-      options: ['code', 'id_token', 'code id_token'],
-      description: describe('responseType'),
-    },
-    prompt: { type: 'string', value: '', description: describe('prompt') },
-    icon_url: { type: 'string', value: form.iconUrl, description: describe('iconUrl') },
+    fieldErrors: (error.fieldErrors || []).map(entry =>
+      String(entry.pointer || '').startsWith(prefix)
+        ? { ...entry, pointer: entry.pointer.slice(prefix.length) }
+        : entry
+    ),
   };
 };
 
-const formOf = (providerName, providerConfig) => ({
-  name: providerName,
-  displayName: providerConfig.display_name?.value || '',
-  issuer: providerConfig.issuer?.value || '',
-  clientId: providerConfig.client_id?.value || '',
-  clientSecret: providerConfig.client_secret?.value || '',
-  scope: providerConfig.scope?.value || 'openid profile email',
-  responseType: providerConfig.response_type?.value || 'code',
-  iconUrl: providerConfig.icon_url?.value || '',
-  enabled: providerConfig.enabled?.value !== undefined ? providerConfig.enabled.value : false,
+const formSchema = ({ schema, taken, editing, scope }) => ({
+  required: ['name', ...(schema.required || [])],
+  properties: {
+    name: {
+      $ref: '#/$defs/providerName',
+      custom: value =>
+        !editing && taken.includes(value) ? { rule: 'unique', params: { scope, value } } : null,
+    },
+    ...(schema.properties || {}),
+  },
 });
 
-const ProviderCard = ({ providerName, providerConfig, onEdit }) => {
+const ProviderCard = ({ providerName, provider, onEdit }) => {
   const { t } = useTranslation();
   return (
     <div className="col-md-6 mb-3">
       <button
         type="button"
         className="card border-secondary w-100 text-start"
-        onClick={() => onEdit(providerName, providerConfig)}
+        onClick={() => onEdit(providerName, provider)}
       >
         <div className="card-header">
           <h6 className="mb-0">
             <FaOpenid className="me-2" />
-            {providerConfig.display_name?.value || providerName}
-            {providerConfig.enabled?.value && (
-              <span className="badge bg-success ms-2">{t('oidc.enabled')}</span>
-            )}
+            {provider.display_name || providerName}
+            {provider.enabled && <span className="badge bg-success ms-2">{t('oidc.enabled')}</span>}
           </h6>
         </div>
         <div className="card-body">
           <small className="text-muted">
-            <strong>{t('oidc.issuer')}:</strong> {providerConfig.issuer?.value}
+            <strong>{t('oidc.issuer')}:</strong> {provider.issuer}
             <br />
-            <strong>{t('oidc.clientId')}:</strong> {providerConfig.client_id?.value}
+            <strong>{t('oidc.clientId')}:</strong> {provider.client_id}
             <br />
-            <strong>{t('oidc.scope')}:</strong> {providerConfig.scope?.value}
+            <strong>{t('oidc.scope')}:</strong> {provider.scope}
           </small>
         </div>
       </button>
@@ -91,189 +92,99 @@ const ProviderCard = ({ providerName, providerConfig, onEdit }) => {
 
 ProviderCard.propTypes = {
   providerName: PropTypes.string.isRequired,
-  providerConfig: PropTypes.object.isRequired,
+  provider: PropTypes.object.isRequired,
   onEdit: PropTypes.func.isRequired,
 };
 
-const FormField = ({ id, label, required = false, hint, error, children }) => (
-  <div className="form-group mb-3">
-    <label htmlFor={id}>
-      {label} {required ? <span className="text-danger">*</span> : null}
-    </label>
-    {children}
-    {error ? <div className="text-danger small">{error}</div> : null}
-    {hint ? <small className="form-text text-muted">{hint}</small> : null}
-  </div>
-);
-
-FormField.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  required: PropTypes.bool,
-  hint: PropTypes.string,
-  error: PropTypes.string,
-  children: PropTypes.node.isRequired,
-};
-
-const ProviderForm = ({ form, errors, editing, busy, onChange }) => {
+const ProviderForm = ({ form, schema, rules, editing, busy, onChange }) => {
   const { t } = useTranslation();
-  const text = (field, type = 'text', extra = {}) => (
-    <input
-      type={type}
-      className="form-control"
-      id={field}
-      placeholder={t(`oidc.form.${field}.placeholder`, { defaultValue: '' })}
-      value={form[field]}
-      onChange={e => onChange(field, e.target.value)}
-      disabled={busy}
-      {...extra}
-    />
+  const fields = Object.entries(schema.properties || {}).map(([key, property], index) =>
+    fieldOf({
+      pointer: `/${key}`,
+      key,
+      property,
+      required: (schema.required || []).includes(key),
+      index,
+    })
   );
   return (
     <div className="row">
       <div className="col-md-6">
-        <FormField
-          id="name"
+        <Field
+          id={rules.idFor('name')}
           label={t('oidc.form.name.label')}
-          required
           hint={t('oidc.form.name.hint')}
-          error={errors.name}
+          error={rules.errors.name || ''}
+          required
         >
-          <input
-            type="text"
-            className="form-control"
-            id="name"
-            placeholder={t('oidc.form.name.placeholder')}
-            value={form.name}
-            onChange={e => onChange('name', e.target.value.toLowerCase())}
-            disabled={busy || editing}
-            required
+          {aria => (
+            <input
+              {...aria}
+              type="text"
+              className="form-control"
+              placeholder={t('oidc.form.name.placeholder')}
+              value={form.name}
+              onChange={e => onChange('name', e.target.value.toLowerCase())}
+              onBlur={() => rules.onBlur('name')}
+              disabled={busy || editing}
+            />
+          )}
+        </Field>
+      </div>
+      {fields.map(field => (
+        <div key={field.key} className={field.type === 'boolean' ? 'col-md-12' : 'col-md-6'}>
+          <ConfigField
+            field={field}
+            id={rules.idFor(field.key)}
+            value={form[field.key]}
+            error={rules.errors[field.key] || ''}
+            onChange={value => onChange(field.key, value)}
+            onBlur={() => rules.onBlur(field.key)}
           />
-        </FormField>
-      </div>
-      <div className="col-md-6">
-        <FormField
-          id="displayName"
-          label={t('oidc.form.displayName.label')}
-          required
-          hint={t('oidc.form.displayName.hint')}
-          error={errors.displayName}
-        >
-          {text('displayName', 'text', { required: true })}
-        </FormField>
-      </div>
-      <div className="col-md-12">
-        <FormField
-          id="issuer"
-          label={t('oidc.form.issuer.label')}
-          required
-          hint={t('oidc.form.issuer.hint')}
-          error={errors.issuer}
-        >
-          {text('issuer', 'url', { required: true })}
-        </FormField>
-      </div>
-      <div className="col-md-6">
-        <FormField
-          id="clientId"
-          label={t('oidc.form.clientId.label')}
-          required
-          hint={t('oidc.form.clientId.hint')}
-          error={errors.clientId}
-        >
-          {text('clientId', 'text', { required: true })}
-        </FormField>
-      </div>
-      <div className="col-md-6">
-        <FormField
-          id="clientSecret"
-          label={t('oidc.form.clientSecret.label')}
-          required
-          hint={t('oidc.form.clientSecret.hint')}
-          error={errors.clientSecret}
-        >
-          {text('clientSecret', 'password', { required: true })}
-        </FormField>
-      </div>
-      <div className="col-md-6">
-        <FormField id="scope" label={t('oidc.form.scope.label')} hint={t('oidc.form.scope.hint')}>
-          {text('scope')}
-        </FormField>
-      </div>
-      <div className="col-md-6">
-        <FormField
-          id="responseType"
-          label={t('oidc.form.responseType.label')}
-          hint={t('oidc.form.responseType.hint')}
-        >
-          <select
-            className="form-control"
-            id="responseType"
-            value={form.responseType}
-            onChange={e => onChange('responseType', e.target.value)}
-            disabled={busy}
-          >
-            <option value="code">{t('oidc.form.responseType.options.code')}</option>
-            <option value="id_token">{t('oidc.form.responseType.options.id_token')}</option>
-            <option value="code id_token">
-              {t('oidc.form.responseType.options.code_id_token')}
-            </option>
-          </select>
-        </FormField>
-      </div>
-      <div className="col-md-12">
-        <FormField
-          id="iconUrl"
-          label={t('oidc.form.iconUrl.label')}
-          hint={t('oidc.form.iconUrl.hint')}
-        >
-          {text('iconUrl', 'url')}
-        </FormField>
-      </div>
-      <div className="col-md-12">
-        <div className="form-check">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="enabled"
-            checked={form.enabled}
-            onChange={e => onChange('enabled', e.target.checked)}
-            disabled={busy}
-          />
-          <label className="form-check-label" htmlFor="enabled">
-            {t('oidc.form.enabled.label')}
-          </label>
         </div>
-      </div>
+      ))}
     </div>
   );
 };
 
 ProviderForm.propTypes = {
   form: PropTypes.object.isRequired,
-  errors: PropTypes.object.isRequired,
+  schema: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
   editing: PropTypes.bool.isRequired,
   busy: PropTypes.bool.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
 /**
- * The OIDC providers block of the auth configuration: one card per
- * provider opening the add-or-edit dialog, the delete confirmation, every
- * change written back through `onConfigUpdate` with the whole auth tree.
+ * The OIDC providers block of the auth configuration: one card per entry
+ * of the `providers` map opening the add-or-edit dialog, whose form is
+ * drawn from the map's item schema (`additionalProperties`) through
+ * `ConfigField` and validated through `useFormRules`, the delete
+ * confirmation, every change written back through `onProvidersUpdate`
+ * with the whole map.
  */
-const OidcProviders = ({ config, onConfigUpdate }) => {
+const OidcProviders = ({ providers, schema, onProvidersUpdate }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [formErrors, setFormErrors] = useState({});
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(() => emptyForm(schema));
   const [busy, setBusy] = useState(false);
   const [editingProvider, setEditingProvider] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [providerToDelete, setProviderToDelete] = useState(null);
-
-  const providers = config.auth?.oidc?.providers || {};
+  const taken = useMemo(() => Object.keys(providers), [providers]);
+  const scope = t('oidc.title');
+  const rulesSchema = useMemo(
+    () => formSchema({ schema, taken, editing: Boolean(editingProvider), scope }),
+    [schema, taken, editingProvider, scope]
+  );
+  const rules = useFormRules({
+    schema: rulesSchema,
+    values: form,
+    labels: LABELS,
+    idPrefix: 'oidc',
+  });
 
   const closeModal = () => {
     setShowModal(false);
@@ -282,44 +193,25 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
 
   const openAdd = () => {
     setEditingProvider(null);
-    setForm(EMPTY_FORM);
-    setFormErrors({});
+    setForm(emptyForm(schema));
+    rules.reset();
     setShowModal(true);
   };
 
-  const openEdit = (providerName, providerConfig) => {
+  const openEdit = (providerName, provider) => {
     setEditingProvider(providerName);
-    setFormErrors({});
-    setForm(formOf(providerName, providerConfig));
+    setForm(formOf(providerName, provider, schema));
+    rules.reset();
     setShowModal(true);
   };
 
   const onChange = (field, value) => {
     setForm(previous => ({ ...previous, [field]: value }));
-    setFormErrors(previous => ({ ...previous, [field]: '' }));
-  };
-
-  const validate = () => {
-    const errors = {};
-    REQUIRED_FIELDS.forEach(field => {
-      if (!form[field]) {
-        errors[field] = t('oidc.errors.requiredFields');
-      }
-    });
-    if (form.name && !/^[a-z0-9_]+$/i.test(form.name)) {
-      errors.name = t('oidc.errors.invalidName');
-    }
-    if (form.name && providers[form.name] && !editingProvider) {
-      errors.name = t('oidc.errors.providerExists', { name: form.name });
-    }
-    return errors;
   };
 
   const save = async e => {
     e.preventDefault();
-    const errors = validate();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+    if (!rules.validateAll()) {
       return;
     }
 
@@ -328,31 +220,28 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
       notify('info', editingProvider ? t('oidc.messages.updating') : t('oidc.messages.adding'), {
         key: OIDC_PROVIDER_KEY,
       });
-      const newConfig = { ...config };
-      newConfig.auth ||= {};
-      newConfig.auth.oidc ||= {};
-      newConfig.auth.oidc.providers ||= {};
-      newConfig.auth.oidc.providers[form.name] = providerConfigOf(form, t);
-      await onConfigUpdate(newConfig);
+      await onProvidersUpdate({ ...providers, [form.name]: itemOf(form) });
       notify(
         'success',
         t('oidc.messages.success', {
-          displayName: form.displayName,
+          displayName: form.display_name || form.name,
           action: editingProvider ? t('oidc.actions.updated') : t('oidc.actions.added'),
         }),
         { key: OIDC_PROVIDER_KEY }
       );
       closeModal();
-      setForm(EMPTY_FORM);
+      setForm(emptyForm(schema));
     } catch (error) {
-      notify(
-        'danger',
-        t('oidc.errors.apiError', {
-          action: editingProvider ? t('oidc.actions.updating') : t('oidc.actions.adding'),
-          error: error.response?.data?.message || error.message,
-        }),
-        { key: OIDC_PROVIDER_KEY }
-      );
+      if (!rules.applyServerErrors(itemErrors(error, form.name))) {
+        notify(
+          'danger',
+          t('oidc.errors.apiError', {
+            action: editingProvider ? t('oidc.actions.updating') : t('oidc.actions.adding'),
+            error: error.serverMessage || error.message,
+          }),
+          { key: OIDC_PROVIDER_KEY }
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -375,20 +264,17 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
     }
     try {
       notify('info', t('oidc.messages.deleting'), { key: OIDC_PROVIDER_KEY });
-      const newConfig = { ...config };
-      if (newConfig.auth?.oidc?.providers) {
-        delete newConfig.auth.oidc.providers[providerToDelete];
-      }
-      await onConfigUpdate(newConfig);
+      const remaining = Object.fromEntries(
+        Object.entries(providers).filter(([name]) => name !== providerToDelete)
+      );
+      await onProvidersUpdate(remaining);
       notify('success', t('oidc.messages.deleteSuccess', { providerName: providerToDelete }), {
         key: OIDC_PROVIDER_KEY,
       });
     } catch (error) {
       notify(
         'danger',
-        t('oidc.errors.deleteError', {
-          error: error.response?.data?.message || error.message,
-        }),
+        t('oidc.errors.deleteError', { error: error.serverMessage || error.message }),
         { key: OIDC_PROVIDER_KEY }
       );
     } finally {
@@ -411,7 +297,7 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
             <FaShieldHalved className="me-2" />
             {t('oidc.title')}
             <span className="badge bg-light text-dark ms-2">
-              {t('oidc.providerCount', { count: Object.keys(providers).length })}
+              {t('oidc.providerCount', { count: taken.length })}
             </span>
           </h6>
           <button type="button" className="btn btn-primary btn-sm" onClick={openAdd}>
@@ -421,13 +307,13 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
         </div>
         <div className="card-body">
           <p className="text-muted mb-3">{t('oidc.description')}</p>
-          {Object.keys(providers).length > 0 ? (
+          {taken.length > 0 ? (
             <div className="row">
-              {Object.entries(providers).map(([providerName, providerConfig]) => (
+              {Object.entries(providers).map(([providerName, provider]) => (
                 <ProviderCard
                   key={providerName}
                   providerName={providerName}
-                  providerConfig={providerConfig}
+                  provider={provider}
                   onEdit={openEdit}
                 />
               ))}
@@ -442,7 +328,7 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
       </div>
 
       <Modal show={showModal} onHide={closeModal} size="lg">
-        <form onSubmit={save}>
+        <form onSubmit={save} noValidate>
           <Modal.Header closeButton>
             <Modal.Title as="h5">
               <FaOpenid className="me-2" />
@@ -451,9 +337,11 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
           </Modal.Header>
           <Modal.Body>
             <p className="text-muted mb-4">{t('oidc.modal.description')}</p>
+            <FormErrorSummary errors={rules.summary} />
             <ProviderForm
               form={form}
-              errors={formErrors}
+              schema={schema}
+              rules={rules}
               editing={Boolean(editingProvider)}
               busy={busy}
               onChange={onChange}
@@ -513,8 +401,9 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
 };
 
 OidcProviders.propTypes = {
-  config: PropTypes.object.isRequired,
-  onConfigUpdate: PropTypes.func.isRequired,
+  providers: PropTypes.object.isRequired,
+  schema: PropTypes.object.isRequired,
+  onProvidersUpdate: PropTypes.func.isRequired,
 };
 
 export default OidcProviders;

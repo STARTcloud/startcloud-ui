@@ -4,24 +4,25 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { formatFileSize } from '../../../../utils/formatFileSize';
 import { responseMessage } from '../../../../utils/responseMessage';
+import { isVisible } from '../../../../utils/validation';
 import { architectureShape, itemShape, providerShape } from '../../../catalog/utils/itemShape';
 import { api } from '../api';
+import {
+  ARCHITECTURE_LABELS,
+  ARCHITECTURE_SCHEMA,
+  CHECKSUM_TYPES,
+  PROVIDER_LABELS,
+  PROVIDER_SCHEMA,
+} from '../forms';
 import { canManageBox } from '../permissions';
-
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
-const CHECKSUM_TYPES = ['NULL', 'MD5', 'SHA1', 'SHA256', 'SHA384', 'SHA512'];
-const CHECKSUM_PATTERNS = {
-  MD5: /^[a-fA-F0-9]{32}$/,
-  SHA1: /^[a-fA-F0-9]{40}$/,
-  SHA256: /^[a-fA-F0-9]{64}$/,
-  SHA384: /^[a-fA-F0-9]{96}$/,
-  SHA512: /^[a-fA-F0-9]{128}$/,
-};
 
 const slotShape = {
   item: itemShape.isRequired,
@@ -37,33 +38,46 @@ const slotShape = {
   }).isRequired,
 };
 
-const ProviderEditForm = ({ draft, error, onChange }) => {
+const ProviderEditForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group col-md-3">
-        <label htmlFor="name">{t('boxes.provider.name')}</label>
-        <input
-          type="text"
-          className="form-control"
-          id="name"
-          name="name"
-          value={draft.name}
-          onChange={onChange}
-          required
-        />
-        {error ? <div className="text-danger">{error}</div> : null}
-      </div>
-      <div className="form-group">
-        <label htmlFor="description">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="description"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-        />
-      </div>
+    <form noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('name')}
+        label={t('boxes.provider.name')}
+        error={rules.errors.name || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            name="name"
+            value={draft.name}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('name')}
+          />
+        )}
+      </Field>
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+          />
+        )}
+      </Field>
     </form>
   );
 };
@@ -73,7 +87,7 @@ ProviderEditForm.propTypes = {
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
-  error: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -87,44 +101,38 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
     name: provider.name,
     description: provider.description || '',
   });
-  const [error, setError] = useState('');
   const [showDelete, setShowDelete] = useState(false);
+  const rules = useFormRules({
+    formKey: 'provider',
+    schema: PROVIDER_SCHEMA,
+    values: draft,
+    labels: PROVIDER_LABELS,
+    idPrefix: 'provider-edit',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: value }));
-      if (name === 'name') {
-        setError(value && NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
 
   useEffect(() => {
     if (!editing) {
       return undefined;
     }
-    setEditor(<ProviderEditForm draft={draft} error={error} onChange={onChange} />);
+    setEditor(<ProviderEditForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setEditor(null);
-  }, [editing, draft, error, onChange, setEditor]);
+  }, [editing, draft, rules, onChange, setEditor]);
 
-  const save = async () => {
-    if (error) {
-      notify('danger', error);
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
+  };
+
+  const save = () => {
+    if (!rules.validateAll()) {
       return;
     }
     const renamed = draft.name !== provider.name;
-    if (renamed) {
-      const exists = await api.providers
-        .get(org, item.name, version, draft.name)
-        .then(Boolean)
-        .catch(() => false);
-      if (exists) {
-        notify('danger', t('boxes.provider.exists'));
-        return;
-      }
-    }
     api.providers
       .update(org, item.name, version, provider.name, draft)
       .then(() => {
@@ -137,6 +145,9 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
         }
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         log.api.error('Error updating provider', {
           providerName: draft.name,
           error: requestError.message,
@@ -171,15 +182,10 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
   if (editing) {
     return (
       <>
-        <button
-          type="button"
-          className="btn btn-success me-2"
-          onClick={save}
-          disabled={Boolean(error)}
-        >
+        <button type="button" className="btn btn-success me-2" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
-        <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
+        <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
           {t('boxes.buttons.cancel')}
         </button>
         {back}
@@ -245,90 +251,120 @@ UploadProgress.propTypes = {
   progress: PropTypes.number.isRequired,
 };
 
-const AddArchitectureForm = ({ draft, errors, file, progress, onChange, onFile }) => {
+const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile }) => {
   const { t } = useTranslation();
+  const { file } = draft;
   return (
     <div className="add-architecture-form">
-      <div className="form-group">
+      <form noValidate>
+        <FormErrorSummary errors={rules.summary} />
         <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
-            id="defaultBoxSwitch"
+            id={rules.idFor('defaultBox')}
             name="defaultBox"
             checked={draft.defaultBox}
             onChange={onChange}
           />
-          <label className="form-check-label" htmlFor="defaultBoxSwitch">
+          <label className="form-check-label" htmlFor={rules.idFor('defaultBox')}>
             {t('boxes.architecture.defaultBox')}
           </label>
         </div>
-        <div className="mb-3">
-          <label className="btn btn-outline-primary">
-            <input
-              type="file"
-              onChange={onFile}
-              className="d-none"
-              accept=".box,application/octet-stream"
-            />
-            {t('boxes.architecture.chooseFile')}
-          </label>
-          {file ? (
-            <div className="mt-2">
-              <small className="text-muted">
-                {t('boxes.architecture.selected', {
-                  name: file.name,
-                  size: formatFileSize(file.size),
-                })}
-              </small>
+        <Field
+          id={rules.idFor('file')}
+          label={t('boxes.architecture.file')}
+          error={rules.errors.file || ''}
+        >
+          {aria => (
+            <div>
+              <label className="btn btn-outline-primary">
+                <input
+                  {...aria}
+                  type="file"
+                  onChange={onFile}
+                  onBlur={() => rules.onBlur('file')}
+                  className="d-none"
+                  accept=".box,application/octet-stream"
+                />
+                {t('boxes.architecture.chooseFile')}
+              </label>
+              {file ? (
+                <div className="mt-2">
+                  <small className="text-muted">
+                    {t('boxes.architecture.selected', {
+                      name: file.name,
+                      size: formatFileSize(file.size),
+                    })}
+                  </small>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
+          )}
+        </Field>
         {file ? <UploadProgress file={file} progress={progress} /> : null}
-        <div className="form-group col-md-3">
-          <label htmlFor="architectureName">{t('boxes.architecture.name')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="architectureName"
-            name="name"
-            value={draft.name}
-            onChange={onChange}
-            required
-          />
-          {errors.name ? <div className="text-danger">{errors.name}</div> : null}
-        </div>
-        <div className="form-group col-md-3">
-          <label htmlFor="checksumType">{t('boxes.architecture.checksumType')}</label>
-          <select
-            className="form-control"
-            id="checksumType"
-            name="checksumType"
-            value={draft.checksumType}
-            onChange={onChange}
-          >
-            {CHECKSUM_TYPES.map(type => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-        {draft.checksumType !== 'NULL' ? (
-          <div className="form-group">
-            <label htmlFor="checksum">{t('boxes.architecture.checksum')}</label>
+        <Field
+          id={rules.idFor('name')}
+          label={t('boxes.architecture.name')}
+          error={rules.errors.name || ''}
+          className="form-group col-md-3"
+        >
+          {aria => (
             <input
+              {...aria}
               type="text"
               className="form-control"
-              id="checksum"
-              name="checksum"
-              value={draft.checksum}
+              name="name"
+              value={draft.name}
               onChange={onChange}
+              onBlur={() => rules.onBlur('name')}
             />
-            {errors.checksum ? <div className="text-danger">{errors.checksum}</div> : null}
-          </div>
+          )}
+        </Field>
+        <Field
+          id={rules.idFor('checksumType')}
+          label={t('boxes.architecture.checksumType')}
+          error={rules.errors.checksumType || ''}
+          className="form-group col-md-3"
+        >
+          {aria => (
+            <select
+              {...aria}
+              className="form-select"
+              name="checksumType"
+              value={draft.checksumType}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('checksumType')}
+            >
+              {CHECKSUM_TYPES.map(type => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        {isVisible(ARCHITECTURE_SCHEMA.properties.checksum, [draft]) ? (
+          <Field
+            id={rules.idFor('checksum')}
+            label={t('boxes.architecture.checksum')}
+            error={rules.errors.checksum || ''}
+            className="form-group"
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                name="checksum"
+                value={draft.checksum}
+                onChange={onChange}
+                onBlur={() => rules.onBlur('checksum')}
+              />
+            )}
+          </Field>
         ) : null}
-      </div>
+      </form>
     </div>
   );
 };
@@ -339,56 +375,20 @@ AddArchitectureForm.propTypes = {
     defaultBox: PropTypes.bool.isRequired,
     checksumType: PropTypes.string.isRequired,
     checksum: PropTypes.string.isRequired,
+    file: PropTypes.object,
   }).isRequired,
-  errors: PropTypes.shape({ name: PropTypes.string, checksum: PropTypes.string }).isRequired,
-  file: PropTypes.object,
+  rules: formRulesShape.isRequired,
   progress: PropTypes.number.isRequired,
   onChange: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
 };
 
-const EMPTY_ARCHITECTURE = { name: '', defaultBox: false, checksumType: 'NULL', checksum: '' };
-
-const checksumError = (checksum, type, t) => {
-  if (type === 'NULL') {
-    return '';
-  }
-  if (!checksum) {
-    return t('boxes.validation.required');
-  }
-  const pattern = CHECKSUM_PATTERNS[type];
-  if (!pattern) {
-    return t('boxes.validation.unsupportedChecksum');
-  }
-  return pattern.test(checksum) ? '' : t('boxes.validation.invalidChecksumFormat', { type });
-};
-
-const EMPTY_ERRORS = { name: '', checksum: '' };
-
-const useArchitectureDraft = t => {
-  const [state, setState] = useState({ draft: EMPTY_ARCHITECTURE, errors: EMPTY_ERRORS });
-
-  const onChange = useCallback(
-    event => {
-      const { name, value, type, checked } = event.target;
-      const next = type === 'checkbox' ? checked : value;
-      setState(current => {
-        const draft = { ...current.draft, [name]: next };
-        return {
-          draft,
-          errors: {
-            name: draft.name && NAME_RE.test(draft.name) ? '' : t('boxes.validation.invalidName'),
-            checksum: checksumError(draft.checksum, draft.checksumType, t),
-          },
-        };
-      });
-    },
-    [t]
-  );
-
-  const reset = () => setState({ draft: EMPTY_ARCHITECTURE, errors: EMPTY_ERRORS });
-
-  return { draft: state.draft, errors: state.errors, onChange, reset };
+const EMPTY_ARCHITECTURE = {
+  name: '',
+  defaultBox: false,
+  checksumType: 'NULL',
+  checksum: '',
+  file: null,
 };
 
 export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
@@ -396,11 +396,26 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
   const status = useStatus();
   const { user, org, reload, notify, setForm } = ctx;
   const [show, setShow] = useState(false);
-  const [file, setFile] = useState(null);
+  const [draft, setDraft] = useState(EMPTY_ARCHITECTURE);
   const [progress, setProgress] = useState(0);
-  const { draft, errors, onChange, reset } = useArchitectureDraft(t);
+  const rules = useFormRules({
+    formKey: 'architecture',
+    schema: ARCHITECTURE_SCHEMA,
+    values: draft,
+    labels: ARCHITECTURE_LABELS,
+    idPrefix: 'architecture-add',
+  });
 
-  const onFile = useCallback(event => setFile(event.target.files[0] || null), []);
+  const onChange = useCallback(event => {
+    const { name, value, type, checked } = event.target;
+    const next = type === 'checkbox' ? checked : value;
+    setDraft(current => ({ ...current, [name]: next }));
+  }, []);
+
+  const onFile = useCallback(event => {
+    const file = event.target.files[0] || null;
+    setDraft(current => ({ ...current, file }));
+  }, []);
 
   useEffect(() => {
     if (!show) {
@@ -409,15 +424,14 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
     setForm(
       <AddArchitectureForm
         draft={draft}
-        errors={errors}
-        file={file}
+        rules={rules}
         progress={progress}
         onChange={onChange}
         onFile={onFile}
       />
     );
     return () => setForm(null);
-  }, [show, draft, errors, file, progress, onChange, onFile, setForm]);
+  }, [show, draft, rules, progress, onChange, onFile, setForm]);
 
   if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
@@ -435,19 +449,24 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
     }
   };
 
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_ARCHITECTURE);
+      setProgress(0);
+      rules.reset();
+    }
+    setShow(!show);
+  };
+
   const save = async () => {
-    if (!file) {
-      notify('danger', t('boxes.architecture.selectFile'));
+    if (!rules.validateAll()) {
       return;
     }
-    if (!draft.name) {
-      notify('danger', t('boxes.architecture.enterName'));
-      return;
-    }
+    const { file, ...fields } = draft;
     notify('info', t('boxes.architecture.uploadStarting'));
     setProgress(0);
     try {
-      await api.architectures.create(org, item.name, version, provider.name, draft);
+      await api.architectures.create(org, item.name, version, provider.name, fields);
       const result = await api.files.upload(
         file,
         {
@@ -465,30 +484,30 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
         notify('info', t('boxes.architecture.uploadAssembling'));
       }
       setShow(false);
-      setFile(null);
+      setDraft(EMPTY_ARCHITECTURE);
       setProgress(0);
-      reset();
+      rules.reset();
       reload();
     } catch (error) {
+      if (rules.applyServerErrors(error)) {
+        return;
+      }
       log.file.error('Upload failed', { error: error.message, stack: error.stack });
       notify('danger', responseMessage(error, t(error.message)));
     }
   };
-
-  const disabled =
-    Boolean(errors.name) || !file || (draft.checksumType !== 'NULL' && !draft.checksum);
 
   return (
     <div>
       <button
         type="button"
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
-        onClick={() => setShow(current => !current)}
+        onClick={toggle}
       >
         {show ? t('boxes.buttons.cancel') : t('boxes.architecture.add')}
       </button>
       {show ? (
-        <button type="button" className="btn btn-success" onClick={save} disabled={disabled}>
+        <button type="button" className="btn btn-success" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
       ) : null}

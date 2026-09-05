@@ -5,18 +5,43 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { ORG_NAME_PATTERN } from '../../../utils/organizations';
 import { responseMessage } from '../../../utils/responseMessage';
-import { adminShape } from '../utils/processConfig';
+import { adminShape } from '../utils/adminShape';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 
+const RENAME_SCHEMA = {
+  required: ['organization'],
+  properties: { organization: { type: 'string' } },
+};
+const RENAME_LABELS = { organization: 'orgUserManager.rename.name' };
+const EMPTY_RENAME = { organization: '' };
+
+const EDIT_SCHEMA = {
+  properties: {
+    org_code: { type: 'string' },
+    email: { type: 'string' },
+    description: { type: 'string' },
+    accessMode: { type: 'string' },
+    defaultRole: { type: 'string' },
+  },
+};
+const EDIT_LABELS = {
+  org_code: 'orgUserManager.editModal.orgCode',
+  email: 'orgUserManager.editModal.orgEmail',
+  description: 'orgUserManager.editModal.description',
+  accessMode: 'orgUserManager.editModal.accessMode',
+  defaultRole: 'orgUserManager.editModal.defaultRole',
+};
 const EMPTY_EDIT = {
-  orgCode: '',
+  org_code: '',
   email: '',
   description: '',
   accessMode: 'private',
@@ -24,107 +49,128 @@ const EMPTY_EDIT = {
 };
 
 const editOf = details => ({
-  orgCode: details.org_code || '',
+  org_code: details.org_code || '',
   email: details.email || '',
   description: details.description || '',
   accessMode: details.access_mode || 'private',
   defaultRole: details.default_role || 'member',
 });
 
-const EditOrganizationModal = ({ organization, draft, onChange, onClose, onSave }) => {
+const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, onSave }) => {
   const { t } = useTranslation();
   return (
     <Modal show={Boolean(organization)} onHide={onClose}>
-      <Modal.Header closeButton>
-        <Modal.Title as="h5">
-          {t('orgUserManager.editModal.title', { orgName: organization?.name || '' })}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <div className="form-group mb-3">
-          <label htmlFor="editOrgCode">{t('orgUserManager.editModal.orgCode')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="editOrgCode"
-            value={draft.orgCode}
-            onChange={e =>
-              onChange('orgCode', e.target.value.toUpperCase().replace(/[^0-9A-F]/g, ''))
-            }
-            maxLength="6"
-            pattern="[0-9A-F]{6}"
-          />
-          <small className="form-text text-muted">
-            {t('orgUserManager.editModal.orgCodeHint')}
-          </small>
-        </div>
-        <div className="form-group mb-3">
-          <label htmlFor="editOrgEmail">{t('orgUserManager.editModal.orgEmail')}</label>
-          <input
-            type="email"
-            className="form-control"
-            id="editOrgEmail"
-            value={draft.email}
-            onChange={e => onChange('email', e.target.value)}
-          />
-          <small className="form-text text-muted">
-            {t('orgUserManager.editModal.orgEmailHint')}
-          </small>
-        </div>
-        <div className="form-group mb-3">
-          <label htmlFor="editOrgDescription">{t('orgUserManager.editModal.description')}</label>
-          <textarea
-            className="form-control"
-            id="editOrgDescription"
-            value={draft.description}
-            onChange={e => onChange('description', e.target.value)}
-            rows="3"
-          />
-        </div>
-        <div className="form-group mb-3">
-          <label htmlFor="editOrgAccessMode">{t('orgUserManager.editModal.accessMode')}</label>
-          <select
-            className="form-control"
-            id="editOrgAccessMode"
-            value={draft.accessMode}
-            onChange={e => onChange('accessMode', e.target.value)}
+      <form onSubmit={onSave} noValidate>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">
+            {t('orgUserManager.editModal.title', { orgName: organization?.name || '' })}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FormErrorSummary errors={rules.summary} />
+          <Field
+            id={rules.idFor('org_code')}
+            label={t('orgUserManager.editModal.orgCode')}
+            hint={t('orgUserManager.editModal.orgCodeHint')}
+            error={rules.errors.org_code || ''}
           >
-            <option value="private">{t('orgUserManager.editModal.accessModes.private')}</option>
-            <option value="invite_only">
-              {t('orgUserManager.editModal.accessModes.inviteOnly')}
-            </option>
-            <option value="request_to_join">
-              {t('orgUserManager.editModal.accessModes.requestToJoin')}
-            </option>
-          </select>
-          <small className="form-text text-muted">
-            {t('orgUserManager.editModal.accessModeHint')}
-          </small>
-        </div>
-        <div className="form-group mb-3">
-          <label htmlFor="editOrgDefaultRole">{t('orgUserManager.editModal.defaultRole')}</label>
-          <select
-            className="form-control"
-            id="editOrgDefaultRole"
-            value={draft.defaultRole}
-            onChange={e => onChange('defaultRole', e.target.value)}
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                value={draft.org_code}
+                onChange={e => onChange('org_code', e.target.value.toUpperCase())}
+                onBlur={() => rules.onBlur('org_code')}
+              />
+            )}
+          </Field>
+          <Field
+            id={rules.idFor('email')}
+            label={t('orgUserManager.editModal.orgEmail')}
+            hint={t('orgUserManager.editModal.orgEmailHint')}
+            error={rules.errors.email || ''}
           >
-            <option value="member">{t('roles.member')}</option>
-            <option value="admin">{t('roles.admin')}</option>
-          </select>
-          <small className="form-text text-muted">
-            {t('orgUserManager.editModal.defaultRoleHint')}
-          </small>
-        </div>
-      </Modal.Body>
-      <Modal.Footer>
-        <button type="button" className="btn btn-secondary" onClick={onClose}>
-          {t('admin.buttons.cancel')}
-        </button>
-        <button type="button" className="btn btn-primary" onClick={onSave}>
-          {t('admin.buttons.save')}
-        </button>
-      </Modal.Footer>
+            {aria => (
+              <input
+                {...aria}
+                type="email"
+                className="form-control"
+                value={draft.email}
+                onChange={e => onChange('email', e.target.value)}
+                onBlur={() => rules.onBlur('email')}
+              />
+            )}
+          </Field>
+          <Field
+            id={rules.idFor('description')}
+            label={t('orgUserManager.editModal.description')}
+            error={rules.errors.description || ''}
+          >
+            {aria => (
+              <textarea
+                {...aria}
+                className="form-control"
+                value={draft.description}
+                onChange={e => onChange('description', e.target.value)}
+                onBlur={() => rules.onBlur('description')}
+                rows="3"
+              />
+            )}
+          </Field>
+          <Field
+            id={rules.idFor('accessMode')}
+            label={t('orgUserManager.editModal.accessMode')}
+            hint={t('orgUserManager.editModal.accessModeHint')}
+            error={rules.errors.accessMode || ''}
+          >
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                value={draft.accessMode}
+                onChange={e => onChange('accessMode', e.target.value)}
+                onBlur={() => rules.onBlur('accessMode')}
+              >
+                <option value="private">{t('orgUserManager.editModal.accessModes.private')}</option>
+                <option value="invite_only">
+                  {t('orgUserManager.editModal.accessModes.inviteOnly')}
+                </option>
+                <option value="request_to_join">
+                  {t('orgUserManager.editModal.accessModes.requestToJoin')}
+                </option>
+              </select>
+            )}
+          </Field>
+          <Field
+            id={rules.idFor('defaultRole')}
+            label={t('orgUserManager.editModal.defaultRole')}
+            hint={t('orgUserManager.editModal.defaultRoleHint')}
+            error={rules.errors.defaultRole || ''}
+          >
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                value={draft.defaultRole}
+                onChange={e => onChange('defaultRole', e.target.value)}
+                onBlur={() => rules.onBlur('defaultRole')}
+              >
+                <option value="member">{t('roles.member')}</option>
+                <option value="admin">{t('roles.admin')}</option>
+              </select>
+            )}
+          </Field>
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            {t('admin.buttons.cancel')}
+          </button>
+          <button type="submit" className="btn btn-primary">
+            {t('admin.buttons.save')}
+          </button>
+        </Modal.Footer>
+      </form>
     </Modal>
   );
 };
@@ -132,32 +178,45 @@ const EditOrganizationModal = ({ organization, draft, onChange, onClose, onSave 
 EditOrganizationModal.propTypes = {
   organization: PropTypes.shape({ name: PropTypes.string.isRequired }),
   draft: PropTypes.shape({
-    orgCode: PropTypes.string.isRequired,
+    org_code: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
     accessMode: PropTypes.string.isRequired,
     defaultRole: PropTypes.string.isRequired,
   }).isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
 };
 
-const OrgTitle = ({ org, renaming, newName, onNameChange, onRename, onCancel }) => {
+const OrgTitle = ({ org, renaming, rename, rules, onNameChange, onRename, onCancel }) => {
   const { t } = useTranslation();
   if (renaming) {
     return (
       <form onSubmit={onRename} noValidate>
-        <input
-          type="text"
-          className="form-control"
-          value={newName}
-          onChange={e => onNameChange(e.target.value)}
-        />
-        <button className="btn btn-success btn-sm mt-2" type="submit">
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('organization')}
+          label={t('orgUserManager.rename.name')}
+          error={rules.errors.organization || ''}
+          className="mb-2"
+        >
+          {aria => (
+            <input
+              {...aria}
+              type="text"
+              className="form-control"
+              value={rename.organization}
+              onChange={e => onNameChange(e.target.value)}
+              onBlur={() => rules.onBlur('organization')}
+            />
+          )}
+        </Field>
+        <button className="btn btn-success btn-sm" type="submit">
           {t('admin.buttons.save')}
         </button>
-        <button className="btn btn-secondary btn-sm mt-2 ms-2" type="button" onClick={onCancel}>
+        <button className="btn btn-secondary btn-sm ms-2" type="button" onClick={onCancel}>
           {t('admin.buttons.cancel')}
         </button>
       </form>
@@ -180,7 +239,8 @@ const OrgTitle = ({ org, renaming, newName, onNameChange, onRename, onCancel }) 
 OrgTitle.propTypes = {
   org: PropTypes.object.isRequired,
   renaming: PropTypes.bool.isRequired,
-  newName: PropTypes.string.isRequired,
+  rename: PropTypes.shape({ organization: PropTypes.string.isRequired }).isRequired,
+  rules: formRulesShape.isRequired,
   onNameChange: PropTypes.func.isRequired,
   onRename: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
@@ -199,7 +259,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
   const notify = useNotify();
   const [organizations, setOrganizations] = useState([]);
   const [renamingId, setRenamingId] = useState(null);
-  const [newOrgName, setNewOrgName] = useState('');
+  const [rename, setRename] = useState(EMPTY_RENAME);
   const [oldName, setOldName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState(null);
@@ -208,18 +268,24 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const current = session.restore();
   const currentUser = current ? current.user : null;
+  const renameRules = useFormRules({
+    formKey: 'organization',
+    schema: RENAME_SCHEMA,
+    values: rename,
+    labels: RENAME_LABELS,
+    idPrefix: 'rename',
+  });
+  const editRules = useFormRules({
+    formKey: 'organization',
+    schema: EDIT_SCHEMA,
+    values: draft,
+    labels: EDIT_LABELS,
+    idPrefix: 'edit',
+  });
 
   useEffect(() => {
     admin.organizationsWithUsers().then(setOrganizations, () => null);
   }, [admin]);
-
-  const checkOrganizationExists = async name => {
-    try {
-      return Boolean(await admin.organization(name));
-    } catch {
-      return false;
-    }
-  };
 
   const dropMember = (predicate, userId) =>
     setOrganizations(previous =>
@@ -304,19 +370,10 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
 
   const handleRenameOrganization = async e => {
     e.preventDefault();
-
-    if (!ORG_NAME_PATTERN.test(newOrgName)) {
-      notify('danger', t('orgUserManager.invalidOrgName'));
+    if (!renameRules.validateAll()) {
       return;
     }
-    if (newOrgName === oldName) {
-      notify('danger', t('orgUserManager.rename.sameNameError'));
-      return;
-    }
-    if (await checkOrganizationExists(newOrgName)) {
-      notify('danger', t('orgUserManager.rename.orgExistsError'));
-      return;
-    }
+    const newOrgName = rename.organization;
 
     try {
       await admin.updateOrganization(oldName, { organization: newOrgName });
@@ -330,25 +387,40 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
         previous.map(org => (org.name === oldName ? { ...org, name: newOrgName } : org))
       );
       setRenamingId(null);
-      setNewOrgName('');
+      setRename(EMPTY_RENAME);
       setOldName('');
+      renameRules.reset();
       notify('success', t('orgUserManager.rename.success'));
-    } catch {
-      notify('danger', t('orgUserManager.rename.error'));
+    } catch (error) {
+      if (!renameRules.applyServerErrors(error)) {
+        notify('danger', t('orgUserManager.rename.error'));
+      }
     }
+  };
+
+  const startRename = org => {
+    setRenamingId(org.id);
+    setRename({ organization: org.name });
+    setOldName(org.name);
+    renameRules.reset();
   };
 
   const openEdit = async org => {
     const details = await admin.organization(org.name);
     setEditingOrg(details);
     setDraft(editOf(details));
+    editRules.reset();
   };
 
-  const saveEdit = async () => {
+  const saveEdit = async e => {
+    e.preventDefault();
+    if (!editRules.validateAll()) {
+      return;
+    }
     try {
       await admin.updateOrganization(editingOrg.name, {
         organization: editingOrg.name,
-        org_code: draft.orgCode,
+        org_code: draft.org_code,
         email: draft.email,
         description: draft.description,
       });
@@ -356,7 +428,9 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       notify('success', t('orgUserManager.editModal.updateSuccess'));
       setEditingOrg(null);
     } catch (error) {
-      notify('danger', responseMessage(error, t('orgUserManager.editModal.updateError')));
+      if (!editRules.applyServerErrors(error)) {
+        notify('danger', responseMessage(error, t('orgUserManager.editModal.updateError')));
+      }
     }
   };
 
@@ -388,8 +462,9 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
                 <OrgTitle
                   org={org}
                   renaming={renamingId === org.id}
-                  newName={newOrgName}
-                  onNameChange={setNewOrgName}
+                  rename={rename}
+                  rules={renameRules}
+                  onNameChange={value => setRename({ organization: value })}
                   onRename={handleRenameOrganization}
                   onCancel={() => setRenamingId(null)}
                 />
@@ -405,11 +480,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
                     <button
                       type="button"
                       className="btn btn-primary btn-sm me-2"
-                      onClick={() => {
-                        setRenamingId(org.id);
-                        setNewOrgName(org.name);
-                        setOldName(org.name);
-                      }}
+                      onClick={() => startRename(org)}
                     >
                       {t('admin.buttons.rename')}
                     </button>
@@ -467,6 +538,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       <EditOrganizationModal
         organization={editingOrg}
         draft={draft}
+        rules={editRules}
         onChange={(field, value) => setDraft(previous => ({ ...previous, [field]: value }))}
         onClose={() => setEditingOrg(null)}
         onSave={saveEdit}

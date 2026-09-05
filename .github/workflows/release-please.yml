@@ -65,6 +65,7 @@ jobs:
         consumer:
           - Makr91/BoxVault
           - STARTcloud/provisioner-catalog
+          - STARTcloud/VDI-CIFS-Health-private
     steps:
       - name: Split owner and repo
         id: target

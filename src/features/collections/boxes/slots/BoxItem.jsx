@@ -4,15 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../catalog/utils/itemShape';
 import { deleteVersionCascade } from '../adapter';
 import { api } from '../api';
 import { DeployButton, deployableVersion } from '../deploy';
+import { BOX_EDIT_LABELS, BOX_EDIT_SCHEMA, VERSION_LABELS, VERSION_SCHEMA } from '../forms';
 import { canManageBox } from '../permissions';
-
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
 
 const STARTER_VAGRANTFILE = `## Vagrant File tooling compatabile with Bhyve and Virtualbox, potentially ESXI/Vmware,KVM
 ##
@@ -312,35 +314,87 @@ const draftFrom = box =>
     EDIT_FIELDS.map(field => [field, box[field] ?? (field === 'isPublic' ? false : '')])
   );
 
-const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
+const OptionalLabel = ({ text }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <strong>{text}:</strong> {t('boxes.box.optional')}
+    </>
+  );
+};
+
+OptionalLabel.propTypes = {
+  text: PropTypes.string.isRequired,
+};
+
+const EditTextField = ({ name, type = 'text', hint, placeholder, draft, rules, onChange }) => (
+  <Field
+    id={rules.idFor(name)}
+    label={<OptionalLabel text={rules.labelFor(name)} />}
+    hint={hint}
+    error={rules.errors[name] || ''}
+    className="mt-2"
+  >
+    {aria => (
+      <input
+        {...aria}
+        type={type}
+        className="form-control"
+        name={name}
+        value={draft[name]}
+        onChange={onChange}
+        onBlur={() => rules.onBlur(name)}
+        placeholder={placeholder}
+      />
+    )}
+  </Field>
+);
+
+EditTextField.propTypes = {
+  name: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  hint: PropTypes.string.isRequired,
+  placeholder: PropTypes.string.isRequired,
+  draft: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
     <div className="edit-form">
-      <form>
-        <div className="mb-1">
-          <strong>{t('boxes.box.name')}:</strong>
-        </div>
-        <div className="form-group row align-items-center">
-          <div className="col-auto pe-0">
-            <input type="text" className="form-control" id="organization" value={org} disabled />
-          </div>
-          <div className="col-auto px-1">
-            <span className="font-size-xl font-weight-bolder">/</span>
-          </div>
-          <div className="col-auto ps-0">
-            <input
-              type="text"
-              className="form-control"
-              id="name"
-              name="name"
-              value={draft.name}
-              onChange={onChange}
-              required
-            />
-          </div>
-        </div>
-        {nameError ? <div className="text-danger">{nameError}</div> : null}
-        <small className="form-text text-muted">{t('boxes.box.shortDescription')}</small>
+      <form noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('name')}
+          label={<strong>{t('boxes.box.name')}:</strong>}
+          hint={t('boxes.box.shortDescription')}
+          error={rules.errors.name || ''}
+          className="mb-1"
+        >
+          {aria => (
+            <div className="row align-items-center g-0">
+              <div className="col-auto pe-0">
+                <input type="text" className="form-control" value={org} disabled />
+              </div>
+              <div className="col-auto px-1">
+                <span className="font-size-xl font-weight-bolder">/</span>
+              </div>
+              <div className="col-auto ps-0">
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  name="name"
+                  value={draft.name}
+                  onChange={onChange}
+                  onBlur={() => rules.onBlur('name')}
+                />
+              </div>
+            </div>
+          )}
+        </Field>
         <div className="form-group mt-2">
           <strong>{t('boxes.box.status')}: </strong>
           {published ? t('boxes.status.completed') : t('boxes.status.pending')}
@@ -381,70 +435,55 @@ const BoxEditForm = ({ org, published, draft, nameError, onChange }) => {
           </div>
           <small className="form-text text-muted">{t('boxes.box.visibilityHint')}</small>
         </div>
-        <div className="form-group mt-2">
-          <label className="mb-1" htmlFor="description">
-            <strong>{t('boxes.box.description')}:</strong> {t('boxes.box.optional')}
-          </label>
-          <textarea
-            className="form-control"
-            id="description"
-            name="description"
-            value={draft.description}
-            onChange={onChange}
-            rows="4"
-            placeholder={t('boxes.box.shortDescription')}
-          />
-        </div>
+        <Field
+          id={rules.idFor('description')}
+          label={<OptionalLabel text={t('boxes.box.description')} />}
+          error={rules.errors.description || ''}
+          className="mt-2"
+        >
+          {aria => (
+            <textarea
+              {...aria}
+              className="form-control"
+              name="description"
+              value={draft.description}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('description')}
+              rows="4"
+              placeholder={t('boxes.box.shortDescription')}
+            />
+          )}
+        </Field>
         <div className="form-group mt-3">
           <h5>
             <strong>{t('boxes.box.cicd.title')}</strong> {t('boxes.box.optional')}
           </h5>
           <small className="form-text text-muted mb-3">{t('boxes.box.cicd.connect')}</small>
-          <div className="form-group mt-2">
-            <label className="mb-1" htmlFor="githubRepo">
-              <strong>{t('boxes.box.cicd.repository')}:</strong> {t('boxes.box.optional')}
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="githubRepo"
-              name="githubRepo"
-              value={draft.githubRepo}
-              onChange={onChange}
-              placeholder={t('boxes.box.cicd.repositoryPlaceholder')}
-            />
-            <small className="form-text text-muted">{t('boxes.box.cicd.repositoryHint')}</small>
-          </div>
-          <div className="form-group mt-2">
-            <label className="mb-1" htmlFor="workflowFile">
-              <strong>{t('boxes.box.cicd.workflow')}:</strong> {t('boxes.box.optional')}
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="workflowFile"
-              name="workflowFile"
-              value={draft.workflowFile}
-              onChange={onChange}
-              placeholder={t('boxes.box.cicd.workflowPlaceholder')}
-            />
-            <small className="form-text text-muted">{t('boxes.box.cicd.workflowHint')}</small>
-          </div>
-          <div className="form-group mt-2">
-            <label className="mb-1" htmlFor="cicdUrl">
-              <strong>{t('boxes.box.cicd.pipelineUrl')}:</strong> {t('boxes.box.optional')}
-            </label>
-            <input
-              type="url"
-              className="form-control"
-              id="cicdUrl"
-              name="cicdUrl"
-              value={draft.cicdUrl}
-              onChange={onChange}
-              placeholder={t('boxes.box.cicd.pipelinePlaceholder')}
-            />
-            <small className="form-text text-muted">{t('boxes.box.cicd.pipelineHint')}</small>
-          </div>
+          <EditTextField
+            name="githubRepo"
+            hint={t('boxes.box.cicd.repositoryHint')}
+            placeholder={t('boxes.box.cicd.repositoryPlaceholder')}
+            draft={draft}
+            rules={rules}
+            onChange={onChange}
+          />
+          <EditTextField
+            name="workflowFile"
+            hint={t('boxes.box.cicd.workflowHint')}
+            placeholder={t('boxes.box.cicd.workflowPlaceholder')}
+            draft={draft}
+            rules={rules}
+            onChange={onChange}
+          />
+          <EditTextField
+            name="cicdUrl"
+            type="url"
+            hint={t('boxes.box.cicd.pipelineHint')}
+            placeholder={t('boxes.box.cicd.pipelinePlaceholder')}
+            draft={draft}
+            rules={rules}
+            onChange={onChange}
+          />
         </div>
       </form>
     </div>
@@ -455,7 +494,7 @@ BoxEditForm.propTypes = {
   org: PropTypes.string.isRequired,
   published: PropTypes.bool.isRequired,
   draft: PropTypes.object.isRequired,
-  nameError: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -467,19 +506,19 @@ export const BoxItemActions = ({ item, ctx }) => {
   const manage = canManageBox(user, org, box);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => draftFrom(box));
-  const [nameError, setNameError] = useState('');
   const [showDelete, setShowDelete] = useState(false);
+  const rules = useFormRules({
+    formKey: 'box',
+    schema: BOX_EDIT_SCHEMA,
+    values: draft,
+    labels: BOX_EDIT_LABELS,
+    idPrefix: 'box-edit',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
-      if (name === 'name') {
-        setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
+  }, []);
 
   useEffect(() => {
     if (!editing) {
@@ -490,20 +529,23 @@ export const BoxItemActions = ({ item, ctx }) => {
         org={org}
         published={Boolean(box.published)}
         draft={draft}
-        nameError={nameError}
+        rules={rules}
         onChange={onChange}
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, nameError, onChange, org, box.published, setEditor]);
+  }, [editing, draft, rules, onChange, org, box.published, setEditor]);
 
   const cancel = () => {
     setEditing(false);
     setDraft(draftFrom(box));
-    setNameError('');
+    rules.reset();
   };
 
   const save = () => {
+    if (!rules.validateAll()) {
+      return;
+    }
     api.boxes
       .update(org, box.name, { ...box, ...draft, isPublic: draft.isPublic ? 1 : 0 })
       .then(() => {
@@ -516,6 +558,9 @@ export const BoxItemActions = ({ item, ctx }) => {
         }
       })
       .catch(error => {
+        if (rules.applyServerErrors(error)) {
+          return;
+        }
         log.api.error('Error updating box', { boxName: box.name, error: error.message });
         notify('danger', responseMessage(error, t('boxes.box.updateError')));
       });
@@ -549,12 +594,7 @@ export const BoxItemActions = ({ item, ctx }) => {
 
   const editButtons = editing ? (
     <>
-      <button
-        type="button"
-        className="btn btn-success me-2"
-        onClick={save}
-        disabled={Boolean(nameError)}
-      >
+      <button type="button" className="btn btn-success me-2" onClick={save}>
         {t('boxes.buttons.save')}
       </button>
       <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
@@ -610,34 +650,47 @@ BoxItemActions.propTypes = {
   }).isRequired,
 };
 
-const AddVersionForm = ({ draft, error, onChange }) => {
+const AddVersionForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group col-md-3">
-        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
-        <input
-          type="text"
-          className="form-control"
-          id="versionNumber"
-          name="versionNumber"
-          value={draft.versionNumber}
-          onChange={onChange}
-          required
-        />
-        {error ? <div className="text-danger">{error}</div> : null}
-      </div>
-      <div className="form-group">
-        <label htmlFor="versionDescription">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="versionDescription"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-          rows="3"
-        />
-      </div>
+    <form noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('versionNumber')}
+        label={t('boxes.version.number')}
+        error={rules.errors.versionNumber || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            name="versionNumber"
+            value={draft.versionNumber}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('versionNumber')}
+          />
+        )}
+      </Field>
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+            rows="3"
+          />
+        )}
+      </Field>
     </form>
   );
 };
@@ -647,7 +700,7 @@ AddVersionForm.propTypes = {
     versionNumber: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
-  error: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -659,38 +712,41 @@ export const BoxVersionsActions = ({ item, ctx }) => {
   const manage = canManageBox(user, org, item.extras.raw);
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_VERSION);
-  const [error, setError] = useState('');
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: VERSION_SCHEMA,
+    values: draft,
+    labels: VERSION_LABELS,
+    idPrefix: 'box-version',
+  });
 
-  const onChange = useCallback(
-    event => {
-      const { name, value } = event.target;
-      setDraft(current => ({ ...current, [name]: value }));
-      if (name === 'versionNumber') {
-        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-      }
-    },
-    [t]
-  );
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
 
   useEffect(() => {
     if (!show) {
       return undefined;
     }
-    setForm(<AddVersionForm draft={draft} error={error} onChange={onChange} />);
+    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setForm(null);
-  }, [show, draft, error, onChange, setForm]);
+  }, [show, draft, rules, onChange, setForm]);
 
   if (!manage) {
     return null;
   }
 
-  const save = () => {
-    if (!draft.versionNumber || error) {
-      notify('danger', error || t('boxes.validation.required'));
-      return;
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_VERSION);
+      rules.reset();
     }
-    if ((item.versions || []).some(version => version.version === draft.versionNumber)) {
-      notify('danger', t('boxes.version.exists'));
+    setShow(!show);
+  };
+
+  const save = () => {
+    if (!rules.validateAll()) {
       return;
     }
     api.versions
@@ -699,9 +755,13 @@ export const BoxVersionsActions = ({ item, ctx }) => {
         notify('success', t('boxes.version.added'));
         setShow(false);
         setDraft(EMPTY_VERSION);
+        rules.reset();
         reload();
       })
       .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
         notify('danger', responseMessage(requestError, t('boxes.version.addError')));
       });
   };
@@ -711,17 +771,12 @@ export const BoxVersionsActions = ({ item, ctx }) => {
       <button
         type="button"
         className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
-        onClick={() => setShow(current => !current)}
+        onClick={toggle}
       >
         {show ? t('boxes.buttons.cancel') : t('boxes.version.add')}
       </button>
       {show ? (
-        <button
-          type="button"
-          className="btn btn-success"
-          onClick={save}
-          disabled={!draft.versionNumber || Boolean(error)}
-        >
+        <button type="button" className="btn btn-success" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
       ) : null}

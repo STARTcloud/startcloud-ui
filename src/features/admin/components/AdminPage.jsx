@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
-import { adminShape } from '../utils/processConfig';
+import { adminShape } from '../utils/adminShape';
 
 import AdminConfig from './AdminConfig';
 import AdminOrganizations from './AdminOrganizations';

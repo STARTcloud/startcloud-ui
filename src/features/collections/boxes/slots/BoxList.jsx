@@ -4,61 +4,71 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Field from '../../../../components/common/Field';
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { session } from '../../../../lib/runtime';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { joinAsAdmin } from '../../../organizations/api/organizations';
 import { api } from '../api';
+import { BOX_LABELS, BOX_SCHEMA } from '../forms';
 import { isGlobalAdmin, isOrgManager, isOrgMember } from '../permissions';
 
-const NAME_RE = /^[0-9a-zA-Z-._]+$/;
 const EMPTY_BOX = { name: '', description: '', isPublic: false };
 
-const CreateBoxForm = ({ org, draft, nameError, onChange }) => {
+const CreateBoxForm = ({ org, draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
       <h4>{t('boxes.box.organization.headers.createNewBox')}</h4>
-      <form>
-        <div className="form-group">
-          <label htmlFor="boxName">
-            <strong>{t('boxes.box.name')}:</strong>
-          </label>
-          <div className="form-group row align-items-center">
-            <div className="col-auto pe-0">
-              <input type="text" className="form-control" id="organization" value={org} disabled />
+      <form noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('name')}
+          label={<strong>{t('boxes.box.name')}:</strong>}
+          hint={t('boxes.box.shortDescription')}
+          error={rules.errors.name || ''}
+        >
+          {aria => (
+            <div className="row align-items-center g-0">
+              <div className="col-auto pe-0">
+                <input type="text" className="form-control" value={org} disabled />
+              </div>
+              <div className="col-auto px-1">
+                <span className="font-size-xl font-weight-bolder">/</span>
+              </div>
+              <div className="col-auto ps-0">
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  name="name"
+                  value={draft.name}
+                  onChange={onChange}
+                  onBlur={() => rules.onBlur('name')}
+                />
+              </div>
             </div>
-            <div className="col-auto px-1">
-              <span className="font-size-xl font-weight-bolder">/</span>
-            </div>
-            <div className="col-auto ps-0">
-              <input
-                type="text"
-                className="form-control"
-                id="boxName"
-                name="name"
-                value={draft.name}
-                onChange={onChange}
-                required
-              />
-            </div>
-          </div>
-          {nameError ? <div className="text-danger">{nameError}</div> : null}
-          <small className="form-text text-muted">{t('boxes.box.shortDescription')}</small>
-        </div>
-        <div className="form-group mt-2">
-          <label htmlFor="description">
-            <strong>{t('boxes.box.description')}:</strong>
-          </label>
-          <textarea
-            className="form-control"
-            id="description"
-            name="description"
-            value={draft.description}
-            onChange={onChange}
-            rows="3"
-          />
-        </div>
+          )}
+        </Field>
+        <Field
+          id={rules.idFor('description')}
+          label={<strong>{t('boxes.box.description')}:</strong>}
+          error={rules.errors.description || ''}
+        >
+          {aria => (
+            <textarea
+              {...aria}
+              className="form-control"
+              name="description"
+              value={draft.description}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('description')}
+              rows="3"
+            />
+          )}
+        </Field>
         <div className="form-group mt-2">
           <label htmlFor="visibilityPrivate">
             <strong>{t('boxes.box.visibility')}:</strong>
@@ -107,7 +117,7 @@ CreateBoxForm.propTypes = {
     description: PropTypes.string.isRequired,
     isPublic: PropTypes.bool.isRequired,
   }).isRequired,
-  nameError: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -173,7 +183,12 @@ export const BoxListActions = ({ ctx }) => {
   const { user, org, reload, notify } = ctx;
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_BOX);
-  const [nameError, setNameError] = useState('');
+  const rules = useFormRules({
+    formKey: 'box',
+    schema: BOX_SCHEMA,
+    values: draft,
+    labels: BOX_LABELS,
+  });
 
   if (!org || !user) {
     return null;
@@ -182,20 +197,20 @@ export const BoxListActions = ({ ctx }) => {
   const onChange = event => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
-    if (name === 'name') {
-      setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
-    }
   };
 
   const cancel = () => {
     setCreating(false);
     setDraft(EMPTY_BOX);
-    setNameError('');
+    rules.reset();
   };
 
   const create = () => {
     if (!creating) {
       setCreating(true);
+      return;
+    }
+    if (!rules.validateAll()) {
       return;
     }
     api.boxes
@@ -206,6 +221,9 @@ export const BoxListActions = ({ ctx }) => {
         navigate(`/${org}/${draft.name}`);
       })
       .catch(error => {
+        if (rules.applyServerErrors(error)) {
+          return;
+        }
         log.api.error('Error creating box', { boxName: draft.name, error: error.message });
         notify('danger', responseMessage(error, t('boxes.box.organization.errors.boxCreate')));
       });
@@ -218,12 +236,7 @@ export const BoxListActions = ({ ctx }) => {
       ) : null}
       {isOrgMember(user, org) ? (
         <>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-success"
-            onClick={create}
-            disabled={creating && (!draft.name || Boolean(nameError))}
-          >
+          <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.box.organization.buttons.createBox') : t('pages.addNew')}
           </button>
           {creating ? (
@@ -235,7 +248,7 @@ export const BoxListActions = ({ ctx }) => {
       ) : null}
       {isOrgManager(user, org) ? <RemoveAll org={org} reload={reload} notify={notify} /> : null}
       {creating ? (
-        <CreateBoxForm org={org} draft={draft} nameError={nameError} onChange={onChange} />
+        <CreateBoxForm org={org} draft={draft} rules={rules} onChange={onChange} />
       ) : null}
     </>
   );

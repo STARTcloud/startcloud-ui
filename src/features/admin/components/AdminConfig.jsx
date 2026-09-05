@@ -1,260 +1,53 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaChevronDown,
-  FaChevronRight,
-  FaDatabase,
-  FaEnvelope,
-  FaEnvelopeOpenText,
-  FaGear,
-  FaGears,
-  FaShieldHalved,
-} from 'react-icons/fa6';
+import { FaEnvelopeOpenText } from 'react-icons/fa6';
 
-import ConfigField from '../../../components/common/ConfigField';
+import ConfigSections, {
+  countFields,
+  filterSections,
+} from '../../../components/common/ConfigSections';
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { responseMessage } from '../../../utils/responseMessage';
-import { processConfig } from '../utils/processConfig';
+import { schemaSections, setValueAt, valueAt } from '../utils/schemaSections';
 
 import OidcProviders from './OidcProviders';
 
 const SMTP_TEST_KEY = 'smtp-test';
+const PROVIDERS_POINTER = '/auth/oidc/providers';
+const EMPTY_CONFIG = {};
+const EMPTY_SCHEMA = { properties: {} };
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
-
-const SECTION_ICONS = {
-  authentication: FaShieldHalved,
-  database: FaDatabase,
-  mail: FaEnvelope,
-  application: FaGears,
+const SMTP_TEST_SCHEMA = {
+  required: ['email'],
+  properties: { email: { $ref: '#/$defs/email' } },
 };
-
-const SectionIcon = ({ sectionKey }) => {
-  const Icon = SECTION_ICONS[sectionKey] || FaGear;
-  return <Icon className="me-2" />;
-};
-
-SectionIcon.propTypes = {
-  sectionKey: PropTypes.string.isRequired,
-};
-
-const wideField = field => field.type === 'textarea' || field.type === 'array';
-
-const ConfigFields = ({ fields, values, onFieldChange, onUpload }) => (
-  <div className="row">
-    {fields.map(field => (
-      <div key={field.path} className={wideField(field) ? 'col-12' : 'col-md-6'}>
-        <ConfigField
-          field={field}
-          currentValue={values[field.path] !== undefined ? values[field.path] : field.value}
-          onFieldChange={onFieldChange}
-          onUpload={onUpload}
-        />
-      </div>
-    ))}
-  </div>
-);
-
-ConfigFields.propTypes = {
-  fields: PropTypes.array.isRequired,
-  values: PropTypes.object.isRequired,
-  onFieldChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func.isRequired,
-};
-
-const Subsection = ({ sectionKey, subsection, values, onFieldChange, onUpload }) => {
-  const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState(false);
-  return (
-    <div className="card mb-4">
-      <button
-        type="button"
-        className="card-header text-start w-100 border-0"
-        onClick={() => setCollapsed(current => !current)}
-        aria-expanded={!collapsed}
-      >
-        <h6 className="mb-0">
-          {collapsed ? <FaChevronRight className="me-2" /> : <FaChevronDown className="me-2" />}
-          <SectionIcon sectionKey={sectionKey} />
-          {t(`configManager.subsections.${subsection.key}`)}
-          <span className="badge bg-light text-dark ms-2">
-            {t('configManager.settingsCount', { count: subsection.fields.length })}
-          </span>
-        </h6>
-      </button>
-      {!collapsed && (
-        <div className="card-body">
-          <ConfigFields
-            fields={subsection.fields}
-            values={values}
-            onFieldChange={onFieldChange}
-            onUpload={onUpload}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-Subsection.propTypes = {
-  sectionKey: PropTypes.string.isRequired,
-  subsection: PropTypes.shape({
-    key: PropTypes.string.isRequired,
-    fields: PropTypes.array.isRequired,
-  }).isRequired,
-  values: PropTypes.object.isRequired,
-  onFieldChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func.isRequired,
-};
-
-const shouldShowSubsection = (subsection, subsectionName) => {
-  if (subsectionName === 'oidcProviders') {
-    return true;
-  }
-  if (subsectionName.toLowerCase().includes('oidc')) {
-    return false;
-  }
-  return subsection.fields.length > 0;
-};
-
-const matchesField = (field, term) =>
-  !term ||
-  (field.label || '').toLowerCase().includes(term) ||
-  field.key.toLowerCase().includes(term);
-
-const filterSection = (section, term) => {
-  const subsections = {};
-  Object.entries(section.subsections || {}).forEach(([name, subsection]) => {
-    if (name === 'oidcProviders') {
-      subsections[name] = subsection;
-      return;
-    }
-    const fields = subsection.fields.filter(field => matchesField(field, term));
-    if (shouldShowSubsection(subsection, name) && fields.length > 0) {
-      subsections[name] = { ...subsection, fields };
-    }
-  });
-  return {
-    ...section,
-    fields: section.fields.filter(field => matchesField(field, term)),
-    subsections,
-  };
-};
-
-const filterSections = (sections, term) =>
-  Object.fromEntries(
-    Object.entries(sections)
-      .map(([name, section]) => [name, filterSection(section, term)])
-      .filter(
-        ([, section]) => section.fields.length > 0 || Object.keys(section.subsections).length > 0
-      )
-  );
-
-const countFields = sections =>
-  Object.values(sections).reduce(
-    (count, section) =>
-      count +
-      section.fields.length +
-      Object.entries(section.subsections)
-        .filter(([name]) => name !== 'oidcProviders')
-        .reduce((sum, [, subsection]) => sum + subsection.fields.length, 0),
-    0
-  );
-
-const ConfigSection = ({ section, values, onFieldChange, onUpload, oidc }) => {
-  const { t } = useTranslation();
-  return (
-    <div>
-      {section.fields.length > 0 && (
-        <div className="card mb-4">
-          <div className="card-header">
-            <h5 className="mb-0">
-              <SectionIcon sectionKey={section.key} />
-              {t(`configManager.sections.${section.key}`)}
-              <span className="badge bg-light text-dark ms-2">
-                {t('configManager.settingsCount', { count: section.fields.length })}
-              </span>
-            </h5>
-          </div>
-          <div className="card-body">
-            <ConfigFields
-              fields={section.fields}
-              values={values}
-              onFieldChange={onFieldChange}
-              onUpload={onUpload}
-            />
-          </div>
-        </div>
-      )}
-      {Object.entries(section.subsections || {}).map(([subsectionName, subsection]) => {
-        if (!shouldShowSubsection(subsection, subsectionName)) {
-          return null;
-        }
-        if (subsectionName === 'oidcProviders' && oidc) {
-          return (
-            <OidcProviders
-              key={subsectionName}
-              config={oidc.config}
-              onConfigUpdate={oidc.onConfigUpdate}
-            />
-          );
-        }
-        return (
-          <Subsection
-            key={subsectionName}
-            sectionKey={section.key}
-            subsection={subsection}
-            values={values}
-            onFieldChange={onFieldChange}
-            onUpload={onUpload}
-          />
-        );
-      })}
-    </div>
-  );
-};
-
-ConfigSection.propTypes = {
-  section: PropTypes.shape({
-    key: PropTypes.string.isRequired,
-    fields: PropTypes.array.isRequired,
-    subsections: PropTypes.object,
-  }).isRequired,
-  values: PropTypes.object.isRequired,
-  onFieldChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func.isRequired,
-  oidc: PropTypes.shape({
-    config: PropTypes.object.isRequired,
-    onConfigUpdate: PropTypes.func.isRequired,
-  }),
-};
-
-const setValueAt = (tree, path, newValue) => {
-  const keys = path.split('.');
-  let current = tree;
-  for (let i = 0; i < keys.length; i++) {
-    const key = keys[i];
-    if (i === keys.length - 1) {
-      if (current && typeof current[key] === 'object' && current[key] !== null) {
-        current[key].value = newValue;
-      }
-    } else {
-      current = current[key];
-      if (current === undefined) {
-        return;
-      }
-    }
-  }
-};
+const SMTP_TEST_LABELS = { email: 'configManager.smtpTest.recipient' };
+const EMPTY_SMTP_TEST = { email: '' };
 
 const SmtpTest = ({ onTest }) => {
   const { t } = useTranslation();
-  const [testEmail, setTestEmail] = useState('');
+  const [form, setForm] = useState(EMPTY_SMTP_TEST);
+  const rules = useFormRules({
+    schema: SMTP_TEST_SCHEMA,
+    values: form,
+    labels: SMTP_TEST_LABELS,
+    idPrefix: 'smtp-test',
+  });
+  const send = event => {
+    event.preventDefault();
+    if (rules.validateAll()) {
+      onTest(form.email);
+    }
+  };
   return (
     <div className="card mb-4">
       <div className="card-header">
@@ -264,29 +57,32 @@ const SmtpTest = ({ onTest }) => {
         </h5>
       </div>
       <div className="card-body">
-        <div className="mb-3">
-          <label htmlFor="testEmail" className="form-label">
-            {t('configManager.smtpTest.recipient')}
-          </label>
-          <div className="input-group">
-            <input
-              type="email"
-              className="form-control"
-              id="testEmail"
-              value={testEmail}
-              onChange={e => setTestEmail(e.target.value)}
-              placeholder={t('configManager.smtpTest.placeholder')}
-            />
-            <button
-              className="btn btn-outline-primary"
-              type="button"
-              onClick={() => onTest(testEmail)}
-            >
-              {t('configManager.smtpTest.send')}
-            </button>
-          </div>
-          <small className="form-text text-muted">{t('configManager.smtpTest.hint')}</small>
-        </div>
+        <form onSubmit={send} noValidate>
+          <FormErrorSummary errors={rules.summary} />
+          <Field
+            id={rules.idFor('email')}
+            label={t('configManager.smtpTest.recipient')}
+            hint={t('configManager.smtpTest.hint')}
+            error={rules.errors.email || ''}
+          >
+            {aria => (
+              <div className="input-group">
+                <input
+                  {...aria}
+                  type="email"
+                  className="form-control"
+                  value={form.email}
+                  onChange={e => setForm({ email: e.target.value })}
+                  onBlur={() => rules.onBlur('email')}
+                  placeholder={t('configManager.smtpTest.placeholder')}
+                />
+                <button className="btn btn-outline-primary" type="submit">
+                  {t('configManager.smtpTest.send')}
+                </button>
+              </div>
+            )}
+          </Field>
+        </form>
       </div>
     </div>
   );
@@ -296,13 +92,19 @@ SmtpTest.propTypes = {
   onTest: PropTypes.func.isRequired,
 };
 
+const nameOf = pointer => pointer.slice(1);
+
 /**
  * The Configuration tab of the admin page: one tab per configuration file
  * the host's status names in `config` (`app` alone when it names none),
- * its sections and foldable subsections of fields searched from the navbar
- * by label or key, the OIDC providers block inside auth, update and
- * restart, the SSL upload on upload fields and the SMTP test on mail,
- * every call through the app's `config` adapter.
+ * the file and its schema fetched together, the sections and foldable
+ * subsections drawn from the schema and searched from the navbar by title
+ * or key, every value validated through the schema on blur and on Update
+ * with the summary above the sections, the refused write painted by
+ * pointer, the restart notice from the 200's `requiresRestart`, the OIDC
+ * providers block over `additionalProperties` of `auth.oidc.providers`,
+ * update and restart, the SSL upload on upload fields and the SMTP test on
+ * mail, every call through the app's `config` adapter.
  */
 const AdminConfig = ({ config: configApi }) => {
   const { t } = useTranslation();
@@ -310,19 +112,20 @@ const AdminConfig = ({ config: configApi }) => {
   const status = useStatus();
   const configNames = status.config || ['app'];
   const [selectedConfig, setSelectedConfig] = useState(configNames[0]);
-  const [config, setConfig] = useState({});
-  const [sections, setSections] = useState({});
-  const [values, setValues] = useState({});
+  const [loaded, setLoaded] = useState({ name: '', config: null, schema: null });
   const [searchTerm, setSearchTerm] = useState('');
+  const ready = loaded.name === selectedConfig && loaded.config && loaded.schema;
+  const config = ready ? loaded.config : EMPTY_CONFIG;
+  const schema = ready ? loaded.schema : EMPTY_SCHEMA;
+  const rules = useFormRules({ schema, values: config, idPrefix: `config-${selectedConfig}` });
+  const { reset } = rules;
 
   const fetchConfig = useCallback(
     configName => {
-      configApi.get(configName).then(
-        data => {
-          setConfig(data);
-          const { extractedValues, organizedSections } = processConfig(data, configName);
-          setValues(extractedValues);
-          setSections(organizedSections);
+      Promise.all([configApi.get(configName), configApi.schema(configName)]).then(
+        ([file, fileSchema]) => {
+          setLoaded({ name: configName, config: file, schema: fileSchema });
+          reset();
         },
         error => {
           log.api.error('Error fetching config', {
@@ -332,29 +135,37 @@ const AdminConfig = ({ config: configApi }) => {
         }
       );
     },
-    [configApi]
+    [configApi, reset]
   );
 
   useEffect(() => {
     fetchConfig(selectedConfig);
   }, [selectedConfig, fetchConfig]);
 
-  const handleFieldChange = (fieldPath, value) => {
-    setValues(previous => ({ ...previous, [fieldPath]: value }));
+  const sections = useMemo(() => schemaSections(schema), [schema]);
+
+  const handleFieldChange = (pointer, value) => {
+    setLoaded(current => ({ ...current, config: setValueAt(current.config, pointer, value) }));
+  };
+
+  const afterWrite = (configName, data) => {
+    notify('success', t('configManager.updateSuccess'));
+    if (data?.requiresRestart) {
+      notify('warning', t('configManager.restartNeeded'));
+    }
+    fetchConfig(configName);
   };
 
   const updateConfig = () => {
-    const newConfig = JSON.parse(JSON.stringify(config));
-    Object.entries(values).forEach(([path, value]) => {
-      setValueAt(newConfig, path, value);
-    });
-
-    configApi.update(selectedConfig, newConfig).then(
-      () => {
-        notify('success', t('configManager.updateSuccess'));
-        fetchConfig(selectedConfig);
-      },
+    if (!rules.validateAll()) {
+      return;
+    }
+    configApi.update(selectedConfig, config).then(
+      data => afterWrite(selectedConfig, data),
       error => {
+        if (rules.applyServerErrors(error)) {
+          return;
+        }
         log.component.error('Error updating config', {
           configName: selectedConfig,
           error: error.message,
@@ -364,17 +175,12 @@ const AdminConfig = ({ config: configApi }) => {
     );
   };
 
-  const handleConfigUpdate = async newConfig => {
-    await configApi.update('auth', newConfig);
-    setConfig(newConfig);
-  };
+  const handleProvidersUpdate = providers =>
+    configApi
+      .update(selectedConfig, setValueAt(config, PROVIDERS_POINTER, providers))
+      .then(data => afterWrite(selectedConfig, data));
 
   const handleTestSmtp = testEmail => {
-    if (!testEmail) {
-      notify('warning', t('configManager.smtpTest.emailRequired'));
-      return;
-    }
-
     notify('info', t('configManager.testingSmtp'), { key: SMTP_TEST_KEY });
     configApi
       .testSmtp(testEmail)
@@ -391,7 +197,8 @@ const AdminConfig = ({ config: configApi }) => {
       });
   };
 
-  const handleFileUpload = async (file, targetPath) => {
+  const handleFileUpload = async (pointer, file) => {
+    const targetPath = valueAt(config, pointer);
     if (!file || !targetPath) {
       return;
     }
@@ -419,16 +226,26 @@ const AdminConfig = ({ config: configApi }) => {
       });
   };
 
-  const oidc = selectedConfig === 'auth' ? { config, onConfigUpdate: handleConfigUpdate } : null;
+  const renderMap = field =>
+    field.pointer === PROVIDERS_POINTER ? (
+      <div key={field.pointer} className="col-12">
+        <OidcProviders
+          providers={valueAt(config, field.pointer) || {}}
+          schema={field.additionalProperties}
+          onProvidersUpdate={handleProvidersUpdate}
+        />
+      </div>
+    ) : null;
 
   const visibleSections = filterSections(sections, searchTerm.toLowerCase());
+  const hasErrors = Object.keys(rules.errors).length > 0;
 
   useNavbarSearchBinding({
     query: searchTerm,
     onQueryChange: setSearchTerm,
     placeholder: t('configManager.search'),
     matched: countFields(visibleSections),
-    total: countFields(filterSections(sections, '')),
+    total: countFields(sections),
     groups: NO_FILTERS,
     onClearFilters: clearNothing,
   });
@@ -440,7 +257,9 @@ const AdminConfig = ({ config: configApi }) => {
           <li className="nav-item" key={configName}>
             <button
               type="button"
-              className={`nav-link ${selectedConfig === configName ? 'active' : ''}`}
+              className={`nav-link ${selectedConfig === configName ? 'active' : ''} ${
+                selectedConfig === configName && hasErrors ? 'text-danger' : ''
+              }`}
               onClick={() => setSelectedConfig(configName)}
             >
               {t(`configManager.tabs.${configName}`)}
@@ -459,19 +278,23 @@ const AdminConfig = ({ config: configApi }) => {
         </li>
       </ul>
       <div className="config-container mt-3">
-        {searchTerm !== '' && Object.keys(visibleSections).length === 0 && (
+        <FormErrorSummary errors={rules.summary} />
+        {searchTerm !== '' && visibleSections.length === 0 && (
           <div className="alert alert-info">{t('pages.noMatches')}</div>
         )}
-        {Object.entries(visibleSections).map(([sectionName, section]) => (
-          <ConfigSection
-            key={sectionName}
-            section={section}
-            values={values}
-            onFieldChange={handleFieldChange}
+        {ready ? (
+          <ConfigSections
+            sections={visibleSections}
+            config={config}
+            rules={rules}
+            nameFor={nameOf}
+            onChange={handleFieldChange}
             onUpload={handleFileUpload}
-            oidc={oidc}
+            renderMap={renderMap}
           />
-        ))}
+        ) : (
+          <p>{t('loading')}</p>
+        )}
         {selectedConfig === 'mail' && <SmtpTest onTest={handleTestSmtp} />}
       </div>
     </div>
@@ -481,6 +304,7 @@ const AdminConfig = ({ config: configApi }) => {
 AdminConfig.propTypes = {
   config: PropTypes.shape({
     get: PropTypes.func.isRequired,
+    schema: PropTypes.func.isRequired,
     update: PropTypes.func.isRequired,
     restart: PropTypes.func.isRequired,
     testSmtp: PropTypes.func.isRequired,

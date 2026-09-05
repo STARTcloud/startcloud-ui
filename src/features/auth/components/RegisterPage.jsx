@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { Link, useLocation } from 'react-router-dom';
 
+import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
 import {
   authShape,
@@ -16,6 +19,22 @@ import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from './AuthShell';
 import ProviderButtons from './ProviderButtons';
+
+const REGISTER_SCHEMA = {
+  required: ['username', 'email', 'password'],
+  properties: {
+    username: { type: 'string' },
+    name: { type: 'string' },
+    email: { type: 'string' },
+    password: { type: 'string' },
+  },
+};
+const REGISTER_LABELS = {
+  username: 'auth:register.username',
+  name: 'auth:register.name',
+  email: 'auth:register.email',
+  password: 'auth:register.password',
+};
 
 const resolveInitialMode = ({ localAllowed, hasOidc, loginMethodKey }) => {
   if (!localAllowed) {
@@ -39,121 +58,95 @@ const deriveRegisterView = ({ mode, localAllowed, hasOidc }) => {
   };
 };
 
-const validateForm = (formValues, t) => {
-  const errors = {};
-  if (!formValues.username) {
-    errors.username = t('errors.fieldRequired');
-  } else if (formValues.username.length < 3 || formValues.username.length > 20) {
-    errors.username = t('errors.usernameLength');
-  }
-
-  if (!formValues.email) {
-    errors.email = t('errors.fieldRequired');
-  } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
-    errors.email = t('errors.invalidEmail');
-  }
-
-  if (!formValues.password) {
-    errors.password = t('errors.fieldRequired');
-  } else if (formValues.password.length < 6 || formValues.password.length > 40) {
-    errors.password = t('errors.passwordLength');
-  }
-
-  return errors;
-};
-
 const RegisterField = ({
-  id,
   name,
   label,
-  hint,
-  error,
+  hint = '',
   type,
   autoComplete,
   value,
+  rules,
   onChange,
-  children,
+  children = null,
 }) => (
-  <div className="auth-field">
-    <label className="auth-field-label" htmlFor={id}>
-      {label}
-    </label>
-    <div
-      className={`auth-input-wrap${children ? ' auth-input-wrap--password' : ''}${error ? ' has-error' : ''}`}
-    >
-      <input
-        id={id}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        value={value}
-        onChange={onChange}
-        maxLength={255}
-      />
-      {children}
-    </div>
-    {hint && <p className="auth-field-hint">{hint}</p>}
-    {error && <p className="auth-field-error">{error}</p>}
-  </div>
+  <Field
+    id={rules.idFor(name)}
+    label={label}
+    hint={hint}
+    error={rules.errors[name] || ''}
+    className="auth-field"
+  >
+    {aria => (
+      <div className={`auth-input-wrap${children ? ' auth-input-wrap--password' : ''}`}>
+        <input
+          {...aria}
+          name={name}
+          type={type}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={onChange}
+          onBlur={() => rules.onBlur(name)}
+        />
+        {children}
+      </div>
+    )}
+  </Field>
 );
 
 RegisterField.propTypes = {
-  id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
   hint: PropTypes.string,
-  error: PropTypes.string,
   type: PropTypes.string.isRequired,
   autoComplete: PropTypes.string.isRequired,
   value: PropTypes.string.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   children: PropTypes.node,
 };
 
-const LocalRegisterForm = ({ formValues, validationErrors, onChange, onSubmit, loading }) => {
+const LocalRegisterForm = ({ formValues, rules, onChange, onSubmit, loading }) => {
   const { t } = useTranslation(['auth']);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form className="auth-form" onSubmit={onSubmit} noValidate>
+      <FormErrorSummary errors={rules.summary} />
       <RegisterField
-        id="register-username"
         name="username"
         label={t('register.username')}
-        error={validationErrors.username}
         type="text"
         autoComplete="username"
         value={formValues.username}
+        rules={rules}
         onChange={onChange}
       />
       <RegisterField
-        id="register-name"
         name="name"
         label={t('register.name')}
         hint={t('register.nameHint')}
         type="text"
         autoComplete="name"
         value={formValues.name}
+        rules={rules}
         onChange={onChange}
       />
       <RegisterField
-        id="register-email"
         name="email"
         label={t('register.email')}
-        error={validationErrors.email}
         type="email"
         autoComplete="email"
         value={formValues.email}
+        rules={rules}
         onChange={onChange}
       />
       <RegisterField
-        id="register-password"
         name="password"
         label={t('register.password')}
-        error={validationErrors.password}
         type={showPassword ? 'text' : 'password'}
         autoComplete="new-password"
         value={formValues.password}
+        rules={rules}
         onChange={onChange}
       >
         <button
@@ -184,7 +177,7 @@ LocalRegisterForm.propTypes = {
     email: PropTypes.string.isRequired,
     password: PropTypes.string.isRequired,
   }).isRequired,
-  validationErrors: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
@@ -197,7 +190,7 @@ const RegisterMethods = ({
   loading,
   loadingProvider,
   formValues,
-  validationErrors,
+  rules,
   onChange,
   onSubmit,
   onSelectProvider,
@@ -212,7 +205,7 @@ const RegisterMethods = ({
       {view.showLocalForm && (
         <LocalRegisterForm
           formValues={formValues}
-          validationErrors={validationErrors}
+          rules={rules}
           onChange={onChange}
           onSubmit={onSubmit}
           loading={loading}
@@ -268,7 +261,7 @@ RegisterMethods.propTypes = {
   loading: PropTypes.bool.isRequired,
   loadingProvider: PropTypes.string,
   formValues: PropTypes.object.isRequired,
-  validationErrors: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onSelectProvider: PropTypes.func.isRequired,
@@ -296,8 +289,13 @@ const RegisterPage = ({ session, returnTo, auth }) => {
     email: '',
     password: '',
   });
-  const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const rules = useFormRules({
+    formKey: 'register',
+    schema: REGISTER_SCHEMA,
+    values: formValues,
+    labels: REGISTER_LABELS,
+  });
   const [loadingProvider, setLoadingProvider] = useState(null);
   const [status, setStatus] = useState(null);
   const [invitationToken, setInvitationToken] = useState(null);
@@ -411,10 +409,7 @@ const RegisterPage = ({ session, returnTo, auth }) => {
 
   const handleSubmit = event => {
     event.preventDefault();
-
-    const errors = validateForm(formValues, t);
-    setValidationErrors(errors);
-    if (Object.keys(errors).length > 0) {
+    if (!rules.validateAll()) {
       return;
     }
 
@@ -433,10 +428,12 @@ const RegisterPage = ({ session, returnTo, auth }) => {
         setIsSubmitting(false);
       })
       .catch(error => {
-        setStatus({
-          success: false,
-          message: responseMessage(error, error.message || error.toString()),
-        });
+        if (!rules.applyServerErrors(error)) {
+          setStatus({
+            success: false,
+            message: responseMessage(error, error.message || error.toString()),
+          });
+        }
         setIsSubmitting(false);
       });
   };
@@ -472,7 +469,7 @@ const RegisterPage = ({ session, returnTo, auth }) => {
           loading={isSubmitting}
           loadingProvider={loadingProvider}
           formValues={formValues}
-          validationErrors={validationErrors}
+          rules={rules}
           onChange={handleInputChange}
           onSubmit={handleSubmit}
           onSelectProvider={handleOidcRegister}

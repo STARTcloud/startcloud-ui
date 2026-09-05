@@ -9,6 +9,7 @@ export const resumeUser = userId => client.put(`${user(userId)}/resume`, {});
 
 export const adminConfig = {
   get: configName => client.get(encodePath('api', 'config', configName)),
+  schema: configName => client.get(encodePath('api', 'config', configName, 'schema')),
   update: (configName, configData) =>
     client.put(encodePath('api', 'config', configName), configData),
   restart: () => client.post('/api/config/restart', {}),

@@ -13,6 +13,7 @@ const uploadSslForm = (token, file) => {
 export const setupApi = {
   verifyToken: token => client.post('/api/setup/verify-token', { token }, PUBLIC),
   configs: token => client.get('/api/setup', setupAuth(token)),
+  schemas: token => client.get('/api/setup/schema', setupAuth(token)),
   update: (token, configs) => client.put('/api/setup', { configs }, setupAuth(token)),
   status: () => client.get('/api/setup/status', PUBLIC),
   uploadSsl: uploadSslForm,
