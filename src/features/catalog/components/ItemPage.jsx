@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
 import Markdown from 'react-markdown';
@@ -10,8 +9,10 @@ import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { providerPath, versionPath } from '../../../utils/routes';
+import { useDetailSearch } from '../hooks/useDetailSearch';
 import {
   collectionShape,
+  detailSearchShape,
   itemShape,
   pageContextShape,
   sortVersionsNewestFirst,
@@ -19,7 +20,9 @@ import {
   visibilityOf,
 } from '../utils/itemShape';
 
+import { createdColumn, downloadsColumn, updatedColumn } from './columns';
 import ItemFacts from './ItemFacts';
+import SubTable, { hasAny } from './SubTable';
 
 const Readme = ({ readme }) => {
   const { t } = useTranslation();
@@ -213,98 +216,99 @@ ItemDetails.propTypes = {
   formatFileSize: PropTypes.func.isRequired,
 };
 
-const shortChecksum = artifact =>
-  `${artifact.checksumType}:${artifact.checksum.slice(0, 4)}…${artifact.checksum.slice(-4)}`;
+const versionColumns = (org, name) => [
+  {
+    key: 'version',
+    labelKey: 'pages.table.version',
+    sortValue: version => [new Date(version.createdAt || 0).getTime(), version.version],
+    render: (version, ctx) => (
+      <>
+        <Link to={versionPath(ctx.collection, org, name, version.version)}>{version.version}</Link>
+        {version.deprecated ? (
+          <span className="badge bg-danger ms-2">{ctx.t('pages.status.deprecated')}</span>
+        ) : null}
+      </>
+    ),
+  },
+  { ...createdColumn, defaultHidden: false, when: hasAny(version => version.createdAt) },
+  { ...updatedColumn, defaultHidden: false, when: hasAny(version => version.updatedAt) },
+  { ...downloadsColumn, when: hasAny(version => typeof version.downloads === 'number') },
+  {
+    key: 'details',
+    labelKey: 'pages.table.details',
+    sortValue: version => (version.description || '').toLowerCase(),
+    when: hasAny(version => version.description),
+    render: version => version.description,
+  },
+  {
+    key: 'providers',
+    labelKey: 'pages.table.providers',
+    when: hasAny(version => (version.providers || []).length > 0),
+    render: (version, ctx) =>
+      (version.providers || []).map(provider => (
+        <Link
+          key={provider.name}
+          to={providerPath(ctx.collection, org, name, version.version, provider.name)}
+          className="badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1"
+        >
+          {provider.name}
+        </Link>
+      )),
+  },
+  {
+    key: 'artifacts',
+    labelKey: 'pages.version.artifacts',
+    when: hasAny(version => (version.artifacts || []).length > 0),
+    render: (version, ctx) =>
+      (version.artifacts || []).map(artifact => (
+        <Link
+          key={artifact.name}
+          to={versionPath(ctx.collection, org, name, version.version)}
+          className="badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1"
+        >
+          {artifact.name}
+        </Link>
+      )),
+  },
+];
 
-const ArtifactLinks = ({ artifacts }) => {
-  const { t } = useTranslation();
-  return artifacts.map(artifact => (
-    <div key={artifact.downloadUrl} className="d-flex align-items-center gap-2 flex-wrap">
-      <a href={artifact.downloadUrl}>{t('pages.table.download')}</a>
-      <code className="checksum" title={`${artifact.checksumType}:${artifact.checksum}`}>
-        {shortChecksum(artifact)}
-      </code>
-    </div>
-  ));
-};
+const versionMatches = (version, needle) =>
+  [
+    version.version,
+    version.description,
+    version.releaseNotes,
+    ...(version.providers || []).map(provider => provider.name),
+  ].some(value => (value || '').toLowerCase().includes(needle));
 
-ArtifactLinks.propTypes = {
-  artifacts: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
-
-const VersionsTable = ({ collection, item, org, ctx }) => {
+const VersionsTable = ({ collection, item, columns, search, ctx }) => {
   const { t } = useTranslation();
   const { VersionRowActions } = collection.slots;
-  const versions = sortVersionsNewestFirst(item.versions || []);
-  const hasReleased = versions.some(version => version.createdAt);
-  const hasDetails = versions.some(version => version.description);
-  const hasProviders = versions.some(version => (version.providers || []).length > 0);
-  const hasArtifacts = versions.some(version => (version.artifacts || []).length > 0);
   return (
-    <Table striped className="table">
-      <thead>
-        <tr>
-          <th>{t('pages.table.version')}</th>
-          {hasReleased ? <th>{t('pages.version.released')}</th> : null}
-          {hasDetails ? <th>{t('pages.table.details')}</th> : null}
-          {hasProviders ? <th>{t('pages.table.providers')}</th> : null}
-          {hasArtifacts ? <th>{t('pages.version.artifacts')}</th> : null}
-          {VersionRowActions ? <th>{t('pages.table.actions')}</th> : null}
-        </tr>
-      </thead>
-      <tbody>
-        {versions.map(version => (
-          <tr key={version.version}>
-            <td>
-              <Link to={versionPath(collection, org, item.name, version.version)}>
-                {version.version}
-              </Link>
-              {version.deprecated ? (
-                <span className="badge bg-danger ms-2">{t('pages.status.deprecated')}</span>
-              ) : null}
-            </td>
-            {hasReleased ? (
-              <td>{version.createdAt ? new Date(version.createdAt).toLocaleDateString() : ''}</td>
-            ) : null}
-            {hasDetails ? <td>{version.description}</td> : null}
-            {hasProviders ? (
-              <td>
-                {(version.providers || []).map(provider => (
-                  <Link
-                    key={provider.name}
-                    to={providerPath(collection, org, item.name, version.version, provider.name)}
-                    className="badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1"
-                  >
-                    {provider.name}
-                  </Link>
-                ))}
-              </td>
-            ) : null}
-            {hasArtifacts ? (
-              <td>
-                <ArtifactLinks artifacts={version.artifacts || []} />
-              </td>
-            ) : null}
-            {VersionRowActions ? (
-              <td>
-                <VersionRowActions item={item} version={version} ctx={ctx} />
-              </td>
-            ) : null}
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <SubTable
+      columns={columns}
+      rows={search.rows}
+      rowKey={version => version.version}
+      RowActions={VersionRowActions}
+      actionsProps={{ item, ctx }}
+      rowProp="version"
+      sort={search.sort}
+      onSort={search.setSort}
+      hiddenColumns={search.hiddenColumns}
+      ctx={ctx}
+      emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+    />
   );
 };
 
 VersionsTable.propTypes = {
   collection: collectionShape.isRequired,
   item: PropTypes.object.isRequired,
-  org: PropTypes.string.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+  search: detailSearchShape.isRequired,
   ctx: PropTypes.object.isRequired,
 };
 
-const VersionsSection = ({ collection, item, org, form, ctx }) => {
+const VersionsSection = ({ collection, item, columns, search, form, ctx }) => {
   const { t } = useTranslation();
   const { VersionsActions } = collection.slots;
   return (
@@ -316,7 +320,13 @@ const VersionsSection = ({ collection, item, org, form, ctx }) => {
         </div>
       </div>
       {form}
-      <VersionsTable collection={collection} item={item} org={org} ctx={ctx} />
+      <VersionsTable
+        collection={collection}
+        item={item}
+        columns={columns}
+        search={search}
+        ctx={ctx}
+      />
     </>
   );
 };
@@ -324,7 +334,8 @@ const VersionsSection = ({ collection, item, org, form, ctx }) => {
 VersionsSection.propTypes = {
   collection: collectionShape.isRequired,
   item: itemShape.isRequired,
-  org: PropTypes.string.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+  search: detailSearchShape.isRequired,
   form: PropTypes.node,
   ctx: PropTypes.object.isRequired,
 };
@@ -341,6 +352,14 @@ const ItemPage = ({ collection, org, name, context }) => {
   const { item } = data;
   const signedIn = Boolean(context.user);
   const watch = useItemWatch({ collection, item: ready ? item : null, signedIn, notify });
+  const columns = versionColumns(org, name);
+  const search = useDetailSearch({
+    rows: ready && item ? sortVersionsNewestFirst(item.versions || []) : [],
+    matches: versionMatches,
+    placeholderKey: 'pages.search.versions',
+    columns,
+    prefsKey: `${context.prefsPrefix}_${org}_${name}`,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -405,7 +424,14 @@ const ItemPage = ({ collection, org, name, context }) => {
       {ItemExtras ? <ItemExtras item={item} ctx={ctx} /> : null}
       <ItemDetails item={item} formatFileSize={context.formatFileSize} />
       {collection.hasVersions ? (
-        <VersionsSection collection={collection} item={item} org={org} form={form} ctx={ctx} />
+        <VersionsSection
+          collection={collection}
+          item={item}
+          columns={columns}
+          search={search}
+          form={form}
+          ctx={ctx}
+        />
       ) : null}
       {ItemSections ? <ItemSections item={item} ctx={ctx} /> : null}
     </div>

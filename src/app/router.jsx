@@ -287,7 +287,11 @@ const collectionRoutes = ({ collection, collections, organizations, context }) =
         key={`${base}/:name/:version`}
         path={`${base}/:name/:version`}
         element={<VersionRoute collection={collection} context={context} />}
-      />,
+      />
+    );
+  }
+  if (collection.hasVersions && collection.hasProviders) {
+    routes.push(
       <Route
         key={`${base}/:name/:version/:provider`}
         path={`${base}/:name/:version/:provider`}
@@ -316,7 +320,7 @@ const AppRoutes = ({
 }) => {
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
-  const { activeOrgUuid, organizations, oidc } = account;
+  const { activeOrgUuid, organizations, oidc, issuerUrl } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
     <Route
       path="/setup"
@@ -423,6 +427,7 @@ const AppRoutes = ({
               account={accountAdapter}
               activeOrgUuid={activeOrgUuid}
               localAccounts={hasFeature(status, 'local-accounts')}
+              issuerUrl={issuerUrl}
             />
           ) : (
             <Stub titleKey="profile.pageTitle" token="backend" />

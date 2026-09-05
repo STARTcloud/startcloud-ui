@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="uds-top" x1="205" y1="92" x2="384" y2="216" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#1A2A8F"/>
+<stop offset="0.45" stop-color="#1C4FB5"/>
+<stop offset="1" stop-color="#2270D6"/>
+</linearGradient>
+<linearGradient id="uds-bottom" x1="92" y1="235" x2="235" y2="388" gradientUnits="userSpaceOnUse">
+<stop offset="0" stop-color="#1E5AC2"/>
+<stop offset="1" stop-color="#2A7DE0"/>
+</linearGradient>
+</defs>
+<g transform="translate(80 80) scale(0.78)">
+<path d="M68 108C66 80 110 70 205 64L360 60C392 60 402 76 400 110L393 242C380 240 372 244 366 250C395 300 400 345 372 378C345 405 295 415 258 408L220 406C120 380 66 300 70 222L72 215C68 180 66 140 68 108Z" fill="#7FC31C"/>
+<path d="M386 110C386 80 378 66 350 62L360 60C392 60 402 76 400 110L393 242L380 240Z" fill="#66801E"/>
+<path d="M70 222C66 300 120 380 220 406L222 396C130 370 80 296 82 226Z" fill="#66801E"/>
+<path d="M205 92L352 88C372 88 384 96 384 114L380 216C360 200 330 205 318 225C295 190 245 140 205 92Z" fill="url(#uds-top)"/>
+<path d="M100 225C140 262 200 335 235 388C150 362 92 300 92 235Z" fill="url(#uds-bottom)"/>
+</g>
+</svg>

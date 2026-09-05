@@ -78,18 +78,31 @@ export const fetchWithDeduplication = (emailHash, fetchProfile) => {
   return promise;
 };
 
+const lookupProfile = async (hash, signal) => {
+  const response = await client.raw('GET', encodePath('api', 'gravatar', 'profile', hash), {
+    auth: false,
+    signal,
+  });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  return response.json();
+};
+
 /**
  * The Gravatar profile behind an email hash through the host's
- * `/api/gravatar/profile` proxy, deduplicated and cached; null when the
- * lookup fails, an abort logging nothing.
+ * `/api/gravatar/profile` proxy, deduplicated and cached; null when there is
+ * no profile (a 404 is a miss, not an error) or when the lookup fails, an
+ * abort logging nothing.
  * @param {string} emailHash - The email hash
  * @param {AbortSignal} [signal] - Cancels the request
  * @returns {Promise<Object|null>}
  */
 export const gravatarProfile = (emailHash, signal) =>
-  fetchWithDeduplication(emailHash, hash =>
-    client.get(encodePath('api', 'gravatar', 'profile', hash), { auth: false, signal })
-  ).catch(error => {
+  fetchWithDeduplication(emailHash, hash => lookupProfile(hash, signal)).catch(error => {
     if (!isAbort(error)) {
       log.api.error('Error fetching Gravatar profile', { emailHash, error: error.message });
     }

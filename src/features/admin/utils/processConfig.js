@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 
+import { generateLabel } from '../../../utils/configLabel';
+
 /**
  * The app's side of the shared admin page: the organizations with their
  * members and the suspend, resume, rename, edit and delete calls over
@@ -54,16 +56,6 @@ const SECTION_MAPS = {
     smtp_settings: 'mail',
     smtp_auth: 'mail',
   },
-};
-
-export const generateLabel = fieldName => {
-  if (!fieldName || typeof fieldName !== 'string') {
-    return fieldName || '';
-  }
-  return fieldName
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 };
 
 export const inferSectionKey = (path, configType) => {

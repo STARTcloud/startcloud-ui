@@ -10,12 +10,16 @@ import { collectionShape, pageContextShape } from '../utils/itemShape';
 import ItemCards from './ItemCards';
 import ItemsTable from './ItemsTable';
 
-const groupByOrganization = items => {
+const groupByOrganization = (collection, items) => {
   const groups = new Map();
   items.forEach(item => {
     const key = item.organization.name;
     if (!groups.has(key)) {
-      groups.set(key, { key: `org:${key}`, organization: item.organization, items: [] });
+      groups.set(key, {
+        key: `${collection.key}:org:${key}`,
+        organization: item.organization,
+        items: [],
+      });
     }
     groups.get(key).items.push(item);
   });
@@ -212,7 +216,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
     const shared = {
       collection,
       items,
-      groups: grouped ? groupByOrganization(items) : null,
+      groups: grouped ? groupByOrganization(collection, items) : null,
       collapsed,
       onToggleGroup: toggleCollapsed,
       watches:

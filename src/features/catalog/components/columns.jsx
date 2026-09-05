@@ -92,11 +92,7 @@ export const osColumn = {
     return (
       <>
         {iconUrl ? (
-          <img
-            src={iconUrl}
-            alt=""
-            className="rounded-circle icon-with-margin-sm v-align-middle avatar-lg"
-          />
+          <img src={iconUrl} alt="" className="icon-with-margin-sm v-align-middle avatar-lg" />
         ) : null}
         <span className="v-align-middle">{label}</span>
       </>
@@ -179,21 +175,4 @@ export const architecturesColumn = {
   defaultHidden: true,
   sortValue: item => namesKey(architectureNames(item)),
   render: item => nameBadges(architectureNames(item)),
-};
-
-export const sizeColumn = {
-  key: 'size',
-  labelKey: 'pages.table.size',
-  sortValue: item => item.artifact?.fileSize || 0,
-  render: (item, ctx) => ctx.formatFileSize(item.artifact?.fileSize),
-};
-
-export const checksumColumn = {
-  key: 'checksum',
-  labelKey: 'pages.table.checksum',
-  sortValue: item => (item.artifact?.checksum || '').toLowerCase(),
-  render: item => {
-    const checksum = item.artifact?.checksum || '';
-    return checksum ? <code title={checksum}>{checksum}</code> : '';
-  },
 };

@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaRegStar, FaSort, FaSortDown, FaSortUp, FaStar } from 'react-icons/fa6';
+import { FaRegStar, FaStar } from 'react-icons/fa6';
 
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
 import { collectionShape, itemShape } from '../utils/itemShape';
+
+import SortHeader from './SortHeader';
 
 const WatchStar = ({ watched, onToggle }) => {
   const { t } = useTranslation();
@@ -26,33 +28,6 @@ const WatchStar = ({ watched, onToggle }) => {
 WatchStar.propTypes = {
   watched: PropTypes.bool.isRequired,
   onToggle: PropTypes.func.isRequired,
-};
-
-const SortIcon = ({ column, sort }) => {
-  if (sort.column !== column) {
-    return <FaSort />;
-  }
-  return sort.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
-};
-
-SortIcon.propTypes = {
-  column: PropTypes.string.isRequired,
-  sort: PropTypes.shape({ column: PropTypes.string, direction: PropTypes.string }).isRequired,
-};
-
-const SortButton = ({ onClick, children }) => (
-  <button
-    type="button"
-    className="btn btn-link btn-sm p-0 fw-bold text-body text-decoration-none text-nowrap"
-    onClick={onClick}
-  >
-    {children}
-  </button>
-);
-
-SortButton.propTypes = {
-  onClick: PropTypes.func.isRequired,
-  children: PropTypes.node.isRequired,
 };
 
 const ItemRow = ({ item, columns, watches, ItemQuickActions, RowActions, ctx }) => (
@@ -156,10 +131,9 @@ const ItemsTable = ({
         <tr>
           <th className="col-watch text-center" title={t('pages.watch.filterWatched')}>
             {watches ? (
-              <SortButton onClick={() => onSort('watch')}>
-                <FaRegStar aria-label={t('pages.watch.filterWatched')} />{' '}
-                <SortIcon column="watch" sort={sort} />
-              </SortButton>
+              <SortHeader column="watch" sort={sort} onSort={onSort}>
+                <FaRegStar aria-label={t('pages.watch.filterWatched')} />
+              </SortHeader>
             ) : (
               <FaRegStar aria-label={t('pages.watch.filterWatched')} />
             )}
@@ -167,9 +141,9 @@ const ItemsTable = ({
           {columns.map(column => (
             <th key={column.key} className={`col-${column.key}`}>
               {column.sortValue ? (
-                <SortButton onClick={() => onSort(column.key)}>
-                  {t(column.labelKey)} <SortIcon column={column.key} sort={sort} />
-                </SortButton>
+                <SortHeader column={column.key} sort={sort} onSort={onSort}>
+                  {t(column.labelKey)}
+                </SortHeader>
               ) : (
                 t(column.labelKey)
               )}

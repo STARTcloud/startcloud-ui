@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { itemShape } from '../utils/itemShape';
 
+import ChecksumCell from './ChecksumCell';
+
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
 const formatMemory = memoryMb => {
@@ -35,9 +37,7 @@ const osRow = (item, rows) => {
     key: 'os',
     content: (
       <>
-        {iconUrl ? (
-          <img src={iconUrl} alt="" className="rounded-circle me-2 avatar-lg v-align-middle" />
-        ) : null}
+        {iconUrl ? <img src={iconUrl} alt="" className="me-2 avatar-lg v-align-middle" /> : null}
         {label}
       </>
     ),
@@ -104,12 +104,7 @@ const artifactRows = (item, formatFileSize) => {
     rows.push({
       key: 'checksum',
       content: (
-        <>
-          <code className="checksum text-break me-2">{artifact.checksum}</code>
-          {artifact.checksumType ? (
-            <span className="badge bg-secondary">{artifact.checksumType}</span>
-          ) : null}
-        </>
+        <ChecksumCell checksum={artifact.checksum} checksumType={artifact.checksumType || ''} />
       ),
     });
   }

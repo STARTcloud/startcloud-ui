@@ -8,13 +8,24 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
-import { responseMessage } from '../../../utils/responseMessage';
-import { fetchPublicContent, getFavorites, saveFavorites } from '../api/about';
+import { getFavorites, saveFavorites } from '../api/about';
 
 import AboutPage from './AboutPage';
 
-const EMPTY = { title: '', description: '', components: [], features: [], goal: '' };
 const FAVORITE_KEY = 'favorite';
+
+const BOXVAULT_FEATURES = [
+  'authentication',
+  'boxManagement',
+  'versionControl',
+  'organizationSupport',
+  'apiDocumentation',
+  'secureStorage',
+];
+const BOXVAULT_COMPONENTS = [
+  { key: 'backend', details: ['nodejs', 'auth', 'endpoints', 'database'] },
+  { key: 'frontend', details: ['react', 'interface', 'features'] },
+];
 
 const CATALOG_FEATURES = ['catalogs', 'tiers', 'artifacts', 'watches', 'deploy'];
 const CATALOG_COMPONENTS = [
@@ -23,9 +34,14 @@ const CATALOG_COMPONENTS = [
   { key: 'worker', details: ['gate', 'push', 'config'] },
 ];
 
+const componentsOf = (t, prefix, components) =>
+  components.map(component => ({
+    title: t(`${prefix}.${component.key}.title`),
+    details: component.details.map(detail => t(`${prefix}.${component.key}.${detail}`)),
+  }));
+
 const PROFILES = {
   boxvault: {
-    remote: true,
     docs: () => [
       { key: 'gettingStarted', href: '/docs/guides/', Icon: FaServer },
       { key: 'fullDocs', href: '/docs', Icon: FaBook },
@@ -40,16 +56,15 @@ const PROFILES = {
     ],
     supportLabel: key => `about.boxvault.support.${key}`,
     supportIntro: 'about.boxvault.support.description',
-    content: (t, data) => ({
-      title: data.title || t('about.boxvault.fallbackTitle'),
-      description: data.description || t('about.boxvault.fallbackDescription'),
-      goal: data.goal || t('about.boxvault.fallbackGoal'),
-      features: data.features,
-      components: data.components,
+    content: t => ({
+      title: t('about.boxvault.title'),
+      description: t('about.boxvault.description'),
+      goal: t('about.boxvault.goal'),
+      features: BOXVAULT_FEATURES.map(key => t(`about.boxvault.features.${key}`)),
+      components: componentsOf(t, 'about.boxvault.components', BOXVAULT_COMPONENTS),
     }),
   },
   catalog: {
-    remote: false,
     docs: () => [
       { key: 'gettingStarted', href: '/docs/guides/getting-started/', Icon: FaServer },
       { key: 'docs', href: '/docs/', Icon: FaBook },
@@ -69,46 +84,25 @@ const PROFILES = {
       description: t('about.catalog.description'),
       goal: t('about.catalog.goal'),
       features: CATALOG_FEATURES.map(key => t(`about.catalog.features.${key}`)),
-      components: CATALOG_COMPONENTS.map(component => ({
-        title: t(`about.catalog.components.${component.key}.title`),
-        details: component.details.map(detail =>
-          t(`about.catalog.components.${component.key}.${detail}`)
-        ),
-      })),
+      components: componentsOf(t, 'about.catalog.components', CATALOG_COMPONENTS),
     }),
   },
 };
 
 /**
- * The About route: the shared `AboutPage` fed by the host's status, the
- * host's project content from `/api/users/all` when its role serves one,
- * else the locale strings, and the identity-provider favourite toggle when
- * the host advertises `favorites` and the viewer signed in through the
- * provider.
+ * The About route: the shared `AboutPage` fed by the host's status and the
+ * locale strings of the host's role, plus the identity-provider favourite
+ * toggle when the host advertises `favorites` and the viewer signed in
+ * through the provider.
  */
 const AboutRoute = ({ theme, oidc }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
   const profile = PROFILES[status.role];
-  const [projectData, setProjectData] = useState(EMPTY);
   const [favorited, setFavorited] = useState(false);
   const favorites = hasFeature(status, 'favorites') && oidc;
   const clientId = status.role;
-
-  useEffect(() => {
-    if (!profile.remote) {
-      return;
-    }
-    const loadData = async () => {
-      try {
-        setProjectData(await fetchPublicContent(i18n.language));
-      } catch (error) {
-        notify('danger', responseMessage(error, error.message || error.toString()));
-      }
-    };
-    loadData();
-  }, [i18n.language, notify, profile.remote]);
 
   useEffect(() => {
     if (!favorites) {
@@ -150,7 +144,7 @@ const AboutRoute = ({ theme, oidc }) => {
     }
   };
 
-  const content = profile.content(t, projectData);
+  const content = profile.content(t);
 
   return (
     <AboutPage

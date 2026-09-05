@@ -12,8 +12,8 @@ const parse = key => {
 
 const setOf = values => new Set(Array.isArray(values) ? values : []);
 
-const defaultHidden = collection =>
-  collection.columns.filter(column => column.defaultHidden).map(column => column.key);
+const defaultHidden = columns =>
+  columns.filter(column => column.defaultHidden).map(column => column.key);
 
 const plainSets = sets =>
   Object.fromEntries(Object.entries(sets).map(([key, set]) => [key, [...set]]));
@@ -32,7 +32,7 @@ export const readPrefs = (key, collections) => {
     );
     sort[collection.key] = saved.sort?.[collection.key] || { column: '', direction: 'asc' };
     hiddenColumns[collection.key] = setOf(
-      saved.hiddenColumns?.[collection.key] ?? defaultHidden(collection)
+      saved.hiddenColumns?.[collection.key] ?? defaultHidden(collection.columns)
     );
   });
   return {
@@ -66,6 +66,18 @@ export const writePrefs = (
       hiddenColumns: plainSets(hiddenColumns),
     })
   );
+};
+
+export const readDetailPrefs = (key, columns) => {
+  const saved = parse(key);
+  return {
+    sort: saved.sort || { column: '', direction: 'asc' },
+    hiddenColumns: setOf(saved.hiddenColumns ?? defaultHidden(columns)),
+  };
+};
+
+export const writeDetailPrefs = (key, { sort, hiddenColumns }) => {
+  localStorage.setItem(key, JSON.stringify({ sort, hiddenColumns: [...hiddenColumns] }));
 };
 
 export const emptyFilters = collections => ({

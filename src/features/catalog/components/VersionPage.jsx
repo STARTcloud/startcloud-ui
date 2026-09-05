@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link } from 'react-router-dom';
@@ -10,48 +9,20 @@ import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { providerPath } from '../../../utils/routes';
-import { collectionShape, pageContextShape, versionShape } from '../utils/itemShape';
+import { useDetailSearch } from '../hooks/useDetailSearch';
+import {
+  collectionShape,
+  detailSearchShape,
+  pageContextShape,
+  versionShape,
+} from '../utils/itemShape';
+import { sortItems } from '../utils/sort';
+
+import ChecksumCell from './ChecksumCell';
+import { createdColumn, downloadsColumn, updatedColumn } from './columns';
+import SubTable, { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
-
-const ArtifactsTable = ({ artifacts }) => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <h4>{t('pages.version.artifacts')}</h4>
-      <Table striped className="table">
-        <thead>
-          <tr>
-            <th>{t('pages.table.name')}</th>
-            <th>{t('pages.table.checksum')}</th>
-            <th>{t('pages.table.download')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {artifacts.map(artifact => (
-            <tr key={artifact.downloadUrl}>
-              <td>{artifact.name}</td>
-              <td>
-                <code className="checksum text-break">
-                  {artifact.checksumType}:{artifact.checksum}
-                </code>
-              </td>
-              <td>
-                <a href={artifact.downloadUrl} className="btn btn-sm btn-outline-primary">
-                  {t('pages.table.download')}
-                </a>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </>
-  );
-};
-
-ArtifactsTable.propTypes = {
-  artifacts: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
 
 const MetaRow = ({ entry }) => {
   const { t } = useTranslation();
@@ -112,64 +83,229 @@ VersionSummary.propTypes = {
   slotProps: PropTypes.object.isRequired,
 };
 
-const ProvidersTable = ({ collection, org, name, entry, slotProps }) => {
+const providerColumns = (org, name, version) => [
+  {
+    key: 'name',
+    labelKey: 'pages.table.name',
+    sortValue: provider => provider.name.toLowerCase(),
+    render: (provider, ctx) => (
+      <Link to={providerPath(ctx.collection, org, name, version, provider.name)}>
+        {provider.name}
+      </Link>
+    ),
+  },
+  { ...createdColumn, defaultHidden: false, when: hasAny(provider => provider.createdAt) },
+  { ...updatedColumn, defaultHidden: false, when: hasAny(provider => provider.updatedAt) },
+  { ...downloadsColumn, when: hasAny(provider => typeof provider.downloads === 'number') },
+  {
+    key: 'details',
+    labelKey: 'pages.table.details',
+    sortValue: provider => (provider.description || '').toLowerCase(),
+    when: hasAny(provider => provider.description),
+    render: provider => provider.description,
+  },
+  {
+    key: 'architectures',
+    labelKey: 'pages.table.architectures',
+    when: hasAny(provider => (provider.architectures || []).length > 0),
+    render: (provider, ctx) => (
+      <span className="d-inline-flex flex-wrap align-items-center gap-2">
+        {(provider.architectures || []).map(architecture => (
+          <span key={architecture.name} className="d-inline-flex align-items-center gap-1">
+            <span className="badge bg-secondary badge-xs">{architecture.name}</span>
+            {architecture.downloadUrl ? (
+              <a
+                href={architecture.downloadUrl}
+                className="btn btn-sm btn-outline-primary"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {ctx.t('pages.table.download')}
+              </a>
+            ) : null}
+          </span>
+        ))}
+      </span>
+    ),
+  },
+];
+
+const providerMatches = (provider, needle) =>
+  [
+    provider.name,
+    provider.description,
+    ...(provider.architectures || []).map(architecture => architecture.name),
+  ].some(value => (value || '').toLowerCase().includes(needle));
+
+const artifactColumns = [
+  {
+    key: 'name',
+    labelKey: 'pages.table.name',
+    sortValue: artifact => artifact.name.toLowerCase(),
+    render: artifact => artifact.name,
+  },
+  { ...createdColumn, defaultHidden: false, when: hasAny(artifact => artifact.createdAt) },
+  { ...updatedColumn, defaultHidden: false, when: hasAny(artifact => artifact.updatedAt) },
+  {
+    key: 'downloads',
+    labelKey: 'pages.table.downloads',
+    sortValue: artifact => artifact.downloadCount || 0,
+    when: hasAny(artifact => typeof artifact.downloadCount === 'number'),
+    render: artifact => (typeof artifact.downloadCount === 'number' ? artifact.downloadCount : ''),
+  },
+  {
+    key: 'size',
+    labelKey: 'pages.table.fileSize',
+    sortValue: artifact => artifact.fileSize || 0,
+    when: hasAny(artifact => artifact.fileSize),
+    render: (artifact, ctx) => (artifact.fileSize ? ctx.formatFileSize(artifact.fileSize) : ''),
+  },
+  {
+    key: 'checksum',
+    labelKey: 'pages.table.checksum',
+    sortValue: artifact => (artifact.checksum || '').toLowerCase(),
+    when: hasAny(artifact => artifact.checksum),
+    render: artifact =>
+      artifact.checksum ? (
+        <ChecksumCell checksum={artifact.checksum} checksumType={artifact.checksumType || ''} />
+      ) : (
+        ''
+      ),
+  },
+  {
+    key: 'download',
+    labelKey: 'pages.table.download',
+    when: hasAny(artifact => artifact.downloadUrl),
+    render: (artifact, ctx) =>
+      artifact.downloadUrl ? (
+        <a
+          href={artifact.downloadUrl}
+          className="btn btn-sm btn-outline-primary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {ctx.t('pages.table.download')}
+        </a>
+      ) : null,
+  },
+];
+
+const artifactMatches = (artifact, needle) =>
+  [artifact.name, artifact.checksum].some(value => (value || '').toLowerCase().includes(needle));
+
+const ProvidersTable = ({ collection, columns, search, slotProps }) => {
   const { t } = useTranslation();
   const { ProviderRowActions } = collection.slots;
   return (
-    <Table striped className="table">
-      <thead>
-        <tr>
-          <th>{t('pages.table.name')}</th>
-          <th>{t('pages.table.details')}</th>
-          <th>{t('pages.table.download')}</th>
-          {ProviderRowActions ? <th>{t('pages.table.actions')}</th> : null}
-        </tr>
-      </thead>
-      <tbody>
-        {(entry.providers || []).map(provider => (
-          <tr key={provider.name}>
-            <td>
-              <Link to={providerPath(collection, org, name, entry.version, provider.name)}>
-                {provider.name}
-              </Link>
-            </td>
-            <td>{provider.description}</td>
-            <td>
-              {(provider.architectures || [])
-                .filter(architecture => architecture.downloadUrl)
-                .map(architecture => (
-                  <div key={architecture.name}>
-                    <a
-                      href={architecture.downloadUrl}
-                      className="btn btn-outline-primary mt-2"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t('pages.table.download')} {architecture.name}
-                    </a>
-                  </div>
-                ))}
-            </td>
-            {ProviderRowActions ? (
-              <td>
-                <ProviderRowActions {...slotProps} provider={provider} />
-              </td>
-            ) : null}
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <SubTable
+      columns={columns}
+      rows={search.rows}
+      rowKey={provider => provider.name}
+      RowActions={ProviderRowActions}
+      actionsProps={slotProps}
+      rowProp="provider"
+      sort={search.sort}
+      onSort={search.setSort}
+      hiddenColumns={search.hiddenColumns}
+      ctx={slotProps.ctx}
+      emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+    />
   );
 };
 
 ProvidersTable.propTypes = {
   collection: collectionShape.isRequired,
-  org: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  entry: versionShape.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+  search: detailSearchShape.isRequired,
   slotProps: PropTypes.object.isRequired,
 };
 
+const ProvidersSection = ({ collection, columns, search, form, slotProps }) => {
+  const { t } = useTranslation();
+  const { ProvidersActions } = collection.slots;
+  return (
+    <div className="list-table">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h4>{t('pages.version.providersFor', { version: slotProps.version.version })}</h4>
+        {ProvidersActions ? <ProvidersActions {...slotProps} /> : null}
+      </div>
+      {form}
+      <ProvidersTable
+        collection={collection}
+        columns={columns}
+        search={search}
+        slotProps={slotProps}
+      />
+    </div>
+  );
+};
+
+ProvidersSection.propTypes = {
+  collection: collectionShape.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
+  search: detailSearchShape.isRequired,
+  form: PropTypes.node,
+  slotProps: PropTypes.object.isRequired,
+};
+
+const ArtifactsSection = ({ collection, rows, search, form, slotProps }) => {
+  const { t } = useTranslation();
+  const { ArtifactsActions, ArtifactRowActions } = collection.slots;
+  return (
+    <div className="list-table">
+      <div className="d-flex justify-content-between align-items-center flex-wrap mb-3">
+        <h4>{t('pages.version.artifacts')}</h4>
+        {ArtifactsActions ? <ArtifactsActions {...slotProps} /> : null}
+      </div>
+      {form}
+      <SubTable
+        columns={artifactColumns}
+        rows={rows}
+        rowKey={artifact => artifact.name}
+        RowActions={ArtifactRowActions}
+        actionsProps={slotProps}
+        rowProp="artifact"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        ctx={slotProps.ctx}
+        emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+      />
+    </div>
+  );
+};
+
+ArtifactsSection.propTypes = {
+  collection: collectionShape.isRequired,
+  rows: PropTypes.array.isRequired,
+  search: detailSearchShape.isRequired,
+  form: PropTypes.node,
+  slotProps: PropTypes.object.isRequired,
+};
+
+const detailRows = (collection, entry) => {
+  if (!entry) {
+    return [];
+  }
+  return collection.hasProviders ? entry.providers || [] : entry.artifacts || [];
+};
+
+const sideArtifacts = (artifacts, search) => {
+  const needle = search.query.trim().toLowerCase();
+  const shown = search.filtering
+    ? artifacts.filter(artifact => artifactMatches(artifact, needle))
+    : artifacts;
+  return sortItems(shown, search.sort, artifactColumns);
+};
+
+/**
+ * One version of an item: its summary with the release notes and the
+ * deprecation banner, then for a collection with providers the version's
+ * providers table (with the version's own artifacts above it when it carries
+ * any), else the version's artifacts table, one file per architecture; the
+ * navbar search, the header sort and the Columns pills drive whichever of
+ * the two tables the collection puts first.
+ */
 const VersionPage = ({ collection, org, name, version, context }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
@@ -180,6 +316,19 @@ const VersionPage = ({ collection, org, name, version, context }) => {
   const key = `${org}/${name}/${version}/${nonce}`;
   const ready = data.key === key;
   const { item, entry } = data;
+  const columns = providerColumns(org, name, version);
+  const detail = collection.hasProviders
+    ? { matches: providerMatches, placeholderKey: 'pages.search.providers', columns }
+    : {
+        matches: artifactMatches,
+        placeholderKey: 'pages.search.artifacts',
+        columns: artifactColumns,
+      };
+  const search = useDetailSearch({
+    rows: ready ? detailRows(collection, entry) : [],
+    ...detail,
+    prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}`,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -207,7 +356,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
     document.title = `${name} v${version}`;
   }, [name, version]);
 
-  const { VersionActions, ProvidersActions } = collection.slots;
+  const { VersionActions } = collection.slots;
   const ctx = {
     ...context,
     t,
@@ -255,21 +404,31 @@ const VersionPage = ({ collection, org, name, version, context }) => {
           slotProps={slotProps}
         />
       )}
-      {artifacts.length > 0 ? <ArtifactsTable artifacts={artifacts} /> : null}
-      <div className="list-table">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4>{t('pages.version.providersFor', { version: entry.version })}</h4>
-          {ProvidersActions ? <ProvidersActions {...slotProps} /> : null}
-        </div>
-        {form}
-        <ProvidersTable
+      {collection.hasProviders && artifacts.length > 0 ? (
+        <ArtifactsSection
           collection={collection}
-          org={org}
-          name={name}
-          entry={entry}
+          rows={sideArtifacts(artifacts, search)}
+          search={search}
           slotProps={slotProps}
         />
-      </div>
+      ) : null}
+      {collection.hasProviders ? (
+        <ProvidersSection
+          collection={collection}
+          columns={columns}
+          search={search}
+          form={form}
+          slotProps={slotProps}
+        />
+      ) : (
+        <ArtifactsSection
+          collection={collection}
+          rows={search.rows}
+          search={search}
+          form={form}
+          slotProps={slotProps}
+        />
+      )}
     </div>
   );
 };

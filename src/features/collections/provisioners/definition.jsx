@@ -333,6 +333,7 @@ export const provisioners = {
   icon: <FaCubes aria-hidden />,
   segment: '',
   hasVersions: true,
+  hasProviders: true,
   itemRoute: true,
   searchKey: 'provisioners.search.placeholder',
   defaultView: 'cards',

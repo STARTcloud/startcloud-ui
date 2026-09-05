@@ -35,7 +35,7 @@ Before creating an issue, please:
 
 - Follow existing React / JavaScript conventions
 - **ESLint** (strict React + hooks + jsx-a11y + import rules) and **Prettier** enforce style — run `npm run quality` / `npm run fix`
-- Shared code lives under `src/chrome`, `src/pages` and `src/session`; anything one app differs in belongs under `src/apps/<app>/` and arrives as data
+- The tree is feature-first (`src/app`, `components`, `features`, `hooks`, `contexts`, `lib`, `utils`, `config`); there is no per-app code, anything one host differs in arrives in its `/api/status` and is gated with `hasFeature`
 - Every string goes through i18next; add it to every language under `public/locales`
 
 ### What We're Looking For

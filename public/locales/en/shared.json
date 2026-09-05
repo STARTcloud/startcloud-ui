@@ -80,6 +80,7 @@
   },
   "profile": {
     "pageTitle": "Profile",
+    "manageAtIdp": "Manage at identity provider",
     "noJobTitle": "No Job Title",
     "unknown": "Unknown",
     "tabs": {
@@ -425,6 +426,17 @@
         "label": "Enable this provider for user authentication"
       }
     },
+    "config": {
+      "enabled": "Enable {{displayName}} OIDC authentication",
+      "displayName": "Display name shown on the login button",
+      "issuer": "{{displayName}} OIDC issuer URL",
+      "clientId": "{{displayName}} OAuth client ID",
+      "clientSecret": "{{displayName}} OAuth client secret",
+      "scope": "OAuth scopes to request",
+      "responseType": "OAuth 2.0 response type",
+      "prompt": "Optional prompt parameter",
+      "iconUrl": "Icon shown on the login button"
+    },
     "instructions": {
       "title": "Configuration Instructions",
       "step1": "Register your application with your OIDC provider's developer console",
@@ -676,6 +688,12 @@
     "empty": "Nothing here yet.",
     "noMatches": "Nothing matches.",
     "searchAll": "Search…",
+    "search": {
+      "versions": "Search versions",
+      "providers": "Search providers",
+      "architectures": "Search architectures",
+      "artifacts": "Search artifacts"
+    },
     "filter": {
       "collection": "Collection",
       "provider": "Provider",
@@ -790,7 +808,6 @@
       "error": "Failed to update the watch. Please try again."
     },
     "deploy": {
-      "deploy": "Deploy",
       "versionTitle": "Deploy {{version}} with Hyperweaver"
     },
     "about": {
@@ -817,9 +834,32 @@
         "githubProfile": "GitHub Profile",
         "repository": "Project Repository"
       },
-      "fallbackTitle": "BoxVault Project",
-      "fallbackDescription": "A self-hosted solution for managing VM templates.",
-      "fallbackGoal": "Providing a robust platform for Vagrant boxes."
+      "title": "BoxVault",
+      "description": "BoxVault is a self-hosted solution designed to store and manage Virtual Machine templates.",
+      "goal": "To provide a robust and easy-to-use platform for managing Vagrant boxes.",
+      "features": {
+        "authentication": "User Authentication",
+        "boxManagement": "Box Management",
+        "versionControl": "Version Control",
+        "organizationSupport": "Organization Support",
+        "apiDocumentation": "API Documentation",
+        "secureStorage": "Secure Storage"
+      },
+      "components": {
+        "backend": {
+          "title": "Backend",
+          "nodejs": "Node.js service that also answers Vagrant's box API on the same paths",
+          "auth": "Local accounts, single sign-on through OpenID Connect providers, and service-account tokens for automation",
+          "endpoints": "REST API documented in the Swagger UI at /api-docs",
+          "database": "Organizations, boxes, versions, providers, architectures and ISOs in the database; files on local storage"
+        },
+        "frontend": {
+          "title": "Frontend",
+          "react": "React single-page app with the navbar and pages shared byte for byte with the provisioner catalog",
+          "interface": "Light and dark themes, English and Spanish, browser notifications",
+          "features": "Box and ISO upload, versions, providers and architectures, organization console, admin panel"
+        }
+      }
     },
     "catalog": {
       "description": "The public catalog of provisioner packages for hyperweaver-agent and zoneweaver-agent, with per-organization private catalogs behind STARTcloud sign-in.",
@@ -933,15 +973,25 @@
     "iso": {
       "upload": {
         "drop": "Drop an ISO here or click to choose one",
-        "uploading": "Uploading… {{percent}}%"
+        "uploading": "Uploading… {{percent}}%",
+        "exists": "A file for this architecture already exists."
       },
+      "file": {
+        "deleted": "File deleted successfully!",
+        "deleteError": "Could not delete the file."
+      },
+      "name": "ISO Name",
+      "createTitle": "Create New ISO",
+      "create": "Create ISO",
+      "created": "ISO created successfully.",
+      "createError": "An error occurred while creating the ISO.",
+      "visibilityHint": "Making an ISO private prevents users from accessing it unless given permission.",
       "deleteTitle": "Delete ISO",
       "deleteMessage": "Are you sure you want to delete {{name}}?",
       "makePublic": "Make public",
       "makePrivate": "Make private",
       "publish": "Publish",
-      "unpublish": "Unpublish",
-      "copyChecksum": "Copy checksum"
+      "unpublish": "Unpublish"
     },
     "search": {
       "boxes": "Search boxes",

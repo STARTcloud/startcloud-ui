@@ -46,6 +46,7 @@ export const boxes = {
   icon: <FaCube aria-hidden />,
   segment: '',
   hasVersions: true,
+  hasProviders: true,
   itemRoute: true,
   searchKey: 'boxes.search.boxes',
   defaultView: 'table',

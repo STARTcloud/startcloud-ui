@@ -9,6 +9,7 @@ import {
   filterGroupsOf,
 } from '../utils/itemShape';
 import { emptyFilters, readPrefs, toggleIn, writePrefs } from '../utils/prefs';
+import { nextSort, sortItems } from '../utils/sort';
 
 const groupShown = (group, { signedIn, org, items }) =>
   (!group.signedInOnly || signedIn) &&
@@ -49,39 +50,10 @@ const passesWatched = (item, watched, watchedIds) =>
   watched.size === 0 ||
   WATCHED_GROUP.values(item, { watchedIds }).some(value => watched.has(value));
 
-const sortItems = (items, sort, columns) => {
-  const column = columns.find(entry => entry.key === sort.column);
-  if (!column || !column.sortValue) {
-    return items;
-  }
-  const direction = sort.direction === 'desc' ? -1 : 1;
-  return [...items].sort((a, b) => {
-    const left = column.sortValue(a);
-    const right = column.sortValue(b);
-    if (left < right) {
-      return -direction;
-    }
-    if (left > right) {
-      return direction;
-    }
-    return 0;
-  });
-};
-
 const watchSort = watchedIds => ({
   key: 'watch',
   sortValue: item => (watchedIds.has(item.id) ? 0 : 1),
 });
-
-const nextSort = (current, column) => {
-  if (current.column !== column) {
-    return { column, direction: 'asc' };
-  }
-  if (current.direction === 'asc') {
-    return { column, direction: 'desc' };
-  }
-  return { column: '', direction: 'asc' };
-};
 
 const collectionGroup = (collections, itemsByCollection, prefs, setPrefs, t) => ({
   key: 'collection',

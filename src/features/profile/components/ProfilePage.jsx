@@ -10,6 +10,8 @@ import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { responseMessage } from '../../../utils/responseMessage';
 
+import ProfileTabs from './ProfileTabs';
+
 /**
  * The app's side of the shared profile page: the calls behind the display
  * name, password, email, verification, memberships, join requests and
@@ -58,17 +60,46 @@ const groupByOrganization = (accounts, unknownLabel) => {
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
 
+const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
+  const tabs = [
+    { key: 'profile', labelKey: 'profile.tabs.profile' },
+    { key: 'organizations', labelKey: 'profile.tabs.organizations' },
+  ];
+  if (showSecurity) {
+    tabs.push({ key: 'security', labelKey: 'profile.tabs.security' });
+  }
+  if (oidc && issuerUrl) {
+    tabs.push({
+      key: 'manageAtIdp',
+      labelKey: 'profile.manageAtIdp',
+      href: `${issuerUrl}/user/profile`,
+    });
+  }
+  tabs.push({ key: 'serviceAccounts', labelKey: 'profile.tabs.serviceAccounts' });
+  return tabs;
+};
+
 /**
  * The profile page every estate app with accounts of its own draws the same
  * way: the avatar card with the verification notice, then Profile (display
  * name and the Gravatar facts), Organizations (memberships, make primary,
  * leave, pending join requests), Security (password, email, delete account,
- * only while the host advertises `local-accounts`) and Service accounts
+ * only while the host advertises `local-accounts` and the account is not
+ * signed in through the identity provider, whose accounts get a link to
+ * manage themselves at the provider instead) and Service accounts
  * (create, the one-time token, select and delete), every call through the
  * app's `account` adapter and the session's own `reload` and
  * `signOutEverywhere`.
  */
-const ProfilePage = ({ session, events, returnTo, account, activeOrgUuid, localAccounts }) => {
+const ProfilePage = ({
+  session,
+  events,
+  returnTo,
+  account,
+  activeOrgUuid,
+  localAccounts,
+  issuerUrl,
+}) => {
   const { t } = useTranslation();
   const notify = useNotify();
   useEffect(() => {
@@ -78,6 +109,8 @@ const ProfilePage = ({ session, events, returnTo, account, activeOrgUuid, localA
   const [current, setCurrent] = useState(() => session.restore());
   const currentUser = userOf(current);
   const oidc = Boolean(current?.oidc);
+  const showSecurity = localAccounts && !oidc;
+  const tabs = tabsFor({ showSecurity, oidc, issuerUrl });
   const [gravatarProfile, setGravatarProfile] = useState({});
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -930,50 +963,11 @@ const ProfilePage = ({ session, events, returnTo, account, activeOrgUuid, localA
                 </button>
               </div>
             )}
-            <ul className="nav nav-tabs">
-              <li className="nav-item">
-                <button
-                  type="button"
-                  className={`nav-link ${activeTab === 'profile' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('profile')}
-                >
-                  {t('profile.tabs.profile')}
-                </button>
-              </li>
-              <li className="nav-item">
-                <button
-                  type="button"
-                  className={`nav-link ${activeTab === 'organizations' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('organizations')}
-                >
-                  {t('profile.tabs.organizations')}
-                </button>
-              </li>
-              {localAccounts && (
-                <li className="nav-item">
-                  <button
-                    type="button"
-                    className={`nav-link ${activeTab === 'security' ? 'active' : ''}`}
-                    onClick={() => handleTabChange('security')}
-                  >
-                    {t('profile.tabs.security')}
-                  </button>
-                </li>
-              )}
-              <li className="nav-item">
-                <button
-                  type="button"
-                  className={`nav-link ${activeTab === 'serviceAccounts' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('serviceAccounts')}
-                >
-                  {t('profile.tabs.serviceAccounts')}
-                </button>
-              </li>
-            </ul>
+            <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
             <div className="tab-content mt-3">
               {activeTab === 'profile' && renderProfileTab()}
               {activeTab === 'organizations' && renderOrganizationsTab()}
-              {activeTab === 'security' && localAccounts && renderSecurityTab()}
+              {activeTab === 'security' && showSecurity && renderSecurityTab()}
               {activeTab === 'serviceAccounts' && renderServiceAccountsTab()}
             </div>
           </div>
@@ -1004,6 +998,7 @@ ProfilePage.propTypes = {
   account: accountShape.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
+  issuerUrl: PropTypes.string.isRequired,
 };
 
 export default ProfilePage;

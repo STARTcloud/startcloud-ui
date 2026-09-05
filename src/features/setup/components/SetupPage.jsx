@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useNotify } from '../../../contexts/NoticeContext';
 import { log } from '../../../lib/logger';
+import { generateLabel } from '../../../utils/configLabel';
 import { CONFIG_NAMES, validateConfigValue } from '../../../utils/configValidation';
 
 const SETUP_KEY = 'setup';
@@ -85,7 +86,7 @@ const SetupField = ({ configName, path, entry, error, onChange, onUpload }) => {
   const [showPassword, setShowPassword] = useState(false);
   const errorKey = path.join('.');
   const fieldId = `field-${errorKey}`;
-  const label = path[path.length - 1];
+  const label = generateLabel(path[path.length - 1]);
   const inputValue = entry.value === null || entry.value === undefined ? '' : entry.value;
   const invalid = error ? 'is-invalid' : '';
   const change = e => onChange(configName, path, e.target.value);
@@ -233,7 +234,7 @@ const SetupFields = ({ configName, tree, path, errors, databaseType, onChange, o
         <div key={errorKey} className="col-md-6 mb-3">
           <div className="card">
             <div className="card-header">
-              <h5>{key}</h5>
+              <h5>{generateLabel(key)}</h5>
             </div>
             <div className="card-body">
               <SetupFields

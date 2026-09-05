@@ -1,14 +1,84 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import PageHeader from '../../../components/common/PageHeader';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useDetailSearch } from '../hooks/useDetailSearch';
 import { collectionShape, pageContextShape } from '../utils/itemShape';
 
-const shortChecksum = checksum =>
-  `${checksum.substring(0, 20)}...${checksum.substring(checksum.length - 20)}`;
+import ChecksumCell from './ChecksumCell';
+import { createdColumn, updatedColumn } from './columns';
+import SubTable, { hasAny } from './SubTable';
+
+const architectureColumns = [
+  {
+    key: 'name',
+    labelKey: 'pages.table.name',
+    sortValue: architecture => architecture.name.toLowerCase(),
+    render: architecture => architecture.name,
+  },
+  { ...createdColumn, defaultHidden: false, when: hasAny(architecture => architecture.createdAt) },
+  { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
+  {
+    key: 'downloads',
+    labelKey: 'pages.table.downloads',
+    sortValue: architecture => architecture.downloadCount || 0,
+    when: hasAny(architecture => typeof architecture.downloadCount === 'number'),
+    render: architecture =>
+      typeof architecture.downloadCount === 'number' ? architecture.downloadCount : '',
+  },
+  {
+    key: 'defaultBox',
+    labelKey: 'pages.table.defaultBox',
+    sortValue: architecture => (architecture.defaultBox ? 0 : 1),
+    render: (architecture, ctx) => ctx.t(architecture.defaultBox ? 'yes' : 'no'),
+  },
+  {
+    key: 'size',
+    labelKey: 'pages.table.fileSize',
+    sortValue: architecture => architecture.fileSize || 0,
+    when: hasAny(architecture => architecture.fileSize),
+    render: (architecture, ctx) =>
+      architecture.fileSize ? ctx.formatFileSize(architecture.fileSize) : '',
+  },
+  {
+    key: 'checksum',
+    labelKey: 'pages.table.checksum',
+    sortValue: architecture => (architecture.checksum || '').toLowerCase(),
+    when: hasAny(architecture => architecture.checksum),
+    render: architecture =>
+      architecture.checksum ? (
+        <ChecksumCell
+          checksum={architecture.checksum}
+          checksumType={architecture.checksumType || ''}
+        />
+      ) : (
+        ''
+      ),
+  },
+  {
+    key: 'download',
+    labelKey: 'pages.table.download',
+    when: hasAny(architecture => architecture.downloadUrl),
+    render: (architecture, ctx) =>
+      architecture.downloadUrl ? (
+        <a
+          href={architecture.downloadUrl}
+          className="btn btn-sm btn-outline-primary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {ctx.t('pages.table.download')}
+        </a>
+      ) : null,
+  },
+];
+
+const architectureMatches = (architecture, needle) =>
+  [architecture.name, architecture.checksum].some(value =>
+    (value || '').toLowerCase().includes(needle)
+  );
 
 const ProviderPage = ({ collection, org, name, version, provider, context }) => {
   const { t, i18n } = useTranslation();
@@ -20,6 +90,13 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
   const key = `${org}/${name}/${version}/${provider}/${nonce}`;
   const ready = data.key === key;
   const { item, entry } = data;
+  const search = useDetailSearch({
+    rows: ready && entry ? entry.architectures || [] : [],
+    matches: architectureMatches,
+    placeholderKey: 'pages.search.architectures',
+    columns: architectureColumns,
+    prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}_${provider}`,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -60,13 +137,6 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
     setForm,
   };
 
-  const copyChecksum = checksum => {
-    navigator.clipboard.writeText(checksum).then(
-      () => notify('success', t('pages.provider.checksumCopied')),
-      () => notify('danger', t('pages.provider.copyFailed'))
-    );
-  };
-
   if (!ready) {
     return (
       <div className="list row">
@@ -80,7 +150,6 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
 
   const slotProps = { item, version, provider: entry, ctx };
   const actions = ProviderActions ? <ProviderActions {...slotProps} /> : null;
-  const architectures = entry.architectures || [];
 
   return (
     <div className="list row">
@@ -101,65 +170,19 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
           {ArchitecturesActions ? <ArchitecturesActions {...slotProps} /> : null}
         </div>
         {form}
-        <Table striped className="table">
-          <thead>
-            <tr>
-              <th>{t('pages.table.name')}</th>
-              <th>{t('pages.table.defaultBox')}</th>
-              <th>{t('pages.table.fileSize')}</th>
-              <th>{t('pages.table.checksum')}</th>
-              <th>{t('pages.table.checksumType')}</th>
-              <th>{t('pages.table.download')}</th>
-              {ArchitectureRowActions ? <th>{t('pages.table.actions')}</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {architectures.map(architecture => (
-              <tr key={architecture.name}>
-                <td>{architecture.name}</td>
-                <td>{architecture.defaultBox ? t('yes') : t('no')}</td>
-                <td>
-                  {architecture.fileSize ? context.formatFileSize(architecture.fileSize) : 'N/A'}
-                </td>
-                <td>
-                  {architecture.checksum ? (
-                    <button
-                      type="button"
-                      className="btn btn-link p-0 text-clickable"
-                      onClick={() => copyChecksum(architecture.checksum)}
-                      title={t('pages.provider.clickToCopy')}
-                    >
-                      {shortChecksum(architecture.checksum)}
-                    </button>
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
-                <td>{architecture.checksumType || 'N/A'}</td>
-                <td>
-                  {architecture.downloadUrl ? (
-                    <a
-                      href={architecture.downloadUrl}
-                      className="btn btn-outline-primary"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t('pages.table.download')}
-                      {typeof architecture.downloadCount === 'number'
-                        ? ` (${architecture.downloadCount})`
-                        : ''}
-                    </a>
-                  ) : null}
-                </td>
-                {ArchitectureRowActions ? (
-                  <td>
-                    <ArchitectureRowActions {...slotProps} architecture={architecture} />
-                  </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+        <SubTable
+          columns={architectureColumns}
+          rows={search.rows}
+          rowKey={architecture => architecture.name}
+          RowActions={ArchitectureRowActions}
+          actionsProps={slotProps}
+          rowProp="architecture"
+          sort={search.sort}
+          onSort={search.setSort}
+          hiddenColumns={search.hiddenColumns}
+          ctx={ctx}
+          emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+        />
       </div>
     </div>
   );

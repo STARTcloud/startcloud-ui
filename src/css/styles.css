@@ -860,7 +860,8 @@ button::-moz-focus-inner {
 }
 
 .items-table .col-os {
-  width: 10rem;
+  width: 14rem;
+  white-space: nowrap;
 }
 
 .items-table .col-size,

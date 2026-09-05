@@ -115,9 +115,15 @@ const LocalLoginForm = ({ formValues, errors, onChange, onSubmit, loading }) => 
             autoComplete="username"
             value={formValues.username}
             onChange={onChange}
+            aria-invalid={Boolean(errors.username)}
+            aria-describedby={errors.username ? 'login-username-error' : undefined}
           />
         </div>
-        {errors.username && <p className="auth-field-error">{errors.username}</p>}
+        {errors.username && (
+          <p id="login-username-error" className="auth-field-error">
+            {errors.username}
+          </p>
+        )}
       </div>
 
       <div className="auth-field">
@@ -134,6 +140,8 @@ const LocalLoginForm = ({ formValues, errors, onChange, onSubmit, loading }) => 
             autoComplete="current-password"
             value={formValues.password}
             onChange={onChange}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? 'login-password-error' : undefined}
           />
           <button
             type="button"
@@ -144,7 +152,11 @@ const LocalLoginForm = ({ formValues, errors, onChange, onSubmit, loading }) => 
             {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
-        {errors.password && <p className="auth-field-error">{errors.password}</p>}
+        {errors.password && (
+          <p id="login-password-error" className="auth-field-error">
+            {errors.password}
+          </p>
+        )}
         <label className="auth-check">
           <input
             type="checkbox"

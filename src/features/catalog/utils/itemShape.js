@@ -9,6 +9,8 @@ export const architectureShape = PropTypes.shape({
   checksumType: PropTypes.string,
   downloadUrl: PropTypes.string,
   downloadCount: PropTypes.number,
+  createdAt: PropTypes.string,
+  updatedAt: PropTypes.string,
 });
 
 export const artifactShape = PropTypes.shape({
@@ -23,6 +25,9 @@ export const artifactShape = PropTypes.shape({
 export const providerShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   description: PropTypes.string,
+  createdAt: PropTypes.string,
+  updatedAt: PropTypes.string,
+  downloads: PropTypes.number,
   architectures: PropTypes.arrayOf(architectureShape),
   extras: PropTypes.object,
 });
@@ -31,6 +36,7 @@ export const versionShape = PropTypes.shape({
   version: PropTypes.string.isRequired,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
+  downloads: PropTypes.number,
   description: PropTypes.string,
   releaseNotes: PropTypes.string,
   deprecated: PropTypes.bool,
@@ -110,6 +116,20 @@ export const filterGroupsOf = collection =>
 
 export const isPrivate = item => item.isPublic === false;
 
+export const sortShape = PropTypes.shape({
+  column: PropTypes.string,
+  direction: PropTypes.string,
+});
+
+export const detailSearchShape = PropTypes.shape({
+  rows: PropTypes.array.isRequired,
+  query: PropTypes.string.isRequired,
+  filtering: PropTypes.bool.isRequired,
+  sort: sortShape.isRequired,
+  setSort: PropTypes.func.isRequired,
+  hiddenColumns: PropTypes.instanceOf(Set).isRequired,
+});
+
 export const columnShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   labelKey: PropTypes.string,
@@ -126,6 +146,7 @@ export const collectionShape = PropTypes.shape({
   icon: PropTypes.node,
   segment: PropTypes.string.isRequired,
   hasVersions: PropTypes.bool.isRequired,
+  hasProviders: PropTypes.bool.isRequired,
   itemRoute: PropTypes.bool.isRequired,
   searchKey: PropTypes.string.isRequired,
   defaultView: PropTypes.oneOf(['table', 'cards']).isRequired,
@@ -181,11 +202,12 @@ export const providerNames = item =>
 
 export const architectureNames = item =>
   sortNames(
-    (item.versions || []).flatMap(version =>
-      (version.providers || []).flatMap(provider =>
+    (item.versions || []).flatMap(version => [
+      ...(version.providers || []).flatMap(provider =>
         (provider.architectures || []).map(architecture => architecture.name)
-      )
-    )
+      ),
+      ...(version.artifacts || []).map(artifact => artifact.name),
+    ])
   );
 
 export const defaultMatches = (item, needle) =>

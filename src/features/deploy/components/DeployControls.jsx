@@ -28,9 +28,10 @@ const deployProps = {
 
 /**
  * The Deploy controls every collection Hyperweaver can turn into a machine
- * draws the same way: a filled button carrying the Hyperweaver glyph for
- * action rows and the use-this strip, the glyph alone for rows and cards
- * through the `ItemQuickActions` slot; each drawn only while the host
+ * draws the same way: a filled button carrying only the Hyperweaver glyph,
+ * never a word, for action rows and the use-this strip, the bare glyph for
+ * rows and cards through the `ItemQuickActions` slot, the version title on
+ * the tooltip and aria-label of both; each drawn only while the host
  * advertises `deploy`, the viewer is signed in, entitled to Hyperweaver and
  * Hyperweaver is configured. The collection supplies only where its
  * Hyperweaver lives, who may deploy and the deep link.
@@ -81,21 +82,20 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
   };
 
   const DeployButton = ({ user, item, version, size = '' }) => {
-    const { t } = useTranslation();
     const deploy = useDeploy({ user, item, version });
     if (!deploy) {
       return null;
     }
     return (
       <a
-        className={`btn btn-primary ${size} fw-semibold d-inline-flex align-items-center gap-2 me-2`}
+        className={`btn btn-primary ${size} d-inline-flex align-items-center me-2`}
         href={deploy.href}
         target="_blank"
         rel="noopener noreferrer"
         title={deploy.title}
+        aria-label={deploy.title}
       >
         <HyperweaverGlyph />
-        {t('pages.deploy.deploy')}
       </a>
     );
   };

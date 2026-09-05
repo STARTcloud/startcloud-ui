@@ -17,24 +17,34 @@ const architectureSummary = architecture => ({
   downloadCount: fileDownloads(architecture.files),
 });
 
-const providerSummary = provider => ({
-  name: provider.name,
-  description: provider.description || '',
-  architectures: (provider.architectures || []).map(architectureSummary),
-});
+const providerSummary = provider => {
+  const architectures = (provider.architectures || []).map(architectureSummary);
+  return {
+    name: provider.name,
+    description: provider.description || '',
+    createdAt: provider.createdAt || null,
+    updatedAt: provider.updatedAt || null,
+    downloads: architectures.reduce((sum, architecture) => sum + architecture.downloadCount, 0),
+    architectures,
+  };
+};
 
-const versionSummary = version => ({
-  version: version.versionNumber,
-  createdAt: version.createdAt || null,
-  updatedAt: version.updatedAt || null,
-  description: version.description || '',
-  releaseNotes: readReleaseNotes(version),
-  deprecated: readDeprecated(version),
-  deprecationReason: readDeprecationReason(version),
-  providers: (version.providers || []).map(providerSummary),
-  artifacts: [],
-  extras: { raw: version },
-});
+const versionSummary = version => {
+  const providers = (version.providers || []).map(providerSummary);
+  return {
+    version: version.versionNumber,
+    createdAt: version.createdAt || null,
+    updatedAt: version.updatedAt || null,
+    downloads: providers.reduce((sum, provider) => sum + provider.downloads, 0),
+    description: version.description || '',
+    releaseNotes: readReleaseNotes(version),
+    deprecated: readDeprecated(version),
+    deprecationReason: readDeprecationReason(version),
+    providers,
+    artifacts: [],
+    extras: { raw: version },
+  };
+};
 
 const boxItem = (box, orgName, logo) => ({
   id: box.id ?? `${orgName}/${box.name}`,
@@ -114,6 +124,9 @@ const getVersion = async (org, name, version) => {
       return {
         name: provider.name,
         description: provider.description || '',
+        createdAt: provider.createdAt || null,
+        updatedAt: provider.updatedAt || null,
+        downloads: 0,
         architectures: await Promise.all(
           architectures.map(async architecture => ({
             name: architecture.name,
@@ -143,6 +156,8 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
       checksumType: info.checksumType || '',
       downloadUrl: url,
       downloadCount: info.downloadCount || 0,
+      createdAt: info.createdAt || null,
+      updatedAt: info.updatedAt || null,
     };
   } catch (error) {
     log.api.error('Error fetching file info', {
@@ -158,6 +173,8 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
       checksumType: '',
       downloadUrl: '',
       downloadCount: 0,
+      createdAt: null,
+      updatedAt: null,
     };
   }
 };

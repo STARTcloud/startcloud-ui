@@ -9,7 +9,7 @@ The page asks the origin that served it `GET /api/status` and builds itself from
 - **React 19** + **React Router 7**
 - **Vite** (build + dev server)
 - **Bootstrap 5.3** + **react-bootstrap**
-- **i18next** + **react-i18next** — `public/locales/<lang>/{shared,auth,<app>}.json`
+- **i18next** + **react-i18next** — `public/locales/<lang>/{shared,auth}.json`
 - **axios** against the hosting backend's `/api/*` surface
 
 ## Getting started
@@ -36,15 +36,81 @@ server:
 npm run build
 ```
 
-Output goes to `dist/`, served from `/`.
+Output goes to `dist/`, served from `/`. The SPA owns `/` on every host, programs call `/api` and the paths their protocol dictates, and a machine and a browser asking for the same root URL are told apart by the client's own signal (`Accept` or its user agent), never by a redirect or a proxy; the build stays `base: '/'`.
 
 ## Distribution
 
 CI (release-please → build) publishes each release as a versioned GitHub Release asset — `startcloud-ui-<version>.tar.gz`, the contents of `dist/`. Each backend pins a version, fetches that tarball into its `ui/` folder at build time and serves it statically with an SPA fallback.
 
-## The `/api` contract
+## Hosting the UI
 
-Every host that serves the build must answer `GET /api/status` before login with `role`, `version`, `brand`, `auth`, `collections`, `features`, `links` and `ticket` (`idp` when `auth` carries it), and implement the `/api/*` surface the features it advertises call. The `api/` folders under `src/features/` are the whole list.
+A host is a backend that serves this build and answers `GET /api/status`. Nothing in the UI names a host; a new one is a status payload and the `/api/*` routes its tokens call.
+
+1. Pin a release as `startcloudUiVersion` in your `package.json`, fetch `startcloud-ui-<version>.tar.gz` into `ui/` at build time and serve it statically at `/` with an SPA fallback to `index.html` (and `callback/index.html` at `/callback/` when you answer `idp`), the fallback tried after every `/api` and protocol route; no redirect from `/`, no proxy in front.
+2. Answer `GET /api/status` before login, without auth:
+
+   ```json
+   {
+     "role": "boxvault",
+     "version": "0.77.0",
+     "brand": {
+       "name": "BoxVault",
+       "logoUrl": "/brand/boxvault.svg",
+       "repo": "https://github.com/Makr91/BoxVault"
+     },
+     "auth": ["backend"],
+     "collections": ["boxes", "isos"],
+     "features": [
+       "local-accounts",
+       "setup",
+       "admin",
+       "org-console",
+       "discover",
+       "invitations",
+       "uploads",
+       "watches",
+       "deploy",
+       "favorites",
+       "notifications",
+       "health"
+     ],
+     "links": { "docs": "/docs", "contact": "" },
+     "ticket": null
+   }
+   ```
+
+   | Field             | Meaning                                                                                                                                                                        |
+   | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | `role`, `version` | Your app name and released version; the version is the footer's and the About page's                                                                                           |
+   | `brand`           | `name`, `logoUrl` (a path you serve, or one of `public/brand/`) and `repo`                                                                                                     |
+   | `auth`            | `["backend"]` for your own session routes (`/api/auth/*`, `/api/user`, `/api/userinfo/claims`, `/api/user/preferences`) or `["idp"]` for the browser as the OIDC public client |
+   | `idp`             | With `idp` only: `issuer`, `clientId`, `scopes`, `storagePrefix`                                                                                                               |
+   | `collections`     | The collections to mount, in order, the first with no route segment: `boxes`, `isos`, `provisioners`                                                                           |
+   | `features`        | The gate; absence hides the surface, no array at all renders everything                                                                                                        |
+   | `links`           | `docs` and `contact`                                                                                                                                                           |
+   | `ticket`          | `{ baseUrl, reqType, fallbackCustomerId }`, or `null` when you serve them at `/api/config/ticket`                                                                              |
+
+3. Implement the `/api/*` routes behind the tokens you advertise; the `api/` folders under `src/features/` and `src/features/collections/` are the whole list, one call per line.
+4. Carry `dependency-bump.yml` so each UI release opens a `bump/startcloud-ui` pull request against your pin, for a human to merge.
+
+| Token              | Surface                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `local-accounts`   | the `/register` form and the profile page's password, email and delete-account sections |
+| `setup`            | `/setup` and the setup gate before any other route                                      |
+| `admin`            | `/admin` and the Admin menu row (still needs `ROLE_ADMIN`)                              |
+| `org-console`      | `/org-console` and its menu row (still needs org OWNER/ADMIN)                           |
+| `discover`         | `/organizations/discover` and the Discover button on the home page                      |
+| `invitations`      | the Invitations tab in the org console                                                  |
+| `uploads`          | ISO upload zone, box file upload, the upload slots                                      |
+| `private-catalogs` | `/api/private/<uuid>/...` per membership, the access-denied banner                      |
+| `watches`          | watch stars and the Watched filter                                                      |
+| `deploy`           | the Deploy button and glyph (still needs the hyperweaver entitlement and `/api/config`) |
+| `rebuild`          | the Rebuild catalog data menu row (still needs `ROLE_ADMIN`)                            |
+| `favorites`        | the Add to Favorites toggle on About (needs `/api/favorites`)                           |
+| `notifications`    | the Notifications menu row (still needs the scope)                                      |
+| `health`           | the footer health heart from `/api/health`                                              |
+
+The routes `/login`, `/register`, `/profile`, `/invite/:token` and `/auth/callback` exist only for `backend`; `/callback/` only for `idp`. A deep link to a route the host lacks renders a not-available page naming the missing token.
 
 ## Layout
 
@@ -68,7 +134,7 @@ src/
   css/                styles.css, fonts.css
 public/
   brand/              boxvault.svg  boxvault-dark.svg
-  locales/<lang>/     shared.json  auth.json  boxvault.json  catalog.json
+  locales/<lang>/     shared.json  auth.json
 ```
 
 ## Scripts

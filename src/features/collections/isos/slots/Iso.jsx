@@ -1,158 +1,142 @@
 import PropTypes from 'prop-types';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaCheck,
-  FaCopy,
-  FaDownload,
-  FaGlobe,
-  FaLock,
-  FaPen,
-  FaTrash,
-  FaUpload,
-  FaXmark,
-} from 'react-icons/fa6';
+import { FaCheck, FaGlobe, FaLock, FaPen, FaTrash, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
-import { useStatus } from '../../../../contexts/StatusContext';
 import { log } from '../../../../lib/logger';
-import { hasFeature } from '../../../../utils/capabilities';
-import { isOrgManager } from '../../boxes';
+import { session } from '../../../../lib/runtime';
+import { responseMessage } from '../../../../utils/responseMessage';
+import { itemShape, versionShape } from '../../../catalog/utils/itemShape';
+import { joinAsAdmin } from '../../../organizations/api/organizations';
+import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../boxes';
+import { deleteVersionCascade } from '../adapter';
 import { api } from '../api';
 
-const HOVER_DWELL_MS = 400;
-const UPLOAD_KEY = 'iso-upload';
+const NAME_RE = /^[0-9a-zA-Z-._]+$/;
+const EMPTY_ISO = { name: '', description: '', isPublic: false };
+const EMPTY_VERSION = { versionNumber: '', description: '' };
 
-const UploadZone = ({ uploading, progress, onFile }) => {
+const CreateIsoForm = ({ org, draft, nameError, onChange }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [over, setOver] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
-  const dwell = useRef(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(dwell.current), []);
-
-  const startDwell = () => {
-    clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => setOpen(true), HOVER_DWELL_MS);
-  };
-
-  const stopDwell = () => clearTimeout(dwell.current);
-
-  const pick = file => {
-    if (file) {
-      onFile(file, isPublic);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-success"
-        onClick={() => setOpen(true)}
-        onMouseEnter={startDwell}
-        onMouseLeave={stopDwell}
-      >
-        {t('pages.addNew')}
-      </button>
-    );
-  }
-
   return (
-    <div
-      role="presentation"
-      className={`upload-zone w-100 order-last${over ? ' over' : ''}`}
-      onDragOver={event => {
-        event.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={event => {
-        event.preventDefault();
-        setOver(false);
-        pick(event.dataTransfer.files[0]);
-      }}
-    >
-      <button
-        type="button"
-        className="navbar-search-tool upload-zone-close"
-        onClick={() => setOpen(false)}
-        disabled={uploading}
-        title={t('boxes.buttons.close')}
-        aria-label={t('boxes.buttons.close')}
-      >
-        <FaXmark />
-      </button>
-      <button
-        type="button"
-        className="upload-zone-target"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={event => {
-          if (event.key === 'Escape' && !uploading) {
-            setOpen(false);
-          }
-        }}
-        disabled={uploading}
-      >
-        <FaUpload className="upload-zone-icon" aria-hidden />
-        <span>
-          {uploading
-            ? t('boxes.iso.upload.uploading', { percent: progress })
-            : t('boxes.iso.upload.drop')}
-        </span>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        hidden
-        accept=".iso"
-        disabled={uploading}
-        onChange={event => {
-          pick(event.target.files[0]);
-          event.target.value = '';
-        }}
-      />
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          role="switch"
-          id="isoUploadPublic"
-          checked={isPublic}
-          disabled={uploading}
-          onChange={event => setIsPublic(event.target.checked)}
-        />
-        <label
-          className="form-check-label d-inline-flex align-items-center gap-2"
-          htmlFor="isoUploadPublic"
-        >
-          {isPublic ? <FaGlobe /> : <FaLock />}
-          {t(isPublic ? 'pages.status.public' : 'pages.status.private')}
-        </label>
-      </div>
-      {uploading ? (
-        <div className="progress upload-zone-progress">
-          <div
-            className="progress-bar progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            style={{ width: `${progress}%` }}
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
+    <div className="create-form mt-2 mb-3 w-100 order-last">
+      <h4>{t('boxes.iso.createTitle')}</h4>
+      <form>
+        <div className="form-group">
+          <label htmlFor="isoName">
+            <strong>{t('boxes.iso.name')}:</strong>
+          </label>
+          <div className="form-group row align-items-center">
+            <div className="col-auto pe-0">
+              <input type="text" className="form-control" id="organization" value={org} disabled />
+            </div>
+            <div className="col-auto px-1">
+              <span className="font-size-xl font-weight-bolder">/</span>
+            </div>
+            <div className="col-auto ps-0">
+              <input
+                type="text"
+                className="form-control"
+                id="isoName"
+                name="name"
+                value={draft.name}
+                onChange={onChange}
+                required
+              />
+            </div>
+          </div>
+          {nameError ? <div className="text-danger">{nameError}</div> : null}
+        </div>
+        <div className="form-group mt-2">
+          <label htmlFor="description">
+            <strong>{t('boxes.box.description')}:</strong>
+          </label>
+          <textarea
+            className="form-control"
+            id="description"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            rows="3"
           />
         </div>
-      ) : null}
+        <div className="form-group mt-2">
+          <label htmlFor="visibilityPrivate">
+            <strong>{t('boxes.box.visibility')}:</strong>
+          </label>
+          <div>
+            <div className="form-check">
+              <input
+                type="radio"
+                className="form-check-input"
+                id="visibilityPrivate"
+                name="isPublic"
+                value="false"
+                checked={!draft.isPublic}
+                onChange={onChange}
+              />
+              <label className="form-check-label" htmlFor="visibilityPrivate">
+                {t('boxes.box.organization.visibility.private')}
+              </label>
+            </div>
+            <div className="form-check">
+              <input
+                type="radio"
+                className="form-check-input"
+                id="visibilityPublic"
+                name="isPublic"
+                value="true"
+                checked={draft.isPublic}
+                onChange={onChange}
+              />
+              <label className="form-check-label" htmlFor="visibilityPublic">
+                {t('boxes.box.organization.visibility.public')}
+              </label>
+            </div>
+          </div>
+          <small className="form-text text-muted">{t('boxes.iso.visibilityHint')}</small>
+        </div>
+      </form>
     </div>
   );
 };
 
-UploadZone.propTypes = {
-  uploading: PropTypes.bool.isRequired,
-  progress: PropTypes.number.isRequired,
-  onFile: PropTypes.func.isRequired,
+CreateIsoForm.propTypes = {
+  org: PropTypes.string.isRequired,
+  draft: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    isPublic: PropTypes.bool.isRequired,
+  }).isRequired,
+  nameError: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const JoinAsOwner = ({ org, notify }) => {
+  const { t } = useTranslation();
+  const join = () => {
+    joinAsAdmin(org)
+      .then(async () => {
+        await session.reload();
+        window.location.reload();
+      })
+      .catch(error => {
+        log.api.error('Error joining organization as admin', { org, error: error.message });
+        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
+      });
+  };
+  return (
+    <button type="button" className="btn btn-sm btn-outline-warning" onClick={join}>
+      {t('boxes.box.organization.buttons.joinAsAdmin')}
+    </button>
+  );
+};
+
+JoinAsOwner.propTypes = {
+  org: PropTypes.string.isRequired,
+  notify: PropTypes.func.isRequired,
 };
 
 const RemoveAll = ({ org, reload, notify }) => {
@@ -188,40 +172,74 @@ RemoveAll.propTypes = {
 
 export const IsoListActions = ({ ctx }) => {
   const { t } = useTranslation();
-  const status = useStatus();
+  const navigate = useNavigate();
   const { user, org, reload, notify } = ctx;
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState(EMPTY_ISO);
+  const [nameError, setNameError] = useState('');
 
-  if (!org || !isOrgManager(user, org)) {
+  if (!org || !user) {
     return null;
   }
 
-  const upload = (file, isPublic) => {
-    setUploading(true);
-    setProgress(0);
-    notify('', '', { key: UPLOAD_KEY });
+  const onChange = event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
+    if (name === 'name') {
+      setNameError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
+    }
+  };
+
+  const cancel = () => {
+    setCreating(false);
+    setDraft(EMPTY_ISO);
+    setNameError('');
+  };
+
+  const create = () => {
+    if (!creating) {
+      setCreating(true);
+      return;
+    }
     api.isos
-      .upload(org, file, isPublic, event => {
-        setProgress(Math.round((100 * event.loaded) / event.total));
-      })
+      .create(org, draft)
       .then(() => {
-        notify('success', t('boxes.messages.operationSuccessful'), { key: UPLOAD_KEY });
-        reload();
+        notify('success', t('boxes.iso.created'));
+        cancel();
+        navigate(`/${org}/isos/${draft.name}`);
       })
       .catch(error => {
-        log.api.error('Error uploading ISO', { error: error.message });
-        notify('danger', t('boxes.messages.uploadFailed'), { key: UPLOAD_KEY });
-      })
-      .finally(() => setUploading(false));
+        log.api.error('Error creating ISO', { isoName: draft.name, error: error.message });
+        notify('danger', responseMessage(error, t('boxes.iso.createError')));
+      });
   };
 
   return (
     <>
-      {hasFeature(status, 'uploads') ? (
-        <UploadZone uploading={uploading} progress={progress} onFile={upload} />
+      {isGlobalAdmin(user) && !isOrgMember(user, org) ? (
+        <JoinAsOwner org={org} notify={notify} />
       ) : null}
-      <RemoveAll org={org} reload={reload} notify={notify} />
+      {isOrgMember(user, org) ? (
+        <>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-success"
+            onClick={create}
+            disabled={creating && (!draft.name || Boolean(nameError))}
+          >
+            {creating ? t('boxes.iso.create') : t('pages.addNew')}
+          </button>
+          {creating ? (
+            <button type="button" className="btn btn-sm btn-secondary" onClick={cancel}>
+              {t('boxes.buttons.cancel')}
+            </button>
+          ) : null}
+        </>
+      ) : null}
+      {isOrgManager(user, org) ? <RemoveAll org={org} reload={reload} notify={notify} /> : null}
+      {creating ? (
+        <CreateIsoForm org={org} draft={draft} nameError={nameError} onChange={onChange} />
+      ) : null}
     </>
   );
 };
@@ -240,18 +258,19 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
   const [name, setName] = useState(iso.name);
   const save = () => {
     const next = name.trim();
-    if (!next) {
+    if (!next || !NAME_RE.test(next)) {
+      notify('danger', t('boxes.validation.invalidName'));
       return;
     }
     api.isos
-      .update(org, iso.id, { name: next })
+      .update(org, iso.name, { name: next })
       .then(() => {
         notify('success', t('boxes.messages.operationSuccessful'));
         onSaved(next);
       })
       .catch(error => {
         log.api.error('Error updating ISO name', { error: error.message });
-        notify('danger', t('boxes.messages.operationFailed'));
+        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
       });
   };
   return (
@@ -284,8 +303,7 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
 };
 
 RenameControls.propTypes = {
-  iso: PropTypes.shape({ id: PropTypes.number.isRequired, name: PropTypes.string.isRequired })
-    .isRequired,
+  iso: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
   org: PropTypes.string.isRequired,
   notify: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
@@ -301,49 +319,22 @@ export const IsoItemActions = ({ item, ctx }) => {
   const [renaming, setRenaming] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
-  const download = () => {
+  const update = (fields, message) => {
     api.isos
-      .downloadLink(org, iso.id)
-      .then(downloadUrl => window.location.assign(downloadUrl))
-      .catch(error => {
-        log.api.error('Error getting download link', { error: error.message });
-        notify('danger', t('boxes.messages.operationFailed'));
-      });
-  };
-
-  const copyChecksum = () => {
-    navigator.clipboard
-      .writeText(iso.checksum)
-      .then(() => notify('success', t('pages.provider.checksumCopied')))
-      .catch(() => notify('danger', t('boxes.messages.copyFailed')));
-  };
-
-  const toggleVisibility = () => {
-    api.isos
-      .update(org, iso.id, { isPublic: !iso.isPublic })
+      .update(org, iso.name, fields)
       .then(reload)
       .catch(error => {
-        log.api.error('Error updating ISO visibility', { error: error.message });
-        notify('danger', t('boxes.messages.operationFailed'));
-      });
-  };
-
-  const togglePublished = () => {
-    api.isos
-      .update(org, iso.id, { published: !iso.published })
-      .then(reload)
-      .catch(error => {
-        log.api.error('Error updating ISO release status', { error: error.message });
-        notify('danger', t('boxes.messages.operationFailed'));
+        log.api.error(message, { isoName: iso.name, error: error.message });
+        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
       });
   };
 
   const remove = () => {
     api.isos
-      .remove(org, iso.id)
+      .remove(org, iso.name)
       .then(() => navigate(`/${org}/isos`))
       .catch(error => {
-        log.api.error('Error deleting ISO', { error: error.message });
+        log.api.error('Error deleting ISO', { isoName: iso.name, error: error.message });
         notify('danger', t('boxes.messages.deleteFailed'));
       });
   };
@@ -365,14 +356,18 @@ export const IsoItemActions = ({ item, ctx }) => {
     }
     return (
       <>
-        <button type="button" className="btn btn-outline-secondary me-2" onClick={toggleVisibility}>
+        <button
+          type="button"
+          className="btn btn-outline-secondary me-2"
+          onClick={() => update({ isPublic: !iso.isPublic }, 'Error updating ISO visibility')}
+        >
           {iso.isPublic ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
           {t(iso.isPublic ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
         </button>
         <button
           type="button"
           className={`btn ${iso.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
-          onClick={togglePublished}
+          onClick={() => update({ published: !iso.published }, 'Error updating ISO release status')}
         >
           {t(iso.published ? 'boxes.iso.unpublish' : 'boxes.iso.publish')}
         </button>
@@ -394,14 +389,6 @@ export const IsoItemActions = ({ item, ctx }) => {
 
   return (
     <>
-      <button type="button" className="btn btn-primary me-2" onClick={download}>
-        <FaDownload className="me-2" />
-        {t('boxes.buttons.download')}
-      </button>
-      <button type="button" className="btn btn-outline-secondary me-2" onClick={copyChecksum}>
-        <FaCopy className="me-2" />
-        {t('boxes.iso.copyChecksum')}
-      </button>
       {manageControls()}
       <Link className="btn btn-dark me-2" to={`/${org}/isos`}>
         {t('boxes.buttons.back')}
@@ -418,9 +405,180 @@ export const IsoItemActions = ({ item, ctx }) => {
 };
 
 IsoItemActions.propTypes = {
-  item: PropTypes.shape({
-    extras: PropTypes.shape({ raw: PropTypes.object.isRequired }).isRequired,
+  item: itemShape.isRequired,
+  ctx: PropTypes.shape({
+    user: PropTypes.object,
+    org: PropTypes.string.isRequired,
+    reload: PropTypes.func.isRequired,
+    notify: PropTypes.func.isRequired,
   }).isRequired,
+};
+
+const AddVersionForm = ({ draft, error, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <form>
+      <div className="form-group col-md-3">
+        <label htmlFor="versionNumber">{t('boxes.version.number')}</label>
+        <input
+          type="text"
+          className="form-control"
+          id="versionNumber"
+          name="versionNumber"
+          value={draft.versionNumber}
+          onChange={onChange}
+          required
+        />
+        {error ? <div className="text-danger">{error}</div> : null}
+      </div>
+      <div className="form-group">
+        <label htmlFor="versionDescription">{t('boxes.provider.description')}</label>
+        <textarea
+          className="form-control"
+          id="versionDescription"
+          name="description"
+          value={draft.description}
+          onChange={onChange}
+          rows="3"
+        />
+      </div>
+    </form>
+  );
+};
+
+AddVersionForm.propTypes = {
+  draft: PropTypes.shape({
+    versionNumber: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+  }).isRequired,
+  error: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+export const IsoVersionsActions = ({ item, ctx }) => {
+  const { t } = useTranslation();
+  const { user, org, reload, notify, setForm } = ctx;
+  const manage = isOrgManager(user, org);
+  const [show, setShow] = useState(false);
+  const [draft, setDraft] = useState(EMPTY_VERSION);
+  const [error, setError] = useState('');
+
+  const onChange = useCallback(
+    event => {
+      const { name, value } = event.target;
+      setDraft(current => ({ ...current, [name]: value }));
+      if (name === 'versionNumber') {
+        setError(NAME_RE.test(value) ? '' : t('boxes.validation.invalidName'));
+      }
+    },
+    [t]
+  );
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(<AddVersionForm draft={draft} error={error} onChange={onChange} />);
+    return () => setForm(null);
+  }, [show, draft, error, onChange, setForm]);
+
+  if (!manage) {
+    return null;
+  }
+
+  const save = () => {
+    if (!draft.versionNumber || error) {
+      notify('danger', error || t('boxes.validation.required'));
+      return;
+    }
+    if ((item.versions || []).some(version => version.version === draft.versionNumber)) {
+      notify('danger', t('boxes.version.exists'));
+      return;
+    }
+    api.versions
+      .create(org, item.name, draft)
+      .then(() => {
+        notify('success', t('boxes.version.added'));
+        setShow(false);
+        setDraft(EMPTY_VERSION);
+        reload();
+      })
+      .catch(requestError => {
+        notify('danger', responseMessage(requestError, t('boxes.version.addError')));
+      });
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
+        onClick={() => setShow(current => !current)}
+      >
+        {show ? t('boxes.buttons.cancel') : t('boxes.version.add')}
+      </button>
+      {show ? (
+        <button
+          type="button"
+          className="btn btn-success"
+          onClick={save}
+          disabled={!draft.versionNumber || Boolean(error)}
+        >
+          {t('boxes.buttons.save')}
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
+IsoVersionsActions.propTypes = {
+  item: itemShape.isRequired,
+  ctx: PropTypes.shape({
+    user: PropTypes.object,
+    org: PropTypes.string.isRequired,
+    reload: PropTypes.func.isRequired,
+    notify: PropTypes.func.isRequired,
+    setForm: PropTypes.func.isRequired,
+  }).isRequired,
+};
+
+export const IsoVersionRowActions = ({ item, version, ctx }) => {
+  const { t } = useTranslation();
+  const { user, org, reload, notify } = ctx;
+  const [show, setShow] = useState(false);
+
+  if (!isOrgManager(user, org)) {
+    return null;
+  }
+
+  const remove = () => {
+    deleteVersionCascade(org, item.name, version.version)
+      .then(() => {
+        notify('success', t('boxes.version.deleted'));
+        reload();
+      })
+      .catch(error => {
+        log.component.error('Error deleting version', {
+          versionNumber: version.version,
+          error: error.message,
+        });
+        notify('danger', responseMessage(error, t('boxes.version.deleteError')));
+      });
+  };
+
+  return (
+    <>
+      <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
+        {t('boxes.buttons.delete')}
+      </button>
+      <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
+    </>
+  );
+};
+
+IsoVersionRowActions.propTypes = {
+  item: itemShape.isRequired,
+  version: versionShape.isRequired,
   ctx: PropTypes.shape({
     user: PropTypes.object,
     org: PropTypes.string.isRequired,

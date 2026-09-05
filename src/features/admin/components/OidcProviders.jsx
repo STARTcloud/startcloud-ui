@@ -21,54 +21,29 @@ const EMPTY_FORM = {
   enabled: true,
 };
 
-const providerConfigOf = form => ({
-  enabled: {
-    type: 'boolean',
-    value: form.enabled,
-    description: `Enable ${form.displayName} OIDC authentication`,
-  },
-  display_name: {
-    type: 'string',
-    value: form.displayName,
-    description: 'Display name shown on login button',
-  },
-  issuer: {
-    type: 'string',
-    value: form.issuer,
-    description: `${form.displayName} OIDC issuer URL`,
-  },
-  client_id: {
-    type: 'string',
-    value: form.clientId,
-    description: `${form.displayName} OAuth Client ID`,
-  },
-  client_secret: {
-    type: 'password',
-    value: form.clientSecret,
-    description: `${form.displayName} OAuth Client Secret`,
-  },
-  scope: {
-    type: 'string',
-    value: form.scope,
-    description: 'OAuth scopes to request',
-  },
-  response_type: {
-    type: 'select',
-    value: form.responseType,
-    options: ['code', 'id_token', 'code id_token'],
-    description: 'OAuth 2.0 response type',
-  },
-  prompt: {
-    type: 'string',
-    value: '',
-    description: 'Optional prompt parameter',
-  },
-  icon_url: {
-    type: 'string',
-    value: form.iconUrl,
-    description: 'Icon shown on the login button',
-  },
-});
+const providerConfigOf = (form, t) => {
+  const describe = key => t(`oidc.config.${key}`, { displayName: form.displayName });
+  return {
+    enabled: { type: 'boolean', value: form.enabled, description: describe('enabled') },
+    display_name: { type: 'string', value: form.displayName, description: describe('displayName') },
+    issuer: { type: 'string', value: form.issuer, description: describe('issuer') },
+    client_id: { type: 'string', value: form.clientId, description: describe('clientId') },
+    client_secret: {
+      type: 'password',
+      value: form.clientSecret,
+      description: describe('clientSecret'),
+    },
+    scope: { type: 'string', value: form.scope, description: describe('scope') },
+    response_type: {
+      type: 'select',
+      value: form.responseType,
+      options: ['code', 'id_token', 'code id_token'],
+      description: describe('responseType'),
+    },
+    prompt: { type: 'string', value: '', description: describe('prompt') },
+    icon_url: { type: 'string', value: form.iconUrl, description: describe('iconUrl') },
+  };
+};
 
 const formOf = (providerName, providerConfig) => ({
   name: providerName,
@@ -357,7 +332,7 @@ const OidcProviders = ({ config, onConfigUpdate }) => {
       newConfig.auth ||= {};
       newConfig.auth.oidc ||= {};
       newConfig.auth.oidc.providers ||= {};
-      newConfig.auth.oidc.providers[form.name] = providerConfigOf(form);
+      newConfig.auth.oidc.providers[form.name] = providerConfigOf(form, t);
       await onConfigUpdate(newConfig);
       notify(
         'success',
