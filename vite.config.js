@@ -73,10 +73,7 @@ export default defineConfig(({ command }) => ({
       },
       output: {
         entryFileNames: `assets/[name].js`,
-        chunkFileNames: chunkInfo => {
-          const app = chunkInfo.facadeModuleId?.match(/\/src\/apps\/([^/]+)\/main\.jsx$/);
-          return app ? `assets/${app[1]}.js` : `assets/[name].js`;
-        },
+        chunkFileNames: `assets/[name].js`,
         assetFileNames: assetInfo => {
           if (assetInfo.name === 'favicon.ico' || assetInfo.name === 'dark-favicon.ico') {
             return '[name][extname]';

@@ -1,7 +1,8 @@
-import { createBackendSession } from '../session/backendSession';
-import { createBrowserOidc } from '../session/browserOidc';
-import { createReturnTo } from '../session/returnTo';
 import { authMethod } from '../utils/capabilities';
+
+import { createBackendSession } from './backendSession';
+import { createBrowserOidc } from './browserOidc';
+import { createReturnTo } from './returnTo';
 
 const STORAGE_KEY = 'intended_url';
 

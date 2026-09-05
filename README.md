@@ -2,7 +2,7 @@
 
 One React + Vite web UI for the STARTcloud estate — a single build that serves whichever backend hosts it, starting with **BoxVault** and the **Provisioner Catalog**, with the identity provider and further apps to follow.
 
-The page asks the origin that served it `GET /api/status` and reads `role` from the answer; that picks the app (`boxvault`, `catalog`) whose routes, adapters and strings load on top of the shared chrome, pages and session code. Everything an app differs in arrives as data; the navbar, footer, notices, search, organization switcher, notifications, account pages, admin pages and listing pages are the same code for every app.
+The page asks the origin that served it `GET /api/status` and builds itself from the answer: `brand` and `links` draw the shell, `auth` picks the session (the host's own backend or the browser as an OIDC client), `collections` names the collections to mount, and every route, menu row and control is gated at runtime by the `features` tokens the host advertises. A backend that lacks a token never shows that surface; a new backend is a new status payload, never new UI code.
 
 ## Tech stack
 
@@ -28,7 +28,7 @@ server:
   auth_target: https://dev-auth.startcloud.com
 ```
 
-`api_target` answers `/api/status` and so decides which app the dev server runs; point it at a BoxVault backend (and set `auth_target` to the same origin) to work on BoxVault. `config.yaml` only affects local development — the built app talks to whatever origin serves it at runtime.
+`api_target` answers `/api/status` and so decides which host the dev server renders; point it at a BoxVault backend (and set `auth_target` to the same origin) to work on BoxVault. `config.yaml` only affects local development — the built app talks to whatever origin serves it at runtime.
 
 ## Building
 
@@ -44,24 +44,31 @@ CI (release-please → build) publishes each release as a versioned GitHub Relea
 
 ## The `/api` contract
 
-Every host that serves the build must answer `GET /api/status` before login with at least `{ "role": "<app>", "version": "<backend version>" }`, and implement the `/api/*` surface its app's adapter calls. The `auth`, `account`, `organizations`, `admin` and `setup` adapters under `src/apps/<app>/` are the whole list.
+Every host that serves the build must answer `GET /api/status` before login with `role`, `version`, `brand`, `auth`, `collections`, `features`, `links` and `ticket` (`idp` when `auth` carries it), and implement the `/api/*` surface the features it advertises call. The `api/` folders under `src/features/` are the whole list.
 
 ## Layout
 
 ```text
 src/
-  main.jsx            probes /api/status and loads apps/<role>
-  chrome/  pages/  session/  css/   shared by every app
-  apps/<app>/
-    main.jsx          boot(status)
-    App.jsx           routes
-    Shell.jsx         AppChrome wiring
-    config.jsx        names, keys, session, client, push
-    api.js            every backend call
-    adapter.js        item-shape adapters
-    collections.jsx   the collections the listing pages draw
-    slots/            per-collection action components
-public/locales/<lang>/ shared.json  auth.json  <app>.json
+  app/                index.jsx (probes /api/status), App.jsx, provider.jsx, router.jsx, callback.jsx
+  components/
+    common/           Avatar, BrandLogo, ConfirmModal, ErrorBoundary, NotAvailableStub, PageHeader, ...
+    layout/           AppShell, Header, Footer, Breadcrumbs, Search, UserMenu, Notices, ...
+  features/
+    auth/  admin/  organizations/  profile/  setup/  catalog/  deploy/  about/  notifications/
+      api/  components/  hooks/  utils/  index.js
+    collections/
+      registry.js     token -> collection, mounted in status.collections order
+      boxes/  isos/  provisioners/   definition, adapter, api, slots, index.js
+  hooks/              useSession, useTheme, useFavicon, useSearchBinding
+  contexts/           StatusContext, NoticeContext, SearchContext
+  lib/                apiClient, backendSession, browserOidc, createSession, runtime, i18n, logger, ...
+  utils/              capabilities, routes, relativeTime, gravatar, identity, ticketUrl, membership, ...
+  config/             brand fallbacks and constants that are not from status
+  css/                styles.css, fonts.css
+public/
+  brand/              boxvault.svg  boxvault-dark.svg
+  locales/<lang>/     shared.json  auth.json  boxvault.json  catalog.json
 ```
 
 ## Scripts
