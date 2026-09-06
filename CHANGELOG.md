@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.5.0...v0.5.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* keep the page's required rules, sync push after the session loads and keep the editor's actions mounted ([90a352b](https://github.com/STARTcloud/startcloud-ui/commit/90a352b0945554e232460743cf3592bd9af95eff))
+* keep the page's required rules, sync push after the session loads, keep the editor's actions mounted and read the plain ticket section ([b198fb4](https://github.com/STARTcloud/startcloud-ui/commit/b198fb4aff6262eaf524f0be97499b98a34f5241))
+
 ## [0.5.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.4.0...v0.5.0) (2026-09-06)
 
 
