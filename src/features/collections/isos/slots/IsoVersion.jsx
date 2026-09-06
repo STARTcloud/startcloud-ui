@@ -25,7 +25,7 @@ import { api } from '../api';
 
 const HOVER_DWELL_MS = 400;
 const EMPTY_ARCHITECTURE = { name: '' };
-const EMPTY_DEPRECATION = { deprecationReason: '' };
+const EMPTY_DEPRECATION = { deprecation_reason: '' };
 const UPLOAD_KEY = 'iso-upload';
 
 const slotShape = {
@@ -181,7 +181,7 @@ export const IsoVersionBannerActions = ({ item, version, ctx }) => {
           org,
           item,
           version,
-          fields: { deprecated: false, deprecationReason: null },
+          fields: { deprecated: false, deprecation_reason: null },
           t,
           notify,
           reload,
@@ -218,7 +218,7 @@ const DeprecateButton = ({ onDeprecate }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const ok = await onDeprecate(draft.deprecationReason.trim());
+    const ok = await onDeprecate(draft.deprecation_reason.trim());
     if (ok) {
       close();
     }
@@ -240,9 +240,9 @@ const DeprecateButton = ({ onDeprecate }) => {
     <form className="flex-grow-1" onSubmit={submit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('deprecationReason')}
+        id={rules.idFor('deprecation_reason')}
         label={t('boxes.version.deprecationReason')}
-        error={rules.errors.deprecationReason || ''}
+        error={rules.errors.deprecation_reason || ''}
         className="mb-2"
       >
         {aria => (
@@ -250,9 +250,9 @@ const DeprecateButton = ({ onDeprecate }) => {
             {...aria}
             type="text"
             className="form-control form-control-sm"
-            value={draft.deprecationReason}
-            onChange={event => setDraft({ deprecationReason: event.target.value })}
-            onBlur={() => rules.onBlur('deprecationReason')}
+            value={draft.deprecation_reason}
+            onChange={event => setDraft({ deprecation_reason: event.target.value })}
+            onBlur={() => rules.onBlur('deprecation_reason')}
           />
         )}
       </Field>
@@ -285,7 +285,7 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
       org,
       item,
       version,
-      fields: { releaseNotes: draft },
+      fields: { release_notes: draft },
       t,
       notify,
       reload,
@@ -335,7 +335,7 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
               org,
               item,
               version,
-              fields: { deprecated: true, deprecationReason: reason },
+              fields: { deprecated: true, deprecation_reason: reason },
               t,
               notify,
               reload,

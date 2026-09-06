@@ -22,7 +22,7 @@ import {
 } from '../forms';
 import { canManageBox } from '../permissions';
 
-const EMPTY_DEPRECATION = { deprecationReason: '' };
+const EMPTY_DEPRECATION = { deprecation_reason: '' };
 
 const slotShape = {
   item: itemShape.isRequired,
@@ -60,9 +60,9 @@ const VersionEditForm = ({ draft, rules, onChange }) => {
     <form noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('versionNumber')}
+        id={rules.idFor('version_number')}
         label={t('boxes.version.number')}
-        error={rules.errors.versionNumber || ''}
+        error={rules.errors.version_number || ''}
         className="form-group col-md-3"
       >
         {aria => (
@@ -70,10 +70,10 @@ const VersionEditForm = ({ draft, rules, onChange }) => {
             {...aria}
             type="text"
             className="form-control"
-            name="versionNumber"
-            value={draft.versionNumber}
+            name="version_number"
+            value={draft.version_number}
             onChange={onChange}
-            onBlur={() => rules.onBlur('versionNumber')}
+            onBlur={() => rules.onBlur('version_number')}
           />
         )}
       </Field>
@@ -100,7 +100,7 @@ const VersionEditForm = ({ draft, rules, onChange }) => {
 
 VersionEditForm.propTypes = {
   draft: PropTypes.shape({
-    versionNumber: PropTypes.string.isRequired,
+    version_number: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
@@ -114,7 +114,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
   const manage = canManageBox(user, org, item.extras.raw);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
-    versionNumber: version.version,
+    version_number: version.version,
     description: version.description || '',
   });
   const [showDelete, setShowDelete] = useState(false);
@@ -148,14 +148,14 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const renamed = draft.versionNumber !== version.version;
+    const renamed = draft.version_number !== version.version;
     api.versions
       .update(org, item.name, version.version, draft)
       .then(() => {
         notify('success', t('boxes.version.updated'));
         setEditing(false);
         if (renamed) {
-          navigate(`/${org}/${item.name}/${draft.versionNumber}`);
+          navigate(`/${org}/${item.name}/${draft.version_number}`);
         } else {
           reload();
         }
@@ -276,7 +276,7 @@ const DeprecateButton = ({ onDeprecate }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const ok = await onDeprecate(draft.deprecationReason.trim());
+    const ok = await onDeprecate(draft.deprecation_reason.trim());
     if (ok) {
       close();
     }
@@ -298,9 +298,9 @@ const DeprecateButton = ({ onDeprecate }) => {
     <form className="flex-grow-1" onSubmit={submit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('deprecationReason')}
+        id={rules.idFor('deprecation_reason')}
         label={t('boxes.version.deprecationReason')}
-        error={rules.errors.deprecationReason || ''}
+        error={rules.errors.deprecation_reason || ''}
         className="mb-2"
       >
         {aria => (
@@ -308,9 +308,9 @@ const DeprecateButton = ({ onDeprecate }) => {
             {...aria}
             type="text"
             className="form-control form-control-sm"
-            value={draft.deprecationReason}
-            onChange={event => setDraft({ deprecationReason: event.target.value })}
-            onBlur={() => rules.onBlur('deprecationReason')}
+            value={draft.deprecation_reason}
+            onChange={event => setDraft({ deprecation_reason: event.target.value })}
+            onBlur={() => rules.onBlur('deprecation_reason')}
           />
         )}
       </Field>

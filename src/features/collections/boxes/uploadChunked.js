@@ -148,7 +148,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
  * @param {string} options.path - The chunk upload path
  * @param {File} options.file - The file to send
  * @param {string} [options.checksum] - The declared checksum
- * @param {string} [options.checksumType] - The checksum algorithm, `NULL` when none
+ * @param {string} [options.checksum_type] - The checksum algorithm, `NULL` when none
  * @param {() => Promise<Object>} options.info - Reads the assembled file's info
  * @param {Function} [options.onUploadProgress] - Progress callback
  * @returns {Promise<Object>} The backend's completion result
@@ -158,7 +158,7 @@ export const uploadChunked = async ({
   path,
   file,
   checksum,
-  checksumType,
+  checksum_type: checksumType,
   info,
   onUploadProgress,
 }) => {

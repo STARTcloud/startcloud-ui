@@ -81,36 +81,36 @@ PageSearch.propTypes = {
 const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
 const NAME_LABELS = { name: 'profile.fields.displayName' };
 const PASSWORD_SCHEMA = {
-  required: ['newPassword', 'confirmPassword'],
+  required: ['new_password', 'confirmPassword'],
   properties: {
-    newPassword: { type: 'string' },
-    confirmPassword: { type: 'string', equals: 'newPassword' },
+    new_password: { type: 'string' },
+    confirmPassword: { type: 'string', equals: 'new_password' },
   },
 };
 const PASSWORD_LABELS = {
-  newPassword: 'profile.security.changePassword.newPasswordPlaceholder',
+  new_password: 'profile.security.changePassword.newPasswordPlaceholder',
   confirmPassword: 'profile.security.changePassword.confirmPasswordPlaceholder',
 };
 const EMAIL_SCHEMA = {
-  required: ['newEmail'],
-  properties: { newEmail: { type: 'string' } },
+  required: ['new_email'],
+  properties: { new_email: { type: 'string' } },
 };
-const EMAIL_LABELS = { newEmail: 'profile.security.changeEmail.newEmailPlaceholder' };
+const EMAIL_LABELS = { new_email: 'profile.security.changeEmail.newEmailPlaceholder' };
 const SERVICE_ACCOUNT_SCHEMA = {
   required: ['organization', 'description'],
   properties: {
     organization: { type: 'string' },
     description: { type: 'string' },
-    expirationDays: { type: 'integer' },
+    expiration_days: { type: 'integer' },
   },
 };
 const SERVICE_ACCOUNT_LABELS = {
   organization: 'profile.serviceAccounts.organization',
   description: 'profile.serviceAccounts.descriptionPlaceholder',
-  expirationDays: 'profile.serviceAccounts.expires',
+  expiration_days: 'profile.serviceAccounts.expires',
 };
-const EMPTY_PASSWORD = { newPassword: '', confirmPassword: '' };
-const EMPTY_EMAIL = { newEmail: '' };
+const EMPTY_PASSWORD = { new_password: '', confirmPassword: '' };
+const EMPTY_EMAIL = { new_email: '' };
 const EXPIRATIONS = [30, 60, 90, 365];
 
 const userOf = current => current?.user || null;
@@ -192,7 +192,7 @@ const ProfilePage = ({
   const [serviceAccountForm, setServiceAccountForm] = useState(() => ({
     organization: activeOrgUuid,
     description: '',
-    expirationDays: 30,
+    expiration_days: 30,
   }));
   const [newServiceAccountToken, setNewServiceAccountToken] = useState(null);
   const nameRules = useFormRules({
@@ -270,7 +270,7 @@ const ProfilePage = ({
 
   const resetServiceAccountStates = useCallback(() => {
     setNewServiceAccountToken(null);
-    setServiceAccountForm(previous => ({ ...previous, description: '', expirationDays: 30 }));
+    setServiceAccountForm(previous => ({ ...previous, description: '', expiration_days: 30 }));
     resetServiceAccountRules();
   }, [resetServiceAccountRules]);
 
@@ -482,7 +482,7 @@ const ProfilePage = ({
 
       const created = await account.serviceAccounts.create(
         serviceAccountForm.description,
-        serviceAccountForm.expirationDays,
+        serviceAccountForm.expiration_days,
         targetOrg.id
       );
       await loadServiceAccounts(controller.signal);
@@ -594,7 +594,7 @@ const ProfilePage = ({
     }
     const controller = new AbortController();
     try {
-      await account.changePassword(currentUser.id, passwordForm.newPassword, controller.signal);
+      await account.changePassword(currentUser.id, passwordForm.new_password, controller.signal);
       notify('success', t('profile.messages.passwordChanged'));
     } catch (error) {
       if (!isAbort(error) && !passwordRules.applyServerErrors(error)) {
@@ -611,7 +611,7 @@ const ProfilePage = ({
     }
     const controller = new AbortController();
     try {
-      await account.changeEmail(currentUser.id, emailForm.newEmail, controller.signal);
+      await account.changeEmail(currentUser.id, emailForm.new_email, controller.signal);
       notify('success', t('profile.messages.emailChanged'));
       await refreshUserData();
     } catch (error) {
@@ -725,9 +725,9 @@ const ProfilePage = ({
         <div className="col-md-3">
           <FormErrorSummary errors={passwordRules.summary} />
           <Field
-            id={passwordRules.idFor('newPassword')}
+            id={passwordRules.idFor('new_password')}
             label={t('profile.security.changePassword.newPasswordPlaceholder')}
-            error={passwordRules.errors.newPassword || ''}
+            error={passwordRules.errors.new_password || ''}
           >
             {aria => (
               <input
@@ -735,9 +735,9 @@ const ProfilePage = ({
                 type="password"
                 className="form-control"
                 autoComplete="new-password"
-                value={passwordForm.newPassword}
-                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                onBlur={() => passwordRules.onBlur('newPassword')}
+                value={passwordForm.new_password}
+                onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                onBlur={() => passwordRules.onBlur('new_password')}
               />
             )}
           </Field>
@@ -770,9 +770,9 @@ const ProfilePage = ({
         <div className="col-md-3">
           <FormErrorSummary errors={emailRules.summary} />
           <Field
-            id={emailRules.idFor('newEmail')}
+            id={emailRules.idFor('new_email')}
             label={t('profile.security.changeEmail.newEmailPlaceholder')}
-            error={emailRules.errors.newEmail || ''}
+            error={emailRules.errors.new_email || ''}
           >
             {aria => (
               <input
@@ -780,9 +780,9 @@ const ProfilePage = ({
                 type="email"
                 className="form-control"
                 autoComplete="email"
-                value={emailForm.newEmail}
-                onChange={e => setEmailForm({ newEmail: e.target.value })}
-                onBlur={() => emailRules.onBlur('newEmail')}
+                value={emailForm.new_email}
+                onChange={e => setEmailForm({ new_email: e.target.value })}
+                onBlur={() => emailRules.onBlur('new_email')}
               />
             )}
           </Field>
@@ -1012,22 +1012,22 @@ const ProfilePage = ({
             )}
           </Field>
           <Field
-            id={serviceAccountRules.idFor('expirationDays')}
+            id={serviceAccountRules.idFor('expiration_days')}
             label={t('profile.serviceAccounts.expires')}
-            error={serviceAccountRules.errors.expirationDays || ''}
+            error={serviceAccountRules.errors.expiration_days || ''}
           >
             {aria => (
               <select
                 {...aria}
                 className="form-select"
-                value={serviceAccountForm.expirationDays}
+                value={serviceAccountForm.expiration_days}
                 onChange={e =>
                   setServiceAccountForm({
                     ...serviceAccountForm,
-                    expirationDays: Number(e.target.value),
+                    expiration_days: Number(e.target.value),
                   })
                 }
-                onBlur={() => serviceAccountRules.onBlur('expirationDays')}
+                onBlur={() => serviceAccountRules.onBlur('expiration_days')}
               >
                 {EXPIRATIONS.map(days => (
                   <option key={days} value={days}>

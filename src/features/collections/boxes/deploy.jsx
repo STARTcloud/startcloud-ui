@@ -8,7 +8,7 @@ export { deployableVersion };
 const fetchHyperweaverUrl = () =>
   api.config
     .hyperweaver()
-    .then(data => data?.hyperweaver?.url?.value || '')
+    .then(data => data?.hyperweaver?.url || '')
     .catch(error => {
       log.api.error('Error fetching hyperweaver config', { error: error.message });
       return '';

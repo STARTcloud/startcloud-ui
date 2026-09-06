@@ -420,7 +420,7 @@ const RegisterPage = ({ session, returnTo, auth }) => {
         username: formValues.username,
         email: formValues.email,
         password: formValues.password,
-        invitationToken,
+        invitation_token: invitationToken,
         name: formValues.name,
       })
       .then(data => {

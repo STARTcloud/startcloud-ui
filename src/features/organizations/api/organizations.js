@@ -20,7 +20,10 @@ export const removeOrganization = organization => client.delete(org(organization
 export const discoverOrganizations = () => client.get('/api/organizations/discover');
 
 export const setAccessMode = (organization, accessMode, defaultRole) =>
-  client.put(`${org(organization)}/access-mode`, { accessMode, defaultRole });
+  client.put(`${org(organization)}/access-mode`, {
+    access_mode: accessMode,
+    default_role: defaultRole,
+  });
 
 export const setMemberRole = (organization, userId, role) =>
   client.put(`${org(organization)}${encodePath('users', userId)}/role`, { role });

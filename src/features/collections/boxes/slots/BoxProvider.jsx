@@ -262,12 +262,12 @@ const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={rules.idFor('defaultBox')}
-            name="defaultBox"
-            checked={draft.defaultBox}
+            id={rules.idFor('default_box')}
+            name="default_box"
+            checked={draft.default_box}
             onChange={onChange}
           />
-          <label className="form-check-label" htmlFor={rules.idFor('defaultBox')}>
+          <label className="form-check-label" htmlFor={rules.idFor('default_box')}>
             {t('boxes.architecture.defaultBox')}
           </label>
         </div>
@@ -322,19 +322,19 @@ const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile }) => {
           )}
         </Field>
         <Field
-          id={rules.idFor('checksumType')}
+          id={rules.idFor('checksum_type')}
           label={t('boxes.architecture.checksumType')}
-          error={rules.errors.checksumType || ''}
+          error={rules.errors.checksum_type || ''}
           className="form-group col-md-3"
         >
           {aria => (
             <select
               {...aria}
               className="form-select"
-              name="checksumType"
-              value={draft.checksumType}
+              name="checksum_type"
+              value={draft.checksum_type}
               onChange={onChange}
-              onBlur={() => rules.onBlur('checksumType')}
+              onBlur={() => rules.onBlur('checksum_type')}
             >
               {CHECKSUM_TYPES.map(type => (
                 <option key={type} value={type}>
@@ -372,8 +372,8 @@ const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile }) => {
 AddArchitectureForm.propTypes = {
   draft: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    defaultBox: PropTypes.bool.isRequired,
-    checksumType: PropTypes.string.isRequired,
+    default_box: PropTypes.bool.isRequired,
+    checksum_type: PropTypes.string.isRequired,
     checksum: PropTypes.string.isRequired,
     file: PropTypes.object,
   }).isRequired,
@@ -385,8 +385,8 @@ AddArchitectureForm.propTypes = {
 
 const EMPTY_ARCHITECTURE = {
   name: '',
-  defaultBox: false,
-  checksumType: 'NULL',
+  default_box: false,
+  checksum_type: 'NULL',
   checksum: '',
   file: null,
 };
@@ -476,7 +476,7 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
           provider: provider.name,
           architecture: draft.name,
           checksum: draft.checksum,
-          checksumType: draft.checksumType,
+          checksum_type: draft.checksum_type,
         },
         onProgress
       );

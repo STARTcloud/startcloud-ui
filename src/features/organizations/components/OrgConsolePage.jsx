@@ -26,33 +26,33 @@ const ORG_SCHEMA = {
     organization: { type: 'string' },
     email: { type: 'string' },
     description: { type: 'string' },
-    accessMode: { type: 'string' },
-    defaultRole: { type: 'string' },
+    access_mode: { type: 'string' },
+    default_role: { type: 'string' },
   },
 };
 const ORG_LABELS = {
   organization: 'orgConsole.organization.name',
   email: 'orgConsole.organization.email',
   description: 'orgConsole.organization.description',
-  accessMode: 'orgConsole.organization.accessMode',
-  defaultRole: 'orgConsole.organization.defaultRole',
+  access_mode: 'orgConsole.organization.accessMode',
+  default_role: 'orgConsole.organization.defaultRole',
 };
 const EMPTY_ORG = {
   organization: '',
   email: '',
   description: '',
-  accessMode: 'private',
-  defaultRole: 'member',
+  access_mode: 'private',
+  default_role: 'member',
 };
 const INVITE_SCHEMA = {
   required: ['email'],
-  properties: { email: { type: 'string' }, inviteRole: { type: 'string' } },
+  properties: { email: { type: 'string' }, invite_role: { type: 'string' } },
 };
 const INVITE_LABELS = {
   email: 'orgConsole.invitation.email',
-  inviteRole: 'orgConsole.invitation.assignRole',
+  invite_role: 'orgConsole.invitation.assignRole',
 };
-const EMPTY_INVITE = { email: '', inviteRole: 'member' };
+const EMPTY_INVITE = { email: '', invite_role: 'member' };
 
 const matchesTerm = (fields, term) =>
   fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
@@ -603,8 +603,8 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
           organization: details.name,
           email: details.email,
           description: details.description,
-          accessMode: details.accessMode,
-          defaultRole: details.defaultRole,
+          access_mode: details.accessMode,
+          default_role: details.defaultRole,
         });
         setIsExternalOrg(details.isExternalOrg);
         setOrgIdpLink(details.idpLink);
@@ -633,7 +633,13 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
     if (!orgRules.validateAll()) {
       return;
     }
-    const { organization, email, description, accessMode, defaultRole } = orgForm;
+    const {
+      organization,
+      email,
+      description,
+      access_mode: accessMode,
+      default_role: defaultRole,
+    } = orgForm;
 
     try {
       await organizations.update(org, { organization, email, description });
@@ -691,12 +697,12 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
     if (!inviteRules.validateAll()) {
       return;
     }
-    const { email, inviteRole } = inviteForm;
+    const { email, invite_role: inviteRole } = inviteForm;
     try {
       const sent = await organizations.invite({
         email,
-        organizationName: org,
-        inviteRole,
+        organization_name: org,
+        invite_role: inviteRole,
       });
       const invitationDetails = `${t('orgConsole.invitation.sent')}
         ${t('orgConsole.invitation.token')}: ${sent.invitationToken}
@@ -822,7 +828,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
   );
 
   const canManageMembership = canManageRoles && !isExternalOrg;
-  const currentTab = visibleTab(activeTab, isExternalOrg, orgForm.accessMode, invitationsEnabled);
+  const currentTab = visibleTab(activeTab, isExternalOrg, orgForm.access_mode, invitationsEnabled);
 
   return (
     <div className="list row">
@@ -834,7 +840,7 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
         activeTab={currentTab}
         setActiveTab={selectTab}
         isExternalOrg={isExternalOrg}
-        orgAccessMode={orgForm.accessMode}
+        orgAccessMode={orgForm.access_mode}
         joinRequestCount={joinRequests.length}
         invitationsEnabled={invitationsEnabled}
       />
@@ -883,8 +889,8 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
                           orgLocale={orgLocale}
                           orgTimezone={orgTimezone}
                           orgAddress={orgAddress}
-                          orgAccessMode={orgForm.accessMode}
-                          orgDefaultRole={orgForm.defaultRole}
+                          orgAccessMode={orgForm.access_mode}
+                          orgDefaultRole={orgForm.default_role}
                           orgIdpLink={orgIdpLink}
                         />
                       </>
@@ -958,18 +964,18 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
                         <div className="row">
                           <div className="col-md-6">
                             <Field
-                              id={orgRules.idFor('accessMode')}
+                              id={orgRules.idFor('access_mode')}
                               label={t('orgConsole.organization.accessMode')}
                               hint={t('orgConsole.organization.accessModeHint')}
-                              error={orgRules.errors.accessMode}
+                              error={orgRules.errors.access_mode}
                             >
                               {aria => (
                                 <select
                                   {...aria}
                                   className="form-select"
-                                  value={orgForm.accessMode}
-                                  onChange={e => setOrgField('accessMode', e.target.value)}
-                                  onBlur={() => orgRules.onBlur('accessMode')}
+                                  value={orgForm.access_mode}
+                                  onChange={e => setOrgField('access_mode', e.target.value)}
+                                  onBlur={() => orgRules.onBlur('access_mode')}
                                 >
                                   <option value="private">
                                     {t('orgConsole.organization.accessModes.private')}
@@ -986,18 +992,18 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
                           </div>
                           <div className="col-md-6">
                             <Field
-                              id={orgRules.idFor('defaultRole')}
+                              id={orgRules.idFor('default_role')}
                               label={t('orgConsole.organization.defaultRole')}
                               hint={t('orgConsole.organization.defaultRoleHint')}
-                              error={orgRules.errors.defaultRole}
+                              error={orgRules.errors.default_role}
                             >
                               {aria => (
                                 <select
                                   {...aria}
                                   className="form-select"
-                                  value={orgForm.defaultRole}
-                                  onChange={e => setOrgField('defaultRole', e.target.value)}
-                                  onBlur={() => orgRules.onBlur('defaultRole')}
+                                  value={orgForm.default_role}
+                                  onChange={e => setOrgField('default_role', e.target.value)}
+                                  onBlur={() => orgRules.onBlur('default_role')}
                                 >
                                   <option value="member">{t('roles.member')}</option>
                                   <option value="admin">{t('roles.admin')}</option>
@@ -1117,22 +1123,22 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
                       </div>
                       <div className="col-md-4">
                         <Field
-                          id={inviteRules.idFor('inviteRole')}
+                          id={inviteRules.idFor('invite_role')}
                           label={t('orgConsole.invitation.assignRole')}
-                          error={inviteRules.errors.inviteRole}
+                          error={inviteRules.errors.invite_role}
                         >
                           {aria => (
                             <select
                               {...aria}
                               className="form-select"
-                              value={inviteForm.inviteRole}
+                              value={inviteForm.invite_role}
                               onChange={e =>
                                 setInviteForm(previous => ({
                                   ...previous,
-                                  inviteRole: e.target.value,
+                                  invite_role: e.target.value,
                                 }))
                               }
-                              onBlur={() => inviteRules.onBlur('inviteRole')}
+                              onBlur={() => inviteRules.onBlur('invite_role')}
                             >
                               <option value="member">{t('roles.member')}</option>
                               {canManageRoles && <option value="admin">{t('roles.admin')}</option>}

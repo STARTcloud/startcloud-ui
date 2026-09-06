@@ -4,7 +4,7 @@ const HEX_RE = /^[a-fA-F0-9]+$/;
 export const CHECKSUM_TYPES = ['NULL', ...Object.keys(CHECKSUM_LENGTHS)];
 
 const checksumFailure = (value, values) => {
-  const type = values.checksumType;
+  const type = values.checksum_type;
   if (type === 'NULL') {
     return null;
   }
@@ -29,7 +29,7 @@ export const BOX_SCHEMA = {
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    isPublic: { type: 'boolean' },
+    is_public: { type: 'boolean' },
   },
 };
 
@@ -40,19 +40,19 @@ export const BOX_EDIT_SCHEMA = {
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    isPublic: { type: 'boolean' },
-    githubRepo: { type: 'string' },
-    workflowFile: { type: 'string' },
-    cicdUrl: { type: 'string' },
+    is_public: { type: 'boolean' },
+    github_repo: { type: 'string' },
+    workflow_file: { type: 'string' },
+    cicd_url: { type: 'string' },
   },
 };
 
 export const BOX_EDIT_LABELS = {
   name: 'boxes.box.name',
   description: 'boxes.box.description',
-  githubRepo: 'boxes.box.cicd.repository',
-  workflowFile: 'boxes.box.cicd.workflow',
-  cicdUrl: 'boxes.box.cicd.pipelineUrl',
+  github_repo: 'boxes.box.cicd.repository',
+  workflow_file: 'boxes.box.cicd.workflow',
+  cicd_url: 'boxes.box.cicd.pipelineUrl',
 };
 
 export const ISO_SCHEMA = BOX_SCHEMA;
@@ -62,21 +62,21 @@ export const ISO_LABELS = { name: 'boxes.iso.name', description: 'boxes.box.desc
 export const ISO_RENAME_SCHEMA = { required: ['name'], properties: { name: { type: 'string' } } };
 
 export const VERSION_SCHEMA = {
-  required: ['versionNumber'],
-  properties: { versionNumber: { type: 'string' }, description: { type: 'string' } },
+  required: ['version_number'],
+  properties: { version_number: { type: 'string' }, description: { type: 'string' } },
 };
 
 export const VERSION_LABELS = {
-  versionNumber: 'boxes.version.number',
+  version_number: 'boxes.version.number',
   description: 'boxes.provider.description',
 };
 
 export const DEPRECATION_SCHEMA = {
-  required: ['deprecationReason'],
-  properties: { deprecationReason: { type: 'string' } },
+  required: ['deprecation_reason'],
+  properties: { deprecation_reason: { type: 'string' } },
 };
 
-export const DEPRECATION_LABELS = { deprecationReason: 'boxes.version.deprecationReason' };
+export const DEPRECATION_LABELS = { deprecation_reason: 'boxes.version.deprecationReason' };
 
 export const PROVIDER_SCHEMA = {
   required: ['name'],
@@ -92,11 +92,11 @@ export const ARCHITECTURE_SCHEMA = {
   required: ['name'],
   properties: {
     name: { type: 'string' },
-    defaultBox: { type: 'boolean' },
-    checksumType: { type: 'string', enum: CHECKSUM_TYPES },
+    default_box: { type: 'boolean' },
+    checksum_type: { type: 'string', enum: CHECKSUM_TYPES },
     checksum: {
       type: 'string',
-      dependsOn: 'checksumType',
+      dependsOn: 'checksum_type',
       showWhen: Object.keys(CHECKSUM_LENGTHS),
       custom: checksumFailure,
     },
@@ -106,8 +106,8 @@ export const ARCHITECTURE_SCHEMA = {
 
 export const ARCHITECTURE_LABELS = {
   name: 'boxes.architecture.name',
-  defaultBox: 'boxes.architecture.defaultBox',
-  checksumType: 'boxes.architecture.checksumType',
+  default_box: 'boxes.architecture.defaultBox',
+  checksum_type: 'boxes.architecture.checksumType',
   checksum: 'boxes.architecture.checksum',
   file: 'boxes.architecture.file',
 };

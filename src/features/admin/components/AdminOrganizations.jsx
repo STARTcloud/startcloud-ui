@@ -29,31 +29,31 @@ const EDIT_SCHEMA = {
     org_code: { type: 'string' },
     email: { type: 'string' },
     description: { type: 'string' },
-    accessMode: { type: 'string' },
-    defaultRole: { type: 'string' },
+    access_mode: { type: 'string' },
+    default_role: { type: 'string' },
   },
 };
 const EDIT_LABELS = {
   org_code: 'orgUserManager.editModal.orgCode',
   email: 'orgUserManager.editModal.orgEmail',
   description: 'orgUserManager.editModal.description',
-  accessMode: 'orgUserManager.editModal.accessMode',
-  defaultRole: 'orgUserManager.editModal.defaultRole',
+  access_mode: 'orgUserManager.editModal.accessMode',
+  default_role: 'orgUserManager.editModal.defaultRole',
 };
 const EMPTY_EDIT = {
   org_code: '',
   email: '',
   description: '',
-  accessMode: 'private',
-  defaultRole: 'member',
+  access_mode: 'private',
+  default_role: 'member',
 };
 
 const editOf = details => ({
   org_code: details.org_code || '',
   email: details.email || '',
   description: details.description || '',
-  accessMode: details.access_mode || 'private',
-  defaultRole: details.default_role || 'member',
+  access_mode: details.access_mode || 'private',
+  default_role: details.default_role || 'member',
 });
 
 const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, onSave }) => {
@@ -119,18 +119,18 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
             )}
           </Field>
           <Field
-            id={rules.idFor('accessMode')}
+            id={rules.idFor('access_mode')}
             label={t('orgUserManager.editModal.accessMode')}
             hint={t('orgUserManager.editModal.accessModeHint')}
-            error={rules.errors.accessMode || ''}
+            error={rules.errors.access_mode || ''}
           >
             {aria => (
               <select
                 {...aria}
                 className="form-select"
-                value={draft.accessMode}
-                onChange={e => onChange('accessMode', e.target.value)}
-                onBlur={() => rules.onBlur('accessMode')}
+                value={draft.access_mode}
+                onChange={e => onChange('access_mode', e.target.value)}
+                onBlur={() => rules.onBlur('access_mode')}
               >
                 <option value="private">{t('orgUserManager.editModal.accessModes.private')}</option>
                 <option value="invite_only">
@@ -143,18 +143,18 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
             )}
           </Field>
           <Field
-            id={rules.idFor('defaultRole')}
+            id={rules.idFor('default_role')}
             label={t('orgUserManager.editModal.defaultRole')}
             hint={t('orgUserManager.editModal.defaultRoleHint')}
-            error={rules.errors.defaultRole || ''}
+            error={rules.errors.default_role || ''}
           >
             {aria => (
               <select
                 {...aria}
                 className="form-select"
-                value={draft.defaultRole}
-                onChange={e => onChange('defaultRole', e.target.value)}
-                onBlur={() => rules.onBlur('defaultRole')}
+                value={draft.default_role}
+                onChange={e => onChange('default_role', e.target.value)}
+                onBlur={() => rules.onBlur('default_role')}
               >
                 <option value="member">{t('roles.member')}</option>
                 <option value="admin">{t('roles.admin')}</option>
@@ -181,8 +181,8 @@ EditOrganizationModal.propTypes = {
     org_code: PropTypes.string.isRequired,
     email: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    accessMode: PropTypes.string.isRequired,
-    defaultRole: PropTypes.string.isRequired,
+    access_mode: PropTypes.string.isRequired,
+    default_role: PropTypes.string.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
@@ -424,7 +424,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
         email: draft.email,
         description: draft.description,
       });
-      await admin.accessMode(editingOrg.name, draft.accessMode, draft.defaultRole);
+      await admin.accessMode(editingOrg.name, draft.access_mode, draft.default_role);
       notify('success', t('orgUserManager.editModal.updateSuccess'));
       setEditingOrg(null);
     } catch (error) {

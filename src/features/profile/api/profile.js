@@ -6,10 +6,10 @@ const user = userId => encodePath('api', 'users', userId);
 export const removeAccount = userId => client.delete(user(userId));
 
 export const changePassword = (userId, newPassword, signal) =>
-  client.put(`${user(userId)}/change-password`, { newPassword }, { signal });
+  client.put(`${user(userId)}/change-password`, { new_password: newPassword }, { signal });
 
 export const changeEmail = (userId, newEmail, signal) =>
-  client.put(`${user(userId)}/change-email`, { newEmail }, { signal });
+  client.put(`${user(userId)}/change-email`, { new_email: newEmail }, { signal });
 
 export const changeName = (userId, name, signal) =>
   client.put(`${user(userId)}/change-name`, { name }, { signal });
@@ -27,7 +27,11 @@ export const cancelRequest = requestId =>
 
 export const serviceAccounts = {
   create: (description, expirationDays, organizationId) =>
-    client.post('/api/service-accounts/', { description, expirationDays, organizationId }),
+    client.post('/api/service-accounts/', {
+      description,
+      expiration_days: expirationDays,
+      organization_id: organizationId,
+    }),
   organizations: () => client.get('/api/service-accounts/organizations'),
   list: signal => client.get('/api/service-accounts/', { signal }),
   remove: id => client.delete(encodePath('api', 'service-accounts', id)),

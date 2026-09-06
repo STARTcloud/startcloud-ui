@@ -307,12 +307,14 @@ BoxCicdBar.propTypes = {
   item: itemShape.isRequired,
 };
 
-const EDIT_FIELDS = ['name', 'description', 'isPublic', 'githubRepo', 'workflowFile', 'cicdUrl'];
-
-const draftFrom = box =>
-  Object.fromEntries(
-    EDIT_FIELDS.map(field => [field, box[field] ?? (field === 'isPublic' ? false : '')])
-  );
+const draftFrom = box => ({
+  name: box.name ?? '',
+  description: box.description ?? '',
+  is_public: box.isPublic ?? false,
+  github_repo: box.githubRepo ?? '',
+  workflow_file: box.workflowFile ?? '',
+  cicd_url: box.cicdUrl ?? '',
+});
 
 const OptionalLabel = ({ text }) => {
   const { t } = useTranslation();
@@ -409,9 +411,9 @@ const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPrivate"
-                name="isPublic"
+                name="is_public"
                 value="false"
-                checked={!draft.isPublic}
+                checked={!draft.is_public}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPrivate">
@@ -423,9 +425,9 @@ const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPublic"
-                name="isPublic"
+                name="is_public"
                 value="true"
-                checked={Boolean(draft.isPublic)}
+                checked={Boolean(draft.is_public)}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPublic">
@@ -460,7 +462,7 @@ const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
           </h5>
           <small className="form-text text-muted mb-3">{t('boxes.box.cicd.connect')}</small>
           <EditTextField
-            name="githubRepo"
+            name="github_repo"
             hint={t('boxes.box.cicd.repositoryHint')}
             placeholder={t('boxes.box.cicd.repositoryPlaceholder')}
             draft={draft}
@@ -468,7 +470,7 @@ const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
             onChange={onChange}
           />
           <EditTextField
-            name="workflowFile"
+            name="workflow_file"
             hint={t('boxes.box.cicd.workflowHint')}
             placeholder={t('boxes.box.cicd.workflowPlaceholder')}
             draft={draft}
@@ -476,7 +478,7 @@ const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
             onChange={onChange}
           />
           <EditTextField
-            name="cicdUrl"
+            name="cicd_url"
             type="url"
             hint={t('boxes.box.cicd.pipelineHint')}
             placeholder={t('boxes.box.cicd.pipelinePlaceholder')}
@@ -517,7 +519,7 @@ export const BoxItemActions = ({ item, ctx }) => {
 
   const onChange = useCallback(event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
   }, []);
 
   useEffect(() => {
@@ -547,7 +549,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       return;
     }
     api.boxes
-      .update(org, box.name, { ...box, ...draft, isPublic: draft.isPublic ? 1 : 0 })
+      .update(org, box.name, { ...draft, published: Boolean(box.published) })
       .then(() => {
         notify('success', t('boxes.box.updated'));
         setEditing(false);
@@ -568,13 +570,7 @@ export const BoxItemActions = ({ item, ctx }) => {
 
   const publish = published => {
     api.boxes
-      .update(org, box.name, {
-        id: box.id,
-        name: box.name,
-        isPublic: box.isPublic,
-        description: box.description,
-        published,
-      })
+      .update(org, box.name, { published })
       .then(reload)
       .catch(error => {
         log.api.error('Error updating box release status', { error: error.message });
@@ -656,9 +652,9 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
     <form noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('versionNumber')}
+        id={rules.idFor('version_number')}
         label={t('boxes.version.number')}
-        error={rules.errors.versionNumber || ''}
+        error={rules.errors.version_number || ''}
         className="form-group col-md-3"
       >
         {aria => (
@@ -666,10 +662,10 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
             {...aria}
             type="text"
             className="form-control"
-            name="versionNumber"
-            value={draft.versionNumber}
+            name="version_number"
+            value={draft.version_number}
             onChange={onChange}
-            onBlur={() => rules.onBlur('versionNumber')}
+            onBlur={() => rules.onBlur('version_number')}
           />
         )}
       </Field>
@@ -697,14 +693,14 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
 
 AddVersionForm.propTypes = {
   draft: PropTypes.shape({
-    versionNumber: PropTypes.string.isRequired,
+    version_number: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
-const EMPTY_VERSION = { versionNumber: '', description: '' };
+const EMPTY_VERSION = { version_number: '', description: '' };
 
 export const BoxVersionsActions = ({ item, ctx }) => {
   const { t } = useTranslation();

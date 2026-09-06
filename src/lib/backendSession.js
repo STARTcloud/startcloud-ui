@@ -79,7 +79,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     try {
       const { data } = await axios.post(
         `${api}/auth/refresh-token`,
-        { stayLoggedIn: user.stayLoggedIn },
+        { stay_logged_in: user.stayLoggedIn },
         { headers: authHeader() }
       );
       if (!data.accessToken) {
@@ -184,7 +184,11 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   };
 
   const login = async (username, password, stayLoggedIn = false) => {
-    const { data } = await axios.post(`${api}/auth/signin`, { username, password, stayLoggedIn });
+    const { data } = await axios.post(`${api}/auth/signin`, {
+      username,
+      password,
+      stay_logged_in: stayLoggedIn,
+    });
     if (data.accessToken) {
       store({ ...data, stayLoggedIn, tokenRefreshTime: Date.now() });
       events.emit('login');

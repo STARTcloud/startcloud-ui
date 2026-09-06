@@ -21,13 +21,13 @@ const fileInfo = (organization, name, number, providerName, architectureName) =>
 
 const uploadBoxFile = (file, options, onUploadProgress) => {
   const { organization, name, version: number, provider: providerName } = options;
-  const { architecture: architectureName, checksum, checksumType } = options;
+  const { architecture: architectureName, checksum, checksum_type: checksumType } = options;
   return uploadChunked({
     client,
     path: `${architecture(organization, name, number, providerName, architectureName)}/file/upload`,
     file,
     checksum,
-    checksumType,
+    checksum_type: checksumType,
     info: () => fileInfo(organization, name, number, providerName, architectureName),
     onUploadProgress,
   });

@@ -24,8 +24,8 @@ import {
 import { deleteVersionCascade } from '../adapter';
 import { api } from '../api';
 
-const EMPTY_ISO = { name: '', description: '', isPublic: false };
-const EMPTY_VERSION = { versionNumber: '', description: '' };
+const EMPTY_ISO = { name: '', description: '', is_public: false };
+const EMPTY_VERSION = { version_number: '', description: '' };
 
 const CreateIsoForm = ({ org, draft, rules, onChange }) => {
   const { t } = useTranslation();
@@ -88,9 +88,9 @@ const CreateIsoForm = ({ org, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPrivate"
-                name="isPublic"
+                name="is_public"
                 value="false"
-                checked={!draft.isPublic}
+                checked={!draft.is_public}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPrivate">
@@ -102,9 +102,9 @@ const CreateIsoForm = ({ org, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPublic"
-                name="isPublic"
+                name="is_public"
                 value="true"
-                checked={draft.isPublic}
+                checked={draft.is_public}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPublic">
@@ -124,7 +124,7 @@ CreateIsoForm.propTypes = {
   draft: PropTypes.shape({
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    isPublic: PropTypes.bool.isRequired,
+    is_public: PropTypes.bool.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
@@ -205,7 +205,7 @@ export const IsoListActions = ({ ctx }) => {
 
   const onChange = event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
   };
 
   const cancel = () => {
@@ -400,7 +400,7 @@ export const IsoItemActions = ({ item, ctx }) => {
         <button
           type="button"
           className="btn btn-outline-secondary me-2"
-          onClick={() => update({ isPublic: !iso.isPublic }, 'Error updating ISO visibility')}
+          onClick={() => update({ is_public: !iso.isPublic }, 'Error updating ISO visibility')}
         >
           {iso.isPublic ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
           {t(iso.isPublic ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
@@ -461,9 +461,9 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
     <form noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('versionNumber')}
+        id={rules.idFor('version_number')}
         label={t('boxes.version.number')}
-        error={rules.errors.versionNumber || ''}
+        error={rules.errors.version_number || ''}
         className="form-group col-md-3"
       >
         {aria => (
@@ -471,10 +471,10 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
             {...aria}
             type="text"
             className="form-control"
-            name="versionNumber"
-            value={draft.versionNumber}
+            name="version_number"
+            value={draft.version_number}
             onChange={onChange}
-            onBlur={() => rules.onBlur('versionNumber')}
+            onBlur={() => rules.onBlur('version_number')}
           />
         )}
       </Field>
@@ -502,7 +502,7 @@ const AddVersionForm = ({ draft, rules, onChange }) => {
 
 AddVersionForm.propTypes = {
   draft: PropTypes.shape({
-    versionNumber: PropTypes.string.isRequired,
+    version_number: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,

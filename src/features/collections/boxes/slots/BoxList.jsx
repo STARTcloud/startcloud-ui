@@ -15,7 +15,7 @@ import { api } from '../api';
 import { BOX_LABELS, BOX_SCHEMA } from '../forms';
 import { isGlobalAdmin, isOrgManager, isOrgMember } from '../permissions';
 
-const EMPTY_BOX = { name: '', description: '', isPublic: false };
+const EMPTY_BOX = { name: '', description: '', is_public: false };
 
 const CreateBoxForm = ({ org, draft, rules, onChange }) => {
   const { t } = useTranslation();
@@ -79,9 +79,9 @@ const CreateBoxForm = ({ org, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPrivate"
-                name="isPublic"
+                name="is_public"
                 value="false"
-                checked={!draft.isPublic}
+                checked={!draft.is_public}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPrivate">
@@ -93,9 +93,9 @@ const CreateBoxForm = ({ org, draft, rules, onChange }) => {
                 type="radio"
                 className="form-check-input"
                 id="visibilityPublic"
-                name="isPublic"
+                name="is_public"
                 value="true"
-                checked={draft.isPublic}
+                checked={draft.is_public}
                 onChange={onChange}
               />
               <label className="form-check-label" htmlFor="visibilityPublic">
@@ -115,7 +115,7 @@ CreateBoxForm.propTypes = {
   draft: PropTypes.shape({
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    isPublic: PropTypes.bool.isRequired,
+    is_public: PropTypes.bool.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
@@ -196,7 +196,7 @@ export const BoxListActions = ({ ctx }) => {
 
   const onChange = event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'isPublic' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
   };
 
   const cancel = () => {
