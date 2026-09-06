@@ -50,12 +50,11 @@ const declaredOnly = (host, page) => {
       .filter(([key]) => declared.includes(key))
       .map(([key, needs]) => [key, needs.filter(name => declared.includes(name))])
   );
-  return {
-    ...host,
-    required: (host.required || []).filter(name => declared.includes(name)),
-    dependentRequired,
-    properties,
-  };
+  const required = new Set([
+    ...(host.required || []).filter(name => declared.includes(name)),
+    ...(page.required || []),
+  ]);
+  return { ...host, required: [...required], dependentRequired, properties };
 };
 
 const effectiveSchema = (formKey, schema) => {
@@ -109,10 +108,10 @@ const without = (map, name) =>
  * The blur-and-submit validation of one form over the host's rules: the
  * host's `rules.forms[formKey]` when the host lists the form, applied to
  * the properties the page's `schema` declares and to no other (the page
- * contributes its client-only `equals`, `custom`, `dependsOn` and
- * `showWhen` entries), the page's `schema` reduced to `required` when the
- * host does not list it, and the `schema` itself when no `formKey` is
- * given (the config pages).
+ * contributes its own `required` and its client-only `equals`, `custom`,
+ * `dependsOn` and `showWhen` entries), the page's `schema` reduced to
+ * `required` when the host does not list it, and the `schema` itself when
+ * no `formKey` is given (the config pages).
  * Nothing runs while typing; `onBlur(name)` marks a failing field, a marked
  * field is re-evaluated on every change so its error clears the moment the
  * value is right, `validateAll()` marks every failing field and answers

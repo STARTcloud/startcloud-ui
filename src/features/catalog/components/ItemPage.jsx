@@ -138,13 +138,9 @@ const ItemHeading = ({ item, org, editor, actions, watch, ctx }) => {
   const { ItemChips, ItemHeaderExtra } = ctx.collection.slots;
   if (editor) {
     return (
-      <div className="mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4>{t('pages.item.details')}</h4>
-          <div>{actions}</div>
-        </div>
+      <PageHeader title={t('pages.item.details')} actions={actions}>
         {editor}
-      </div>
+      </PageHeader>
     );
   }
   const title = (

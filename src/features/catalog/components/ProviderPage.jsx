@@ -154,13 +154,9 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
   return (
     <div className="list row">
       {editor ? (
-        <div className="mb-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h4>{t('pages.provider.edit')}</h4>
-            <div>{actions}</div>
-          </div>
+        <PageHeader title={t('pages.provider.edit')} actions={actions}>
           {editor}
-        </div>
+        </PageHeader>
       ) : (
         <PageHeader title={entry.name} subtitle={entry.description || ''} actions={actions} />
       )}

@@ -73,6 +73,7 @@ export const useSession = ({
     resolveActiveOrg(session.organizations, localStorage.getItem(activeOrgKey))
   );
   const [ended, setEnded] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     onAdoptRef.current = onAdopt;
@@ -119,7 +120,10 @@ export const useSession = ({
       provider.signOut();
       adopt(null);
     });
-    provider.load().then(adopt);
+    provider.load().then(next => {
+      adopt(next);
+      setLoaded(true);
+    });
     return () => {
       offEnded();
       offLogin();
@@ -128,13 +132,13 @@ export const useSession = ({
   }, [adopt, events, provider]);
 
   useEffect(() => {
-    if (!session.user || !push || !push.isPushEnabled()) {
+    if (!loaded || !session.user || !push || !push.isPushEnabled()) {
       return undefined;
     }
     const report = () => notify('danger', t('notifications.enableError'));
     push.syncSubscription().catch(report);
     return push.listenForSubscriptionChange(report);
-  }, [notify, push, session.user, t]);
+  }, [loaded, notify, push, session.user, t]);
 
   const pickOrg = uuid => {
     if (!session.organizations.some(org => org.uuid === uuid)) {

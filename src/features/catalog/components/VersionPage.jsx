@@ -46,9 +46,18 @@ MetaRow.propTypes = {
   entry: versionShape.isRequired,
 };
 
-const VersionSummary = ({ entry, manage, actions, slots, slotProps }) => {
+const VersionSummary = ({ entry, manage, actions, editor, slots, slotProps }) => {
   const { t } = useTranslation();
   const { VersionBannerActions, VersionNotesActions } = slots;
+  if (editor) {
+    return (
+      <div className="mb-4">
+        <PageHeader title={t('pages.version.edit')} actions={actions}>
+          {editor}
+        </PageHeader>
+      </div>
+    );
+  }
   return (
     <div className="mb-4">
       <PageHeader
@@ -79,6 +88,7 @@ VersionSummary.propTypes = {
   entry: versionShape.isRequired,
   manage: PropTypes.bool.isRequired,
   actions: PropTypes.node,
+  editor: PropTypes.node,
   slots: PropTypes.object.isRequired,
   slotProps: PropTypes.object.isRequired,
 };
@@ -387,23 +397,14 @@ const VersionPage = ({ collection, org, name, version, context }) => {
 
   return (
     <div className="list row">
-      {editor ? (
-        <div className="mb-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h4>{t('pages.version.edit')}</h4>
-            <div>{actions}</div>
-          </div>
-          {editor}
-        </div>
-      ) : (
-        <VersionSummary
-          entry={entry}
-          manage={manage}
-          actions={actions}
-          slots={collection.slots}
-          slotProps={slotProps}
-        />
-      )}
+      <VersionSummary
+        entry={entry}
+        manage={manage}
+        actions={actions}
+        editor={editor}
+        slots={collection.slots}
+        slotProps={slotProps}
+      />
       {collection.hasProviders && artifacts.length > 0 ? (
         <ArtifactsSection
           collection={collection}
