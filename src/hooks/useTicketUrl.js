@@ -7,20 +7,18 @@ import { ticketUrl } from '../utils/ticketUrl';
 
 const firstValue = (...values) => values.find(value => !!value) || '';
 
-const knobValue = (config, key) => config?.[key]?.value || '';
-
 const servesTicketConfig = status => !status.ticket;
 
 const ticketOf = ({ status, ticketConfig }) => {
   if (servesTicketConfig(status)) {
-    if (!knobValue(ticketConfig, 'enabled')) {
+    if (!ticketConfig?.enabled) {
       return null;
     }
     return {
-      baseUrl: knobValue(ticketConfig, 'base_url'),
-      reqType: firstValue(knobValue(ticketConfig, 'req_type'), 'sso'),
-      fallbackCustomerId: knobValue(ticketConfig, 'fallback_customer_id'),
-      context: knobValue(ticketConfig, 'context'),
+      baseUrl: ticketConfig.base_url || '',
+      reqType: firstValue(ticketConfig.req_type, 'sso'),
+      fallbackCustomerId: ticketConfig.fallback_customer_id || '',
+      context: ticketConfig.context || '',
     };
   }
   return { ...status.ticket, context: `${status.idp.clientId}|${status.version}` };
@@ -41,11 +39,11 @@ const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
 };
 
 /**
- * The support-ticket link of the account menu: the `ticket_system` knobs
- * from `/api/config/ticket` on a host whose status answers `ticket: null`,
- * else the host's `status.ticket`, resolved with the active organization's
- * customer code and the signed-in identity; empty when there is no ticket
- * system or no user.
+ * The support-ticket link of the account menu: the plain `ticket_system`
+ * section from `/api/config/ticket` on a host whose status answers
+ * `ticket: null`, else the host's `status.ticket`, resolved with the active
+ * organization's customer code and the signed-in identity; empty when there
+ * is no ticket system or no user.
  *
  * @param {Object} options - The ticket inputs
  * @param {Object} options.status - The payload from `probeStatus`
