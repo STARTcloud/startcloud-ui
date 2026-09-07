@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.5.1...v0.6.0) (2026-09-07)
+
+
+### Features
+
+* add the branding packs, the pack generator and the pre-paint theme chain ([c643df8](https://github.com/STARTcloud/startcloud-ui/commit/c643df8dff6afff9982ecf008708aef9c11b23d6))
+* add the cookie session provider, the optional auth mode and the issuer's status shape ([bfd9af5](https://github.com/STARTcloud/startcloud-ui/commit/bfd9af5b66f23df13e81cbf3ac22695c49d64a61))
+* add the identity provider's five page groups behind the cookie token ([29413a8](https://github.com/STARTcloud/startcloud-ui/commit/29413a8ac28d5bc7c8b3008f82ddbf2f61fb6c3c))
+* add the sidebar, the account and operator exports and the footer token ([da3fc2f](https://github.com/STARTcloud/startcloud-ui/commit/da3fc2fd55a74eb76301d9572a94ce95d9d95d80))
+* feed the badges, the restart card and the footer heart from the event stream ([8635bf9](https://github.com/STARTcloud/startcloud-ui/commit/8635bf93c3914b4e7cc2c1601ca536df02eafd16))
+
+
+### Bug Fixes
+
+* build the ticket context from the role, answer the about stub on a role without keys and name the configuration row ([4d9c9fc](https://github.com/STARTcloud/startcloud-ui/commit/4d9c9fcc69d0a7cfdecbf54c39b8f34d7ddc6729))
+* Contracts  and Mockups for Auth Service ([ede99de](https://github.com/STARTcloud/startcloud-ui/commit/ede99de084fcd1ed4c5e39ea93939f79d1d965c8))
+
 ## [0.5.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.5.0...v0.5.1) (2026-09-06)
 
 
