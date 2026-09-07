@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.6.0...v0.7.0) (2026-09-07)
+
+
+### Features
+
+* read and write favorites on the contract's snake_case route ([19e10bb](https://github.com/STARTcloud/startcloud-ui/commit/19e10bb2db634b8ac7134595de9581d5f8343816))
+
 ## [0.6.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.5.1...v0.6.0) (2026-09-07)
 
 
