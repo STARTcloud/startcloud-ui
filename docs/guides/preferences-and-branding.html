@@ -1,0 +1,410 @@
+<meta charset="utf-8">
+<title>STARTcloud Universal Branding</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #ffffff;
+    --header: #f6f9fc;
+    --surface: #ffffff;
+    --surface-2: #eaeff4;
+    --border: #dbe4ee;
+    --text: #46546e;
+    --heading: #2a3547;
+    --muted: #7c8fac;
+    --primary: #5d87ff;
+    --primary-rgb: 93, 135, 255;
+    --primary-contrast: #ffffff;
+    --label: #5d87ff;
+    --danger: #e2533a;
+    --warning: #d99a16;
+    --success: #13a37f;
+    --code: #1b1e22;
+    --changed: #fff6e0;
+    --changed-border: #f0d48a;
+    --focus: #5d87ff;
+    --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #212529;
+      --header: #2b3035;
+      --surface: #2b3035;
+      --surface-2: #343a40;
+      --border: #495057;
+      --text: #8b9bb4;
+      --heading: #ffffff;
+      --muted: #8b9bb4;
+      --label: #9eb7ff;
+      --danger: #fa896b;
+      --warning: #f0b429;
+      --success: #13deb9;
+      --changed: #3a3320;
+      --changed-border: #6b5a22;
+      --focus: #9eb7ff;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212529;
+    --header: #2b3035;
+    --surface: #2b3035;
+    --surface-2: #343a40;
+    --border: #495057;
+    --text: #8b9bb4;
+    --heading: #ffffff;
+    --muted: #8b9bb4;
+    --label: #9eb7ff;
+    --danger: #fa896b;
+    --warning: #f0b429;
+    --success: #13deb9;
+    --changed: #3a3320;
+    --changed-border: #6b5a22;
+    --focus: #9eb7ff;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  body { background: var(--bg); color: var(--text); font-family: 'Open Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  h1, h2, h3 { font-family: 'Montserrat', 'Open Sans', sans-serif; color: var(--heading); margin: 0; font-weight: 600; text-wrap: balance; }
+  a { color: var(--label); text-decoration: none; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .page { max-width: 1240px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 40px; }
+  .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 8px; }
+  .intro h1 { font-size: 26px; }
+  .intro p { margin: 0; }
+  .legend { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--changed); border: 1px solid var(--changed-border); }
+  .state { display: flex; flex-direction: column; gap: 14px; }
+  .state-label { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .state-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .frame { border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
+  .frame.live { min-height: 560px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 20px; background: var(--surface); border-top: 1px solid var(--border); }
+  .actions .lbl { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .pill.on { border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  .pill .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .try { font-size: 12.5px; color: var(--muted); padding: 10px 20px 12px; background: var(--surface); }
+  .kv { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--muted); }
+
+  .site { display: flex; flex-direction: column; flex: 1; background: var(--s-bg); color: var(--s-text); }
+  .site .navbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: var(--s-header); border-bottom: 1px solid var(--s-border); height: 62px; box-sizing: border-box; }
+  .site .brand { display: flex; align-items: center; gap: 10px; color: var(--s-heading); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; }
+  .site .brand-mark { width: 34px; height: 34px; border-radius: 50%; background: var(--s-primary); display: inline-flex; align-items: center; justify-content: center; color: var(--s-on-primary); font-size: 15px; flex-shrink: 0; }
+  .site .brand-mark.square { border-radius: 7px; }
+  .site .nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .site .util { color: var(--s-text); padding: 6px 10px; font-size: 14px; }
+  .site .cluster { display: flex; align-items: center; gap: 4px; }
+  .site .btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 5px; border: 1px solid var(--s-border); background: transparent; color: var(--s-text); font: inherit; font-size: 13px; white-space: nowrap; }
+  .site .btn.icon { width: 34px; padding: 0; justify-content: center; border: 0; }
+  .site .flag { width: 18px; height: 13px; border-radius: 2px; background: repeating-linear-gradient(180deg, #b22234 0 2px, #fff 2px 4px); position: relative; }
+  .site .flag::before { content: ''; position: absolute; left: 0; top: 0; width: 8px; height: 7px; background: #3c3b6e; }
+  .site .btn.lang { width: auto; padding: 0 8px; gap: 5px; }
+  .site .btn.lang .code { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+  .site .auth-page { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px 40px; }
+  .site .auth-column { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; font-family: 'IBM Plex Sans', 'Open Sans', system-ui, sans-serif; }
+  .site .auth-heading { text-align: center; }
+  .site .auth-headline { font-family: var(--s-display); font-weight: 500; letter-spacing: -0.02em; line-height: 1.08; font-size: 32px; color: var(--s-heading); margin: 0; }
+  .site .auth-subhead { color: var(--s-muted); font-size: 14.5px; margin: 8px 0 0; }
+  .site .a-wrap { display: flex; align-items: center; background: var(--s-surface); border: 1px solid var(--s-border); border-radius: 12px; }
+  .site .a-wrap input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; padding: 13px 16px; font: inherit; font-size: 15px; color: var(--s-heading); }
+  .site .a-wrap input::placeholder { color: var(--s-muted); }
+  .site .a-wrap:focus-within { border-color: var(--s-primary); box-shadow: 0 0 0 4px color-mix(in oklab, var(--s-primary) 22%, transparent); }
+  .site .a-btn { border: 1px solid transparent; border-radius: 12px; padding: 13px 18px; font: inherit; font-size: 15px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; box-sizing: border-box; }
+  .site .a-btn.p { background: var(--s-primary); color: var(--s-on-primary); }
+  .site .a-btn.s { background: var(--s-surface); border-color: var(--s-border); color: var(--s-heading); }
+  .site .a-btn .pi { width: 18px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, #2a3547, #6c757d); }
+  .site .a-or { display: flex; align-items: center; gap: 14px; color: var(--s-muted); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .site .a-or::before, .site .a-or::after { content: ''; flex: 1; height: 1px; background: var(--s-border); }
+  .site .a-links { text-align: center; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
+  .site .a-link { color: var(--s-primary); }
+  .site .a-link.muted { color: var(--s-muted); }
+  .site .a-foot { text-align: center; color: var(--s-muted); font-size: 14px; }
+  .site .a-policy { border-top: 1px solid var(--s-border); padding-top: 12px; font-size: 12px; text-align: center; color: var(--s-muted); }
+  .site .site-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-size: 13px; background: var(--s-header); border-top: 1px solid var(--s-border); color: var(--s-muted); }
+  .site .site-footer .m { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #13deb9, #5d87ff); display: inline-block; vertical-align: middle; }
+  .site .bar { display: flex; gap: 16px; padding: 8px 20px; background: var(--surface-2); color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .site .bar span { white-space: nowrap; }
+
+  .four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .four > .mini { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 260px; }
+  .four > .mini:last-child { border-right: 0; }
+  .mini .cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .mini .site { flex: 1; }
+  .mini .navbar { height: 48px; padding: 8px 12px; gap: 10px; }
+  .mini .brand-mark { width: 26px; height: 26px; font-size: 12px; }
+  .mini .brand { font-size: 13px; }
+  .mini .auth-page { padding: 18px 14px 20px; }
+  .mini .auth-headline { font-size: 22px; }
+  .mini .a-wrap input { padding: 9px 12px; font-size: 13px; }
+  .mini .a-btn { padding: 9px 12px; font-size: 13px; }
+  .mini .site-footer { font-size: 11.5px; padding: 8px 12px; }
+  .swatches { display: flex; gap: 6px; align-items: center; }
+  .sw2 { width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); }
+
+  .callouts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .callout { border: 1px dashed var(--label); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; background: var(--bg); max-width: 380px; }
+  .callout.changed { border-style: solid; border-color: var(--changed-border); background: var(--changed); }
+  .callout strong { color: var(--heading); }
+  .spec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .spec.wide { grid-template-columns: 1fr; }
+  .spec-col { display: flex; flex-direction: column; gap: 10px; }
+  .spec h2 { font-size: 15px; }
+  .tbl { display: grid; font-size: 13px; }
+  .tbl .hc { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--heading); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c.k { color: var(--heading); font-weight: 600; }
+  .tbl .c.was { color: var(--muted); }
+  .payload { background: var(--code); color: #e6edf3; border-radius: 6px; padding: 12px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: pre; overflow-x: auto; line-height: 1.5; }
+  .payload .k { color: #9eb7ff; }
+  .payload .s { color: #13deb9; }
+  .payload .st { color: #ffae1f; }
+  @media (max-width: 900px) { .four, .spec { grid-template-columns: 1fr; } .four > .mini { border-right: 0; border-bottom: 1px solid var(--border); } }
+</style>
+
+<div class="page">
+
+  <div class="intro">
+    <h1>STARTcloud Universal Branding</h1>
+    <p>The picture of the Preferences, Language &amp; Branding Contract on the authorization server's four sites; where the two disagree, the contract's text wins. Today the issuer paints its auth pages from <code>auth.css</code>, one <code>[data-theme]</code> block per site composing surfaces, accent and display face in one attribute. On the shared chrome the same four sites are two independent axes: the variant, <code>light</code> or <code>dark</code>, chosen by the person and stamped as <code>data-bs-theme</code>, and the pack, a bare brand name stamped as <code>data-brand</code>, whose stylesheet carries colours, surfaces, artwork and the auth column's face, never geometry. The site's own default variant travels as <code>brand.theme</code> in <code>/api/status</code>, answered per site by hostname, and the pack and its stylesheet come from the branding endpoint. The first frame is live: pick a site and a variant, and the chrome, the sign-in column and the footer repaint from the pack's variables alone.</p>
+    <span class="legend"><span class="sw"></span>a yellow note marks what this design changes against the sites as auth.css paints them today</span>
+  </div>
+
+  <div class="state">
+    <div class="state-label">Live — /login on each site, the variant the person's, the pack the site's; the pre-paint script applies brand.theme until the person chooses</div>
+    <div class="frame live" id="live"></div>
+    <div class="frame" id="live-bar"></div>
+    <div class="callouts">
+      <div class="callout"><strong>What this frame proves.</strong> One chrome, one sign-in column, four looks, and every difference is a value of a pack file: <code>--brand-primary</code>, <code>--brand-on-primary</code>, the mark, the surfaces where the pack names them and, for the auth column alone, the display face. Moonshine's greys and Nomad's purple-black are pack values under the dark variant; a person on the Moonshine.dev site who picks light gets Moonshine's green on whatever light surfaces the pack names, and Bootstrap's where it names none.</div>
+      <div class="callout changed"><strong>Changed: two attributes, never composed.</strong> <code>&lt;html data-theme="moonshinedev"&gt;</code> becomes <code>&lt;html data-bs-theme="dark" data-brand="moonshinedev"&gt;</code>; <code>&lt;html data-theme="light"&gt;</code> becomes <code>data-bs-theme="light"</code> with no <code>data-brand</code> at all, because a site on <code>theme_id: light</code> publishes <code>theme_pack: null</code>.</div>
+      <div class="callout changed"><strong>Changed: surfaces are the pack's to set.</strong> The surface palettes of <code>auth.css</code> move into the packs as <code>--bs-*</code> colours per variant: Moonshine's neutral greys and Nomad's purple-black under <code>[data-brand][data-bs-theme="dark"]</code>, a light twin where the site wants one; the stock variant is the fallback wherever a pack names nothing, and geometry is never a pack's.</div>
+      <div class="callout changed"><strong>Changed: the person chooses.</strong> The auth pages never had a theme button; the chrome's cluster has one on every page, the choice writes through <code>PATCH /api/user/preferences</code>, and the site's <code>theme_id</code> only seeds <code>brand.theme</code> for the first paint of a visitor with no choice.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The four sites at rest — each on its own default variant, the pack's accent, mark and display face</div>
+    <div class="frame">
+      <div class="four" id="four"></div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>STARTcloud</strong> is <code>theme_id: light</code>, so no pack: stock Bootstrap, the chrome's own primary, the STARTcloud mark from <code>brand.logoUrl</code>, Source Serif 4 for the auth headline because that is the shared auth column's face.</div>
+      <div class="callout"><strong>Moonshine.dev</strong> is a dark-default site with a green accent (<code>#1f9d57</code>) and the crescent-M mark; its <code>auth.css</code> block says the headline takes the body sans, so the pack names IBM Plex Sans as its display face.</div>
+      <div class="callout"><strong>SwitchBoard.cloud</strong> is light with the cyan (<code>#24ADE3</code>, the design system's <code>--brand-primary</code>) and Poppins headings, the one site whose block overrides accent and face only and leaves the surfaces to the variant already; it draws no footer.</div>
+      <div class="callout"><strong>Nomad Services</strong> is a dark-default site with the purple (<code>#6c5ce7</code>) and the gear-N mark, headings in the body sans.</div>
+      <div class="callout changed"><strong>Changed: the display face.</strong> The branding contract keeps typography out of v1; decision 5 of the identity contract lets a pack name the auth column's display face and nothing else. That is the one font a pack carries, the chrome stays on Montserrat and Open Sans, and a pack naming no face gets Source Serif 4.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The wire — the status payload per site, the branding endpoint, the pack file</div>
+    <div class="frame">
+      <div class="spec" style="padding: 16px 20px 20px;">
+        <div class="spec-col">
+          <h2>GET /api/status · answered per site by hostname (auth.switchboard.global)</h2>
+          <div class="payload">{
+  <span class="k">"role"</span>: <span class="s">"auth-server"</span>,
+  <span class="k">"version"</span>: <span class="s">"1.9.1"</span>,
+  <span class="k">"brand"</span>: {
+    <span class="k">"name"</span>: <span class="s">"SwitchBoard.cloud"</span>,
+    <span class="k">"logoUrl"</span>: <span class="s">"/brand/switchboard/icon.png"</span>,
+    <span class="k">"theme"</span>: <span class="s">"light"</span>
+  },
+  <span class="k">"auth"</span>: [<span class="s">"cookie"</span>],
+  <span class="k">"collections"</span>: [],
+  <span class="k">"features"</span>: [<span class="s">"local-accounts"</span>, <span class="s">"tfa"</span>, <span class="s">"onboarding"</span>, <span class="s">"interstitials"</span>, <span class="s">"inbox"</span>, <span class="s">"integrations"</span>, <span class="s">"policies"</span>, <span class="s">"org-console"</span>, <span class="s">"invitations"</span>, <span class="s">"admin"</span>, <span class="s">"notifications"</span>, <span class="s">"health"</span>, <span class="s">"events"</span>],
+  <span class="k">"links"</span>: { <span class="k">"docs"</span>: <span class="s">""</span>, <span class="k">"contact"</span>: <span class="s">""</span> },
+  <span class="k">"ticket"</span>: { <span class="k">"baseUrl"</span>: <span class="s">"https://xd.prominic.net/app/apprequest.nsf/router?openagent"</span>, <span class="k">"reqType"</span>: <span class="s">"sso"</span>, <span class="k">"fallbackCustomerId"</span>: <span class="s">"A55DF0"</span> },
+  <span class="k">"events"</span>: { <span class="k">"path"</span>: <span class="s">"/api/events"</span>, <span class="k">"topics"</span>: [<span class="s">"notifications"</span>, <span class="s">"session"</span>, <span class="s">"admin"</span>] }
+}</div>
+          <h2>the same on dev-auth.startcloud.com</h2>
+          <div class="payload">{ …,
+  <span class="k">"brand"</span>: { <span class="k">"name"</span>: <span class="s">"STARTcloud"</span>, <span class="k">"logoUrl"</span>: <span class="s">"/brand/startcloud/icon.png"</span>, <span class="k">"changelog"</span>: <span class="s">"https://github.com/STARTcloud/authorization-server-private/releases"</span>, <span class="k">"theme"</span>: <span class="s">"light"</span> },
+  <span class="k">"features"</span>: [ …, <span class="s">"footer"</span> ],
+  <span class="k">"ticket"</span>: { …, <span class="k">"fallbackCustomerId"</span>: <span class="s">"A55DF1"</span> } }</div>
+          <h2>GET /api/public/site/branding · the same site</h2>
+          <div class="payload">{
+  <span class="k">"site_id"</span>: <span class="s">"switchboard"</span>,
+  <span class="k">"theme_pack"</span>: <span class="s">"switchboard"</span>,
+  <span class="k">"theme_css"</span>: <span class="s">"https://auth.switchboard.global/themes/switchboard/switchboard.css?v=a1b2c3"</span>,
+  <span class="k">"company_name"</span>: <span class="s">"SwitchBoard.cloud"</span>,
+  <span class="k">"logos"</span>: {
+    <span class="k">"small"</span>: { <span class="k">"src"</span>: <span class="s">"https://auth.switchboard.global/brand/switchboard/logo-small.png"</span>, <span class="k">"width"</span>: 640, <span class="k">"height"</span>: 104 },
+    <span class="k">"icon"</span>:  { <span class="k">"src"</span>: <span class="s">"https://auth.switchboard.global/brand/switchboard/icon.png"</span>, <span class="k">"width"</span>: 64, <span class="k">"height"</span>: 64 }
+  }
+}</div>
+        </div>
+        <div class="spec-col">
+          <h2>public/themes/switchboard/switchboard.css · the pack's stylesheet, a file in the shared UI</h2>
+          <div class="payload">[data-brand=<span class="s">"switchboard"</span>] {
+  --brand-primary: <span class="s">#24ADE3</span>;
+  --brand-primary-rgb: 36, 173, 227;
+  --brand-on-primary: <span class="s">#ffffff</span>;
+  --brand-auth-display: <span class="s">'Poppins', Helvetica, Arial, sans-serif</span>;
+
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: var(--brand-primary-rgb);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+}
+[data-brand=<span class="s">"switchboard"</span>][data-bs-theme=<span class="s">"dark"</span>] {
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+}</div>
+          <h2>public/themes/moonshinedev/moonshinedev.css · a pack that sets its surfaces</h2>
+          <div class="payload">[data-brand=<span class="s">"moonshinedev"</span>] {
+  --brand-primary: <span class="s">#1f9d57</span>;
+  --brand-primary-rgb: 31, 157, 87;
+  --brand-on-primary: <span class="s">#ffffff</span>;
+  --brand-auth-display: <span class="s">'IBM Plex Sans', system-ui, sans-serif</span>;
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: var(--brand-primary-rgb);
+}
+[data-brand=<span class="s">"moonshinedev"</span>][data-bs-theme=<span class="s">"dark"</span>] {
+  --bs-body-bg: <span class="s">#23272b</span>;
+  --bs-tertiary-bg: <span class="s">#2b3034</span>;
+  --bs-secondary-bg: <span class="s">#32383d</span>;
+  --bs-border-color: <span class="s">#41484e</span>;
+  --bs-body-color: <span class="s">#d8dde1</span>;
+  --bs-emphasis-color: <span class="s">#ffffff</span>;
+  --bs-secondary-color: <span class="s">#9aa1a8</span>;
+}</div>
+          <h2>What the shell does with them</h2>
+          <div class="tbl" style="grid-template-columns: 130px 1fr;">
+            <span class="hc">Piece</span><span class="hc">Rule</span>
+            <span class="c k">pre-paint</span><span class="c">the <code>index.html</code> script stamps <code>data-bs-theme</code> from the account value, else <code>localStorage.theme</code>, else <code>brand.theme</code>, else <code>auto</code> through <code>matchMedia</code>; the issuer serves <code>index.html</code> per site with <code>data-brand-theme="light|dark"</code> stamped on <code>&lt;html&gt;</code> by hostname, the file in the build unchanged, so the script reads the site default before any fetch, and the script's hash is in <code>script-src</code></span>
+            <span class="c k">mount</span><span class="c"><code>useTheme</code> resolves the same chain in the same order, so the script and the mount never disagree; a toggle writes through <code>PATCH /api/user/preferences</code></span>
+            <span class="c k">pack</span><span class="c">the issuer stamps <code>data-brand</code> and the pack's <code>&lt;link&gt;</code> into <code>index.html</code> per site in the same pass as <code>data-brand-theme</code>, the link after the app stylesheet, so the pack paints with the first frame and the shell appends nothing; on a UI backend that serves one static file the shell reads the branding endpoint after <code>/api/status</code> and appends the link itself; a null pack stamps nothing and links nothing</span>
+            <span class="c k">mark</span><span class="c"><code>brand.logoUrl</code> from status is the chrome's mark, the org mark and the favicon, as on every UI backend; the branding endpoint's slots feed relying apps, not the issuer's own chrome</span>
+            <span class="c k">surfaces</span><span class="c">a pack may set the <code>--bs-*</code> surface and text colours per variant; the shell adds nothing, Bootstrap's own variables carry them, and the stock variant fills whatever the pack leaves unset</span>
+            <span class="c k">auth column</span><span class="c">the column's tokens map onto the pack: its accent is <code>--brand-primary</code>, its button text <code>--brand-on-primary</code>, its headline face <code>--brand-auth-display</code> falling back to Source Serif 4; its surfaces are the variant's as the pack leaves them</span>
+            <span class="c k">footer</span><span class="c">drawn while the site's status lists <code>footer</code>; the SwitchBoard site omits the token, so no page of that site draws one</span>
+            <span class="c k">fallback</span><span class="c">the endpoint down, a 404 or a blocked stylesheet leaves stock Bootstrap with the site's mark from status; never a broken image, never a half-branded page</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: the branding endpoint's shape.</strong> Today <code>SiteBrandingController</code> answers <code>site_id</code>, <code>theme_pack</code>, <code>company_name</code> and three logo strings; the contract's shape is the one above: <code>theme_css</code> returned, absolute URLs, every logo slot an object with <code>width</code> and <code>height</code>, <code>theme_pack: null</code> for a light site; and the path moves from <code>/public/site/branding</code> to <code>/api/public/site/branding</code>, because programs call <code>/api</code> and <code>/public/*</code> is the SPA's.</div>
+      <div class="callout changed"><strong>Changed: the footer flags.</strong> <code>sites.switchboard.ui.show_footer_on_*</code> are six per-page booleans; the shared chrome draws the footer per UI backend through the <code>footer</code> token, so one switch per site, <code>sites.&lt;id&gt;.ui.footer</code>, decides whether that site's status lists the word, every page of the site alike, and the six flags go. A white-label site drops its footer and its "Powered by" line with one value, and one issuer serves branded and white-label sites from the same build.</div>
+      <div class="callout"><strong>Utility links.</strong> <code>links.docs</code> is <code>sites.&lt;id&gt;.assets.help_url</code> and <code>links.contact</code> is <code>mailto:</code> the site's <code>mail.support_email</code>; none of the four sites sets either today, so the signed-out top bar carries the brand, the theme button and the flag alone.</div>
+      <div class="callout"><strong>The pack's variable names</strong> are the contract's: <code>--brand-primary</code>, <code>--brand-on-primary</code>, the optional <code>--brand-logo</code> and <code>--brand-logo-color</code>, plus the <code>--bs-*</code> bridge; <code>--brand-auth-display</code> is the one addition decision 5 makes, and the generator refuses a pack whose primary fails 4.5:1 against its on-primary.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The sites — what application.yml says today, and what each becomes</div>
+    <div class="frame">
+      <div class="tbl" style="grid-template-columns: 120px 1fr 90px 90px 130px 1fr 1fr; margin: 0 20px 8px;">
+        <span class="hc">Site</span><span class="hc">Hostnames</span><span class="hc">theme_id</span><span class="hc">brand.theme</span><span class="hc">Pack</span><span class="hc">Accent · face</span><span class="hc">Marks</span>
+        <span class="c k">startcloud</span><span class="c">auth.startcloud.com · dev-auth.startcloud.com · auth-startcloud.local.com</span><span class="c">light</span><span class="c">light</span><span class="c">none (<code>null</code>)</span><span class="c">the chrome's own primary · Source Serif 4</span><span class="c">logo-small.png · icon.png (the green cloud); footer: the STARTcloud wordmark</span>
+        <span class="c k">moonshinedev</span><span class="c">auth.moonshine.dev · dev-auth.moonshine.dev · auth-moonshine.local.com</span><span class="c">moonshinedev</span><span class="c">dark</span><span class="c"><code>moonshinedev</code></span><span class="c"><span class="swatches"><span class="sw2" style="background: #1f9d57;"></span>#1f9d57</span> · IBM Plex Sans</span><span class="c">logo-small.png (the cream wordmark) · icon.png (the crescent M)</span>
+        <span class="c k">switchboard</span><span class="c">auth.switchboard.global · auth-switchboard.local.com · per-instance auth.&lt;tenant&gt;.switchboard.global</span><span class="c">switchboard</span><span class="c">light</span><span class="c"><code>switchboard</code></span><span class="c"><span class="swatches"><span class="sw2" style="background: #24ADE3;"></span>#24ADE3</span> · Poppins</span><span class="c">logo-small.png (the SwitchBoard Cloud wordmark) · icon.png (the three heads); no footer</span>
+        <span class="c k">nomadservices</span><span class="c">auth.nomad.services · dev-auth.nomad.services · auth-nomadservices.local.com</span><span class="c">nomadservices</span><span class="c">dark</span><span class="c"><code>nomadservices</code></span><span class="c"><span class="swatches"><span class="sw2" style="background: #6c5ce7;"></span>#6c5ce7</span> · IBM Plex Sans</span><span class="c">logo-small.png (NOMAD.Services by Prominic.NET) · icon.png (the gear N)</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>brand.theme is the site's own value.</strong> <code>sites.&lt;id&gt;.ui.default_theme</code>, <code>light</code> or <code>dark</code>, beside the site's other <code>ui</code> switches; today <code>light</code> and <code>switchboard</code> paint light surfaces in <code>auth.css</code> and <code>moonshinedev</code> and <code>nomadservices</code> dark ones, which is what the four sites' values start as, and <code>theme_id</code> only names the pack from then on.</div>
+      <div class="callout"><strong>The pack registry</strong> is the shared UI's: one directory per pack under <code>public/themes/&lt;pack&gt;/</code> beside <code>public/brand/</code>, a package of files a developer writes, the stylesheet, the artwork and the font files, shipped with the build and served by the origin that serves it; the authorization server holds no pack and renders none, it names one per site through <code>theme_id</code> and answers <code>theme_css</code> as that stylesheet's URL with its content hash as <code>?v=</code> and a long <code>max-age</code>, the URL built from the site's configured hostname and never the request's <code>Host</code>; the branding answer itself is <code>public, max-age=300</code>. On the issuer a pack is same-origin unless the site lists the host in <code>sites.&lt;id&gt;.ui.pack_origins</code>, each listed origin becoming that site's <code>style-src</code> and <code>font-src</code> entry, because a stylesheet from a host the issuer does not control runs on the sign-in page (RFC 9700 §4.2.4). The site marks live under <code>public/brand/&lt;site&gt;/</code> in the same build, since the jar serves no <code>/assets</code>.</div>
+      <div class="callout"><strong>Per-instance SwitchBoard</strong> keeps the central site's pack and marks; only the hostname and the registration flags differ, as <code>application-instance.yml</code> already does.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">What this design changed</div>
+    <div class="frame">
+      <div class="tbl" style="grid-template-columns: 180px 1fr 1fr; margin: 0 20px 8px;">
+        <span class="hc">Where</span><span class="hc">Before</span><span class="hc">After</span>
+        <span class="c k">the attribute</span><span class="c was"><code>data-theme</code> on the auth pages composing site and variant (<code>light</code>, <code>dark</code>, <code>moonshinedev</code>, <code>switchboard</code>, <code>nomadservices</code>); <code>data-bs-theme</code> plus <code>data-user-theme</code> on the dashboard layout</span><span class="c"><code>data-bs-theme</code> for the variant and <code>data-brand</code> for the pack, on every page, never composed</span>
+        <span class="c k">the tokens</span><span class="c was"><code>--bg</code>, <code>--ink</code>, <code>--accent</code>, <code>--font-display</code> and friends per <code>[data-theme]</code> block in <code>auth.css</code></span><span class="c"><code>--brand-primary</code>, <code>--brand-on-primary</code>, <code>--brand-auth-display</code> and the <code>--bs-*</code> bridge in a generated pack; surfaces from Bootstrap's variant</span>
+        <span class="c k">the site default</span><span class="c was"><code>theme_id</code> chose the whole look and the person could not change it</span><span class="c"><code>theme_id</code> seeds <code>brand.theme</code>; the person's variant wins the moment it exists</span>
+        <span class="c k">the footer</span><span class="c was">six <code>show_footer_on_*</code> booleans on the SwitchBoard site</span><span class="c">one <code>sites.&lt;id&gt;.ui.footer</code> switch per site; the <code>footer</code> token present or absent in that site's status</span>
+        <span class="c k">the branding answer</span><span class="c was">logo strings, no <code>theme_css</code>, no sizes</span><span class="c">the contract's objects with sizes, <code>theme_css</code> returned, <code>null</code> for a light site</span>
+        <span class="c k">the fonts</span><span class="c was">Plus Jakarta Sans, IBM Plex Sans, Source Serif 4 self-hosted under <code>/assets/fonts/</code>; Poppins fetched from Google for SwitchBoard</span><span class="c">the shared build's Montserrat and Open Sans for the chrome, IBM Plex Sans and Source Serif 4 for the auth column, all bundled; a pack's display face named by the pack and served with it, never fetched from a font CDN at runtime</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var live = document.getElementById('live');
+    var bar = document.getElementById('live-bar');
+    var four = document.getElementById('four');
+    if (!live || !bar || !four) { return; }
+    var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var VARIANTS = {
+      light: { bg: '#ffffff', header: '#f6f9fc', surface: '#ffffff', border: '#dbe4ee', text: '#46546e', heading: '#2a3547', muted: '#7c8fac' },
+      dark: { bg: '#212529', header: '#2b3035', surface: '#2b3035', border: '#495057', text: '#8b9bb4', heading: '#ffffff', muted: '#8b9bb4' }
+    };
+    var SITES = {
+      startcloud: { name: 'STARTcloud', host: 'dev-auth.startcloud.com', pack: null, theme: 'light', primary: '#5d87ff', onPrimary: '#ffffff', display: "'Source Serif 4', Georgia, serif", mark: 'S', markBg: '#91c54e', markFg: '#ffffff', square: false, footer: true, fallback: 'Source Serif 4' },
+      moonshinedev: { name: 'Moonshine.dev', host: 'dev-auth.moonshine.dev', pack: 'moonshinedev', theme: 'dark', primary: '#1f9d57', onPrimary: '#ffffff', display: "'IBM Plex Sans', system-ui, sans-serif", mark: 'M', markBg: '#2a3547', markFg: '#f2e5a9', square: false, footer: true, surfaces: { dark: { bg: '#23272b', header: '#2b3034', surface: '#32383d', border: '#41484e', text: '#d8dde1', heading: '#ffffff', muted: '#9aa1a8' } } },
+      switchboard: { name: 'SwitchBoard.cloud', host: 'auth.switchboard.global', pack: 'switchboard', theme: 'light', primary: '#24ADE3', onPrimary: '#ffffff', display: "'Poppins', Helvetica, Arial, sans-serif", mark: 'SB', markBg: '#24ADE3', markFg: '#ffffff', square: false, footer: false },
+      nomadservices: { name: 'Nomad Services', host: 'dev-auth.nomad.services', pack: 'nomadservices', theme: 'dark', primary: '#6c5ce7', onPrimary: '#ffffff', display: "'IBM Plex Sans', system-ui, sans-serif", mark: 'N', markBg: '#6c5ce7', markFg: '#ffffff', square: true, footer: true, surfaces: { dark: { bg: '#0e0c1f', header: '#15142a', surface: '#1a1830', border: '#2a2a4a', text: '#e0e0f0', heading: '#ffffff', muted: '#a0a0b8' } } }
+    };
+    var ORDER = ['startcloud', 'moonshinedev', 'switchboard', 'nomadservices'];
+    var state = { site: 'switchboard', choice: '' };
+    var resolved = function (site) { return state.choice || site.theme; };
+    var vars = function (site, variant) {
+      var v = Object.assign({}, VARIANTS[variant], (site.surfaces && site.surfaces[variant]) || {});
+      var primary = site.pack ? site.primary : '#5d87ff';
+      return '--s-bg:' + v.bg + ';--s-header:' + v.header + ';--s-surface:' + v.surface + ';--s-border:' + v.border + ';--s-text:' + v.text + ';--s-heading:' + v.heading + ';--s-muted:' + v.muted + ';--s-primary:' + primary + ';--s-on-primary:' + site.onPrimary + ';--s-display:' + site.display + ';';
+    };
+    var mark = function (site) { return '<span class="brand-mark' + (site.square ? ' square' : '') + '" style="background:' + site.markBg + ';color:' + site.markFg + ';">' + esc(site.mark) + '</span>'; };
+    var chrome = function (site, variant) {
+      var themeIcon = variant === 'dark'
+        ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>'
+        : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.9 4.9l1.4 1.4"></path><path d="M17.7 17.7l1.4 1.4"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.9 19.1l1.4-1.4"></path><path d="M17.7 6.3l1.4-1.4"></path></svg>';
+      if (!state.choice) { themeIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg>'; }
+      return '<div class="navbar"><span class="brand">' + mark(site) + esc(site.name) + '</span><div class="nav"></div><div class="cluster"><span class="btn icon" title="Theme">' + themeIcon + '</span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="code">EN</span></span></div></div>';
+    };
+    var column = function (site, mini) {
+      return '<div class="auth-page"><div class="auth-column">'
+        + '<div class="auth-heading"><h1 class="auth-headline">Sign in to ' + esc(site.name) + '</h1>' + (mini ? '' : '<p class="auth-subhead">We\'ll email you a link, or use your password.</p>') + '</div>'
+        + '<div class="a-wrap"><input type="email" placeholder="Enter your personal or work email"></div>'
+        + '<span class="a-btn p">Continue with email</span>'
+        + (mini ? '' : '<div class="a-or">or</div><span class="a-btn s"><span class="pi"></span>Continue with GitHub</span><div class="a-links"><span class="a-link muted">Sign in with password instead</span><span class="a-link muted">Cancel</span></div>')
+        + '<p class="a-foot">New to ' + esc(site.name) + '? <span class="a-link">Create an account</span></p>'
+        + (mini ? '' : '<div class="a-policy">Privacy Policy · Terms of Service</div>')
+        + '</div></div>';
+    };
+    var footer = function (site, variant) {
+      if (!site.footer) { return ''; }
+      return '<div class="site-footer"><span>' + esc(site.name) + ' © 2026 · v1.9.1</span><span>Powered by <span class="m"></span> STARTcloud</span><span></span></div>';
+    };
+    var render = function () {
+      var site = SITES[state.site];
+      var variant = resolved(site);
+      var attrs = 'data-bs-theme="' + variant + '"' + (site.pack ? ' data-brand="' + site.pack + '"' : '');
+      live.innerHTML = '<div class="site" style="' + vars(site, variant) + '">'
+        + '<div class="bar"><span>GET https://' + esc(site.host) + '/login</span><span>&lt;html ' + esc(attrs) + '&gt;</span><span>brand.theme=' + esc(site.theme) + '</span><span>localStorage.theme=' + esc(state.choice || '(none)') + '</span><span>theme_pack=' + esc(site.pack || 'null') + '</span></div>'
+        + chrome(site, variant) + column(site, false) + footer(site, variant) + '</div>';
+      bar.innerHTML = '<div class="actions"><span class="lbl">Site</span>' + ORDER.map(function (k) { return '<button class="pill' + (k === state.site ? ' on' : '') + '" data-site="' + k + '"><span class="dot" style="background:' + (SITES[k].pack ? SITES[k].primary : '#5d87ff') + ';"></span>' + esc(SITES[k].name) + '</button>'; }).join('')
+        + '<span class="lbl" style="margin-left: 16px;">The person\'s choice</span>'
+        + ['', 'light', 'dark'].map(function (c) { return '<button class="pill' + (c === state.choice ? ' on' : '') + '" data-choice="' + c + '">' + (c || 'none yet') + '</button>'; }).join('')
+        + '</div>'
+        + '<div class="try">Try: pick a site, the pack repaints the accent, the mark, the headline face and, on Moonshine.dev and Nomad Services in the dark variant, the surfaces it names · with no choice yet the variant is the site\'s <code>brand.theme</code> (Moonshine.dev and Nomad Services open dark, the other two light) · pick light or dark as the person and every site follows it, the site default never overriding a choice · SwitchBoard.cloud draws no footer because its status omits the <code>footer</code> token · STARTcloud has no pack, so its accent is the chrome\'s own.</div>';
+    };
+    var renderFour = function () {
+      four.innerHTML = ORDER.map(function (k) {
+        var site = SITES[k];
+        var v = site.theme;
+        var attrs = 'data-bs-theme="' + v + '"' + (site.pack ? ' data-brand="' + site.pack + '"' : '');
+        return '<div class="mini"><div class="cap">' + esc(site.name) + ' · ' + esc(attrs) + '</div><div class="site" style="' + vars(site, v) + '">' + chrome(site, v) + column(site, true) + footer(site, v) + '</div></div>';
+      }).join('');
+    };
+    bar.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-site], [data-choice]');
+      if (!el) { return; }
+      if (el.hasAttribute('data-site')) { state.site = el.getAttribute('data-site'); }
+      else { state.choice = el.getAttribute('data-choice'); }
+      render();
+    });
+    render();
+    renderFour();
+  })();
+</script>

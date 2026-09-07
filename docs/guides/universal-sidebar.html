@@ -1,0 +1,558 @@
+<meta charset="utf-8">
+<title>STARTcloud Universal Sidebar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #ffffff;
+    --header: #f6f9fc;
+    --surface: #ffffff;
+    --surface-2: #eaeff4;
+    --border: #dbe4ee;
+    --text: #46546e;
+    --heading: #2a3547;
+    --muted: #7c8fac;
+    --primary: #5d87ff;
+    --primary-rgb: 93, 135, 255;
+    --primary-contrast: #ffffff;
+    --label: #5d87ff;
+    --danger: #e2533a;
+    --warning: #d99a16;
+    --success: #13a37f;
+    --code: #1b1e22;
+    --changed: #fff6e0;
+    --changed-border: #f0d48a;
+    --focus: #5d87ff;
+    --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #212529;
+      --header: #2b3035;
+      --surface: #2b3035;
+      --surface-2: #343a40;
+      --border: #495057;
+      --text: #8b9bb4;
+      --heading: #ffffff;
+      --muted: #8b9bb4;
+      --label: #9eb7ff;
+      --danger: #fa896b;
+      --warning: #f0b429;
+      --success: #13deb9;
+      --changed: #3a3320;
+      --changed-border: #6b5a22;
+      --focus: #9eb7ff;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212529;
+    --header: #2b3035;
+    --surface: #2b3035;
+    --surface-2: #343a40;
+    --border: #495057;
+    --text: #8b9bb4;
+    --heading: #ffffff;
+    --muted: #8b9bb4;
+    --label: #9eb7ff;
+    --danger: #fa896b;
+    --warning: #f0b429;
+    --success: #13deb9;
+    --changed: #3a3320;
+    --changed-border: #6b5a22;
+    --focus: #9eb7ff;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  body { background: var(--bg); color: var(--text); font-family: 'Open Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  h1, h2, h3 { font-family: 'Montserrat', 'Open Sans', sans-serif; color: var(--heading); margin: 0; font-weight: 600; text-wrap: balance; }
+  a { color: var(--label); text-decoration: none; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .page { max-width: 1240px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 40px; }
+  .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 8px; }
+  .intro h1 { font-size: 26px; }
+  .intro p { margin: 0; }
+  .legend { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--changed); border: 1px solid var(--changed-border); }
+  .state { display: flex; flex-direction: column; gap: 14px; }
+  .state-label { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .state-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .frame { border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
+  .frame.live { height: 640px; }
+  .frame.live .shell { overflow: hidden; }
+  .navbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: var(--header); border-bottom: 1px solid var(--border); height: 62px; box-sizing: border-box; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--heading); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); display: inline-flex; align-items: center; justify-content: center; color: var(--primary-contrast); flex-shrink: 0; }
+  .crumbs { display: flex; align-items: center; gap: 6px; flex: 1; font-size: 13.5px; color: var(--text); }
+  .crumbs .sep { color: var(--muted); }
+  .cluster { display: flex; align-items: center; gap: 4px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); color: var(--heading); }
+  .btn.icon { width: 34px; padding: 0; justify-content: center; border: 0; }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+  .btn.account { border: 0; padding: 0 8px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #5d87ff, #13deb9); flex-shrink: 0; }
+  .name { color: var(--heading); font-weight: 600; }
+  .flag { width: 18px; height: 13px; border-radius: 2px; background: repeating-linear-gradient(180deg, #b22234 0 2px, #fff 2px 4px); position: relative; }
+  .flag::before { content: ''; position: absolute; left: 0; top: 0; width: 8px; height: 7px; background: #3c3b6e; }
+  .btn.lang { width: auto; padding: 0 8px; gap: 5px; }
+  .btn.lang .code { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+  .site-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-size: 13px; background: var(--header); border-top: 1px solid var(--border); color: var(--muted); margin-top: auto; }
+  .site-footer .m { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #13deb9, #5d87ff); display: inline-block; vertical-align: middle; }
+
+  .shell { display: flex; flex: 1; min-height: 0; }
+  .body { display: flex; flex: 1; min-height: 0; }
+  .sb { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--header); border-right: 1px solid var(--border); transition: width 0.15s ease; }
+  .sb.rail { width: 38px; }
+  .sb-top { display: flex; align-items: center; gap: 10px; height: 62px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--heading); font: inherit; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; text-align: left; width: 100%; box-sizing: border-box; }
+  .sb-top:hover { background: var(--surface-2); }
+  .sb-top .brand-mark { width: 30px; height: 30px; }
+  .sb-top .pn { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-top .chev { color: var(--muted); font-size: 12px; }
+  .sb.rail .sb-top { padding: 0; justify-content: center; }
+  .sb.rail .sb-top .pn, .sb.rail .sb-top .chev, .sb.rail .sb-sec, .sb.rail .row .l, .sb.rail .row .b, .sb.rail .caret, .sb.rail .kids { display: none; }
+  .sb.rail .sb-top .brand-mark { width: 26px; height: 26px; font-size: 12px; }
+  .sb-nav { flex: 1; overflow: auto; padding: 6px 0; display: flex; flex-direction: column; gap: 10px; }
+  .sb-view { display: flex; align-items: center; gap: 8px; padding: 4px 12px 2px; }
+  .sb-view select { flex: 1; min-width: 0; height: 28px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--heading); font: inherit; font-size: 12.5px; padding: 0 6px; }
+  .sb-view .vl { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .sb.rail .sb-view { display: none; }
+  .sb-sec { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 12px 2px; }
+  .row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 12px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; min-width: 0; }
+  .row:hover { background: var(--surface-2); color: var(--heading); }
+  .row.on { background: rgba(var(--primary-rgb), 0.12); color: var(--heading); font-weight: 600; box-shadow: inset 3px 0 0 var(--primary); }
+  .row .i { width: 18px; text-align: center; flex-shrink: 0; color: inherit; font-size: 14px; }
+  .row .l { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .b { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--danger); color: #fff; }
+  .row .caret { width: 14px; color: var(--muted); font-size: 11px; flex-shrink: 0; }
+  .sb.rail .row { justify-content: center; padding: 8px 0; }
+  .kids .row { padding-left: 34px; font-size: 13px; }
+  .kids .kids .row { padding-left: 52px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); flex-shrink: 0; }
+  .dot.up { background: var(--success); border-color: var(--success); }
+  .sb-foot { border-top: 1px solid var(--border); padding: 8px 10px; display: flex; align-items: center; gap: 10px; min-height: 56px; box-sizing: border-box; cursor: pointer; }
+  .sb-foot:hover { background: var(--surface-2); }
+  .sb-foot .id { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; flex: 1; }
+  .sb-foot .id .n { color: var(--heading); font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-foot .id .e { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sb-foot .chev { color: var(--muted); font-size: 11px; }
+  .sb.rail .sb-foot { justify-content: center; padding: 8px 0; }
+  .sb.rail .sb-foot .id, .sb.rail .sb-foot .chev { display: none; }
+  .btn.act { border-color: var(--outline, var(--border)); color: var(--heading); font-weight: 600; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  .content { overflow: auto; min-height: 0; }
+  .ctx { display: flex; gap: 2px; padding: 8px 20px 0; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .ctx span { padding: 6px 12px; font-size: 13px; color: var(--text); border-bottom: 2px solid transparent; }
+  .ctx span.on { color: var(--heading); font-weight: 600; border-bottom-color: var(--primary); }
+  .content { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .content h2 { font-size: 18px; }
+  .ghost { border: 1px dashed var(--border); border-radius: 6px; padding: 14px; color: var(--muted); font-size: 13px; }
+  .ghost + .ghost { min-height: 120px; }
+  .site-footer { flex-shrink: 0; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 20px; background: var(--surface); }
+  .actions .lbl { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .pill { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+  .pill.on { border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  .try { font-size: 12.5px; color: var(--muted); padding: 10px 20px 12px; background: var(--surface); }
+  .kv { display: inline-flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--muted); }
+
+  .callouts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .callout { border: 1px dashed var(--label); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; background: var(--bg); max-width: 380px; }
+  .callout.changed { border-style: solid; border-color: var(--changed-border); background: var(--changed); }
+  .callout.open { border-style: solid; border-color: var(--danger); }
+  .callout strong { color: var(--heading); }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+  .three > .mini { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 300px; }
+  .three > .mini:last-child { border-right: 0; }
+  .mini .cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .mini .cap.pick { color: var(--success); }
+  .mini .shell, .mini .body { flex: 1; }
+  .mini .navbar { height: 48px; padding: 8px 12px; gap: 10px; }
+  .mini .sb { width: 170px; }
+  .mini .sb-top { height: 48px; padding: 0 10px; font-size: 13px; }
+  .mini .sb-top .brand-mark { width: 26px; height: 26px; font-size: 12px; }
+  .mini .row { font-size: 12.5px; padding: 5px 10px; }
+  .spec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .spec-col { display: flex; flex-direction: column; gap: 10px; }
+  .spec h2 { font-size: 15px; }
+  .tbl { display: grid; font-size: 13px; }
+  .tbl .hc { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--heading); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c.k { color: var(--heading); font-weight: 600; }
+  .payload { background: var(--code); color: #e6edf3; border-radius: 6px; padding: 12px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: pre; overflow-x: auto; line-height: 1.5; }
+  .payload .k { color: #9eb7ff; }
+  .payload .s { color: #13deb9; }
+  .payload .st { color: #ffae1f; }
+  @media (max-width: 900px) { .three, .spec { grid-template-columns: 1fr; } .three > .mini { border-right: 0; border-bottom: 1px solid var(--border); } .sb { width: 200px; } }
+</style>
+
+<div class="page">
+
+  <div class="intro">
+    <h1>STARTcloud Universal Sidebar</h1>
+    <p>One sidebar for every UI backend that needs one, and none for the ones that do not. The manner is borrowed from hyperweaver: the column runs the full height of the viewport on the left, its top is the brand mark and the product name, a click there collapses it to a 38px rail and expands it again, and the navbar, the page and the footer sit to its right and move with it. The window never scrolls: the column's entries and the page each scroll inside themselves, and the footer stays the one fixed row. A feature fills the column by exporting entries, gated by the same tokens and roles that gate its routes; a UI backend with no entries keeps the sidebar-less chrome BoxVault and the catalog have today, with the brand in the header. Two entry kinds share one column: sections of links, the shape the authorization server's admin needs, and a live tree, the shape the fleet monitor's pools would take. The first frame is live: pick a UI backend, click the brand to collapse, scroll inside the column and the page.</p>
+    <span class="legend"><span class="sw"></span>a yellow note marks what this design changes against the chrome as it is today; a red note marks a decision still open</span>
+  </div>
+
+  <div class="state">
+    <div class="state-label">Live — the same AppShell on the estate's UI backends; only the entries the mounted features export differ</div>
+    <div class="frame live" id="live"></div>
+    <div class="frame" id="live-bar"></div>
+    <div class="callouts">
+      <div class="callout"><strong>What this frame proves.</strong> The column is the outer row's first cell and the whole header, page and footer stack is its second, so collapsing the rail pushes everything right in one motion; the cluster, the crumbs and the footer are otherwise untouched, and the column appears only when a feature registered entries. Sections and a tree are both entry kinds, so the auth server's admin, BoxVault's admin and the fleet monitor's pools draw through one component with one row style, one rail and one persistence.</div>
+      <div class="callout"><strong>Scroll.</strong> The frame is viewport-high and nothing outside it scrolls: the column's entries scroll in their own region under the brand, the page scrolls in the region between the header and the footer, and the footer is the one 13px row of the navbar contract, fixed, with no drawer.</div>
+      <div class="callout changed"><strong>Changed: the shell.</strong> `AppShell` becomes a row: `Sidebar` first when the `sidebar` prop carries entries, then the column of header, notices, scroll region and footer; with no entries the row has one cell and the layout is byte-identical to today.</div>
+      <div class="callout changed"><strong>Changed: the brand moves.</strong> With a sidebar the brand mark and product name are the sidebar's top and its collapse control; the header row then opens with the crumbs. Without a sidebar the header keeps the brand as today.</div>
+      <div class="callout changed"><strong>Changed: the foot is bare unless a feature exports `actionMenu`.</strong> Without the export there is no profile drop-up and no action strip: identity, organizations, favorites, notifications, help and logout stay in the header's user menu, a page's actions stay on the page, and the column ends at its last entry. With the export the swap below applies.</div>
+      <div class="callout"><strong>The swap.</strong> While any mounted feature exports `actionMenu`, the header's account slot draws that menu (the same toggle shape, a label and a glyph) and the user menu moves to the sidebar foot as a drop-up whose toggle is the identity card, the avatar alone in the rail. No flag: the export is the switch. Hyperweaver is the first fit, its scope-aware Controls (Machine, Host actions, Bulk actions) taking the slot; the frame shows it as the fifth backend.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The three states — with the column, the rail, and none</div>
+    <div class="frame">
+      <div class="three">
+        <div class="mini">
+          <div class="cap pick">With a sidebar — brand in the column top, click collapses, navbar to the right</div>
+          <div class="shell"><div class="sb"><span class="sb-top"><span class="brand-mark">S</span><span class="pn">STARTcloud</span><span class="chev">⟨</span></span><div class="sb-nav"><div class="sb-sec">Accounts</div><span class="row on"><span class="i">👥</span><span class="l">Users</span></span><span class="row"><span class="i">🏢</span><span class="l">Organizations</span></span></div></div><div class="main"><div class="navbar"><div class="crumbs">Admin<span class="sep">›</span>Users</div><div class="cluster"><span class="avatar"></span></div></div><div class="content"><div class="ghost">page</div></div></div></div>
+        </div>
+        <div class="mini">
+          <div class="cap pick">Collapsed — the 38px rail, the mark alone, everything moved left</div>
+          <div class="shell"><div class="sb rail"><span class="sb-top"><span class="brand-mark">V</span></span><div class="sb-nav"><span class="row on"><span class="i">▦</span></span><span class="row"><span class="i">▤</span></span><span class="row"><span class="i">◫</span></span><span class="row"><span class="i">◫</span></span></div></div><div class="main"><div class="navbar"><div class="crumbs">Fleet<span class="sep">›</span>Engineering<span class="sep">›</span>vdi-eng-014</div><div class="cluster"><span class="avatar"></span></div></div><div class="content"><div class="ghost">page, wider by 222px</div></div></div></div>
+        </div>
+        <div class="mini">
+          <div class="cap pick">No sidebar — the header keeps the brand, the chrome of today</div>
+          <div class="navbar"><span class="brand"><span class="brand-mark">B</span>BoxVault</span><div class="crumbs"><span class="sep">›</span>STARTcloud<span class="sep">›</span>Boxes</div><div class="cluster"><span class="btn account"><span class="name">Mark</span><span class="avatar"></span></span></div></div>
+          <div class="body"><div class="main"><div class="content"><div class="ghost">page</div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>Brand.</strong> The navbar contract fixes a 62px header with the brand first and the cluster last; with a sidebar the brand is the column's top instead, at the same 62px so the two seams align, and the header row opens with the crumbs. The mark, the product name and the collapse are one control; in the rail only the mark remains and the click expands.</div>
+      <div class="callout"><strong>Profile.</strong> Every UI backend keeps the header row and its cluster; the header's user menu is the account control, and the foot draws it only through the swap, while a feature exports `actionMenu`, staying bare otherwise.</div>
+      <div class="callout"><strong>Entries and tree.</strong> Both are kinds of one column: the auth server exports sections, the fleet monitor one section and one tree (pools), BoxVault its admin sections, and any feature may export both.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">How it fits — the contracts were written one on top of the other, and one UI backend is assembled from all of them in this order</div>
+    <div class="frame">
+      <div class="spec" style="padding: 16px 20px 20px;">
+        <div class="spec-col">
+          <h2>The reading order, each contract building on the one before</h2>
+          <div class="tbl" style="grid-template-columns: 34px 170px 1fr;">
+            <span class="hc">#</span><span class="hc">Contract</span><span class="hc">What it adds to the stack</span>
+            <span class="c k">1</span><span class="c k">Preferences, Language &amp; Branding</span><span class="c">the two axes every page is painted with, the variant on <code>data-bs-theme</code> and the pack on <code>data-brand</code>, the pre-paint script, the branding endpoint, the packs under <code>public/themes/&lt;pack&gt;/</code>; its picture is preferences-and-branding.html</span>
+            <span class="c k">2</span><span class="c k">Universal Navbar</span><span class="c">the one build, the UI backend and its <code>/api/status</code>, the feature tokens, the header cluster, the user menu and its modals, the search module and its panel, the footer and its tokens, the chrome metrics, and the Sidebar section that this page draws; its picture is universal-navbar.html</span>
+            <span class="c k">3</span><span class="c k">Universal Session</span><span class="c">the session state every piece of chrome reads, the provider chosen by the first <code>auth</code> token (<code>backend</code>, <code>idp</code>, <code>cookie</code>), the return path, the API client, the storage table the sidebar keys sit in</span>
+            <span class="c k">4</span><span class="c k">Universal Pages</span><span class="c">the routes, the reserved segments, the breadcrumb from the route, the listing pages over the collections a UI backend mounts, the shared account, organization, admin and setup pages, the Sidebar entries rule a feature exports; its picture is universal-pages.html</span>
+            <span class="c k">5</span><span class="c k">the Sidebar</span><span class="c">the column a mounted feature fills through its export, the rail, the tree with views, the swap; this page</span>
+            <span class="c k">6</span><span class="c k">Universal Identity</span><span class="c">the authorization server as one such UI backend: the <code>cookie</code> provider, the issuer's status payload, five page groups, the Account section from the profile feature and the operator sections from the identity feature; its picture is universal-identity.html</span>
+            <span class="c k">·</span><span class="c k">Events, Validation, Config</span><span class="c">the one stream the badges and the heart read, the one rule set every form reads, the one configuration editor; each pointed at from the six above where it is used</span>
+          </div>
+        </div>
+        <div class="spec-col">
+          <h2>One UI backend, assembled — the same steps on the auth server and on BoxVault</h2>
+          <div class="tbl" style="grid-template-columns: 130px 1fr 1fr;">
+            <span class="hc">Step</span><span class="hc">Authorization server</span><span class="hc">BoxVault</span>
+            <span class="c k">1 · serve</span><span class="c">the deb's <code>ui/</code> folder at <code>/</code>, <code>index.html</code> stamped per site with <code>data-brand-theme</code>, <code>data-brand</code> and the pack link (Branding, Navbar)</span><span class="c"><code>backend/ui</code> at <code>/</code>, one static <code>index.html</code>, the shell reading the branding endpoint itself</span>
+            <span class="c k">2 · probe</span><span class="c"><code>GET /api/status</code>: <code>role: auth-server</code>, <code>auth: ["cookie"]</code>, <code>collections: []</code>, fourteen tokens, <code>events</code> with three topics (Identity)</span><span class="c"><code>role: boxvault</code>, <code>auth: ["backend"]</code>, <code>collections: ["boxes", "isos"]</code>, its tokens, <code>events</code> with two topics (Navbar)</span>
+            <span class="c k">3 · session</span><span class="c"><code>createCookieSession</code>: <code>account</code> from storage, then <code>GET /api/user</code> (Session, Identity)</span><span class="c"><code>createBackendSession</code>: the JWT and profile under <code>user</code> (Session)</span>
+            <span class="c k">4 · features</span><span class="c">every identity feature mounted by the <code>cookie</code> token; the shared profile, organizations and notifications features by their tokens (Identity, Navbar)</span><span class="c">the collections registry mounts boxes and ISOs; auth, profile, organizations, admin, setup by their tokens (Pages, Navbar)</span>
+            <span class="c k">5 · routes</span><span class="c">the five groups' routes, the reserved segments, <code>/</code> the profile (Identity, Pages)</span><span class="c"><code>/</code>, <code>/{org}</code>, <code>/{org}/{box}</code> and the rest of the route shape (Pages)</span>
+            <span class="c k">6 · column</span><span class="c">the profile feature's Account section for everyone, the identity feature's operator sections for an admin (this page, Identity)</span><span class="c">the shared admin feature's three entries for an admin, none elsewhere (this page, Pages)</span>
+            <span class="c k">7 · header</span><span class="c">crumbs <code>Account › Profile</code> or <code>Admin › Users</code> from the row; the cluster; no brand while the column draws (Navbar, Pages)</span><span class="c">crumbs <code>› org › Boxes › box</code> from the route; the search module bound by the listing page; the brand in the header on its box pages (Navbar, Pages)</span>
+            <span class="c k">8 · live</span><span class="c"><code>/api/events</code>: <code>notifications</code>, <code>session</code>, <code>admin</code> feeding the Inbox badge, the Blocked IPs badge, the restart cards and the heart (Events)</span><span class="c"><code>/api/events</code>: <code>session</code>, <code>notifications</code> feeding the bell (Events)</span>
+            <span class="c k">9 · footer</span><span class="c">per site by the <code>footer</code> token, the heart while <code>health</code> too, the changelog link (Navbar, Identity)</span><span class="c">always, the heart from <code>/api/health</code>, the repo link (Navbar)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>Why the order matters.</strong> A later contract never restates an earlier one; it names the section it builds on. So a reader who starts at the identity contract meets the sidebar, the pages and the navbar by reference, and the shell is understood by reading them in the order above once.</div>
+      <div class="callout"><strong>Nothing is per app.</strong> Every row of the assembled table differs only in what the UI backend's status answers and which features that answer mounts; the code paths are the same on both columns, and a third UI backend is a third column with no new code in the shell.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The wire — what a feature exports, what the shell draws, where the state lives</div>
+    <div class="frame">
+      <div class="spec" style="padding: 16px 20px 20px;">
+        <div class="spec-col">
+          <h2>A feature's export · src/features/identity/sidebar.js, the issuer's operator sections</h2>
+          <div class="payload"><span class="k">export const</span> sidebar = (status, account) =&gt; {
+  <span class="k">if</span> (!hasFeature(status, <span class="s">'admin'</span>) || !account.user?.roles?.includes(<span class="s">'ROLE_ADMIN'</span>)) <span class="k">return</span> [];
+  <span class="k">return</span> [{
+    key: <span class="s">'admin'</span>, labelKey: <span class="s">'admin.sidebar.title'</span>,
+    sections: [
+      { key: <span class="s">'overview'</span>, items: [{ key: <span class="s">'dashboard'</span>, icon: FaGauge, labelKey: <span class="s">'admin.dashboard.title'</span>, to: <span class="s">'/admin'</span>, end: <span class="k">true</span> }] },
+      { key: <span class="s">'accounts'</span>, labelKey: <span class="s">'admin.sidebar.accounts'</span>, items: [
+        { key: <span class="s">'users'</span>, icon: FaUsers, labelKey: <span class="s">'admin.users.title'</span>, to: <span class="s">'/admin/users'</span> },
+        { key: <span class="s">'orgs'</span>, icon: FaFolderTree, labelKey: <span class="s">'admin.organizations.all'</span>, to: <span class="s">'/admin/organizations'</span> } ] },
+      { key: <span class="s">'security'</span>, labelKey: <span class="s">'admin.sidebar.security'</span>, items: [
+        { key: <span class="s">'blocked'</span>, icon: FaShieldHalved, labelKey: <span class="s">'admin.blocked.title'</span>, to: <span class="s">'/admin/brute-force'</span>, badge: <span class="s">'blockedCount'</span> } ] }
+    ]
+  }];
+};</div>
+          <h2>A tree export · src/features/fleet/sidebar.js</h2>
+          <div class="payload"><span class="k">export const</span> sidebar = status =&gt; hasFeatureStrict(status, <span class="s">'fleet'</span>)
+  ? [{ key: <span class="s">'fleet'</span>, labelKey: <span class="s">'vdi.sidebar.title'</span>, views: [
+      { key: <span class="s">'pool'</span>, labelKey: <span class="s">'vdi.sidebar.byPool'</span>, useTree: usePoolTree },
+      { key: <span class="s">'host'</span>, labelKey: <span class="s">'vdi.sidebar.byHost'</span>, useTree: useHostTree },
+      { key: <span class="s">'state'</span>, labelKey: <span class="s">'vdi.sidebar.byState'</span>, useTree: useStateTree } ] }]
+  : [];
+
+<span class="k">const</span> usePoolTree = () =&gt; ({
+  nodes: pools.map(pool =&gt; ({
+    key: pool.id, icon: FaLayerGroup, label: pool.name, to: <span class="s">`/?pool=${pool.id}`</span>,
+    children: () =&gt; vmsOf(pool).map(vm =&gt; ({ key: vm.id, label: vm.hostname, to: <span class="s">`/vm/${vm.id}`</span>, status: vm.session ? <span class="s">'up'</span> : <span class="s">'idle'</span> })),
+    menu: node =&gt; [{ key: <span class="s">'open'</span>, labelKey: <span class="s">'vdi.open'</span>, onClick: () =&gt; navigate(node.to) }]
+  }))
+});</div>
+        </div>
+        <div class="spec-col">
+          <h2>What the shell draws</h2>
+          <div class="tbl" style="grid-template-columns: 130px 1fr;">
+            <span class="hc">Piece</span><span class="hc">Rule</span>
+            <span class="c k">mount</span><span class="c">`router.jsx` calls every mounted feature's `sidebar(status, account)`, concatenates, hands the list to `AppShell` as `sidebar`; empty means no column</span>
+            <span class="c k">grid</span><span class="c">`AppShell` is a viewport-high row: the column first, then the header, notices, scroll region and footer stacked; the column spans the full height and the stack takes the rest, so the rail pushes the whole stack right; the window never scrolls, the column's entries and the page region scroll on their own, and the footer stays the one fixed row</span>
+            <span class="c k">column</span><span class="c">`components/layout/Sidebar.jsx`: the tertiary band, a right border, 260px by default, 38px rail, 180 to 400px by the drag handle on its right edge; the header's 62px and the footer's row unchanged</span>
+            <span class="c k">top</span><span class="c">one button, 62px: the brand mark, the product name and a chevron; click or Enter toggles the rail; in the rail the mark alone, titled "Expand"; the header row then carries no brand</span>
+            <span class="c k">row</span><span class="c">icon, label, optional badge; `NavLink` active = primary wash and a 3px left tab; a rail shows the icon with the label as its `title`</span>
+            <span class="c k">section</span><span class="c">an uppercase label then its rows; a section with no rows after gating is not drawn</span>
+            <span class="c k">tree</span><span class="c">nodes with a caret, lazy `children()`, a status dot, a right-click menu from the presenter; the selection is route-driven, never checkboxes; `views: [{ key, labelKey, useTree }]` draws a select at the tree's top and the chosen view persists under `sidebar_view_<group>`</span>
+            <span class="c k">foot</span><span class="c">bare; the column ends at its last entry and page actions stay on the page. One exception: while a feature exports `actionMenu` the header's account slot draws it and the foot draws the user menu as a drop-up (the swap)</span>
+            <span class="c k">gates</span><span class="c">the feature's own `hasFeature` and role checks before the export answers; the column never re-decides</span>
+            <span class="c k">badge</span><span class="c">a name (`blockedCount`, `unread`) the shell resolves to a non-negative integer from the event hub where the UI backend advertises `events`, or from a count route the feature names on one without a stream; never a number the export computes, never a string drawn as is, and a timer only where no stream exists; the column only draws it</span>
+            <span class="c k">keyboard</span><span class="c">`nav aria-label`, arrow keys between rows, Left collapses a node, Right expands, Escape closes a menu; the rail stays reachable</span>
+            <span class="c k">mobile</span><span class="c">under 900px the column overlays from the left behind a header toggle, closed by a route change</span>
+          </div>
+          <h2>Storage, per origin</h2>
+          <div class="tbl" style="grid-template-columns: 170px 1fr;">
+            <span class="hc">Value</span><span class="hc">Key</span>
+            <span class="c k">width</span><span class="c">`sidebar_width` (px)</span>
+            <span class="c k">rail</span><span class="c">`sidebar_minimized` (`true` or absent)</span>
+            <span class="c k">open nodes</span><span class="c">`sidebar_open_<group>` (keys)</span>
+            <span class="c k">tree view</span><span class="c">`sidebar_view_<group>` (the view key)</span>
+          </div>
+          <h2>Never</h2>
+          <div class="tbl" style="grid-template-columns: 1fr;">
+            <span class="c">a `sidebar` field in `/api/status`; the entries come from the features the tokens mount</span>
+            <span class="c">two brands at once; the column's top or the header, never both</span>
+            <span class="c">an entry the route table does not know; every `to` is a page of a contract</span>
+            <span class="c">per-app CSS; one row style, one rail, one active tab</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>The auth server's entries.</strong> For every signed-in person, from the profile feature: Account: Profile, Organizations, Integrations, Inbox (the unread badge from the `notifications` topic). For an admin, from the identity feature's own operator export below it, mounted by the `cookie` token and never a role branch inside the shared admin feature: Overview: Dashboard. Accounts: Users, All organizations. Activity: Logins, Registrations, Sessions. Health: Service usage, Insights, Client health. Security: Blocked IPs (the badge from the `admin` topic's `blocked-count`). Content: Terms. System: Configuration. A person's pages are the whole of the issuer, so the column draws for everyone; the rows are the one navigation, and no page repeats them as a tab strip under its header. The user menu on the issuer carries no Admin and no Preferences row, since Dashboard and Profile are rows here; the column is hidden on the sign-in, onboarding, interstitial and error routes.</div>
+      <div class="callout"><strong>BoxVault's entries.</strong> The shared admin feature exports on every UI backend that advertises `admin`, each entry only while the adapter carries `organizationsWithUsers`, `config` or `storage`, so BoxVault's admin page splits into Organizations and users, Configuration and System rows; its box and ISO pages export nothing, and on the issuer, whose adapter carries none of the three, the shared feature exports nothing.</div>
+      <div class="callout"><strong>When the sidebar shows.</strong> On every page once a feature exported entries, BoxVault's admin group beside its box pages included; a user who wants it out of the way collapses it and `sidebar_minimized` remembers, hyperweaver's manner.</div>
+      <div class="callout"><strong>Views on a tree.</strong> A tree may export more than one shape and a select at its top switches between them, Proxmox's manner: VDI Health offers by pool, by host and by session state, the same VMs under different parents; the open nodes are kept per view.</div>
+      <div class="callout"><strong>Entries only from features.</strong> `/api/status` adds no links today; an ad-hoc link source is a later addition, not a rule against it.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">What the contracts change</div>
+    <div class="frame">
+      <div class="tbl" style="grid-template-columns: 180px 1fr 1fr; margin: 0 20px 8px;">
+        <span class="hc">Contract</span><span class="hc">Before</span><span class="hc">After</span>
+        <span class="c k">Navbar</span><span class="c">"Sidebars are the app's choice; sidebar chrome uses the same metrics"; the header opens with the brand; the cluster may live in a sidebar footer</span><span class="c">a Sidebar section: the row grid, the column's metrics, the brand-as-top rule, the two entry kinds, the rail, the row style; the header opens with the brand only when no sidebar is drawn; the cluster lives in the header on every UI backend</span>
+        <span class="c k">Pages</span><span class="c">features export pages, adapters and api calls</span><span class="c">a feature may export `sidebar(status, account)`; the reserved segments unchanged</span>
+        <span class="c k">Session</span><span class="c">storage table: `intended_url`, `activeOrganization`, `push_enabled`, `login_method`, `table_prefs_*`</span><span class="c">plus `sidebar_width`, `sidebar_minimized`, `sidebar_open_<group>`, `sidebar_view_<group>`</span>
+        <span class="c k">Identity, group 5</span><span class="c">AdminPage grown by eight tabs</span><span class="c">the identity feature's operator export, one page per row, the rows the only navigation, no tab strip</span>
+        <span class="c k">Pages, AdminPage</span><span class="c">Organizations and users, Configuration, System as tabs of one page</span><span class="c">the same three as sidebar entries and pages on every `admin` UI backend</span>
+        <span class="c k">Navbar, the swap</span><span class="c">the cluster's account slot is always the user menu</span><span class="c">a feature's `actionMenu` export takes the account slot and the user menu draws in the sidebar foot; the rows and their order unchanged</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var live = document.getElementById('live');
+    var bar = document.getElementById('live-bar');
+    if (!live || !bar) { return; }
+    var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var backends = {
+      auth: {
+        brand: 'STARTcloud', mark: 'S', role: 'auth-server', features: ['admin', 'tfa', 'onboarding', 'inbox'],
+        title: 'Admin', active: 'users',
+        sections: [
+          { label: 'Account', items: [{ key: 'profile', icon: '👤', label: 'Profile', to: '/user/profile' }, { key: 'myorgs', icon: '🏢', label: 'Organizations', to: '/user/organizations' }, { key: 'integrations', icon: '🔌', label: 'Integrations', to: '/user/integrations' }, { key: 'inbox', icon: '🔔', label: 'Inbox', to: '/notifications', badge: '2' }] },
+          { label: 'Overview', items: [{ key: 'dashboard', icon: '◫', label: 'Dashboard', to: '/admin' }] },
+          { label: 'Accounts', items: [{ key: 'users', icon: '👥', label: 'Users', to: '/admin/users' }, { key: 'orgs', icon: '🗂', label: 'All organizations', to: '/admin/organizations' }] },
+          { label: 'Activity', items: [{ key: 'logins', icon: '→', label: 'Logins', to: '/admin/logins' }, { key: 'regs', icon: '＋', label: 'Registrations', to: '/admin/registrations' }, { key: 'sessions', icon: '▣', label: 'Sessions', to: '/admin/sessions' }] },
+          { label: 'Health', items: [{ key: 'usage', icon: '▤', label: 'Service usage', to: '/admin/service-usage' }, { key: 'insights', icon: '◔', label: 'Insights', to: '/admin/insights' }, { key: 'clients', icon: '♥', label: 'Client health', to: '/admin/client-health' }] },
+          { label: 'Security', items: [{ key: 'blocked', icon: '⛨', label: 'Blocked IPs', to: '/admin/brute-force', badge: '3' }] },
+          { label: 'Content', items: [{ key: 'terms', icon: '▭', label: 'Terms', to: '/admin/terms' }] },
+          { label: 'System', items: [{ key: 'config', icon: '⚙', label: 'Configuration', to: '/admin/config' }] }
+        ],
+        ctx: {},
+        crumbs: function (item) { return [['profile', 'myorgs', 'integrations', 'inbox'].indexOf(item.key) === -1 ? 'Admin' : 'Account', item.label]; }
+      },
+      boxadmin: {
+        brand: 'BoxVault', mark: 'B', role: 'boxvault', features: ['admin', 'org-console', 'uploads', 'watches'],
+        title: 'Admin', active: 'orgusers',
+        sections: [
+          { label: 'Admin', items: [{ key: 'orgusers', icon: '🏢', label: 'Organizations and users', to: '/admin' }, { key: 'boxconfig', icon: '⚙', label: 'Configuration', to: '/admin/config' }, { key: 'boxsystem', icon: '▤', label: 'System', to: '/admin/system' }] }
+        ],
+        ctx: { boxconfig: ['app', 'auth', 'db', 'mail'] },
+        crumbs: function (item) { return ['Admin', item.label]; }
+      },
+      vdi: {
+        brand: 'VDI Health', mark: 'V', role: 'vdi-health', features: ['fleet', 'events', 'admin'],
+        title: 'Fleet', active: 'fleet',
+        sections: [{ label: '', items: [{ key: 'fleet', icon: '▦', label: 'Fleet', to: '/' }] }],
+        views: [
+          { key: 'pool', label: 'By pool', tree: [
+            { key: 'pools', icon: '▤', label: 'Pools', to: '/', open: true, children: [
+              { key: 'pool-a', icon: '◫', label: 'Engineering', to: '/?pool=eng', open: true, children: [{ key: 'vm-1', label: 'vdi-eng-014', to: '/vm/1', dot: 'up' }, { key: 'vm-2', label: 'vdi-eng-022', to: '/vm/2', dot: '' }] },
+              { key: 'pool-b', icon: '◫', label: 'Finance', to: '/?pool=fin', open: false, children: [] } ] } ] },
+          { key: 'host', label: 'By host', tree: [
+            { key: 'hosts', icon: '▣', label: 'Hosts', to: '/', open: true, children: [
+              { key: 'host-1', icon: '▣', label: 'vdi-host-01', to: '/?host=1', open: true, children: [{ key: 'vm-1', label: 'vdi-eng-014', to: '/vm/1', dot: 'up' }] },
+              { key: 'host-2', icon: '▣', label: 'vdi-host-02', to: '/?host=2', open: false, children: [{ key: 'vm-2', label: 'vdi-eng-022', to: '/vm/2', dot: '' }] } ] } ] },
+          { key: 'state', label: 'By session state', tree: [
+            { key: 'states', icon: '◔', label: 'Sessions', to: '/', open: true, children: [
+              { key: 'st-active', icon: '●', label: 'Active', to: '/?session=active', open: true, children: [{ key: 'vm-1', label: 'vdi-eng-014', to: '/vm/1', dot: 'up' }] },
+              { key: 'st-none', icon: '○', label: 'No session', to: '/?session=none', open: false, children: [{ key: 'vm-2', label: 'vdi-eng-022', to: '/vm/2', dot: '' }] } ] } ] }
+        ],
+        ctx: { 'vm-1': ['Overview', 'History', 'Stats', 'Metrics'], 'vm-2': ['Overview', 'History', 'Stats', 'Metrics'] },
+        crumbs: function (item) { return ['Fleet', item.label]; }
+      },
+      hw: {
+        brand: 'Hyperweaver', mark: 'H', role: 'hyperweaver-server', features: ['machines', 'zfs', 'tasks', 'host-power'],
+        title: 'Datacenter', active: 'zone-1',
+        actionMenu: { 'zone-1': 'Machine controls', 'zone-2': 'Machine controls', 'build-3': 'Machine controls', 'host-a': 'Host actions', 'host-b': 'Host actions', 'host-c': 'Host actions', dc: 'Bulk actions' },
+        tree: [
+          { key: 'dc', icon: '⌂', label: 'Prominic DC', to: '/', open: true, children: [
+            { key: 'host-a', icon: '▣', label: 'zw-host-01', to: '/hosts', open: true, children: [
+              { key: 'zone-1', label: 'zone-1', to: '/machines', dot: 'up' }, { key: 'zone-2', label: 'zone-2', to: '/machines', dot: 'up' }, { key: 'build-3', label: 'build-3', to: '/machines', dot: '' } ] },
+            { key: 'host-b', icon: '▣', label: 'zw-host-02', to: '/hosts', open: false, children: [] },
+            { key: 'host-c', icon: '▣', label: 'vbox-desk', to: '/hosts', open: false, children: [] } ] }
+        ],
+        ctx: { 'zone-1': ['Zone overview', 'Settings', 'Snapshots', 'Provisioning'], 'zone-2': ['Zone overview', 'Settings', 'Snapshots', 'Provisioning'], 'build-3': ['Zone overview', 'Settings', 'Snapshots'], 'host-a': ['Overview', 'Manage', 'Networking', 'Storage', 'Agent'], 'host-b': ['Overview', 'Manage', 'Networking', 'Storage', 'Agent'], 'host-c': ['Overview', 'Manage', 'Networking', 'Agent'] },
+        crumbs: function (item, path) { return path; }
+      },
+      box: { brand: 'BoxVault', mark: 'B', role: 'boxvault', features: ['admin', 'org-console', 'uploads', 'watches'], none: true, page: 'alma9-server', path: '/startcloud/alma9-server', crumbs: function () { return ['STARTcloud', 'Boxes', 'alma9-server']; } },
+      catalog: { brand: 'Provisioner Catalog', mark: 'P', role: 'catalog', features: ['private-catalogs', 'deploy', 'rebuild'], none: true, page: 'core-provisioner', path: '/startcloud/core-provisioner', crumbs: function () { return ['STARTcloud', 'Provisioners', 'core-provisioner']; } }
+    };
+    var labels = { auth: 'Authorization Server', vdi: 'VDI Health', boxadmin: 'BoxVault · admin', box: 'BoxVault · boxes', catalog: 'Catalog', hw: 'Hyperweaver · the swap' };
+    var state = { backend: 'auth', rail: false, active: null, open: {}, view: null };
+    var treeOf = function (b) {
+      if (b.views) { var v = b.views.filter(function (x) { return x.key === state.view; })[0] || b.views[0]; return v.tree; }
+      return b.tree || null;
+    };
+    var chrome = function (b, crumbs, action) {
+      var c = b.none ? '<span class="brand"><span class="brand-mark">' + esc(b.mark) + '</span>' + esc(b.brand) + '</span>' : '';
+      c += '<div class="crumbs">' + crumbs.map(function (x) { return '<span class="sep">›</span><span>' + esc(x) + '</span>'; }).join('') + '</div>';
+      c += '<div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="code">EN</span></span>';
+      c += action ? '<span class="btn act">' + esc(action) + ' ▾</span></div>' : '<span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>';
+      return '<div class="navbar">' + c + '</div>';
+    };
+    var findNode = function (nodes, key) {
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].key === key) { return nodes[i]; }
+        var hit = nodes[i].children ? findNode(nodes[i].children, key) : null;
+        if (hit) { return hit; }
+      }
+      return null;
+    };
+    var pathTo = function (nodes, key, acc) {
+      for (var i = 0; i < nodes.length; i++) {
+        var next = acc.concat([nodes[i].label]);
+        if (nodes[i].key === key) { return next; }
+        var hit = nodes[i].children ? pathTo(nodes[i].children, key, next) : null;
+        if (hit) { return hit; }
+      }
+      return null;
+    };
+    var isOpen = function (node) { return state.open[node.key] === undefined ? node.open : state.open[node.key]; };
+    var treeHtml = function (nodes) {
+      return nodes.map(function (n) {
+        var on = n.key === state.active;
+        var kids = n.children && n.children.length;
+        var h = '<button class="row' + (on ? ' on' : '') + '" data-pick="' + esc(n.key) + '" title="' + esc(n.label) + '">';
+        if (n.children) { h += '<span class="caret" data-toggle="' + esc(n.key) + '">' + (kids ? (isOpen(n) ? '▾' : '▸') : '') + '</span>'; }
+        h += n.icon ? '<span class="i">' + esc(n.icon) + '</span>' : '<span class="dot' + (n.dot ? ' ' + n.dot : '') + '"></span>';
+        h += '<span class="l">' + esc(n.label) + '</span></button>';
+        if (kids && isOpen(n)) { h += '<div class="kids">' + treeHtml(n.children) + '</div>'; }
+        return h;
+      }).join('');
+    };
+    var sidebarHtml = function (b) {
+      var h = '<div class="sb' + (state.rail ? ' rail' : '') + '"><button class="sb-top" data-act="rail" title="' + (state.rail ? 'Expand' : 'Collapse') + '"><span class="brand-mark">' + esc(b.mark) + '</span><span class="pn">' + esc(b.brand) + '</span><span class="chev">⟨</span></button><div class="sb-nav">';
+      (b.sections || []).forEach(function (s) {
+        h += '<div>' + (s.label ? '<div class="sb-sec">' + esc(s.label) + '</div>' : '');
+        s.items.forEach(function (it) {
+          h += '<button class="row' + (it.key === state.active ? ' on' : '') + '" data-pick="' + esc(it.key) + '" title="' + esc(it.label) + '"><span class="i">' + esc(it.icon) + '</span><span class="l">' + esc(it.label) + '</span>' + (it.badge ? '<span class="b">' + esc(it.badge) + '</span>' : '') + '</button>';
+        });
+        h += '</div>';
+      });
+      if (b.views) {
+        var cur = state.view || b.views[0].key;
+        h += '<div class="sb-view"><span class="vl">View</span><select data-view><option value="">…</option>' + b.views.map(function (v) { return '<option value="' + esc(v.key) + '"' + (v.key === cur ? ' selected' : '') + '>' + esc(v.label) + '</option>'; }).join('') + '</select></div>';
+      }
+      var tree = treeOf(b);
+      if (tree) { h += '<div>' + treeHtml(tree) + '</div>'; }
+      h += '</div>';
+      if (b.actionMenu) { h += '<div class="sb-foot" title="Account menu"><span class="avatar"></span><span class="id"><span class="n">Mark Gilbert</span><span class="e">mark@m4kr.net</span></span><span class="chev">▴</span></div>'; }
+      h += '</div>';
+      return h;
+    };
+    var allItems = function (b) {
+      var out = [];
+      (b.sections || []).forEach(function (s) { out = out.concat(s.items); });
+      return out;
+    };
+    var render = function () {
+      var b = backends[state.backend];
+      if (state.active === null) { state.active = b.active || null; }
+      var item = null, crumbs = [];
+      if (!b.none) {
+        var tr = treeOf(b);
+        item = allItems(b).filter(function (i) { return i.key === state.active; })[0] || (tr ? findNode(tr, state.active) : null);
+        if (item) {
+          var path = tr ? pathTo(tr, item.key, []) : null;
+          crumbs = b.crumbs(item, path || [item.label]);
+        }
+      } else { crumbs = b.crumbs(); }
+      var ctx = item && b.ctx && b.ctx[item.key] ? b.ctx[item.key] : null;
+      var action = item && b.actionMenu ? b.actionMenu[item.key] || null : null;
+      var h = '<div class="shell">';
+      if (!b.none) { h += sidebarHtml(b); }
+      h += '<div class="main">' + chrome(b, crumbs, action);
+      if (ctx) { h += '<div class="ctx">' + ctx.map(function (t, i) { return '<span class="' + (i === 0 || t === (item && item.label) ? 'on' : '') + '">' + esc(t) + '</span>'; }).join('') + '</div>'; }
+      h += '<div class="content"><h2>' + esc(item ? item.label : (b.none ? b.page : b.title)) + '</h2><span class="kv">GET ' + esc(item ? item.to : b.path) + '</span><div class="ghost">' + (b.none ? 'No feature of this UI backend exported sidebar entries; the chrome is exactly today\'s, the brand in the header.' : 'the page this entry routes to; the column never draws page content') + '</div><div class="ghost">page content, scrolling in this region alone</div><div class="ghost"></div><div class="ghost"></div><div class="ghost">the footer below never moves</div></div>';
+      h += '<div class="site-footer"><span>' + esc(b.brand) + ' © 2026 · v1.10.0</span><span>Powered by <span class="m"></span> STARTcloud</span><span></span></div></div></div>';
+      live.innerHTML = h;
+      bar.innerHTML = '<div class="actions"><span class="lbl">UI backend</span>' + ['auth', 'vdi', 'boxadmin', 'box', 'catalog', 'hw'].map(function (k) { return '<button class="pill' + (k === state.backend ? ' on' : '') + '" data-backend="' + k + '">' + esc(labels[k]) + '</button>'; }).join('') + '<span class="lbl" style="margin-left: auto;"><span class="kv">role=' + esc(b.role) + ' · features=[' + esc(b.features.join(', ')) + ']</span></span></div>'
+        + '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the brand at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool, host and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
+    };
+    var onClick = function (e) {
+      var el = e.target.closest('[data-backend], [data-act], [data-toggle], [data-pick]');
+      if (!el) { return; }
+      if (el.hasAttribute('data-backend')) { state.backend = el.getAttribute('data-backend'); state.active = null; state.open = {}; state.view = null; }
+      else if (el.getAttribute('data-act') === 'rail') { state.rail = !state.rail; }
+      else if (el.hasAttribute('data-toggle')) { e.stopPropagation(); var n = findNode(treeOf(backends[state.backend]), el.getAttribute('data-toggle')); state.open[n.key] = !isOpen(n); render(); return; }
+      else if (el.hasAttribute('data-pick')) { state.active = el.getAttribute('data-pick'); var tr = treeOf(backends[state.backend]); if (tr) { var nn = findNode(tr, state.active); if (nn && nn.children && nn.children.length && !isOpen(nn)) { state.open[nn.key] = true; } } }
+      render();
+    };
+    live.addEventListener('change', function (e) {
+      var sel = e.target.closest('[data-view]');
+      if (!sel || !sel.value) { return; }
+      state.view = sel.value;
+      state.open = {};
+      render();
+    });
+    live.addEventListener('click', onClick);
+    bar.addEventListener('click', onClick);
+    render();
+  })();
+</script>

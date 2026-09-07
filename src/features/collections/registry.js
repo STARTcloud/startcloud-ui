@@ -13,9 +13,10 @@ const withoutWatches = collection => ({
 
 /**
  * The collections a host mounts, in the order `status.collections` names
- * them, the first being the implicit one with no route segment; the watch
- * calls are dropped from every adapter when the host does not advertise
- * `watches`, which hides the stars and the Watched filter.
+ * them; the order sets mount order only and each definition carries its
+ * own route segment; the watch calls are dropped from every adapter when
+ * the host does not advertise `watches`, which hides the stars and the
+ * Watched filter.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @returns {Array<Object>} The collection definitions

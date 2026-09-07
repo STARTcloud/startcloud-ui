@@ -1,0 +1,936 @@
+<meta charset="utf-8">
+<title>STARTcloud Universal Pages</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --header: #f6f9fc;
+    --surface: #ffffff;
+    --surface-2: #eaeff4;
+    --border: #dbe4ee;
+    --text: #46546e;
+    --heading: #2a3547;
+    --muted: #7c8fac;
+    --primary: #5d87ff;
+    --primary-contrast: #ffffff;
+    --label: #5d87ff;
+    --danger: #e2533a;
+    --warning: #d99a16;
+    --success: #13a37f;
+    --info: #539bff;
+    --outline: #6c757d;
+    --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
+    --scrim: rgba(42, 53, 71, 0.45);
+    --strip: #2a3547;
+    --strip-text: #f6f9fc;
+    --code: #1b1e22;
+    --changed: #fff6e0;
+    --changed-border: #f0d48a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #212529;
+      --header: #2b3035;
+      --surface: #2b3035;
+      --surface-2: #343a40;
+      --border: #495057;
+      --text: #8b9bb4;
+      --heading: #ffffff;
+      --muted: #8b9bb4;
+      --label: #9eb7ff;
+      --danger: #fa896b;
+      --warning: #f0b429;
+      --success: #13deb9;
+      --outline: #8b9bb4;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --scrim: rgba(0, 0, 0, 0.55);
+      --strip: #16191d;
+      --changed: #3a3320;
+      --changed-border: #6b5a22;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212529;
+    --header: #2b3035;
+    --surface: #2b3035;
+    --surface-2: #343a40;
+    --border: #495057;
+    --text: #8b9bb4;
+    --heading: #ffffff;
+    --muted: #8b9bb4;
+    --label: #9eb7ff;
+    --danger: #fa896b;
+    --warning: #f0b429;
+    --success: #13deb9;
+    --outline: #8b9bb4;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --scrim: rgba(0, 0, 0, 0.55);
+    --strip: #16191d;
+    --changed: #3a3320;
+    --changed-border: #6b5a22;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Montserrat', 'Open Sans', sans-serif;
+    color: var(--heading);
+    text-wrap: balance;
+    margin: 0;
+    font-weight: 600;
+  }
+  a { color: var(--label); text-decoration: none; }
+  a:hover { color: var(--primary); }
+
+  .page { max-width: 1240px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 40px; }
+  .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 8px; }
+  .intro h1 { font-size: 26px; }
+  .intro p { margin: 0; }
+  .legend { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--changed); border: 1px solid var(--changed-border); }
+  .state { display: flex; flex-direction: column; gap: 14px; }
+  .state-label { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .state-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .frame { border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .frame.live { min-height: 720px; }
+  .navbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: var(--header); border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--heading); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; }
+  .brand-mark { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: var(--primary-contrast); }
+  .nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .crumb { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--text); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+  .crumb:hover { color: var(--primary); }
+  .sep { color: var(--muted); font-size: 17px; }
+  .cluster { display: flex; align-items: center; gap: 0; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 5px; border: 1px solid var(--outline); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); color: var(--heading); }
+  .btn.icon { width: 34px; padding: 0; justify-content: center; border: 0; }
+  .btn.icon.on { color: var(--primary); }
+  .btn.primary { border-color: var(--primary); background: var(--primary); color: var(--primary-contrast); font-weight: 600; }
+  .btn.outline { border-color: var(--primary); color: var(--primary); }
+  .btn.danger { border-color: var(--danger); background: var(--danger); color: #fff; }
+  .btn.warning { border-color: var(--warning); background: var(--warning); color: #2a3547; }
+  .btn.dark { border-color: #343a40; background: #343a40; color: #fff; }
+  .btn.success { border-color: var(--success); color: var(--success); }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+  .btn.account { border: 0; padding: 0 16px; gap: 8px; }
+  .btn.open { background: var(--surface-2); color: var(--heading); }
+  .toggle { display: inline-flex; }
+  .toggle .btn { height: 28px; width: 32px; padding: 0; justify-content: center; border-radius: 0; }
+  .toggle .btn:first-child { border-radius: 5px 0 0 5px; }
+  .toggle .btn:last-child { border-radius: 0 5px 5px 0; margin-left: -1px; }
+  .toggle .btn.on { background: var(--outline); color: #fff; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #5d87ff, #13deb9); flex-shrink: 0; }
+  .name { color: var(--heading); font-weight: 600; }
+  .flag { width: 18px; height: 13px; border-radius: 2px; background: repeating-linear-gradient(180deg, #b22234 0 2px, #fff 2px 4px); position: relative; }
+  .flag::before { content: ''; position: absolute; left: 0; top: 0; width: 8px; height: 7px; background: #3c3b6e; }
+  .btn.lang { width: auto; padding: 0 8px; gap: 5px; }
+  .btn.lang .lang-code { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+  .mark { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #fa896b, #ffae1f); flex-shrink: 0; display: inline-block; vertical-align: middle; }
+  .mark.alt { background: linear-gradient(135deg, #13deb9, #5d87ff); }
+  .mark.moon { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .mark.sm { width: 16px; height: 16px; border-radius: 4px; }
+  .mark.row { width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; }
+  .mark.lg { width: 40px; height: 40px; border-radius: 8px; }
+  .search { display: inline-flex; align-items: center; height: 34px; width: 340px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); padding: 0 6px 0 10px; gap: 8px; margin-right: 4px; }
+  .search .ph { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; }
+  .search .count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .search .tool { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--muted); cursor: pointer; }
+  .search .tool.on { color: var(--primary); background: var(--surface-2); }
+  .filters { padding: 12px 20px 14px; background: var(--header); border-bottom: 1px solid var(--border); display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; row-gap: 8px; align-items: center; }
+  .filters .group { display: contents; }
+  .filters .group-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .filters .pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .pill.on-info { background: var(--info); color: #0b2a4a; }
+  .pill.on-primary { background: var(--primary); color: #fff; }
+  .filters .foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; font-size: 12.5px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .filters .foot .sp { flex: 1; }
+  .demo { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .rowh { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .rowh h2 { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .rowh h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .right { display: flex; align-items: center; gap: 8px; }
+  .countb { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 11.5px; font-weight: 600; }
+  .fold { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 0; background: transparent; color: var(--heading); cursor: pointer; padding: 0; font-size: 12px; }
+  .status { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: #fff; background: var(--outline); white-space: nowrap; }
+  .status.success { background: var(--success); }
+  .status.info { background: var(--info); color: #0b2a4a; }
+  .status.warning { background: var(--warning); color: #2a3547; }
+  .status.danger { background: var(--danger); }
+  .status.os { background: #91c54e; color: #16240a; }
+  .status.version { background: var(--primary); }
+  .status.tier-gold { background: #d4af37; color: #212529; }
+  .status.provider-all { background: var(--success); }
+  .status.secondary { background: var(--outline); }
+  .star { color: var(--warning); font-size: 16px; line-height: 1; }
+  .sha { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; color: var(--muted); }
+  .lnk { color: var(--label); cursor: pointer; }
+  .lnk:hover { color: var(--primary); }
+  .grid { display: grid; font-size: 13px; width: 100%; }
+  .grid.boxes { grid-template-columns: 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px 70px minmax(140px, 1.2fr) 90px 32px; }
+  .grid.isos { grid-template-columns: 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 90px minmax(120px, 1fr); }
+  .grid .th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; }
+  .grid .td { padding: 7px 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .grid .td.first { color: var(--heading); }
+  .grid .odd { background: var(--surface-2); }
+  .grid .grp { grid-column: 1 / -1; padding: 9px 8px; background: var(--header); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+  .grid .td + .grp { border-top: 16px solid var(--bg); }
+  .grid .empty { grid-column: 1 / -1; padding: 10px; text-align: center; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .cardgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .icard { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .icard .head { display: flex; align-items: flex-start; gap: 10px; }
+  .icard .t { font-weight: 600; color: var(--heading); }
+  .icard small { color: var(--muted); font-size: 12px; display: block; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+  .hero { display: flex; gap: 16px; align-items: flex-start; flex: 1; min-width: 0; }
+  .artwork { width: 236px; height: 132px; border-radius: 6px; background: linear-gradient(135deg, #5d87ff, #13deb9); flex-shrink: 0; }
+  .hero-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .title { font-size: 24px; display: flex; align-items: center; gap: 8px; color: var(--heading); font-family: 'Montserrat', sans-serif; font-weight: 500; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  .orgh { display: flex; align-items: center; gap: 12px; }
+  .orgh h2 { font-size: 22px; }
+  .orgh small { display: block; color: var(--muted); font-size: 13px; }
+  .cards { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; }
+  .card { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); display: flex; flex-direction: column; }
+  .card-h { padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--heading); font-family: 'Montserrat', sans-serif; font-size: 14px; }
+  .card-b { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .facts { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; font-size: 13px; margin: 0; }
+  .facts dt { color: var(--heading); font-weight: 600; }
+  .facts dd { margin: 0; }
+  .strip { background: var(--strip); color: var(--strip-text); border-radius: 6px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .strip-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .strip .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; font-weight: 600; }
+  .strip .select { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; opacity: 0.85; }
+  .strip .select span.v { border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 4px; padding: 2px 8px; color: #fff; }
+  .code { background: var(--code); color: #e6edf3; border-radius: 5px; padding: 10px 12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; white-space: pre; display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .code .copy { border: 1px solid rgba(255, 255, 255, 0.5); color: #fff; border-radius: 4px; padding: 2px 8px; font-family: 'Open Sans', sans-serif; font-size: 12px; }
+  .strip .more { font-size: 13px; opacity: 0.9; }
+  .meta { display: flex; gap: 24px; color: var(--muted); font-size: 12.5px; flex-wrap: wrap; }
+  .meta strong { color: var(--heading); font-weight: 600; }
+  .alert { border: 1px solid var(--danger); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; color: var(--danger); }
+  .alert .sp { flex: 1; }
+  .upload { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 20px 16px; border: 2px dashed var(--border); border-radius: 5px; background: var(--header); color: var(--muted); font-size: 13px; }
+  .upload .x { position: absolute; top: 8px; right: 8px; color: var(--muted); }
+  .switch { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; }
+  .switch .track { width: 32px; height: 18px; border-radius: 9px; background: var(--outline); position: relative; }
+  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+  .sect { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .sect h2 { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .try { font-size: 12.5px; color: var(--muted); padding: 0 20px 12px; }
+  .site-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-size: 13px; background: var(--header); border-top: 1px solid var(--border); color: var(--muted); margin-top: auto; }
+  .site-footer .c { display: flex; align-items: center; gap: 8px; }
+  .site-footer .m { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #13deb9, #5d87ff); }
+  .site-footer .heart { color: var(--success); }
+  .menu { position: absolute; top: 70px; right: 20px; width: 316px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; box-shadow: var(--shadow); padding: 6px 0; display: flex; flex-direction: column; z-index: 3; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--text); background: transparent; border: 0; font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; width: 100%; }
+  .item:hover { background: var(--surface-2); color: var(--heading); }
+  .item .stack { display: flex; flex-direction: column; line-height: 1.2; }
+  .item .stack small { color: var(--muted); font-size: 11.5px; }
+  .divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .menu-header { padding: 8px 16px 4px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .scrim { position: absolute; left: 0; right: 0; top: 66px; bottom: 0; background: var(--scrim); display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; z-index: 4; }
+  .modal { width: 520px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .modal-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .close { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+  .list { display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; }
+  .orow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .orow:hover { background: var(--surface-2); }
+  .orow.active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+  .orow .stack { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.25; }
+  .orow .stack strong { color: var(--heading); font-size: 13.5px; }
+  .orow .stack small { color: var(--muted); font-size: 12px; }
+  .role { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 4px; color: #fff; background: var(--danger); }
+  .check { color: var(--success); font-weight: 700; }
+  .callouts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .callout { border: 1px dashed var(--label); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; background: var(--bg); max-width: 380px; }
+  .callout.changed { border-style: solid; border-color: var(--changed-border); background: var(--changed); }
+  .callout strong { color: var(--heading); }
+  .callout code, .spec code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+  .spec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .spec.wide { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .spec-col { display: flex; flex-direction: column; gap: 10px; }
+  .spec h2 { font-size: 15px; }
+  .tbl { display: grid; font-size: 13px; }
+  .tbl .hc { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--heading); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c.k { color: var(--heading); font-weight: 600; }
+  .tbl .c.was { color: var(--muted); }
+  .spec pre { margin: 0; font-size: 12px; background: var(--surface-2); padding: 10px 12px; border-radius: 5px; overflow-x: auto; color: var(--text); }
+  @media (max-width: 760px) { .spec { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+
+  <div class="intro">
+    <h1>STARTcloud Universal Pages</h1>
+    <p>The picture of the Universal Pages Contract; where the two disagree, the contract's text wins. One page set for every estate app that serves packaged things: an organization owns items, an item has versions, a version has providers, a provider has architectures or artifacts, and a single-file item such as an ISO has one artifact. BoxVault serves boxes and ISOs this way today, the provisioner catalog serves provisioners the same way, and provisioners become a third BoxVault collection later, so nothing on these pages knows which collection it is drawing. The header is the Universal Navbar as it ships; the breadcrumb comes from the route and nothing else; the navbar search and its filter panel are how a page is narrowed, to one collection, one visibility, one provider. The first frame is live: click the brand, a crumb, an organization, a row, a version or a provider and the header and the page follow the route; fold an organization; flip the one list / cards toggle; pick a Collection or Visibility pill in the filter panel; open the user menu and switch organization and only the active organization changes, the page stays where it is.</p>
+    <span class="legend"><span class="sw"></span>a yellow note marks what this design changed against the apps as they were before it</span>
+  </div>
+
+  <div class="state">
+    <div class="state-label">Live — the route drives the crumbs and the page; the filter panel narrows it; the switcher drives the active organization and nothing else</div>
+    <div class="frame live" id="live"></div>
+    <div class="callouts">
+      <div class="callout"><strong>What this frame proves.</strong> The crumb after the brand is <code>› org › collection › item › version › provider</code>, each level a plain link computed from the route alone; the page draws no breadcrumb of its own; the active organization lives only in the menu row and the switcher.</div>
+      <div class="callout changed"><strong>Changed: the filter panel narrows the page.</strong> Any page that lists more than one collection registers a Collection group (Boxes / ISOs) before the shared Visibility group and the collection's own groups; only boxes or only ISOs is a pill, not a page, so the headings are labels with counts and nothing new gets a route.</div>
+      <div class="callout changed"><strong>Changed: home has no Private / Public level.</strong> One table per collection with organization group rows; private and public rows sit side by side under the Visibility column, and the Visibility pill narrows to either. The catalog draws the same page, a member's private provisioners inside their organization group with the Private badge.</div>
+      <div class="callout changed"><strong>Changed: the switcher never navigates.</strong> Picking an organization sets the active organization for the org console, the ticket id and the create defaults, and leaves the page exactly where it was.</div>
+      <div class="callout changed"><strong>Changed: one toggle per page, headings carry their actions.</strong> The list / cards toggle is drawn once per page and holds there; each collection heading row carries the collection's own actions on its right; there are no "All …" links.</div>
+      <div class="callout"><strong>Existing BoxVault paths stay:</strong> <code>/</code>, <code>/{org}</code>, <code>/{org}/{box}</code>, <code>…/{version}</code>, <code>…/{provider}</code>; <code>/isos</code>, <code>/{org}/isos</code> and <code>/{org}/isos/{iso}</code> are additive, and the Vagrant handler keys on the user agent before any of them.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">HomePage — / signed in, the filter panel open: Collection and Visibility groups, then one table per collection with foldable organization rows, private and public rows side by side, one toggle top right</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"></div>
+        <div class="cluster"><span class="search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><span class="ph">Search…</span><span class="count">10 / 10</span><span class="tool on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M4.9 19.1l2.1-2.1"></path><path d="M17 7l2.1-2.1"></path></svg></span><span class="tool"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span></span><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="filters">
+        <div class="group"><span class="group-label">Collection</span><span class="pills"><span class="pill">Boxes (7)</span><span class="pill">ISOs (3)</span></span></div>
+        <div class="group"><span class="group-label">Visibility</span><span class="pills"><span class="pill">Public (4)</span><span class="pill">Private (6)</span></span></div>
+        <div class="group"><span class="group-label">Watched</span><span class="pills"><span class="pill">Watched (3)</span></span></div>
+        <div class="group"><span class="group-label">Boxes · Provider</span><span class="pills"><span class="pill">virtualbox (5)</span><span class="pill">zone (6)</span><span class="pill">utm (1)</span><span class="pill">docker (1)</span><span class="pill">aws (1)</span></span></div>
+        <div class="group"><span class="group-label">Boxes · Architecture</span><span class="pills"><span class="pill">amd64 (7)</span></span></div>
+        <div class="group"><span class="group-label">Boxes · OS</span><span class="pills"><span class="pill">alma (1)</span><span class="pill">debian (3)</span><span class="pill">windows (1)</span><span class="pill">omnios (1)</span><span class="pill">opnsense (1)</span></span></div>
+        <div class="group"><span class="group-label">ISOs · Organization</span><span class="pills"><span class="pill">STARTcloud (2)</span><span class="pill">PhoneSwitchBoard (1)</span></span></div>
+        <div class="foot"><span>0 filters active</span><span class="sp"></span><span class="lnk">Clear filters</span></div>
+      </div>
+      <div class="demo">
+        <div class="rowh"><h3><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5v10l-9 5-9-5V7z"></path><path d="M12 12l9-5"></path><path d="M12 12v10"></path><path d="M12 12L3 7"></path></svg>Boxes<span class="countb">7</span></h3><span class="right"><span class="btn sm outline">Discover organizations</span><span class="toggle"><span class="btn on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span><span class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></span></span></span></div>
+        <div class="grid boxes">
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span><span class="th">Latest release</span><span class="th">Versions</span><span class="th">Providers</span><span class="th">Architectures</span><span class="th"></span>
+          <span class="grp"><span class="fold">▾</span><span class="mark row"></span><span class="lnk">STARTcloud</span><span class="countb">4 boxes</span></span>
+          <span class="td odd"><span class="star">★</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span><span class="td odd">5</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">Alma 9</span><span class="td odd">last year</span><span class="td odd">1</span><span class="td odd">virtualbox, zone</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 1.2.3 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/windows2022-server</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">12/28/2024</span><span class="td">8/1/2026</span><span class="td">30</span><span class="td"><span class="status success">Published</span></span><span class="td">Windows 2022</span><span class="td">11 months ago</span><span class="td">6</span><span class="td">virtualbox, zone</span><span class="td">amd64</span><span class="td"><span class="lnk" title="Deploy 2.1.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span><span class="td odd">60</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span><span class="td odd">3</span><span class="td odd">zone, virtualbox, utm, docker, aws</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 2.0.1 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td"><span class="star">★</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span><span class="td"><span class="status success">Published</span></span><span class="td">Debian 12</span><span class="td">4 months ago</span><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span><span class="td"><span class="lnk" title="Deploy 4.0.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="grp"><span class="fold">▾</span><span class="mark row alt"></span><span class="lnk">PhoneSwitchBoard</span><span class="countb">2 boxes</span></span>
+          <span class="td odd"><span class="star">★</span></span><span class="td first odd"><span class="mark row alt"></span><span class="lnk">PhoneSwitchBoard/debian13-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">3/2/2026</span><span class="td odd">8/28/2026</span><span class="td odd">77</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">Debian 13</span><span class="td odd">5 days ago</span><span class="td odd">1</span><span class="td odd">virtualbox, zone</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 1.0.4 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row alt"></span><span class="lnk">PhoneSwitchBoard/opnsense-router</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">7/30/2026</span><span class="td">7/30/2026</span><span class="td">0</span><span class="td"><span class="status warning">Pending</span></span><span class="td">OPNsense 26</span><span class="td">—</span><span class="td">1</span><span class="td">virtualbox</span><span class="td">amd64</span><span class="td"><span class="lnk" title="Deploy 26.1.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="grp"><span class="fold">▾</span><span class="mark row moon"></span><span class="lnk">Moonshine</span><span class="countb">1 box</span></span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row moon"></span><span class="lnk">Moonshine/omnios-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">8/8/2025</span><span class="td odd">8/8/2025</span><span class="td odd">6</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">OmniOS r151054</span><span class="td odd">last year</span><span class="td odd">2</span><span class="td odd">zone</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 0.3.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+        </div>
+        <div class="rowh"><h3><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>ISOs<span class="countb">3</span></h3></div>
+        <div class="grid isos">
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">Size</span><span class="th">Checksum</span>
+          <span class="grp"><span class="fold">▾</span><span class="mark row"></span><span class="lnk">STARTcloud</span><span class="countb">2 ISOs</span></span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span><span class="td odd"><span class="status secondary">Private</span></span><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span><span class="td odd">12</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">692.85 MB</span><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">6/25/2026</span><span class="td">6/25/2026</span><span class="td">3</span><span class="td"><span class="status success">Published</span></span><span class="td">7.85 GB</span><span class="td"><span class="sha">7262f4b806f8…</span></span>
+          <span class="grp"><span class="fold">▾</span><span class="mark row alt"></span><span class="lnk">PhoneSwitchBoard</span><span class="countb">1 ISO</span></span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row alt"></span><span class="lnk">PhoneSwitchBoard/OPNsense-26.1.6-dvd-amd64.iso</span></span><span class="td odd"><span class="status secondary">Private</span></span><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span><span class="td odd">1</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">2.07 GB</span><span class="td odd"><span class="sha">19f8cf0e68d5…</span></span>
+        </div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: no Private / Public level.</strong> One table per collection with organization group rows; private and public rows sit side by side under the Visibility column, and the Visibility pill narrows to either. The catalog draws the same page, a member's private provisioners inside their organization group with the Private badge.</div>
+      <div class="callout changed"><strong>Changed: Collection is a filter group.</strong> The home page and the org page register Collection (Boxes / ISOs) first, then the shared Visibility group, then each collection's own groups prefixed by its name; picking Boxes hides the ISO headings and tables, picking Private hides the public rows, and the × in the search box clears everything.</div>
+      <div class="callout changed"><strong>Changed: private rows come from every membership.</strong> Boxes come from <code>/api/discover</code> as today; ISOs come from <code>/api/isos/discover</code> widened by the same token rule (memberships from <code>UserOrg</code>, never the primary org), so both home lists follow one rule and no adapter merges anything.</div>
+      <div class="callout changed"><strong>Changed: shared columns first and identical</strong> on every table: star cell, Name with the org logo and <code>org/name</code> as a link, Visibility, Created, Updated, Downloads; then the columns only that collection has. Downloads for ISOs needs a <code>downloadCount</code> column and one increment in the ISO download controller.</div>
+      <div class="callout changed"><strong>Changed: a collection with no rows is still drawn</strong>, heading, count and a "Nothing here yet." row, so the page shape never shifts.</div>
+      <div class="callout"><strong>No create or delete here:</strong> a box or ISO is created inside an organization, so those actions live on the org page; home carries only Discover organizations, on its first heading row beside the toggle, so nothing sits above the first heading. The catalog draws the same page in cards by default.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">OrgPage — /STARTcloud: the org header row carries the one toggle; each collection heading row carries its actions; headings are labels with counts</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span></div>
+        <div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="orgh"><span class="mark lg"></span><div><h2>STARTcloud</h2><small>STARTcloud · Own Your Data</small></div></div>
+          <span class="toggle"><span class="btn on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span><span class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></span></span>
+        </div>
+        <div class="rowh"><h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5v10l-9 5-9-5V7z"></path><path d="M12 12l9-5"></path><path d="M12 12v10"></path><path d="M12 12L3 7"></path></svg>Boxes<span class="countb">4</span></h2><span class="right"><span class="btn sm success">Add New</span><span class="btn sm danger">Remove All</span></span></div>
+        <div class="grid boxes">
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span><span class="th">Latest release</span><span class="th">Versions</span><span class="th">Providers</span><span class="th">Architectures</span><span class="th"></span>
+          <span class="td odd"><span class="star">★</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span><span class="td odd">5</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">Alma 9</span><span class="td odd">last year</span><span class="td odd">1</span><span class="td odd">virtualbox, zone</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 1.2.3 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/windows2022-server</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">12/28/2024</span><span class="td">8/1/2026</span><span class="td">30</span><span class="td"><span class="status success">Published</span></span><span class="td">Windows 2022</span><span class="td">11 months ago</span><span class="td">6</span><span class="td">virtualbox, zone</span><span class="td">amd64</span><span class="td"><span class="lnk" title="Deploy 2.1.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span><span class="td odd"><span class="status info">Public</span></span><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span><span class="td odd">60</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span><span class="td odd">3</span><span class="td odd">zone, virtualbox, utm, docker, aws</span><span class="td odd">amd64</span><span class="td odd"><span class="lnk" title="Deploy 2.0.1 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+          <span class="td"><span class="star">★</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span><span class="td"><span class="status success">Published</span></span><span class="td">Debian 12</span><span class="td">4 months ago</span><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span><span class="td"><span class="lnk" title="Deploy 4.0.0 with Hyperweaver"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg></span></span>
+        </div>
+        <div class="rowh"><h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>ISOs<span class="countb">2</span></h2><span class="right"><span class="btn sm success">Add New</span><span class="btn sm danger">Remove All</span></span></div>
+        <div class="grid isos">
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">Size</span><span class="th">Checksum</span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span><span class="td odd"><span class="status secondary">Private</span></span><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span><span class="td odd">12</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">692.85 MB</span><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">6/25/2026</span><span class="td">6/25/2026</span><span class="td">3</span><span class="td"><span class="status success">Published</span></span><span class="td">7.85 GB</span><span class="td"><span class="sha">7262f4b806f8…</span></span>
+        </div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: two rows became one per collection.</strong> The heading row holds title, count and the collection's actions on its right; the separate actions row is gone; the toggle sits once in the org header row and the chosen view holds for both collections.</div>
+      <div class="callout changed"><strong>Changed: ISO rows carry no buttons</strong> and boxes get no actions column either; the name links to the item page where the actions live, and the star is the only in-row control.</div>
+      <div class="callout"><strong>The org header</strong> shows the display name with the slug beneath, as the org console does; crumbs and paths stay the slug. Add New still opens the create form under the heading row at full width, and the same green Add New and red Remove All sit on the ISOs row, where Add New opens the upload zone. The search here registers Collection, Visibility and the boxes' groups, as on home.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">CollectionPage — /STARTcloud/isos: one collection, so no Collection group; the heading row carries Add New, Remove All and the toggle; the upload zone expanded</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span><span class="sep">›</span><span class="crumb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>ISOs</span></div>
+        <div class="cluster"><span class="search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><span class="ph">Search ISOs</span><span class="count">2 / 2</span><span class="tool on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M4.9 19.1l2.1-2.1"></path><path d="M17 7l2.1-2.1"></path></svg></span><span class="tool"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span></span><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="filters">
+        <div class="group"><span class="group-label">Visibility</span><span class="pills"><span class="pill">Public (0)</span><span class="pill">Private (2)</span></span></div>
+        <div class="foot"><span>0 filters active</span><span class="sp"></span><span class="lnk">Clear filters</span></div>
+      </div>
+      <div class="demo">
+        <div class="rowh"><h2><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>ISOs<span class="countb">2</span></h2><span class="right"><span class="btn sm success">Add New</span><span class="btn sm danger">Remove All</span><span class="toggle"><span class="btn on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span><span class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></span></span></span></div>
+        <div class="upload"><span class="x">×</span><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg><span>Drop an ISO here or click to choose one</span><span class="switch"><span class="track"></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Private</span></div>
+        <div class="grid isos">
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">Size</span><span class="th">Checksum</span>
+          <span class="td odd"><span class="star">☆</span></span><span class="td first odd"><span class="mark row"></span><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span><span class="td odd"><span class="status secondary">Private</span></span><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span><span class="td odd">12</span><span class="td odd"><span class="status success">Published</span></span><span class="td odd">692.85 MB</span><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          <span class="td"><span class="star">☆</span></span><span class="td first"><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span><span class="td"><span class="status secondary">Private</span></span><span class="td">6/25/2026</span><span class="td">6/25/2026</span><span class="td">3</span><span class="td"><span class="status success">Published</span></span><span class="td">7.85 GB</span><span class="td"><span class="sha">7262f4b806f8…</span></span>
+        </div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>The Visibility and Watched groups are shared:</strong> every collection gets them, in both apps, Visibility whenever private rows exist on the page and Watched whenever the viewer is signed in and a watched row is on the page, after the Collection group where there is one and before the collection's own groups (boxes: Provider · Architecture · OS; ISOs across orgs: Organization; provisioners: Tier · Provider).</div>
+      <div class="callout"><strong>On a single-collection page</strong> the heading row is the page's top row, so the toggle sits on it beside the actions; the upload zone is the Add New button opened on click or hover, with the Public / Private switch and its progress bar, × or Escape to close, and Remove All clears the organization's ISOs after a confirmation.</div>
+      <div class="callout"><strong><code>/isos</code></strong> is the same page across organizations: organization group rows with private and public rows side by side, the Organization group in the panel; it stays because it already exists, not because a page is needed to see only ISOs.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">ItemPage for a single-file item — /STARTcloud/isos/virtio-win-0.1.271.iso: hero, actions, one Facts card, no versions</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span><span class="sep">›</span><span class="crumb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>ISOs</span><span class="sep">›</span><span class="crumb">virtio-win-0.1.271.iso</span></div>
+        <div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero"><div class="hero-text"><div class="title">virtio-win-0.1.271.iso</div><div class="subtitle">STARTcloud / virtio-win-0.1.271.iso</div><div class="chips"><span class="status success">Published</span><span class="status secondary">Private</span></div></div></div>
+          <div class="actions"><span class="btn primary">Download</span><span class="btn">Copy checksum</span><span class="btn">Make public</span><span class="btn warning">Unpublish</span><span class="btn">Rename</span><span class="btn danger">Delete</span><span class="btn dark">Back</span></div>
+        </div>
+        <div class="cards"><div class="card"><div class="card-h">Facts</div><div class="card-b"><dl class="facts"><dt>Size</dt><dd>692.85 MB</dd><dt>Checksum</dt><dd><span class="sha">bbe6166ad86a3f0e…9c41</span> <span class="status secondary">sha256</span></dd><dt>Created</dt><dd>6/25/2026</dd><dt>Updated</dt><dd>6/25/2026</dd><dt>Downloads</dt><dd>12</dd></dl></div></div></div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>New page, same component.</strong> <code>ItemPage</code> draws it from the item shape with <code>hasVersions: false</code> and an item-level <code>artifact</code> (file name, size, checksum, checksum type, download URL, download count), which the Facts card renders when there is no metadata block.</div>
+      <div class="callout"><strong>Slots:</strong> Download, Copy checksum, Make public / Make private, Publish / Unpublish, Rename and Delete are BoxVault's ISO actions in the page's <code>ItemActions</code> slot, gated by org admin/owner as today; an unpublished ISO is visible to members only, exactly as a pending box; the catalog passes none.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">ItemPage — /STARTcloud/alma9-server: Deploy opens the action row for the newest live version and sits in the strip for the selected one; otherwise unchanged</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span><span class="sep">›</span><span class="crumb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5v10l-9 5-9-5V7z"></path><path d="M12 12l9-5"></path><path d="M12 12v10"></path><path d="M12 12L3 7"></path></svg>Boxes</span><span class="sep">›</span><span class="crumb">alma9-server</span></div>
+        <div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero"><div class="artwork"></div><div class="hero-text"><div class="title">alma9-server <span class="star">☆</span></div><div class="subtitle">STARTcloud / alma9-server</div><div class="chips"><span class="status success">Published</span><span class="status info">Public</span><span class="status os">Alma 9</span></div><div>Alma 9 Template</div><div class="chips"><span class="status success">build passing</span><span class="lnk">STARTcloud/alma9-server</span></div></div></div>
+          <div class="actions"><span class="btn primary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg>Deploy</span><span class="btn primary">Edit</span><span class="btn danger">Delete</span><span class="btn warning">Unpublish</span><span class="btn dark">Back to files</span></div>
+        </div>
+        <div class="strip">
+          <div class="strip-head"><span class="label">Use this box</span><span class="select">Version <span class="v">1.2.3 ▾</span><span class="btn sm primary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg>Deploy</span></span></div>
+          <div class="code"><span>vagrant init STARTcloud/alma9-server https://boxvault.startcloud.com/STARTcloud/boxes/alma9-server
+vagrant up</span><span class="copy">Copy</span></div>
+          <div class="more">▸ Option 2: use a Vagrantfile pinned to this version</div>
+          <div class="more">▸ Starter kit (self-bootstrapping Vagrantfile + Hosts.yml)</div>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="card-h">Facts</div><div class="card-b"><dl class="facts"><dt>OS</dt><dd>Alma 9</dd><dt>Type</dt><dd>server</dd><dt>Username</dt><dd>startcloud</dd><dt>Password</dt><dd>•••••••• <span class="btn sm">Show</span></dd><dt>CPUs</dt><dd>2</dd><dt>Memory</dt><dd>4 GB</dd><dt>Providers</dt><dd>virtualbox, zone</dd><dt>Built</dt><dd>2026-08-29</dd><dt>Driver</dt><dd>v0.3.0</dd></dl></div></div>
+          <div class="card"><div class="card-h">README</div><div class="card-b"><strong>alma9-server</strong><span>A minimal AlmaLinux 9 server image for the STARTcloud core provisioner. Ships with cloud-init, the STARTcloud user and SSH keys wired for Hosts.yml.</span></div></div>
+        </div>
+        <div class="sect"><h2>Versions <span class="countb">3</span></h2><span class="btn sm success">Add Version</span></div>
+        <div class="grid" style="grid-template-columns: 160px 110px 1fr 1fr 110px;">
+          <span class="th">Version</span><span class="th">Released</span><span class="th">Details</span><span class="th">Providers</span><span class="th">Actions</span>
+          <span class="td first odd"><span class="lnk">1.2.3</span></span><span class="td odd">8/29/2026</span><span class="td odd">Kernel 5.14.0-503, cloud-init 24.1</span><span class="td odd"><span class="status secondary">virtualbox</span><span class="status secondary">zone</span></span><span class="td odd"><span class="btn sm danger">Delete</span></span>
+          <span class="td first"><span class="lnk">1.2.2</span><span class="status danger">Deprecated</span></span><span class="td">8/14/2026</span><span class="td">Rebuild with updated sudoers</span><span class="td"><span class="status secondary">virtualbox</span><span class="status secondary">zone</span></span><span class="td"><span class="btn sm danger">Delete</span></span>
+          <span class="td first odd"><span class="lnk">1.2.1</span></span><span class="td odd">7/2/2026</span><span class="td odd">First Alma 9.4 build</span><span class="td odd"><span class="status secondary">virtualbox</span></span><span class="td odd"><span class="btn sm danger">Delete</span></span>
+        </div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: Deploy climbs the hierarchy.</strong> The filled rocket button opens the action row for the newest non-deprecated version and stays in the use-this strip for the version picked there; box rows and cards carry the same rocket as a glyph through the collection's <code>ItemQuickActions</code> slot, every one drawn only while the viewer is signed in, entitled to Hyperweaver and Hyperweaver is configured; the tooltip names the version it deploys.</div>
+      <div class="callout"><strong>Unchanged otherwise:</strong> hero, action row, the use-this strip as the collection's extras slot, facts and README from the shape, versions newest first with Released, Details, Providers and Artifacts columns shown only when a version carries them; the versions table keeps its Actions column because a version has row-level actions.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The catalog on the same pages — Provisioner Catalog › STARTcloud › Provisioners › startcloud_generic_provisioner: Quality under Versions, a section header, collapsed</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>Provisioner Catalog</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span><span class="sep">›</span><span class="crumb"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"></path></svg>Provisioners</span><span class="sep">›</span><span class="crumb">startcloud_generic_provisioner</span></div>
+        <div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero"><span class="mark lg"></span><div class="hero-text"><div class="title">STARTcloud Generic Provisioner</div><div class="subtitle">STARTcloud / startcloud_generic_provisioner</div><div class="chips"><span class="status info">Public</span><span class="status tier-gold">Gold</span><span class="status version">v0.4.3</span><span class="status secondary">released 0d ago</span><span class="status secondary">6663 downloads</span></div><div>Generic provisioner for STARTcloud servers</div><div class="chips"><span class="status provider-all">virtualbox</span></div></div></div>
+          <div class="actions"><span class="btn">View on GitHub</span><span class="btn">Homepage</span><span class="btn">Report an issue</span></div>
+        </div>
+        <div class="sect"><h2>Versions <span class="countb">14</span></h2></div>
+        <div class="grid" style="grid-template-columns: 140px 120px 1fr 1fr;">
+          <span class="th">Version</span><span class="th">Released</span><span class="th">Providers</span><span class="th">Artifacts</span>
+          <span class="td first odd"><span class="lnk">0.4.3</span></span><span class="td odd">9/1/2026</span><span class="td odd"><span class="status secondary">virtualbox</span></span><span class="td odd"><span class="lnk">Download</span><span class="sha">sha256:1e68…f288</span></span>
+          <span class="td first"><span class="lnk">0.4.2</span></span><span class="td">9/1/2026</span><span class="td"><span class="status secondary">virtualbox</span></span><span class="td"><span class="lnk">Download</span><span class="sha">sha256:e5d3…fcd2</span></span>
+        </div>
+        <div class="sect"><h2><span class="fold">▸</span>Quality <span class="status tier-gold">Gold</span> <span class="countb">2 unmet rules</span></h2></div>
+      </div>
+      <div class="site-footer"><span class="lnk">Provisioner Catalog © 2026 · v0.0.41</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: Quality moved under Versions</strong> as a section header in the Versions style, collapsed by default with a chevron, expanding to the unmet rules list (<code>platinum.multi_provider</code>, <code>diamond.booted_providers</code>) or "All quality rules pass."; the cards keep their accordion.</div>
+      <div class="callout changed"><strong>Interim: the catalog org is the GitHub repository owner</strong> for public items and the IdP membership for private catalogs, matched by name until the OAuth flow lets people claim their own repositories; after that the IdP organization (uuid) is the only identity.</div>
+      <div class="callout"><strong>No write slots</strong>, so no Edit / Delete / Add anywhere; the action row holds the item's links. The catalog home is the same grouped page as BoxVault's, in cards by default, with the switcher also context only.</div>
+    </div>
+  </div>
+
+  <div class="spec wide">
+    <div class="spec-col">
+      <h2>What this design changed</h2>
+      <div class="tbl" style="grid-template-columns: 180px 1fr 1fr;">
+        <span class="hc">Where</span><span class="hc">Before</span><span class="hc">After</span>
+        <span class="c k">switcher</span><span class="c was">sets the active organization and navigates to /{org} in both apps</span><span class="c">sets the active organization only; the page stays</span>
+        <span class="c k">only boxes, only ISOs</span><span class="c was">headings link to collection pages; no way to narrow the page in place</span><span class="c">a Collection filter group (Boxes / ISOs) in the navbar panel on every page that lists more than one collection; headings are labels; no new routes</span>
+        <span class="c k">org page rows</span><span class="c was">per collection: a heading row with an "All …" link and its own toggle, then a separate actions row</span><span class="c">one org header row with the one toggle; one heading row per collection carrying its actions; no "All …" links</span>
+        <span class="c k">home groups</span><span class="c was">a Private / Public level, every collection under each, then organization rows; a collection with no rows dropped</span><span class="c">no Private / Public level: one table per collection with organization group rows, private and public rows side by side under the Visibility column; every collection heading drawn, empty rows say "Nothing here yet."; folds persist per page</span>
+        <span class="c k">home ISOs</span><span class="c was">/api/isos/discover is public-only</span><span class="c">the route widens by token exactly as /api/discover does for boxes; both adapters become the same two calls</span>
+        <span class="c k">ISO routes and fields</span><span class="c was">the organization ISO list required a token and public ISOs had a second route, so the adapter picked one by membership; ISOs had no published state; the ISO row said filename and boxes summed download counts in the browser</span><span class="c">one organization list and one item route reading the optional token like the box routes; ISOs carry published, a Status column and Publish / Unpublish; every row says isPublic, fileName and downloadCount, the box total summed by the API</span>
+        <span class="c k">ISO actions</span><span class="c was">five buttons in every table row</span><span class="c">an ISO page at /{org}/isos/{iso} with the actions in its action row; the row is a link</span>
+        <span class="c k">columns</span><span class="c was">ISO Name bare; boxes "Public" vs ISOs "Visibility"; boxes "Created" vs ISOs "Uploaded"; no Updated anywhere; no ISO download count</span><span class="c">shared columns first and identical: star cell, Name with logo and org/name link, Visibility, Created, Updated, Downloads; then the collection's own; ISOs gain a downloadCount column and one increment in the download controller</span>
+        <span class="c k">view toggle</span><span class="c was">per collection, stored per collection, twice on the org page</span><span class="c">once per page, stored per page: on the org header row, else on the first collection's heading row</span>
+        <span class="c k">home top row</span><span class="c was">an empty row above the first heading holding only Discover organizations and the toggle at its right</span><span class="c">no row: Discover organizations and the toggle sit on the first collection's heading row</span>
+        <span class="c k">Deploy</span><span class="c was">"Deploy to Hyperweaver", one small button inside the use-this strip</span><span class="c">"Deploy": a filled rocket button first in the item page's action row for the newest non-deprecated version, the same in the strip for the selected version, and a rocket glyph on every box row and card (the <code>ItemQuickActions</code> slot), each tooltip naming the version</span>
+        <span class="c k">catalog Quality</span><span class="c was">an open card beside the hero</span><span class="c">a collapsed section under Versions in the Versions header style</span>
+        <span class="c k">rows under an organization</span><span class="c was">the leading star cell only while signed in on BoxVault, never on the catalog, so rows sat flush under the chevron signed out and on the catalog</span><span class="c">every table draws the watch cell, star when signed in and blank otherwise, so the item icon sits under the organization logo in both apps and both states</span>
+        <span class="c k">card links</span><span class="c was">the catalog's cards lost their GitHub, Homepage and Issue links to the item page; box cards never had any</span><span class="c">every card carries a glyph row for the item's links, repository, homepage, issues and pipeline, each drawn only when the item has it</span>
+        <span class="c k">catalog Visibility</span><span class="c was">no Visibility column; public provisioners carried no visibility at all, private ones a Private chip on cards only; Downloads sat after Tier and Latest release</span><span class="c">every provisioner is Public or Private like a box: the Visibility column after Name, the chip on every card and item page, Downloads right after it before Tier</span>
+        <span class="c k">sign in after a session ends</span><span class="c was">the OIDC buttons ignore returnTo and land on /profile</span><span class="c">returnTo is remembered on /login, so sign-in returns to the page you were on</span>
+        <span class="c k">Listing.jsx</span><span class="c was">three render paths: visibility groups, org groups, flat</span><span class="c">one path: organization group rows when across organizations, headings and actions the same in every case</span>
+        <span class="c k">filter panel labels</span><span class="c was">a fixed 96px label column that wrapped the prefixed labels; PROVIDERS and ARCHITECTURES as group names; empty groups drawn as bare labels</span><span class="c">the label column sizes to the longest label; Provider and Architecture; a group with no values on the page is not drawn</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-col">
+      <h2>Columns — parity between collections</h2>
+      <div class="tbl" style="grid-template-columns: 110px 1fr 1fr 1fr;">
+        <span class="hc">Column</span><span class="hc">Boxes</span><span class="hc">ISOs</span><span class="hc">Provisioners</span>
+        <span class="c k">watch</span><span class="c">star signed in, blank signed out; the star header sorts watched first</span><span class="c">star signed in, blank signed out; the star header sorts watched first</span><span class="c">star signed in (the Worker's /watches, per user), blank signed out; the star header sorts watched first</span>
+        <span class="c k">Name</span><span class="c">org logo + org/name link</span><span class="c">org logo + org/name link</span><span class="c">icon + label link, slug beside it</span>
+        <span class="c k">Visibility</span><span class="c">Public / Private</span><span class="c">Public / Private</span><span class="c">Public / Private</span>
+        <span class="c k">Created</span><span class="c">createdAt</span><span class="c">createdAt</span><span class="c">hidden, the catalog has none</span>
+        <span class="c k">Updated</span><span class="c">updatedAt</span><span class="c">updatedAt</span><span class="c">hidden</span>
+        <span class="c k">Downloads</span><span class="c">sum of file downloadCount</span><span class="c">new downloadCount on the ISO row</span><span class="c">health downloads</span>
+        <span class="c k">then</span><span class="c">Status · OS · Latest release · Versions · Providers · Architectures</span><span class="c">Status · Size · Checksum</span><span class="c">Tier · Latest release · Versions · Providers</span>
+        <span class="c k">row actions</span><span class="c">none, on the item page</span><span class="c">none, on the item page</span><span class="c">none</span>
+      </div>
+      <h2>Filter groups per page</h2>
+      <div class="tbl" style="grid-template-columns: 150px 1fr;">
+        <span class="hc">Page</span><span class="hc">Groups, in order</span>
+        <span class="c k">home, org page</span><span class="c">Collection (Boxes / ISOs) · Visibility · Watched · Boxes: Provider, Architecture, OS · ISOs across orgs: Organization</span>
+        <span class="c k">one collection</span><span class="c">Visibility · that collection's own groups</span>
+        <span class="c k">catalog</span><span class="c">Visibility when private rows exist · Watched · Tier · Provider</span>
+      </div>
+    </div>
+    <div class="spec-col">
+      <h2>Levels and routes</h2>
+      <div class="tbl" style="grid-template-columns: 150px 1fr 1fr 130px;">
+        <span class="hc">Level</span><span class="hc">BoxVault (unchanged)</span><span class="hc">Catalog</span><span class="hc">Crumb</span>
+        <span class="c k">home</span><span class="c">/</span><span class="c">/</span><span class="c">brand only</span>
+        <span class="c k">collection, all orgs</span><span class="c">/isos</span><span class="c">/</span><span class="c">› ISOs</span>
+        <span class="c k">organization</span><span class="c">/{org}</span><span class="c">/{org}</span><span class="c">› STARTcloud</span>
+        <span class="c k">collection, one org</span><span class="c">/{org}/isos</span><span class="c">/{org}</span><span class="c">› STARTcloud › ISOs</span>
+        <span class="c k">item</span><span class="c">/{org}/{box} · /{org}/isos/{iso}</span><span class="c">/{org}/{provisioner}</span><span class="c">› … › alma9-server</span>
+        <span class="c k">version</span><span class="c">/{org}/{box}/{version}</span><span class="c">/{org}/{provisioner}/{version}</span><span class="c">› … › 1.2.3</span>
+        <span class="c k">provider</span><span class="c">…/{version}/{provider}</span><span class="c">same</span><span class="c">› … › zone</span>
+      </div>
+      <h2>Rules the picture keeps</h2>
+      <div class="tbl" style="grid-template-columns: 150px 1fr;">
+        <span class="hc">Rule</span><span class="hc">Where it shows</span>
+        <span class="c k">context ≠ location</span><span class="c">the active org is the organization row of the user menu and the Switch Organization modal it opens; the switcher never moves the page; the crumb shows the route's org only</span>
+        <span class="c k">primary ≠ active</span><span class="c">the primary org is the server's pointer and the crown in the switcher; it is only the first fallback for the active org</span>
+        <span class="c k">one breadcrumb</span><span class="c">the header: plain links up the route, brand › org › collection › item › version › provider, no dropdown anywhere in it; pages draw none</span>
+        <span class="c k">narrowing is filtering</span><span class="c">the navbar search and its panel narrow any listing page; collections, visibility and the rest are pills, never separate pages or tabs</span>
+        <span class="c k">URLs never move</span><span class="c">every BoxVault path above is today's; /isos, /{org}/isos, /{org}/isos/{iso} are additive; the Vagrant handler keys on the user agent</span>
+        <span class="c k">one Listing</span><span class="c">home, org, collection pages are one component with organization group rows across organizations, one toggle, headings that carry actions</span>
+        <span class="c k">one visibility rule</span><span class="c">what a member sees is decided once per app: BoxVault by its discover routes, the catalog by its adapter's membership merge</span>
+        <span class="c k">byte-identical pages</span><span class="c">pages/ copied with cp -r like chrome/; differences are the adapter, the collections file, slots and routes</span>
+        <span class="c k">read-only is valid</span><span class="c">the catalog frame renders with no write control at all</span>
+        <span class="c k">global search, later</span><span class="c">once the search box is expanded, clicking its leading magnifier flips this-app ↔ everywhere; the placeholder and count say which mode is on</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-col">
+      <h2>Item shape — the one thing every page renders</h2>
+      <pre>organization { name, uuid, logo, displayName, description }
+item {
+  organization, name, label, description, icon, artwork,
+  isPublic, published, createdAt, updatedAt, latestReleaseAt, downloads,
+  os { label, iconUrl } | null,
+  metadata | null, readme | null,
+  artifact { fileName, fileSize, checksum, checksumType, downloadUrl, downloadCount } | null,
+  links { repo, homepage, issues, pipeline, badge },
+  extras { … }            app-only data for slots, never read by a page
+  versions [ version ]
+}
+version { version, createdAt, updatedAt, description, releaseNotes,
+          deprecated, deprecationReason, providers [ provider ], artifacts [ architecture ] }
+provider { name, description, architectures [ architecture ] }
+architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
+               downloadUrl, downloadCount }</pre>
+    </div>
+    <div class="spec-col">
+      <h2>Pages</h2>
+      <div class="tbl" style="grid-template-columns: 130px 1fr;">
+        <span class="hc">Page</span><span class="hc">Renders</span>
+        <span class="c k">HomePage</span><span class="c">Listing, grouped by organization: every collection, foldable organization group rows with private and public rows side by side; Discover organizations and the one toggle on the first heading row; Collection + Visibility + Watched + collection groups in the panel</span>
+        <span class="c k">OrgPage</span><span class="c">Listing, flat: org header row with the toggle; per collection a heading row with actions and its table; the same groups in the panel</span>
+        <span class="c k">CollectionPage</span><span class="c">Listing for one collection: grouped across orgs, flat on an org; the heading row carries the toggle and the actions; Visibility + its own groups</span>
+        <span class="c k">ItemPage</span><span class="c">PageHeader (media, title + watch, subtitle, chips, actions slot, children), extras slot, facts from metadata or artifact, README, versions when the collection has them, then the collection's item sections (the catalog's Quality)</span>
+        <span class="c k">VersionPage</span><span class="c">PageHeader with the deprecated chip, banner, release notes, meta row, artifacts, providers</span>
+        <span class="c k">ProviderPage</span><span class="c">PageHeader, architectures</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var live = document.getElementById('live');
+    if (!live) { return; }
+    var DATA = {
+      STARTcloud: {
+        mark: '', display: 'STARTcloud', blurb: 'STARTcloud · Own Your Data', member: true,
+        boxes: {
+          'alma9-server': { os: 'Alma 9', pub: true, published: true, created: '12/28/2024', updated: '8/29/2026', released: 'last year', downloads: 5, desc: 'Alma 9 Template', watched: true, versions: { '1.2.3': { note: 'Kernel 5.14.0-503, cloud-init 24.1', providers: ['virtualbox', 'zone'] }, '1.2.2': { note: 'Rebuild with updated sudoers', providers: ['virtualbox', 'zone'], deprecated: true }, '1.2.1': { note: 'First Alma 9.4 build', providers: ['virtualbox'] } } },
+          'windows2022-server': { os: 'Windows 2022', pub: false, published: true, created: '12/28/2024', updated: '8/1/2026', released: '11 months ago', downloads: 30, desc: 'Windows Server 2022 Template', watched: false, versions: { '2.1.0': { note: 'Cumulative update 2026-07', providers: ['virtualbox', 'zone'] } } },
+          'debian13-server': { os: 'Debian 13', pub: true, published: true, created: '8/13/2025', updated: '7/2/2026', released: '2 months ago', downloads: 60, desc: 'Debian 13 Template', watched: false, versions: { '2.0.1': { note: 'Trixie GA rebuild', providers: ['zone', 'virtualbox', 'utm', 'docker', 'aws'] }, '2.0.0': { note: 'First Trixie build', providers: ['zone', 'virtualbox'] } } },
+          'uds4.0-server': { os: 'Debian 12', pub: false, published: true, created: '5/1/2026', updated: '5/1/2026', released: '4 months ago', downloads: 0, desc: 'UDS 4.0 application server', watched: true, versions: { '4.0.0': { note: 'UDS 4.0 GA', providers: ['zone'] } } }
+        },
+        isos: {
+          'virtio-win-0.1.271.iso': { pub: false, size: '692.85 MB', sha: 'bbe6166ad86a', created: '6/25/2026', updated: '6/25/2026', downloads: 12 },
+          'Server2025.ISO': { pub: false, size: '7.85 GB', sha: '7262f4b806f8', created: '6/25/2026', updated: '6/25/2026', downloads: 3 }
+        }
+      },
+      PhoneSwitchBoard: {
+        mark: 'alt', display: 'PhoneSwitchBoard', blurb: 'PhoneSwitchBoard · Get connected with a Cloud Phone System', member: true,
+        boxes: {
+          'debian13-server': { os: 'Debian 13', pub: true, published: true, created: '3/2/2026', updated: '8/28/2026', released: '5 days ago', downloads: 77, desc: 'Switchboard base image', watched: true, versions: { '1.0.4': { note: 'Asterisk 21 base', providers: ['virtualbox', 'zone'] } } },
+          'opnsense-router': { os: 'OPNsense 26', pub: false, published: false, created: '7/30/2026', updated: '7/30/2026', released: '', downloads: 0, desc: 'Edge router image', watched: false, versions: { '26.1.0': { note: 'OPNsense 26.1', providers: ['virtualbox'] } } }
+        },
+        isos: {
+          'OPNsense-26.1.6-dvd-amd64.iso': { pub: false, size: '2.07 GB', sha: '19f8cf0e68d5', created: '6/25/2026', updated: '6/25/2026', downloads: 1 }
+        }
+      },
+      Moonshine: {
+        mark: 'moon', display: 'Moonshine', blurb: 'Moonshine · Moonshine.dev', member: false,
+        boxes: {
+          'omnios-server': { os: 'OmniOS r151054', pub: true, published: true, created: '8/8/2025', updated: '8/8/2025', released: 'last year', downloads: 6, desc: 'OmniOS r151054 Template', watched: false, versions: { '0.3.0': { note: 'r151054 LTS', providers: ['zone'] }, '0.2.0': { note: 'r151052', providers: ['zone'] } } },
+          'lab-desktop': { os: 'Debian 12', pub: false, published: true, created: '1/4/2026', updated: '6/1/2026', released: '3 months ago', downloads: 1, desc: 'Not visible to non-members', watched: false, versions: { '1.0.0': { note: 'internal', providers: ['virtualbox'] } } }
+        },
+        isos: {}
+      }
+    };
+    var ORGS = ['STARTcloud', 'PhoneSwitchBoard', 'Moonshine'];
+    var SVG = {
+      brand: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg>',
+      box: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 5v10l-9 5-9-5V7z"></path><path d="M12 12l9-5"></path><path d="M12 12v10"></path><path d="M12 12L3 7"></path></svg>',
+      iso: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>',
+      search: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>',
+      gear: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M4.9 19.1l2.1-2.1"></path><path d="M17 7l2.1-2.1"></path></svg>',
+      x: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>',
+      list: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>',
+      cards: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>',
+      upload: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg>',
+      deploy: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 15l-2 6 6-2"></path><path d="M9 15l6-6 4 4-6 6z"></path><path d="M14 4l6 6"></path></svg>',
+      console: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 21v-6h6v6"></path></svg>'
+    };
+    var THEMES = [
+      { title: 'Theme: Auto', attr: null, svg: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg>' },
+      { title: 'Theme: Light', attr: 'light', svg: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.9 4.9l1.4 1.4"></path><path d="M17.7 17.7l1.4 1.4"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.9 19.1l1.4-1.4"></path><path d="M17.7 6.3l1.4-1.4"></path></svg>' },
+      { title: 'Theme: Dark', attr: 'dark', svg: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>' }
+    ];
+    var BOX_HEAD = '<span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span><span class="th">Latest release</span><span class="th">Versions</span><span class="th">Providers</span><span class="th">Architectures</span><span class="th"></span>';
+    var ISO_HEAD = '<span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">Size</span><span class="th">Checksum</span>';
+    var TRY = '<div class="try">Try: brand → home · the gear in the search box opens the filter panel: Collection narrows the page to Boxes or ISOs, Visibility to Public or Private, × clears · every organization row folds with its chevron · the list / cards toggle is drawn once per page and holds there · an organization → its page · a row → the item · an ISO row → the ISO page · a version → the version · a provider → the provider · any crumb → back up · name → menu → the organization row → switcher: the active organization changes, the page does not move.</div>';
+    var FOOTER = '<div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>';
+
+    var state = { route: { org: '', collection: '', item: '', version: '', provider: '' }, active: 'STARTcloud', view: {}, folded: {}, filters: { collection: {}, visibility: {} }, panel: true, menu: false, modal: false, theme: 0 };
+
+    var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var go = function (route) { return ' data-go="' + esc(JSON.stringify(route)) + '"'; };
+    var pageKey = function () { var r = state.route; return (r.org || 'home') + '|' + (r.collection || ''); };
+    var viewOf = function () { return state.view[pageKey()] || 'table'; };
+    var isFolded = function (key) { return Boolean(state.folded[key]); };
+    var chev = function (key) { return isFolded(key) ? '▸' : '▾'; };
+    var filterOn = function (group, value) { var f = state.filters[group]; return Object.keys(f).length === 0 || Boolean(f[value]); };
+    var providersOf = function (box) {
+      var out = [];
+      Object.keys(box.versions).forEach(function (v) { box.versions[v].providers.forEach(function (p) { if (out.indexOf(p) === -1) { out.push(p); } }); });
+      return out.join(', ');
+    };
+    var boxRow = function (org, name) {
+      var b = DATA[org].boxes[name];
+      var names = Object.keys(b.versions);
+      var deployVersion = names.filter(function (v) { return !b.versions[v].deprecated; })[0] || names[0];
+      return { org: org, name: name, label: org + '/' + name, markClass: DATA[org].mark, isBox: true, pub: b.pub, star: b.watched ? '★' : '☆', pubLabel: b.pub ? 'Public' : 'Private', pubClass: b.pub ? 'info' : 'secondary', created: b.created, updated: b.updated, downloads: String(b.downloads), statusLabel: b.published ? 'Published' : 'Pending', statusClass: b.published ? 'success' : 'warning', os: b.os, released: b.released || '—', versions: String(names.length), providers: providersOf(b), desc: b.desc, size: '', sha: '', deployVersion: deployVersion, route: { org: org, collection: 'boxes', item: name } };
+    };
+    var isoRow = function (org, name) {
+      var s = DATA[org].isos[name];
+      return { org: org, name: name, label: org + '/' + name, markClass: DATA[org].mark, isBox: false, pub: s.pub, star: '☆', pubLabel: s.pub ? 'Public' : 'Private', pubClass: s.pub ? 'info' : 'secondary', created: s.created, updated: s.updated, downloads: String(s.downloads), os: '', size: s.size, sha: s.sha + '…', desc: 'sha256 ' + s.sha + '…', route: { org: org, collection: 'isos', item: name } };
+    };
+    var rowsFor = function (kind, orgs) {
+      var out = [];
+      orgs.forEach(function (org) {
+        Object.keys(DATA[org][kind]).forEach(function (name) {
+          var entry = DATA[org][kind][name];
+          if (entry.pub || DATA[org].member) { out.push(kind === 'boxes' ? boxRow(org, name) : isoRow(org, name)); }
+        });
+      });
+      return out;
+    };
+    var collection = function (kind, rows, opts) {
+      var orgs;
+      if (opts.grouped) {
+        var byOrg = {};
+        rows.forEach(function (r) { (byOrg[r.org] = byOrg[r.org] || []).push(r); });
+        orgs = Object.keys(byOrg).map(function (org) {
+          var key = opts.groupKey + ':' + kind + ':' + org;
+          var n = byOrg[org].length;
+          return { key: key, name: org, markClass: DATA[org].mark, isGroup: true, countLabel: n + ' ' + (kind === 'boxes' ? (n === 1 ? 'box' : 'boxes') : (n === 1 ? 'ISO' : 'ISOs')), open: !isFolded(key), rows: byOrg[org] };
+        });
+      } else {
+        orgs = [{ key: 'flat', name: '', markClass: '', isGroup: false, countLabel: '', open: true, rows: rows }];
+      }
+      return { kind: kind, isBoxes: kind === 'boxes', label: kind === 'boxes' ? 'Boxes' : 'ISOs', count: String(rows.length), empty: rows.length === 0, emptyText: opts.filtering ? 'Nothing matches.' : 'Nothing here yet.', showCreate: Boolean(opts.actions) && kind === 'boxes', showUpload: Boolean(opts.actions) && kind === 'isos', showToggle: Boolean(opts.toggle), orgs: orgs };
+    };
+
+    var zebra = function (i) { return i % 2 ? '' : 'odd'; };
+    var cell = function (z, html) { return '<span class="td ' + z + '">' + html + '</span>'; };
+    var nameCell = function (r, z) { return '<span class="td first ' + z + '"><span class="mark row ' + r.markClass + '"></span><span class="lnk"' + go(r.route) + '>' + esc(r.label) + '</span></span>'; };
+    var boxCells = function (r, z) {
+      return cell(z, '<span class="star">' + r.star + '</span>') + nameCell(r, z) + cell(z, '<span class="status ' + r.pubClass + '">' + r.pubLabel + '</span>') + cell(z, r.created) + cell(z, r.updated) + cell(z, r.downloads) + cell(z, '<span class="status ' + r.statusClass + '">' + r.statusLabel + '</span>') + cell(z, esc(r.os)) + cell(z, r.released) + cell(z, r.versions) + cell(z, esc(r.providers)) + cell(z, 'amd64') + cell(z, '<span class="lnk" title="Deploy ' + esc(r.deployVersion) + ' with Hyperweaver">' + SVG.deploy + '</span>');
+    };
+    var isoCells = function (r, z) {
+      return cell(z, '<span class="star">' + r.star + '</span>') + nameCell(r, z) + cell(z, '<span class="status ' + r.pubClass + '">' + r.pubLabel + '</span>') + cell(z, r.created) + cell(z, r.updated) + cell(z, r.downloads) + cell(z, '<span class="status success">Published</span>') + cell(z, r.size) + cell(z, '<span class="sha">' + r.sha + '</span>');
+    };
+    var grpRow = function (o) { return '<span class="grp"><span class="fold" data-fold="' + esc(o.key) + '">' + chev(o.key) + '</span><span class="mark row ' + o.markClass + '"></span><span class="lnk"' + go({ org: o.name }) + '>' + esc(o.name) + '</span><span class="countb">' + o.countLabel + '</span></span>'; };
+    var tableHtml = function (col) {
+      var body = col.empty ? '<span class="empty">' + col.emptyText + '</span>' : '';
+      col.orgs.forEach(function (o) {
+        if (o.isGroup) { body += grpRow(o); }
+        if (o.open) { o.rows.forEach(function (r, i) { body += col.isBoxes ? boxCells(r, zebra(i)) : isoCells(r, zebra(i)); }); }
+      });
+      return '<div class="grid ' + (col.isBoxes ? 'boxes' : 'isos') + '">' + (col.isBoxes ? BOX_HEAD : ISO_HEAD) + body + '</div>';
+    };
+    var cardHtml = function (r) {
+      var chips = '<span class="status ' + r.pubClass + '">' + r.pubLabel + '</span>' + (r.isBox ? '<span class="status ' + r.statusClass + '">' + r.statusLabel + '</span><span class="status os">' + esc(r.os) + '</span>' : '<span class="status secondary">' + r.size + '</span>');
+      return '<div class="icard"><div class="head"><span class="mark lg ' + r.markClass + '"></span><div><span class="t lnk"' + go(r.route) + '>' + esc(r.name) + '</span><small>' + esc(r.org) + '</small></div></div><div class="chips">' + chips + '</div><div class="subtitle">' + esc(r.desc) + '</div>' + (r.isBox ? '<div class="subtitle" style="display: flex; align-items: center; gap: 6px;"><span class="lnk" title="Source repository">⌥ repo</span> · <span class="lnk" title="CI pipeline">⚙ pipeline</span><span class="lnk" style="margin-left: auto;" title="Deploy ' + esc(r.deployVersion) + ' with Hyperweaver">' + SVG.deploy + '</span></div>' : '') + '</div>';
+    };
+    var cardsHtml = function (col) {
+      var out = col.empty ? '<div class="subtitle">' + col.emptyText + '</div>' : '';
+      col.orgs.forEach(function (o) {
+        if (o.isGroup) { out += '<div class="rowh"><span class="right"><span class="fold" data-fold="' + esc(o.key) + '">' + chev(o.key) + '</span><span class="mark row ' + o.markClass + '"></span><span class="lnk"' + go({ org: o.name }) + '>' + esc(o.name) + '</span><span class="countb">' + o.countLabel + '</span></span></div>'; }
+        if (o.open) { out += '<div class="cardgrid">' + o.rows.map(cardHtml).join('') + '</div>'; }
+      });
+      return out;
+    };
+    var toggleHtml = function () {
+      var v = viewOf();
+      return '<span class="toggle"><span class="btn ' + (v === 'table' ? 'on' : '') + '" data-view="table">' + SVG.list + '</span><span class="btn ' + (v === 'cards' ? 'on' : '') + '" data-view="cards">' + SVG.cards + '</span></span>';
+    };
+    var listingHtml = function (v) {
+      var out = '';
+      if (v.isOrg) { out += '<div class="page-head"><div class="orgh"><span class="mark lg ' + v.org.mark + '"></span><div><h2>' + esc(v.org.display) + '</h2><small>' + esc(v.org.blurb) + '</small></div></div>' + toggleHtml() + '</div>'; }
+      v.collections.forEach(function (col, i) {
+        var actions = (col.showCreate || col.showUpload ? '<span class="btn sm success">Add New</span><span class="btn sm danger">Remove All</span>' : '') + (v.isHome && i === 0 ? '<span class="btn sm outline">Discover organizations</span>' + toggleHtml() : '') + (col.showToggle ? toggleHtml() : '');
+        out += '<div class="rowh"><h3>' + (col.isBoxes ? SVG.box : SVG.iso) + col.label + '<span class="countb">' + col.count + '</span></h3><span class="right">' + actions + '</span></div>';
+        out += v.view === 'table' ? tableHtml(col) : cardsHtml(col);
+      });
+      return out;
+    };
+    var isoHtml = function (r, org) {
+      var s = DATA[r.org].isos[r.item];
+      var manage = org.member ? '<span class="btn">' + (s.pub ? 'Make private' : 'Make public') + '</span><span class="btn warning">Unpublish</span><span class="btn">Rename</span><span class="btn danger">Delete</span>' : '';
+      return '<div class="page-head"><div class="hero"><div class="hero-text"><div class="title">' + esc(r.item) + '</div><div class="subtitle">' + esc(r.org + ' / ' + r.item) + '</div><div class="chips"><span class="status success">Published</span><span class="status ' + (s.pub ? 'info' : 'secondary') + '">' + (s.pub ? 'Public' : 'Private') + '</span></div></div></div><div class="actions"><span class="btn primary">Download</span><span class="btn">Copy checksum</span>' + manage + '<span class="btn dark"' + go({ org: r.org, collection: 'isos' }) + '>Back</span></div></div>'
+        + '<div class="cards"><div class="card"><div class="card-h">Facts</div><div class="card-b"><dl class="facts"><dt>Size</dt><dd>' + s.size + '</dd><dt>Checksum</dt><dd><span class="sha">' + s.sha + '…</span> <span class="status secondary">sha256</span></dd><dt>Created</dt><dd>' + s.created + '</dd><dt>Updated</dt><dd>' + s.updated + '</dd><dt>Downloads</dt><dd>' + s.downloads + '</dd></dl></div></div></div>';
+    };
+    var boxHtml = function (r, org) {
+      var b = org.boxes[r.item];
+      var names = Object.keys(b.versions);
+      var live = names.filter(function (v) { return !b.versions[v].deprecated; })[0] || names[0];
+      var manage = '<span class="btn primary" title="Deploy ' + esc(live) + ' with Hyperweaver">' + SVG.deploy + 'Deploy</span>' + (org.member ? '<span class="btn primary">Edit</span><span class="btn danger">Delete</span><span class="btn warning">' + (b.published ? 'Unpublish' : 'Publish') + '</span>' : '');
+      var rows = names.map(function (v, i) {
+        var e = b.versions[v];
+        var z = zebra(i);
+        var providers = e.providers.map(function (p) { return '<span class="status secondary lnk"' + go({ org: r.org, collection: 'boxes', item: r.item, version: v, provider: p }) + '>' + esc(p) + '</span>'; }).join('');
+        return '<span class="td first ' + z + '"><span class="lnk"' + go({ org: r.org, collection: 'boxes', item: r.item, version: v }) + '>' + esc(v) + '</span>' + (e.deprecated ? '<span class="status danger">Deprecated</span>' : '') + '</span>' + cell(z, esc(e.note)) + cell(z, providers) + cell(z, org.member ? '<span class="btn sm danger">Delete</span>' : '');
+      }).join('');
+      return '<div class="page-head"><div class="hero"><div class="artwork"></div><div class="hero-text"><div class="title">' + esc(r.item) + ' <span class="star">' + (b.watched ? '★' : '☆') + '</span></div><div class="subtitle">' + esc(r.org + ' / ' + r.item) + '</div><div class="chips"><span class="status ' + (b.published ? 'success' : 'warning') + '">' + (b.published ? 'Published' : 'Pending') + '</span><span class="status ' + (b.pub ? 'info' : 'secondary') + '">' + (b.pub ? 'Public' : 'Private') + '</span><span class="status os">' + esc(b.os) + '</span></div><div>' + esc(b.desc) + '</div></div></div><div class="actions">' + manage + '<span class="btn dark"' + go({ org: r.org }) + '>Back to files</span></div></div>'
+        + '<div class="strip"><div class="strip-head"><span class="label">Use this box</span><span class="select">Version <span class="v">' + esc(live) + ' ▾</span><span class="btn sm primary" title="Deploy ' + esc(live) + ' with Hyperweaver">' + SVG.deploy + 'Deploy</span></span></div><div class="code"><span>vagrant init ' + esc(r.org + '/' + r.item) + ' https://boxvault.startcloud.com/' + esc(r.org) + '/boxes/' + esc(r.item) + '\nvagrant up</span><span class="copy">Copy</span></div><div class="more">▸ Option 2: use a Vagrantfile pinned to this version</div><div class="more">▸ Starter kit (self-bootstrapping Vagrantfile + Hosts.yml)</div></div>'
+        + '<div class="sect"><h2>Versions <span class="countb">' + names.length + '</span></h2>' + (org.member ? '<span class="btn sm success">Add Version</span>' : '') + '</div>'
+        + '<div class="grid" style="grid-template-columns: 140px 1fr 1fr 110px;"><span class="th">Version</span><span class="th">Details</span><span class="th">Providers</span><span class="th">Actions</span>' + rows + '</div>';
+    };
+    var versionHtml = function (r, org) {
+      var e = org.boxes[r.item].versions[r.version];
+      var rows = e.providers.map(function (p, i) {
+        var z = zebra(i);
+        return '<span class="td first ' + z + '"><span class="lnk"' + go({ org: r.org, collection: 'boxes', item: r.item, version: r.version, provider: p }) + '>' + esc(p) + '</span></span>' + cell(z, '') + cell(z, '<span class="btn sm outline">Download amd64</span>') + cell(z, org.member ? '<span class="btn sm danger">Delete</span>' : '');
+      }).join('');
+      return '<div class="page-head"><div class="hero-text"><div class="title">Version ' + esc(r.version) + '</div>' + (e.deprecated ? '<div class="chips"><span class="status danger">Deprecated</span></div>' : '') + '</div><div class="actions">' + (org.member ? '<span class="btn primary">Edit</span><span class="btn danger">Delete</span>' : '') + '<span class="btn dark"' + go({ org: r.org, collection: 'boxes', item: r.item }) + '>Back</span></div></div>'
+        + (e.deprecated ? '<div class="alert"><strong>This version is deprecated</strong><span class="sp"></span>' + (org.member ? '<span class="btn sm success">Undeprecate</span>' : '') + '</div>' : '')
+        + '<div class="meta"><span>Description: <strong>' + esc(e.note) + '</strong></span><span>Created: <strong>2026-08-14</strong></span></div>'
+        + '<div class="sect"><h2>Providers for version ' + esc(r.version) + ' <span class="countb">' + e.providers.length + '</span></h2>' + (org.member ? '<span class="btn sm success">Add Provider</span>' : '') + '</div>'
+        + '<div class="grid" style="grid-template-columns: 160px 1fr 200px 110px;"><span class="th">Name</span><span class="th">Details</span><span class="th">Download</span><span class="th">Actions</span>' + rows + '</div>';
+    };
+    var providerHtml = function (r, org) {
+      return '<div class="page-head"><div class="hero-text"><div class="title">' + esc(r.provider) + '</div><div class="subtitle">' + esc(r.item + ' ' + r.version) + '</div></div><div class="actions">' + (org.member ? '<span class="btn primary">Edit</span><span class="btn danger">Delete</span>' : '') + '<span class="btn dark"' + go({ org: r.org, collection: 'boxes', item: r.item, version: r.version }) + '>Back</span></div></div>'
+        + '<div class="sect"><h2>Architectures for provider ' + esc(r.provider) + ' <span class="countb">1</span></h2>' + (org.member ? '<span class="btn sm success">Add Architecture</span>' : '') + '</div>'
+        + '<div class="grid" style="grid-template-columns: 120px 110px 100px 1fr 120px 150px 110px;"><span class="th">Name</span><span class="th">Default box</span><span class="th">File size</span><span class="th">Checksum</span><span class="th">Checksum type</span><span class="th">Download</span><span class="th">Actions</span><span class="td first">amd64</span><span class="td">Yes</span><span class="td">1.1 GB</span><span class="td"><span class="lnk">9f1c3a7e2b6d…e7c2d9a4f6b1</span></span><span class="td">SHA256</span><span class="td"><span class="btn sm outline">Download (210)</span></span><span class="td">' + (org.member ? '<span class="btn sm danger">Delete</span>' : '') + '</span></div>';
+    };
+    var crumbsHtml = function () {
+      var r = state.route;
+      var out = '';
+      var crumb = function (route, inner) { out += '<span class="sep">›</span><span class="crumb"' + go(route) + '>' + inner + '</span>'; };
+      if (r.org) { crumb({ org: r.org }, '<span class="mark sm ' + DATA[r.org].mark + '"></span>' + esc(r.org)); }
+      if (r.collection) { crumb({ org: r.org, collection: r.collection }, (r.collection === 'boxes' ? SVG.box + 'Boxes' : SVG.iso + 'ISOs')); }
+      if (r.item) { crumb({ org: r.org, collection: r.collection, item: r.item }, esc(r.item)); }
+      if (r.version) { crumb({ org: r.org, collection: r.collection, item: r.item, version: r.version }, esc(r.version)); }
+      if (r.provider) { crumb(r, esc(r.provider)); }
+      return out;
+    };
+    var panelHtml = function (groups, activeCount) {
+      var rows = groups.map(function (g) {
+        var pills = g.pills.map(function (p) { return '<span class="pill ' + p.cls + '" data-filter="' + esc(p.filter) + '">' + esc(p.label) + ' (' + p.count + ')</span>'; }).join('');
+        return '<div class="group"><span class="group-label">' + esc(g.label) + '</span><span class="pills">' + pills + '</span></div>';
+      }).join('');
+      return '<div class="filters">' + rows + '<div class="foot"><span>' + activeCount + (activeCount === 1 ? ' filter active' : ' filters active') + '</span><span class="sp"></span><span class="lnk" data-act="clear">Clear filters</span></div></div>';
+    };
+    var menuHtml = function () {
+      return '<div class="menu"><span class="item" data-act="switcher"><span class="mark ' + DATA[state.active].mark + '"></span><span class="stack"><span>' + esc(state.active) + '</span><small>Active organization · context, never location</small></span></span><div class="divider"></div><div class="menu-header">BoxVault</div><span class="item">' + SVG.console + 'Organization console<span class="stack" style="margin-left: auto"><small>for the active organization</small></span></span></div>';
+    };
+    var modalHtml = function () {
+      var rows = ['STARTcloud', 'PhoneSwitchBoard'].map(function (name) {
+        var active = name === state.active;
+        return '<span class="orow ' + (active ? 'active' : '') + '" data-act="pick:' + esc(name) + '"><span class="mark ' + DATA[name].mark + '"></span><span class="stack"><strong>' + esc(name) + '</strong><small>' + esc(DATA[name].blurb) + '</small></span><span class="role">Owner</span>' + (active ? '<span class="check">✓</span>' : '') + '</span>';
+      }).join('');
+      return '<div class="scrim" data-act="close"><div class="modal" data-act="noop"><div class="modal-head"><h3>' + SVG.console + 'Switch Organization</h3><span class="close" data-act="close">×</span></div><div class="list">' + rows + '</div></div></div>';
+    };
+
+    var render = function () {
+      var r = state.route;
+      var isHome = !r.org;
+      var isOrg = Boolean(r.org) && !r.collection;
+      var isCollection = Boolean(r.org) && Boolean(r.collection) && !r.item;
+      var isListing = isHome || isOrg || isCollection;
+      var isIso = Boolean(r.item) && r.collection === 'isos';
+      var isBox = Boolean(r.item) && r.collection === 'boxes' && !r.version;
+      var isVersion = Boolean(r.version) && !r.provider;
+      var isProvider = Boolean(r.provider);
+      var org = r.org ? DATA[r.org] : null;
+      var pageOrgs = r.org ? [r.org] : ORGS;
+      var kindsAll = r.collection ? [r.collection] : ['boxes', 'isos'];
+      var allRows = {};
+      var total = 0;
+      kindsAll.forEach(function (k) { allRows[k] = rowsFor(k, pageOrgs); total += allRows[k].length; });
+      var kinds = kindsAll.filter(function (k) { return filterOn('collection', k); });
+      var visOf = function (row) { return row.pub ? 'public' : 'private'; };
+      var passes = function (row) { return filterOn('visibility', visOf(row)); };
+      var activeCount = Object.keys(state.filters.collection).length + Object.keys(state.filters.visibility).length;
+      var groups = [];
+      if (isListing) {
+        if (kindsAll.length > 1) {
+          groups.push({ label: 'Collection', pills: kindsAll.map(function (k) { return { label: k === 'boxes' ? 'Boxes' : 'ISOs', count: allRows[k].length, cls: state.filters.collection[k] ? 'on-primary' : '', filter: 'collection:' + k }; }) });
+        }
+        var visCounts = { public: 0, private: 0 };
+        kinds.forEach(function (k) { allRows[k].forEach(function (row) { visCounts[visOf(row)] += 1; }); });
+        groups.push({ label: 'Visibility', pills: ['public', 'private'].map(function (v) { return { label: v === 'public' ? 'Public' : 'Private', count: visCounts[v], cls: state.filters.visibility[v] ? 'on-info' : '', filter: 'visibility:' + v }; }) });
+      }
+      var matched = 0;
+      var collections = [];
+      if (isListing) {
+        kinds.forEach(function (kind) {
+          var rows = allRows[kind].filter(passes);
+          matched += rows.length;
+          collections.push(collection(kind, rows, { grouped: isHome, groupKey: 'home', actions: !isHome && org.member, toggle: isCollection, filtering: activeCount > 0 }));
+        });
+      }
+      var placeholder = kindsAll.length > 1 ? 'Search…' : (kindsAll[0] === 'boxes' ? 'Search boxes' : 'Search ISOs');
+      var gearOn = state.panel || activeCount > 0 ? 'on' : '';
+      var theme = THEMES[state.theme];
+      var cluster = isListing
+        ? '<span class="search">' + SVG.search + '<span class="ph">' + placeholder + '</span><span class="count">' + matched + ' / ' + total + '</span><span class="tool ' + gearOn + '" data-act="panel">' + SVG.gear + '</span><span class="tool" data-act="clear">' + SVG.x + '</span></span>'
+        : '<span class="btn icon">' + SVG.search + '</span>';
+      cluster += '<span class="btn icon" data-act="theme" title="' + theme.title + '">' + theme.svg + '</span><span class="btn icon lang" title="Change language, English"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg><span class="lang-code">EN</span></span><span class="btn account ' + (state.menu ? 'open' : '') + '" data-act="menu"><span class="name">Mark Gilbert</span><span class="avatar"></span></span>';
+      var body;
+      if (isListing) { body = listingHtml({ isHome: isHome, isOrg: isOrg, org: org, collections: collections, view: viewOf() }); }
+      else if (isIso) { body = isoHtml(r, org); }
+      else if (isBox) { body = boxHtml(r, org); }
+      else if (isVersion) { body = versionHtml(r, org); }
+      else if (isProvider) { body = providerHtml(r, org); }
+      live.innerHTML = '<div class="navbar"><span class="brand"' + go({}) + '><span class="brand-mark">' + SVG.brand + '</span>BoxVault</span><div class="nav">' + crumbsHtml() + '</div><div class="cluster">' + cluster + '</div></div>'
+        + (isListing && state.panel ? panelHtml(groups, activeCount) : '')
+        + '<div class="demo">' + body + '</div>' + TRY + FOOTER
+        + (state.menu ? menuHtml() : '') + (state.modal ? modalHtml() : '');
+    };
+
+    live.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-go],[data-act],[data-fold],[data-filter],[data-view]');
+      if (!el || !live.contains(el)) { return; }
+      e.preventDefault();
+      if (el.hasAttribute('data-go')) {
+        var route = JSON.parse(el.getAttribute('data-go'));
+        state.route = { org: route.org || '', collection: route.collection || '', item: route.item || '', version: route.version || '', provider: route.provider || '' };
+        state.menu = false;
+        state.modal = false;
+      } else if (el.hasAttribute('data-fold')) {
+        var key = el.getAttribute('data-fold');
+        state.folded[key] = !state.folded[key];
+      } else if (el.hasAttribute('data-filter')) {
+        var parts = el.getAttribute('data-filter').split(':');
+        var set = state.filters[parts[0]];
+        if (set[parts[1]]) { delete set[parts[1]]; } else { set[parts[1]] = true; }
+      } else if (el.hasAttribute('data-view')) {
+        state.view[pageKey()] = el.getAttribute('data-view');
+      } else {
+        var act = el.getAttribute('data-act');
+        if (act === 'panel') { state.panel = !state.panel; }
+        else if (act === 'clear') { state.filters = { collection: {}, visibility: {} }; }
+        else if (act === 'menu') { state.menu = !state.menu; }
+        else if (act === 'switcher') { state.modal = true; state.menu = false; }
+        else if (act === 'close') { state.modal = false; }
+        else if (act.indexOf('pick:') === 0) { state.active = act.slice(5); state.modal = false; }
+        else if (act === 'theme') {
+          state.theme = (state.theme + 1) % THEMES.length;
+          var next = THEMES[state.theme];
+          if (next.attr) { document.documentElement.setAttribute('data-theme', next.attr); } else { document.documentElement.removeAttribute('data-theme'); }
+        }
+      }
+      render();
+    });
+
+    render();
+  })();
+</script>

@@ -1,0 +1,583 @@
+<meta charset="utf-8">
+<title>STARTcloud Universal Validation</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --header: #f6f9fc;
+    --surface: #ffffff;
+    --surface-2: #eaeff4;
+    --border: #dbe4ee;
+    --text: #46546e;
+    --heading: #2a3547;
+    --muted: #7c8fac;
+    --primary: #5d87ff;
+    --primary-contrast: #ffffff;
+    --label: #5d87ff;
+    --danger: #e2533a;
+    --danger-bg: #fdeeeb;
+    --warning: #d99a16;
+    --warning-bg: #fff6e0;
+    --success: #13a37f;
+    --success-bg: #e6f7f1;
+    --info: #539bff;
+    --outline: #6c757d;
+    --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
+    --code: #1b1e22;
+    --changed: #fff6e0;
+    --changed-border: #f0d48a;
+    --focus: #5d87ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #212529;
+      --header: #2b3035;
+      --surface: #2b3035;
+      --surface-2: #343a40;
+      --border: #495057;
+      --text: #8b9bb4;
+      --heading: #ffffff;
+      --muted: #8b9bb4;
+      --label: #9eb7ff;
+      --danger: #fa896b;
+      --danger-bg: #3b2a26;
+      --warning: #f0b429;
+      --warning-bg: #3a3320;
+      --success: #13deb9;
+      --success-bg: #1f3a35;
+      --outline: #8b9bb4;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --changed: #3a3320;
+      --changed-border: #6b5a22;
+      --focus: #9eb7ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #212529;
+    --header: #2b3035;
+    --surface: #2b3035;
+    --surface-2: #343a40;
+    --border: #495057;
+    --text: #8b9bb4;
+    --heading: #ffffff;
+    --muted: #8b9bb4;
+    --label: #9eb7ff;
+    --danger: #fa896b;
+    --danger-bg: #3b2a26;
+    --warning: #f0b429;
+    --warning-bg: #3a3320;
+    --success: #13deb9;
+    --success-bg: #1f3a35;
+    --outline: #8b9bb4;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --changed: #3a3320;
+    --changed-border: #6b5a22;
+    --focus: #9eb7ff;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.5; }
+  h1, h2, h3, h4 { font-family: 'Montserrat', 'Open Sans', sans-serif; color: var(--heading); text-wrap: balance; margin: 0; font-weight: 600; }
+  a { color: var(--label); text-decoration: none; }
+  a:hover { color: var(--primary); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; }
+
+  .page { max-width: 1240px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 40px; }
+  .intro { max-width: 72ch; display: flex; flex-direction: column; gap: 8px; }
+  .intro h1 { font-size: 26px; }
+  .intro p { margin: 0; }
+  .legend { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend .sw { width: 14px; height: 14px; border-radius: 3px; background: var(--changed); border: 1px solid var(--changed-border); }
+  .state { display: flex; flex-direction: column; gap: 14px; }
+  .state-label { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--label); font-weight: 600; }
+  .state-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .frame { border: 1px solid var(--border); border-radius: 7px; background: var(--bg); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .frame.live { min-height: 560px; }
+  .navbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: var(--header); border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--heading); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 15px; }
+  .brand-mark { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: var(--primary-contrast); }
+  .nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .crumb { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--text); padding: 6px 10px; border-radius: 5px; }
+  .sep { color: var(--muted); font-size: 17px; }
+  .cluster { display: flex; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 5px; border: 1px solid var(--outline); background: transparent; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); color: var(--heading); }
+  .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .btn.icon { width: 34px; padding: 0; justify-content: center; border: 0; }
+  .btn.primary { border-color: var(--primary); background: var(--primary); color: var(--primary-contrast); font-weight: 600; }
+  .btn.danger { border-color: var(--danger); background: var(--danger); color: #fff; }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+  .btn.account { border: 0; padding: 0 16px; gap: 8px; }
+  .btn.ghost { border-style: dashed; color: var(--muted); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #5d87ff, #13deb9); flex-shrink: 0; }
+  .name { color: var(--heading); font-weight: 600; }
+  .flag { width: 18px; height: 13px; border-radius: 2px; background: repeating-linear-gradient(180deg, #b22234 0 2px, #fff 2px 4px); position: relative; }
+  .flag::before { content: ''; position: absolute; left: 0; top: 0; width: 8px; height: 7px; background: #3c3b6e; }
+  .mark { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #fa896b, #ffae1f); flex-shrink: 0; display: inline-block; vertical-align: middle; }
+  .mark.sm { width: 16px; height: 16px; border-radius: 4px; }
+  .demo { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .site-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; font-size: 13px; background: var(--header); border-top: 1px solid var(--border); color: var(--muted); margin-top: auto; }
+  .site-footer .c { display: flex; align-items: center; gap: 8px; }
+  .site-footer .m { width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #13deb9, #5d87ff); }
+  .site-footer .heart { color: var(--success); }
+  .lnk { color: var(--label); cursor: pointer; }
+  .status { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: #fff; background: var(--outline); white-space: nowrap; }
+  .status.danger { background: var(--danger); }
+  .status.success { background: var(--success); }
+  .status.info { background: var(--info); color: #0b2a4a; }
+  .status.warning { background: var(--warning); color: #2a3547; }
+
+  .sect { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .sect h2 { font-size: 17px; }
+  .card { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); display: flex; flex-direction: column; }
+  .card-h { padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--heading); font-family: 'Montserrat', sans-serif; font-size: 14px; }
+  .card-b { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+  .form { display: flex; flex-direction: column; gap: 14px; max-width: 560px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { color: var(--heading); font-weight: 600; font-size: 13px; }
+  .field .hint { color: var(--muted); font-size: 12px; }
+  .field input, .field select, .field textarea { font: inherit; font-size: 13.5px; color: var(--heading); background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 7px 10px; height: 34px; }
+  .field textarea { height: auto; min-height: 64px; resize: vertical; }
+  .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+  .field.invalid label { color: var(--danger); }
+  .field-error { color: var(--danger); font-size: 12.5px; font-weight: 600; display: flex; align-items: flex-start; gap: 6px; }
+  .field-error .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .field-error::before { content: ''; width: 3px; align-self: stretch; background: var(--danger); border-radius: 2px; flex-shrink: 0; }
+  .summary { border: 2px solid var(--danger); border-radius: 6px; padding: 12px 14px; background: var(--danger-bg); display: flex; flex-direction: column; gap: 6px; max-width: 560px; }
+  .summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .summary h3 { font-size: 15px; color: var(--danger); }
+  .summary ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+  .summary a { color: var(--danger); text-decoration: underline; font-weight: 600; }
+  .inputrow { display: flex; align-items: center; gap: 8px; }
+  .inputrow .org { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .try { font-size: 12.5px; color: var(--muted); padding: 0 20px 12px; }
+
+  .cards { position: absolute; top: 74px; right: 16px; display: flex; flex-direction: column; gap: 8px; width: 340px; z-index: 3; }
+  .ncard { border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--heading); }
+  .ncard.success { border-left-color: var(--success); }
+  .ncard .sp { flex: 1; }
+  .ncard .x { color: var(--muted); cursor: pointer; }
+  .banner { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--warning-bg); border-bottom: 1px solid var(--border); color: var(--heading); font-size: 13px; }
+  .banner .sp { flex: 1; }
+
+  .callouts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .callout { border: 1px dashed var(--label); border-radius: 6px; padding: 10px 12px; font-size: 12.5px; background: var(--bg); max-width: 380px; }
+  .callout.changed { border-style: solid; border-color: var(--changed-border); background: var(--changed); }
+  .callout strong { color: var(--heading); }
+  .spec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .spec.wide { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .spec-col { display: flex; flex-direction: column; gap: 10px; }
+  .spec h2 { font-size: 15px; }
+  .tbl { display: grid; font-size: 13px; }
+  .tbl .hc { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--heading); font-weight: 600; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .tbl .c.k { color: var(--heading); font-weight: 600; }
+  .tbl .c.was { color: var(--muted); }
+  .spec pre { margin: 0; font-size: 12px; background: var(--surface-2); padding: 10px 12px; border-radius: 5px; overflow-x: auto; color: var(--text); }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+  .payload { background: var(--code); color: #e6edf3; border-radius: 6px; padding: 12px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; white-space: pre; overflow-x: auto; }
+  .payload .st { color: #ffae1f; }
+  .payload .k { color: #9eb7ff; }
+  .payload .s { color: #13deb9; }
+  @media (max-width: 760px) { .spec, .two, .row2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="page">
+
+  <div class="intro">
+    <h1>STARTcloud Universal Validation</h1>
+    <p>The picture of the Universal Validation Contract; where the two disagree, the contract's text wins. One rule set per UI backend, written once as JSON Schema keywords and read by the form and the write route alike, so a value cannot pass in the browser and fail on the server or the reverse. One place a field error is shown (beside its field), one place a form's errors are listed (the summary at its top), one body every UI backend answers when a write is refused (RFC 9457 Problem Details with an <code>errors</code> array of JSON Pointers), and one status per case: 422 when a value breaks a rule, 409 when it is already taken, 400 when the request could not be read. Cards, banners and toasts never carry a field error. The first frame is live: type in a field and leave it, submit the form empty, then use the three buttons under the form to see the same form after the server answers 422, 409 and a request-level failure.</p>
+    <span class="legend"><span class="sw"></span>a yellow note marks what this design changed against the apps as they were before it</span>
+  </div>
+
+  <div class="state">
+    <div class="state-label">Live — the Create box form of the org page: rules evaluated on blur and on submit, the summary on submit, the server's errors painted into the same spots</div>
+    <div class="frame live" id="live"></div>
+    <div class="callouts">
+      <div class="callout"><strong>What this frame proves.</strong> The same rule set evaluates in the browser and, simulated here, on the server; every failure lands beside its field with the same wording the summary links to, and nothing about a field ever appears as a card.</div>
+      <div class="callout changed"><strong>Changed: timing.</strong> No rule runs while the user types (NN/g guideline 7, GOV.UK); a field is checked when the user leaves it and every field is checked on submit. The box, version, provider and architecture forms checked the name on every keystroke and disabled Save; that goes.</div>
+      <div class="callout changed"><strong>Changed: no field error in a card.</strong> The org console, the admin organizations tab, the box and ISO slots and discovery raised field errors through <code>notify()</code>; those become inline errors and the summary. Cards keep what they had: the outcome of a request that was accepted or refused as a whole.</div>
+      <div class="callout changed"><strong>Changed: one error component.</strong> Six drawings (<code>auth-field-error</code>, <code>text-danger</code>, <code>invalid-feedback</code>, <code>FormField</code>, <code>AuthAlert</code>, cards) become <code>FieldError</code> and <code>FormErrorSummary</code>, drawn once in <code>components/common</code>.</div>
+      <div class="callout"><strong>Accessibility, on every field:</strong> <code>aria-invalid="true"</code> only after a blur or submit found it wrong (ARIA 1.2), the control's <code>aria-describedby</code> and <code>aria-errormessage</code> naming the error's id, the error text prefixed by a visually hidden "Error:" (GOV.UK), the summary <code>role="alert"</code> and focused on submit (WCAG 4.1.3, ARIA19), the input never cleared.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">One field, four states — at rest, focused, wrong after blur, wrong after the server's 422; the wording tells the user what to enter</div>
+    <div class="frame">
+      <div class="demo">
+        <div class="row2">
+          <div class="field">
+            <label for="s1">Box name</label>
+            <div class="inputrow"><span class="org">STARTcloud /</span><input id="s1" type="text" value="" placeholder=""></div>
+            <span class="hint">Letters, digits, dash and period; this is the URL and the folder.</span>
+          </div>
+          <div class="field">
+            <label for="s2">Box name</label>
+            <div class="inputrow"><span class="org">STARTcloud /</span><input id="s2" type="text" value="alma9_ser" style="outline: 2px solid var(--focus); outline-offset: 1px;"></div>
+            <span class="hint">Letters, digits, dash and period; this is the URL and the folder.</span>
+          </div>
+          <div class="field invalid">
+            <label for="s3">Box name</label>
+            <div class="inputrow"><span class="org">STARTcloud /</span><input id="s3" type="text" value="alma9_server" aria-invalid="true" aria-describedby="s3-error" aria-errormessage="s3-error"></div>
+            <span class="field-error" id="s3-error"><span><span class="vh">Error:</span>Use only letters, digits, dashes and periods in the box name.</span></span>
+          </div>
+          <div class="field invalid">
+            <label for="s4">Box name</label>
+            <div class="inputrow"><span class="org">STARTcloud /</span><input id="s4" type="text" value="alma9-server" aria-invalid="true" aria-describedby="s4-error" aria-errormessage="s4-error"></div>
+            <span class="field-error" id="s4-error"><span><span class="vh">Error:</span>alma9-server is already taken in STARTcloud; enter a different box name.</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>At rest and focused</strong> the field carries no <code>aria-invalid</code> and no red; the hint under it is the rule in plain words, so the user does not have to fail to learn it.</div>
+      <div class="callout"><strong>After blur</strong> the label, border and message turn danger, the message sits under the control in the label's own words ("box name", not "field"), and says what to enter, never "invalid" or "please" (GOV.UK, WCAG 3.3.3).</div>
+      <div class="callout"><strong>After the server</strong> the same spot shows the server's <code>errors[]</code> entry whose <code>pointer</code> is <code>/name</code>, translated by the UI from its <code>rule</code> (<code>unique</code>) and <code>params</code>; the server's <code>detail</code> is for logs and other clients, never parsed for display (RFC 9457 §3.1.4).</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The summary — submit with two failing fields: focus moves to the summary, each line links to its field, the wording is identical to the inline message</div>
+    <div class="frame">
+      <div class="demo">
+        <div class="sect"><h2>Create new box</h2></div>
+        <div class="summary" role="alert" tabindex="-1">
+          <h3>There is a problem</h3>
+          <ul>
+            <li><a href="#e1">Enter a box name.</a></li>
+            <li><a href="#e2">Use only letters, digits, dashes, underscores and periods in the version, not starting with a dash or period.</a></li>
+          </ul>
+        </div>
+        <div class="form">
+          <div class="field invalid">
+            <label for="e1">Box name</label>
+            <div class="inputrow"><span class="org">STARTcloud /</span><input id="e1" type="text" value="" aria-invalid="true" aria-describedby="e1-error" aria-errormessage="e1-error"></div>
+            <span class="field-error" id="e1-error"><span><span class="vh">Error:</span>Enter a box name.</span></span>
+          </div>
+          <div class="field">
+            <label for="e3">Description</label>
+            <textarea id="e3">Alma 9 Template</textarea>
+          </div>
+          <div class="field invalid">
+            <label for="e2">First version</label>
+            <input id="e2" type="text" value=".1.2.3" aria-invalid="true" aria-describedby="e2-error" aria-errormessage="e2-error">
+            <span class="field-error" id="e2-error"><span><span class="vh">Error:</span>Use only letters, digits, dashes, underscores and periods in the version, not starting with a dash or period.</span></span>
+          </div>
+          <div class="actions"><span class="btn primary">Create box</span><span class="btn">Cancel</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>New: the summary.</strong> Shown whenever a submit finds any error, even one (GOV.UK error summary); at the top of the form, <code>role="alert"</code>, <code>tabindex="-1"</code> and focused, one link per field jumping to the control; the lines are the inline messages verbatim, never a second phrasing.</div>
+      <div class="callout"><strong>Submit stays enabled.</strong> A disabled Save hides why; the button submits, the rules run, the summary explains. The inputs keep every value, right or wrong (NN/g guideline 10, GOV.UK).</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">The wire — what the UI backend answers on a refused write, and how the UI reads it</div>
+    <div class="frame">
+      <div class="demo">
+        <div class="two">
+          <div class="spec-col">
+            <h2>422 Unprocessable Content · application/problem+json</h2>
+            <div class="payload"><span class="st">HTTP/1.1 422 Unprocessable Content</span>
+Content-Type: application/problem+json
+
+{
+  <span class="k">"type"</span>: <span class="s">"https://auth.startcloud.com/probs/validation"</span>,
+  <span class="k">"title"</span>: <span class="s">"The request did not pass validation."</span>,
+  <span class="k">"status"</span>: 422,
+  <span class="k">"errors"</span>: [
+    { <span class="k">"pointer"</span>: <span class="s">"/name"</span>, <span class="k">"rule"</span>: <span class="s">"pattern"</span>, <span class="k">"params"</span>: { <span class="k">"pattern"</span>: <span class="s">"slug"</span> },
+      <span class="k">"detail"</span>: <span class="s">"name must match slug"</span> },
+    { <span class="k">"pointer"</span>: <span class="s">"/version_number"</span>, <span class="k">"rule"</span>: <span class="s">"minLength"</span>, <span class="k">"params"</span>: { <span class="k">"minLength"</span>: 1 },
+      <span class="k">"detail"</span>: <span class="s">"version_number must be at least 1 character"</span> }
+  ]
+}</div>
+            <h2>409 Conflict · the one failing rule is unique</h2>
+            <div class="payload"><span class="st">HTTP/1.1 409 Conflict</span>
+Content-Type: application/problem+json
+
+{
+  <span class="k">"type"</span>: <span class="s">"https://auth.startcloud.com/probs/conflict"</span>,
+  <span class="k">"title"</span>: <span class="s">"The value is already taken."</span>,
+  <span class="k">"status"</span>: 409,
+  <span class="k">"errors"</span>: [
+    { <span class="k">"pointer"</span>: <span class="s">"/name"</span>, <span class="k">"rule"</span>: <span class="s">"unique"</span>, <span class="k">"params"</span>: { <span class="k">"scope"</span>: <span class="s">"STARTcloud"</span> },
+      <span class="k">"detail"</span>: <span class="s">"name is already used in STARTcloud"</span> }
+  ]
+}</div>
+            <h2>400 Bad Request · the body could not be read</h2>
+            <div class="payload"><span class="st">HTTP/1.1 400 Bad Request</span>
+Content-Type: application/problem+json
+
+{
+  <span class="k">"type"</span>: <span class="s">"https://auth.startcloud.com/probs/bad-request"</span>,
+  <span class="k">"title"</span>: <span class="s">"The request could not be read."</span>,
+  <span class="k">"status"</span>: 400,
+  <span class="k">"detail"</span>: <span class="s">"Unexpected token } in JSON at position 41"</span>
+}</div>
+          </div>
+          <div class="spec-col">
+            <h2>What the UI does with each</h2>
+            <div class="tbl" style="grid-template-columns: 70px 1fr;">
+              <span class="hc">Status</span><span class="hc">Surface</span>
+              <span class="c k">422</span><span class="c">every <code>errors[]</code> entry painted inline at the field its <code>pointer</code> names and listed in the summary; the message comes from <code>validation.&lt;rule&gt;</code> with <code>params</code> and the field's label; an entry whose pointer matches no field goes to the summary alone</span>
+              <span class="c k">409</span><span class="c">the same, the <code>unique</code> line reading "… is already taken …"</span>
+              <span class="c k">400</span><span class="c">one danger card, "The request could not be sent.", nothing on a field; a 400 is a bug in the client, not the user's data</span>
+              <span class="c k">403</span><span class="c">one danger card from <code>errors.accessDenied</code>; the form stays</span>
+              <span class="c k">404</span><span class="c">one danger card from <code>errors.notFound</code></span>
+              <span class="c k">5xx, 0</span><span class="c">one danger card from <code>errors.request</code> or <code>errors.network</code>; the values stay so the user can retry</span>
+              <span class="c k">2xx</span><span class="c">one success card as today, the form closes or reloads</span>
+            </div>
+            <h2>Never</h2>
+            <div class="tbl" style="grid-template-columns: 1fr;">
+              <span class="c">a field error in a card, a banner, an OS toast or a hub notification</span>
+              <span class="c">a request-level failure painted on a field</span>
+              <span class="c">the server's <code>detail</code> or <code>title</code> shown to the user; the UI translates from <code>rule</code></span>
+              <span class="c">a different status for the same failure on two routes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">A request-level failure — the same form after a 503 from the UI backend: one danger card top right, the fields untouched</div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span>
+        <div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span></div>
+        <div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon"><span class="flag"></span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div>
+      </div>
+      <div class="cards"><div class="ncard" role="alert"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--danger); flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6"></path><path d="M9 9l6 6"></path></svg><span>The request failed. Your values are kept; try again.</span><span class="sp"></span><span class="x">×</span></div></div>
+      <div class="demo">
+        <div class="sect"><h2>Create new box</h2></div>
+        <div class="form">
+          <div class="field"><label for="f1">Box name</label><div class="inputrow"><span class="org">STARTcloud /</span><input id="f1" type="text" value="alma9-server"></div></div>
+          <div class="field"><label for="f2">Description</label><textarea id="f2">Alma 9 Template</textarea></div>
+          <div class="actions"><span class="btn primary">Create box</span><span class="btn">Cancel</span></div>
+        </div>
+      </div>
+      <div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.78.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><strong>Unchanged:</strong> this is the notices contract's card, <code>notify('danger', …)</code>, at most four, newest first, warning and danger until dismissed; the banner band stays for state (session ended, catalog denied) and is never a validation surface.</div>
+      <div class="callout"><strong>The line between the two:</strong> a card answers "did my request go through", a field error answers "what is wrong with this value"; a response with <code>errors[]</code> is the second kind, everything else the first.</div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">Sign in — the same components on the auth pages: required on submit, the server's 422 for a bad password policy painted inline</div>
+    <div class="frame">
+      <div class="demo" style="align-items: center;">
+        <div class="form" style="width: 380px;">
+          <h2 style="font-size: 20px; text-align: center;">Create your account</h2>
+          <div class="summary" role="alert" tabindex="-1"><h3>There is a problem</h3><ul><li><a href="#p1">Enter a password of at least 15 characters.</a></li></ul></div>
+          <div class="field"><label for="u1">Username</label><input id="u1" type="text" value="mark.gilbert"></div>
+          <div class="field"><label for="m1">Email</label><input id="m1" type="email" value="mark@m4kr.net"></div>
+          <div class="field invalid"><label for="p1">Password</label><input id="p1" type="password" value="hunter2hunter" aria-invalid="true" aria-describedby="p1-error" aria-errormessage="p1-error"><span class="field-error" id="p1-error"><span><span class="vh">Error:</span>Enter a password of at least 15 characters.</span></span><span class="hint">At least 15 characters; any characters, spaces included. Longer is better than complicated.</span></div>
+          <div class="actions"><span class="btn primary" style="width: 100%; justify-content: center;">Sign up</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed"><strong>Changed: the password rule.</strong> NIST SP 800-63B rev 4 §3.1.1.2: minimum 15 for a single-factor password, at least 64 allowed, no composition rules, Unicode and spaces accepted, a blocklist on the server. The UI's 6–40 and the backend's upper/lower/number/symbol knobs go; the UI backend publishes its minimum and the UI's rule reads it.</div>
+      <div class="callout changed"><strong>Changed: the email rule.</strong> The WHATWG "valid e-mail address" grammar on both sides, one regex, replacing the three the UI carried and the check the backends did not do.</div>
+      <div class="callout"><strong>The auth pages</strong> keep their own column and typography but draw the same <code>FieldError</code> and <code>FormErrorSummary</code>; the <code>AuthAlert</code> stays for the page-level messages that are not about a field (a provider error, a closed registration).</div>
+    </div>
+  </div>
+
+  <div class="spec wide">
+    <div class="spec-col">
+      <h2>The law — one rule set per UI backend, read by the form and the route</h2>
+      <div class="tbl" style="grid-template-columns: 200px 1fr 1fr;">
+        <span class="hc">Field</span><span class="hc">Rule (JSON Schema keywords)</span><span class="hc">Why</span>
+        <span class="c k">box, ISO, organization, username</span><span class="c"><code>pattern: slug</code> = <code>^[A-Za-z0-9.-]+$</code> and not containing <code>..</code>; <code>minLength 1</code>, <code>maxLength 255</code>; <code>unique</code> in the organization</span><span class="c">the name is a URL path segment and a folder: inside RFC 3986 unreserved, no dot-segments; today's backend rule, nothing stored violates it</span>
+        <span class="c k">version, provider, architecture</span><span class="c"><code>pattern: identifier</code> = <code>^[0-9a-zA-Z][0-9a-zA-Z._-]*$</code> and not containing <code>..</code>; <code>maxLength 255</code>; <code>unique</code> in the parent</span><span class="c">today's backend rule with the leading-character check the UI lacked</span>
+        <span class="c k">username length</span><span class="c"><code>minLength 3</code>, <code>maxLength 64</code></span><span class="c">the UI's 3–20 was arbitrary, the backend had none</span>
+        <span class="c k">password</span><span class="c"><code>minLength</code> from the UI backend, default 15; <code>maxLength 128</code>; no pattern</span><span class="c">NIST SP 800-63B rev 4 §3.1.1.2</span>
+        <span class="c k">email</span><span class="c"><code>format: email</code> asserted with the WHATWG regex; <code>maxLength 255</code></span><span class="c">HTML Standard, valid e-mail address</span>
+        <span class="c k">display name</span><span class="c"><code>maxLength 255</code>, optional</span><span class="c">today's backend rule</span>
+        <span class="c k">description, release notes, join message</span><span class="c"><code>type: string</code>, no length rule</span><span class="c">nothing bounds them today</span>
+        <span class="c k">deprecation reason</span><span class="c">required when <code>deprecated</code> is true; <code>maxLength 512</code></span><span class="c">today's backend rule</span>
+        <span class="c k">organization code</span><span class="c"><code>pattern: orgCode</code> = <code>^[0-9A-F]{6}$</code>, <code>unique</code></span><span class="c">today's backend rule</span>
+        <span class="c k">OIDC provider name</span><span class="c"><code>pattern: providerName</code> = <code>^[a-z0-9_]+$</code>, unique in the providers map, checked in the browser</span><span class="c">today's UI rule; the whole map is one config value</span>
+        <span class="c k">checksum</span><span class="c"><code>pattern: hex</code> and the <code>checksum</code> rule: 32, 40, 64, 96 or 128 characters by type</span><span class="c">today's UI rule</span>
+        <span class="c k">access mode, default role, invite role</span><span class="c"><code>enum</code></span><span class="c">today's backend rule</span>
+        <span class="c k">a configuration node</span><span class="c">by its <code>type</code>, then <code>required</code>, <code>minimum</code>, <code>maximum</code>, <code>enum</code></span><span class="c">the YAML metadata nobody enforced; see the config contract</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec-col">
+      <h2>Vocabulary — the keywords a rule may use</h2>
+      <div class="tbl" style="grid-template-columns: 150px 1fr;">
+        <span class="hc">Keyword</span><span class="hc">Meaning (JSON Schema 2020-12 validation §6, §7)</span>
+        <span class="c k">type</span><span class="c">string, integer, number, boolean, array, object</span>
+        <span class="c k">required</span><span class="c">the property must be present and, for strings, not blank</span>
+        <span class="c k">minLength, maxLength</span><span class="c">string length bounds, inclusive</span>
+        <span class="c k">pattern</span><span class="c">an ECMA-262 regex, unanchored per the spec, so every pattern of ours is written anchored; every pattern is a named <code>$defs</code> entry (<code>slug</code>, <code>identifier</code>, <code>orgCode</code>, <code>providerName</code>, <code>hex</code>) reached by <code>$ref</code>, and a refused write names it</span>
+        <span class="c k">minimum, maximum</span><span class="c">numeric bounds, inclusive</span>
+        <span class="c k">enum</span><span class="c">the allowed values</span>
+        <span class="c k">format</span><span class="c"><code>email</code>, <code>uri</code>, <code>hostname</code>, <code>ipv4</code>; asserted by our evaluator, which the spec permits (§7.2)</span>
+        <span class="c k">minItems, maxItems</span><span class="c">array size bounds</span>
+        <span class="c k">unique</span><span class="c">the estate's one extension: the value must not already exist in its scope; the server decides, the UI only paints; always 409</span>
+      </div>
+      <h2>Error body — RFC 9457 with one extension</h2>
+      <div class="tbl" style="grid-template-columns: 120px 1fr;">
+        <span class="hc">Member</span><span class="hc">Meaning</span>
+        <span class="c k">type</span><span class="c">a URI under <code>https://auth.startcloud.com/probs/</code>: <code>validation</code>, <code>conflict</code>, <code>bad-request</code>, the estate's registry as the hub already uses</span>
+        <span class="c k">title, status</span><span class="c">the human summary of the type and the HTTP status</span>
+        <span class="c k">detail</span><span class="c">for logs and other clients; never parsed, never shown (§3.1.4)</span>
+        <span class="c k">errors[]</span><span class="c">the §3 extension: <code>pointer</code> (RFC 6901, <code>/name</code>, <code>/sql/port</code>, every body member <code>snake_case</code>), <code>rule</code> (the keyword that failed), <code>params</code> (its value), <code>detail</code></span>
+      </div>
+    </div>
+    <div class="spec-col">
+      <h2>Surfaces per case</h2>
+      <div class="tbl" style="grid-template-columns: 170px 1fr;">
+        <span class="hc">Case</span><span class="hc">Surface</span>
+        <span class="c k">a field fails, on blur</span><span class="c">inline <code>FieldError</code>, the control marked invalid</span>
+        <span class="c k">submit with errors</span><span class="c">the summary, focused, plus every inline error; the request is not sent</span>
+        <span class="c k">422 or 409</span><span class="c">the body's <code>errors[]</code> into the same spots</span>
+        <span class="c k">400, 403, 404, 5xx, network</span><span class="c">one danger card, the form kept</span>
+        <span class="c k">success</span><span class="c">one success card</span>
+        <span class="c k">state the user must know first</span><span class="c">a banner, as the notices contract says; never validation</span>
+      </div>
+      <h2>Timing</h2>
+      <div class="tbl" style="grid-template-columns: 170px 1fr;">
+        <span class="hc">When</span><span class="hc">What runs</span>
+        <span class="c k">while typing</span><span class="c">nothing; a field already marked invalid is re-checked on every change so the error clears the moment the value is right</span>
+        <span class="c k">on blur</span><span class="c">that field's rules</span>
+        <span class="c k">on submit</span><span class="c">every field's rules; the summary when any fail; the request only when none do</span>
+        <span class="c k">on the response</span><span class="c">the body's <code>errors[]</code>, or a card</span>
+      </div>
+      <h2>Specification anchors</h2>
+      <div class="tbl" style="grid-template-columns: 1fr;">
+        <span class="c">RFC 9457 Problem Details (§3, §3.1.4, §3.2) · RFC 6901 JSON Pointer · RFC 9110 §15.5.1, §15.5.10, §15.5.21 · JSON Schema 2020-12 Validation §6, §7, §9 and Core §12 output units · OpenAPI 3.1 Schema Object · RFC 3986 §2.3, §3.3 · NIST SP 800-63B rev 4 §3.1.1.2 · HTML Standard, valid e-mail address · WCAG 2.2 SC 3.3.1, 3.3.3, 4.1.3 with techniques ARIA19, ARIA21, G83, G85, G177 · WAI-ARIA 1.2 <code>aria-invalid</code>, <code>aria-errormessage</code>, <code>aria-describedby</code> · WAI-ARIA APG alert pattern · GOV.UK Design System error message and error summary · Nielsen Norman Group, ten guidelines for reporting errors in forms</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var live = document.getElementById('live');
+    if (!live) { return; }
+    var SLUG = /^[A-Za-z0-9.-]+$/;
+    var IDENT = /^[0-9a-zA-Z][0-9a-zA-Z._-]*$/;
+    var EMAIL = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    var TAKEN = ['alma9-server', 'debian13-server', 'windows2022-server', 'uds4.0-server'];
+    var FIELDS = [
+      { id: 'name', label: 'Box name', hint: 'Letters, digits, dash and period; this is the URL and the folder.', prefix: 'STARTcloud /', rules: { required: true, pattern: 'slug', maxLength: 255 } },
+      { id: 'description', label: 'Description', textarea: true, rules: { type: 'string' } },
+      { id: 'version_number', label: 'First version', hint: 'Letters, digits, dash, underscore and period, starting with a letter or digit.', rules: { required: true, pattern: 'identifier', maxLength: 255 } },
+      { id: 'contact', label: 'Contact email', hint: 'Where release notices for this box go.', rules: { required: true, format: 'email', maxLength: 255 } }
+    ];
+    var MESSAGES = {
+      required: function (f) { return 'Enter ' + article(f.label) + '.'; },
+      pattern: function (f, p) { return p === 'slug' ? 'Use only letters, digits, dashes and periods in the ' + f.label.toLowerCase() + '.' : 'Use only letters, digits, dashes, underscores and periods in the ' + f.label.toLowerCase() + ', not starting with a dash or period.'; },
+      maxLength: function (f, p) { return f.label + ' must be ' + p + ' characters or fewer.'; },
+      format: function (f) { return 'Enter ' + article(f.label) + ' in the form name@example.com.'; },
+      unique: function (f, p, v) { return v + ' is already taken in ' + p + '; enter a different ' + f.label.toLowerCase() + '.'; }
+    };
+    var article = function (label) { var l = label.toLowerCase(); return (/^[aeiou]/.test(l) ? 'an ' : 'a ') + l; };
+    var evaluate = function (f, v) {
+      var r = f.rules;
+      if (r.required && !String(v || '').trim()) { return { rule: 'required' }; }
+      if (!v) { return null; }
+      if (r.pattern === 'slug' && (!SLUG.test(v) || v.indexOf('..') !== -1)) { return { rule: 'pattern', params: 'slug' }; }
+      if (r.pattern === 'identifier' && (!IDENT.test(v) || v.indexOf('..') !== -1)) { return { rule: 'pattern', params: 'identifier' }; }
+      if (r.maxLength && v.length > r.maxLength) { return { rule: 'maxLength', params: r.maxLength }; }
+      if (r.format === 'email' && !EMAIL.test(v)) { return { rule: 'format' }; }
+      return null;
+    };
+    var state = { values: { name: '', description: '', version_number: '', contact: '' }, touched: {}, submitted: false, server: {}, cards: [], focusSummary: false };
+    var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var errorFor = function (f) {
+      var s = state.server[f.id];
+      if (s) { return MESSAGES[s.rule](f, s.params, state.values[f.id]); }
+      if (!state.touched[f.id] && !state.submitted) { return ''; }
+      var e = evaluate(f, state.values[f.id]);
+      return e ? MESSAGES[e.rule](f, e.params) : '';
+    };
+    var fieldHtml = function (f) {
+      var err = errorFor(f);
+      var v = esc(state.values[f.id]);
+      var aria = err ? ' aria-invalid="true" aria-describedby="' + f.id + '-error" aria-errormessage="' + f.id + '-error"' : '';
+      var control = f.textarea ? '<textarea id="' + f.id + '" data-field="' + f.id + '"' + aria + '>' + v + '</textarea>' : '<input id="' + f.id + '" type="text" data-field="' + f.id + '" value="' + v + '"' + aria + '>';
+      if (f.prefix) { control = '<div class="inputrow"><span class="org">' + f.prefix + '</span>' + control + '</div>'; }
+      return '<div class="field ' + (err ? 'invalid' : '') + '"><label for="' + f.id + '">' + f.label + '</label>' + control + (err ? '<span class="field-error" id="' + f.id + '-error"><span><span class="vh">Error:</span>' + esc(err) + '</span></span>' : (f.hint ? '<span class="hint">' + f.hint + '</span>' : '')) + '</div>';
+    };
+    var summaryHtml = function () {
+      var lines = FIELDS.map(function (f) { var e = errorFor(f); return e ? '<li><a href="#' + f.id + '" data-jump="' + f.id + '">' + esc(e) + '</a></li>' : ''; }).join('');
+      if (!lines || (!state.submitted && !Object.keys(state.server).length)) { return ''; }
+      return '<div class="summary" role="alert" tabindex="-1" id="summary"><h3>There is a problem</h3><ul>' + lines + '</ul></div>';
+    };
+    var cardsHtml = function () {
+      if (!state.cards.length) { return ''; }
+      return '<div class="cards">' + state.cards.map(function (c, i) { return '<div class="ncard ' + c.kind + '" role="alert"><span>' + esc(c.text) + '</span><span class="sp"></span><span class="x" data-dismiss="' + i + '">×</span></div>'; }).join('') + '</div>';
+    };
+    var render = function () {
+      live.innerHTML = '<div class="navbar"><span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span><div class="nav"><span class="sep">›</span><span class="crumb"><span class="mark sm"></span>STARTcloud</span></div><div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon"><span class="flag"></span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div></div>'
+        + cardsHtml()
+        + '<div class="demo"><div class="sect"><h2>Create new box</h2></div>' + summaryHtml() + '<form class="form" data-form novalidate>' + FIELDS.map(fieldHtml).join('') + '<div class="actions"><button type="submit" class="btn primary">Create box</button><button type="button" class="btn" data-act="reset">Cancel</button></div></form>'
+        + '<div class="actions"><span style="font-size: 12px; color: var(--muted);">Simulate the host answering:</span><button type="button" class="btn sm ghost" data-act="422">422 on name and version</button><button type="button" class="btn sm ghost" data-act="409">409, name taken</button><button type="button" class="btn sm ghost" data-act="503">503 from the host</button><button type="button" class="btn sm ghost" data-act="201">201 created</button></div></div>'
+        + '<div class="try">Try: leave Box name empty and tab away · type alma9_server and tab away · type a version starting with a period · submit with fields empty, the summary takes focus and its links jump to the field · fix a marked field and the error clears as you type · then the three server answers.</div>'
+        + '<div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.78.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>';
+      if (state.focusSummary) { var s = live.querySelector('#summary'); if (s) { s.focus(); } state.focusSummary = false; }
+    };
+    live.addEventListener('input', function (e) {
+      var el = e.target.closest('[data-field]');
+      if (!el) { return; }
+      var id = el.getAttribute('data-field');
+      state.values[id] = el.value;
+      delete state.server[id];
+      if (state.touched[id] || state.submitted) {
+        var f = FIELDS.filter(function (x) { return x.id === id; })[0];
+        var wrap = el.closest('.field');
+        var err = errorFor(f);
+        if (!err && wrap.classList.contains('invalid')) { var pos = el.selectionStart; render(); var again = live.querySelector('#' + id); if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (x) {} } }
+      }
+    });
+    live.addEventListener('focusout', function (e) {
+      var el = e.target.closest('[data-field]');
+      if (!el) { return; }
+      var id = el.getAttribute('data-field');
+      state.touched[id] = true;
+      var next = e.relatedTarget;
+      render();
+      if (next && next.id) { var n = live.querySelector('#' + next.id); if (n) { n.focus(); } }
+    });
+    live.addEventListener('submit', function (e) {
+      e.preventDefault();
+      state.submitted = true;
+      state.server = {};
+      var failing = FIELDS.filter(function (f) { return evaluate(f, state.values[f.id]); });
+      if (failing.length) { state.focusSummary = true; render(); return; }
+      state.cards.unshift({ kind: 'success', text: 'Box created successfully.' });
+      render();
+    });
+    live.addEventListener('click', function (e) {
+      var jump = e.target.closest('[data-jump]');
+      if (jump) { e.preventDefault(); var t = live.querySelector('#' + jump.getAttribute('data-jump')); if (t) { t.focus(); } return; }
+      var dismiss = e.target.closest('[data-dismiss]');
+      if (dismiss) { state.cards.splice(Number(dismiss.getAttribute('data-dismiss')), 1); render(); return; }
+      var el = e.target.closest('[data-act]');
+      if (!el) { return; }
+      var act = el.getAttribute('data-act');
+      if (act === 'reset') { state = { values: { name: '', description: '', version_number: '', contact: '' }, touched: {}, submitted: false, server: {}, cards: [], focusSummary: false }; }
+      else if (act === '422') { state.values.name = state.values.name || 'alma9_server'; state.values.version_number = state.values.version_number || '.1.2'; state.server = { name: { rule: 'pattern', params: 'slug' }, version_number: { rule: 'pattern', params: 'identifier' } }; state.focusSummary = true; }
+      else if (act === '409') { state.values.name = TAKEN.indexOf(state.values.name) !== -1 ? state.values.name : 'alma9-server'; state.server = { name: { rule: 'unique', params: 'STARTcloud' } }; state.focusSummary = true; }
+      else if (act === '503') { state.cards.unshift({ kind: 'danger', text: 'The request failed. Your values are kept; try again.' }); }
+      else if (act === '201') { state.server = {}; state.cards.unshift({ kind: 'success', text: 'Box created successfully.' }); }
+      render();
+    });
+    render();
+  })();
+</script>

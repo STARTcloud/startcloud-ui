@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBridgeLock, FaHouseLock } from 'react-icons/fa6';
+import { FaBridgeLock, FaHouseLock, FaRightFromBracket } from 'react-icons/fa6';
 
 const LogoutItem = ({ oidc = true, onSignOut, onSignOutEverywhere }) => {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ const LogoutItem = ({ oidc = true, onSignOut, onSignOutEverywhere }) => {
           <ScopeIcon />
         </span>
       ) : (
-        <FaHouseLock className="me-2" />
+        <FaRightFromBracket className="me-2" />
       )}
       <span>{t('navbar.logout')}</span>
     </Dropdown.Item>
