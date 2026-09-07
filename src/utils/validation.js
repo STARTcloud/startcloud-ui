@@ -6,7 +6,16 @@ const IPV4_RE = /^(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\.(?:25[0-5]|2[0-4]\d|[01]?\
 const INTEGER_RE = /^-?\d+$/;
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 
-const PATTERN_KEYS = ['slug', 'identifier', 'hex', 'orgCode', 'providerName', 'watchId'];
+const PATTERN_KEYS = [
+  'slug',
+  'identifier',
+  'hex',
+  'orgCode',
+  'providerName',
+  'watchId',
+  'personName',
+  'iconName',
+];
 const RULE_KEYS = [
   'required',
   'minLength',
@@ -73,6 +82,13 @@ export const DEFS = {
   providerName: { type: 'string', pattern: '^[a-z0-9_]+$' },
   hex: { type: 'string', pattern: '^[a-fA-F0-9]+$' },
   watchId: { type: 'string', pattern: '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$' },
+  personName: {
+    type: 'string',
+    pattern:
+      '^[^\\x00-\\x40\\x5B-\\x60\\x7B-\\x7F][^\\x00-\\x1F\\x21-\\x26\\x28-\\x2C\\x2F-\\x40\\x5B-\\x60\\x7B-\\x7F]*$',
+    maxLength: 255,
+  },
+  iconName: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
 };
 
 const FALLBACK_DOCUMENT = { $defs: DEFS };
@@ -367,8 +383,9 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
 /**
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
- * `identifier`, `hex`, `orgCode`, `providerName`, `watchId`), a format and a type by
- * theirs; a rule the UI does not know through `validation.unknown` with the
+ * `identifier`, `hex`, `orgCode`, `providerName`, `watchId`, `personName`,
+ * `iconName`), a format and a type by theirs; a rule the UI does not know
+ * through `validation.unknown` with the
  * field's label, the error's `detail` never shown.
  *
  * @param {{ rule: string, params?: Object, detail?: string }} error - The error

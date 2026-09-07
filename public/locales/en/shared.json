@@ -122,7 +122,9 @@
       "hex": "Use only hexadecimal digits in {{label}}.",
       "orgCode": "Enter {{label}} as 6 hexadecimal characters (0-9, A-F).",
       "providerName": "Use only lowercase letters, digits and underscores in {{label}}.",
-      "watchId": "Enter {{label}} as an organization slug and an item slug joined by one slash, such as startcloud/alma9-server."
+      "watchId": "Enter {{label}} as an organization slug and an item slug joined by one slash, such as startcloud/alma9-server.",
+      "personName": "Enter {{label}} starting with a letter, using letters, spaces, periods, apostrophes and hyphens.",
+      "iconName": "Use only lowercase letters, digits, spaces and dashes in {{label}}, up to 64 characters."
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",

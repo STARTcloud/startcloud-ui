@@ -122,7 +122,9 @@
       "hex": "Usa solo dígitos hexadecimales en {{label}}.",
       "orgCode": "Introduce {{label}} como 6 caracteres hexadecimales (0-9, A-F).",
       "providerName": "Usa solo letras minúsculas, dígitos y guiones bajos en {{label}}.",
-      "watchId": "Introduce {{label}} como un slug de organización y un slug de elemento unidos por una sola barra, como startcloud/alma9-server."
+      "watchId": "Introduce {{label}} como un slug de organización y un slug de elemento unidos por una sola barra, como startcloud/alma9-server.",
+      "personName": "Introduce {{label}} empezando por una letra, con letras, espacios, puntos, apóstrofos y guiones.",
+      "iconName": "Usa solo letras minúsculas, dígitos, espacios y guiones en {{label}}, hasta 64 caracteres."
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",

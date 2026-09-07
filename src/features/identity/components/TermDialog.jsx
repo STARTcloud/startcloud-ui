@@ -53,7 +53,7 @@ const SCHEMA = {
   properties: {
     name: { $ref: '#/$defs/slug' },
     friendly_name: { type: 'string' },
-    icon: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
+    icon: { $ref: '#/$defs/iconName' },
     version: { type: 'string' },
     type: { type: 'string', enum: TERM_TYPES },
     is_public: { type: 'boolean' },

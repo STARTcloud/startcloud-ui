@@ -97,7 +97,13 @@ auth, with one JSON Schema 2020-12 document:
     "orgCode": { "type": "string", "pattern": "^[0-9A-F]{6}$" },
     "providerName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
     "hex": { "type": "string", "pattern": "^[a-fA-F0-9]+$" },
-    "watchId": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" }
+    "watchId": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+    "personName": {
+      "type": "string",
+      "pattern": "^[^\\x00-\\x40\\x5B-\\x60\\x7B-\\x7F][^\\x00-\\x1F\\x21-\\x26\\x28-\\x2C\\x2F-\\x40\\x5B-\\x60\\x7B-\\x7F]*$",
+      "maxLength": 255
+    },
+    "iconName": { "type": "string", "pattern": "^[a-z0-9 -]{1,64}$" }
   },
   "forms": {
     "box": {
@@ -174,7 +180,7 @@ body (RFC 6901).
 | `register`                                               | `POST /api/auth/signup`                                                                              | `username`, `email`, `password`, `name`, `invitation_token`                                                                                                                                                                                                                                  |
 | `displayName`                                            | `PUT /api/users/{id}/change-name`                                                                    | `name`                                                                                                                                                                                                                                                                                       |
 | `password`                                               | `PUT /api/users/{id}/change-password` on BoxVault, `PUT /api/user/password` on the identity provider | `password`, one name on every UI backend because one shared form key cannot carry two shapes                                                                                                                                                                                                 |
-| `register`, `recovery`, `terms` on the identity provider | `POST /registration`, `POST /passwordRecovery`, `POST /api/admin/terms`                              | `email` for the two address forms, the address carrying one name everywhere on the issuer; `name` (`$defs.slug`, `unique` global), `icon` (`pattern`, `^[a-z0-9 -]{1,64}$`) and the rest of the terms record; the issuer lists its own forms because its registration takes an address alone |
+| `register`, `recovery`, `name`, `terms` on the identity provider | `POST /registration`, `POST /passwordRecovery`, `POST /complete-onboarding/name`, `POST /api/admin/terms` | `email` (`$defs.email`, required) for the two address forms, the address carrying one name everywhere on the issuer; `given_name` (`$defs.personName`, required) and `family_name` (`$defs.personName`) for the onboarding name step; the terms record: `name` (`$defs.slug`, `unique` global, required), `friendly_name` (`maxLength 255`), `icon` (`$defs.iconName`), `content` (`type: string`, required), `version` (`maxLength 50`, required), `type` (`enum` `SITE`, `CLIENT`, `BOTH`, required), `is_public` (`boolean`), `display_order` (`integer`, `minimum 0`); the issuer lists its own forms because its registration takes an address alone, and its `password` form carries `maxLength` from its own policy, 64 by default |
 | `email`                                                  | `PUT /api/users/{id}/change-email`                                                                   | `new_email`                                                                                                                                                                                                                                                                                  |
 | `serviceAccount`                                         | `POST /api/service-accounts/`                                                                        | `description`, `expiration_days`, `organization_id`, `role`                                                                                                                                                                                                                                  |
 | `organization`                                           | `PUT /api/organization/{name}`                                                                       | `organization`, `org_code`, `email`, `description`                                                                                                                                                                                                                                           |
@@ -259,6 +265,8 @@ UI with `validation.equals` and the `rule` the `custom` function names.
 | `providerName` | `^[a-z0-9_]+$`                                                 | the OIDC provider key, a YAML map key and a URL segment of the callback                                                                                                                                                              |
 | `hex`          | `^[a-fA-F0-9]+$`                                               | checksums; the length per type is the `checksum` rule                                                                                                                                                                                |
 | `watchId`      | `^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`                            | the id of a watch: an organization slug and an item slug joined by one slash, the key the catalog Worker stores a watch under                                                                                                        |
+| `personName`   | a first character outside ASCII controls, digits, punctuation and symbols, then any of those plus space, period, apostrophe and hyphen, up to 255 | a person's given or family name on the issuer's onboarding step: every non-ASCII letter admitted by exclusion because the evaluator compiles patterns without the `u` flag and `\p{L}` is not available on both sides; the four joiners are the ones names carry |
+| `iconName`     | `^[a-z0-9 -]{1,64}$`                                           | a terms template's icon, stored and drawn as a class attribute alone                                                                                                                                                                  |
 
 The email regular expression, verbatim from the HTML Standard:
 
@@ -453,7 +461,7 @@ SMTP test recipient, the setup page and the admin configuration tab.
 | BoxVault             | `backend/app/rules/*.json` served by `GET /api/rules`; `validateBody(form)` in `backend/app/middleware/validate.js` on every write route; `backend/app/utils/validation.js` the evaluator; `backend/app/utils/problem.js` the body | ✓       |
 | VDI Health Monitor   | `vdi_health/rules.json` served by `GET /api/rules`; `vdi_health/validation.py` the evaluator; `problem()` in `vdi_health/i18n.py` the body                                                                                         | ✓       |
 | Provisioner catalog  | `problemResponse` in `worker/src/index.js` on the Worker's writes; no forms, so no `/api/rules`                                                                                                                                    | ✓       |
-| Authorization server | one `ProblemDetail` handler answering `MethodArgumentNotValidException` as 422 with `errors[]`; `GET /api/rules` for its forms; its own pages draw the same surfaces when they join the shared UI                                  | to come |
+| Authorization server | `ApiProblemAdvice` answering `MethodArgumentNotValidException` and `ConstraintViolationException` as 422 with `errors[]` through `Problems`; `RulesApiController` serving `GET /api/rules` for `register`, `recovery`, `name`, `password` and `terms`; its own pages draw the same surfaces when they join the shared UI | ✓ the document and the body; the pages to come |
 
 ---
 
