@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.7.0...v0.8.0) (2026-09-07)
+
+
+### Features
+
+* send the contract's snake_case members, evaluate allOf and not, read requires_restart ([d72398f](https://github.com/STARTcloud/startcloud-ui/commit/d72398fa1f8859a46347ae6fcffc5f10d1eb88ab))
+
 ## [0.7.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.6.0...v0.7.0) (2026-09-07)
 
 
