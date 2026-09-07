@@ -25,7 +25,7 @@ paints them today.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -33,10 +33,10 @@ paints them today.
 
 Two independent axes, never conflated:
 
-| Axis | Values | Owner | Distribution |
-| --- | --- | --- | --- |
-| **variant** | `light` \| `dark` \| `auto` | the user | claims, SCIM, write API |
-| **pack** | a bare brand name (`moonshinedev`, `shi`) | client/site config | branding endpoint |
+| Axis        | Values                                    | Owner              | Distribution            |
+| ----------- | ----------------------------------------- | ------------------ | ----------------------- |
+| **variant** | `light` \| `dark` \| `auto`               | the user           | claims, SCIM, write API |
+| **pack**    | a bare brand name (`moonshinedev`, `shi`) | client/site config | branding endpoint       |
 
 Plus two more user preferences carried the same way: `language` (BCP 47) and
 `timezone` (IANA name).
@@ -58,7 +58,7 @@ keeps working unchanged, and its bundled assets remain its fallback forever.
 ## Rendering: two attributes, never composed
 
 ```html
-<html lang="es" data-bs-theme="dark" data-brand="moonshinedev">
+<html lang="es" data-bs-theme="dark" data-brand="moonshinedev"></html>
 ```
 
 - **`data-bs-theme` carries the variant and nothing else** — `light` or
@@ -151,7 +151,7 @@ An inline script in `<head>`, before first paint, stamps `data-bs-theme`
 `matchMedia`.
 
 **It must implement the same precedence its app's mount uses — and mount's
-precedence *as it exists in that app at that time*, not a fixed sequence.**
+precedence _as it exists in that app at that time_, not a fixed sequence.**
 An app with one tier reads once; an app with an account cache reads twice;
 both sides gain a tier together or neither does.
 
@@ -240,10 +240,14 @@ changes in the same release.
   "theme_css": "https://auth.example.com/themes/moonshinedev/moonshinedev.css?v=a1b2c3",
   "company_name": "Moonshine.dev",
   "logos": {
-    "mark":  { "src": "https://…/mark.svg", "width": 512, "height": 512, "monochrome": true },
-    "small": { "light": "https://…/wordmark-light.svg", "dark": "https://…/wordmark-dark.svg",
-               "width": 320, "height": 100 },
-    "icon":  { "src": "https://…/icon.png", "width": 64, "height": 64 }
+    "mark": { "src": "https://…/mark.svg", "width": 512, "height": 512, "monochrome": true },
+    "small": {
+      "light": "https://…/wordmark-light.svg",
+      "dark": "https://…/wordmark-dark.svg",
+      "width": 320,
+      "height": 100
+    },
+    "icon": { "src": "https://…/icon.png", "width": 64, "height": 64 }
   }
 }
 ```
@@ -344,14 +348,14 @@ Identity Contract); the chrome's own faces are never a pack's to change.
 
 Neutral prefix so a pack is authored once for the whole estate:
 
-| Variable | Purpose |
-| --- | --- |
-| `--brand-primary` | brand colour |
-| `--brand-on-primary` | text/icon colour ON primary |
-| `--brand-warning` | brand warning colour |
-| `--brand-on-warning` | text/icon colour ON warning |
-| `--brand-logo` | stencil URL for the mask pattern (optional) |
-| `--brand-logo-color` | paint colour for the stencil (optional) |
+| Variable               | Purpose                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `--brand-primary`      | brand colour                                                                                           |
+| `--brand-on-primary`   | text/icon colour ON primary                                                                            |
+| `--brand-warning`      | brand warning colour                                                                                   |
+| `--brand-on-warning`   | text/icon colour ON warning                                                                            |
+| `--brand-logo`         | stencil URL for the mask pattern (optional)                                                            |
+| `--brand-logo-color`   | paint colour for the stencil (optional)                                                                |
 | `--brand-auth-display` | the auth column's headline face (optional; Source Serif 4 when absent), its files served with the pack |
 
 `--brand-on-*` exists because a single colour cannot express its own
@@ -408,17 +412,17 @@ manages packs and none offers a UI for them.
 ### Generated shape
 
 ```css
-[data-brand="moonshinedev"] {
+[data-brand='moonshinedev'] {
   --brand-primary: #8b5cf6;
   --brand-on-primary: #ffffff;
-  --brand-logo: url("https://…/mark.svg");
+  --brand-logo: url('https://…/mark.svg');
   --brand-logo-color: var(--brand-primary);
 
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 139, 92, 246;
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
 }
-[data-brand="moonshinedev"][data-bs-theme="dark"] {
+[data-brand='moonshinedev'][data-bs-theme='dark'] {
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --brand-logo-color: #ffffff;
 }
@@ -445,7 +449,8 @@ Prefer a **monochrome stencil painted by CSS** over per-variant image files:
   mask: var(--brand-logo) center / contain no-repeat;
   -webkit-mask: var(--brand-logo) center / contain no-repeat;
   background-color: var(--brand-logo-color, currentColor);
-  width: 2rem; height: 2rem;
+  width: 2rem;
+  height: 2rem;
 }
 ```
 
@@ -548,12 +553,12 @@ bundled-fallback rules exist to forbid (RFC 9111).
 Server-side injection is the recorded end state. For a first pass it is
 **deferred**, because the two flashes it addresses are not the same size:
 
-| Item | Status | Reason |
-| --- | --- | --- |
-| Pre-paint variant script | **Ship** | Wrong-variant paint is the whole page; it is also a live defect independent of packs |
-| Server-side injection | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while packs set colours only; a pack that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
-| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer | Attaches only to the client-hint leg |
-| CSP nonce | Defer | Obligation stands the day any CSP is enforced |
+| Item                                | Status                                                                                                 | Reason                                                                                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pre-paint variant script            | **Ship**                                                                                               | Wrong-variant paint is the whole page; it is also a live defect independent of packs                                                                                              |
+| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while packs set colours only; a pack that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
+| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                              |
+| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                     |
 
 **Client hints are an enhancement, not a mechanism.** `Sec-CH-Prefers-Color-Scheme`
 is opt-in by protocol (RFC 8942) — the first request never carries it, and a

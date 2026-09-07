@@ -37,11 +37,12 @@ export const hasCollection = (status, token) =>
 
 /**
  * The session the UI creates for the host behind `status`: the first
- * entry of `auth`, `none` when the array is empty (everyone sees
- * everything, no session), `backend` when the array is missing.
+ * entry of `auth` (`backend`, `idp` or `cookie`, the identity provider's
+ * own session on its origin), `none` when the array is empty (everyone
+ * sees everything, no session), `backend` when the array is missing.
  *
  * @param {Object} status - The payload from `probeStatus`
- * @returns {string} 'backend', 'idp' or 'none'
+ * @returns {string} 'backend', 'idp', 'cookie' or 'none'
  */
 export const authMethod = status => {
   const auth = status?.auth;

@@ -34,7 +34,7 @@ citation, never with the author.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -78,9 +78,22 @@ auth, with one JSON Schema 2020-12 document:
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "slug": { "type": "string", "allOf": [ { "pattern": "^[A-Za-z0-9.-]+$" }, { "not": { "pattern": "\\.\\." } } ], "minLength": 1, "maxLength": 255 },
-    "identifier": { "type": "string", "allOf": [ { "pattern": "^[0-9a-zA-Z][0-9a-zA-Z._-]*$" }, { "not": { "pattern": "\\.\\." } } ], "maxLength": 255 },
-    "email": { "type": "string", "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$", "maxLength": 255 },
+    "slug": {
+      "type": "string",
+      "allOf": [{ "pattern": "^[A-Za-z0-9.-]+$" }, { "not": { "pattern": "\\.\\." } }],
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "identifier": {
+      "type": "string",
+      "allOf": [{ "pattern": "^[0-9a-zA-Z][0-9a-zA-Z._-]*$" }, { "not": { "pattern": "\\.\\." } }],
+      "maxLength": 255
+    },
+    "email": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+      "maxLength": 255
+    },
     "orgCode": { "type": "string", "pattern": "^[0-9A-F]{6}$" },
     "providerName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
     "hex": { "type": "string", "pattern": "^[a-fA-F0-9]+$" }
@@ -154,24 +167,24 @@ The forms the shared UI draws, the request each sends and the members the
 UI backend's entry describes. A pointer in a refused write is `/<member>` into that
 body (RFC 6901).
 
-| Form | Request | Members |
-| --- | --- | --- |
-| `login` | the session's sign-in | `username`, `password` |
-| `register` | `POST /api/auth/signup` | `username`, `email`, `password`, `name`, `invitation_token` |
-| `displayName` | `PUT /api/users/{id}/change-name` | `name` |
-| `password` | `PUT /api/users/{id}/change-password` on BoxVault, `PUT /api/user/password` on the identity provider | `password`, one name on every UI backend because one shared form key cannot carry two shapes |
-| `register`, `recovery`, `terms` on the identity provider | `POST /registration`, `POST /passwordRecovery`, `POST /api/admin/terms` | `email` for the two address forms, the address carrying one name everywhere on the issuer; `name` (`$defs.slug`, `unique` global), `icon` (`pattern`, `^[a-z0-9 -]{1,64}$`) and the rest of the terms record; the issuer lists its own forms because its registration takes an address alone |
-| `email` | `PUT /api/users/{id}/change-email` | `new_email` |
-| `serviceAccount` | `POST /api/service-accounts/` | `description`, `expiration_days`, `organization_id` |
-| `organization` | `PUT /api/organization/{name}` | `organization`, `org_code`, `email`, `description` |
-| `accessMode` | `PUT /api/organization/{name}/access-mode` | `access_mode`, `default_role` |
-| `invitation` | `POST /api/auth/invite` | `email`, `organization_name`, `invite_role` |
-| `joinRequest` | `POST /api/organization/{name}/requests` | `message` |
-| `box` | `POST …/box`, `PUT …/box/{name}` | `name`, `description`, `is_public`, `published`, `github_repo`, `workflow_file`, `cicd_url` |
-| `iso` | `POST …/iso`, `PUT …/iso/{name}` | `name`, `description`, `is_public`, `published` |
-| `version` | `POST …/version`, `PUT …/version/{number}` | `version_number`, `description`, `release_notes`, `deprecated`, `deprecation_reason` |
-| `provider` | `POST …/provider`, `PUT …/provider/{name}` | `name`, `description` |
-| `architecture` | `POST …/architecture` | `name`, `default_box`, `checksum_type`, `checksum` |
+| Form                                                     | Request                                                                                              | Members                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `login`                                                  | the session's sign-in                                                                                | `username`, `password`                                                                                                                                                                                                                                                                       |
+| `register`                                               | `POST /api/auth/signup`                                                                              | `username`, `email`, `password`, `name`, `invitation_token`                                                                                                                                                                                                                                  |
+| `displayName`                                            | `PUT /api/users/{id}/change-name`                                                                    | `name`                                                                                                                                                                                                                                                                                       |
+| `password`                                               | `PUT /api/users/{id}/change-password` on BoxVault, `PUT /api/user/password` on the identity provider | `password`, one name on every UI backend because one shared form key cannot carry two shapes                                                                                                                                                                                                 |
+| `register`, `recovery`, `terms` on the identity provider | `POST /registration`, `POST /passwordRecovery`, `POST /api/admin/terms`                              | `email` for the two address forms, the address carrying one name everywhere on the issuer; `name` (`$defs.slug`, `unique` global), `icon` (`pattern`, `^[a-z0-9 -]{1,64}$`) and the rest of the terms record; the issuer lists its own forms because its registration takes an address alone |
+| `email`                                                  | `PUT /api/users/{id}/change-email`                                                                   | `new_email`                                                                                                                                                                                                                                                                                  |
+| `serviceAccount`                                         | `POST /api/service-accounts/`                                                                        | `description`, `expiration_days`, `organization_id`                                                                                                                                                                                                                                          |
+| `organization`                                           | `PUT /api/organization/{name}`                                                                       | `organization`, `org_code`, `email`, `description`                                                                                                                                                                                                                                           |
+| `accessMode`                                             | `PUT /api/organization/{name}/access-mode`                                                           | `access_mode`, `default_role`                                                                                                                                                                                                                                                                |
+| `invitation`                                             | `POST /api/auth/invite`                                                                              | `email`, `organization_name`, `invite_role`                                                                                                                                                                                                                                                  |
+| `joinRequest`                                            | `POST /api/organization/{name}/requests`                                                             | `message`                                                                                                                                                                                                                                                                                    |
+| `box`                                                    | `POST …/box`, `PUT …/box/{name}`                                                                     | `name`, `description`, `is_public`, `published`, `github_repo`, `workflow_file`, `cicd_url`                                                                                                                                                                                                  |
+| `iso`                                                    | `POST …/iso`, `PUT …/iso/{name}`                                                                     | `name`, `description`, `is_public`, `published`                                                                                                                                                                                                                                              |
+| `version`                                                | `POST …/version`, `PUT …/version/{number}`                                                           | `version_number`, `description`, `release_notes`, `deprecated`, `deprecation_reason`                                                                                                                                                                                                         |
+| `provider`                                               | `POST …/provider`, `PUT …/provider/{name}`                                                           | `name`, `description`                                                                                                                                                                                                                                                                        |
+| `architecture`                                           | `POST …/architecture`                                                                                | `name`, `default_box`, `checksum_type`, `checksum`                                                                                                                                                                                                                                           |
 
 The members are the target; BoxVault reads most of them in camelCase today
 (`versionNumber`, `isPublic`, `newPassword`) and the shared UI sends what
@@ -203,18 +216,18 @@ sibling holds one of the values); they never travel to the UI backend.
 The keywords a rule may use are JSON Schema 2020-12 validation keywords,
 verbatim, plus one estate extension:
 
-| Keyword | Meaning | Spec |
-| --- | --- | --- |
-| `type` | `string`, `integer`, `number`, `boolean`, `array`, `object` | Validation §6.1.1 |
-| `required` | on an object, the properties that must be present, presence alone as the spec says; a string that must not be blank carries `minLength: 1` and `pattern: "\\S"` instead, so both sides evaluate the same rule and neither carries a trimming rule of its own | §6.5.3 |
-| `dependentRequired` | properties required when another is present, which is all the keyword can say (§6.5.4); a rule that hangs on a value, "a reason while `deprecated` is true", is written `if { properties: { deprecated: { const: true } }, required: ["deprecated"] } then { required: ["deprecation_reason"] }` (Core §10.2.2), because `dependentRequired` would demand the reason of an undeprecated version too | §6.5.4, Core §10.2.2 |
-| `minLength`, `maxLength` | string length bounds, inclusive | §6.3.2, §6.3.1 |
-| `pattern` | an ECMA-262 regular expression; the spec leaves it unanchored (§6.3.3), so every pattern in this estate is written anchored with `^` and `$`; a lookahead is outside the subset Core §6.4 asks authors to stay in, so "not containing `..`" is written as `allOf: [{ pattern: "^[A-Za-z0-9.-]+$" }, { not: { pattern: "\\.\\." } }]` | §6.3.3, Core §6.4 |
-| `minimum`, `maximum` | numeric bounds, inclusive | §6.2.4, §6.2.2 |
-| `enum` | the allowed values | §6.1.2 |
-| `format` | `uri`, `hostname`, `ipv4`; the spec makes `format` an annotation by default and permits assertion (§7.2), and this estate's evaluator asserts it; the address grammar is the named `$defs.email` pattern rather than `format: email`, because the spec's `email` is RFC 5321 §4.1.2 and a stock validator would disagree with the HTML grammar this estate uses | §7 |
-| `minItems`, `maxItems` | array size bounds | §6.4.2, §6.4.1 |
-| `unique` | the estate's extension: the value must not already exist within the named scope (`organization`, `box`, `version`, `provider`, `global`); only the route can decide it, the UI only paints its answer; a failure is always 409, and its `params.scope` carries the name of the scope the value collided in (the organization's name, the box's name) | this contract |
+| Keyword                  | Meaning                                                                                                                                                                                                                                                                                                                                                                                             | Spec                 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `type`                   | `string`, `integer`, `number`, `boolean`, `array`, `object`                                                                                                                                                                                                                                                                                                                                         | Validation §6.1.1    |
+| `required`               | on an object, the properties that must be present, presence alone as the spec says; a string that must not be blank carries `minLength: 1` and `pattern: "\\S"` instead, so both sides evaluate the same rule and neither carries a trimming rule of its own                                                                                                                                        | §6.5.3               |
+| `dependentRequired`      | properties required when another is present, which is all the keyword can say (§6.5.4); a rule that hangs on a value, "a reason while `deprecated` is true", is written `if { properties: { deprecated: { const: true } }, required: ["deprecated"] } then { required: ["deprecation_reason"] }` (Core §10.2.2), because `dependentRequired` would demand the reason of an undeprecated version too | §6.5.4, Core §10.2.2 |
+| `minLength`, `maxLength` | string length bounds, inclusive                                                                                                                                                                                                                                                                                                                                                                     | §6.3.2, §6.3.1       |
+| `pattern`                | an ECMA-262 regular expression; the spec leaves it unanchored (§6.3.3), so every pattern in this estate is written anchored with `^` and `$`; a lookahead is outside the subset Core §6.4 asks authors to stay in, so "not containing `..`" is written as `allOf: [{ pattern: "^[A-Za-z0-9.-]+$" }, { not: { pattern: "\\.\\." } }]`                                                                | §6.3.3, Core §6.4    |
+| `minimum`, `maximum`     | numeric bounds, inclusive                                                                                                                                                                                                                                                                                                                                                                           | §6.2.4, §6.2.2       |
+| `enum`                   | the allowed values                                                                                                                                                                                                                                                                                                                                                                                  | §6.1.2               |
+| `format`                 | `uri`, `hostname`, `ipv4`; the spec makes `format` an annotation by default and permits assertion (§7.2), and this estate's evaluator asserts it; the address grammar is the named `$defs.email` pattern rather than `format: email`, because the spec's `email` is RFC 5321 §4.1.2 and a stock validator would disagree with the HTML grammar this estate uses                                     | §7                   |
+| `minItems`, `maxItems`   | array size bounds                                                                                                                                                                                                                                                                                                                                                                                   | §6.4.2, §6.4.1       |
+| `unique`                 | the estate's extension: the value must not already exist within the named scope (`organization`, `box`, `version`, `provider`, `global`); only the route can decide it, the UI only paints its answer; a failure is always 409, and its `params.scope` carries the name of the scope the value collided in (the organization's name, the box's name)                                                | this contract        |
 
 ### Rules outside the vocabulary
 
@@ -224,26 +237,26 @@ rule the way it has one per keyword. A UI backend that needs another name adds i
 here first; a `rule` the UI does not know paints from `validation.unknown`
 with the field's label, and the `detail` is never shown.
 
-| Rule | Meaning | `params` |
-| --- | --- | --- |
-| `checksum` | the checksum is not the length its type requires | `type`, `length` |
-| `blocklist` | the password is on the route's blocklist | none |
-| `writable` | a configured directory cannot be written by the service user | none |
-| `reachable` | a configured host and port did not answer | none |
+| Rule        | Meaning                                                      | `params`         |
+| ----------- | ------------------------------------------------------------ | ---------------- |
+| `checksum`  | the checksum is not the length its type requires             | `type`, `length` |
+| `blocklist` | the password is on the route's blocklist                     | none             |
+| `writable`  | a configured directory cannot be written by the service user | none             |
+| `reachable` | a configured host and port did not answer                    | none             |
 
 The client-only `equals` and `custom` keywords of a page schema answer in the
 UI with `validation.equals` and the `rule` the `custom` function names.
 
 ### Named patterns
 
-| Name | Pattern | Why |
-| --- | --- | --- |
-| `slug` | `^[A-Za-z0-9.-]+$`, not containing `..`, 1 to 255 | boxes, ISOs, organizations and usernames are URL path segments and folder names: inside RFC 3986 §2.3 unreserved characters, never a dot-segment (§3.3, §5.2.4); `_` and `~` are legal to the RFC and excluded by this estate's rule |
-| `identifier` | `^[0-9a-zA-Z][0-9a-zA-Z._-]*$`, not containing `..`, up to 255 | versions, providers and architectures: the same reasons, underscore admitted, never starting with `-` or `.` |
-| `email` | the WHATWG "valid e-mail address" regular expression | the HTML Standard's grammar, a willful violation of RFC 5322 that browsers already apply to `type=email` |
-| `orgCode` | `^[0-9A-F]{6}$` | the organization code as the backend stores it |
-| `providerName` | `^[a-z0-9_]+$` | the OIDC provider key, a YAML map key and a URL segment of the callback |
-| `hex` | `^[a-fA-F0-9]+$` | checksums; the length per type is the `checksum` rule |
+| Name           | Pattern                                                        | Why                                                                                                                                                                                                                                  |
+| -------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `slug`         | `^[A-Za-z0-9.-]+$`, not containing `..`, 1 to 255              | boxes, ISOs, organizations and usernames are URL path segments and folder names: inside RFC 3986 §2.3 unreserved characters, never a dot-segment (§3.3, §5.2.4); `_` and `~` are legal to the RFC and excluded by this estate's rule |
+| `identifier`   | `^[0-9a-zA-Z][0-9a-zA-Z._-]*$`, not containing `..`, up to 255 | versions, providers and architectures: the same reasons, underscore admitted, never starting with `-` or `.`                                                                                                                         |
+| `email`        | the WHATWG "valid e-mail address" regular expression           | the HTML Standard's grammar, a willful violation of RFC 5322 that browsers already apply to `type=email`                                                                                                                             |
+| `orgCode`      | `^[0-9A-F]{6}$`                                                | the organization code as the backend stores it                                                                                                                                                                                       |
+| `providerName` | `^[a-z0-9_]+$`                                                 | the OIDC provider key, a YAML map key and a URL segment of the callback                                                                                                                                                              |
+| `hex`          | `^[a-fA-F0-9]+$`                                               | checksums; the length per type is the `checksum` rule                                                                                                                                                                                |
 
 The email regular expression, verbatim from the HTML Standard:
 
@@ -259,22 +272,22 @@ The rule per field, chosen as the least breaking value across every UI backend's
 routes and forms as they were before this contract (nothing stored anywhere
 violates a row):
 
-| Field | Rule | Source of the choice |
-| --- | --- | --- |
-| box, ISO, organization, username | `slug`, `unique` in the organization (organization and username: global) | every backend route; the UI's underscore was the defect |
-| version, provider, architecture | `identifier`, `unique` in the parent | the backend rule, with the leading-character check the UI lacked |
-| username length | `minLength 3`, `maxLength 64` | the UI's 3 to 20 was arbitrary, the backend had none |
-| password | `minLength` from the UI backend, default 15; `maxLength` at least 64, 128 here; no `pattern`; Unicode and spaces accepted; the route checks a blocklist | NIST SP 800-63B rev 4 §3.1.1.2: minimum 15 for a single-factor password, at least 64 permitted, no composition rules, no periodic change |
-| email | `format: email`, `maxLength 255` | the HTML Standard grammar; the backends gain the check they lacked |
-| display name | `maxLength 255`, optional | the backend rule |
-| description, release notes, join message | `type: string` | nothing bounds them today |
-| deprecation reason | required while `deprecated` is true, `maxLength 512` | the backend rule |
-| organization code | `orgCode`, `unique` global | the backend rule |
-| OIDC provider name | `providerName`, `unique` within the providers map, checked in the browser | the UI rule; the config route gains it |
-| checksum | `hex`, and the `checksum` rule: 32, 40, 64, 96 or 128 characters by type, the type from the sibling select | the UI rule |
-| access mode, default role, invite role, checksum type | `enum` | the backend rules |
-| CI/CD URL | `format: uri` | the field is a link |
-| a configuration value | by its schema: `type`, then `required`, `minimum`, `maximum`, `enum`, `pattern`, `format` | the [Universal Config Contract](universal-config/) |
+| Field                                                 | Rule                                                                                                                                                    | Source of the choice                                                                                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| box, ISO, organization, username                      | `slug`, `unique` in the organization (organization and username: global)                                                                                | every backend route; the UI's underscore was the defect                                                                                  |
+| version, provider, architecture                       | `identifier`, `unique` in the parent                                                                                                                    | the backend rule, with the leading-character check the UI lacked                                                                         |
+| username length                                       | `minLength 3`, `maxLength 64`                                                                                                                           | the UI's 3 to 20 was arbitrary, the backend had none                                                                                     |
+| password                                              | `minLength` from the UI backend, default 15; `maxLength` at least 64, 128 here; no `pattern`; Unicode and spaces accepted; the route checks a blocklist | NIST SP 800-63B rev 4 §3.1.1.2: minimum 15 for a single-factor password, at least 64 permitted, no composition rules, no periodic change |
+| email                                                 | `format: email`, `maxLength 255`                                                                                                                        | the HTML Standard grammar; the backends gain the check they lacked                                                                       |
+| display name                                          | `maxLength 255`, optional                                                                                                                               | the backend rule                                                                                                                         |
+| description, release notes, join message              | `type: string`                                                                                                                                          | nothing bounds them today                                                                                                                |
+| deprecation reason                                    | required while `deprecated` is true, `maxLength 512`                                                                                                    | the backend rule                                                                                                                         |
+| organization code                                     | `orgCode`, `unique` global                                                                                                                              | the backend rule                                                                                                                         |
+| OIDC provider name                                    | `providerName`, `unique` within the providers map, checked in the browser                                                                               | the UI rule; the config route gains it                                                                                                   |
+| checksum                                              | `hex`, and the `checksum` rule: 32, 40, 64, 96 or 128 characters by type, the type from the sibling select                                              | the UI rule                                                                                                                              |
+| access mode, default role, invite role, checksum type | `enum`                                                                                                                                                  | the backend rules                                                                                                                        |
+| CI/CD URL                                             | `format: uri`                                                                                                                                           | the field is a link                                                                                                                      |
+| a configuration value                                 | by its schema: `type`, then `required`, `minimum`, `maximum`, `enum`, `pattern`, `format`                                                               | the [Universal Config Contract](universal-config/)                                                                                       |
 
 The four password composition knobs a UI backend may still carry
 (`local_password_require_uppercase` and its siblings) default to off and are
@@ -284,15 +297,15 @@ named in that UI backend's configuration as against the specification.
 
 ## Surfaces
 
-| Case | Surface | Never |
-| --- | --- | --- |
-| a field fails a rule, on blur | inline `FieldError` under the control, the control marked invalid, the value kept | a card, a banner, a toast |
-| submit with any failing field | `FormErrorSummary` at the top of the form, `role="alert"`, focused, one link per field, the same wording as inline; the request is not sent | a card |
-| the UI backend answers 422 | every `errors[]` entry painted into the inline spot its `pointer` names and listed in the summary; an entry whose pointer matches no field goes to the summary alone | `responseMessage` into a card |
-| the UI backend answers 409 | the same, the `unique` line reading that the value is already taken in its scope | a card |
-| 400, 403, 404, 5xx, no response | one danger card through `notify` drawing the translation of `messageKey` alone, the form and its values kept; a 400 is a defect in the client, not the user's data. `serverMessage`, `title` and `detail` go to the console and the client-error report for the developer and are never rendered, because a rendered server sentence is server-controlled prose on the page and can carry reflected input | inline; a card from `serverMessage` |
-| success | one success card, as today | |
-| state the user must know before acting | a banner, as the navbar contract's Notices section says | validation |
+| Case                                   | Surface                                                                                                                                                                                                                                                                                                                                                                                                   | Never                               |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| a field fails a rule, on blur          | inline `FieldError` under the control, the control marked invalid, the value kept                                                                                                                                                                                                                                                                                                                         | a card, a banner, a toast           |
+| submit with any failing field          | `FormErrorSummary` at the top of the form, `role="alert"`, focused, one link per field, the same wording as inline; the request is not sent                                                                                                                                                                                                                                                               | a card                              |
+| the UI backend answers 422             | every `errors[]` entry painted into the inline spot its `pointer` names and listed in the summary; an entry whose pointer matches no field goes to the summary alone                                                                                                                                                                                                                                      | `responseMessage` into a card       |
+| the UI backend answers 409             | the same, the `unique` line reading that the value is already taken in its scope                                                                                                                                                                                                                                                                                                                          | a card                              |
+| 400, 403, 404, 5xx, no response        | one danger card through `notify` drawing the translation of `messageKey` alone, the form and its values kept; a 400 is a defect in the client, not the user's data. `serverMessage`, `title` and `detail` go to the console and the client-error report for the developer and are never rendered, because a rendered server sentence is server-controlled prose on the page and can carry reflected input | inline; a card from `serverMessage` |
+| success                                | one success card, as today                                                                                                                                                                                                                                                                                                                                                                                |                                     |
+| state the user must know before acting | a banner, as the navbar contract's Notices section says                                                                                                                                                                                                                                                                                                                                                   | validation                          |
 
 The line between the two kinds: a card answers whether the request went
 through; a field error answers what is wrong with this value. A response
@@ -300,12 +313,12 @@ carrying `errors[]` is the second kind, every other failure the first.
 
 ### Timing
 
-| When | What runs |
-| --- | --- |
-| while typing | nothing; a field already marked invalid is re-evaluated on every change so the error clears the moment the value is right |
-| on blur | that field's rules |
-| on submit | every field's rules; the summary when any fail; the request only when none do |
-| on the response | the body's `errors[]`, or a card |
+| When            | What runs                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| while typing    | nothing; a field already marked invalid is re-evaluated on every change so the error clears the moment the value is right |
+| on blur         | that field's rules                                                                                                        |
+| on submit       | every field's rules; the summary when any fail; the request only when none do                                             |
+| on the response | the body's `errors[]`, or a card                                                                                          |
 
 Submit stays enabled: a disabled Save hides why; the button submits, the rules
 run, the summary explains (GOV.UK).
@@ -329,15 +342,15 @@ the property's `title`.
 
 ### Accessibility
 
-| Rule | Spec |
-| --- | --- |
-| the control carries `aria-invalid="true"` only after a blur or a submit found it wrong, never on first render | WAI-ARIA 1.2 `aria-invalid`: set only after the user has attempted to submit or the value is confirmed invalid |
-| the control's `aria-describedby` and `aria-errormessage` name the error's id; the error element exists only while the error does | WAI-ARIA 1.2 `aria-errormessage`, used with `aria-invalid="true"` |
-| the error text is prefixed by a visually hidden "Error:" | GOV.UK error message |
-| the summary is `role="alert"`, `tabindex="-1"`, focused when it appears, and links to each field | WCAG 2.2 SC 4.1.3 technique ARIA19; GOV.UK error summary; WAI-ARIA APG alert pattern, which forbids an alert from moving focus by itself, so the focus move is the summary's own |
-| the item in error is identified and described in text | WCAG 2.2 SC 3.3.1 (A), techniques G83, G85, ARIA21 |
-| a correction is suggested | WCAG 2.2 SC 3.3.3 (AA), technique G177 |
-| the hint under a field states the rule before the user fails it | GOV.UK hint text |
+| Rule                                                                                                                             | Spec                                                                                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the control carries `aria-invalid="true"` only after a blur or a submit found it wrong, never on first render                    | WAI-ARIA 1.2 `aria-invalid`: set only after the user has attempted to submit or the value is confirmed invalid                                                                   |
+| the control's `aria-describedby` and `aria-errormessage` name the error's id; the error element exists only while the error does | WAI-ARIA 1.2 `aria-errormessage`, used with `aria-invalid="true"`                                                                                                                |
+| the error text is prefixed by a visually hidden "Error:"                                                                         | GOV.UK error message                                                                                                                                                             |
+| the summary is `role="alert"`, `tabindex="-1"`, focused when it appears, and links to each field                                 | WCAG 2.2 SC 4.1.3 technique ARIA19; GOV.UK error summary; WAI-ARIA APG alert pattern, which forbids an alert from moving focus by itself, so the focus move is the summary's own |
+| the item in error is identified and described in text                                                                            | WCAG 2.2 SC 3.3.1 (A), techniques G83, G85, ARIA21                                                                                                                               |
+| a correction is suggested                                                                                                        | WCAG 2.2 SC 3.3.3 (AA), technique G177                                                                                                                                           |
+| the hint under a field states the rule before the user fails it                                                                  | GOV.UK hint text                                                                                                                                                                 |
 
 ---
 
@@ -352,36 +365,46 @@ Every refused write, on every UI backend, answers `application/problem+json`
   "title": "The request did not pass validation.",
   "status": 422,
   "errors": [
-    { "pointer": "/name", "rule": "pattern", "params": { "pattern": "slug" }, "detail": "name must match slug" },
-    { "pointer": "/version_number", "rule": "minLength", "params": { "minLength": 1 }, "detail": "version_number must be at least 1 character" }
+    {
+      "pointer": "/name",
+      "rule": "pattern",
+      "params": { "pattern": "slug" },
+      "detail": "name must match slug"
+    },
+    {
+      "pointer": "/version_number",
+      "rule": "minLength",
+      "params": { "minLength": 1 },
+      "detail": "version_number must be at least 1 character"
+    }
   ]
 }
 ```
 
-| Member | Meaning | Spec |
-| --- | --- | --- |
-| `type` | a URI under `https://auth.startcloud.com/probs/`, one registry for the estate, each type bound to one status as RFC 9457 §4 asks: `validation` (422), `conflict` (409), `bad-request` (400), `forbidden` (403), `not-found` (404), `internal` (500, the identity provider's `server` folded into it), `authentication` (401, a refused sign-in), `throttled` (429, every rate-limited answer), `method-locked` (409, a second-factor method disabled by its lockout), and the notification hub's own `notifications/<slug>` family, whose `validation` entry answers 422 like the rest | RFC 9457 §3.1.1, §4 |
-| `title` | the human summary of the type | §3.1.3 |
-| `status` | the HTTP status of this occurrence | §3.1.2 |
-| `detail` | a human explanation for logs and other clients; consumers SHOULD NOT parse it, and the UI never shows it | §3.1.4 |
-| `errors[]` | the §3 extension, one entry per failing value | §3, §3.2 |
-| `errors[].pointer` | a JSON Pointer into the request body as sent, `/name`, `/boxvault/origin`, `/configs/app/boxvault/origin` on the setup write, `/users/0/email` | RFC 6901; JSON Schema Core §12.3.3 `instanceLocation` |
-| `errors[].rule` | the keyword that failed, the last segment of the schema's `keywordLocation`, or one of the named rules outside the vocabulary | JSON Schema Core §12.3.1 |
-| `errors[].params` | the keyword's value in the rule, what the message needs to say: `{ "minLength": 15 }`, `{ "pattern": "slug" }` (the `$defs` name), `{ "scope": "STARTcloud" }` on `unique`, `{ "type": "SHA256", "length": 64 }` on `checksum` | this contract |
-| `errors[].detail` | the UI backend's own sentence, never shown | RFC 9457 §3 |
+| Member             | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Spec                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `type`             | a URI under `https://auth.startcloud.com/probs/`, one registry for the estate, each type bound to one status as RFC 9457 §4 asks: `validation` (422), `conflict` (409), `bad-request` (400), `forbidden` (403), `not-found` (404), `internal` (500, the identity provider's `server` folded into it), `authentication` (401, a refused sign-in), `throttled` (429, every rate-limited answer), `method-locked` (409, a second-factor method disabled by its lockout), and the notification hub's own `notifications/<slug>` family, whose `validation` entry answers 422 like the rest | RFC 9457 §3.1.1, §4                                   |
+| `title`            | the human summary of the type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | §3.1.3                                                |
+| `status`           | the HTTP status of this occurrence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | §3.1.2                                                |
+| `detail`           | a human explanation for logs and other clients; consumers SHOULD NOT parse it, and the UI never shows it                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | §3.1.4                                                |
+| `errors[]`         | the §3 extension, one entry per failing value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | §3, §3.2                                              |
+| `errors[].pointer` | a JSON Pointer into the request body as sent, `/name`, `/boxvault/origin`, `/configs/app/boxvault/origin` on the setup write, `/users/0/email`                                                                                                                                                                                                                                                                                                                                                                                                                                         | RFC 6901; JSON Schema Core §12.3.3 `instanceLocation` |
+| `errors[].rule`    | the keyword that failed, the last segment of the schema's `keywordLocation`, or one of the named rules outside the vocabulary                                                                                                                                                                                                                                                                                                                                                                                                                                                          | JSON Schema Core §12.3.1                              |
+| `errors[].params`  | the keyword's value in the rule, what the message needs to say: `{ "minLength": 15 }`, `{ "pattern": "slug" }` (the `$defs` name), `{ "scope": "STARTcloud" }` on `unique`, `{ "type": "SHA256", "length": 64 }` on `checksum`                                                                                                                                                                                                                                                                                                                                                         | this contract                                         |
+| `errors[].detail`  | the UI backend's own sentence, never shown                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | RFC 9457 §3                                           |
 
 A client MUST ignore members it does not recognize (§3.2), so a UI backend may add
 `instance` or its own members without breaking the UI.
 
 ### Status codes
 
-| Status | When | Spec |
-| --- | --- | --- |
-| 400 Bad Request | the request could not be read: unparseable JSON, a missing body, a wrong content type, a malformed header; never a rule failure | RFC 9110 §15.5.1 |
+| Status                    | When                                                                                                                                                                                                     | Spec              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 400 Bad Request           | the request could not be read: unparseable JSON, a missing body, a wrong content type, a malformed header; never a rule failure                                                                          | RFC 9110 §15.5.1  |
 | 422 Unprocessable Content | the body was read and a value breaks a rule: "the syntax of the request content is correct (thus a 400 (Bad Request) status code is inappropriate) but was unable to process the contained instructions" | RFC 9110 §15.5.21 |
-| 409 Conflict | the one failing rule is `unique`: "the request conflicts with the current state of the target resource" | RFC 9110 §15.5.10 |
-| 403 Forbidden | the caller may not do this | RFC 9110 §15.5.4 |
-| 404 Not Found | the parent does not exist | RFC 9110 §15.5.5 |
+| 409 Conflict              | the one failing rule is `unique`: "the request conflicts with the current state of the target resource"                                                                                                  | RFC 9110 §15.5.10 |
+| 403 Forbidden             | the caller may not do this                                                                                                                                                                               | RFC 9110 §15.5.4  |
+| 404 Not Found             | the parent does not exist                                                                                                                                                                                | RFC 9110 §15.5.5  |
 
 The industry is split on 400 versus 422 for a rule failure, by generation more
 than by argument: GitHub's REST API, FastAPI, Laravel and Rails answer 422
@@ -400,17 +423,17 @@ because the UI keys on `errors[]` being present, but it is still a defect.
 
 One implementation in the STARTcloud UI, every form drawn through it:
 
-| Piece | Role |
-| --- | --- |
-| `src/utils/validation.js` | `DEFS`, the named patterns as the fallback document; `validateValue(schema, value, document)` and `validateObject(schema, values, document)` over the vocabulary, answering `[{ pointer, rule, params }]`, nested objects and `additionalProperties` maps walked, a property hidden by `dependsOn`/`showWhen` skipped, `equals` and `custom` honoured; `isVisible`, `scopesFor`; `messageFor(error, label, t)` mapping to `validation.<rule>` |
-| `src/lib/runtime.js` | `rules`, the UI backend's `/api/rules` fetched once by `loadRules()` before the first render; `null` on 404 or any failure |
-| `src/hooks/useFormRules.js` | `useFormRules({ formKey, schema, values, labels, idPrefix })` → `{ errors, touched, summary, onBlur, validateAll, applyServerErrors, clear, reset, idFor, labelFor }`: the UI backend's entry merged onto the page's declaration, the blur and submit timing, the server's `errors[]` merged by pointer with entries matching no field kept for the summary, a server error cleared when its value changes |
-| `src/components/common/Field.jsx` | the label, the control as a render prop receiving `{ id, aria-invalid, aria-describedby, aria-errormessage }`, the hint while there is no error, `FieldError` while there is |
-| `src/components/common/FieldError.jsx` | the inline error with its id, the hidden prefix and the danger rule |
-| `src/components/common/FormErrorSummary.jsx` | the summary: `role="alert"`, `tabindex="-1"`, focused when it appears, one link per error, an entry with no field as text |
-| `src/lib/apiClient.js` | `ApiError.problem` (the parsed body when it is `application/problem+json` or carries `type` and `status`) and `ApiError.fieldErrors` (its `errors[]`); 422 to `errors.validation`, 409 to `errors.conflict`, neither drawn as a card by a form |
-| `src/features/collections/boxes/forms.js` | the page schemas and label keys of the box, ISO, version, provider and architecture forms, the checksum `custom` rule among them |
-| `public/locales/<lang>/shared.json` | `validation.*`, one key per rule, replacing `setup.validation.*`, `boxes.validation.*` and `auth:errors.fieldRequired`, `usernameLength`, `invalidEmail`, `passwordLength` |
+| Piece                                        | Role                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/utils/validation.js`                    | `DEFS`, the named patterns as the fallback document; `validateValue(schema, value, document)` and `validateObject(schema, values, document)` over the vocabulary, answering `[{ pointer, rule, params }]`, nested objects and `additionalProperties` maps walked, a property hidden by `dependsOn`/`showWhen` skipped, `equals` and `custom` honoured; `isVisible`, `scopesFor`; `messageFor(error, label, t)` mapping to `validation.<rule>` |
+| `src/lib/runtime.js`                         | `rules`, the UI backend's `/api/rules` fetched once by `loadRules()` before the first render; `null` on 404 or any failure                                                                                                                                                                                                                                                                                                                    |
+| `src/hooks/useFormRules.js`                  | `useFormRules({ formKey, schema, values, labels, idPrefix })` → `{ errors, touched, summary, onBlur, validateAll, applyServerErrors, clear, reset, idFor, labelFor }`: the UI backend's entry merged onto the page's declaration, the blur and submit timing, the server's `errors[]` merged by pointer with entries matching no field kept for the summary, a server error cleared when its value changes                                    |
+| `src/components/common/Field.jsx`            | the label, the control as a render prop receiving `{ id, aria-invalid, aria-describedby, aria-errormessage }`, the hint while there is no error, `FieldError` while there is                                                                                                                                                                                                                                                                  |
+| `src/components/common/FieldError.jsx`       | the inline error with its id, the hidden prefix and the danger rule                                                                                                                                                                                                                                                                                                                                                                           |
+| `src/components/common/FormErrorSummary.jsx` | the summary: `role="alert"`, `tabindex="-1"`, focused when it appears, one link per error, an entry with no field as text                                                                                                                                                                                                                                                                                                                     |
+| `src/lib/apiClient.js`                       | `ApiError.problem` (the parsed body when it is `application/problem+json` or carries `type` and `status`) and `ApiError.fieldErrors` (its `errors[]`); 422 to `errors.validation`, 409 to `errors.conflict`, neither drawn as a card by a form                                                                                                                                                                                                |
+| `src/features/collections/boxes/forms.js`    | the page schemas and label keys of the box, ISO, version, provider and architecture forms, the checksum `custom` rule among them                                                                                                                                                                                                                                                                                                              |
+| `public/locales/<lang>/shared.json`          | `validation.*`, one key per rule, replacing `setup.validation.*`, `boxes.validation.*` and `auth:errors.fieldRequired`, `usernameLength`, `invalidEmail`, `passwordLength`                                                                                                                                                                                                                                                                    |
 
 The forms drawn through it: sign in, register, profile (password, email,
 display name, service account), organization console (organization record,
@@ -422,28 +445,28 @@ SMTP test recipient, the setup page and the admin configuration tab.
 
 ## Server reference
 
-| Host | Where | Status |
-| --- | --- | --- |
-| BoxVault | `backend/app/rules/*.json` served by `GET /api/rules`; `validateBody(form)` in `backend/app/middleware/validate.js` on every write route; `backend/app/utils/validation.js` the evaluator; `backend/app/utils/problem.js` the body | ✓ |
-| VDI Health Monitor | `vdi_health/rules.json` served by `GET /api/rules`; `vdi_health/validation.py` the evaluator; `problem()` in `vdi_health/i18n.py` the body | ✓ |
-| Provisioner catalog | `problemResponse` in `worker/src/index.js` on the Worker's writes; no forms, so no `/api/rules` | ✓ |
-| Authorization server | one `ProblemDetail` handler answering `MethodArgumentNotValidException` as 422 with `errors[]`; `GET /api/rules` for its forms; its own pages draw the same surfaces when they join the shared UI | to come |
+| Host                 | Where                                                                                                                                                                                                                              | Status  |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| BoxVault             | `backend/app/rules/*.json` served by `GET /api/rules`; `validateBody(form)` in `backend/app/middleware/validate.js` on every write route; `backend/app/utils/validation.js` the evaluator; `backend/app/utils/problem.js` the body | ✓       |
+| VDI Health Monitor   | `vdi_health/rules.json` served by `GET /api/rules`; `vdi_health/validation.py` the evaluator; `problem()` in `vdi_health/i18n.py` the body                                                                                         | ✓       |
+| Provisioner catalog  | `problemResponse` in `worker/src/index.js` on the Worker's writes; no forms, so no `/api/rules`                                                                                                                                    | ✓       |
+| Authorization server | one `ProblemDetail` handler answering `MethodArgumentNotValidException` as 422 with `errors[]`; `GET /api/rules` for its forms; its own pages draw the same surfaces when they join the shared UI                                  | to come |
 
 ---
 
 ## Conformance checklist
 
-| Line | Catalog | BoxVault | VDI Health | Auth server |
-| --- | --- | --- | --- | --- |
-| `GET /api/rules` answers the UI backend's forms as JSON Schema 2020-12 with the estate's `$defs` and `unique` | n/a, no forms | ✓ | ✓ the `$defs`, no forms | to come |
-| the write route evaluates the same document before the write; a rule outside the vocabulary answers in the same body | ✓ | ✓ `validateBody(form)` | ✓ | to come |
-| every refused write is `application/problem+json` with `type`, `title`, `status` and `errors[]` of `pointer`, `rule`, `params`, `detail` | ✓ `problemResponse` | ✓ `problem()` | ✓ `problem()` | to come |
-| 422 for a rule failure, 409 for `unique`, 400 only for an unreadable request | ✓ no `unique` | ✓ | ✓ no `unique` | to come |
-| password minimum 15 by default, at least 64 accepted, no composition rules, a blocklist on the route | n/a | ✓ `auth.local.local_password_min_length`, `rules/password-blocklist.json` | n/a, no passwords | to come |
-| the email grammar is the HTML Standard's on both sides | n/a | ✓ | n/a | to come |
-| every form draws `FieldError` and `FormErrorSummary`, validates on blur and on submit, never on keystroke, never in a card | ✓ shared UI | ✓ shared UI | ✓ shared UI | to come |
-| `aria-invalid` only after blur or submit, `aria-describedby` and `aria-errormessage` wired, the summary `role="alert"` and focused | ✓ shared UI | ✓ shared UI | ✓ shared UI | to come |
-| the wording says what to enter, in the label's words, one `validation.<rule>` key per rule | ✓ shared UI | ✓ shared UI | ✓ shared UI | to come |
+| Line                                                                                                                                     | Catalog             | BoxVault                                                                  | VDI Health              | Auth server |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------- | ----------------------- | ----------- |
+| `GET /api/rules` answers the UI backend's forms as JSON Schema 2020-12 with the estate's `$defs` and `unique`                            | n/a, no forms       | ✓                                                                         | ✓ the `$defs`, no forms | to come     |
+| the write route evaluates the same document before the write; a rule outside the vocabulary answers in the same body                     | ✓                   | ✓ `validateBody(form)`                                                    | ✓                       | to come     |
+| every refused write is `application/problem+json` with `type`, `title`, `status` and `errors[]` of `pointer`, `rule`, `params`, `detail` | ✓ `problemResponse` | ✓ `problem()`                                                             | ✓ `problem()`           | to come     |
+| 422 for a rule failure, 409 for `unique`, 400 only for an unreadable request                                                             | ✓ no `unique`       | ✓                                                                         | ✓ no `unique`           | to come     |
+| password minimum 15 by default, at least 64 accepted, no composition rules, a blocklist on the route                                     | n/a                 | ✓ `auth.local.local_password_min_length`, `rules/password-blocklist.json` | n/a, no passwords       | to come     |
+| the email grammar is the HTML Standard's on both sides                                                                                   | n/a                 | ✓                                                                         | n/a                     | to come     |
+| every form draws `FieldError` and `FormErrorSummary`, validates on blur and on submit, never on keystroke, never in a card               | ✓ shared UI         | ✓ shared UI                                                               | ✓ shared UI             | to come     |
+| `aria-invalid` only after blur or submit, `aria-describedby` and `aria-errormessage` wired, the summary `role="alert"` and focused       | ✓ shared UI         | ✓ shared UI                                                               | ✓ shared UI             | to come     |
+| the wording says what to enter, in the label's words, one `validation.<rule>` key per rule                                               | ✓ shared UI         | ✓ shared UI                                                               | ✓ shared UI             | to come     |
 
 ---
 

@@ -7,16 +7,18 @@ const gravatarHashOf = (backend, user) =>
 
 /**
  * The signed-in account's avatar: the stored avatar of a backend profile,
- * else the Gravatar behind its email hash, fetched once; the provider's
- * `picture` claim for an identity-provider session; empty when signed out.
+ * else the Gravatar behind its email hash, fetched once; the profile's
+ * `picture` for a cookie session; the provider's `picture` claim for an
+ * identity-provider session; empty when signed out.
  *
  * @param {Object} options - The account
  * @param {boolean} options.backend - Whether the session is the app's own backend
+ * @param {boolean} [options.cookie] - Whether the session is the identity provider's own cookie session
  * @param {Object|null} options.user - The session's user
  * @param {Object|null} options.claims - The session's claims
  * @returns {string} The avatar URL
  */
-export const useAccountAvatar = ({ backend, user, claims }) => {
+export const useAccountAvatar = ({ backend, cookie = false, user, claims }) => {
   const [gravatar, setGravatar] = useState(null);
   const emailHash = gravatarHashOf(backend, user);
 
@@ -41,6 +43,9 @@ export const useAccountAvatar = ({ backend, user, claims }) => {
   if (backend) {
     const fetched = gravatar && gravatar.emailHash === user.emailHash ? gravatar.url : '';
     return user.avatarUrl || fetched;
+  }
+  if (cookie) {
+    return user.picture || '';
   }
   return claims?.picture || '';
 };

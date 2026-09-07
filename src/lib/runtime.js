@@ -7,8 +7,19 @@ import { createSessionEvents } from './events';
 import { log } from './logger';
 
 const PUBLIC = { auth: false };
+const DATA_ATTRIBUTE = /^data-[a-z0-9-]+$/;
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
+
+const appendAnalytics = analytics => {
+  if (!analytics?.script_url || !DATA_ATTRIBUTE.test(analytics.attribute || '')) {
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = analytics.script_url;
+  script.setAttribute(analytics.attribute, analytics.value ?? '');
+  document.head.appendChild(script);
+};
 
 const onError = error =>
   log.api.error('Request failed', {
@@ -81,13 +92,16 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * is known: the session provider and return-to helper from `createSession`,
  * the API client at the origin that serves the page (the dev proxy when
  * Vite serves it), and the notification hub client, the identity provider
- * itself for an `idp` host and the app's own backend otherwise. Runs once
- * per entry before anything renders; the exports are live bindings.
+ * itself for an `idp` host and the app's own backend otherwise; and the
+ * analytics script tag with its data attribute when the status carries
+ * `analytics`. Runs once per entry before anything renders; the exports
+ * are live bindings.
  *
  * @param {Object} status - The payload from `probeStatus`
  */
 export const initRuntime = status => {
   apiOrigin = __API_ORIGIN__ || window.location.origin;
+  appendAnalytics(status.analytics);
   ({ session, returnTo } = createSession(status, events));
   client = createApiClient({
     baseUrl: apiOrigin,

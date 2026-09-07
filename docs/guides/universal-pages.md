@@ -36,7 +36,7 @@ against the apps as they were before it.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -93,29 +93,29 @@ against the apps as they were before it.
 
 ## Information architecture
 
-| Level | Route shape | Page | Breadcrumb after the brand |
-| --- | --- | --- | --- |
-| home | `/` | HomePage: every collection, organization group rows, private and public rows side by side | nothing |
-| collection, all orgs | `/{collection}` | CollectionPage across organizations | `› ISOs` |
-| organization | `/{org}` | OrgPage: org header, one heading row and table per collection; private items when the viewer is a member | `› STARTcloud` |
-| collection, one org | `/{org}/{collection}` | CollectionPage for that organization | `› STARTcloud › ISOs` |
-| item | `/{org}/{collection}/{item}` | ItemPage | `› STARTcloud › Boxes › alma9-server` |
-| version | `…/{item}/{version}` | VersionPage | `› … › 1.2.3` |
-| provider | `…/{version}/{provider}` | ProviderPage | `› … › zone` |
+| Level                | Route shape                  | Page                                                                                                     | Breadcrumb after the brand            |
+| -------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| home                 | `/`                          | HomePage: every collection, organization group rows, private and public rows side by side                | nothing                               |
+| collection, all orgs | `/{collection}`              | CollectionPage across organizations                                                                      | `› ISOs`                              |
+| organization         | `/{org}`                     | OrgPage: org header, one heading row and table per collection; private items when the viewer is a member | `› STARTcloud`                        |
+| collection, one org  | `/{org}/{collection}`        | CollectionPage for that organization                                                                     | `› STARTcloud › ISOs`                 |
+| item                 | `/{org}/{collection}/{item}` | ItemPage                                                                                                 | `› STARTcloud › Boxes › alma9-server` |
+| version              | `…/{item}/{version}`         | VersionPage                                                                                              | `› … › 1.2.3`                         |
+| provider             | `…/{version}/{provider}`     | ProviderPage                                                                                             | `› … › zone`                          |
 
 An app maps its own paths onto those levels; the shape above is the
 canonical one and the one a new app adopts. Two existing apps map it as
 follows.
 
-| Level | BoxVault (unchanged paths) | Catalog |
-| --- | --- | --- |
-| home | `/` | `/` |
-| collection, all orgs | `/isos` (boxes have no page of their own; the Collection filter narrows home) | `/` is provisioners |
-| organization | `/{org}` | `/{org}` |
-| collection, one org | `/{org}/isos` | `/{org}` |
-| item | `/{org}/{box}`, `/{org}/isos/{iso}` | `/{org}/{provisioner}` |
-| version | `/{org}/{box}/{version}` | `/{org}/{provisioner}/{version}` |
-| provider | `/{org}/{box}/{version}/{provider}` | `/{org}/{provisioner}/{version}/{provider}` |
+| Level                | BoxVault (unchanged paths)                                                    | Catalog                                     |
+| -------------------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
+| home                 | `/`                                                                           | `/`                                         |
+| collection, all orgs | `/isos` (boxes have no page of their own; the Collection filter narrows home) | `/` is provisioners                         |
+| organization         | `/{org}`                                                                      | `/{org}`                                    |
+| collection, one org  | `/{org}/isos`                                                                 | `/{org}`                                    |
+| item                 | `/{org}/{box}`, `/{org}/isos/{iso}`                                           | `/{org}/{provisioner}`                      |
+| version              | `/{org}/{box}/{version}`                                                      | `/{org}/{provisioner}/{version}`            |
+| provider             | `/{org}/{box}/{version}/{provider}`                                           | `/{org}/{provisioner}/{version}/{provider}` |
 
 `/isos`, `/{org}/isos` and `/{org}/isos/{iso}` are additive browser routes;
 the Vagrant handler keys on the `Vagrant/` user agent before any of them.
@@ -252,16 +252,16 @@ wrap), so the shared columns sit at the same x on every table of both
 apps however many columns follow, and only the wide columns — Providers,
 Architectures, the catalog's coverage and Checksum — share the remainder:
 
-| Column | Boxes | ISOs | Provisioners |
-| --- | --- | --- | --- |
-| watch | star signed in, blank signed out | star signed in, blank signed out | star signed in, blank signed out |
-| Name | org logo + `org/name` link | org logo + `org/name` link | icon + label link, slug beside it |
-| Visibility | Public / Private | Public / Private | Public / Private |
-| Created | `createdAt`, hidden until shown | `createdAt`, hidden until shown | none |
-| Updated | `updatedAt`, hidden until shown | `updatedAt`, hidden until shown | none |
-| Downloads | sum of file `downloadCount` | the ISO's `downloadCount` | health downloads |
-| then | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · Size · Checksum | Tier · Latest release · Versions · Providers |
-| row actions | none | none | none |
+| Column      | Boxes                                                                                    | ISOs                             | Provisioners                                 |
+| ----------- | ---------------------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
+| watch       | star signed in, blank signed out                                                         | star signed in, blank signed out | star signed in, blank signed out             |
+| Name        | org logo + `org/name` link                                                               | org logo + `org/name` link       | icon + label link, slug beside it            |
+| Visibility  | Public / Private                                                                         | Public / Private                 | Public / Private                             |
+| Created     | `createdAt`, hidden until shown                                                          | `createdAt`, hidden until shown  | none                                         |
+| Updated     | `updatedAt`, hidden until shown                                                          | `updatedAt`, hidden until shown  | none                                         |
+| Downloads   | sum of file `downloadCount`                                                              | the ISO's `downloadCount`        | health downloads                             |
+| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · Size · Checksum         | Tier · Latest release · Versions · Providers |
+| row actions | none                                                                                     | none                             | none                                         |
 
 Rows carry no action buttons; an item's actions live on its page and the
 watch star is the only in-row control. One label key per column,
@@ -327,15 +327,15 @@ architecture {
 - `published: null` and `isPublic: null` hide the matching chip and
   column.
 
-| Source | BoxVault adapter | Catalog adapter |
-| --- | --- | --- |
-| list, all orgs | `BoxService.discoverAll`, `IsoService.discoverAll`, both widened by the caller's token to the token's memberships | `/api/catalog` plus `/api/private/{uuid}/catalog` for every membership while the UI backend advertises `private-catalogs` |
-| list, one org | `BoxService.getAll`, `IsoService.getAll`, both widened by the caller's token | `/api/private/{uuid}/catalog` + public items by owner |
-| item | `BoxService.get` + `VersionService.getVersions` + `ProviderService.getProviders`; the ISO from the org list | the item from the list, providers per version from `/api/catalog/health` |
-| version | `VersionService.getVersion` + providers + architectures + `FileService.getDownloadLink` | the version's artifacts |
-| provider | `ProviderService.getProvider` + `ArchitectureService.getArchitectures` + `FileService.info` | the version's artifacts |
-| watches | `BoxService.watch/unwatch/getUserWatches`, `IsoService.watch/unwatch/getUserWatches`, one watch set per collection; dropped by the registry when the UI backend lacks `watches` | the Worker's `/api/watches`: `GET` the caller's ids, `POST { id }`, `DELETE ?id=`, kept in KV under the token's uuid so they follow the user; the data job notifies each watcher of a new version through the hub inbox and push |
-| health extras | none | `tier`, `failed_rules`, `presentation`, coverage per version |
+| Source         | BoxVault adapter                                                                                                                                                                | Catalog adapter                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| list, all orgs | `BoxService.discoverAll`, `IsoService.discoverAll`, both widened by the caller's token to the token's memberships                                                               | `/api/catalog` plus `/api/private/{uuid}/catalog` for every membership while the UI backend advertises `private-catalogs`                                                                                                        |
+| list, one org  | `BoxService.getAll`, `IsoService.getAll`, both widened by the caller's token                                                                                                    | `/api/private/{uuid}/catalog` + public items by owner                                                                                                                                                                            |
+| item           | `BoxService.get` + `VersionService.getVersions` + `ProviderService.getProviders`; the ISO from the org list                                                                     | the item from the list, providers per version from `/api/catalog/health`                                                                                                                                                         |
+| version        | `VersionService.getVersion` + providers + architectures + `FileService.getDownloadLink`                                                                                         | the version's artifacts                                                                                                                                                                                                          |
+| provider       | `ProviderService.getProvider` + `ArchitectureService.getArchitectures` + `FileService.info`                                                                                     | the version's artifacts                                                                                                                                                                                                          |
+| watches        | `BoxService.watch/unwatch/getUserWatches`, `IsoService.watch/unwatch/getUserWatches`, one watch set per collection; dropped by the registry when the UI backend lacks `watches` | the Worker's `/api/watches`: `GET` the caller's ids, `POST { id }`, `DELETE ?id=`, kept in KV under the token's uuid so they follow the user; the data job notifies each watcher of a new version through the hub inbox and push |
+| health extras  | none                                                                                                                                                                            | `tier`, `failed_rules`, `presentation`, coverage per version                                                                                                                                                                     |
 
 ---
 
@@ -445,17 +445,17 @@ adds its own foldable section to an item page (the catalog's Quality).
   organization, the active one by default, the one-time token, the keys
   grouped per organization, select and delete); `account` is
   `{ gravatarProfile, changePassword, changeEmail, changeName, remove,
-  verifyMail, resendVerification, organizations, leave, setPrimary,
-  requests, cancelRequest, serviceAccounts: { list, organizations, create,
-  remove } }`, and an edit that the session must reflect calls
+verifyMail, resendVerification, organizations, leave, setPrimary,
+requests, cancelRequest, serviceAccounts: { list, organizations, create,
+remove } }`, and an edit that the session must reflect calls
   `session.reload()` and emits `login` on the bus. Its keys are
   `profile.*` in `shared.json`; the catalog carries it unrouted, its
   profile being the identity provider's.
 - **OrgConsolePage** and **DiscoveryPage**: the organization pages of an
   app with organizations of its own, over one `organizations` adapter
   (`get, update, accessMode, users, memberRole, removeMember, invite,
-  invitations, removeInvitation, requests, approveRequest, denyRequest,
-  discover, join, gravatarProfile`).
+invitations, removeInvitation, requests, approveRequest, denyRequest,
+discover, join, gravatarProfile`).
   `OrgConsolePage({ session, activeOrgKey, organizations, org, admin })`
   is the console of the active organization for its owners and admins:
   Organization (the editable record and access mode of a local
@@ -469,7 +469,7 @@ adds its own foldable section to an item page (the catalog's Quality).
   `admin` is the app's global-admin flag folded into `isOwner`, and a
   rename stores the new name under `activeOrgKey` and refreshes the
   session. `DiscoveryPage({ session, returnTo, organizations, orgMark,
-  joinIntentKey })` lists the organizations open to discovery with their
+joinIntentKey })` lists the organizations open to discovery with their
   access mode and counts, searched from the navbar, and opens the
   request-to-join dialog (a react-bootstrap `Modal`); a visitor is sent to
   sign in with the organization kept under `joinIntentKey`. `UserCard`
@@ -480,7 +480,7 @@ adds its own foldable section to an item page (the catalog's Quality).
   both unrouted.
 - **AdminPage**: the admin page of an app with accounts and configuration
   of its own, `AdminPage({ session, returnTo, allowed, admin,
-  activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
+activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
   app's own `updateCommand` with a copy button) when the app's
   `updateStatus` reports one, then Organizations and users
   (`AdminOrganizations`: every organization with its `UserCard` members,
@@ -493,10 +493,10 @@ adds its own foldable section to an item page (the catalog's Quality).
   `Modal`, update, restart, SSL upload on upload fields, the SMTP test on
   mail) and System (`AdminStorage`, one bar per
   storage path); `admin` is `{ organizationsWithUsers, organization,
-  updateOrganization, accessMode, suspendOrganization, resumeOrganization,
-  removeOrganization, removeMember, removeUser, suspendUser, resumeUser,
-  gravatarProfile, config: { get, update, restart, testSmtp, uploadSsl },
-  storage, updateStatus }`, `allowed` the app's global-admin flag; a
+updateOrganization, accessMode, suspendOrganization, resumeOrganization,
+removeOrganization, removeMember, removeUser, suspendUser, resumeUser,
+gravatarProfile, config: { get, update, restart, testSmtp, uploadSsl },
+storage, updateStatus }`, `allowed` the app's global-admin flag; a
   visitor is sent to sign in and a non-admin home. With the sidebar of
   the navbar contract those three are the admin feature's sidebar entries
   at `/admin`, `/admin/config` and `/admin/system`, one page each, on
@@ -506,7 +506,7 @@ adds its own foldable section to an item page (the catalog's Quality).
   unrouted.
 - **SetupPage**: the first-run page of an app that configures itself in
   the browser, `SetupPage({ setup })` with `setup` as `{ status,
-  verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
+verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   per name in `status.config` with every field validated against the served
   schema through the shared evaluator, the SQLite path in place of the SQL
   block following `dependsOn`/`showWhen` in the schema, the SSL upload on
@@ -572,13 +572,13 @@ The search module and its panel are the navbar contract's; a listing page
 registers one binding over every collection it shows. Groups appear in
 this order:
 
-| Group | When | Values |
-| --- | --- | --- |
-| Collection | the page lists more than one collection | one pill per collection (Boxes, ISOs), counts of rows |
-| Visibility | private rows exist on the page | Public, Private |
-| Watched | signed in, and a watched row of any collection is on the page | Watched, one pill narrowing every collection at once |
-| the collection's own | always, prefixed by the collection name when several are listed | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs across organizations: Organization (primary); catalog provisioners: Tier (badge colours) · Provider (primary) |
-| Columns | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone |
+| Group                | When                                                                      | Values                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Collection           | the page lists more than one collection                                   | one pill per collection (Boxes, ISOs), counts of rows                                                                                                                                                |
+| Visibility           | private rows exist on the page                                            | Public, Private                                                                                                                                                                                      |
+| Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                 |
+| the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs across organizations: Organization (primary); catalog provisioners: Tier (badge colours) · Provider (primary) |
+| Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                               |
 
 Query matches: BoxVault name, label, description and organization; the
 catalog also the repository. Picking a Collection pill hides the other
@@ -652,23 +652,23 @@ the "How it fits" section of
 
 One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcloud-ui):
 
-| Path | Role |
-| --- | --- |
-| `src/features/catalog/` | The shared pages: `HomePage.jsx`, `OrgPage.jsx`, `CollectionPage.jsx`, `ItemPage.jsx`, `VersionPage.jsx`, `ProviderPage.jsx`, `Listing.jsx`, `ItemsTable.jsx`, `ItemCards.jsx`, `ItemFacts.jsx`, `columns.jsx`, the `useCatalogSearch` hook, `itemShape.js` and `prefs.js` |
-| `src/app/router.jsx` | The route table: the collection routes from the registry in the UI backend's order, every feature route gated by `hasFeature` or the first `auth` token |
-| `src/utils/routes.js`, `src/components/layout/AppShell.jsx` | The crumbs drawn from the route |
-| `src/features/collections/registry.js` | `collectionsFor(status)` over the three definitions below |
-| `src/features/collections/provisioners/` | `definition`, `adapter.js` (the membership merge over `/api/catalog` and `/api/private/{uuid}/catalog`), `api.js`, `deploy.jsx`, `slots/RebuildItem.jsx` |
-| `src/features/collections/boxes/`, `isos/` | `definition`, `adapter.js`, `api.js`, `deploy.jsx`, `permissions.js`, `versionFields.js`, `uploadChunked.js`, `distroIcons.js`, and the slots for create, edit, publish, add version, add provider, add architecture, ISO upload and ISO actions in `slots/BoxList.jsx`, `slots/BoxItem.jsx`, `slots/BoxVersion.jsx`, `slots/BoxProvider.jsx` and `slots/Iso.jsx`; BoxVault's ISO read routes share the box routes' token rule and field names (`isPublic`, `published`, `fileName`, `downloadCount`) |
-| `src/features/deploy/` | `DeployControls` and `HyperweaverGlyph.jsx` |
-| `src/features/search/` | `SearchPage.jsx`, `SearchResults.jsx` (the list under the navbar panel), `useAppSearch` (the UI backend's `/api/search` behind the `search` token, else the client-side walk of the mounted collections), `searchRow.js` (the row shape and its path) |
-| `src/features/about/` | `AboutPage.jsx` and `AboutRoute.jsx`, keyed by `status.role` over `about.boxvault.*` and `about.catalog.*`; a role with no `about.<role>.*` keys, the `auth-server` role today, answers `NotAvailableStub` at `/about` |
-| `src/features/auth/` | `LoginPage.jsx`, `RegisterPage.jsx`, `InvitePage.jsx`, `CallbackPage.jsx`, `AuthShell.jsx`, `ProviderButtons.jsx` and the `api/` calls of the session contract's account pages |
-| `src/features/profile/`, `organizations/`, `admin/`, `setup/` | `ProfilePage.jsx`; `OrgConsolePage.jsx` and `DiscoveryPage.jsx`; `AdminPage.jsx`, `AdminOrganizations.jsx` (drawn only when the adapter carries `organizationsWithUsers`), `AdminConfig.jsx` (one tab per name in `status.config`, `["app"]` when absent), `AdminStorage.jsx` (only when the adapter carries `storage`), `OidcProviders.jsx`, `UpdateNotice.jsx` (the update command from `status.role`) and `utils/schemaSections.js`; `SetupPage.jsx`; each with its `api/` calls |
-| `src/features/vdi/` | The fleet pages: `FleetPage.jsx`, `StatusCards.jsx`, `PoolCards.jsx`, `FleetTable.jsx`, `DriveBadges.jsx`, `CacheBadge.jsx`, `SessionBadge.jsx`, `LastSeen.jsx`, `IconsCell.jsx`, `ExportButtons.jsx`, `VmPage.jsx`, `VmOverview.jsx`, `VmHistory.jsx`, `VmStats.jsx`, `VmMetrics.jsx`; the hooks `useFleet.js`, `useFleetSearch.js`, `useVmHistory.js`; `api/fleet.js`; `utils/vmStatus.js`, `cacheLevel.js`, `eventTypes.js`, `exportRows.js` |
-| `src/lib/sse.js`, `src/hooks/useEventStream.js` | The shared event-stream client and the hook a page subscribes to named events with, per the [Universal Events Contract](universal-events/) |
-| `src/components/common/` | `PageHeader.jsx`, `StatusChips.jsx`, `DeprecationBanner.jsx`, `GroupHeading.jsx`, `ConfirmModal.jsx` (the type-to-confirm modal every destructive action opens, its keys under `pages.confirm.*`), `ConfigField.jsx`, `UserCard.jsx` |
-| `src/utils/` | `membership.js` (`isMember`, `isManager`, `isOwner` over the chrome's organization shape), `organizations.js` (`organizationsShape`, `ORG_NAME_PATTERN`, `membershipsOf`), `auth.js` (`authShape`, `returnToShape` and the sign-in method helpers), `validation.js` (the shared evaluator) |
+| Path                                                          | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/catalog/`                                       | The shared pages: `HomePage.jsx`, `OrgPage.jsx`, `CollectionPage.jsx`, `ItemPage.jsx`, `VersionPage.jsx`, `ProviderPage.jsx`, `Listing.jsx`, `ItemsTable.jsx`, `ItemCards.jsx`, `ItemFacts.jsx`, `columns.jsx`, the `useCatalogSearch` hook, `itemShape.js` and `prefs.js`                                                                                                                                                                                                                            |
+| `src/app/router.jsx`                                          | The route table: the collection routes from the registry in the UI backend's order, every feature route gated by `hasFeature` or the first `auth` token                                                                                                                                                                                                                                                                                                                                               |
+| `src/utils/routes.js`, `src/components/layout/AppShell.jsx`   | The crumbs drawn from the route                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `src/features/collections/registry.js`                        | `collectionsFor(status)` over the three definitions below                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `src/features/collections/provisioners/`                      | `definition`, `adapter.js` (the membership merge over `/api/catalog` and `/api/private/{uuid}/catalog`), `api.js`, `deploy.jsx`, `slots/RebuildItem.jsx`                                                                                                                                                                                                                                                                                                                                              |
+| `src/features/collections/boxes/`, `isos/`                    | `definition`, `adapter.js`, `api.js`, `deploy.jsx`, `permissions.js`, `versionFields.js`, `uploadChunked.js`, `distroIcons.js`, and the slots for create, edit, publish, add version, add provider, add architecture, ISO upload and ISO actions in `slots/BoxList.jsx`, `slots/BoxItem.jsx`, `slots/BoxVersion.jsx`, `slots/BoxProvider.jsx` and `slots/Iso.jsx`; BoxVault's ISO read routes share the box routes' token rule and field names (`isPublic`, `published`, `fileName`, `downloadCount`) |
+| `src/features/deploy/`                                        | `DeployControls` and `HyperweaverGlyph.jsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `src/features/search/`                                        | `SearchPage.jsx`, `SearchResults.jsx` (the list under the navbar panel), `useAppSearch` (the UI backend's `/api/search` behind the `search` token, else the client-side walk of the mounted collections), `searchRow.js` (the row shape and its path)                                                                                                                                                                                                                                                 |
+| `src/features/about/`                                         | `AboutPage.jsx` and `AboutRoute.jsx`, keyed by `status.role` over `about.boxvault.*` and `about.catalog.*`; a role with no `about.<role>.*` keys, the `auth-server` role today, answers `NotAvailableStub` at `/about`                                                                                                                                                                                                                                                                                |
+| `src/features/auth/`                                          | `LoginPage.jsx`, `RegisterPage.jsx`, `InvitePage.jsx`, `CallbackPage.jsx`, `AuthShell.jsx`, `ProviderButtons.jsx` and the `api/` calls of the session contract's account pages                                                                                                                                                                                                                                                                                                                        |
+| `src/features/profile/`, `organizations/`, `admin/`, `setup/` | `ProfilePage.jsx`; `OrgConsolePage.jsx` and `DiscoveryPage.jsx`; `AdminPage.jsx`, `AdminOrganizations.jsx` (drawn only when the adapter carries `organizationsWithUsers`), `AdminConfig.jsx` (one tab per name in `status.config`, `["app"]` when absent), `AdminStorage.jsx` (only when the adapter carries `storage`), `OidcProviders.jsx`, `UpdateNotice.jsx` (the update command from `status.role`) and `utils/schemaSections.js`; `SetupPage.jsx`; each with its `api/` calls                   |
+| `src/features/vdi/`                                           | The fleet pages: `FleetPage.jsx`, `StatusCards.jsx`, `PoolCards.jsx`, `FleetTable.jsx`, `DriveBadges.jsx`, `CacheBadge.jsx`, `SessionBadge.jsx`, `LastSeen.jsx`, `IconsCell.jsx`, `ExportButtons.jsx`, `VmPage.jsx`, `VmOverview.jsx`, `VmHistory.jsx`, `VmStats.jsx`, `VmMetrics.jsx`; the hooks `useFleet.js`, `useFleetSearch.js`, `useVmHistory.js`; `api/fleet.js`; `utils/vmStatus.js`, `cacheLevel.js`, `eventTypes.js`, `exportRows.js`                                                       |
+| `src/lib/sse.js`, `src/hooks/useEventStream.js`               | The shared event-stream client and the hook a page subscribes to named events with, per the [Universal Events Contract](universal-events/)                                                                                                                                                                                                                                                                                                                                                            |
+| `src/components/common/`                                      | `PageHeader.jsx`, `StatusChips.jsx`, `DeprecationBanner.jsx`, `GroupHeading.jsx`, `ConfirmModal.jsx` (the type-to-confirm modal every destructive action opens, its keys under `pages.confirm.*`), `ConfigField.jsx`, `UserCard.jsx`                                                                                                                                                                                                                                                                  |
+| `src/utils/`                                                  | `membership.js` (`isMember`, `isManager`, `isOwner` over the chrome's organization shape), `organizations.js` (`organizationsShape`, `ORG_NAME_PATTERN`, `membershipsOf`), `auth.js` (`authShape`, `returnToShape` and the sign-in method helpers), `validation.js` (the shared evaluator)                                                                                                                                                                                                            |
 
 Shared by every UI backend, once: `src/css/styles.css` (the auth pages' rules
 included), `src/css/fonts.css` (the auth pages' IBM Plex Sans and Source
@@ -691,30 +691,30 @@ backend they are on.
 
 ## Conformance checklist
 
-| Line | Catalog | BoxVault | VDI Health |
-| --- | --- | --- | --- |
-| One build of startcloud-ui, the UI backend's differences its `collections` and `features` in `/api/status` | ✓ `["provisioners"]` | ✓ `["boxes", "isos"]` | ✓ `[]` with `fleet` |
-| Breadcrumb from the route only, one breadcrumb, no page crumbs, no pickers | ✓ `routes.js` in the shared `AppShell.jsx` | ✓ the same file | n/a — no collections, `vm` reserved |
-| Switcher sets the active organization only, never navigates | ✓ `pickOrg` of `useSession` | ✓ the same hook | ✓ the same hook under `idp` |
-| Existing URLs unchanged | n/a — first router | ✓ `/isos`, `/{org}/isos`, `/{org}/isos/{iso}` added beside them | n/a — first router; `/vm/{instance_id}` new |
-| Item shape produced by one adapter, pages never read wire data | ✓ `provisioners/adapter.js` | ✓ `boxes/adapter.js`, `isos/adapter.js` | n/a — no collections; `api/fleet.js` reads the `snake_case` wire shape the `fleet` topic shares |
-| One visibility rule per app | ✓ membership merge in the adapter, `private-catalogs` advertised | ✓ box and ISO discover and per-organization lists widened by the same token rule, unpublished rows for their uploader only | ✓ everyone under `auth.mode: none`, every signed-in user under `idp` |
-| Registry names every collection with adapter, filter groups, columns, slots | ✓ provisioners | ✓ boxes, isos | n/a |
-| Listing: organization groups, every collection drawn, heading rows with actions, one toggle per page, shared columns first | ✓ `Listing.jsx` | ✓ the same file | n/a |
-| Home, Org, Collection, Item, Version, Provider pages from `features/catalog` | ✓ | ✓ | n/a — `FleetPage` at `/` |
-| Fleet pages from `features/vdi` while the UI backend advertises `fleet`, live through the `fleet` topic | n/a | n/a | ✓ `FleetPage`, `VmPage`, `useFleet` |
-| Single-file item page from `artifact` | n/a | ✓ `/{org}/isos/{iso}` with `IsoItemActions` | n/a |
-| Write actions only in slots, shown while the UI backend advertises `uploads` | n/a — read-only | ✓ `slots/BoxList.jsx`, `slots/BoxItem.jsx`, `slots/BoxVersion.jsx`, `slots/BoxProvider.jsx`, `slots/Iso.jsx` | n/a — read-only |
-| Collection, Visibility and Watched groups first in the panel, own groups prefixed, then a Columns group per collection in list view, one watch set per collection | ✓ `useCatalogSearch.jsx` | ✓ the same file | ✓ `useFleetSearch.js`: Status, Pool, Session, Cache, Drives, Publication, Columns |
-| Sign-in returns to the page the session ended on | n/a — one-click sign in | ✓ `returnTo` remembered on `/login` for every sign-in path | n/a — one-click sign in |
-| Login, register and invite routed by the `backend` or `cookie` auth token, register by `local-accounts` | ✓ `NotAvailableStub` on a deep link | ✓ `/login`, `/register`, `/invite/:token` | ✓ `NotAvailableStub` |
-| Profile routed by the `backend` or `cookie` auth token | ✓ `NotAvailableStub` | ✓ `/profile` | ✓ `NotAvailableStub` |
-| Organization console and discovery routed by `org-console` and `discover` | ✓ `NotAvailableStub` | ✓ `/org-console`, `/organizations/discover` | ✓ `NotAvailableStub` |
-| Admin routed by `admin` | ✓ `NotAvailableStub` | ✓ `/admin` | ✓ `/admin` under `idp`: Configuration from `status.config` and the update notice, no Organizations or System tab |
-| Search page at `/search?q=`, `search` reserved | ✓ client-side rows | ✓ `GET /api/search` rows | ✓ says nothing to search |
-| Setup and its gate by `setup` | ✓ no gate | ✓ `/setup` | ✓ no gate |
-| Deep links load (SPA fallback) | ✓ Worker answers Pages 404s with `index.html` | ✓ catch-all over `backend/ui` | ✓ `index.html` after every `/api` route |
-| Serves the pinned UI release and answers `GET /api/status` | ✓ `startcloudUiVersion` in the root `package.json`, the Worker's `/api/status` | ✓ `startcloudUiVersion` in `backend/package.json`, `status.routes.js` in both server modes | ✓ `[tool.startcloud] ui_version` in `pyproject.toml`, `routes/status.py` |
+| Line                                                                                                                                                              | Catalog                                                                        | BoxVault                                                                                                                   | VDI Health                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| One build of startcloud-ui, the UI backend's differences its `collections` and `features` in `/api/status`                                                        | ✓ `["provisioners"]`                                                           | ✓ `["boxes", "isos"]`                                                                                                      | ✓ `[]` with `fleet`                                                                                              |
+| Breadcrumb from the route only, one breadcrumb, no page crumbs, no pickers                                                                                        | ✓ `routes.js` in the shared `AppShell.jsx`                                     | ✓ the same file                                                                                                            | n/a — no collections, `vm` reserved                                                                              |
+| Switcher sets the active organization only, never navigates                                                                                                       | ✓ `pickOrg` of `useSession`                                                    | ✓ the same hook                                                                                                            | ✓ the same hook under `idp`                                                                                      |
+| Existing URLs unchanged                                                                                                                                           | n/a — first router                                                             | ✓ `/isos`, `/{org}/isos`, `/{org}/isos/{iso}` added beside them                                                            | n/a — first router; `/vm/{instance_id}` new                                                                      |
+| Item shape produced by one adapter, pages never read wire data                                                                                                    | ✓ `provisioners/adapter.js`                                                    | ✓ `boxes/adapter.js`, `isos/adapter.js`                                                                                    | n/a — no collections; `api/fleet.js` reads the `snake_case` wire shape the `fleet` topic shares                  |
+| One visibility rule per app                                                                                                                                       | ✓ membership merge in the adapter, `private-catalogs` advertised               | ✓ box and ISO discover and per-organization lists widened by the same token rule, unpublished rows for their uploader only | ✓ everyone under `auth.mode: none`, every signed-in user under `idp`                                             |
+| Registry names every collection with adapter, filter groups, columns, slots                                                                                       | ✓ provisioners                                                                 | ✓ boxes, isos                                                                                                              | n/a                                                                                                              |
+| Listing: organization groups, every collection drawn, heading rows with actions, one toggle per page, shared columns first                                        | ✓ `Listing.jsx`                                                                | ✓ the same file                                                                                                            | n/a                                                                                                              |
+| Home, Org, Collection, Item, Version, Provider pages from `features/catalog`                                                                                      | ✓                                                                              | ✓                                                                                                                          | n/a — `FleetPage` at `/`                                                                                         |
+| Fleet pages from `features/vdi` while the UI backend advertises `fleet`, live through the `fleet` topic                                                           | n/a                                                                            | n/a                                                                                                                        | ✓ `FleetPage`, `VmPage`, `useFleet`                                                                              |
+| Single-file item page from `artifact`                                                                                                                             | n/a                                                                            | ✓ `/{org}/isos/{iso}` with `IsoItemActions`                                                                                | n/a                                                                                                              |
+| Write actions only in slots, shown while the UI backend advertises `uploads`                                                                                      | n/a — read-only                                                                | ✓ `slots/BoxList.jsx`, `slots/BoxItem.jsx`, `slots/BoxVersion.jsx`, `slots/BoxProvider.jsx`, `slots/Iso.jsx`               | n/a — read-only                                                                                                  |
+| Collection, Visibility and Watched groups first in the panel, own groups prefixed, then a Columns group per collection in list view, one watch set per collection | ✓ `useCatalogSearch.jsx`                                                       | ✓ the same file                                                                                                            | ✓ `useFleetSearch.js`: Status, Pool, Session, Cache, Drives, Publication, Columns                                |
+| Sign-in returns to the page the session ended on                                                                                                                  | n/a — one-click sign in                                                        | ✓ `returnTo` remembered on `/login` for every sign-in path                                                                 | n/a — one-click sign in                                                                                          |
+| Login, register and invite routed by the `backend` or `cookie` auth token, register by `local-accounts`                                                           | ✓ `NotAvailableStub` on a deep link                                            | ✓ `/login`, `/register`, `/invite/:token`                                                                                  | ✓ `NotAvailableStub`                                                                                             |
+| Profile routed by the `backend` or `cookie` auth token                                                                                                            | ✓ `NotAvailableStub`                                                           | ✓ `/profile`                                                                                                               | ✓ `NotAvailableStub`                                                                                             |
+| Organization console and discovery routed by `org-console` and `discover`                                                                                         | ✓ `NotAvailableStub`                                                           | ✓ `/org-console`, `/organizations/discover`                                                                                | ✓ `NotAvailableStub`                                                                                             |
+| Admin routed by `admin`                                                                                                                                           | ✓ `NotAvailableStub`                                                           | ✓ `/admin`                                                                                                                 | ✓ `/admin` under `idp`: Configuration from `status.config` and the update notice, no Organizations or System tab |
+| Search page at `/search?q=`, `search` reserved                                                                                                                    | ✓ client-side rows                                                             | ✓ `GET /api/search` rows                                                                                                   | ✓ says nothing to search                                                                                         |
+| Setup and its gate by `setup`                                                                                                                                     | ✓ no gate                                                                      | ✓ `/setup`                                                                                                                 | ✓ no gate                                                                                                        |
+| Deep links load (SPA fallback)                                                                                                                                    | ✓ Worker answers Pages 404s with `index.html`                                  | ✓ catch-all over `backend/ui`                                                                                              | ✓ `index.html` after every `/api` route                                                                          |
+| Serves the pinned UI release and answers `GET /api/status`                                                                                                        | ✓ `startcloudUiVersion` in the root `package.json`, the Worker's `/api/status` | ✓ `startcloudUiVersion` in `backend/package.json`, `status.routes.js` in both server modes                                 | ✓ `[tool.startcloud] ui_version` in `pyproject.toml`, `routes/status.py`                                         |
 
 ---
 

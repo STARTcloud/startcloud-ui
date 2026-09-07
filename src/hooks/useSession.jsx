@@ -37,9 +37,9 @@ export const sessionStateShape = PropTypes.shape({
  * stored session on the first render and its loaded one after, its
  * claims, the memberships in the chrome's organization shape, the active
  * organization resolved stored → primary → first and persisted under the
- * app's key, the ended state with the page to return to, the sign-in and
- * sign-out handlers, and the push subscription kept in sync while signed
- * in.
+ * app's key, whether `load()` has confirmed the session, the ended state
+ * with the page to return to, the sign-in and sign-out handlers, and the
+ * push subscription kept in sync while signed in.
  *
  * @param {Object} options - The app's side
  * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`
@@ -168,6 +168,7 @@ export const useSession = ({
     ...session,
     claims,
     activeOrgUuid,
+    loaded,
     pickOrg,
     sessionEnded: ended,
     signIn,

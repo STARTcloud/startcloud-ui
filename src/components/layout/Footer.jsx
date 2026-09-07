@@ -73,20 +73,29 @@ HealthIndicator.propTypes = {
   fetchHealth: PropTypes.func.isRequired,
 };
 
-const Footer = ({ appName, version, repoUrl, poweredBy, fetchHealth = null }) => {
+const Footer = ({ appName, version, repoUrl = '', poweredBy, fetchHealth = null }) => {
   const { t } = useTranslation(['shared', 'auth']);
+  const line = (
+    <>
+      {appName} &copy; {new Date().getFullYear()} · v{version}
+    </>
+  );
   return (
     <footer className="footer mt-auto bg-body-tertiary border-top">
       <div className="container-fluid position-relative d-flex align-items-center">
         <div className="footer-edge-start">
-          <a
-            href={repoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-decoration-none text-body-secondary"
-          >
-            {appName} &copy; {new Date().getFullYear()} · v{version}
-          </a>
+          {repoUrl ? (
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-decoration-none text-body-secondary"
+            >
+              {line}
+            </a>
+          ) : (
+            <span className="text-body-secondary">{line}</span>
+          )}
         </div>
         <div className="mx-auto d-flex align-items-center">
           <span className="text-muted me-2">{t('auth:login.poweredBy')}</span>
@@ -119,7 +128,7 @@ const Footer = ({ appName, version, repoUrl, poweredBy, fetchHealth = null }) =>
 Footer.propTypes = {
   appName: PropTypes.string.isRequired,
   version: PropTypes.string.isRequired,
-  repoUrl: PropTypes.string.isRequired,
+  repoUrl: PropTypes.string,
   poweredBy: PropTypes.shape({
     href: PropTypes.string.isRequired,
     logoSrc: PropTypes.string.isRequired,

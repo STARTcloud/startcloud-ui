@@ -19,7 +19,7 @@ configure on ours.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -42,15 +42,15 @@ scopes you need. You get back a `client_id` (and a secret, if confidential).
 
 ## Pick your client shape
 
-| Your app | Grant | Client auth | Secret? |
-| --- | --- | --- | --- |
-| Browser SPA (static hosting, no backend) | `authorization_code` + PKCE | `none` (public) | No |
-| Web app / BFF with a backend | `authorization_code` | `client_secret_basic` or `private_key_jwt` | Yes (or a key) |
-| Backend service calling our APIs (no user) | `client_credentials` | `client_secret_basic` or `private_key_jwt` | Yes |
-| Desktop / mobile app | `authorization_code` + PKCE | `none` (public) | No |
-| TV / CLI / input-constrained device | `device_code` | per client type | Optional |
-| Decoupled auth (user approves on their phone) | `ciba` | confidential only | Yes |
-| High-assurance / financial-grade | `authorization_code` + PKCE, `fapi: true` | `private_key_jwt` or `tls_client_auth` | Key or cert |
+| Your app                                      | Grant                                     | Client auth                                | Secret?        |
+| --------------------------------------------- | ----------------------------------------- | ------------------------------------------ | -------------- |
+| Browser SPA (static hosting, no backend)      | `authorization_code` + PKCE               | `none` (public)                            | No             |
+| Web app / BFF with a backend                  | `authorization_code`                      | `client_secret_basic` or `private_key_jwt` | Yes (or a key) |
+| Backend service calling our APIs (no user)    | `client_credentials`                      | `client_secret_basic` or `private_key_jwt` | Yes            |
+| Desktop / mobile app                          | `authorization_code` + PKCE               | `none` (public)                            | No             |
+| TV / CLI / input-constrained device           | `device_code`                             | per client type                            | Optional       |
+| Decoupled auth (user approves on their phone) | `ciba`                                    | confidential only                          | Yes            |
+| High-assurance / financial-grade              | `authorization_code` + PKCE, `fapi: true` | `private_key_jwt` or `tls_client_auth`     | Key or cert    |
 
 End-user login methods — password, magic link, passkeys, GitHub / Google /
 Microsoft federated login, TOTP / SMS / backup-code 2FA — are all handled on
@@ -289,13 +289,13 @@ Two valid shapes — pick one deliberately:
 
 ## Scopes and the claims you get back
 
-| Scope | Yields |
-| --- | --- |
-| `openid profile email` | standard OIDC claims; `email_verified` = our mailbox proof |
-| `phone` | `phone_number`, `phone_number_verified` |
-| `organizations` | the org membership claim ([Organizations](../../features/organizations/)) |
-| `entitlements` | which estate apps the user has used ([SCIM Provisioning](../../features/scim-provisioning/)) |
-| `idp` | `idp` / `idp_family` — how the user authenticated upstream |
+| Scope                  | Yields                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `openid profile email` | standard OIDC claims; `email_verified` = our mailbox proof                                   |
+| `phone`                | `phone_number`, `phone_number_verified`                                                      |
+| `organizations`        | the org membership claim ([Organizations](../../features/organizations/))                    |
+| `entitlements`         | which estate apps the user has used ([SCIM Provisioning](../../features/scim-provisioning/)) |
+| `idp`                  | `idp` / `idp_family` — how the user authenticated upstream                                   |
 
 Custom ID-token claims (`UUID`, `roles`, `preferences`, `customer_id`,
 `lsid`, ...) are released per client via `id-token-custom-claims` — ask for

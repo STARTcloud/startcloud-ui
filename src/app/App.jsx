@@ -71,7 +71,8 @@ const shellFlags = ({ status, backend, globalAdmin, memberships, activeOrgUuid }
  * The app behind the status: the session from the host's first `auth`
  * token, the theme and favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
- * provider's picture for an identity-provider one), the profile reload and
+ * profile's picture for a cookie one, the provider's picture for an
+ * identity-provider one), the profile reload and
  * the terminate stream a backend session keeps, the ticket link, the
  * notification adapters, and the shell around the routes.
  */
@@ -80,6 +81,7 @@ const App = ({ getSupportedLanguages }) => {
   const navigate = useNavigate();
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
+  const cookie = authMethod(status) === 'cookie';
   const [collections] = useState(() => collectionsFor(status));
   const [{ notifications, push, pushAdapter }] = useState(() => createRuntimeAdapters(status));
   const account = useSession({
@@ -90,7 +92,7 @@ const App = ({ getSupportedLanguages }) => {
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
   });
-  const { user, claims, organizations: memberships, activeOrgUuid, reload } = account;
+  const { user, claims, organizations: memberships, activeOrgUuid, loaded, reload } = account;
   const {
     theme,
     preference: themePreference,
@@ -107,7 +109,7 @@ const App = ({ getSupportedLanguages }) => {
     user,
     activeOrgUuid,
   });
-  const avatarUrl = useAccountAvatar({ backend, user, claims });
+  const avatarUrl = useAccountAvatar({ backend, cookie, user, claims });
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
   const appSearch = useAppSearch(collections);
 
@@ -116,7 +118,7 @@ const App = ({ getSupportedLanguages }) => {
     dark: brandLogoUrl(status.brand, 'dark'),
   });
   useAccountPreferences({ user, setThemePreference });
-  useSessionKeepalive({ enabled: backend, user, reload });
+  useSessionKeepalive({ enabled: backend, user, loaded, reload });
 
   if (setupComplete === null) {
     return <div>{t('loading')}</div>;

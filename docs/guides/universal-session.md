@@ -30,7 +30,7 @@ whose write-through the provider carries.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -55,7 +55,7 @@ whose write-through the provider carries.
   path from a query string is taken only when it starts with one `/`.
 - **Headers come from the provider, requests go through the client.** No
   component builds an auth header or calls axios; `session.headers(method,
-  url)` is the one source, and the shared API client of the
+url)` is the one source, and the shared API client of the
   [API client](#api-client) section is the one caller, resolving those
   headers per request against the absolute URL it sends.
 - **The provider is built once.** `initRuntime(status)` in `src/lib/runtime.js`
@@ -77,22 +77,22 @@ whose write-through the provider carries.
 returns the object below; `sessionStateShape` in `session/useSession.jsx`
 is its prop-type and every shell takes it as `account`.
 
-| Field | Meaning |
-| --- | --- |
-| `user` | the provider's user: the access token's claims on the browser OIDC provider, the stored profile on the backend provider; `null` signed out |
-| `claims` | the provider's memoized claims (`/userinfo` on the IdP, `/api/userinfo/claims` through a backend), `null` until loaded or signed out |
-| `organizations` | memberships in the chrome's organization shape `{ uuid, name, roles, primary }` |
-| `oidc` | whether the session came from an OpenID Connect sign-in (the backend provider's local, LDAP and service sessions answer `false`) |
-| `issuerUrl` | the identity provider behind the session, empty when there is none or it is not yet resolved |
-| `activeOrgUuid` | the active organization, resolved stored → primary → first and persisted under `activeOrgKey` |
-| `pickOrg(uuid)` | sets the active organization when it is a membership; never navigates |
-| `sessionEnded` | `{ returnTo }` while the session died outside the app, else `null` |
-| `signIn()` | remembers the return path (the ended session's page, else the current page unless it is an auth page) and calls `provider.begin({})` |
-| `signOut()` | clears the local session through the provider |
-| `signOutEverywhere()` | the provider's estate-wide sign-out |
-| `refresh()` | the provider's refresh, then the new state |
-| `reload()` | the provider's profile re-read, then the new state |
-| `savePreferences(patch)` | the provider's preferences write |
+| Field                    | Meaning                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `user`                   | the provider's user: the access token's claims on the browser OIDC provider, the stored profile on the backend provider; `null` signed out |
+| `claims`                 | the provider's memoized claims (`/userinfo` on the IdP, `/api/userinfo/claims` through a backend), `null` until loaded or signed out       |
+| `organizations`          | memberships in the chrome's organization shape `{ uuid, name, roles, primary }`                                                            |
+| `oidc`                   | whether the session came from an OpenID Connect sign-in (the backend provider's local, LDAP and service sessions answer `false`)           |
+| `issuerUrl`              | the identity provider behind the session, empty when there is none or it is not yet resolved                                               |
+| `activeOrgUuid`          | the active organization, resolved stored → primary → first and persisted under `activeOrgKey`                                              |
+| `pickOrg(uuid)`          | sets the active organization when it is a membership; never navigates                                                                      |
+| `sessionEnded`           | `{ returnTo }` while the session died outside the app, else `null`                                                                         |
+| `signIn()`               | remembers the return path (the ended session's page, else the current page unless it is an auth page) and calls `provider.begin({})`       |
+| `signOut()`              | clears the local session through the provider                                                                                              |
+| `signOutEverywhere()`    | the provider's estate-wide sign-out                                                                                                        |
+| `refresh()`              | the provider's refresh, then the new state                                                                                                 |
+| `reload()`               | the provider's profile re-read, then the new state                                                                                         |
+| `savePreferences(patch)` | the provider's preferences write                                                                                                           |
 
 Behaviour fixed by the hook:
 
@@ -115,23 +115,23 @@ Behaviour fixed by the hook:
 A provider is a plain object; `useSession`, the callback page and the app's
 own screens call it and nothing else touches its storage.
 
-| Member | Browser OIDC provider (`createBrowserOidc`) | Backend session provider (`createBackendSession`) |
-| --- | --- | --- |
-| `id`, `issuerUrl` | `'idp'`, the configured issuer | `'backend'`, empty (resolved per session) |
-| `restore()` | the access token's claims from `localStorage`, synchronously | the stored profile from `localStorage`, synchronously |
-| `load()` | the same after refreshing a token within a minute of expiry; a failed refresh ends the session | the same plus `issuerUrl`: the `iss` of the ID token embedded in the backend's JWT, when it is `https://` and one of `/api/auth/oidc/issuers` |
-| `reload()` | `load()` | `GET /api/user` merged over the stored profile, then `load()` |
-| `begin(opts)` | PKCE S256 authorization request to the discovered authorization endpoint; `opts` unused | `{ method, silent }` → `/api/auth/oidc/<method>`, `?prompt=none` when silent; also `login(username, password, stayLoggedIn)` → `/api/auth/signin` for the app's own form |
-| `complete()` | reads `code` and `state` from the callback URL, checks the state, exchanges the code with the verifier and a DPoP proof, stores the tokens, applies the account's `preferences.theme` and `preferences.language` to local storage, emits `login` | reads `code` from the callback URL, exchanges it at `/api/auth/oidc/exchange`, reads `/api/user` with the token, stores the profile with the token and its `provider`, emits `login` |
-| `headers(method, url)` | `Authorization: DPoP <token>` plus a `DPoP` proof bound to the method, the URL and the token, or `Bearer` when the token was issued as one; `{}` while signed out | `{ 'x-access-token': <jwt> }`, the JWT refreshed first four minutes after the last refresh while the session was kept; `{}` while signed out |
-| `retryAuth()` | the refresh grant; `true` when it succeeded, else the session ends on the bus and `false` | `POST /api/auth/refresh-token` while the session was kept (`stayLoggedIn`); `true` when a new JWT came back |
-| `adoptResponse(headers)` | n/a | stores an `x-refreshed-token` response header as the session's JWT |
-| `endSession()` | drops the tokens and ends the session on the bus | drops the stored profile and ends the session on the bus |
-| `refresh()` | the refresh grant, then `load()`; failure ends the session | `POST /api/auth/refresh-token`, then `load()`; `null` on failure |
-| `claims()` | memoized `/userinfo` with the session's headers | memoized `GET /api/userinfo/claims` |
-| `savePreferences(patch)` | `PATCH {issuer}/api/user/preferences` with a proof for that URL, through the dev proxy when one answers same-origin | `PATCH /api/user/preferences`, then `preferredTheme` and `preferredLanguage` updated in the stored profile |
-| `signOut()` | drops the tokens and the DPoP key | drops the stored profile |
-| `signOutEverywhere()` | form-`POST` to the discovered end-session endpoint with `client_id`, `post_logout_redirect_uri`, `state` and `id_token_hint` when an ID token is held; `/` when the issuer has none | `POST /api/auth/oidc/logout` for an OIDC session, then the `redirect_url` it answers, else `/` |
+| Member                   | Browser OIDC provider (`createBrowserOidc`)                                                                                                                                                                                                      | Backend session provider (`createBackendSession`)                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`, `issuerUrl`        | `'idp'`, the configured issuer                                                                                                                                                                                                                   | `'backend'`, empty (resolved per session)                                                                                                                                            |
+| `restore()`              | the access token's claims from `localStorage`, synchronously                                                                                                                                                                                     | the stored profile from `localStorage`, synchronously                                                                                                                                |
+| `load()`                 | the same after refreshing a token within a minute of expiry; a failed refresh ends the session                                                                                                                                                   | the same plus `issuerUrl`: the `iss` of the ID token embedded in the backend's JWT, when it is `https://` and one of `/api/auth/oidc/issuers`                                        |
+| `reload()`               | `load()`                                                                                                                                                                                                                                         | `GET /api/user` merged over the stored profile, then `load()`                                                                                                                        |
+| `begin(opts)`            | PKCE S256 authorization request to the discovered authorization endpoint; `opts` unused                                                                                                                                                          | `{ method, silent }` → `/api/auth/oidc/<method>`, `?prompt=none` when silent; also `login(username, password, stayLoggedIn)` → `/api/auth/signin` for the app's own form             |
+| `complete()`             | reads `code` and `state` from the callback URL, checks the state, exchanges the code with the verifier and a DPoP proof, stores the tokens, applies the account's `preferences.theme` and `preferences.language` to local storage, emits `login` | reads `code` from the callback URL, exchanges it at `/api/auth/oidc/exchange`, reads `/api/user` with the token, stores the profile with the token and its `provider`, emits `login` |
+| `headers(method, url)`   | `Authorization: DPoP <token>` plus a `DPoP` proof bound to the method, the URL and the token, or `Bearer` when the token was issued as one; `{}` while signed out                                                                                | `{ 'x-access-token': <jwt> }`, the JWT refreshed first four minutes after the last refresh while the session was kept; `{}` while signed out                                         |
+| `retryAuth()`            | the refresh grant; `true` when it succeeded, else the session ends on the bus and `false`                                                                                                                                                        | `POST /api/auth/refresh-token` while the session was kept (`stayLoggedIn`); `true` when a new JWT came back                                                                          |
+| `adoptResponse(headers)` | n/a                                                                                                                                                                                                                                              | stores an `x-refreshed-token` response header as the session's JWT                                                                                                                   |
+| `endSession()`           | drops the tokens and ends the session on the bus                                                                                                                                                                                                 | drops the stored profile and ends the session on the bus                                                                                                                             |
+| `refresh()`              | the refresh grant, then `load()`; failure ends the session                                                                                                                                                                                       | `POST /api/auth/refresh-token`, then `load()`; `null` on failure                                                                                                                     |
+| `claims()`               | memoized `/userinfo` with the session's headers                                                                                                                                                                                                  | memoized `GET /api/userinfo/claims`                                                                                                                                                  |
+| `savePreferences(patch)` | `PATCH {issuer}/api/user/preferences` with a proof for that URL, through the dev proxy when one answers same-origin                                                                                                                              | `PATCH /api/user/preferences`, then `preferredTheme` and `preferredLanguage` updated in the stored profile                                                                           |
+| `signOut()`              | drops the tokens and the DPoP key                                                                                                                                                                                                                | drops the stored profile                                                                                                                                                             |
+| `signOutEverywhere()`    | form-`POST` to the discovered end-session endpoint with `client_id`, `post_logout_redirect_uri`, `state` and `id_token_hint` when an ID token is held; `/` when the issuer has none                                                              | `POST /api/auth/oidc/logout` for an OIDC session, then the `redirect_url` it answers, else `/`                                                                                       |
 
 A failure from `complete()` may carry `messageKey`; the callback page shows
 that key translated, else the message. The backend provider raises
@@ -228,11 +228,11 @@ invite nor a return path.
 `endSession({ returnTo })`, which emits `sessionEnded` with the current
 path and query when no `returnTo` is given.
 
-| Event | Emitted by | Effect in the hook |
-| --- | --- | --- |
-| `login` | a provider after `complete()` or the backend's `login()`; a screen after a change the profile must reflect (BoxVault's profile page after an edit) | `provider.load()` and adopt |
-| `logout` | a screen that decided the session is invalid | `provider.signOut()` and adopt `null` |
-| `sessionEnded` | `endSession()` from a provider (refresh failure), from the API client (a `401` the provider could not recover) or from a stream | adopt `null`, record `{ returnTo }`, the session-ended banner shows |
+| Event          | Emitted by                                                                                                                                         | Effect in the hook                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `login`        | a provider after `complete()` or the backend's `login()`; a screen after a change the profile must reflect (BoxVault's profile page after an edit) | `provider.load()` and adopt                                         |
+| `logout`       | a screen that decided the session is invalid                                                                                                       | `provider.signOut()` and adopt `null`                               |
+| `sessionEnded` | `endSession()` from a provider (refresh failure), from the API client (a `401` the provider could not recover) or from a stream                    | adopt `null`, record `{ returnTo }`, the session-ended banner shows |
 
 A UI backend's session-terminated signal arrives on the one stream of the
 [Universal Events Contract](universal-events/): the runtime's
@@ -325,21 +325,21 @@ cluster's Sign in carries that page, and dismissing the banner keeps it.
 Storage is per origin, so no key carries an app prefix; the only prefix is
 the `idp.storagePrefix` the UI backend names for its tokens.
 
-| Value | `idp` UI backend (the catalog) | `backend` UI backend (BoxVault) |
-| --- | --- | --- |
-| session | `<storagePrefix>.access_token`, `.refresh_token`, `.id_token`, `.token_type`, `.expires_at` in `localStorage`; `<storagePrefix>.oidc_discovery` in `sessionStorage`; the DPoP key in IndexedDB `<storagePrefix>-dpop` | `user` in `localStorage`: the profile, the JWT, `stayLoggedIn`, `tokenRefreshTime` |
-| return path | `intended_url` | `intended_url` |
-| active organization | `activeOrganization` (uuid) | `activeOrganization` (organization name) |
-| push switch | `push_enabled` | `push_enabled` |
-| sign-in method chosen | n/a — sign-in is one click | `login_method` |
-| join intent kept across a sign-in | n/a | `join_org` |
-| silent SSO tried | n/a — sign-in is one click | `silent_sso_attempted` in `sessionStorage` |
-| table preferences | `table_prefs_<org or home>` | `table_prefs_<org or home>` |
-| sidebar width | `sidebar_width` (px) | `sidebar_width` (px) |
-| sidebar collapsed | `sidebar_minimized` | `sidebar_minimized` |
-| sidebar open nodes | `sidebar_open_<group>` | `sidebar_open_<group>` |
-| sidebar tree view | `sidebar_view_<group>` | `sidebar_view_<group>` |
-| theme and language | `theme`, `language`, the chrome's own keys, kept across a sign-out | the same |
+| Value                             | `idp` UI backend (the catalog)                                                                                                                                                                                        | `backend` UI backend (BoxVault)                                                    |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| session                           | `<storagePrefix>.access_token`, `.refresh_token`, `.id_token`, `.token_type`, `.expires_at` in `localStorage`; `<storagePrefix>.oidc_discovery` in `sessionStorage`; the DPoP key in IndexedDB `<storagePrefix>-dpop` | `user` in `localStorage`: the profile, the JWT, `stayLoggedIn`, `tokenRefreshTime` |
+| return path                       | `intended_url`                                                                                                                                                                                                        | `intended_url`                                                                     |
+| active organization               | `activeOrganization` (uuid)                                                                                                                                                                                           | `activeOrganization` (organization name)                                           |
+| push switch                       | `push_enabled`                                                                                                                                                                                                        | `push_enabled`                                                                     |
+| sign-in method chosen             | n/a — sign-in is one click                                                                                                                                                                                            | `login_method`                                                                     |
+| join intent kept across a sign-in | n/a                                                                                                                                                                                                                   | `join_org`                                                                         |
+| silent SSO tried                  | n/a — sign-in is one click                                                                                                                                                                                            | `silent_sso_attempted` in `sessionStorage`                                         |
+| table preferences                 | `table_prefs_<org or home>`                                                                                                                                                                                           | `table_prefs_<org or home>`                                                        |
+| sidebar width                     | `sidebar_width` (px)                                                                                                                                                                                                  | `sidebar_width` (px)                                                               |
+| sidebar collapsed                 | `sidebar_minimized`                                                                                                                                                                                                   | `sidebar_minimized`                                                                |
+| sidebar open nodes                | `sidebar_open_<group>`                                                                                                                                                                                                | `sidebar_open_<group>`                                                             |
+| sidebar tree view                 | `sidebar_view_<group>`                                                                                                                                                                                                | `sidebar_view_<group>`                                                             |
+| theme and language                | `theme`, `language`, the chrome's own keys, kept across a sign-out                                                                                                                                                    | the same                                                                           |
 
 A `cookie` UI backend (the identity provider) keeps `account` (the cached display fields), `intended_url`, `activeOrganization` (uuid), `push_enabled`, `login_method` (`password` or `magic_link`), `theme`, `language`, `table_prefs_admin_users`, `table_prefs_admin_logins`, `table_prefs_admin_registrations`, `table_prefs_admin_sessions`, `table_prefs_inbox` and the sidebar keys; it has no upstream, so `silent_sso_attempted` is unused.
 
@@ -360,7 +360,7 @@ feature's `api/` file calls it.
   the request, the same origin unless a dev proxy answers same-origin
   (then empty), so a DPoP proof binds to the URL the backend verifies.
 - `request({ method, path, params, body, headers, contentType, auth, signal,
-  onUploadProgress, responseType, skipAuthRefresh, messageKeys })` and the
+onUploadProgress, responseType, skipAuthRefresh, messageKeys })` and the
   shorthands `get`, `post`, `put`, `patch` and `delete` resolve to the
   response body; `raw(method, path, init)` sends the same headers on a
   `fetch` for a stream; `resolve(path)` is the absolute URL.
@@ -452,13 +452,13 @@ routed while the UI backend's first `auth` token is `backend` or `cookie`
 `NotAvailableStub` on an `idp` UI backend, whose sign-in is one click.
 
 - `auth` is `{ methods, register, validateInvitation, acceptInvitation,
-  loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
+loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
   and the two localStorage keys the pages remember the chosen sign-in
   method and the one silent SSO attempt under.
 - `LoginPage({ session, returnTo, auth, appName })` reads
   `auth.methods()`, draws the local form only where the provider carries
   `login`, one button per identity provider through `session.begin({
-  method })`, the remembered choice between the two, the silent
+method })`, the remembered choice between the two, the silent
   `prompt=none` attempt of the navbar contract, and remembers the return
   path for the callback.
 - `RegisterPage({ session, returnTo, auth })` draws the local form where
@@ -480,15 +480,15 @@ routed while the UI backend's first `auth` token is `backend` or `cookie`
 
 One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcloud-ui):
 
-| Path | Role |
-| --- | --- |
-| `src/lib/` | The shared layer, see below |
-| `src/lib/createSession.js` | `createSession(status, events)`: `createBrowserOidc({ ...status.idp, events, apiBase })` and `createReturnTo` with `/callback` as the auth path for an `idp` UI backend; `createCookieSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the identity contract's sign-in paths for a `cookie` UI backend; `createBackendSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the auth paths otherwise; `intended_url` in all three |
-| `src/lib/runtime.js` | `initRuntime(status)`: `events`, `session`, `returnTo`, `client` at the serving origin with `onError` logging, `hubClient` at `idp.issuer` or the same client; every feature's `api/` file calls `client` |
-| `src/app/App.jsx` | `useSession` with `onAdopt` feeding the provisioners adapter's memberships while the UI backend advertises `private-catalogs`, the theme and language write-through, the profile reload interval and the event stream of the events contract while the UI backend advertises `events` (`useSessionKeepalive`), the account state into `AppShell` |
-| `src/app/router.jsx` | The `auth` adapter over `features/auth/api` and the `/login`, `/register`, `/invite/:token` and `/auth/callback` routes while the UI backend's first `auth` token is `backend`; the `account` adapter over `features/profile/api` and the `/profile` route on the shared `ProfilePage`, which calls `signOutEverywhere`, `reload` and emits `login` on the bus |
-| `src/app/callback.jsx` | The `/callback/` entry of an `idp` UI backend rendering `CallbackPage` |
-| `src/features/collections/boxes/uploadChunked.js` | The chunked box upload on `client` |
+| Path                                              | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/lib/`                                        | The shared layer, see below                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/lib/createSession.js`                        | `createSession(status, events)`: `createBrowserOidc({ ...status.idp, events, apiBase })` and `createReturnTo` with `/callback` as the auth path for an `idp` UI backend; `createCookieSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the identity contract's sign-in paths for a `cookie` UI backend; `createBackendSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the auth paths otherwise; `intended_url` in all three |
+| `src/lib/runtime.js`                              | `initRuntime(status)`: `events`, `session`, `returnTo`, `client` at the serving origin with `onError` logging, `hubClient` at `idp.issuer` or the same client; every feature's `api/` file calls `client`                                                                                                                                                                                                                                                                            |
+| `src/app/App.jsx`                                 | `useSession` with `onAdopt` feeding the provisioners adapter's memberships while the UI backend advertises `private-catalogs`, the theme and language write-through, the profile reload interval and the event stream of the events contract while the UI backend advertises `events` (`useSessionKeepalive`), the account state into `AppShell`                                                                                                                                     |
+| `src/app/router.jsx`                              | The `auth` adapter over `features/auth/api` and the `/login`, `/register`, `/invite/:token` and `/auth/callback` routes while the UI backend's first `auth` token is `backend`; the `account` adapter over `features/profile/api` and the `/profile` route on the shared `ProfilePage`, which calls `signOutEverywhere`, `reload` and emits `login` on the bus                                                                                                                       |
+| `src/app/callback.jsx`                            | The `/callback/` entry of an `idp` UI backend rendering `CallbackPage`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `src/features/collections/boxes/uploadChunked.js` | The chunked box upload on `client`                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 Shared by every UI backend, once: `src/lib/` — `browserOidc.js`,
 `backendSession.js` (`createBackendSession`, `profileMemberships`),
@@ -504,19 +504,19 @@ organization shape; the `session.*` keys it reads live in `shared.json`.
 
 ## Conformance checklist
 
-| Line | Catalog | BoxVault | Auth server |
-| --- | --- | --- | --- |
-| One session layer in startcloud-ui; the provider, the bus and the return-path helper built by `initRuntime` from the UI backend's first `auth` token | ✓ `["idp"]` with `idp` | ✓ `["backend"]` | to come — `["cookie"]`, `createCookieSession` |
-| First render from the stored session, then `load()` | ✓ token claims, refresh a minute before expiry | ✓ stored profile, issuer resolved from the embedded ID token | to come — the cached `account` profile, then `GET /api/user` |
-| Every request through the shared API client, its header from the provider, one replay on `401`, every failure an `ApiError` | ✓ `session.headers` with DPoP proofs; `client` at the Worker, `hubClient` at the issuer | ✓ `x-access-token` through `session.headers`; one client, every call in the features' `api/` files | to come — `X-XSRF-TOKEN` through `session.headers`, no replay (`retryAuth` false) |
-| The backend verifies the browser provider's token and DPoP proof on every gate | ✓ the Worker | ✓ `requestAuth.js` under `verifyToken`, `sessionAuth` and discover | n/a — the issuer |
-| Sign-in returns to the page it started on, never an auth page | ✓ `/callback/` consumes `intended_url` | ✓ `/auth/callback` consumes `intended_url`; form, providers and silent SSO remember it | to come — `intended_url` consumed after the sign-in step's `next` |
-| Session ended elsewhere ends on the bus and raises the session-ended banner with the return path | ✓ refresh failure, the client's unrecovered `401` | ✓ the client's unrecovered `401`, `session-terminated` on the `events` stream | to come — the client's `401` on an authenticated call |
-| Claims memoized from the provider | ✓ `/userinfo` | ✓ `/api/userinfo/claims` | to come — `/api/userinfo/claims` |
-| Preferences write through the provider; account value applied on sign-in | ✓ `PATCH` the issuer with a proof; `preferences` from `/userinfo` in `complete()` | ✓ `PATCH` the backend; `preferredTheme` and `preferredLanguage` from the profile | to come — `PATCH /api/user/preferences`; `preferences.theme` and `language` applied by `load()` on every adopt |
-| Sign out: this app and everywhere | ✓ tokens and key dropped; end-session form `POST` with `id_token_hint` | ✓ profile dropped; `/api/auth/oidc/logout` then its redirect | to come — `POST /user/logout` for both answering `{ next }`; the plain red row |
-| Active organization persisted, validated, primary → first | ✓ by uuid | ✓ by name | to come — `activeOrganization` by uuid, a console context only |
-| Push subscription synced while signed in | ✓ | ✓ | to come — the push worker at scope `/push/` |
+| Line                                                                                                                                                 | Catalog                                                                                 | BoxVault                                                                                           | Auth server                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| One session layer in startcloud-ui; the provider, the bus and the return-path helper built by `initRuntime` from the UI backend's first `auth` token | ✓ `["idp"]` with `idp`                                                                  | ✓ `["backend"]`                                                                                    | ✓ `["cookie"]`, `createCookieSession`                                                                  |
+| First render from the stored session, then `load()`                                                                                                  | ✓ token claims, refresh a minute before expiry                                          | ✓ stored profile, issuer resolved from the embedded ID token                                       | ✓ the cached `account` profile, then `GET /api/user`                                                   |
+| Every request through the shared API client, its header from the provider, one replay on `401`, every failure an `ApiError`                          | ✓ `session.headers` with DPoP proofs; `client` at the Worker, `hubClient` at the issuer | ✓ `x-access-token` through `session.headers`; one client, every call in the features' `api/` files | ✓ `X-XSRF-TOKEN` through `session.headers`, no replay (`retryAuth` false)                              |
+| The backend verifies the browser provider's token and DPoP proof on every gate                                                                       | ✓ the Worker                                                                            | ✓ `requestAuth.js` under `verifyToken`, `sessionAuth` and discover                                 | n/a — the issuer                                                                                       |
+| Sign-in returns to the page it started on, never an auth page                                                                                        | ✓ `/callback/` consumes `intended_url`                                                  | ✓ `/auth/callback` consumes `intended_url`; form, providers and silent SSO remember it             | to come — `intended_url` consumed after the sign-in step's `next`                                      |
+| Session ended elsewhere ends on the bus and raises the session-ended banner with the return path                                                     | ✓ refresh failure, the client's unrecovered `401`                                       | ✓ the client's unrecovered `401`, `session-terminated` on the `events` stream                      | ✓ the client's `401` on an authenticated call                                                          |
+| Claims memoized from the provider                                                                                                                    | ✓ `/userinfo`                                                                           | ✓ `/api/userinfo/claims`                                                                           | ✓ `/api/userinfo/claims`                                                                               |
+| Preferences write through the provider; account value applied on sign-in                                                                             | ✓ `PATCH` the issuer with a proof; `preferences` from `/userinfo` in `complete()`       | ✓ `PATCH` the backend; `preferredTheme` and `preferredLanguage` from the profile                   | ✓ `PATCH /api/user/preferences`; `preferences.theme` and `language` applied by `load()` on every adopt |
+| Sign out: this app and everywhere                                                                                                                    | ✓ tokens and key dropped; end-session form `POST` with `id_token_hint`                  | ✓ profile dropped; `/api/auth/oidc/logout` then its redirect                                       | ✓ `POST /user/logout` for both answering `{ next }`; the plain red row                                 |
+| Active organization persisted, validated, primary → first                                                                                            | ✓ by uuid                                                                               | ✓ by name                                                                                          | ✓ `activeOrganization` by uuid, a console context only                                                 |
+| Push subscription synced while signed in                                                                                                             | ✓                                                                                       | ✓                                                                                                  | to come — the push worker at scope `/push/`                                                            |
 
 ---
 

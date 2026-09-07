@@ -31,7 +31,7 @@ ad-hoc dashboard stream both become topics on the one path.
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -77,11 +77,11 @@ answers a top-level `events` object in `GET /api/status`:
 }
 ```
 
-| Field | Meaning |
-| --- | --- |
-| `features` contains `events` | the UI opens the stream at all; without the token nothing is opened and no page subscribes |
-| `events.path` | the stream path on the serving origin, `/api/events` on every UI backend that follows the [Where the UI is served](universal-navbar/#where-the-ui-is-served) rule |
-| `events.topics` | every topic the UI backend can stream, core and app topics alike; the client asks for the ones its pages need from this list and never for one outside it |
+| Field                        | Meaning                                                                                                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `features` contains `events` | the UI opens the stream at all; without the token nothing is opened and no page subscribes                                                                        |
+| `events.path`                | the stream path on the serving origin, `/api/events` on every UI backend that follows the [Where the UI is served](universal-navbar/#where-the-ui-is-served) rule |
+| `events.topics`              | every topic the UI backend can stream, core and app topics alike; the client asks for the ones its pages need from this list and never for one outside it         |
 
 A UI backend without live data omits both the token and the object. The token
 is the gate and the object is data, the same split the navbar contract
@@ -155,13 +155,13 @@ data: {"instance_id":"i-0a1b","hostname":"VDI-0042", ...}
 
 ```
 
-| Line | Rule |
-| --- | --- |
-| `id:` | monotonic per UI backend, `<epoch-ms>-<seq>`, `seq` resetting to `0` each millisecond; the same id space across every topic so a single `Last-Event-ID` resumes the whole stream |
-| `event:` | the kebab-case event name fixed per topic below; never the default unnamed `message` |
-| `data:` | one JSON object on one line; never a bare string, never split over several `data:` lines |
-| `retry: 3000` | sent once at the start; the client's base reconnect delay |
-| `:hb` | a comment line every 25 seconds while the stream is idle, so an idle connection is told apart from a dead one |
+| Line          | Rule                                                                                                                                                                             |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id:`         | monotonic per UI backend, `<epoch-ms>-<seq>`, `seq` resetting to `0` each millisecond; the same id space across every topic so a single `Last-Event-ID` resumes the whole stream |
+| `event:`      | the kebab-case event name fixed per topic below; never the default unnamed `message`                                                                                             |
+| `data:`       | one JSON object on one line; never a bare string, never split over several `data:` lines                                                                                         |
+| `retry: 3000` | sent once at the start; the client's base reconnect delay                                                                                                                        |
+| `:hb`         | a comment line every 25 seconds while the stream is idle, so an idle connection is told apart from a dead one                                                                    |
 
 Any frame the contract does not name is a defect: no unnamed events, no
 `data:` without `id:`, no non-JSON data.
@@ -177,10 +177,10 @@ page in the estate reads the same names.
 
 ### Core topics
 
-| Topic | Event | Data | Snapshot |
-| --- | --- | --- | --- |
-| `session` | `session-terminated` | `{}` | none; the client ends the session on the bus |
-| `notifications` | `unread-count` | `{ "count": N }` | none; the client reads `GET /api/notifications/unread-count` on connect |
+| Topic           | Event                | Data             | Snapshot                                                                |
+| --------------- | -------------------- | ---------------- | ----------------------------------------------------------------------- |
+| `session`       | `session-terminated` | `{}`             | none; the client ends the session on the bus                            |
+| `notifications` | `unread-count`       | `{ "count": N }` | none; the client reads `GET /api/notifications/unread-count` on connect |
 
 A UI backend streams `session` when it holds a session it can end from outside
 the tab (a back-channel logout, a revoke sweep) and `notifications` when
@@ -194,13 +194,13 @@ inside these events keeps every field and every `snake_case` name the
 Python server's REST routes use; nothing inside `vm`, `pool`, `uds` or
 `state_event` is renamed.
 
-| Event | Data |
-| --- | --- |
-| `fleet-snapshot` | `{ "vms": [vm], "pools": { name: pool } }` |
-| `vm-updated` | one `vm` object |
-| `vm-removed` | `{ "instance_id", "hostname" }` |
-| `vm-events` | `{ "instance_id", "hostname", "events": [state_event] }` |
-| `pools-updated` | `{ "vms": { hostname: uds }, "synthetic": { hostname: vm }, "pools": { name: pool } }` |
+| Event            | Data                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| `fleet-snapshot` | `{ "vms": [vm], "pools": { name: pool } }`                                             |
+| `vm-updated`     | one `vm` object                                                                        |
+| `vm-removed`     | `{ "instance_id", "hostname" }`                                                        |
+| `vm-events`      | `{ "instance_id", "hostname", "events": [state_event] }`                               |
+| `pools-updated`  | `{ "vms": { hostname: uds }, "synthetic": { hostname: vm }, "pools": { name: pool } }` |
 
 `fleet-snapshot` is the topic's snapshot event; it is what a reset sends
 and what `useFleet` seeds its keyed map from after `GET /api/vdi/fleet`.
@@ -211,11 +211,11 @@ The UI backend whose `role` is `auth-server` streams one app topic,
 admitted to `ROLE_ADMIN` alone and answered `403` to everyone else, so
 that nothing an operator must know is learned by a timer:
 
-| Event | Data |
-| --- | --- |
+| Event              | Data                                                                                                                                                                                                                                                                                           |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `restart-required` | `{ "required": true, "last_modified_by": "mark@m4kr.net", "last_modified_time": "2026-09-07T02:14:00Z" }`, sent when a configuration write leaves a restart pending and `{ "required": false }` after the restart; the Dashboard's restart card and the Configuration page's card both read it |
-| `blocked-count` | `{ "count": 3 }`, sent when the brute-force block list changes; the Blocked IPs sidebar badge |
-| `health` | `{ "status": "ok", "timestamp": "…", "services": { … } }`, the `/api/health` shape, sent when any service changes state; the footer's heart |
+| `blocked-count`    | `{ "count": 3 }`, sent when the brute-force block list changes; the Blocked IPs sidebar badge                                                                                                                                                                                                  |
+| `health`           | `{ "status": "ok", "timestamp": "…", "services": { … } }`, the `/api/health` shape, sent when any service changes state; the footer's heart                                                                                                                                                    |
 
 The topic has no snapshot event: a connecting client reads
 `GET /api/admin/config/restart-status`, `GET /api/admin/brute-force/count`
@@ -236,10 +236,10 @@ name and the same events, the way every UI backend's `session` topic sends
 The server keeps a ring of the events it sent, the last 500 events or the
 last 5 minutes, whichever is larger, in id order across every topic.
 
-| Reconnect | Server answer |
-| --- | --- |
-| no `Last-Event-ID` | `retry`, `ready`, then live events; the client seeds each topic from its REST snapshot route |
-| `Last-Event-ID` inside the ring | `retry`, `ready`, every event after that id in order, filtered to the subscribed topics, then live events |
+| Reconnect                        | Server answer                                                                                                                                                                                                                                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| no `Last-Event-ID`               | `retry`, `ready`, then live events; the client seeds each topic from its REST snapshot route                                                                                                                                                                                                                |
+| `Last-Event-ID` inside the ring  | `retry`, `ready`, every event after that id in order, filtered to the subscribed topics, then live events                                                                                                                                                                                                   |
 | `Last-Event-ID` outside the ring | `retry`, `ready`, `id: <the newest id>` `event: reset` `data: { "topics": [...] }`, then each subscribed topic's snapshot event (a topic without a snapshot sends nothing), then live events; `reset` carries an `id:` like every other frame, so the grammar's "no `data:` without `id:`" holds for it too |
 
 `reset` tells the client its state is stale beyond repair; the snapshot
@@ -256,13 +256,13 @@ back on its next reconnect if nothing else arrives in between.
 
 ## Auth
 
-| Status | Meaning | Client |
-| --- | --- | --- |
-| `200` | the stream is open | reads frames |
-| `401` | the UI backend requires a session and none was presented or it is invalid | `session.endSession()`; the session-ended banner shows and the stream is not retried until the next sign-in |
-| `403` | the caller may not read a requested topic | fatal, no retry; the page that asked for the topic sees `stopped` |
-| `204` | the UI backend has nothing to stream for this caller and will not | stop for good |
-| any other non-`200`, or a `Content-Type` other than `text/event-stream` | a proxy, a wrong path, a UI backend without the stream | fatal, no retry |
+| Status                                                                  | Meaning                                                                   | Client                                                                                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `200`                                                                   | the stream is open                                                        | reads frames                                                                                                |
+| `401`                                                                   | the UI backend requires a session and none was presented or it is invalid | `session.endSession()`; the session-ended banner shows and the stream is not retried until the next sign-in |
+| `403`                                                                   | the caller may not read a requested topic                                 | fatal, no retry; the page that asked for the topic sees `stopped`                                           |
+| `204`                                                                   | the UI backend has nothing to stream for this caller and will not         | stop for good                                                                                               |
+| any other non-`200`, or a `Content-Type` other than `text/event-stream` | a proxy, a wrong path, a UI backend without the stream                    | fatal, no retry                                                                                             |
 
 A dropped connection with no status (the socket closed, the network went
 away) is the only condition that retries. The server verifies the token
@@ -340,12 +340,12 @@ times and stale flags between events.
 
 ## Server reference
 
-| Host | Where | Status |
-| --- | --- | --- |
-| VDI Health Monitor | `vdi_health/sse.py`: the topic registry, the ring, the id generator, the heartbeat, `subscribe` and `broadcast(topic, event, data)`; `vdi_health/routes/events.py` answers `GET /api/events` | the first implementation of this contract; every fleet broadcast in the server is `broadcast("fleet", "<event>", data)` |
-| BoxVault | `backend/app/utils/events.js` (the ring, ids, ready, heartbeat, replay, reset, per-user delivery) behind `routes/events.routes.js` at `/api/events`, the `events` token and object in `status.controller.js`, `tests/events.test.js` | `session` and `notifications` topics; `unread-count` is pushed after a read, read-all or delete BoxVault proxied, since it holds the user's hub token only inside a request |
-| Provisioner catalog | the Worker | none; the catalog has no live data and advertises no `events` |
-| Authorization server | `GET /api/events` on the issuer, the `session`, `notifications` and `admin` topics; `/api/notifications/stream` with its `connected` and `notification` events retires with `notifications.js`, so a tab holds one connection | to come — the cookie session of the [Universal Identity Contract](universal-identity/); the hub is local, so `unread-count` is pushed on every write to the person's inbox; `session-terminated` fires when the HTTP session that opened the stream is invalidated (a logout in another tab, an RP-initiated logout, expiry, a back-channel logout), never when an OAuth client session of the same person is revoked, because that session is not the one holding the stream; emitters are keyed by session id, closed by the logout handler and the session-destroyed event, capped per person, and refused to a `ROLE_2FA_REQUIRED` or `ROLE_ONBOARDING` principal, so a tab signed out on a shared machine stops receiving within the second |
+| Host                 | Where                                                                                                                                                                                                                                | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| VDI Health Monitor   | `vdi_health/sse.py`: the topic registry, the ring, the id generator, the heartbeat, `subscribe` and `broadcast(topic, event, data)`; `vdi_health/routes/events.py` answers `GET /api/events`                                         | the first implementation of this contract; every fleet broadcast in the server is `broadcast("fleet", "<event>", data)`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| BoxVault             | `backend/app/utils/events.js` (the ring, ids, ready, heartbeat, replay, reset, per-user delivery) behind `routes/events.routes.js` at `/api/events`, the `events` token and object in `status.controller.js`, `tests/events.test.js` | `session` and `notifications` topics; `unread-count` is pushed after a read, read-all or delete BoxVault proxied, since it holds the user's hub token only inside a request                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Provisioner catalog  | the Worker                                                                                                                                                                                                                           | none; the catalog has no live data and advertises no `events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Authorization server | `GET /api/events` on the issuer, the `session`, `notifications` and `admin` topics; `/api/notifications/stream` with its `connected` and `notification` events retires with `notifications.js`, so a tab holds one connection        | to come — the cookie session of the [Universal Identity Contract](universal-identity/); the hub is local, so `unread-count` is pushed on every write to the person's inbox; `session-terminated` fires when the HTTP session that opened the stream is invalidated (a logout in another tab, an RP-initiated logout, expiry, a back-channel logout), never when an OAuth client session of the same person is revoked, because that session is not the one holding the stream; emitters are keyed by session id, closed by the logout handler and the session-destroyed event, capped per person, and refused to a `ROLE_2FA_REQUIRED` or `ROLE_ONBOARDING` principal, so a tab signed out on a shared machine stops receiving within the second |
 
 What a server keeps per connection is the subscribed topic set and the
 response; what it keeps per UI backend is the ring and the id counter. The
@@ -361,20 +361,20 @@ appends to the ring and fans out to every subscriber of the topic.
 
 Tick each line in the PR that claims conformance.
 
-| Line | Catalog | BoxVault | VDI Health | Auth server |
-| --- | --- | --- | --- | --- |
-| `events` token and `events: { path, topics }` in `/api/status`, omitted when the UI backend has no live data | n/a — omitted, no live data | ✓ `status.controller.js`, `["session", "notifications"]` | ✓ `/api/events`, `["fleet"]` plus `session` under `auth.mode: idp` | to come — `/api/events`, `["notifications", "session", "admin"]` |
-| One path, one connection per tab, topics from `?topics=`, unknown topics ignored, empty means core | n/a | ✓ `events.routes.js` | ✓ `routes/events.py` | to come |
-| The session's headers on the request; `401` ends the session on the bus, `403` and `204` stop for good | n/a | ✓ `x-access-token` through `verifyToken`; no credential → `401`, a service account → `403` | ✓ `auth.py` verifies as on every `/api/vdi/*` route; no headers under `auth.mode: none` | to come — the session cookie; no session → `401`; a pending onboarding principal admitted, a `ROLE_2FA_REQUIRED` one refused; `admin` answers `403` to a non-admin |
-| `text/event-stream; charset=utf-8`, `no-cache, no-transform`, `X-Accel-Buffering: no`, no `Connection` header, never compressed, headers flushed first | n/a | ✓ | ✓ | to come |
-| `retry: 3000` then `event: ready` with the id and the subscribed topics | n/a | ✓ | ✓ | to come |
-| Every event `id: <epoch-ms>-<seq>`, kebab-case `event:`, one-line JSON `data:`; `:hb` every 25 s | n/a | ✓ `events.js` | ✓ `sse.py` | to come |
-| Ring of 500 events or 5 minutes; `Last-Event-ID` inside it replays in order, outside it answers `reset` then every snapshot event | n/a | ✓ no snapshot topics, `reset` alone | ✓ `fleet-snapshot` after `reset` | to come — no snapshot topics, `reset` alone |
-| Core topics by their fixed names: `session` → `session-terminated`, `notifications` → `unread-count` | n/a | ✓ both | ✓ `session` while `auth.mode` is `idp` | to come — both |
-| App topics registered in this guide with every event and its snapshot | n/a | n/a — none yet | ✓ `fleet`: `fleet-snapshot`, `vm-updated`, `vm-removed`, `vm-events`, `pools-updated` | to come — `admin`: `restart-required`, `blocked-count`, `health`, no snapshot |
-| Every broadcast through one server module; no ad-hoc queue list | n/a | ✓ `broadcast` in `events.js`; `sessionEvents.js` removed | ✓ `broadcast("fleet", …)` everywhere | to come — one module; `/api/notifications/stream` and `notifications.js` retired |
-| The UI opens the stream through `connectEventStream` and pages read it through `useEventStream`; no page opens a stream of its own | n/a | ✓ the runtime stream | ✓ `useFleet`, `useVmHistory` | to come — the runtime stream |
-| `useSessionKeepalive` answers `session-terminated` on the one stream with `events.endSession()` | n/a | ✓ | ✓ | to come |
+| Line                                                                                                                                                   | Catalog                     | BoxVault                                                                                   | VDI Health                                                                              | Auth server                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `events` token and `events: { path, topics }` in `/api/status`, omitted when the UI backend has no live data                                           | n/a — omitted, no live data | ✓ `status.controller.js`, `["session", "notifications"]`                                   | ✓ `/api/events`, `["fleet"]` plus `session` under `auth.mode: idp`                      | to come — `/api/events`, `["notifications", "session", "admin"]`                                                                                                   |
+| One path, one connection per tab, topics from `?topics=`, unknown topics ignored, empty means core                                                     | n/a                         | ✓ `events.routes.js`                                                                       | ✓ `routes/events.py`                                                                    | to come                                                                                                                                                            |
+| The session's headers on the request; `401` ends the session on the bus, `403` and `204` stop for good                                                 | n/a                         | ✓ `x-access-token` through `verifyToken`; no credential → `401`, a service account → `403` | ✓ `auth.py` verifies as on every `/api/vdi/*` route; no headers under `auth.mode: none` | to come — the session cookie; no session → `401`; a pending onboarding principal admitted, a `ROLE_2FA_REQUIRED` one refused; `admin` answers `403` to a non-admin |
+| `text/event-stream; charset=utf-8`, `no-cache, no-transform`, `X-Accel-Buffering: no`, no `Connection` header, never compressed, headers flushed first | n/a                         | ✓                                                                                          | ✓                                                                                       | to come                                                                                                                                                            |
+| `retry: 3000` then `event: ready` with the id and the subscribed topics                                                                                | n/a                         | ✓                                                                                          | ✓                                                                                       | to come                                                                                                                                                            |
+| Every event `id: <epoch-ms>-<seq>`, kebab-case `event:`, one-line JSON `data:`; `:hb` every 25 s                                                       | n/a                         | ✓ `events.js`                                                                              | ✓ `sse.py`                                                                              | to come                                                                                                                                                            |
+| Ring of 500 events or 5 minutes; `Last-Event-ID` inside it replays in order, outside it answers `reset` then every snapshot event                      | n/a                         | ✓ no snapshot topics, `reset` alone                                                        | ✓ `fleet-snapshot` after `reset`                                                        | to come — no snapshot topics, `reset` alone                                                                                                                        |
+| Core topics by their fixed names: `session` → `session-terminated`, `notifications` → `unread-count`                                                   | n/a                         | ✓ both                                                                                     | ✓ `session` while `auth.mode` is `idp`                                                  | to come — both                                                                                                                                                     |
+| App topics registered in this guide with every event and its snapshot                                                                                  | n/a                         | n/a — none yet                                                                             | ✓ `fleet`: `fleet-snapshot`, `vm-updated`, `vm-removed`, `vm-events`, `pools-updated`   | to come — `admin`: `restart-required`, `blocked-count`, `health`, no snapshot                                                                                      |
+| Every broadcast through one server module; no ad-hoc queue list                                                                                        | n/a                         | ✓ `broadcast` in `events.js`; `sessionEvents.js` removed                                   | ✓ `broadcast("fleet", …)` everywhere                                                    | to come — one module; `/api/notifications/stream` and `notifications.js` retired                                                                                   |
+| The UI opens the stream through `connectEventStream` and pages read it through `useEventStream`; no page opens a stream of its own                     | n/a                         | ✓ the runtime stream                                                                       | ✓ `useFleet`, `useVmHistory`                                                            | to come — the runtime stream                                                                                                                                       |
+| `useSessionKeepalive` answers `session-terminated` on the one stream with `events.endSession()`                                                        | n/a                         | ✓                                                                                          | ✓                                                                                       | to come                                                                                                                                                            |
 
 ---
 

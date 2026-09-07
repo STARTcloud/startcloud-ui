@@ -9,6 +9,7 @@ const MESSAGE_KEYS = {
   422: 'errors.validation',
 };
 const PROBLEM_TYPE = 'application/problem+json';
+const OPTIONAL_AUTH = 'optional';
 
 const textOf = value => (typeof value === 'string' ? value : '');
 
@@ -80,7 +81,10 @@ export class ApiError extends Error {
  * instance of its own, the session's headers resolved per request against
  * the absolute URL sent (so a DPoP proof binds to the right target), one
  * replay after a 401 when the session can recover, the session ended when
- * it cannot, and every failure thrown as `ApiError`.
+ * it cannot, and every failure thrown as `ApiError`. `auth` is `true` for
+ * that, `false` to send no session headers, and `'optional'` to send them
+ * while neither replaying nor ending the session on a 401, for the one
+ * call that asks whether anyone is signed in at all.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.baseUrl - The public origin the API is reached at, the one the session signs its headers for
@@ -101,7 +105,13 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
   };
 
   const recover = async ({ error, auth, skipAuthRefresh, attempt }) => {
-    if (isAbort(error) || !auth || skipAuthRefresh || error.response?.status !== 401) {
+    if (
+      isAbort(error) ||
+      !auth ||
+      auth === OPTIONAL_AUTH ||
+      skipAuthRefresh ||
+      error.response?.status !== 401
+    ) {
       throw error;
     }
     const recovered = await Promise.resolve()

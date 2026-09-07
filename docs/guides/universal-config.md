@@ -29,7 +29,7 @@ the files. The visual reference is
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -63,13 +63,13 @@ the files. The visual reference is
 
 ## Files and environment
 
-| Rule | Value |
-| --- | --- |
-| location | `/etc/<app>/<name>.config.yaml` in production; `config/<name>.dev.config.yaml` in the tree otherwise; the setup token, the SSL pair and the config backups beside them |
-| names | `status.config` lists them (`["app"]` on the VDI Health Monitor, `["app", "auth", "db", "mail"]` on BoxVault); each is a tab of the admin page and of the setup page; a name outside the list is 404 |
+| Rule        | Value                                                                                                                                                                                                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| location    | `/etc/<app>/<name>.config.yaml` in production; `config/<name>.dev.config.yaml` in the tree otherwise; the setup token, the SSL pair and the config backups beside them                                                                                                                    |
+| names       | `status.config` lists them (`["app"]` on the VDI Health Monitor, `["app", "auth", "db", "mail"]` on BoxVault); each is a tab of the admin page and of the setup page; a name outside the list is 404                                                                                      |
 | environment | `CONFIG_DIR`, default `/etc/<app>`, the only environment variable a backend reads; there is no environment switch, production versus development is chosen by which config directory exists; any other setting in an environment variable is a defect; the authorization server is exempt |
-| the schema | `<name>.schema.yaml` beside the code (BoxVault `backend/app/config/schema/`, VDI `vdi_health/schema/`), one per file, YAML on disk because YAML is a JSON superset; served as JSON |
-| format | YAML 1.2 as `js-yaml` and PyYAML read it; keys `snake_case`; a value is a scalar, a list of scalars, or a map for a free subtree the schema names as such |
+| the schema  | `<name>.schema.yaml` beside the code (BoxVault `backend/app/config/schema/`, VDI `vdi_health/schema/`), one per file, YAML on disk because YAML is a JSON superset; served as JSON                                                                                                        |
+| format      | YAML 1.2 as `js-yaml` and PyYAML read it; keys `snake_case`; a value is a scalar, a list of scalars, or a map for a free subtree the schema names as such                                                                                                                                 |
 
 ### A file and its schema
 
@@ -160,19 +160,19 @@ One JSON Schema 2020-12 document per file. The rules are the validation
 contract's vocabulary; the drawing words are this contract's additions, which
 the spec permits as annotations (Core §7.7.1).
 
-| Keyword | Meaning | Spec |
-| --- | --- | --- |
-| `type`, `enum`, `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `format`, `required`, `minItems`, `maxItems`, `additionalProperties` | the rules, as the validation contract fixes them; `additionalProperties` describes every entry of a free map (`logging.categories`) | Validation §6, §7; Core §10.3.2.3 |
-| `default` | the value a missing key takes at boot and in `postinst`; RECOMMENDED valid against the schema | Validation §9.2 |
-| `title`, `description` | the field's label and the hint under it | Validation §9.1 |
-| `readOnly` | drawn, never editable (the database dialect the type sets) | Validation §9.4 |
-| `writeOnly` | a secret: masked as `********` on read, kept when a write carries the mask or blank | Validation §9.4 |
-| `deprecated` | drawn with a deprecation note; removed by a later migration | Validation §9.3 |
-| `section`, `subsection`, `order` | where and in what order the field is drawn; `sections` at the root names and orders the tabs' groups; an object property that names a `subsection` gives it its `title`, and a property naming none inherits its parent's; a property in no section goes to `general` | this contract |
-| `upload` | a text field with an upload button (the SSL paths) | this contract |
-| `dependsOn`, `showWhen` | drawn only while a sibling has one of the values; the one conditional form | this contract |
-| `requiresRestart` | the admin page says a restart is needed after this value changes; the route reports it in its 200 | this contract |
-| `x-pool` and any other `x-` key | a UI backend's own annotation, ignored by the shared UI; a `type: object` with neither `properties` nor `additionalProperties` is a free subtree the page does not draw | OpenAPI convention |
+| Keyword                                                                                                                                         | Meaning                                                                                                                                                                                                                                                               | Spec                              |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `type`, `enum`, `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `format`, `required`, `minItems`, `maxItems`, `additionalProperties` | the rules, as the validation contract fixes them; `additionalProperties` describes every entry of a free map (`logging.categories`)                                                                                                                                   | Validation §6, §7; Core §10.3.2.3 |
+| `default`                                                                                                                                       | the value a missing key takes at boot and in `postinst`; RECOMMENDED valid against the schema                                                                                                                                                                         | Validation §9.2                   |
+| `title`, `description`                                                                                                                          | the field's label and the hint under it                                                                                                                                                                                                                               | Validation §9.1                   |
+| `readOnly`                                                                                                                                      | drawn, never editable (the database dialect the type sets)                                                                                                                                                                                                            | Validation §9.4                   |
+| `writeOnly`                                                                                                                                     | a secret: masked as `********` on read, kept when a write carries the mask or blank                                                                                                                                                                                   | Validation §9.4                   |
+| `deprecated`                                                                                                                                    | drawn with a deprecation note; removed by a later migration                                                                                                                                                                                                           | Validation §9.3                   |
+| `section`, `subsection`, `order`                                                                                                                | where and in what order the field is drawn; `sections` at the root names and orders the tabs' groups; an object property that names a `subsection` gives it its `title`, and a property naming none inherits its parent's; a property in no section goes to `general` | this contract                     |
+| `upload`                                                                                                                                        | a text field with an upload button (the SSL paths)                                                                                                                                                                                                                    | this contract                     |
+| `dependsOn`, `showWhen`                                                                                                                         | drawn only while a sibling has one of the values; the one conditional form                                                                                                                                                                                            | this contract                     |
+| `requiresRestart`                                                                                                                               | the admin page says a restart is needed after this value changes; the route reports it in its 200                                                                                                                                                                     | this contract                     |
+| `x-pool` and any other `x-` key                                                                                                                 | a UI backend's own annotation, ignored by the shared UI; a `type: object` with neither `properties` nor `additionalProperties` is a free subtree the page does not draw                                                                                               | OpenAPI convention                |
 
 The one collection the shared UI draws as a dialog rather than a list of
 fields is the OIDC providers map, `type: object` with `additionalProperties`
@@ -191,16 +191,16 @@ the table at the end says where each came from and what replaces it.
 
 ## Routes
 
-| Route | Answer |
-| --- | --- |
-| `GET /api/config/<name>` | the file as JSON, `writeOnly` values masked; admin only |
-| `GET /api/config/<name>/schema` | the schema document itself as JSON; admin only, since it names the file's shape |
-| `PUT /api/config/<name>` | the body is the whole file or a subtree of it; the route restores masked secrets, evaluates the merged result against the schema, answers 422 with one `errors[]` entry per failing value (pointer `/boxvault/api_listen_port_encrypted`, into the body as sent), and only then writes the file atomically with a backup beside it; 200 carries `{ "message": "…", "requires_restart": true }` when a changed key says so, `snake_case` like every other body member |
-| `POST /api/config/restart` | exits for the process manager, as today |
-| `GET /api/setup` | `{ "configs": { "<name>": <file> } }`, every file in `status.config`, secrets masked, under the setup token |
-| `GET /api/setup/schema` | `{ "schemas": { "<name>": <schema> } }`, under the setup token |
-| `PUT /api/setup` | the body is `{ "configs": { "<name>": <file> } }`; every file evaluated against its schema, the 422 carrying every failing value of every file with pointers into the body as sent, `/configs/app/boxvault/origin`; nothing written while any fails |
-| `GET /api/config/ticket`, `/grafana`, `/hyperweaver` | the public subsets a page needs before login, unchanged |
+| Route                                                | Answer                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/config/<name>`                             | the file as JSON, `writeOnly` values masked; admin only                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `GET /api/config/<name>/schema`                      | the schema document itself as JSON; admin only, since it names the file's shape                                                                                                                                                                                                                                                                                                                                                                                      |
+| `PUT /api/config/<name>`                             | the body is the whole file or a subtree of it; the route restores masked secrets, evaluates the merged result against the schema, answers 422 with one `errors[]` entry per failing value (pointer `/boxvault/api_listen_port_encrypted`, into the body as sent), and only then writes the file atomically with a backup beside it; 200 carries `{ "message": "…", "requires_restart": true }` when a changed key says so, `snake_case` like every other body member |
+| `POST /api/config/restart`                           | exits for the process manager, as today                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `GET /api/setup`                                     | `{ "configs": { "<name>": <file> } }`, every file in `status.config`, secrets masked, under the setup token                                                                                                                                                                                                                                                                                                                                                          |
+| `GET /api/setup/schema`                              | `{ "schemas": { "<name>": <schema> } }`, under the setup token                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `PUT /api/setup`                                     | the body is `{ "configs": { "<name>": <file> } }`; every file evaluated against its schema, the 422 carrying every failing value of every file with pointers into the body as sent, `/configs/app/boxvault/origin`; nothing written while any fails                                                                                                                                                                                                                  |
+| `GET /api/config/ticket`, `/grafana`, `/hyperweaver` | the public subsets a page needs before login, unchanged                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 The refused write is the validation contract's body:
 
@@ -210,8 +210,18 @@ The refused write is the validation contract's body:
   "title": "The configuration did not pass validation.",
   "status": 422,
   "errors": [
-    { "pointer": "/boxvault/api_listen_port_encrypted", "rule": "maximum", "params": { "maximum": 65535 }, "detail": "api_listen_port_encrypted must be at most 65535" },
-    { "pointer": "/logging/log_directory", "rule": "writable", "params": {}, "detail": "/var/log/boxvault is not writable by boxvault" }
+    {
+      "pointer": "/boxvault/api_listen_port_encrypted",
+      "rule": "maximum",
+      "params": { "maximum": 65535 },
+      "detail": "api_listen_port_encrypted must be at most 65535"
+    },
+    {
+      "pointer": "/logging/log_directory",
+      "rule": "writable",
+      "params": {},
+      "detail": "/var/log/boxvault is not writable by boxvault"
+    }
   ]
 }
 ```
@@ -250,13 +260,13 @@ paints it from `validation.<rule>` with the field's `title`.
 
 ## Upgrades and migrations
 
-| Case | What happens |
-| --- | --- |
-| a new key | its `default` is filled at boot for the running process and written into the file by `postinst` on the next package upgrade, so the file the admin reads matches what runs |
-| a removed key | logged as unknown at boot; the release's migration drops it from the file in `postinst` |
+| Case                   | What happens                                                                                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a new key              | its `default` is filled at boot for the running process and written into the file by `postinst` on the next package upgrade, so the file the admin reads matches what runs                         |
+| a removed key          | logged as unknown at boot; the release's migration drops it from the file in `postinst`                                                                                                            |
 | a renamed or moved key | one entry in the UI backend's migration list, a function per release, run by `postinst` in order against the file's `schemaVersion`; the old key is read, the new key written, the old key dropped |
-| a changed rule | the tightened rule applies at boot; a value that no longer passes stops the UI backend with its pointer, so an upgrade never runs on a value the new release cannot honour |
-| a changed default | only a missing key takes it; a value the admin set is never overwritten |
+| a changed rule         | the tightened rule applies at boot; a value that no longer passes stops the UI backend with its pointer, so an upgrade never runs on a value the new release cannot honour                         |
+| a changed default      | only a missing key takes it; a value the admin set is never overwritten                                                                                                                            |
 
 The file carries `schemaVersion: <n>` at its root; the schema carries the
 same; `postinst` runs the migrations from the file's version to the schema's
@@ -267,57 +277,57 @@ committed.
 
 ## What the shared UI draws
 
-| Page | Behaviour |
-| --- | --- |
-| `AdminConfig` | one tab per name in `status.config`; fetches the file and its schema together; draws the sections and foldable subsections through `ConfigSections`; validates on blur and on Update through `useFormRules` with the schema as the rule set; paints the 422 by pointer, the field name being the pointer without its leading slash; marks the tab that carries an error; a warning card `configManager.restartNeeded` when the 200 carries `requiresRestart`, and a `restart` badge on every field whose property says so; the navbar search over `title` and key |
-| `SetupPage` | the same over every file at once under the setup token, the files and schemas fetched together; Submit all stays enabled and the summary lists every file's errors; a server pointer `/configs/<name>/…` lands on the field `<name>/…`; the SQLite path in place of the SQL block follows `dependsOn`/`showWhen` in the schema, not code |
-| `ConfigSections` | `src/components/common/ConfigSections.jsx`: the sections and foldable subsections of one file, every field through `ConfigField`, a hidden field folded away, a map field drawn as one field per entry unless the page hands a `renderMap` for it (the OIDC providers block) |
-| `ConfigField` | `src/components/common/ConfigField.jsx`: one schema property by its `type` and `format` through `Field` (switch for a boolean, select from `enum`, password with reveal for `writeOnly`, comma list for an array of scalars, text with the upload button on `upload`, text with `inputmode="numeric"` for a number), the label from `title`, the hint from `description` |
-| `schemaSections` | `src/features/admin/utils/schemaSections.js`: `schemaSections(schema)` walking the schema into sections, `fieldOf` for one property, `valueAt(config, pointer)` and `setValueAt(config, pointer, value)` over the plain file; the labels come from `title`, the key only when there is none |
+| Page             | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminConfig`    | one tab per name in `status.config`; fetches the file and its schema together; draws the sections and foldable subsections through `ConfigSections`; validates on blur and on Update through `useFormRules` with the schema as the rule set; paints the 422 by pointer, the field name being the pointer without its leading slash; marks the tab that carries an error; a warning card `configManager.restartNeeded` when the 200 carries `requiresRestart`, and a `restart` badge on every field whose property says so; the navbar search over `title` and key |
+| `SetupPage`      | the same over every file at once under the setup token, the files and schemas fetched together; Submit all stays enabled and the summary lists every file's errors; a server pointer `/configs/<name>/…` lands on the field `<name>/…`; the SQLite path in place of the SQL block follows `dependsOn`/`showWhen` in the schema, not code                                                                                                                                                                                                                          |
+| `ConfigSections` | `src/components/common/ConfigSections.jsx`: the sections and foldable subsections of one file, every field through `ConfigField`, a hidden field folded away, a map field drawn as one field per entry unless the page hands a `renderMap` for it (the OIDC providers block)                                                                                                                                                                                                                                                                                      |
+| `ConfigField`    | `src/components/common/ConfigField.jsx`: one schema property by its `type` and `format` through `Field` (switch for a boolean, select from `enum`, password with reveal for `writeOnly`, comma list for an array of scalars, text with the upload button on `upload`, text with `inputmode="numeric"` for a number), the label from `title`, the hint from `description`                                                                                                                                                                                          |
+| `schemaSections` | `src/features/admin/utils/schemaSections.js`: `schemaSections(schema)` walking the schema into sections, `fieldOf` for one property, `valueAt(config, pointer)` and `setValueAt(config, pointer, value)` over the plain file; the labels come from `title`, the key only when there is none                                                                                                                                                                                                                                                                       |
 
 ---
 
 ## What this design changed
 
-| Where | Before | After |
-| --- | --- | --- |
-| the file | BoxVault, VDI and hyperweaver-server: every leaf a node of ten keys of UI metadata around `value`; the agents: plain values | plain values everywhere |
-| the rules | in the file, enforced nowhere (BoxVault, VDI, hyperweaver-server); in a JS schema (zoneweaver-agent); in Go code (hyperweaver-agent) | in one schema file per config file, shipped with the code, served at `/schema`, enforced on both sides |
-| bounds and options | `min`/`max`/`options` in the file; `validation{min,max}` too on hyperweaver-server; `min`/`max`/`enum` in the agents' schemas | `minimum`, `maximum`, `enum` |
-| conditional fields | `depends_on`/`show_when` and `conditional{field,value}` side by side | `dependsOn`/`showWhen` |
-| subsection keys | `subsection` (a label) and `subsection_key` (a locale key) both in every node | `subsection` names the key; `sections` at the root carries the titles |
-| collections of items | hyperweaver-server's `type: collection` with `item_schema`, `secret_fields`, `item_label_field`, managed by its own routes | a `type: object` with `additionalProperties` describing an item, drawn as a list of items; the OIDC providers block of BoxVault's auth file is the first user |
-| `PUT` | deep merge and write, any value accepted; 500 on error (all three); one key checked (zoneweaver); the whole document validated in Go, 500 with the reason (hyperweaver-agent) | validate, 422 with pointers, then merge and write, on every UI backend |
-| boot | the file is read as is | the file is validated; defaults fill; a bad file stops the UI backend |
-| upgrades | a new template per release, the diff left to the admin | `default`, `schemaVersion` and the migration list |
-| the Worker | `wrangler.toml` vars and secrets | unchanged and named the one UI backend with no configuration files: a static UI backend has nothing to write |
+| Where                | Before                                                                                                                                                                        | After                                                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the file             | BoxVault, VDI and hyperweaver-server: every leaf a node of ten keys of UI metadata around `value`; the agents: plain values                                                   | plain values everywhere                                                                                                                                       |
+| the rules            | in the file, enforced nowhere (BoxVault, VDI, hyperweaver-server); in a JS schema (zoneweaver-agent); in Go code (hyperweaver-agent)                                          | in one schema file per config file, shipped with the code, served at `/schema`, enforced on both sides                                                        |
+| bounds and options   | `min`/`max`/`options` in the file; `validation{min,max}` too on hyperweaver-server; `min`/`max`/`enum` in the agents' schemas                                                 | `minimum`, `maximum`, `enum`                                                                                                                                  |
+| conditional fields   | `depends_on`/`show_when` and `conditional{field,value}` side by side                                                                                                          | `dependsOn`/`showWhen`                                                                                                                                        |
+| subsection keys      | `subsection` (a label) and `subsection_key` (a locale key) both in every node                                                                                                 | `subsection` names the key; `sections` at the root carries the titles                                                                                         |
+| collections of items | hyperweaver-server's `type: collection` with `item_schema`, `secret_fields`, `item_label_field`, managed by its own routes                                                    | a `type: object` with `additionalProperties` describing an item, drawn as a list of items; the OIDC providers block of BoxVault's auth file is the first user |
+| `PUT`                | deep merge and write, any value accepted; 500 on error (all three); one key checked (zoneweaver); the whole document validated in Go, 500 with the reason (hyperweaver-agent) | validate, 422 with pointers, then merge and write, on every UI backend                                                                                        |
+| boot                 | the file is read as is                                                                                                                                                        | the file is validated; defaults fill; a bad file stops the UI backend                                                                                         |
+| upgrades             | a new template per release, the diff left to the admin                                                                                                                        | `default`, `schemaVersion` and the migration list                                                                                                             |
+| the Worker           | `wrangler.toml` vars and secrets                                                                                                                                              | unchanged and named the one UI backend with no configuration files: a static UI backend has nothing to write                                                  |
 
 ---
 
 ## Server reference
 
-| Host | Where | Status |
-| --- | --- | --- |
-| BoxVault | `backend/app/config/schema/{app,auth,db,mail}.schema.yaml`; `backend/app/utils/config-loader.js` at boot; `controllers/config/{get,update,schema}.js` and `setup/{update,schema}.js` the routes; `backend/app/config/migrations.js` run by `backend/scripts/migrate-config.js` from `postinst` | ✓ |
-| VDI Health Monitor | `vdi_health/schema/app.schema.yaml`; `vdi_health/config.py` at boot; `routes/config.py` the routes; `vdi_health/migrations.py` run from `postinst` | ✓ |
-| hyperweaver-server | a plain `config.yaml` plus a schema; `_sections` becomes `sections`, `collection` the item object above | to come |
-| zoneweaver-agent, hyperweaver-agent | plain files with a served schema; the schema's `min`/`max` become `minimum`/`maximum`, the `values` vocabulary becomes `additionalProperties`, the save answers 422 with pointers | to come |
-| Provisioner catalog | no configuration files | n/a |
-| Authorization server | to come: the shared editor over `GET /api/config/<name>`, `/schema` and `PUT /api/config/<name>` named by `status.config`, the Java side answering nested plain values per section and one schema per file; until it lands the Thymeleaf `/admin/config` page is the named exception of the identity contract's decision 16, and the `CONFIG_DIR` rule still does not bind Spring's own YAML loading | to come |
+| Host                                | Where                                                                                                                                                                                                                                                                                                                                                                                                | Status  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| BoxVault                            | `backend/app/config/schema/{app,auth,db,mail}.schema.yaml`; `backend/app/utils/config-loader.js` at boot; `controllers/config/{get,update,schema}.js` and `setup/{update,schema}.js` the routes; `backend/app/config/migrations.js` run by `backend/scripts/migrate-config.js` from `postinst`                                                                                                       | ✓       |
+| VDI Health Monitor                  | `vdi_health/schema/app.schema.yaml`; `vdi_health/config.py` at boot; `routes/config.py` the routes; `vdi_health/migrations.py` run from `postinst`                                                                                                                                                                                                                                                   | ✓       |
+| hyperweaver-server                  | a plain `config.yaml` plus a schema; `_sections` becomes `sections`, `collection` the item object above                                                                                                                                                                                                                                                                                              | to come |
+| zoneweaver-agent, hyperweaver-agent | plain files with a served schema; the schema's `min`/`max` become `minimum`/`maximum`, the `values` vocabulary becomes `additionalProperties`, the save answers 422 with pointers                                                                                                                                                                                                                    | to come |
+| Provisioner catalog                 | no configuration files                                                                                                                                                                                                                                                                                                                                                                               | n/a     |
+| Authorization server                | to come: the shared editor over `GET /api/config/<name>`, `/schema` and `PUT /api/config/<name>` named by `status.config`, the Java side answering nested plain values per section and one schema per file; until it lands the Thymeleaf `/admin/config` page is the named exception of the identity contract's decision 16, and the `CONFIG_DIR` rule still does not bind Spring's own YAML loading | to come |
 
 ---
 
 ## Conformance checklist
 
-| Line | BoxVault | VDI Health | hyperweaver-server | zoneweaver-agent | hyperweaver-agent |
-| --- | --- | --- | --- | --- | --- |
-| plain YAML files under `CONFIG_DIR`, named by `status.config`, no other environment variable | ✓ | ✓ | to come | to come | to come |
-| one JSON Schema 2020-12 document per file, shipped with the code, served at `GET /api/config/<name>/schema` | ✓ | ✓ | to come | to come | to come |
-| `GET /api/config/<name>` masks `writeOnly` values; a write carrying the mask keeps the value | ✓ | ✓ | to come | to come | to come |
-| `PUT` validates against the schema and answers the validation contract's 422 with pointers before writing | ✓ | ✓ | to come | to come | to come |
-| boot fills `default`, validates, stops on failure with every pointer logged, warns on unknown keys | ✓ | ✓ | to come | to come | to come |
-| `schemaVersion` in the file and the schema; `postinst` runs the migration list | ✓ | ✓ | to come | to come | to come |
-| the admin and setup pages draw the form from the schema and validate on blur and submit through the shared evaluator | ✓ | ✓ | to come | to come | to come |
+| Line                                                                                                                 | BoxVault | VDI Health | hyperweaver-server | zoneweaver-agent | hyperweaver-agent |
+| -------------------------------------------------------------------------------------------------------------------- | -------- | ---------- | ------------------ | ---------------- | ----------------- |
+| plain YAML files under `CONFIG_DIR`, named by `status.config`, no other environment variable                         | ✓        | ✓          | to come            | to come          | to come           |
+| one JSON Schema 2020-12 document per file, shipped with the code, served at `GET /api/config/<name>/schema`          | ✓        | ✓          | to come            | to come          | to come           |
+| `GET /api/config/<name>` masks `writeOnly` values; a write carrying the mask keeps the value                         | ✓        | ✓          | to come            | to come          | to come           |
+| `PUT` validates against the schema and answers the validation contract's 422 with pointers before writing            | ✓        | ✓          | to come            | to come          | to come           |
+| boot fills `default`, validates, stops on failure with every pointer logged, warns on unknown keys                   | ✓        | ✓          | to come            | to come          | to come           |
+| `schemaVersion` in the file and the schema; `postinst` runs the migration list                                       | ✓        | ✓          | to come            | to come          | to come           |
+| the admin and setup pages draw the form from the schema and validate on blur and submit through the shared evaluator | ✓        | ✓          | to come            | to come          | to come           |
 
 ---
 

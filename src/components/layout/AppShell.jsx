@@ -57,6 +57,34 @@ const utilityLinks = (status, t) => {
   return links;
 };
 
+const footerRepoUrl = brand => brand.repo || brand.changelog || '';
+
+const localProfileFor = status =>
+  authMethod(status) === 'backend' ? { to: '/profile', LinkComponent: Link } : null;
+
+const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
+  const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
+  if (!user) {
+    return null;
+  }
+  return {
+    ...identity,
+    oidc,
+    issuerUrl,
+    localProfile: localProfileFor(status),
+    organizations: orgs.organizations,
+    activeOrgUuid,
+    onPickOrg: account.pickOrg,
+    loadOrganizations: orgs.load,
+    orgMark: orgs.mark,
+    favorites: claims?.favorite_apps || [],
+    appName: status.brand.name,
+    viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
+    onSignOutEverywhere: account.signOutEverywhere,
+    ...menu,
+  };
+};
+
 const logoResolver = primary => name =>
   primary ? primary.adapter.getOrganization(name).then(org => org.logo || '') : Promise.resolve('');
 
@@ -200,7 +228,7 @@ const AppShell = ({
   const status = useStatus();
   const { pathname, search } = useLocation();
   const scrollRef = useRef(null);
-  const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
+  const { user, claims, activeOrgUuid } = account;
   const signedIn = Boolean(user);
   const anonymous = authMethod(status) === 'none';
   const reserved = [
@@ -245,37 +273,25 @@ const AppShell = ({
 
   const links = utilityLinks(status, t);
 
-  const userMenu = signedIn
-    ? {
-        displayName,
-        email,
-        renderAvatar,
-        oidc,
-        issuerUrl,
-        localProfile:
-          authMethod(status) === 'backend' ? { to: '/profile', LinkComponent: Link } : null,
-        organizations,
-        activeOrgUuid,
-        onPickOrg: account.pickOrg,
-        loadOrganizations,
-        orgMark: orgs.mark,
-        favorites: claims?.favorite_apps || [],
-        appName: status.brand.name,
-        appRows: (
-          <AppRows
-            showAdminBoard={showAdminBoard}
-            showOrgConsole={showOrgConsole}
-            extraRows={appRows}
-          />
-        ),
-        notifications,
-        push,
-        viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
-        ticketUrl,
-        onSignOut,
-        onSignOutEverywhere: account.signOutEverywhere,
-      }
-    : null;
+  const userMenu = buildUserMenu({
+    account,
+    status,
+    identity: { displayName, email, renderAvatar },
+    orgs,
+    menu: {
+      appRows: (
+        <AppRows
+          showAdminBoard={showAdminBoard}
+          showOrgConsole={showOrgConsole}
+          extraRows={appRows}
+        />
+      ),
+      notifications,
+      push,
+      ticketUrl,
+      onSignOut,
+    },
+  });
 
   return (
     <div className="App d-flex flex-column vh-100">
@@ -304,7 +320,7 @@ const AppShell = ({
       <Footer
         appName={status.brand.name}
         version={status.version}
-        repoUrl={status.brand.repo}
+        repoUrl={footerRepoUrl(status.brand)}
         poweredBy={POWERED_BY}
         fetchHealth={fetchHealth}
       />
