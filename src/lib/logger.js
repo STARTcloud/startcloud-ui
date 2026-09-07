@@ -138,7 +138,7 @@ const initializeLoggers = () => {
 
 const enrichErrorMetadata = metadata => ({
   ...metadata,
-  url: `${window.location.pathname}${window.location.search}`,
+  page: window.location.pathname,
   userAgent: navigator.userAgent,
 });
 

@@ -700,7 +700,7 @@ Notification", then "View all notifications" → `{issuer}/notifications`.
 Each test answers through an in-app notice card, "Test sent." or
 "Test failed: …".
 
-- Read API: `GET /api/notifications?page&size&unreadOnly`,
+- Read API: `GET /api/notifications?page&size&unread_only`,
   `GET /api/notifications/unread-count`, `POST /api/notifications/{id}/read`,
   `POST /api/notifications/read-all`, `DELETE /api/notifications/{id}` — with
   the user's Bearer token carrying the `notifications` scope. Server-side

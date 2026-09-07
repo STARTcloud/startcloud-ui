@@ -78,6 +78,12 @@ RestartCard.propTypes = {
   }),
 };
 
+const restartOf = data => ({
+  restart_required: Boolean(data.required),
+  last_modified_by: data.last_modified_by || null,
+  last_modified_time: data.last_modified_time || null,
+});
+
 const useRestartRequired = () => {
   const [status, setStatus] = useState(null);
 
@@ -101,7 +107,7 @@ const useRestartRequired = () => {
 
   useEventStream('restart-required', data => {
     if (data && typeof data === 'object') {
-      setStatus(data);
+      setStatus(restartOf(data));
     }
   });
 

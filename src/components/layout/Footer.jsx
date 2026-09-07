@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCircle, FaHeartPulse } from 'react-icons/fa6';
@@ -28,19 +28,26 @@ const HealthIndicator = ({ fetchHealth, streamed }) => {
   const { t } = useTranslation();
   const [health, setHealth] = useState({ status: 'loading', services: {} });
 
+  const load = useCallback(() => {
+    fetchHealth()
+      .then(data => setHealth(data))
+      .catch(() => setHealth({ status: 'error', services: {} }));
+  }, [fetchHealth]);
+
   useEffect(() => {
-    const load = () => {
-      fetchHealth()
-        .then(data => setHealth(data))
-        .catch(() => setHealth({ status: 'error', services: {} }));
-    };
     load();
     if (streamed) {
       return undefined;
     }
     const interval = setInterval(load, HEALTH_POLL_MS);
     return () => clearInterval(interval);
-  }, [fetchHealth, streamed]);
+  }, [load, streamed]);
+
+  useEventStream('ready', () => {
+    if (streamed) {
+      load();
+    }
+  });
 
   useEventStream('health', data => {
     if (streamed && data) {
@@ -90,8 +97,9 @@ HealthIndicator.propTypes = {
  * app's name, year and version on the left as the repository link, the
  * changelog link or plain text; "Powered by" in the centre; and the health
  * heart on the right while the app hands a `fetchHealth`, its state read
- * once and then from the stream's `health` event while `streamed`, by a
- * 60-second poll otherwise.
+ * once on mount, then while `streamed` read again on every `ready` of
+ * the tab's stream and kept by its `health` event, and by a 60-second
+ * poll otherwise.
  */
 const Footer = ({
   appName,

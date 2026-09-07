@@ -570,9 +570,10 @@ For a consuming app:
 The whole policy the identity provider sends, directive by directive, is
 written in the Universal Identity Contract's interstitial group, since it
 names the map, Places and analytics origins that contract keeps. The
-worked cautionary example is this server's own Report-Only policy, which
-shipped `script-src 'self'` — a policy written in good faith that forbids the
-very inline script this contract requires.
+worked cautionary example was this server's own Report-Only policy, which
+once shipped `script-src 'self'` — a policy written in good faith that forbade
+the very inline script this contract requires; it carries a per-request
+nonce today and the published hash after the cutover.
 
 ---
 
