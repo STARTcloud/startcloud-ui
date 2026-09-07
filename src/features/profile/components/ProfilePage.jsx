@@ -103,16 +103,19 @@ const SERVICE_ACCOUNT_SCHEMA = {
     organization: { type: 'string' },
     description: { type: 'string' },
     expiration_days: { type: 'integer' },
+    role: { type: 'string' },
   },
 };
 const SERVICE_ACCOUNT_LABELS = {
   organization: 'profile.serviceAccounts.organization',
   description: 'profile.serviceAccounts.descriptionPlaceholder',
   expiration_days: 'profile.serviceAccounts.expires',
+  role: 'profile.serviceAccounts.role',
 };
 const EMPTY_PASSWORD = { password: '', confirmPassword: '' };
 const EMPTY_EMAIL = { new_email: '' };
 const EXPIRATIONS = [30, 60, 90, 365];
+const SERVICE_ACCOUNT_ROLES = ['member', 'admin', 'owner'];
 
 const userOf = current => current?.user || null;
 
@@ -160,7 +163,8 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
  * (create, the one-time token, select and delete), the Organizations and
  * Service accounts lists searched from the navbar, every call through the
  * app's `account` adapter and the session's own `reload` and
- * `signOutEverywhere`.
+ * `signOutEverywhere`; `admin` is the app's global-admin flag, the one
+ * that offers the superadmin role on a new service account.
  */
 const BackendProfilePage = ({
   session,
@@ -170,6 +174,7 @@ const BackendProfilePage = ({
   activeOrgUuid,
   localAccounts,
   issuerUrl,
+  admin,
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -194,6 +199,7 @@ const BackendProfilePage = ({
     organization: activeOrgUuid,
     description: '',
     expiration_days: 30,
+    role: 'member',
   }));
   const [newServiceAccountToken, setNewServiceAccountToken] = useState(null);
   const nameRules = useFormRules({
@@ -271,7 +277,12 @@ const BackendProfilePage = ({
 
   const resetServiceAccountStates = useCallback(() => {
     setNewServiceAccountToken(null);
-    setServiceAccountForm(previous => ({ ...previous, description: '', expiration_days: 30 }));
+    setServiceAccountForm(previous => ({
+      ...previous,
+      description: '',
+      expiration_days: 30,
+      role: 'member',
+    }));
     resetServiceAccountRules();
   }, [resetServiceAccountRules]);
 
@@ -484,7 +495,8 @@ const BackendProfilePage = ({
       const created = await account.serviceAccounts.create(
         serviceAccountForm.description,
         serviceAccountForm.expiration_days,
-        targetOrg.id
+        targetOrg.id,
+        serviceAccountForm.role
       );
       await loadServiceAccounts(controller.signal);
       resetServiceAccountStates();
@@ -1038,6 +1050,30 @@ const BackendProfilePage = ({
               </select>
             )}
           </Field>
+          <Field
+            id={serviceAccountRules.idFor('role')}
+            label={t('profile.serviceAccounts.role')}
+            error={serviceAccountRules.errors.role || ''}
+          >
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                value={serviceAccountForm.role}
+                onChange={e =>
+                  setServiceAccountForm({ ...serviceAccountForm, role: e.target.value })
+                }
+                onBlur={() => serviceAccountRules.onBlur('role')}
+              >
+                {SERVICE_ACCOUNT_ROLES.map(role => (
+                  <option key={role} value={role}>
+                    {t(`roles.${role}`)}
+                  </option>
+                ))}
+                {admin && <option value="superadmin">{t('roles.superadmin')}</option>}
+              </select>
+            )}
+          </Field>
         </div>
         <button className="btn btn-primary mb-3" type="submit">
           {t('profile.serviceAccounts.createButton')}
@@ -1189,6 +1225,7 @@ BackendProfilePage.propTypes = {
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
+  admin: PropTypes.bool.isRequired,
 };
 
 /**
@@ -1205,6 +1242,7 @@ const ProfilePage = ({
   activeOrgUuid,
   localAccounts,
   issuerUrl,
+  admin,
 }) => {
   if (account.profile && account.stepUp) {
     return (
@@ -1220,6 +1258,7 @@ const ProfilePage = ({
       activeOrgUuid={activeOrgUuid}
       localAccounts={localAccounts}
       issuerUrl={issuerUrl}
+      admin={admin}
     />
   );
 };
@@ -1232,6 +1271,7 @@ ProfilePage.propTypes = {
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
+  admin: PropTypes.bool.isRequired,
 };
 
 export default ProfilePage;

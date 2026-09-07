@@ -164,6 +164,7 @@
     "member": "Member",
     "admin": "Administrator",
     "owner": "Owner",
+    "superadmin": "Superadmin",
     "user": "User"
   },
   "profile": {
@@ -338,6 +339,7 @@
       },
       "createButton": "Create Service Account",
       "organization": "Organization",
+      "role": "Role",
       "expires": "Expires",
       "token": "Token",
       "tokenShownOnce": "Copy this token now — it is shown only once and cannot be retrieved later.",

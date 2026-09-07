@@ -26,11 +26,12 @@ export const cancelRequest = requestId =>
   client.delete(encodePath('api', 'user', 'requests', requestId));
 
 export const serviceAccounts = {
-  create: (description, expirationDays, organizationId) =>
+  create: (description, expirationDays, organizationId, role) =>
     client.post('/api/service-accounts/', {
       description,
       expiration_days: expirationDays,
       organization_id: organizationId,
+      role,
     }),
   organizations: () => client.get('/api/service-accounts/organizations'),
   list: signal => client.get('/api/service-accounts/', { signal }),

@@ -203,7 +203,7 @@ const notCheck = ({ rule, value, patternName, document, evaluate }) => {
     return null;
   }
   const passed = !subschemaFailure({ schema: rule.not, value, patternName, document, evaluate });
-  return passed ? { rule: 'not', params: {} } : null;
+  return passed ? { rule: 'pattern', params: { pattern: patternName || rule.not.pattern } } : null;
 };
 
 const firstFailure = (rule, value, patternName, document) => {

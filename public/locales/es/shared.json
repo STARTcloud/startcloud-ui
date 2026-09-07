@@ -164,6 +164,7 @@
     "member": "Miembro",
     "admin": "Administrador",
     "owner": "Propietario",
+    "superadmin": "Superadministrador",
     "user": "Usuario"
   },
   "profile": {
@@ -338,6 +339,7 @@
       },
       "createButton": "Crear Cuenta de Servicio",
       "organization": "Organización",
+      "role": "Rol",
       "expires": "Expira",
       "token": "Token",
       "tokenShownOnce": "Copia este token ahora — se muestra solo una vez y no se puede recuperar después.",

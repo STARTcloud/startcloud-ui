@@ -716,9 +716,10 @@ Each test answers through an in-app notice card, "Test sent." or
   subscription re-POSTed on every page load, `DELETE …?endpoint=` on
   switch-off, and the service worker re-subscribes and re-POSTs on
   `pushsubscriptionchange`. The hub never toasts a producer's events. The
-  push worker carries no `fetch` handler, is registered with scope
-  `/push/` (the UI backend sends `Service-Worker-Allowed` for that path
-  alone) and is served with `Cache-Control: no-cache`, because a worker at
+  push worker is the build's `/notification-sw.js` at the origin root,
+  carries no `fetch` handler, is registered with scope `/push/` (the UI
+  backend sends `Service-Worker-Allowed: /push/` and
+  `Cache-Control: no-cache` on that one file), because a worker at
   root scope with a `fetch` handler can rewrite every page and redirect
   of the origin and outlive the script injection that registered it.
 - A toast switch failure answers inline in the modal: unsupported browser,

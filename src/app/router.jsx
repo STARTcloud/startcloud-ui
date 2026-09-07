@@ -630,7 +630,7 @@ const interstitialRoutes = ({ status, cookie }) => {
   ]);
 };
 
-const issuerProfile = ({ account, status }) => (
+const issuerProfile = ({ account, status, globalAdmin }) => (
   <ProfilePage
     session={session}
     events={events}
@@ -639,11 +639,12 @@ const issuerProfile = ({ account, status }) => (
     activeOrgUuid={account.activeOrgUuid}
     localAccounts={hasFeature(status, 'local-accounts')}
     issuerUrl={account.issuerUrl}
+    admin={globalAdmin}
   />
 );
 
 const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications }) => {
-  const profile = issuerProfile({ account, status });
+  const profile = issuerProfile({ account, status, globalAdmin });
   return gatedRoutes([
     {
       path: '/user/profile',
@@ -724,12 +725,21 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
     />
   ));
 
-const homeElementFor = ({ status, cookie, fleet, account, collections, context, theme }) => {
+const homeElementFor = ({
+  status,
+  cookie,
+  fleet,
+  account,
+  collections,
+  context,
+  theme,
+  globalAdmin,
+}) => {
   if (cookie) {
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
     }
-    return issuerProfile({ account, status });
+    return issuerProfile({ account, status, globalAdmin });
   }
   if (fleet) {
     return <FleetPage context={context} theme={theme} />;
@@ -796,6 +806,7 @@ const AppRoutes = ({
     collections,
     context,
     theme,
+    globalAdmin,
   });
 
   return (
@@ -895,9 +906,15 @@ const AppRoutes = ({
               activeOrgUuid={activeOrgUuid}
               localAccounts={hasFeature(status, 'local-accounts')}
               issuerUrl={issuerUrl}
+              admin={globalAdmin}
             />
           ) : (
-            gated(cookie, issuerProfile({ account, status }), 'profile.pageTitle', 'backend')
+            gated(
+              cookie,
+              issuerProfile({ account, status, globalAdmin }),
+              'profile.pageTitle',
+              'backend'
+            )
           )
         }
       />
