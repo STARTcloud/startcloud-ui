@@ -12,36 +12,25 @@ import AdminOrganizations from './AdminOrganizations';
 import AdminStorage from './AdminStorage';
 import UpdateNotice from './UpdateNotice';
 
-const TAB_KEYS = {
-  organizations: 'admin.tabs.orgsAndUsers',
-  config: 'admin.tabs.configManagement',
-  system: 'admin.tabs.system',
-};
-
-const tabsOf = admin => [
-  ...(admin.organizationsWithUsers ? ['organizations'] : []),
-  'config',
-  ...(admin.storage ? ['system'] : []),
-];
+export const ADMIN_PAGES = ['organizations', 'config', 'system'];
 
 /**
- * The admin page of an app with configuration of its own: the update
- * notice when the app's `updateStatus` reports one, then the
- * Organizations and users tab while the adapter carries
- * `organizationsWithUsers`, the Configuration tab, and the System tab
- * while the adapter carries `storage`, every call through the app's
- * `admin` adapter; a visitor is sent to sign in and a signed-in non-admin
- * home, `allowed` being the app's global-admin flag.
+ * One admin page per sidebar entry of an app with configuration of its
+ * own: the update notice when the app's `updateStatus` reports one, then
+ * the page the route names, Organizations and users while the adapter
+ * carries `organizationsWithUsers`, Configuration while it carries
+ * `config`, System while it carries `storage`, every call through the
+ * app's `admin` adapter; the sidebar rows are the one navigation and no
+ * tab strip is drawn; a visitor is sent to sign in and a signed-in
+ * non-admin home, `allowed` being the app's global-admin flag.
  */
-const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateCommand }) => {
+const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateCommand, page }) => {
   const { t } = useTranslation();
   useEffect(() => {
     document.title = t('admin.pageTitle');
   }, [t]);
 
   const navigate = useNavigate();
-  const tabs = tabsOf(admin);
-  const [activeTab, setActiveTab] = useState(tabs[0]);
   const [updateInfo, setUpdateInfo] = useState(null);
 
   useEffect(() => {
@@ -71,25 +60,12 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
         <h3 className="text-center">{t('admin.title')}</h3>
       </header>
       {updateInfo && <UpdateNotice updateInfo={updateInfo} command={updateCommand} />}
-      <ul className="nav nav-tabs">
-        {tabs.map(tab => (
-          <li className="nav-item" key={tab}>
-            <button
-              type="button"
-              className={`nav-link ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {t(TAB_KEYS[tab])}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="tab-content mt-2">
-        {activeTab === 'organizations' && admin.organizationsWithUsers ? (
+      <div className="mt-2">
+        {page === 'organizations' && admin.organizationsWithUsers ? (
           <AdminOrganizations session={session} activeOrgKey={activeOrgKey} admin={admin} />
         ) : null}
-        {activeTab === 'config' ? <AdminConfig config={admin.config} /> : null}
-        {activeTab === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
+        {page === 'config' && admin.config ? <AdminConfig config={admin.config} /> : null}
+        {page === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
       </div>
     </div>
   );
@@ -102,6 +78,7 @@ AdminPage.propTypes = {
   admin: adminShape.isRequired,
   activeOrgKey: PropTypes.string.isRequired,
   updateCommand: PropTypes.string.isRequired,
+  page: PropTypes.oneOf(ADMIN_PAGES).isRequired,
 };
 
 export default AdminPage;

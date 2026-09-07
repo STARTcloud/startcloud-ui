@@ -51,7 +51,9 @@ const UserMenu = ({
   orgMark,
   favorites,
   appName,
+  appVersion = '',
   appRows,
+  showPreferences = true,
   notifications,
   push,
   viewAllUrl,
@@ -123,7 +125,7 @@ const UserMenu = ({
             </Dropdown.Item>
           ) : null}
 
-          {issuerUrl ? (
+          {issuerUrl && showPreferences ? (
             <Dropdown.Item
               href={`${issuerUrl}/user/profile#preferences`}
               target="_blank"
@@ -139,7 +141,14 @@ const UserMenu = ({
           {appRows ? (
             <>
               <Dropdown.Divider />
-              <Dropdown.Header className="py-0">{appName}</Dropdown.Header>
+              <Dropdown.Header className="py-0">
+                {appName}
+                {appVersion ? (
+                  <span className="text-body-secondary ms-2">
+                    {t('navbar.versionShort', { version: appVersion })}
+                  </span>
+                ) : null}
+              </Dropdown.Header>
               {appRows}
             </>
           ) : null}
@@ -191,7 +200,9 @@ UserMenu.propTypes = {
   orgMark: PropTypes.node,
   favorites: PropTypes.array.isRequired,
   appName: PropTypes.string.isRequired,
+  appVersion: PropTypes.string,
   appRows: PropTypes.node,
+  showPreferences: PropTypes.bool,
   notifications: notificationsAdapterShape,
   push: pushAdapterShape.isRequired,
   viewAllUrl: PropTypes.string.isRequired,

@@ -29,7 +29,16 @@
     "orgConsole": "Consola de la organización",
     "rebuild": "Regenerar datos del catálogo",
     "boxvault": "BoxVault",
-    "catalog": "Provisioner Catalog"
+    "catalog": "Provisioner Catalog",
+    "versionShort": "v{{version}}",
+    "sidebar": {
+      "expand": "Expandir la barra lateral",
+      "collapse": "Contraer la barra lateral",
+      "resize": "Cambiar el ancho de la barra lateral",
+      "toggle": "Abrir la navegación",
+      "navigation": "Barra lateral",
+      "view": "Vista"
+    }
   },
   "user": {
     "unknownUser": "Usuario Desconocido"
@@ -240,6 +249,15 @@
     }
   },
   "unknown": "Desconocido",
+  "account": {
+    "sidebar": {
+      "title": "Cuenta",
+      "profile": "Perfil",
+      "organizations": "Organizaciones",
+      "integrations": "Integraciones",
+      "inbox": "Bandeja de entrada"
+    }
+  },
   "admin": {
     "pageTitle": "Admin",
     "title": "Panel de Administración",
@@ -247,6 +265,53 @@
       "orgsAndUsers": "Organizaciones y Usuarios",
       "configManagement": "Gestión de Configuración",
       "system": "Sistema"
+    },
+    "sidebar": {
+      "title": "Admin",
+      "overview": "Resumen",
+      "accounts": "Cuentas",
+      "activity": "Actividad",
+      "health": "Salud",
+      "security": "Seguridad",
+      "content": "Contenido",
+      "system": "Sistema"
+    },
+    "dashboard": {
+      "title": "Panel"
+    },
+    "users": {
+      "title": "Usuarios"
+    },
+    "organizations": {
+      "all": "Todas las organizaciones"
+    },
+    "activity": {
+      "logins": {
+        "title": "Inicios de sesión"
+      },
+      "registrations": {
+        "title": "Registros"
+      },
+      "sessions": {
+        "title": "Sesiones"
+      }
+    },
+    "health": {
+      "usage": {
+        "title": "Uso de los servicios"
+      },
+      "insights": {
+        "title": "Estadísticas"
+      },
+      "clients": {
+        "title": "Salud de los clientes"
+      }
+    },
+    "blocked": {
+      "title": "IPs bloqueadas"
+    },
+    "terms": {
+      "title": "Términos"
     },
     "buttons": {
       "save": "Guardar",

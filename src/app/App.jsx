@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,7 +37,7 @@ import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
 import { isManager } from '../utils/membership';
 
-import AppRoutes from './router';
+import AppRoutes, { sidebarEntries } from './router';
 
 const isGlobalAdmin = user =>
   Boolean(user?.roles?.includes('ROLE_ADMIN') || user?.authorities?.includes('ROLE_ADMIN'));
@@ -58,9 +58,9 @@ const notificationsFor = ({ status, claims, user, notifications }) => {
   return hasFeature(status, 'notifications') && scoped ? notifications : null;
 };
 
-const shellFlags = ({ status, backend, globalAdmin, memberships, activeOrgUuid }) => ({
+const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid }) => ({
   loadOrganizations: backend ? loadOrganizations : null,
-  showAdminBoard: hasFeature(status, 'admin') && globalAdmin,
+  showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
   showOrgConsole:
     hasFeature(status, 'org-console') && isManager(memberships, activeOrgUuid, globalAdmin),
   appRows: hasFeature(status, 'rebuild') && globalAdmin ? <RebuildItem /> : null,
@@ -74,7 +74,8 @@ const shellFlags = ({ status, backend, globalAdmin, memberships, activeOrgUuid }
  * profile's picture for a cookie one, the provider's picture for an
  * identity-provider one), the profile reload and
  * the terminate stream a backend session keeps, the ticket link, the
- * notification adapters, and the shell around the routes.
+ * notification adapters, the sidebar entries the mounted features export,
+ * and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t } = useTranslation();
@@ -119,13 +120,14 @@ const App = ({ getSupportedLanguages }) => {
   });
   useAccountPreferences({ user, setThemePreference });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
+  const sidebar = useMemo(() => sidebarEntries({ status, account: { user } }), [status, user]);
 
   if (setupComplete === null) {
     return <div>{t('loading')}</div>;
   }
 
   const globalAdmin = isGlobalAdmin(user);
-  const flags = shellFlags({ status, backend, globalAdmin, memberships, activeOrgUuid });
+  const flags = shellFlags({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid });
 
   const handleSignOut = () => {
     account.signOut();
@@ -158,6 +160,7 @@ const App = ({ getSupportedLanguages }) => {
         ticketUrl={ticket}
         notifications={notificationsFor({ status, claims, user, notifications })}
         push={pushAdapter}
+        sidebar={sidebar}
         {...flags}
       >
         <AppRoutes

@@ -161,7 +161,7 @@ provider of the session contract, chosen when the UI backend's first
 | `endSession()`                            | drops every storage key but `theme` and `language` and ends the session on the bus                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `refresh()`                               | `load()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `claims()`                                | memoized `GET /api/userinfo/claims`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `savePreferences(patch)`                  | `PATCH /api/user/preferences`, then the cached profile's `preferences` updated                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `savePreferences(patch)`                  | `PATCH /api/user/preferences`, then `preferences.theme` and `preferences.language` of the answer applied to local storage as `load()` does; the cache holds the display fields alone and is never widened, so nothing in it is updated                                                                                                                                                                                                                                                                              |
 | `signOut()`                               | `POST /user/logout` with the CSRF header, answering `200 { "next": "/connect/logout/frontchannel" }` while relying parties registered front-channel URIs and `{ "next": "/login?logout" }` otherwise; the provider drops every storage key but `theme` and `language` and sets `window.location` to `next`                                                                                                                                                                                                           |
 | `signOutEverywhere()`                     | `signOut()`; on the issuer the local session is the SSO session, so the logout row draws the plain red row                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `oidc`                                    | always `false`: a federated sign-in on the issuer still ends in the issuer's own session, so the logout row never offers the two-scope toggle                                                                                                                                                                                                                                                                                                                                                                        |
@@ -253,7 +253,7 @@ convergence is a later round across all of them.
 | `links`                         | `docs` from `sites.<id>.assets.help_url`, `contact` as `mailto:` of `sites.<id>.mail.support_email`; an unset value answers `""`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | the chrome hides an empty link; the issuer never invents a destination                                                                                                                                                                                                                                                                         |
 | `ticket`                        | `baseUrl` from `integrations.improvement_request.base_url`, `reqType` its `req`, `fallbackCustomerId` the site's `customer_id`; `null` while `improvement_request.enabled` is false                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | when neither the active organization nor the person carries a customer id, the ticket belongs to the site the person was on, not to the global `improvement_request.customer_id`                                                                                                                                                               |
 | `events`                        | `{ "path": "/api/events", "topics": ["notifications", "session", "admin"] }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | the one stream of the events contract; `admin` is the operator's topic (`restart-required`, `blocked-count`, `health`), answered `403` to anyone without `ROLE_ADMIN`; `/api/notifications/stream` and `notifications.js` retire with it, so a tab holds one connection and no page runs a timer                                               |
-| `analytics`                     | `{ script_url, attribute, value }` from `integrations.analytics.script_url`, `data_attribute_name` and `data_attribute_value` while `enabled` is true and `script_url` is set; absent otherwise. The collector is one the estate runs (a self-hosted Plausible or Umami), `script_url` names that host, and the tag is configured never to send the query string (`data-exclude-search` on Umami; Plausible drops it by default), so the tag stays on every page, the sign-in pages included, and the failures it records are ours; a `script_url` on a host outside the estate is not appended on the sign-in, onboarding, interstitial and error routes, because those pages carry reset tokens, codes and the desktop token in their URL | the served `index.html` is the shared build's, so the tag a site wants rides the payload instead of the template; insight into sign-in failures is kept by owning the collector rather than by dropping the tag                                                                                                                                |
+| `analytics`                     | `{ script_url, attribute, value }` from `integrations.analytics.script_url`, `data_attribute_name` and `data_attribute_value` while `enabled` is true and `script_url` is set; absent otherwise. The collector is one the estate runs (a self-hosted Plausible or Umami), `script_url` names that host, and the tag is configured never to send the query string (`data-exclude-search` on Umami; Plausible drops it by default), so the tag stays on every page, the sign-in pages included, and the failures it records are ours; the issuer answers `analytics` only while the host of `script_url` is a configured hostname of one of its sites and leaves the member absent otherwise, so the shell appends whatever the payload carries on every page and decides nothing, because the sign-in, onboarding, interstitial and error pages carry reset tokens, codes and the desktop token in their URL and the UI has no list of the estate's hosts to judge a script by | the served `index.html` is the shared build's, so the tag a site wants rides the payload instead of the template; insight into sign-in failures is kept by owning the collector rather than by dropping the tag                                                                                                                                |
 
 ---
 
@@ -1641,14 +1641,17 @@ when the first `auth` token is `cookie`, answering `[]` unless the UI
 backend advertises `admin` and the account's `roles` holds `ROLE_ADMIN`,
 else one group `{ key: 'admin', labelKey: 'admin.sidebar.title',
 sections }` with the seven sections above in that order, each row
-`{ key, icon, labelKey, to, end?, badge? }`, the Dashboard row with
+`{ key, icon, labelKey, to, end?, badge?, external? }`, the Dashboard row with
 `end: true`, the Accounts section's second row labelled "All
 organizations" with a glyph other than the Account section's
 Organizations row, the Terms section present only while the UI backend
 also advertises `policies`, the Blocked IPs row carrying `badge:
 'blockedCount'`, which the shell resolves from the `admin` topic's
 `blocked-count` event after one read of `GET /api/admin/brute-force/count`
-on connect and never from a timer. The shared admin feature keeps its
+on connect and never from a timer, and the Configuration row carrying
+`external: true` until the shared editor lands (decision 16), so the
+shell follows it as a top-level navigation into the Thymeleaf page and
+drops the member with the exception. The shared admin feature keeps its
 three entries, Organizations and users, Configuration and System at
 `/admin`, `/admin/config` and `/admin/system`, each drawn only while the
 adapter carries `organizationsWithUsers`, `config` or `storage`, and
@@ -1795,9 +1798,10 @@ problem body with `code`.
     it is made.
   - **Configuration**: the shared `AdminConfig` of the config contract
     over the issuer's schema when it lands, the Thymeleaf `/admin/config`
-    page until then (decision 16), reached from the sidebar row as a
-    top-level navigation into the old chrome and back by its own links,
-    the one named jump between two chromes until the editor lands.
+    page until then (decision 16), reached from the sidebar row, which
+    carries `external: true` until the editor lands, as a top-level
+    navigation into the old chrome and back by its own links, the one
+    named jump between two chromes.
   - **Dashboard's restart card**: while the `admin` topic's
     `restart-required` says a restart is pending the Dashboard draws a
     warning card naming who changed what and when, with Restart behind
@@ -2100,6 +2104,20 @@ Settled before code, in the order they were raised:
 64. A `card` of the notice surface draws the translation of `messageKey`
     alone; the server's sentence goes to the console and the client
     error report for the developer.
+65. The cookie provider's cache holds the display fields alone;
+    `savePreferences` reapplies `theme` and `language` to local storage
+    and updates nothing in the cache.
+66. The issuer answers `analytics` only while `script_url` names a
+    configured hostname of one of its sites; the shell appends whatever
+    the payload carries and decides nothing about hosts.
+67. `login_method` is LoginPage's own local-storage key; the session
+    hook and the cookie provider never read or write it.
+68. A sidebar `tree` is a hook answering `{ nodes, menu? }`, the node
+    shape of the navbar contract's Export bullet; a `views` entry's
+    `useTree` answers the same shape.
+69. A sidebar row may carry `external: true`, followed as a top-level
+    navigation; on the issuer the Configuration row alone carries it,
+    until the shared editor lands.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

@@ -17,6 +17,7 @@ import {
   AdminPage,
   adminConfig,
   resumeUser,
+  sidebar as adminSidebar,
   storage,
   suspendUser,
   updateStatus,
@@ -46,6 +47,7 @@ import {
   collectionShape,
   pageContextShape,
 } from '../features/catalog';
+import { sidebar as identitySidebar } from '../features/identity';
 import {
   DiscoveryPage,
   OrgConsolePage,
@@ -77,6 +79,7 @@ import {
   removeAccount,
   serviceAccounts,
   setPrimaryOrganization,
+  sidebar as profileSidebar,
 } from '../features/profile';
 import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
@@ -146,11 +149,39 @@ const backendAdminMembers = {
   storage,
 };
 
-const adminAdapterFor = backend => ({
-  ...(backend ? backendAdminMembers : {}),
-  config: adminConfig,
-  updateStatus,
-});
+const adminAdapterFor = method => {
+  if (method === 'cookie') {
+    return { updateStatus };
+  }
+  return {
+    ...(method === 'backend' ? backendAdminMembers : {}),
+    config: adminConfig,
+    updateStatus,
+  };
+};
+
+const firstAdminPage = admin => (admin.organizationsWithUsers ? 'organizations' : 'config');
+
+/**
+ * Every mounted feature's `sidebar(status, account)` answer, concatenated
+ * in the order the column draws them: the profile feature's Account
+ * group, the identity feature's operator group while the host's first
+ * `auth` token is `cookie`, and the shared admin feature's entries over
+ * the admin adapter the host gets; empty means no column.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @returns {Array} The sidebar groups `AppShell` takes as `sidebar`
+ */
+export const sidebarEntries = ({ status, account }) => {
+  const method = authMethod(status);
+  return [
+    ...profileSidebar(status, account),
+    ...(method === 'cookie' ? identitySidebar(status, account) : []),
+    ...adminSidebar(status, account, adminAdapterFor(method)),
+  ];
+};
 
 const Stub = ({ titleKey, token }) => {
   const { t } = useTranslation();
@@ -160,6 +191,30 @@ const Stub = ({ titleKey, token }) => {
 Stub.propTypes = {
   titleKey: PropTypes.string.isRequired,
   token: PropTypes.string.isRequired,
+};
+
+const AdminRoute = ({ globalAdmin, page = '' }) => {
+  const status = useStatus();
+  const admin = adminAdapterFor(authMethod(status));
+  if (!hasFeature(status, 'admin')) {
+    return <Stub titleKey="admin.pageTitle" token="admin" />;
+  }
+  return (
+    <AdminPage
+      session={session}
+      returnTo={returnTo}
+      allowed={globalAdmin}
+      admin={admin}
+      activeOrgKey={ACTIVE_ORG_KEY}
+      updateCommand={UPDATE_COMMAND(status.role)}
+      page={page || firstAdminPage(admin)}
+    />
+  );
+};
+
+AdminRoute.propTypes = {
+  globalAdmin: PropTypes.bool.isRequired,
+  page: PropTypes.string,
 };
 
 const DiscoverLink = () => {
@@ -466,22 +521,14 @@ const AppRoutes = ({
           )
         }
       />
+      <Route path="/admin" element={<AdminRoute globalAdmin={globalAdmin} />} />
       <Route
-        path="/admin"
-        element={
-          hasFeature(status, 'admin') ? (
-            <AdminPage
-              session={session}
-              returnTo={returnTo}
-              allowed={globalAdmin}
-              admin={adminAdapterFor(backend)}
-              activeOrgKey={ACTIVE_ORG_KEY}
-              updateCommand={UPDATE_COMMAND(status.role)}
-            />
-          ) : (
-            <Stub titleKey="admin.pageTitle" token="admin" />
-          )
-        }
+        path="/admin/config"
+        element={<AdminRoute globalAdmin={globalAdmin} page="config" />}
+      />
+      <Route
+        path="/admin/system"
+        element={<AdminRoute globalAdmin={globalAdmin} page="system" />}
       />
       <Route
         path="/org-console"

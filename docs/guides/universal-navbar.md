@@ -316,8 +316,18 @@ side.
   the sidebar never re-decides a gate. Every `to` is a route of a
   contract. Entries come only from features; the status payload adds
   none. A section is `{ key, labelKey?, items }` and a row
-  `{ key, icon, labelKey, to, end?, badge? }`, `end` marking a row active
-  on its exact path alone. A row's `badge` names a count the shell
+  `{ key, icon, labelKey, to, end?, badge?, external? }`, `end` marking a
+  row active on its exact path alone and `external` marking a row the
+  shell follows as a top-level navigation rather than a router link,
+  never active, because a page still served by another chrome is
+  reached and left by a full load. A bare `tree` is a hook, the same
+  shape a view's `useTree` answers: `{ nodes, menu? }`, every node
+  `{ key, icon?, label, to, children?, status? }`, `children` a function
+  the sidebar calls on expand answering the child nodes, `status` a word
+  the status dot draws (`up`, `idle`, absent for none), and `menu(node)`
+  answering the right-click rows as `[{ key, labelKey, onClick }]`; a
+  node's `label` is text the feature already has, never a key, because
+  a pool or a host is named by its data. A row's `badge` names a count the shell
   resolves from the event hub where the UI backend advertises `events`,
   and from a count route the feature names on a UI backend without a
   stream, never a number the export computes, never a string drawn as is

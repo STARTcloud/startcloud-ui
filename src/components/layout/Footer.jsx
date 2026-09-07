@@ -4,6 +4,8 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCircle, FaHeartPulse } from 'react-icons/fa6';
 
+import { useEventStream } from '../../hooks/useEventStream';
+
 const HEALTH_POLL_MS = 60000;
 
 const statusColor = status => {
@@ -22,7 +24,7 @@ const statusColor = status => {
 
 const OVERALL_COLORS = { ok: 'text-success', warning: 'text-warning', error: 'text-danger' };
 
-const HealthIndicator = ({ fetchHealth }) => {
+const HealthIndicator = ({ fetchHealth, streamed }) => {
   const { t } = useTranslation();
   const [health, setHealth] = useState({ status: 'loading', services: {} });
 
@@ -33,9 +35,18 @@ const HealthIndicator = ({ fetchHealth }) => {
         .catch(() => setHealth({ status: 'error', services: {} }));
     };
     load();
+    if (streamed) {
+      return undefined;
+    }
     const interval = setInterval(load, HEALTH_POLL_MS);
     return () => clearInterval(interval);
-  }, [fetchHealth]);
+  }, [fetchHealth, streamed]);
+
+  useEventStream('health', data => {
+    if (streamed && data) {
+      setHealth(data);
+    }
+  });
 
   const overall = health.status || 'error';
 
@@ -71,9 +82,25 @@ const HealthIndicator = ({ fetchHealth }) => {
 
 HealthIndicator.propTypes = {
   fetchHealth: PropTypes.func.isRequired,
+  streamed: PropTypes.bool.isRequired,
 };
 
-const Footer = ({ appName, version, repoUrl = '', poweredBy, fetchHealth = null }) => {
+/**
+ * The footer row of the navbar contract's Footer status section: the
+ * app's name, year and version on the left as the repository link, the
+ * changelog link or plain text; "Powered by" in the centre; and the health
+ * heart on the right while the app hands a `fetchHealth`, its state read
+ * once and then from the stream's `health` event while `streamed`, by a
+ * 60-second poll otherwise.
+ */
+const Footer = ({
+  appName,
+  version,
+  repoUrl = '',
+  poweredBy,
+  fetchHealth = null,
+  streamed = false,
+}) => {
   const { t } = useTranslation(['shared', 'auth']);
   const line = (
     <>
@@ -118,7 +145,7 @@ const Footer = ({ appName, version, repoUrl = '', poweredBy, fetchHealth = null 
           </a>
         </div>
         <div className="footer-edge-end d-flex align-items-center">
-          {fetchHealth ? <HealthIndicator fetchHealth={fetchHealth} /> : null}
+          {fetchHealth ? <HealthIndicator fetchHealth={fetchHealth} streamed={streamed} /> : null}
         </div>
       </div>
     </footer>
@@ -134,6 +161,7 @@ Footer.propTypes = {
     logoSrc: PropTypes.string.isRequired,
   }).isRequired,
   fetchHealth: PropTypes.func,
+  streamed: PropTypes.bool,
 };
 
 export default Footer;

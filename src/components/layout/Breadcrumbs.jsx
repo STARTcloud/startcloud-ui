@@ -47,6 +47,14 @@ const CrumbLink = ({ crumb, LinkComponent }) => {
       </a>
     );
   }
+  if (!crumb.onClick) {
+    return (
+      <span className={CRUMB_CLASS}>
+        {crumb.icon}
+        {crumb.label}
+      </span>
+    );
+  }
   return (
     <button type="button" className={CRUMB_CLASS} onClick={crumb.onClick}>
       {crumb.icon}

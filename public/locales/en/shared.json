@@ -29,7 +29,16 @@
     "orgConsole": "Organization console",
     "rebuild": "Rebuild catalog data",
     "boxvault": "BoxVault",
-    "catalog": "Provisioner Catalog"
+    "catalog": "Provisioner Catalog",
+    "versionShort": "v{{version}}",
+    "sidebar": {
+      "expand": "Expand the sidebar",
+      "collapse": "Collapse the sidebar",
+      "resize": "Resize the sidebar",
+      "toggle": "Open the navigation",
+      "navigation": "Sidebar",
+      "view": "View"
+    }
   },
   "user": {
     "unknownUser": "Unknown User"
@@ -240,6 +249,15 @@
     }
   },
   "unknown": "Unknown",
+  "account": {
+    "sidebar": {
+      "title": "Account",
+      "profile": "Profile",
+      "organizations": "Organizations",
+      "integrations": "Integrations",
+      "inbox": "Inbox"
+    }
+  },
   "admin": {
     "pageTitle": "Admin",
     "title": "Admin Panel",
@@ -247,6 +265,53 @@
       "orgsAndUsers": "Organizations and Users",
       "configManagement": "Configuration Management",
       "system": "System"
+    },
+    "sidebar": {
+      "title": "Admin",
+      "overview": "Overview",
+      "accounts": "Accounts",
+      "activity": "Activity",
+      "health": "Health",
+      "security": "Security",
+      "content": "Content",
+      "system": "System"
+    },
+    "dashboard": {
+      "title": "Dashboard"
+    },
+    "users": {
+      "title": "Users"
+    },
+    "organizations": {
+      "all": "All organizations"
+    },
+    "activity": {
+      "logins": {
+        "title": "Logins"
+      },
+      "registrations": {
+        "title": "Registrations"
+      },
+      "sessions": {
+        "title": "Sessions"
+      }
+    },
+    "health": {
+      "usage": {
+        "title": "Service usage"
+      },
+      "insights": {
+        "title": "Insights"
+      },
+      "clients": {
+        "title": "Client health"
+      }
+    },
+    "blocked": {
+      "title": "Blocked IPs"
+    },
+    "terms": {
+      "title": "Terms"
     },
     "buttons": {
       "save": "Save",

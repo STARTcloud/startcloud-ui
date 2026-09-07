@@ -10,3 +10,4 @@ export {
   setPrimaryOrganization,
 } from './api/profile';
 export { default as ProfilePage, accountShape } from './components/ProfilePage';
+export { sidebar } from './sidebar';

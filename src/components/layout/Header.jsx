@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaBars, FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
 
 import Crumbs, { crumbShape } from './Breadcrumbs';
 import { LanguageButton } from './LanguageModal';
@@ -81,7 +81,7 @@ UtilityLinks.propTypes = {
 };
 
 const Header = ({
-  brand,
+  brand = null,
   links = [],
   crumbs = [],
   LinkComponent = 'a',
@@ -91,6 +91,7 @@ const Header = ({
   onSignIn = null,
   signInTo = '',
   userMenu = null,
+  onSidebarToggle = null,
 }) => {
   const { t } = useTranslation();
   const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
@@ -99,7 +100,18 @@ const Header = ({
   return (
     <nav className="navbar navbar-expand-lg shadow-sm bg-body-tertiary border-bottom">
       <div className="container-fluid">
-        <Brand brand={brand} LinkComponent={LinkComponent} />
+        {onSidebarToggle ? (
+          <button
+            type="button"
+            className="btn btn-link nav-link cluster-btn sidebar-toggle me-2"
+            onClick={onSidebarToggle}
+            title={t('navbar.sidebar.toggle')}
+            aria-label={t('navbar.sidebar.toggle')}
+          >
+            <FaBars />
+          </button>
+        ) : null}
+        {brand ? <Brand brand={brand} LinkComponent={LinkComponent} /> : null}
         <ul className="nav nav-pills me-auto align-items-center">
           {signedIn ? (
             <Crumbs crumbs={crumbs} LinkComponent={LinkComponent} />
@@ -136,7 +148,7 @@ const Header = ({
 };
 
 Header.propTypes = {
-  brand: brandShape.isRequired,
+  brand: brandShape,
   links: PropTypes.arrayOf(linkShape),
   crumbs: PropTypes.arrayOf(crumbShape),
   LinkComponent: PropTypes.elementType,
@@ -152,6 +164,7 @@ Header.propTypes = {
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
   userMenu: PropTypes.object,
+  onSidebarToggle: PropTypes.func,
 };
 
 export default Header;

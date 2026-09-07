@@ -9,9 +9,10 @@ import { POWERED_BY } from '../../config/brand';
 import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { sessionStateShape } from '../../hooks/useSession';
+import { useSidebarBadges } from '../../hooks/useSidebarBadges';
 import { reportRenderError } from '../../lib/logger';
 import { returnTo } from '../../lib/runtime';
-import { authMethod } from '../../utils/capabilities';
+import { authMethod, hasFeature } from '../../utils/capabilities';
 import { userDisplayName, userSecondaryLine } from '../../utils/identity';
 import { buildRouteCrumbs, parseRoute } from '../../utils/routes';
 import Avatar from '../common/Avatar';
@@ -23,6 +24,7 @@ import Header from './Header';
 import { NoticeCards } from './Notices';
 import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModal';
 import { OrgLogo, organizationShape } from './OrgSwitcherModal';
+import Sidebar, { sidebarGroupShape } from './Sidebar';
 
 const UNIVERSAL_ROUTES = [
   'about',
@@ -45,6 +47,7 @@ const UNIVERSAL_ROUTES = [
 ];
 
 const SESSION_ENDED_KEY = 'session-ended';
+const PROFILE_ROUTES = ['/profile', '/user/profile'];
 
 const utilityLinks = (status, t) => {
   const links = [{ key: 'about', label: t('navbar.about'), to: '/about' }];
@@ -61,6 +64,31 @@ const footerRepoUrl = brand => brand.repo || brand.changelog || '';
 
 const localProfileFor = status =>
   authMethod(status) === 'backend' ? { to: '/profile', LinkComponent: Link } : null;
+
+const sidebarRows = groups =>
+  groups.flatMap(group =>
+    (group.sections || []).flatMap(section => section.items.map(row => ({ group, row })))
+  );
+
+const rowMatches = (row, pathname) => {
+  if (row.end) {
+    return pathname === row.to;
+  }
+  return pathname === row.to || pathname.startsWith(`${row.to}/`);
+};
+
+const sidebarCrumbs = ({ groups, pathname, t }) => {
+  const [match] = sidebarRows(groups)
+    .filter(entry => rowMatches(entry.row, pathname))
+    .sort((a, b) => b.row.to.length - a.row.to.length);
+  if (!match) {
+    return [];
+  }
+  return [
+    { key: 'group', label: t(match.group.labelKey) },
+    { key: 'row', label: t(match.row.labelKey), to: match.row.to },
+  ];
+};
 
 const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
   const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
@@ -79,6 +107,7 @@ const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
     orgMark: orgs.mark,
     favorites: claims?.favorite_apps || [],
     appName: status.brand.name,
+    appVersion: hasFeature(status, 'footer') ? '' : status.version,
     viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
     onSignOutEverywhere: account.signOutEverywhere,
     ...menu,
@@ -150,6 +179,60 @@ const useSessionEndedBanner = ended => {
   }, [ended, notify, t]);
 };
 
+const useSidebarOverlay = pathname => {
+  const [openAt, setOpenAt] = useState('');
+  return {
+    open: openAt === pathname,
+    toggle: () => setOpenAt(previous => (previous === pathname ? '' : pathname)),
+    close: () => setOpenAt(''),
+  };
+};
+
+const menuFor = ({ cookie, onAuthPage, sidebar, rows, adapters }) => {
+  const profileInSidebar = sidebarRows(sidebar).some(entry =>
+    PROFILE_ROUTES.includes(entry.row.to)
+  );
+  return {
+    appRows: cookie && onAuthPage ? null : rows,
+    showPreferences: !cookie && !profileInSidebar,
+    ...adapters,
+  };
+};
+
+const signInFor = ({ account, anonymous, onAuthPage, pathname, search }) => {
+  if (anonymous) {
+    return { onSignIn: null, signInTo: '' };
+  }
+  const returnPath = account.sessionEnded?.returnTo || (onAuthPage ? '' : `${pathname}${search}`);
+  return { onSignIn: account.signIn, signInTo: returnTo.signInTo(returnPath) };
+};
+
+const identityFor = ({ user, claims, t }) => {
+  const displayName = claims?.name || userDisplayName(user) || t('user.unknownUser');
+  return { displayName, email: userSecondaryLine({ ...user, name: displayName }) };
+};
+
+const ShellFooter = ({ fetchHealth }) => {
+  const status = useStatus();
+  if (!hasFeature(status, 'footer')) {
+    return null;
+  }
+  return (
+    <Footer
+      appName={status.brand.name}
+      version={status.version}
+      repoUrl={footerRepoUrl(status.brand)}
+      poweredBy={POWERED_BY}
+      fetchHealth={fetchHealth}
+      streamed={hasFeature(status, 'events') && Boolean(status.events)}
+    />
+  );
+};
+
+ShellFooter.propTypes = {
+  fetchHealth: PropTypes.func,
+};
+
 const AppRows = ({ showAdminBoard, showOrgConsole, extraRows }) => {
   const { t } = useTranslation();
   const { links } = useStatus();
@@ -196,13 +279,18 @@ AppRows.propTypes = {
 
 /**
  * The whole chrome around the routes, described by the host's status: the
- * header with the brand from `status.brand`, the utility links from
- * `status.links`, the route crumbs, the user menu and the notice banners;
- * the notice cards; the one scroll region with the page inside its own
- * error boundary so a page that throws keeps the chrome; and the footer.
- * The app supplies the session state, the collections the host mounts,
- * the avatar, the ticket link, the notification adapters and the menu
- * rows the host's features unlock.
+ * sidebar first when the mounted features exported entries for it, then
+ * the header with the brand from `status.brand` (in the sidebar's top
+ * while one draws), the utility links from `status.links`, the route
+ * crumbs (`<group> › <row>` on a route a sidebar row matches), the user
+ * menu and the notice banners; the notice cards; the one scroll region
+ * with the page inside its own error boundary so a page that throws keeps
+ * the chrome; and the footer while the host lists the `footer` token. The
+ * column and the app section are hidden on the auth routes of the
+ * session's return-path helper. The app supplies the session state, the
+ * collections the host mounts, the avatar, the ticket link, the
+ * notification adapters, the sidebar entries and the menu rows the host's
+ * features unlock.
  */
 const AppShell = ({
   account,
@@ -222,6 +310,7 @@ const AppShell = ({
   showOrgConsole,
   appRows = null,
   fetchHealth = null,
+  sidebar = [],
   children,
 }) => {
   const { t, i18n } = useTranslation();
@@ -231,6 +320,7 @@ const AppShell = ({
   const { user, claims, activeOrgUuid } = account;
   const signedIn = Boolean(user);
   const anonymous = authMethod(status) === 'none';
+  const cookie = authMethod(status) === 'cookie';
   const reserved = [
     ...UNIVERSAL_ROUTES,
     ...collections.map(collection => collection.segment).filter(Boolean),
@@ -245,7 +335,13 @@ const AppShell = ({
     crumbMark: <BrandLogo theme={theme} className="logo-sm" />,
     logoFor: logoResolver(primary),
   };
-  const crumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
+  const onAuthPage = returnTo.onAuthPage(pathname);
+  const showSidebar = sidebar.length > 0 && !onAuthPage;
+  const overlay = useSidebarOverlay(pathname);
+  const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
+  const routeCrumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
+  const rowCrumbs = showSidebar ? sidebarCrumbs({ groups: sidebar, pathname, t }) : [];
+  const crumbs = rowCrumbs.length > 0 ? rowCrumbs : routeCrumbs;
   useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn && !anonymous);
 
   useEffect(() => {
@@ -257,9 +353,6 @@ const AppShell = ({
     await i18n.changeLanguage(lng);
   };
 
-  const displayName = claims?.name || userDisplayName(user) || t('user.unknownUser');
-  const email = userSecondaryLine({ ...user, name: displayName });
-
   const renderAvatar = size => (
     <Avatar
       picture={avatarUrl}
@@ -268,48 +361,50 @@ const AppShell = ({
     />
   );
 
-  const onAuthPage = returnTo.onAuthPage(pathname);
-  const returnPath = account.sessionEnded?.returnTo || (onAuthPage ? '' : `${pathname}${search}`);
+  const signIn = signInFor({ account, anonymous, onAuthPage, pathname, search });
 
   const links = utilityLinks(status, t);
 
   const userMenu = buildUserMenu({
     account,
     status,
-    identity: { displayName, email, renderAvatar },
+    identity: { ...identityFor({ user, claims, t }), renderAvatar },
     orgs,
-    menu: {
-      appRows: (
+    menu: menuFor({
+      cookie,
+      onAuthPage,
+      sidebar,
+      rows: (
         <AppRows
           showAdminBoard={showAdminBoard}
           showOrgConsole={showOrgConsole}
           extraRows={appRows}
         />
       ),
-      notifications,
-      push,
-      ticketUrl,
-      onSignOut,
-    },
+      adapters: { notifications, push, ticketUrl, onSignOut },
+    }),
   });
 
-  return (
-    <div className="App d-flex flex-column vh-100">
+  const brand = {
+    name: status.brand.name,
+    logo: <BrandLogo theme={theme} className="logo-cluster icon-with-margin-sm" />,
+    to: '/',
+  };
+
+  const stack = (
+    <>
       <Header
-        brand={{
-          name: status.brand.name,
-          logo: <BrandLogo theme={theme} className="logo-cluster icon-with-margin-sm" />,
-          to: '/',
-        }}
+        brand={showSidebar ? null : brand}
         links={links}
         crumbs={crumbs}
         LinkComponent={Link}
         theme={{ preference: themePreference, onToggle: toggleTheme }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
-        onSignIn={anonymous ? null : account.signIn}
-        signInTo={anonymous ? '' : returnTo.signInTo(returnPath)}
+        onSignIn={signIn.onSignIn}
+        signInTo={signIn.signInTo}
         userMenu={userMenu}
+        onSidebarToggle={showSidebar ? overlay.toggle : null}
       />
       <NoticeCards LinkComponent={Link} />
       <div ref={scrollRef} className="container-fluid app-scroll py-3">
@@ -317,13 +412,24 @@ const AppShell = ({
           {children}
         </ErrorBoundary>
       </div>
-      <Footer
-        appName={status.brand.name}
-        version={status.version}
-        repoUrl={footerRepoUrl(status.brand)}
-        poweredBy={POWERED_BY}
-        fetchHealth={fetchHealth}
+      <ShellFooter fetchHealth={fetchHealth} />
+    </>
+  );
+
+  if (!showSidebar) {
+    return <div className="App d-flex flex-column vh-100">{stack}</div>;
+  }
+
+  return (
+    <div className="App app-with-sidebar d-flex vh-100">
+      <Sidebar
+        entries={sidebar}
+        brand={{ name: brand.name, logo: brand.logo }}
+        badges={badges}
+        open={overlay.open}
+        onClose={overlay.close}
       />
+      <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>
   );
 };
@@ -346,6 +452,7 @@ AppShell.propTypes = {
   showOrgConsole: PropTypes.bool.isRequired,
   appRows: PropTypes.node,
   fetchHealth: PropTypes.func,
+  sidebar: PropTypes.arrayOf(sidebarGroupShape),
   children: PropTypes.node.isRequired,
 };
 
