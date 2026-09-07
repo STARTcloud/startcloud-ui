@@ -821,7 +821,7 @@
           <div class="payload">
             [data-brand=<span class="s">"switchboard"</span>] { --brand-primary:
             <span class="s">#24ADE3</span>; --brand-primary-rgb: 36, 173, 227; --brand-on-primary:
-            <span class="s">#212529</span>; --brand-auth-display:
+            <span class="s">#000000</span>; --brand-auth-display:
             <span class="s">'Poppins', Helvetica, Arial, sans-serif</span>; --bs-primary:
             var(--brand-primary); --bs-primary-rgb: var(--brand-primary-rgb);
             --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
@@ -834,7 +834,7 @@
           <div class="payload">
             [data-brand=<span class="s">"moonshinedev"</span>] { --brand-primary:
             <span class="s">#1f9d57</span>; --brand-primary-rgb: 31, 157, 87; --brand-on-primary:
-            <span class="s">#212529</span>; --brand-auth-display:
+            <span class="s">#000000</span>; --brand-auth-display:
             <span class="s">'IBM Plex Sans', system-ui, sans-serif</span>; --bs-primary:
             var(--brand-primary); --bs-primary-rgb: var(--brand-primary-rgb); } [data-brand=<span
               class="s"
@@ -941,10 +941,10 @@
         <code>--brand-on-primary</code>, the optional <code>--brand-logo</code> and
         <code>--brand-logo-color</code>, plus the <code>--bs-*</code> bridge;
         <code>--brand-auth-display</code> is the one addition decision 5 makes; the generator
-        computes <code>--brand-on-primary</code> as white or <code>#212529</code>, whichever passes
-        4.5:1 against the accent, when the YAML omits it, so Moonshine.dev and SwitchBoard.cloud
-        read dark on their accents and Nomad Services white, and refuses a pack where neither
-        passes.
+        computes <code>--brand-on-primary</code> as white or black, whichever contrasts more with
+        the accent, when the YAML omits it, so Moonshine.dev and SwitchBoard.cloud read black on
+        their accents and Nomad Services white, and refuses a pack whose better of the two is under
+        4.5:1.
       </div>
     </div>
   </div>
@@ -1160,7 +1160,7 @@
         pack: 'moonshinedev',
         theme: 'dark',
         primary: '#1f9d57',
-        onPrimary: '#212529',
+        onPrimary: '#000000',
         display: "'IBM Plex Sans', system-ui, sans-serif",
         mark: 'M',
         markBg: '#2a3547',
@@ -1185,7 +1185,7 @@
         pack: 'switchboard',
         theme: 'light',
         primary: '#24ADE3',
-        onPrimary: '#212529',
+        onPrimary: '#000000',
         display: "'Poppins', Helvetica, Arial, sans-serif",
         mark: 'SB',
         markBg: '#24ADE3',

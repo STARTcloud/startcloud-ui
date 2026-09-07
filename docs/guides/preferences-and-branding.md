@@ -529,14 +529,16 @@ is a build gate rather than a review note:
 
 The accent is the site's and is never shifted to pass: when a pack's
 YAML omits `on_primary` the generator computes `--brand-on-primary` as
-`#ffffff` or `#212529`, whichever contrasts with `--brand-primary` at
-4.5:1 or better, and refuses the pack only when neither does, because a
-brand colour is chosen by the site and the text on it is arithmetic. A
-pack that names `on_primary` is checked as named. The identity provider's
-four sites resolve to: `moonshinedev` (`#1f9d57`) `#212529`, `switchboard`
-(`#24ade3`) `#212529`, `nomadservices` (`#6c5ce7`) `#ffffff`, and
-`startcloud` has no pack; `--brand-on-primary` is also the auth column's
-button text, so those buttons read dark on the two light accents.
+`#ffffff` or `#000000`, whichever contrasts with `--brand-primary` more,
+and refuses the pack only when the better of the two is under 4.5:1,
+because a brand colour is chosen by the site, the text on it is
+arithmetic, and the two extremes are the only pair no accent can defeat
+that white can pass. A pack that names `on_primary` is checked as named.
+The identity provider's four sites resolve to: `moonshinedev` (`#1f9d57`)
+`#000000` at 6.02:1, `switchboard` (`#24ade3`) `#000000` at 7.5:1,
+`nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud` has no
+pack; `--brand-on-primary` is also the auth column's button text, so
+those buttons read black on the two light accents.
 
 `lang` on `<html>` must carry the user's language: screen readers take
 pronunciation from it, and the value is already stored, published and

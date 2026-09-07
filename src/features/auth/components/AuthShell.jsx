@@ -66,14 +66,31 @@ AuthSpinner.propTypes = {
 
 /**
  * The centered column every auth page draws in: an optional icon, the
- * headline, an optional subhead and the page's own content beneath.
+ * headline, an optional subhead and the page's own content beneath; `wide`
+ * widens the column for a document, and a `headingRef` makes the headline
+ * focusable so a multi-step page can move focus to it when a step appears.
  */
-const AuthShell = ({ title, subtitle, icon, children }) => (
+const AuthShell = ({
+  title,
+  subtitle,
+  icon,
+  wide = false,
+  headingRef = null,
+  top = null,
+  children,
+}) => (
   <div className="auth-page">
-    <div className="auth-column">
+    <div className={wide ? 'auth-column auth-column-wide' : 'auth-column'}>
+      {top}
       <div className="auth-heading">
         {icon}
-        <h1 className="auth-headline">{title}</h1>
+        {headingRef ? (
+          <h1 className="auth-headline" ref={headingRef} tabIndex={-1}>
+            {title}
+          </h1>
+        ) : (
+          <h1 className="auth-headline">{title}</h1>
+        )}
         {subtitle && <p className="auth-subhead">{subtitle}</p>}
       </div>
       {children}
@@ -83,8 +100,11 @@ const AuthShell = ({ title, subtitle, icon, children }) => (
 
 AuthShell.propTypes = {
   title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
+  subtitle: PropTypes.node,
   icon: PropTypes.node,
+  wide: PropTypes.bool,
+  headingRef: PropTypes.shape({ current: PropTypes.any }),
+  top: PropTypes.node,
   children: PropTypes.node,
 };
 

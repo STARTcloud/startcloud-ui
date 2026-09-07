@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
 import NotAvailableStub from '../components/common/NotAvailableStub';
+import { notificationsAdapterShape } from '../components/layout/NotificationsModal';
 import {
   ACTIVE_ORG_KEY,
   JOIN_INTENT_KEY,
@@ -26,7 +27,11 @@ import {
   CallbackPage,
   InvitePage,
   LoginPage,
+  MagicLinkPage,
+  PasswordRecoveryPage,
+  PasswordResetPage,
   RegisterPage,
+  VerifyLinkPage,
   acceptInvitation,
   activeInvitations,
   invite,
@@ -47,15 +52,46 @@ import {
   collectionShape,
   pageContextShape,
 } from '../features/catalog';
-import { sidebar as identitySidebar } from '../features/identity';
+import {
+  IDENTITY_ADMIN_PAGES,
+  IdentityAdminPage,
+  sidebar as identitySidebar,
+} from '../features/identity';
+import { IntegrationsPage, issuerIntegrations } from '../features/integrations';
+import {
+  CibaApprovePage,
+  CodeDisplayPage,
+  ConsentPage,
+  DesktopContinuePage,
+  DeviceActivatePage,
+  DeviceActivatedPage,
+  FrontChannelLogoutPage,
+  LinkAccountPage,
+  LogoutConfirmPage,
+} from '../features/interstitials';
+import { InboxPage } from '../features/notifications';
+import {
+  AccountTypeStep,
+  BackupCodesPage,
+  EmailCodeStep,
+  NameStep,
+  OnboardingHub,
+  PhoneStep,
+  TeamNameStep,
+  TermsPage,
+  TfaEnrolChoiceStep,
+  TotpEnrolPage,
+} from '../features/onboarding';
 import {
   DiscoveryPage,
   OrgConsolePage,
+  OrganizationsPage,
   approveRequest,
   createJoinRequest,
   denyRequest,
   discoverOrganizations,
   getOrganization,
+  issuerOrganizations,
   organizationRequests,
   organizationUsers,
   organizationsWithUsers,
@@ -68,21 +104,26 @@ import {
   updateOrganization,
   userOrganizations,
 } from '../features/organizations';
+import { PolicyPage } from '../features/policies';
 import {
   ProfilePage,
   cancelRequest,
   changeEmail,
   changeName,
   changePassword,
+  issuerAccount,
   leaveOrganization,
   myRequests,
+  placesKey,
   removeAccount,
   serviceAccounts,
   setPrimaryOrganization,
   sidebar as profileSidebar,
+  stepUp,
 } from '../features/profile';
 import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
+import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage } from '../features/vdi';
 import { sessionStateShape } from '../hooks/useSession';
 import { events, returnTo, session } from '../lib/runtime';
@@ -215,6 +256,32 @@ const AdminRoute = ({ globalAdmin, page = '' }) => {
 AdminRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
   page: PropTypes.string,
+};
+
+const IdentityAdminRoute = ({ globalAdmin, user, page }) => {
+  const status = useStatus();
+  if (!hasFeature(status, 'admin')) {
+    return <Stub titleKey="admin.pageTitle" token="admin" />;
+  }
+  if (page === 'terms' && !hasFeature(status, 'policies')) {
+    return <Stub titleKey="admin.terms.title" token="policies" />;
+  }
+  return (
+    <IdentityAdminPage
+      session={session}
+      returnTo={returnTo}
+      allowed={globalAdmin}
+      stepUp={stepUp}
+      user={user}
+      page={page}
+    />
+  );
+};
+
+IdentityAdminRoute.propTypes = {
+  globalAdmin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
+  page: PropTypes.string.isRequired,
 };
 
 const DiscoverLink = () => {
@@ -373,14 +440,318 @@ const collectionRoutes = ({ collection, collections, organizations, context }) =
   return routes;
 };
 
+const gated = (open, element, titleKey, token) =>
+  open ? element : <Stub titleKey={titleKey} token={token} />;
+
+const gatedRoutes = rows =>
+  rows.map(({ path, open, element, titleKey, token }) => (
+    <Route key={path} path={path} element={gated(open, element, titleKey, token)} />
+  ));
+
+const signInRoutes = ({ status, cookie }) => {
+  const tfa = cookie && hasFeature(status, 'tfa');
+  const local = cookie && hasFeature(status, 'local-accounts');
+  const pages = { session, returnTo };
+  return gatedRoutes([
+    {
+      path: '/login/magic',
+      open: cookie,
+      element: <MagicLinkPage returnTo={returnTo} />,
+      titleKey: 'auth:login.magic.title',
+      token: 'cookie',
+    },
+    {
+      path: '/authenticator',
+      open: tfa,
+      element: <TfaCodePage returnTo={returnTo} />,
+      titleKey: 'auth:tfa.title',
+      token: 'tfa',
+    },
+    {
+      path: '/authenticator-method',
+      open: tfa,
+      element: <TfaMethodPage returnTo={returnTo} />,
+      titleKey: 'auth:tfa.choose.title',
+      token: 'tfa',
+    },
+    {
+      path: '/passwordRecovery',
+      open: local,
+      element: <PasswordRecoveryPage {...pages} />,
+      titleKey: 'auth:recovery.title',
+      token: 'local-accounts',
+    },
+    {
+      path: '/passwordReset',
+      open: local,
+      element: <PasswordResetPage {...pages} />,
+      titleKey: 'auth:reset.title',
+      token: 'local-accounts',
+    },
+    {
+      path: '/registration',
+      open: local,
+      element: <RegisterPage {...pages} auth={authAdapter} />,
+      titleKey: 'auth:register.pageTitle',
+      token: 'local-accounts',
+    },
+    {
+      path: '/registration/verify',
+      open: local,
+      element: <VerifyLinkPage returnTo={returnTo} />,
+      titleKey: 'auth:register.pageTitle',
+      token: 'local-accounts',
+    },
+  ]);
+};
+
+const onboardingRoutes = ({ status, cookie }) => {
+  const onboarding = cookie && hasFeature(status, 'onboarding');
+  const tfa = cookie && hasFeature(status, 'tfa');
+  const policies = cookie && hasFeature(status, 'policies');
+  const step = (path, open, Element, titleKey, token) => ({
+    path,
+    open,
+    element: <Element returnTo={returnTo} />,
+    titleKey,
+    token,
+  });
+  return gatedRoutes([
+    step(
+      '/complete-onboarding',
+      onboarding,
+      OnboardingHub,
+      'auth:onboarding.password',
+      'onboarding'
+    ),
+    step(
+      '/complete-onboarding/name',
+      onboarding,
+      NameStep,
+      'auth:onboarding.name.title',
+      'onboarding'
+    ),
+    step(
+      '/complete-onboarding/phone-setup',
+      onboarding,
+      PhoneStep,
+      'auth:onboarding.phone.title',
+      'onboarding'
+    ),
+    step(
+      '/complete-onboarding/email-verification',
+      onboarding,
+      EmailCodeStep,
+      'auth:onboarding.email.title',
+      'onboarding'
+    ),
+    step(
+      '/complete-onboarding/choose-2fa-method',
+      onboarding && tfa,
+      TfaEnrolChoiceStep,
+      'auth:onboarding.tfa.title',
+      'tfa'
+    ),
+    step('/qrcode', tfa, TotpEnrolPage, 'auth:onboarding.qr.title', 'tfa'),
+    step(
+      '/complete-onboarding/backup-codes',
+      onboarding,
+      BackupCodesPage,
+      'auth:onboarding.codes.title',
+      'onboarding'
+    ),
+    step(
+      '/complete-onboarding/account-type',
+      onboarding && hasFeature(status, 'org-console'),
+      AccountTypeStep,
+      'auth:onboarding.account.title',
+      'org-console'
+    ),
+    step(
+      '/complete-onboarding/team-name',
+      onboarding,
+      TeamNameStep,
+      'auth:onboarding.team.title',
+      'onboarding'
+    ),
+    step('/oauth2/accept-terms', policies, TermsPage, 'auth:terms.pageTitle', 'policies'),
+    step('/provider-registration/tos', policies, TermsPage, 'auth:terms.pageTitle', 'policies'),
+    {
+      path: '/public/policies/:name',
+      open: hasFeature(status, 'policies'),
+      element: <PolicyPage />,
+      titleKey: 'auth:policy.pageTitle',
+      token: 'policies',
+    },
+  ]);
+};
+
+const interstitialRoutes = ({ status, cookie }) => {
+  const open = hasFeature(status, 'interstitials');
+  const signedIn = cookie && open;
+  const row = (path, gate, element, titleKey) => ({
+    path,
+    open: gate,
+    element,
+    titleKey,
+    token: 'interstitials',
+  });
+  return gatedRoutes([
+    row(
+      '/oauth2/consent',
+      signedIn,
+      <ConsentPage session={session} returnTo={returnTo} />,
+      'auth:consent.title'
+    ),
+    row('/activate', open, <DeviceActivatePage />, 'auth:device.title'),
+    row('/activated', open, <DeviceActivatedPage />, 'auth:device.connected'),
+    row('/ciba/approve', signedIn, <CibaApprovePage />, 'auth:ciba.title'),
+    row(
+      '/connect/logout/confirm',
+      signedIn,
+      <LogoutConfirmPage returnTo={returnTo} />,
+      'auth:logout.title'
+    ),
+    row(
+      '/connect/logout/frontchannel',
+      open,
+      <FrontChannelLogoutPage returnTo={returnTo} />,
+      'auth:logout.signingOut'
+    ),
+    row('/oauth2/code', open, <CodeDisplayPage />, 'auth:code.title'),
+    row('/continue', open, <DesktopContinuePage />, 'auth:desktop.title'),
+    row(
+      '/link-account-consent',
+      signedIn,
+      <LinkAccountPage returnTo={returnTo} />,
+      'auth:link.title'
+    ),
+  ]);
+};
+
+const issuerProfile = ({ account, status }) => (
+  <ProfilePage
+    session={session}
+    events={events}
+    returnTo={returnTo}
+    account={issuerAccount}
+    activeOrgUuid={account.activeOrgUuid}
+    localAccounts={hasFeature(status, 'local-accounts')}
+    issuerUrl={account.issuerUrl}
+  />
+);
+
+const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications }) => {
+  const profile = issuerProfile({ account, status });
+  return gatedRoutes([
+    {
+      path: '/user/profile',
+      open: cookie,
+      element: profile,
+      titleKey: 'profile.pageTitle',
+      token: 'cookie',
+    },
+    {
+      path: '/user/organizations',
+      open: cookie && hasFeature(status, 'org-console'),
+      element: (
+        <OrganizationsPage
+          session={session}
+          events={events}
+          organizations={issuerOrganizations}
+          activeOrgKey={ACTIVE_ORG_KEY}
+        />
+      ),
+      titleKey: 'organizations.title',
+      token: 'org-console',
+    },
+    {
+      path: '/org-console',
+      open: hasFeature(status, 'org-console'),
+      element: cookie ? (
+        <OrgConsolePage
+          session={session}
+          events={events}
+          activeOrgKey={ACTIVE_ORG_KEY}
+          organizations={issuerOrganizations}
+          org={account.activeOrgUuid}
+          admin={globalAdmin}
+          places={placesKey}
+        />
+      ) : (
+        <OrgConsolePage
+          session={session}
+          activeOrgKey={ACTIVE_ORG_KEY}
+          organizations={organizationsAdapter}
+          org={account.activeOrgUuid}
+          admin={globalAdmin}
+        />
+      ),
+      titleKey: 'orgConsole.pageTitle',
+      token: 'org-console',
+    },
+    {
+      path: '/user/integrations',
+      open: cookie && hasFeature(status, 'integrations'),
+      element: (
+        <IntegrationsPage integrations={issuerIntegrations} stepUp={stepUp} user={account.user} />
+      ),
+      titleKey: 'integrations.title',
+      token: 'integrations',
+    },
+    {
+      path: '/notifications',
+      open: cookie && hasFeature(status, 'inbox') && Boolean(notifications),
+      element: notifications ? <InboxPage notifications={notifications} /> : null,
+      titleKey: 'inbox.title',
+      token: 'inbox',
+    },
+  ]);
+};
+
+const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
+  IDENTITY_ADMIN_PAGES.map(page => (
+    <Route
+      key={`/admin/${page}`}
+      path={`/admin/${page}`}
+      element={gated(
+        cookie,
+        <IdentityAdminRoute globalAdmin={globalAdmin} user={user} page={page} />,
+        'admin.pageTitle',
+        'cookie'
+      )}
+    />
+  ));
+
+const homeElementFor = ({ status, cookie, fleet, account, collections, context, theme }) => {
+  if (cookie) {
+    if (!account.user) {
+      return <Navigate to={returnTo.signInTo('/')} replace />;
+    }
+    return issuerProfile({ account, status });
+  }
+  if (fleet) {
+    return <FleetPage context={context} theme={theme} />;
+  }
+  return (
+    <HomePage
+      collections={collections}
+      context={context}
+      actions={hasFeature(status, 'discover') ? <DiscoverLink /> : null}
+    />
+  );
+};
+
 /**
  * Every route the app serves: the fleet page at `/` and the VM page at
  * `/vm/:instance` while the host advertises `fleet`, else the home page
- * and the collection routes from the registry in the host's order, the
- * setup gate while the host advertises `setup` and setup is incomplete,
- * and each feature route gated by its feature token or by the host's
- * first `auth` token, a route the host lacks rendering `NotAvailableStub`
- * instead.
+ * and the collection routes from the registry in the host's order (the
+ * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
+ * to sign in with `/` as the return path), the setup gate while the host
+ * advertises `setup` and setup is incomplete, each feature route gated by
+ * its feature token or by the host's first `auth` token, and the identity
+ * contract's five groups behind the `cookie` token and their feature
+ * tokens, a route the host lacks rendering `NotAvailableStub` instead.
  */
 const AppRoutes = ({
   account,
@@ -390,9 +761,11 @@ const AppRoutes = ({
   setupComplete,
   globalAdmin,
   afterSignIn,
+  notifications = null,
 }) => {
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
+  const cookie = authMethod(status) === 'cookie';
   const fleet = hasFeatureStrict(status, 'fleet');
   const { activeOrgUuid, organizations, oidc, issuerUrl } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
@@ -411,15 +784,15 @@ const AppRoutes = ({
     );
   }
 
-  const homeElement = fleet ? (
-    <FleetPage context={context} theme={theme} />
-  ) : (
-    <HomePage
-      collections={collections}
-      context={context}
-      actions={hasFeature(status, 'discover') ? <DiscoverLink /> : null}
-    />
-  );
+  const homeElement = homeElementFor({
+    status,
+    cookie,
+    fleet,
+    account,
+    collections,
+    context,
+    theme,
+  });
 
   return (
     <Routes>
@@ -456,7 +829,7 @@ const AppRoutes = ({
       <Route
         path="/login"
         element={
-          backend ? (
+          backend || cookie ? (
             <LoginPage
               session={session}
               returnTo={returnTo}
@@ -503,6 +876,9 @@ const AppRoutes = ({
           )
         }
       />
+      {signInRoutes({ status, cookie })}
+      {onboardingRoutes({ status, cookie })}
+      {interstitialRoutes({ status, cookie })}
       <Route
         path="/profile"
         element={
@@ -517,11 +893,22 @@ const AppRoutes = ({
               issuerUrl={issuerUrl}
             />
           ) : (
-            <Stub titleKey="profile.pageTitle" token="backend" />
+            gated(cookie, issuerProfile({ account, status }), 'profile.pageTitle', 'backend')
           )
         }
       />
-      <Route path="/admin" element={<AdminRoute globalAdmin={globalAdmin} />} />
+      {signedInRoutes({ status, cookie, account, globalAdmin, notifications })}
+      <Route
+        path="/admin"
+        element={
+          cookie ? (
+            <IdentityAdminRoute globalAdmin={globalAdmin} user={account.user} page="dashboard" />
+          ) : (
+            <AdminRoute globalAdmin={globalAdmin} />
+          )
+        }
+      />
+      {identityAdminRoutes({ cookie, globalAdmin, user: account.user })}
       <Route
         path="/admin/config"
         element={<AdminRoute globalAdmin={globalAdmin} page="config" />}
@@ -529,22 +916,6 @@ const AppRoutes = ({
       <Route
         path="/admin/system"
         element={<AdminRoute globalAdmin={globalAdmin} page="system" />}
-      />
-      <Route
-        path="/org-console"
-        element={
-          hasFeature(status, 'org-console') ? (
-            <OrgConsolePage
-              session={session}
-              activeOrgKey={ACTIVE_ORG_KEY}
-              organizations={organizationsAdapter}
-              org={activeOrgUuid}
-              admin={globalAdmin}
-            />
-          ) : (
-            <Stub titleKey="orgConsole.pageTitle" token="org-console" />
-          )
-        }
       />
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
@@ -562,6 +933,7 @@ AppRoutes.propTypes = {
   setupComplete: PropTypes.bool.isRequired,
   globalAdmin: PropTypes.bool.isRequired,
   afterSignIn: PropTypes.func.isRequired,
+  notifications: notificationsAdapterShape,
 };
 
 export default AppRoutes;

@@ -1,4 +1,40 @@
 export {
+  backupCodesCount,
+  changePassword as changeIssuerPassword,
+  connectedApps,
+  deleteAccount,
+  favorites,
+  generateBackupCodes,
+  issuerAccount,
+  passkeyCreationOptions,
+  passkeys,
+  placesKey,
+  preferTfa,
+  profile,
+  registerPasskey,
+  removePasskey,
+  removeTfaMethod,
+  renamePasskey,
+  requestEmailChange,
+  revokeSession,
+  revokeSessions,
+  saveFavorites,
+  savePreferences,
+  sendPhoneCode,
+  sendTfaSms,
+  sessions,
+  setTfa,
+  stepUp,
+  tfaEnrol,
+  tfaMethods,
+  updateAddress,
+  updateDetails,
+  verifyEmailChange,
+  verifyPhone,
+  verifyTfaApp,
+  verifyTfaSms,
+} from './api/account';
+export {
   cancelRequest,
   changeEmail,
   changeName,
@@ -9,5 +45,6 @@ export {
   serviceAccounts,
   setPrimaryOrganization,
 } from './api/profile';
+export { issuerAccountShape } from './components/IssuerProfilePage';
 export { default as ProfilePage, accountShape } from './components/ProfilePage';
 export { sidebar } from './sidebar';

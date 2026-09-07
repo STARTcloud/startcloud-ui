@@ -65,7 +65,15 @@
     "network": "The server could not be reached.",
     "request": "The request failed.",
     "validation": "The request did not pass validation.",
-    "conflict": "A value is already taken."
+    "conflict": "A value is already taken.",
+    "step_up_required": "Confirm it's you to continue.",
+    "step_up_failed": "That did not match; try again.",
+    "last_method": "Remove another method first; the last method cannot be removed.",
+    "no_methods": "Add a phone number or an authenticator app before enabling two-factor.",
+    "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
+    "unknown_code": "That invite code did not match an organization.",
+    "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
+    "last_owner": "A team needs an owner; make someone else an owner first."
   },
   "validation": {
     "errorPrefix": "Error:",
@@ -139,7 +147,10 @@
       "profile": "Profile",
       "organizations": "Organizations",
       "security": "Security",
-      "serviceAccounts": "Service Accounts"
+      "serviceAccounts": "Service Accounts",
+      "preferences": "Preferences",
+      "favorites": "Favorites",
+      "sessions": "Sessions"
     },
     "search": {
       "organizations": "Search organizations and requests",
@@ -178,6 +189,104 @@
         "title": "Delete Account",
         "warning": "Warning: This action cannot be undone.",
         "button": "Delete My Account"
+      },
+      "password": {
+        "title": "Password",
+        "none": "No password is set. Set one to sign in with a password.",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Confirm password",
+        "hint": "At least {{count}} characters; any characters, spaces included.",
+        "change": "Change password",
+        "set": "Set password",
+        "reason": "Changing your password changes how you sign in.",
+        "saved": "Password changed."
+      },
+      "email": {
+        "title": "Email",
+        "new": "New email address",
+        "send": "Send code",
+        "reason": "Changing your email address changes how you sign in.",
+        "sent": "A verification code was sent to the new address.",
+        "code": "Verification code",
+        "verify": "Verify",
+        "changed": "Email address changed."
+      },
+      "tfa": {
+        "title": "Two-factor authentication",
+        "on": "Enabled",
+        "off": "Disabled",
+        "sms": "SMS",
+        "app": "Authenticator app",
+        "label": "Label",
+        "enable": "Enable two-factor",
+        "disable": "Disable two-factor",
+        "disableTitle": "Disable two-factor authentication",
+        "disableBody": "Disabling two-factor authentication makes your sign-in rely on your password alone.",
+        "noMethods": "No methods are enrolled yet.",
+        "preferredBadge": "Preferred",
+        "setPreferred": "Set preferred",
+        "remove": "Remove",
+        "lastMethod": "Remove another method first",
+        "locked": "Your {{method}} method is disabled after too many failed attempts.",
+        "reenrol": "Re-enrol now",
+        "addPhone": "Add phone number",
+        "addApp": "Add authenticator app",
+        "smsRisk": "SMS codes are easier to intercept or capture through a SIM swap than codes from an authenticator app.",
+        "scan": "Scan this QR code with your authenticator app.",
+        "qrAlt": "QR code for your authenticator app",
+        "setupKey": "Unable to scan? Use this setup key",
+        "copyKey": "Copy setup key",
+        "appCode": "Enter the code from your authenticator app",
+        "enrolReason": "Adding a sign-in method changes how you sign in.",
+        "enrolled": "Method added.",
+        "preferReason": "Changing your preferred method changes how you sign in.",
+        "preferred": "Preferred method saved.",
+        "removeReason": "Removing the {{method}} method changes how you sign in.",
+        "removed": "Method removed.",
+        "enableReason": "Enabling two-factor changes how you sign in.",
+        "disableReason": "Disabling two-factor changes how you sign in.",
+        "enabledDone": "Two-factor authentication enabled.",
+        "disabledDone": "Two-factor authentication disabled."
+      },
+      "passkeys": {
+        "title": "Passkeys",
+        "none": "No passkeys yet.",
+        "name": "Passkey name",
+        "add": "Add passkey",
+        "rename": "Rename",
+        "remove": "Remove",
+        "rpId": "Site",
+        "addedOn": "added {{date}}",
+        "lastUsed": "last used",
+        "addReason": "Adding a passkey changes how you sign in.",
+        "added": "Passkey added.",
+        "removeReason": "Removing the passkey {{label}} changes how you sign in.",
+        "removed": "Passkey removed.",
+        "renamed": "Passkey renamed.",
+        "unsupported": "This browser does not support passkeys."
+      },
+      "recovery": {
+        "title": "Recovery",
+        "remaining": "{{count}} remaining",
+        "none": "No backup codes",
+        "generate": "Generate backup codes",
+        "regenerate": "Regenerate",
+        "download": "Download as text file",
+        "once": "Save these codes now; they are shown only once.",
+        "reason": "Generating backup codes changes how you sign in."
+      },
+      "delete": {
+        "title": "Delete account",
+        "irreversible": "This action cannot be undone.",
+        "destroys": "Your personal organization, your sessions, your passkeys and your connected applications are deleted with your account. Teams you co-own keep running without you. Teams only you own must be transferred or deleted first.",
+        "confirmEmail": "Type {{email}} to confirm",
+        "understand": "I understand this will permanently delete my account",
+        "mismatch": "Type {{email}} exactly to confirm.",
+        "tick": "Tick the box to confirm you understand.",
+        "reason": "Deleting your account ends every way you sign in.",
+        "soleOwner": "You are the only owner of {{teams}}.",
+        "button": "Delete account"
       }
     },
     "organizations": {
@@ -246,6 +355,120 @@
       "leave": "Leave Organization",
       "cancel": "Cancel",
       "delete": "Delete"
+    },
+    "details": {
+      "givenName": "Given name(s)",
+      "familyName": "Family name",
+      "middleName": "Middle name",
+      "salutation": {
+        "label": "Salutation",
+        "none": "None",
+        "mr": "Mr",
+        "mrs": "Mrs",
+        "ms": "Ms",
+        "mx": "Mx",
+        "dr": "Dr",
+        "prof": "Prof",
+        "custom": "Custom",
+        "customLabel": "Your salutation"
+      },
+      "gender": {
+        "label": "Gender",
+        "none": "Prefer not to say",
+        "male": "Male",
+        "female": "Female",
+        "custom": "Custom",
+        "customLabel": "Your gender"
+      },
+      "website": "Website",
+      "birthdate": "Birthdate",
+      "email": "Email",
+      "changeEmail": "Change email",
+      "mobile": "Mobile number",
+      "noMobile": "No mobile number",
+      "change": "Change",
+      "verified": "Verified",
+      "sendCode": "Send code",
+      "codeSent": "A verification code was sent.",
+      "numberChanged": "Number changed. Send a new code.",
+      "code": "Verification code",
+      "verify": "Verify",
+      "phoneReason": "Changing your mobile number changes how you sign in.",
+      "phoneChanged": "Mobile number changed.",
+      "saved": "Profile saved."
+    },
+    "address": {
+      "title": "Address",
+      "line1": "Address line 1",
+      "line2": "Address line 2",
+      "country": "Country",
+      "countryNone": "Choose a country",
+      "state": "State/Province",
+      "city": "City",
+      "postalCode": "Postal code",
+      "save": "Save",
+      "clear": "Clear address",
+      "saved": "Address saved.",
+      "searchPlaceholder": "Begin typing your address"
+    },
+    "stepUp": {
+      "title": "Confirm it's you",
+      "body": "Confirm your identity to continue.",
+      "password": "Current password",
+      "code": "Authenticator or backup code",
+      "usePassword": "Use your password instead",
+      "useCode": "Use an authenticator or backup code instead",
+      "confirm": "Confirm"
+    },
+    "preferences": {
+      "language": "Language",
+      "languageHint": "Saved as you change it, the same value the globe in the header writes.",
+      "theme": {
+        "label": "Theme",
+        "light": "Light",
+        "dark": "Dark",
+        "auto": "Auto (follow device)"
+      },
+      "themeHint": "Saved as you change it, the same value the theme button writes.",
+      "timezone": "Time zone",
+      "timezoneHint": "The detected zone is preselected while none is set.",
+      "channel": {
+        "label": "Sign-in approval channel",
+        "PUSH": "In-app notification",
+        "EMAIL": "Email",
+        "SMS": "SMS"
+      },
+      "channelHint": "How you are notified when an application asks to sign you in on another device.",
+      "pin": "Sign-in approval PIN",
+      "pinHint": "Optional PIN an application must present before a sign-in request reaches you.",
+      "pinSet": "A PIN is set",
+      "pinNone": "No PIN",
+      "set": "Set",
+      "clear": "Clear",
+      "save": "Save",
+      "saved": "Preferences saved."
+    },
+    "favorites": {
+      "title": "Favorites",
+      "none": "No favorites yet.",
+      "available": "Available applications",
+      "noneAvailable": "Every connected application is already a favorite.",
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "sessions": {
+      "title": "Active sessions",
+      "none": "No active sessions.",
+      "unknownClient": "Unknown application",
+      "signOut": "Sign out",
+      "signOutReason": "Signing out a session changes how you are signed in.",
+      "signedOut": "Session signed out.",
+      "revokeAll": "Revoke all sessions, this browser included",
+      "revokeAllBody": "Every session is signed out, this browser included, and you will need to sign in again. Type \"{{keyword}}\" to confirm.",
+      "revokeAllReason": "Revoking every session ends how you are signed in.",
+      "revokedAll": "Every session was signed out.",
+      "authorized": "Authorized",
+      "lastActive": "Last active"
     }
   },
   "unknown": "Unknown",
@@ -277,41 +500,350 @@
       "system": "System"
     },
     "dashboard": {
-      "title": "Dashboard"
+      "title": "Dashboard",
+      "stats": {
+        "totalUsers": "Total users",
+        "loginsToday": "Logins today",
+        "registrationsWeek": "Registrations this week",
+        "failedLogins": "Failed logins today",
+        "activeSessions": "Active sessions"
+      },
+      "map": {
+        "title": "Login distribution",
+        "days": "Days shown",
+        "daysCount": "{{count}} days",
+        "count": "{{count}} logins",
+        "viewLogins": "View logins"
+      },
+      "recentLogins": "Recent login activity",
+      "recentRegistrations": "Recent registrations",
+      "viewAll": "View all",
+      "restart": {
+        "title": "Restart required.",
+        "body": "Configuration changed by {{by}} at",
+        "button": "Restart",
+        "started": "Restart started.",
+        "confirmTitle": "Restart the server",
+        "confirmBody": "Every session stays signed in, but requests fail while the server restarts. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Restarting the server changes how everyone signs in until it is back."
+      }
     },
     "users": {
-      "title": "Users"
+      "title": "Users",
+      "search": "Search the users on this page",
+      "filter": {
+        "search": "Search users",
+        "status": "Status",
+        "anyStatus": "Any status",
+        "tfa": "2FA on",
+        "customerId": "Has customer ID",
+        "activeAfter": "Active after"
+      },
+      "table": {
+        "select": "Select",
+        "email": "Email",
+        "name": "Name",
+        "customerId": "Customer ID",
+        "status": "Status",
+        "roles": "Roles",
+        "organizations": "Organizations",
+        "tfa": "2FA",
+        "active": "Active",
+        "disabled": "Disabled",
+        "notSet": "Not set",
+        "primary": "Primary organization",
+        "on": "On",
+        "off": "Off"
+      },
+      "suspend": "Suspend",
+      "enable": "Enable",
+      "more": "More",
+      "suspended": "The account is suspended.",
+      "enabled": "The account is enabled.",
+      "roles": {
+        "action": "Roles",
+        "title": "Roles of {{user}}",
+        "saved": "Roles saved."
+      },
+      "primaryOrg": {
+        "action": "Set primary organization",
+        "title": "Set the primary organization",
+        "body": "Choose the organization {{user}} belongs to first.",
+        "label": "Primary organization",
+        "confirm": "Set as primary",
+        "saved": "Primary organization saved."
+      },
+      "customerId": {
+        "action": "Edit customer ID",
+        "title": "Customer ID of {{user}}",
+        "label": "Customer ID",
+        "hint": "Six hexadecimal characters (0-9, A-F); leave empty to clear it.",
+        "saved": "Customer ID saved."
+      },
+      "rateLimits": {
+        "action": "Rate limits",
+        "title": "Rate limits · {{user}}",
+        "signIn": "Sign-in gate",
+        "armed": "armed · {{seconds}}s",
+        "clear": "clear",
+        "locked": "locked",
+        "method": "Second factor · {{method}}",
+        "banned": "Banned",
+        "unlockMethod": "Unlock a method",
+        "unlock": "Unlock",
+        "unlockSignIn": "Unlock sign-in",
+        "ban": "Ban",
+        "unban": "Unban",
+        "done": "Rate limit updated."
+      },
+      "delete": {
+        "action": "Delete",
+        "title": "Delete the account",
+        "body": "{{user}} is removed with every membership, session and passkey; a team only they own is left without an owner. Type \"{{keyword}}\" to confirm.",
+        "done": "The account is deleted.",
+        "stepUpReason": "Deleting an account ends how that person signs in."
+      },
+      "bulk": {
+        "selectAll": "Select all on this page",
+        "selected": "{{count}} selected",
+        "enable": "Enable",
+        "suspend": "Suspend",
+        "add_role": "Add role",
+        "remove_role": "Remove role",
+        "delete": "Delete",
+        "role": "Role",
+        "clearSelection": "Clear selection",
+        "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+        "confirmTitle": "Confirm the bulk action",
+        "confirmBody": "{{action}} for {{count}} selected accounts. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Deleting accounts ends how those people sign in."
+      }
     },
     "organizations": {
-      "all": "All organizations"
+      "all": "All organizations",
+      "table": {
+        "name": "Name",
+        "type": "Type",
+        "inviteCode": "Invite code",
+        "customerId": "Customer ID",
+        "members": "Members",
+        "created": "Created"
+      },
+      "personal": "Personal",
+      "team": "Team",
+      "search": "Search organizations",
+      "customerId": {
+        "title": "Customer ID of {{org}}",
+        "hint": "Six hexadecimal characters (0-9, A-F); leave empty to clear it."
+      },
+      "deleted": "The organization is deleted.",
+      "delete": {
+        "title": "Delete the organization",
+        "body": "{{org}} is removed with its memberships and invitations. Type \"{{keyword}}\" to confirm."
+      }
     },
     "activity": {
       "logins": {
-        "title": "Logins"
+        "title": "Logins",
+        "result": "Result",
+        "reason": "Reason",
+        "success": "Success",
+        "failed": "Failed",
+        "showOnly": "Show only",
+        "all": "All",
+        "failedOnly": "Failed only",
+        "successOnly": "Successful only",
+        "search": "Search the logins on this page"
       },
       "registrations": {
-        "title": "Registrations"
+        "title": "Registrations",
+        "search": "Search the registrations on this page",
+        "emailVerified": "Email verified",
+        "phoneVerified": "Phone verified",
+        "verified": "Verified",
+        "unverified": "Unverified"
       },
       "sessions": {
-        "title": "Sessions"
-      }
+        "title": "Sessions",
+        "user": "User · Application",
+        "authorized": "Authorized",
+        "lastActive": "Last active",
+        "revoke": "Revoke",
+        "revoked": "The session is revoked.",
+        "revokeTitle": "Revoke the session",
+        "revokeBody": "{{user}} is signed out of {{app}} on that device.",
+        "search": "Search sessions by user or application"
+      },
+      "time": "Time",
+      "username": "Username",
+      "address": "Address",
+      "location": "Location",
+      "device": "Device",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "filter": "Filter",
+      "clear": "Clear",
+      "export": "Export"
     },
     "health": {
       "usage": {
-        "title": "Service usage"
+        "title": "Service usage",
+        "service": "Service",
+        "active": "Active",
+        "authorizations": "Auths",
+        "users": "Users",
+        "share": "Usage",
+        "firstUsed": "First used",
+        "lastUsed": "Last activity",
+        "totalSessions": "Total active sessions",
+        "totalAuthorizations": "Total authorizations",
+        "define": {
+          "active": "Sessions open right now for the application.",
+          "authorizations": "Authorizations ever granted to it.",
+          "users": "Distinct people who have used it.",
+          "share": "Its share of every active session."
+        }
       },
       "insights": {
-        "title": "Insights"
+        "title": "Insights",
+        "activeUsers": "Active users",
+        "posture": "Security posture",
+        "churn": "Churn risk",
+        "app_activity": "App activity",
+        "penetration": "Apps per user",
+        "app_pairs": "Top app combinations",
+        "growth": "Registrations per week",
+        "quiet_users": "Quietest accounts",
+        "org_rollup": "Organizations",
+        "active_users": "Active users",
+        "active": {
+          "daily": "Today",
+          "weekly": "7 days",
+          "monthly": "30 days",
+          "quarterly": "90 days"
+        },
+        "postureOf": {
+          "enabled_total": "Enabled / total",
+          "disabled_users": "Disabled",
+          "using_2fa": "2FA enabled",
+          "email_verified": "Email verified",
+          "phone_verified": "Phone verified",
+          "admins": "Admins",
+          "never_logged_in": "Never logged in",
+          "with_local_auth": "With a password",
+          "with_external_auth": "Federated only",
+          "with_linked_provider": "With a linked provider"
+        },
+        "churnOf": {
+          "quiet_30": "Quiet for 30 days",
+          "quiet_60": "Quiet for 60 days",
+          "quiet_90": "Quiet for 90 days",
+          "enabled_total": "Enabled accounts"
+        },
+        "columns": {
+          "client_name": "App",
+          "active_30d": "Active (30d)",
+          "adopted_30d": "New (30d)",
+          "total_users": "All",
+          "app_count": "Apps",
+          "users": "Users",
+          "app_a": "App",
+          "app_b": "With",
+          "week": "Week of",
+          "count": "Registrations",
+          "username": "Username",
+          "last_login_at": "Last sign-in",
+          "name": "Name",
+          "customer_id": "Customer ID",
+          "personal": "Personal",
+          "members": "Members"
+        },
+        "define": {
+          "active_users": "People who signed in within the window.",
+          "posture": "How the accounts are secured and verified.",
+          "churn": "Accounts with no sign-in for the number of days.",
+          "app_activity": "Sign-ins per application in the last 30 days, the people new to it, and all time.",
+          "penetration": "How many applications each person uses.",
+          "app_pairs": "The applications most often used by the same people.",
+          "growth": "New accounts per week.",
+          "quiet_users": "The accounts longest without a sign-in.",
+          "org_rollup": "Members and active members per organization."
+        }
       },
       "clients": {
-        "title": "Client health"
+        "title": "Client health",
+        "summary": "{{healthy}} of {{total}} clients are healthy",
+        "heading": "Clients",
+        "responseTime": "{{ms}} ms",
+        "noResponse": "no answer",
+        "checked": "checked",
+        "errorDetails": "View error details"
+      },
+      "definitions": "What these numbers mean",
+      "refresh": "Refresh",
+      "status": {
+        "healthy": "Healthy",
+        "unhealthy": "Unhealthy",
+        "unknown": "Not probeable"
+      },
+      "providers": {
+        "one": "provider",
+        "summary": "{{healthy}} of {{total}} providers",
+        "heading": "Providers"
       }
     },
     "blocked": {
-      "title": "Blocked IPs"
+      "title": "Blocked IPs",
+      "table": {
+        "ip": "IP address",
+        "attempts": "Attempts"
+      },
+      "unblock": "Unblock",
+      "enabled": "Brute force protection is enabled. {{count}} addresses currently blocked.",
+      "disabled": "Brute force protection is disabled.",
+      "unblocked": "{{ip}} is unblocked.",
+      "unblockTitle": "Unblock the address",
+      "unblockBody": "{{ip}} may sign in again at once."
     },
     "terms": {
-      "title": "Terms"
+      "title": "Terms",
+      "create": "Create",
+      "edit": "Edit",
+      "copy": "Copy",
+      "copyName": "Name of the copy",
+      "copyTitle": "Copy {{name}}",
+      "preview": "Preview",
+      "delete": "Delete",
+      "undo": "Undo",
+      "public": "Public",
+      "version": "v{{version}}",
+      "updatedAt": "updated",
+      "orderSaved": "Order saved.",
+      "created": "The template is created.",
+      "updated": "The template is saved.",
+      "copied": "The template is copied.",
+      "deleted": "{{name}} is deleted.",
+      "deleteTitle": "Delete the template",
+      "deleteBody": "{{name}} and every acceptance record that names it are removed. Type \"{{keyword}}\" to confirm.",
+      "editTitle": "Edit template · {{name}}",
+      "createTitle": "Create a template",
+      "placeholders": "Placeholders:",
+      "field": {
+        "name": "Name",
+        "displayName": "Display name",
+        "icon": "Icon",
+        "version": "Version",
+        "type": "Type",
+        "public": "Public",
+        "publicAt": "Publicly accessible at /public/policies/{{name}}",
+        "order": "Display order",
+        "content": "Content (Markdown)"
+      },
+      "type": {
+        "client": "Client (OAuth apps)",
+        "site": "Site (Registration)",
+        "both": "Both"
+      }
     },
     "buttons": {
       "save": "Save",
@@ -530,7 +1062,8 @@
     "tabs": {
       "organization": "Organization",
       "joinRequests": "Join Requests",
-      "invitations": "Invitations"
+      "invitations": "Invitations",
+      "members": "Members"
     },
     "search": {
       "joinRequests": "Search join requests",
@@ -621,7 +1154,27 @@
       "token": "Token",
       "orgId": "Organization ID",
       "sendWarning": "Warning: Invitation created but email might not have been sent. You can copy the link below and send it manually."
-    }
+    },
+    "website": "Website",
+    "logoUrl": "Logo URL",
+    "locale": "Locale",
+    "timezone": "Time zone",
+    "timezoneNone": "Not set",
+    "telephone": "Phone",
+    "team": "Team",
+    "convert": "Convert to a team",
+    "convertName": "Team name",
+    "converted": "The organization is now a team.",
+    "delete": "Delete organization",
+    "deleteBody": "{{name}} and its memberships are deleted. Type \"{{keyword}}\" to confirm.",
+    "deleted": "Organization deleted.",
+    "leave": "Leave",
+    "leaveBody": "You leave {{name}} and lose access to it. Type \"{{keyword}}\" to confirm.",
+    "left": "You left the organization.",
+    "managedBy": "managed by {{source}}",
+    "lastOwner": "The last owner cannot change their own role",
+    "noMembers": "No members.",
+    "revokeInvite": "Revoke"
   },
   "discovery": {
     "discoverButton": "Discover organizations",
@@ -682,7 +1235,12 @@
     "loadError": "Failed to load notifications. Please try again.",
     "markReadError": "Failed to mark the notification as read. Please try again.",
     "dismissError": "Failed to dismiss the notification. Please try again.",
-    "markAllReadError": "Failed to mark all notifications as read. Please try again."
+    "markAllReadError": "Failed to mark all notifications as read. Please try again.",
+    "markAll": "Mark all as read",
+    "deleteAll": "Delete all",
+    "deleteAllBody": "Every notification on this page is deleted. Type \"{{keyword}}\" to confirm.",
+    "delete": "Delete",
+    "viewDetails": "View details"
   },
   "notifications": {
     "pushSwitch": "Toasts (OS notifications) on this device",
@@ -1575,5 +2133,111 @@
     "errors": {
       "accessDenied": "Access denied by the catalog gate."
     }
+  },
+  "codeInput": {
+    "digit": "Digit {{n}} of {{m}}"
+  },
+  "copyButton": {
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "passwordField": {
+    "show": "Show password",
+    "hide": "Hide password",
+    "generate": "Generate a passphrase for me",
+    "generated": "Save it in your password manager"
+  },
+  "stepDots": {
+    "label": "Step {{n}} of {{m}}, {{step}}"
+  },
+  "pager": {
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}}",
+    "showing": "Showing {{from}} to {{to}} of {{total}}"
+  },
+  "sortable": {
+    "handle": "Drag to reorder {{label}}; use the arrow keys to move it",
+    "position": "Position {{index}} of {{count}}"
+  },
+  "organizations": {
+    "title": "Organizations",
+    "create": "Create an organization",
+    "createButton": "Create",
+    "created": "Organization created.",
+    "name": "Organization name",
+    "join": "Join with an invite code",
+    "joinButton": "Join",
+    "joined": "You joined the organization.",
+    "inviteCode": "Invite code",
+    "regenerate": "Regenerate",
+    "regenerated": "Invite code regenerated.",
+    "view": "View",
+    "manage": "Manage",
+    "makePrimary": "Make primary",
+    "primarySet": "Primary organization changed.",
+    "leave": "Leave",
+    "personal": "Personal",
+    "primary": "Primary",
+    "yourRole": "Your role {{role}}",
+    "none": "You are not a member of any organization yet."
+  },
+  "integrations": {
+    "title": "Integrations & connected accounts",
+    "notices": {
+      "setPassword": "Set a password so you can still sign in if a linked account is unlinked.",
+      "enableTfa": "Enable two-factor authentication to protect your account."
+    },
+    "linked": {
+      "title": "Linked external accounts",
+      "none": "No linked accounts.",
+      "linkedAs": "Linked as {{name}}",
+      "lastUsed": "last used",
+      "status": {
+        "valid": "Active",
+        "revoked": "Revoked",
+        "unknown": "Unknown"
+      },
+      "unlink": "Unlink",
+      "unlinkBody": "Unlink {{provider}} from your account. Type \"{{keyword}}\" to confirm.",
+      "unlinkReason": "Unlinking {{provider}} changes how you sign in."
+    },
+    "available": {
+      "notLinked": "Not linked",
+      "link": "Link account"
+    },
+    "terms": {
+      "title": "Accepted terms & policies",
+      "none": "No accepted terms yet.",
+      "version": "Version {{version}}",
+      "accepted": "accepted",
+      "view": "View",
+      "type": {
+        "site": "Site",
+        "client": "Client",
+        "both": "Both"
+      }
+    },
+    "apps": {
+      "title": "Connected applications",
+      "none": "No connected applications.",
+      "activeSessions_one": "{{count}} active session",
+      "activeSessions_other": "{{count}} active sessions",
+      "unregistered": "Unregistered",
+      "firstUsed": "First connected",
+      "lastUsed": "last used",
+      "permissions": "Permissions:",
+      "removeScope": "Remove {{scope}} permission",
+      "removeScopeBody": "Remove the {{scope}} permission from {{app}}. Type \"{{keyword}}\" to confirm.",
+      "sessions": "Sessions",
+      "revoke": "Revoke access",
+      "revokeBody": "Revoke {{app}}'s access to your account; its {{count}} active sessions end. Type \"{{keyword}}\" to confirm.",
+      "revokeReason": "Revoking {{app}} changes how you are signed in."
+    }
+  },
+  "dateRange": {
+    "presets": "Date presets",
+    "days": "{{count}} days",
+    "allTime": "All time"
   }
 }

@@ -44,6 +44,33 @@ const UNIVERSAL_ROUTES = [
   'push',
   'search',
   'vm',
+  'authenticator',
+  'authenticator-method',
+  'passwordRecovery',
+  'passwordReset',
+  'registration',
+  'complete-onboarding',
+  'qrcode',
+  'provider-registration',
+  'public',
+  'oauth2',
+  'activate',
+  'activated',
+  'ciba',
+  'connect',
+  'continue',
+  'link-account-consent',
+  'link-account',
+  'user',
+  'org',
+  'notifications',
+  'error',
+  'api',
+  'assets',
+  'brand',
+  'locales',
+  'fonts',
+  'themes',
 ];
 
 const SESSION_ENDED_KEY = 'session-ended';
@@ -62,8 +89,23 @@ const utilityLinks = (status, t) => {
 
 const footerRepoUrl = brand => brand.repo || brand.changelog || '';
 
-const localProfileFor = status =>
-  authMethod(status) === 'backend' ? { to: '/profile', LinkComponent: Link } : null;
+const LOCAL_PROFILE_PATHS = { backend: '/profile', cookie: '/user/profile' };
+
+const localProfileFor = status => {
+  const to = LOCAL_PROFILE_PATHS[authMethod(status)];
+  return to ? { to, LinkComponent: Link } : null;
+};
+
+const menuLinksFor = ({ status, cookie, issuerUrl }) => {
+  if (cookie) {
+    return {
+      issuerUrl: '',
+      viewAllUrl: '',
+      viewAllTo: hasFeature(status, 'inbox') ? '/notifications' : '',
+    };
+  }
+  return { issuerUrl, viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '', viewAllTo: '' };
+};
 
 const sidebarRows = groups =>
   groups.flatMap(group =>
@@ -93,7 +135,7 @@ const sidebarCrumbs = ({ groups, pathname, t }) => {
   ];
 };
 
-const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
+const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
   const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
   if (!user) {
     return null;
@@ -101,7 +143,8 @@ const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
   return {
     ...identity,
     oidc,
-    issuerUrl,
+    ...menuLinksFor({ status, cookie, issuerUrl }),
+    LinkComponent: Link,
     localProfile: localProfileFor(status),
     organizations: orgs.organizations,
     activeOrgUuid,
@@ -111,7 +154,6 @@ const buildUserMenu = ({ account, status, identity, orgs, menu }) => {
     favorites: claims?.favorite_apps || [],
     appName: status.brand.name,
     appVersion: hasFeature(status, 'footer') ? '' : status.version,
-    viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
     onSignOutEverywhere: account.signOutEverywhere,
     ...menu,
   };
@@ -164,7 +206,7 @@ const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) 
   return signedIn ? buildRouteCrumbs({ route, t, orgIcon }) : [];
 };
 
-const useSessionEndedBanner = ended => {
+const useSessionEndedBanner = (ended, signInTo) => {
   const { t } = useTranslation();
   const notify = useNotify();
 
@@ -178,8 +220,9 @@ const useSessionEndedBanner = ended => {
         <strong>{t('sessionEnded.title')}</strong> {t('sessionEnded.body')}
       </>
     );
-    notify('warning', text, { tier: 'banner', key: SESSION_ENDED_KEY });
-  }, [ended, notify, t]);
+    const action = signInTo ? { label: t('navbar.signIn'), to: signInTo } : null;
+    notify('warning', text, { tier: 'banner', key: SESSION_ENDED_KEY, action });
+  }, [ended, notify, signInTo, t]);
 };
 
 const useSidebarOverlay = pathname => {
@@ -202,13 +245,16 @@ const menuFor = ({ cookie, onAuthPage, sidebar, rows, adapters }) => {
   };
 };
 
-const signInFor = ({ account, anonymous, onAuthPage, pathname, search }) => {
-  if (anonymous) {
+const signInFor = ({ account, anonymous, hidden, onAuthPage, pathname, search }) => {
+  if (anonymous || hidden) {
     return { onSignIn: null, signInTo: '' };
   }
   const returnPath = account.sessionEnded?.returnTo || (onAuthPage ? '' : `${pathname}${search}`);
   return { onSignIn: account.signIn, signInTo: returnTo.signInTo(returnPath) };
 };
+
+const bannerSignInFor = ({ account, hidden }) =>
+  hidden ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
 
 const identityFor = ({ user, claims, t }) => {
   const displayName = claims?.name || userDisplayName(user) || t('user.unknownUser');
@@ -290,7 +336,9 @@ AppRows.propTypes = {
  * with the page inside its own error boundary so a page that throws keeps
  * the chrome; and the footer while the host lists the `footer` token. The
  * column and the app section are hidden on the auth routes of the
- * session's return-path helper. The app supplies the session state, the
+ * session's return-path helper, and on a `cookie` host the cluster's Sign
+ * in button is hidden there too, the session-ended banner carrying its
+ * own Sign in in its place. The app supplies the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
  * features unlock.
@@ -339,13 +387,17 @@ const AppShell = ({
     logoFor: logoResolver(primary),
   };
   const onAuthPage = returnTo.onAuthPage(pathname);
+  const signInHidden = cookie && onAuthPage;
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
   const routeCrumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
   const rowCrumbs = showSidebar ? sidebarCrumbs({ groups: sidebar, pathname, t }) : [];
   const crumbs = rowCrumbs.length > 0 ? rowCrumbs : routeCrumbs;
-  useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn && !anonymous);
+  useSessionEndedBanner(
+    Boolean(account.sessionEnded) && !signedIn && !anonymous,
+    bannerSignInFor({ account, hidden: signInHidden })
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
@@ -364,13 +416,21 @@ const AppShell = ({
     />
   );
 
-  const signIn = signInFor({ account, anonymous, onAuthPage, pathname, search });
+  const signIn = signInFor({
+    account,
+    anonymous,
+    hidden: signInHidden,
+    onAuthPage,
+    pathname,
+    search,
+  });
 
   const links = utilityLinks(status, t);
 
   const userMenu = buildUserMenu({
     account,
     status,
+    cookie,
     identity: { ...identityFor({ user, claims, t }), renderAvatar },
     orgs,
     menu: menuFor({

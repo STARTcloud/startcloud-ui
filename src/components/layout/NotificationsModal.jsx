@@ -2,21 +2,13 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { Form, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import {
-  FaArrowUpRightFromSquare,
-  FaBell,
-  FaCheck,
-  FaDesktop,
-  FaEnvelope,
-  FaGear,
-  FaPaperPlane,
-  FaShieldHalved,
-  FaTriangleExclamation,
-  FaXmark,
-} from 'react-icons/fa6';
+import { FaArrowUpRightFromSquare, FaDesktop, FaPaperPlane } from 'react-icons/fa6';
 
 import { useNotify } from '../../contexts/NoticeContext';
-import { formatRelativeTime } from '../../utils/relativeTime';
+import InboxList, {
+  extractEntries,
+  linkOf,
+} from '../../features/notifications/components/InboxList';
 
 export const notificationsAdapterShape = PropTypes.shape({
   list: PropTypes.func.isRequired,
@@ -24,6 +16,7 @@ export const notificationsAdapterShape = PropTypes.shape({
   markRead: PropTypes.func.isRequired,
   markAllRead: PropTypes.func.isRequired,
   remove: PropTypes.func.isRequired,
+  removeAll: PropTypes.func,
   sendTest: PropTypes.func,
 });
 
@@ -35,101 +28,6 @@ export const pushAdapterShape = PropTypes.shape({
   unsubscribe: PropTypes.func.isRequired,
   sendTest: PropTypes.func,
 });
-
-const TYPE_ICONS = {
-  SECURITY: FaShieldHalved,
-  OAUTH: FaShieldHalved,
-  ACCOUNT: FaEnvelope,
-  ADMIN: FaGear,
-  SYSTEM: FaGear,
-  MESSAGE: FaEnvelope,
-  ALERT: FaTriangleExclamation,
-};
-
-const SEVERITY_CLASSES = {
-  DANGER: 'text-danger',
-  CRITICAL: 'text-danger',
-  ERROR: 'text-danger',
-  WARNING: 'text-warning',
-  SUCCESS: 'text-success',
-  INFO: 'text-body-secondary',
-};
-
-const extractEntries = data => (Array.isArray(data?.notifications) ? data.notifications : []);
-
-const linkOf = entry =>
-  typeof entry.navigate === 'string' && entry.navigate.startsWith('https://') ? entry.navigate : '';
-
-const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss }) => {
-  const { t, i18n } = useTranslation();
-  const Icon = TYPE_ICONS[entry.type] || FaBell;
-  const unread = !entry.readAt;
-
-  return (
-    <div className="notification-row">
-      <button
-        type="button"
-        className="dropdown-item notification-item"
-        onClick={() => onSelect(entry)}
-      >
-        <Icon
-          className={`notification-item-icon ${SEVERITY_CLASSES[entry.severity] || 'text-body-secondary'}`}
-        />
-        <span className="notification-item-body">
-          <span className={`notification-item-title ${unread ? 'fw-semibold' : ''}`}>
-            {entry.title}
-            {linkOf(entry) ? (
-              <FaArrowUpRightFromSquare className="ms-1 small text-body-secondary" aria-hidden />
-            ) : null}
-          </span>
-          {entry.body ? <span className="notification-item-text">{entry.body}</span> : null}
-          <span className="notification-item-time">
-            {formatRelativeTime(entry.createdAt, i18n.language)}
-          </span>
-        </span>
-        {unread ? <span className="notification-item-dot" /> : null}
-      </button>
-      <span className="notification-tools">
-        {unread ? (
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => onMarkRead(entry)}
-            title={t('inbox.markRead')}
-            aria-label={t('inbox.markRead')}
-          >
-            <FaCheck />
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn btn-sm"
-          onClick={() => onDismiss(entry)}
-          title={t('inbox.dismiss')}
-          aria-label={t('inbox.dismiss')}
-        >
-          <FaXmark />
-        </button>
-      </span>
-    </div>
-  );
-};
-
-NotificationRow.propTypes = {
-  entry: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    title: PropTypes.string,
-    body: PropTypes.string,
-    type: PropTypes.string,
-    severity: PropTypes.string,
-    navigate: PropTypes.string,
-    createdAt: PropTypes.string,
-    readAt: PropTypes.string,
-  }).isRequired,
-  onSelect: PropTypes.func.isRequired,
-  onMarkRead: PropTypes.func.isRequired,
-  onDismiss: PropTypes.func.isRequired,
-};
 
 const TestButton = ({ label, Icon, send }) => {
   const { t } = useTranslation();
@@ -234,7 +132,23 @@ PushSwitch.propTypes = {
   onEnabledChange: PropTypes.func.isRequired,
 };
 
-const NotificationsModal = ({ show, onHide, onUnreadDelta, notifications, push, viewAllUrl }) => {
+/**
+ * The Notification Channel Notifications modal: the rows of the inbox
+ * list with mark-read and dismiss, Mark all read, the toast switch, the
+ * two test glyphs and View all notifications, an in-router link when
+ * `viewAllTo` names a path of this app (the issuer's `/notifications`) and
+ * a new-tab link to `viewAllUrl` at the identity provider otherwise.
+ */
+const NotificationsModal = ({
+  show,
+  onHide,
+  onUnreadDelta,
+  notifications,
+  push,
+  viewAllUrl,
+  viewAllTo = '',
+  LinkComponent = 'a',
+}) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [entries, setEntries] = useState([]);
@@ -318,17 +232,13 @@ const NotificationsModal = ({ show, onHide, onUnreadDelta, notifications, push, 
         {!loadFailed && entries.length === 0 ? (
           <p className="small text-body-secondary m-3">{t('inbox.empty')}</p>
         ) : null}
-        <div className="notification-list">
-          {entries.map(entry => (
-            <NotificationRow
-              key={entry.id}
-              entry={entry}
-              onSelect={handleSelect}
-              onMarkRead={markRead}
-              onDismiss={handleDismiss}
-            />
-          ))}
-        </div>
+        <InboxList
+          entries={entries}
+          onSelect={handleSelect}
+          onMarkRead={markRead}
+          onDismiss={handleDismiss}
+          labels={{ markRead: t('inbox.markRead'), dismiss: t('inbox.dismiss') }}
+        />
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between align-items-center flex-nowrap gap-3 small">
         <PushSwitch push={push} enabled={pushEnabled} onEnabledChange={setPushEnabled} />
@@ -347,7 +257,12 @@ const NotificationsModal = ({ show, onHide, onUnreadDelta, notifications, push, 
               send={notifications.sendTest}
             />
           ) : null}
-          {viewAllUrl ? (
+          {viewAllTo ? (
+            <LinkComponent to={viewAllTo} className="text-nowrap" onClick={onHide}>
+              {t('inbox.viewAll')}
+            </LinkComponent>
+          ) : null}
+          {!viewAllTo && viewAllUrl ? (
             <a href={viewAllUrl} target="_blank" rel="noopener noreferrer" className="text-nowrap">
               {t('inbox.viewAll')}
               <FaArrowUpRightFromSquare className="ms-2" />
@@ -366,6 +281,8 @@ NotificationsModal.propTypes = {
   notifications: notificationsAdapterShape.isRequired,
   push: pushAdapterShape.isRequired,
   viewAllUrl: PropTypes.string.isRequired,
+  viewAllTo: PropTypes.string,
+  LinkComponent: PropTypes.elementType,
 };
 
 export default NotificationsModal;

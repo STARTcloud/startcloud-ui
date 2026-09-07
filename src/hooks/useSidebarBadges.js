@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { useUnread } from '../features/notifications/context/UnreadContext';
 import { client } from '../lib/runtime';
 import { hasFeature } from '../utils/capabilities';
 
@@ -18,12 +19,15 @@ const countOf = data => Math.max(0, Number(data?.count) || 0);
 
 /**
  * The counts behind the sidebar rows' `badge` names, resolved by the
- * shell and never by an export: `unread` from the `notifications` topic's
- * `unread-count` event where the host advertises `events` and from the
- * notifications adapter's `unreadCount()` once on mount where it does
- * not; `blockedCount` from the `admin` topic's `blocked-count` event after
- * one read of `GET /api/admin/brute-force/count` when the stream connects.
- * No timer runs; a name no mounted row carries is never resolved.
+ * shell and never by an export: `unread` is the notifications feature's
+ * one context, the same count the user menu's bell and the inbox page
+ * read, written here from the `notifications` topic's `unread-count`
+ * event where the host advertises `events` and from the notifications
+ * adapter's `unreadCount()` once on mount where it does not;
+ * `blockedCount` from the `admin` topic's `blocked-count` event after
+ * one read of `GET /api/admin/brute-force/count` when the stream
+ * connects. No timer runs; a name no mounted row carries is never
+ * resolved.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -33,6 +37,7 @@ const countOf = data => Math.max(0, Number(data?.count) || 0);
  */
 export const useSidebarBadges = ({ status, entries, notifications }) => {
   const [counts, setCounts] = useState({});
+  const { unread, set: setUnread } = useUnread();
   const wanted = badgeNamesOf(entries).join(',');
   const streaming = hasFeature(status, 'events') && Boolean(status.events);
   const notificationsRef = useRef(notifications);
@@ -52,7 +57,7 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
     }
     notificationsRef.current
       .unreadCount()
-      .then(data => set('unread', countOf(data)))
+      .then(data => setUnread(countOf(data)))
       .catch(() => null);
   };
 
@@ -74,7 +79,7 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
 
   useEventStream('unread-count', data => {
     if (wantsUnread) {
-      set('unread', countOf(data));
+      setUnread(countOf(data));
     }
   });
 
@@ -97,5 +102,5 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
     readRef.current.readBlocked();
   }, [streaming, wanted]);
 
-  return counts;
+  return { ...counts, unread };
 };

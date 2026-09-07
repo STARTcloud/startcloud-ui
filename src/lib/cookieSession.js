@@ -1,6 +1,6 @@
 import { createApiClient } from './apiClient';
 
-const DISPLAY_FIELDS = ['name', 'email', 'picture', 'roles', 'organizations'];
+const DISPLAY_FIELDS = ['name', 'email', 'picture', 'roles', 'organizations', 'has_local_auth'];
 const DROPPED_KEYS = [
   'intended_url',
   'activeOrganization',

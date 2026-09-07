@@ -6,7 +6,7 @@ import process from 'process';
 import YAML from 'yaml';
 
 const THEMES_DIR = path.resolve('public/themes');
-const ON_PRIMARY_CHOICES = ['#ffffff', '#212529'];
+const ON_PRIMARY_CHOICES = ['#ffffff', '#000000'];
 const TEXT_MIN = 4.5;
 const MARK_MIN = 3;
 const HEX = /^#(?<digits>[0-9a-f]{6})$/i;
@@ -103,12 +103,11 @@ const onPrimaryFailure = (pack, source) => {
       TEXT_MIN
     );
   }
-  const computed = ON_PRIMARY_CHOICES.find(choice => contrast(source.primary, choice) >= TEXT_MIN);
-  if (!computed) {
-    return `${pack}: --brand-primary ${source.primary} reaches ${TEXT_MIN}:1 against neither ${ON_PRIMARY_CHOICES.join(' nor ')}`;
-  }
-  source.on_primary = computed;
-  return '';
+  const [better] = [...ON_PRIMARY_CHOICES].sort(
+    (first, second) => contrast(source.primary, second) - contrast(source.primary, first)
+  );
+  source.on_primary = better;
+  return failing(pack, primary, { name: '--brand-on-primary', value: better }, TEXT_MIN);
 };
 
 const failuresOf = (pack, source) => {
@@ -234,9 +233,10 @@ const writePack = (pack, css) => {
  * SHA-256 hex and nothing else, the `?v=` every UI backend reads.
  *
  * The YAML source carries `primary` (six-digit hex, required), `on_primary`
- * (hex, optional: when absent the generator takes `#ffffff` or `#212529`,
- * whichever reaches 4.5:1 against `primary`, and refuses the pack when
- * neither does), `warning` and `on_warning` (hex, optional, together), `logo`
+ * (hex, optional: when absent the generator takes `#ffffff` or `#000000`,
+ * whichever contrasts more with `primary`, and refuses the pack only when
+ * that better one is under 4.5:1), `warning` and `on_warning` (hex,
+ * optional, together), `logo`
  * (a file in the pack directory, optional) with `logo_color` (hex, the
  * primary when absent), `display` (the auth column's headline face as a
  * CSS font-family list, optional), `fonts` (optional, one entry per file

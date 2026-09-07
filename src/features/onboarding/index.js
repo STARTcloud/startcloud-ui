@@ -1,0 +1,10 @@
+export { default as AccountTypeStep } from './components/AccountTypeStep';
+export { default as BackupCodesPage } from './components/BackupCodesPage';
+export { default as EmailCodeStep } from './components/EmailCodeStep';
+export { default as NameStep } from './components/NameStep';
+export { default as OnboardingHub } from './components/OnboardingHub';
+export { default as PhoneStep } from './components/PhoneStep';
+export { default as TeamNameStep } from './components/TeamNameStep';
+export { default as TermsPage } from './components/TermsPage';
+export { default as TfaEnrolChoiceStep } from './components/TfaEnrolChoiceStep';
+export { default as TotpEnrolPage } from './components/TotpEnrolPage';

@@ -57,6 +57,8 @@ const UserMenu = ({
   notifications,
   push,
   viewAllUrl,
+  viewAllTo = '',
+  LinkComponent = 'a',
   ticketUrl,
   onSignOut,
   onSignOutEverywhere,
@@ -155,7 +157,13 @@ const UserMenu = ({
 
           {notifications || ticketUrl ? <Dropdown.Divider /> : null}
           {notifications && push ? (
-            <NotificationsItem notifications={notifications} push={push} viewAllUrl={viewAllUrl} />
+            <NotificationsItem
+              notifications={notifications}
+              push={push}
+              viewAllUrl={viewAllUrl}
+              viewAllTo={viewAllTo}
+              LinkComponent={LinkComponent}
+            />
           ) : null}
           {ticketUrl ? (
             <Dropdown.Item href={ticketUrl} target="_blank" rel="noopener noreferrer">
@@ -206,6 +214,8 @@ UserMenu.propTypes = {
   notifications: notificationsAdapterShape,
   push: pushAdapterShape.isRequired,
   viewAllUrl: PropTypes.string.isRequired,
+  viewAllTo: PropTypes.string,
+  LinkComponent: PropTypes.elementType,
   ticketUrl: PropTypes.string.isRequired,
   onSignOut: PropTypes.func.isRequired,
   onSignOutEverywhere: PropTypes.func.isRequired,

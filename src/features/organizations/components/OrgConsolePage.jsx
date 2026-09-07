@@ -16,6 +16,9 @@ import { hasFeature } from '../../../utils/capabilities';
 import { isOwner } from '../../../utils/membership';
 import { membershipsOf, organizationsShape } from '../../../utils/organizations';
 import { responseMessage } from '../../../utils/responseMessage';
+import { issuerOrganizationsShape } from '../api/issuer';
+
+import IssuerOrgConsole from './IssuerOrgConsole';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
@@ -506,7 +509,7 @@ InvitationsTable.propTypes = {
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
  */
-const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) => {
+const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const status = useStatus();
@@ -1183,12 +1186,62 @@ const OrgConsolePage = ({ session, activeOrgKey, organizations, org, admin }) =>
   );
 };
 
-OrgConsolePage.propTypes = {
+BackendOrgConsole.propTypes = {
   session: PropTypes.object.isRequired,
   activeOrgKey: PropTypes.string.isRequired,
   organizations: organizationsShape.isRequired,
   org: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
+};
+
+/**
+ * The organization console of the active organization: the identity
+ * provider's form over one membership record while the `organizations`
+ * adapter carries `list` (the issuer's fields, the flags `can_manage`,
+ * `can_rename` and `is_owner` gating every control, `events` and
+ * `places` handed through), else the shared console of an app with
+ * organizations of its own, unchanged.
+ */
+const OrgConsolePage = ({
+  session,
+  activeOrgKey,
+  organizations,
+  org,
+  admin,
+  events = null,
+  places = null,
+}) => {
+  if (organizations.list && events) {
+    return (
+      <IssuerOrgConsole
+        session={session}
+        events={events}
+        organizations={organizations}
+        org={org}
+        activeOrgKey={activeOrgKey}
+        places={places}
+      />
+    );
+  }
+  return (
+    <BackendOrgConsole
+      session={session}
+      activeOrgKey={activeOrgKey}
+      organizations={organizations}
+      org={org}
+      admin={admin}
+    />
+  );
+};
+
+OrgConsolePage.propTypes = {
+  session: PropTypes.object.isRequired,
+  activeOrgKey: PropTypes.string.isRequired,
+  organizations: PropTypes.oneOfType([organizationsShape, issuerOrganizationsShape]).isRequired,
+  org: PropTypes.string.isRequired,
+  admin: PropTypes.bool.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }),
+  places: PropTypes.func,
 };
 
 export default OrgConsolePage;

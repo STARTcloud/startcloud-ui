@@ -110,13 +110,13 @@ Each step names the contract sections it is built from, the files it touches, th
 
 ## 5. Open
 
-- Nothing; every decision through 73, a–g and h–ad is made and written into the contracts, the decisions 27 to 73 in the identity contract's own list, 65 to 73 answering the first nine gaps of startcloud-ui's NOTIFICATIONS.md (2026-09-07); the artwork and font files of decision 73 are Mark's to supply. The UI work may begin, the shared UI first (decision in §0).
+- Nothing; every decision through 88, a–g and h–ad is made and written into the contracts, the decisions 27 to 88 in the identity contract's own list, 65 to 88 answering the gaps of startcloud-ui's NOTIFICATIONS.md (2026-09-07); the Poppins files of decision 73 are Mark's to supply, the marks and provider icons landed. The UI work may begin, the shared UI first (decision in §0).
 
 ## 6. Handoff (state as of 2026-09-07; the planning is complete)
 
 State of every artefact, so the next session reads before it acts:
 
-- Every contract in G:\Projects\startcloud-ui\docs\guides is final for this conversion: universal-navbar, universal-session, universal-pages, universal-events, universal-validation, universal-config, preferences-and-branding and universal-identity, the last carrying decisions 1 to 73. Every ruling of the four review rounds (nonsense, spec, security, UX) is written into them as a rule with its reason; nothing is left in chat alone. Read every file in full before touching it.
+- Every contract in G:\Projects\startcloud-ui\docs\guides is final for this conversion: universal-navbar, universal-session, universal-pages, universal-events, universal-validation, universal-config, preferences-and-branding and universal-identity, the last carrying decisions 1 to 88. Every ruling of the four review rounds (nonsense, spec, security, UX) is written into them as a rule with its reason; nothing is left in chat alone. Read every file in full before touching it.
 - The five mockups beside them match the contracts: universal-identity.html (five groups, the signed-in chrome, the admin pages, the errors), universal-sidebar.html, universal-navbar.html, universal-pages.html and preferences-and-branding.html, each viewed as file:///G:/Projects/startcloud-ui/docs/guides/<file>. Where a mockup and a contract disagree the contract wins and the mockup is corrected.
 - Auth-server stubs in its docs/guides point at the moved files with the GitHub URL and the local path.
 - Next UI work is the UI growth of §3a, step 1 first, each step closed by its own check; next server work is the build and serving item and then the server endpoints in their stated order; the config editor is last. Never say "twins": name the endpoint.

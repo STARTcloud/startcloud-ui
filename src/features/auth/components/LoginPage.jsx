@@ -18,6 +18,7 @@ import {
 import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner } from './AuthShell';
+import CookieLogin from './CookieLogin';
 import ProviderButtons from './ProviderButtons';
 
 const LOGIN_SCHEMA = {
@@ -286,14 +287,7 @@ LoginMethods.propTypes = {
   onSwitchMode: PropTypes.func.isRequired,
 };
 
-/**
- * The sign-in page every estate app with a login route draws the same way:
- * the app's enabled methods from `auth.methods()`, the local form where the
- * provider carries `login`, one button per identity provider through
- * `session.begin`, the remembered choice between the two, the one silent SSO
- * attempt per browser session, and the return path kept for the callback.
- */
-const LoginPage = ({ session, returnTo, auth, appName }) => {
+const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
@@ -534,6 +528,29 @@ const LoginPage = ({ session, returnTo, auth, appName }) => {
       )}
     </AuthShell>
   );
+};
+
+BackendLoginPage.propTypes = {
+  session: PropTypes.object.isRequired,
+  returnTo: returnToShape.isRequired,
+  auth: authShape.isRequired,
+  appName: PropTypes.string.isRequired,
+};
+
+/**
+ * The sign-in page every estate app with a login route draws the same way:
+ * the app's enabled methods from `auth.methods()`, the local form where the
+ * provider carries `login`, one button per identity provider through
+ * `session.begin`, the remembered choice between the two, the one silent SSO
+ * attempt per browser session, and the return path kept for the callback;
+ * on the identity provider (`session.id` is `cookie`) the page grows by the
+ * issuer's modes and states through `CookieLogin`.
+ */
+const LoginPage = ({ session, returnTo, auth, appName }) => {
+  if (session.id === 'cookie') {
+    return <CookieLogin session={session} returnTo={returnTo} auth={auth} appName={appName} />;
+  }
+  return <BackendLoginPage session={session} returnTo={returnTo} auth={auth} appName={appName} />;
 };
 
 LoginPage.propTypes = {

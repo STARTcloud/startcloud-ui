@@ -341,7 +341,7 @@ the `idp.storagePrefix` the UI backend names for its tokens.
 | sidebar tree view                 | `sidebar_view_<group>`                                                                                                                                                                                                | `sidebar_view_<group>`                                                             |
 | theme and language                | `theme`, `language`, the chrome's own keys, kept across a sign-out                                                                                                                                                    | the same                                                                           |
 
-A `cookie` UI backend (the identity provider) keeps `account` (the cached display fields), `intended_url`, `activeOrganization` (uuid), `push_enabled`, `login_method` (`password` or `magic_link`), `theme`, `language`, `table_prefs_admin_users`, `table_prefs_admin_logins`, `table_prefs_admin_registrations`, `table_prefs_admin_sessions`, `table_prefs_inbox` and the sidebar keys; it has no upstream, so `silent_sso_attempted` is unused.
+A `cookie` UI backend (the identity provider) keeps `account` (the cached display fields), `intended_url`, `activeOrganization` (uuid), `push_enabled`, `login_method` (`password` or `magic_link`), `theme`, `language`, `table_prefs_admin_users`, `table_prefs_admin_organizations`, `table_prefs_admin_logins`, `table_prefs_admin_registrations`, `table_prefs_admin_sessions`, `table_prefs_inbox` and the sidebar keys; it has no upstream, so `silent_sso_attempted` is unused.
 
 ---
 

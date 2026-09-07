@@ -18,6 +18,7 @@ import {
 import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from './AuthShell';
+import CookieRegister from './CookieRegister';
 import ProviderButtons from './ProviderButtons';
 
 const REGISTER_SCHEMA = {
@@ -268,14 +269,7 @@ RegisterMethods.propTypes = {
   onSwitchMode: PropTypes.func.isRequired,
 };
 
-/**
- * The registration page every estate app with a register route draws the
- * same way: the local form where `auth.methods()` allows self-registration
- * or the URL carries an invitation token, one button per identity provider
- * through `session.begin`, and the check-your-inbox state after a local
- * sign-up.
- */
-const RegisterPage = ({ session, returnTo, auth }) => {
+const BackendRegisterPage = ({ session, returnTo, auth }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const location = useLocation();
 
@@ -485,6 +479,27 @@ const RegisterPage = ({ session, returnTo, auth }) => {
       </p>
     </AuthShell>
   );
+};
+
+BackendRegisterPage.propTypes = {
+  session: PropTypes.object.isRequired,
+  returnTo: returnToShape.isRequired,
+  auth: authShape.isRequired,
+};
+
+/**
+ * The registration page every estate app with a register route draws the
+ * same way: the local form where `auth.methods()` allows self-registration
+ * or the URL carries an invitation token, one button per identity provider
+ * through `session.begin`, and the check-your-inbox state after a local
+ * sign-up; on the identity provider (`session.id` is `cookie`) the page is
+ * the email-only form and sent state of `CookieRegister`.
+ */
+const RegisterPage = ({ session, returnTo, auth }) => {
+  if (session.id === 'cookie') {
+    return <CookieRegister session={session} returnTo={returnTo} />;
+  }
+  return <BackendRegisterPage session={session} returnTo={returnTo} auth={auth} />;
 };
 
 RegisterPage.propTypes = {

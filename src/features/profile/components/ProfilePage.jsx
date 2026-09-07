@@ -14,6 +14,7 @@ import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { responseMessage } from '../../../utils/responseMessage';
 
+import IssuerProfilePage, { issuerAccountShape } from './IssuerProfilePage';
 import ProfileTabs from './ProfileTabs';
 
 /**
@@ -161,7 +162,7 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
  * app's `account` adapter and the session's own `reload` and
  * `signOutEverywhere`.
  */
-const ProfilePage = ({
+const BackendProfilePage = ({
   session,
   events,
   returnTo,
@@ -1180,11 +1181,54 @@ const ProfilePage = ({
   );
 };
 
-ProfilePage.propTypes = {
+BackendProfilePage.propTypes = {
   session: PropTypes.object.isRequired,
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   returnTo: returnToShape.isRequired,
   account: accountShape.isRequired,
+  activeOrgUuid: PropTypes.string.isRequired,
+  localAccounts: PropTypes.bool.isRequired,
+  issuerUrl: PropTypes.string.isRequired,
+};
+
+/**
+ * The shared profile page: the identity provider's form with its five
+ * tabs while the `account` adapter carries `profile` and `stepUp` (the
+ * issuer's adapter), else the page every app with accounts of its own
+ * draws, unchanged.
+ */
+const ProfilePage = ({
+  session,
+  events,
+  returnTo,
+  account,
+  activeOrgUuid,
+  localAccounts,
+  issuerUrl,
+}) => {
+  if (account.profile && account.stepUp) {
+    return (
+      <IssuerProfilePage session={session} events={events} returnTo={returnTo} account={account} />
+    );
+  }
+  return (
+    <BackendProfilePage
+      session={session}
+      events={events}
+      returnTo={returnTo}
+      account={account}
+      activeOrgUuid={activeOrgUuid}
+      localAccounts={localAccounts}
+      issuerUrl={issuerUrl}
+    />
+  );
+};
+
+ProfilePage.propTypes = {
+  session: PropTypes.object.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
+  returnTo: returnToShape.isRequired,
+  account: PropTypes.oneOfType([accountShape, issuerAccountShape]).isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,

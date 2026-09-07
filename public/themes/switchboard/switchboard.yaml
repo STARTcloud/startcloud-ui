@@ -1,3 +1,13 @@
 primary: '#24ade3'
-on_primary: '#212529'
+on_primary: '#000000'
 display: "'Poppins', Helvetica, Arial, sans-serif"
+fonts:
+  - family: Poppins
+    file: poppins-500.woff2
+    weight: 500
+  - family: Poppins
+    file: poppins-600.woff2
+    weight: 600
+  - family: Poppins
+    file: poppins-700.woff2
+    weight: 700

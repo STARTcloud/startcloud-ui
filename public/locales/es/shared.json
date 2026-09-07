@@ -65,7 +65,15 @@
     "network": "No se pudo contactar con el servidor.",
     "request": "La solicitud falló.",
     "validation": "La solicitud no pasó la validación.",
-    "conflict": "Un valor ya está en uso."
+    "conflict": "Un valor ya está en uso.",
+    "step_up_required": "Confirma que eres tú para continuar.",
+    "step_up_failed": "No coincidió; inténtalo de nuevo.",
+    "last_method": "Quita otro método primero; el último método no se puede quitar.",
+    "no_methods": "Añade un número de teléfono o una aplicación de autenticación antes de activar la verificación en dos pasos.",
+    "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
+    "unknown_code": "Ese código de invitación no coincide con ninguna organización.",
+    "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
+    "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero."
   },
   "validation": {
     "errorPrefix": "Error:",
@@ -139,7 +147,10 @@
       "profile": "Perfil",
       "organizations": "Organizaciones",
       "security": "Seguridad",
-      "serviceAccounts": "Cuentas de Servicio"
+      "serviceAccounts": "Cuentas de Servicio",
+      "preferences": "Preferencias",
+      "favorites": "Favoritos",
+      "sessions": "Sesiones"
     },
     "search": {
       "organizations": "Buscar organizaciones y solicitudes",
@@ -178,6 +189,104 @@
         "title": "Eliminar Cuenta",
         "warning": "Advertencia: Esta acción no se puede deshacer.",
         "button": "Eliminar Mi Cuenta"
+      },
+      "password": {
+        "title": "Contraseña",
+        "none": "No hay contraseña. Establece una para iniciar sesión con contraseña.",
+        "current": "Contraseña actual",
+        "new": "Nueva contraseña",
+        "confirm": "Confirmar la contraseña",
+        "hint": "Al menos {{count}} caracteres; cualquier carácter, espacios incluidos.",
+        "change": "Cambiar la contraseña",
+        "set": "Establecer la contraseña",
+        "reason": "Cambiar tu contraseña cambia cómo inicias sesión.",
+        "saved": "Contraseña cambiada."
+      },
+      "email": {
+        "title": "Correo electrónico",
+        "new": "Nueva dirección de correo",
+        "send": "Enviar código",
+        "reason": "Cambiar tu dirección de correo cambia cómo inicias sesión.",
+        "sent": "Se envió un código de verificación a la nueva dirección.",
+        "code": "Código de verificación",
+        "verify": "Verificar",
+        "changed": "Dirección de correo cambiada."
+      },
+      "tfa": {
+        "title": "Verificación en dos pasos",
+        "on": "Activada",
+        "off": "Desactivada",
+        "sms": "SMS",
+        "app": "Aplicación de autenticación",
+        "label": "Etiqueta",
+        "enable": "Activar la verificación en dos pasos",
+        "disable": "Desactivar la verificación en dos pasos",
+        "disableTitle": "Desactivar la verificación en dos pasos",
+        "disableBody": "Desactivar la verificación en dos pasos hace que tu inicio de sesión dependa solo de tu contraseña.",
+        "noMethods": "Todavía no hay métodos registrados.",
+        "preferredBadge": "Preferido",
+        "setPreferred": "Marcar como preferido",
+        "remove": "Quitar",
+        "lastMethod": "Quita otro método primero",
+        "locked": "Tu método {{method}} está desactivado tras demasiados intentos fallidos.",
+        "reenrol": "Volver a registrar",
+        "addPhone": "Añadir número de teléfono",
+        "addApp": "Añadir aplicación de autenticación",
+        "smsRisk": "Los códigos por SMS son más fáciles de interceptar o capturar mediante un duplicado de SIM que los códigos de una aplicación de autenticación.",
+        "scan": "Escanea este código QR con tu aplicación de autenticación.",
+        "qrAlt": "Código QR para tu aplicación de autenticación",
+        "setupKey": "¿No puedes escanear? Usa esta clave de configuración",
+        "copyKey": "Copiar la clave de configuración",
+        "appCode": "Introduce el código de tu aplicación de autenticación",
+        "enrolReason": "Añadir un método de inicio de sesión cambia cómo inicias sesión.",
+        "enrolled": "Método añadido.",
+        "preferReason": "Cambiar tu método preferido cambia cómo inicias sesión.",
+        "preferred": "Método preferido guardado.",
+        "removeReason": "Quitar el método {{method}} cambia cómo inicias sesión.",
+        "removed": "Método quitado.",
+        "enableReason": "Activar la verificación en dos pasos cambia cómo inicias sesión.",
+        "disableReason": "Desactivar la verificación en dos pasos cambia cómo inicias sesión.",
+        "enabledDone": "Verificación en dos pasos activada.",
+        "disabledDone": "Verificación en dos pasos desactivada."
+      },
+      "passkeys": {
+        "title": "Llaves de acceso",
+        "none": "Todavía no hay llaves de acceso.",
+        "name": "Nombre de la llave de acceso",
+        "add": "Añadir llave de acceso",
+        "rename": "Renombrar",
+        "remove": "Quitar",
+        "rpId": "Sitio",
+        "addedOn": "añadida el {{date}}",
+        "lastUsed": "último uso",
+        "addReason": "Añadir una llave de acceso cambia cómo inicias sesión.",
+        "added": "Llave de acceso añadida.",
+        "removeReason": "Quitar la llave de acceso {{label}} cambia cómo inicias sesión.",
+        "removed": "Llave de acceso quitada.",
+        "renamed": "Llave de acceso renombrada.",
+        "unsupported": "Este navegador no admite llaves de acceso."
+      },
+      "recovery": {
+        "title": "Recuperación",
+        "remaining": "{{count}} restantes",
+        "none": "Sin códigos de respaldo",
+        "generate": "Generar códigos de respaldo",
+        "regenerate": "Regenerar",
+        "download": "Descargar como archivo de texto",
+        "once": "Guarda estos códigos ahora; solo se muestran una vez.",
+        "reason": "Generar códigos de respaldo cambia cómo inicias sesión."
+      },
+      "delete": {
+        "title": "Eliminar la cuenta",
+        "irreversible": "Esta acción no se puede deshacer.",
+        "destroys": "Tu organización personal, tus sesiones, tus llaves de acceso y tus aplicaciones conectadas se eliminan con tu cuenta. Los equipos que compartes con otros propietarios siguen funcionando sin ti. Los equipos de los que eres el único propietario deben transferirse o eliminarse primero.",
+        "confirmEmail": "Escribe {{email}} para confirmar",
+        "understand": "Entiendo que esto eliminará mi cuenta de forma permanente",
+        "mismatch": "Escribe {{email}} exactamente para confirmar.",
+        "tick": "Marca la casilla para confirmar que lo entiendes.",
+        "reason": "Eliminar tu cuenta termina todas las formas de iniciar sesión.",
+        "soleOwner": "Eres el único propietario de {{teams}}.",
+        "button": "Eliminar la cuenta"
       }
     },
     "organizations": {
@@ -246,6 +355,120 @@
       "leave": "Dejar Organización",
       "cancel": "Cancelar",
       "delete": "Eliminar"
+    },
+    "details": {
+      "givenName": "Nombre(s)",
+      "familyName": "Apellidos",
+      "middleName": "Segundo nombre",
+      "salutation": {
+        "label": "Tratamiento",
+        "none": "Ninguno",
+        "mr": "Sr.",
+        "mrs": "Sra.",
+        "ms": "Srta.",
+        "mx": "Mx",
+        "dr": "Dr.",
+        "prof": "Prof.",
+        "custom": "Personalizado",
+        "customLabel": "Tu tratamiento"
+      },
+      "gender": {
+        "label": "Género",
+        "none": "Prefiero no decirlo",
+        "male": "Masculino",
+        "female": "Femenino",
+        "custom": "Personalizado",
+        "customLabel": "Tu género"
+      },
+      "website": "Sitio web",
+      "birthdate": "Fecha de nacimiento",
+      "email": "Correo electrónico",
+      "changeEmail": "Cambiar el correo",
+      "mobile": "Número de móvil",
+      "noMobile": "Sin número de móvil",
+      "change": "Cambiar",
+      "verified": "Verificado",
+      "sendCode": "Enviar código",
+      "codeSent": "Se envió un código de verificación.",
+      "numberChanged": "El número cambió. Envía un código nuevo.",
+      "code": "Código de verificación",
+      "verify": "Verificar",
+      "phoneReason": "Cambiar tu número de móvil cambia cómo inicias sesión.",
+      "phoneChanged": "Número de móvil cambiado.",
+      "saved": "Perfil guardado."
+    },
+    "address": {
+      "title": "Dirección",
+      "line1": "Dirección, línea 1",
+      "line2": "Dirección, línea 2",
+      "country": "País",
+      "countryNone": "Elige un país",
+      "state": "Estado/Provincia",
+      "city": "Ciudad",
+      "postalCode": "Código postal",
+      "save": "Guardar",
+      "clear": "Borrar la dirección",
+      "saved": "Dirección guardada.",
+      "searchPlaceholder": "Empieza a escribir tu dirección"
+    },
+    "stepUp": {
+      "title": "Confirma que eres tú",
+      "body": "Confirma tu identidad para continuar.",
+      "password": "Contraseña actual",
+      "code": "Código de la aplicación o de respaldo",
+      "usePassword": "Usar tu contraseña en su lugar",
+      "useCode": "Usar un código de la aplicación o de respaldo en su lugar",
+      "confirm": "Confirmar"
+    },
+    "preferences": {
+      "language": "Idioma",
+      "languageHint": "Se guarda al cambiarlo, el mismo valor que escribe el globo de la cabecera.",
+      "theme": {
+        "label": "Tema",
+        "light": "Claro",
+        "dark": "Oscuro",
+        "auto": "Automático (seguir el dispositivo)"
+      },
+      "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
+      "timezone": "Zona horaria",
+      "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
+      "channel": {
+        "label": "Canal de aprobación de inicio de sesión",
+        "PUSH": "Notificación en la aplicación",
+        "EMAIL": "Correo electrónico",
+        "SMS": "SMS"
+      },
+      "channelHint": "Cómo se te avisa cuando una aplicación pide iniciar tu sesión en otro dispositivo.",
+      "pin": "PIN de aprobación de inicio de sesión",
+      "pinHint": "PIN opcional que una aplicación debe presentar antes de que una solicitud de inicio de sesión te llegue.",
+      "pinSet": "Hay un PIN establecido",
+      "pinNone": "Sin PIN",
+      "set": "Establecer",
+      "clear": "Borrar",
+      "save": "Guardar",
+      "saved": "Preferencias guardadas."
+    },
+    "favorites": {
+      "title": "Favoritos",
+      "none": "Todavía no hay favoritos.",
+      "available": "Aplicaciones disponibles",
+      "noneAvailable": "Todas las aplicaciones conectadas ya son favoritas.",
+      "add": "Añadir",
+      "remove": "Quitar"
+    },
+    "sessions": {
+      "title": "Sesiones activas",
+      "none": "No hay sesiones activas.",
+      "unknownClient": "Aplicación desconocida",
+      "signOut": "Cerrar sesión",
+      "signOutReason": "Cerrar una sesión cambia cómo tienes la sesión iniciada.",
+      "signedOut": "Sesión cerrada.",
+      "revokeAll": "Revocar todas las sesiones, este navegador incluido",
+      "revokeAllBody": "Se cierran todas las sesiones, este navegador incluido, y tendrás que iniciar sesión de nuevo. Escribe \"{{keyword}}\" para confirmar.",
+      "revokeAllReason": "Revocar todas las sesiones termina cómo tienes la sesión iniciada.",
+      "revokedAll": "Se cerraron todas las sesiones.",
+      "authorized": "Autorizada",
+      "lastActive": "Última actividad"
     }
   },
   "unknown": "Desconocido",
@@ -277,41 +500,350 @@
       "system": "Sistema"
     },
     "dashboard": {
-      "title": "Panel"
+      "title": "Panel",
+      "stats": {
+        "totalUsers": "Usuarios totales",
+        "loginsToday": "Inicios de sesión hoy",
+        "registrationsWeek": "Registros esta semana",
+        "failedLogins": "Inicios fallidos hoy",
+        "activeSessions": "Sesiones activas"
+      },
+      "map": {
+        "title": "Distribución de inicios de sesión",
+        "days": "Días mostrados",
+        "daysCount": "{{count}} días",
+        "count": "{{count}} inicios de sesión",
+        "viewLogins": "Ver inicios de sesión"
+      },
+      "recentLogins": "Actividad reciente de inicio de sesión",
+      "recentRegistrations": "Registros recientes",
+      "viewAll": "Ver todo",
+      "restart": {
+        "title": "Reinicio necesario.",
+        "body": "Configuración cambiada por {{by}} el",
+        "button": "Reiniciar",
+        "started": "Reinicio iniciado.",
+        "confirmTitle": "Reiniciar el servidor",
+        "confirmBody": "Las sesiones se conservan, pero las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Reiniciar el servidor cambia cómo inicia sesión todo el mundo hasta que vuelva."
+      }
     },
     "users": {
-      "title": "Usuarios"
+      "title": "Usuarios",
+      "search": "Buscar en los usuarios de esta página",
+      "filter": {
+        "search": "Buscar usuarios",
+        "status": "Estado",
+        "anyStatus": "Cualquier estado",
+        "tfa": "2FA activado",
+        "customerId": "Con ID de cliente",
+        "activeAfter": "Activo después de"
+      },
+      "table": {
+        "select": "Seleccionar",
+        "email": "Correo",
+        "name": "Nombre",
+        "customerId": "ID de cliente",
+        "status": "Estado",
+        "roles": "Roles",
+        "organizations": "Organizaciones",
+        "tfa": "2FA",
+        "active": "Activo",
+        "disabled": "Desactivado",
+        "notSet": "Sin definir",
+        "primary": "Organización principal",
+        "on": "Sí",
+        "off": "No"
+      },
+      "suspend": "Suspender",
+      "enable": "Activar",
+      "more": "Más",
+      "suspended": "La cuenta está suspendida.",
+      "enabled": "La cuenta está activada.",
+      "roles": {
+        "action": "Roles",
+        "title": "Roles de {{user}}",
+        "saved": "Roles guardados."
+      },
+      "primaryOrg": {
+        "action": "Definir organización principal",
+        "title": "Definir la organización principal",
+        "body": "Elige la organización a la que {{user}} pertenece en primer lugar.",
+        "label": "Organización principal",
+        "confirm": "Definir como principal",
+        "saved": "Organización principal guardada."
+      },
+      "customerId": {
+        "action": "Editar ID de cliente",
+        "title": "ID de cliente de {{user}}",
+        "label": "ID de cliente",
+        "hint": "Seis caracteres hexadecimales (0-9, A-F); déjalo vacío para borrarlo.",
+        "saved": "ID de cliente guardado."
+      },
+      "rateLimits": {
+        "action": "Límites de intentos",
+        "title": "Límites de intentos · {{user}}",
+        "signIn": "Bloqueo de inicio de sesión",
+        "armed": "activo · {{seconds}}s",
+        "clear": "libre",
+        "locked": "bloqueado",
+        "method": "Segundo factor · {{method}}",
+        "banned": "Vetado",
+        "unlockMethod": "Desbloquear un método",
+        "unlock": "Desbloquear",
+        "unlockSignIn": "Desbloquear inicio de sesión",
+        "ban": "Vetar",
+        "unban": "Quitar veto",
+        "done": "Límite de intentos actualizado."
+      },
+      "delete": {
+        "action": "Eliminar",
+        "title": "Eliminar la cuenta",
+        "body": "{{user}} se elimina con todas sus membresías, sesiones y llaves de acceso; un equipo del que sea único propietario queda sin propietario. Escribe \"{{keyword}}\" para confirmar.",
+        "done": "La cuenta se ha eliminado.",
+        "stepUpReason": "Eliminar una cuenta acaba con la forma en que esa persona inicia sesión."
+      },
+      "bulk": {
+        "selectAll": "Seleccionar todo en esta página",
+        "selected": "{{count}} seleccionados",
+        "enable": "Activar",
+        "suspend": "Suspender",
+        "add_role": "Añadir rol",
+        "remove_role": "Quitar rol",
+        "delete": "Eliminar",
+        "role": "Rol",
+        "clearSelection": "Limpiar selección",
+        "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+        "confirmTitle": "Confirmar la acción en bloque",
+        "confirmBody": "{{action}} para {{count}} cuentas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Eliminar cuentas acaba con la forma en que esas personas inician sesión."
+      }
     },
     "organizations": {
-      "all": "Todas las organizaciones"
+      "all": "Todas las organizaciones",
+      "table": {
+        "name": "Nombre",
+        "type": "Tipo",
+        "inviteCode": "Código de invitación",
+        "customerId": "ID de cliente",
+        "members": "Miembros",
+        "created": "Creada"
+      },
+      "personal": "Personal",
+      "team": "Equipo",
+      "search": "Buscar organizaciones",
+      "customerId": {
+        "title": "ID de cliente de {{org}}",
+        "hint": "Seis caracteres hexadecimales (0-9, A-F); déjalo vacío para borrarlo."
+      },
+      "deleted": "La organización se ha eliminado.",
+      "delete": {
+        "title": "Eliminar la organización",
+        "body": "{{org}} se elimina con sus membresías e invitaciones. Escribe \"{{keyword}}\" para confirmar."
+      }
     },
     "activity": {
       "logins": {
-        "title": "Inicios de sesión"
+        "title": "Inicios de sesión",
+        "result": "Resultado",
+        "reason": "Motivo",
+        "success": "Correcto",
+        "failed": "Fallido",
+        "showOnly": "Mostrar solo",
+        "all": "Todos",
+        "failedOnly": "Solo fallidos",
+        "successOnly": "Solo correctos",
+        "search": "Buscar en los inicios de sesión de esta página"
       },
       "registrations": {
-        "title": "Registros"
+        "title": "Registros",
+        "search": "Buscar en los registros de esta página",
+        "emailVerified": "Correo verificado",
+        "phoneVerified": "Teléfono verificado",
+        "verified": "Verificado",
+        "unverified": "Sin verificar"
       },
       "sessions": {
-        "title": "Sesiones"
-      }
+        "title": "Sesiones",
+        "user": "Usuario · Aplicación",
+        "authorized": "Autorizada",
+        "lastActive": "Última actividad",
+        "revoke": "Revocar",
+        "revoked": "La sesión se ha revocado.",
+        "revokeTitle": "Revocar la sesión",
+        "revokeBody": "{{user}} cierra sesión en {{app}} en ese dispositivo.",
+        "search": "Buscar sesiones por usuario o aplicación"
+      },
+      "time": "Hora",
+      "username": "Usuario",
+      "address": "Dirección",
+      "location": "Ubicación",
+      "device": "Dispositivo",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de fin",
+      "filter": "Filtrar",
+      "clear": "Limpiar",
+      "export": "Exportar"
     },
     "health": {
       "usage": {
-        "title": "Uso de los servicios"
+        "title": "Uso de los servicios",
+        "service": "Servicio",
+        "active": "Activas",
+        "authorizations": "Autoriz.",
+        "users": "Usuarios",
+        "share": "Uso",
+        "firstUsed": "Primer uso",
+        "lastUsed": "Última actividad",
+        "totalSessions": "Sesiones activas totales",
+        "totalAuthorizations": "Autorizaciones totales",
+        "define": {
+          "active": "Sesiones abiertas ahora mismo para la aplicación.",
+          "authorizations": "Autorizaciones concedidas en total.",
+          "users": "Personas distintas que la han usado.",
+          "share": "Su parte de todas las sesiones activas."
+        }
       },
       "insights": {
-        "title": "Estadísticas"
+        "title": "Estadísticas",
+        "activeUsers": "Usuarios activos",
+        "posture": "Postura de seguridad",
+        "churn": "Riesgo de abandono",
+        "app_activity": "Actividad por aplicación",
+        "penetration": "Aplicaciones por usuario",
+        "app_pairs": "Combinaciones más frecuentes",
+        "growth": "Registros por semana",
+        "quiet_users": "Cuentas más inactivas",
+        "org_rollup": "Organizaciones",
+        "active_users": "Usuarios activos",
+        "active": {
+          "daily": "Hoy",
+          "weekly": "7 días",
+          "monthly": "30 días",
+          "quarterly": "90 días"
+        },
+        "postureOf": {
+          "enabled_total": "Activados / total",
+          "disabled_users": "Desactivados",
+          "using_2fa": "Con 2FA",
+          "email_verified": "Correo verificado",
+          "phone_verified": "Teléfono verificado",
+          "admins": "Administradores",
+          "never_logged_in": "Nunca han iniciado sesión",
+          "with_local_auth": "Con contraseña",
+          "with_external_auth": "Solo federados",
+          "with_linked_provider": "Con proveedor vinculado"
+        },
+        "churnOf": {
+          "quiet_30": "Inactivos 30 días",
+          "quiet_60": "Inactivos 60 días",
+          "quiet_90": "Inactivos 90 días",
+          "enabled_total": "Cuentas activadas"
+        },
+        "columns": {
+          "client_name": "Aplicación",
+          "active_30d": "Activos (30d)",
+          "adopted_30d": "Nuevos (30d)",
+          "total_users": "Total",
+          "app_count": "Aplicaciones",
+          "users": "Usuarios",
+          "app_a": "Aplicación",
+          "app_b": "Con",
+          "week": "Semana del",
+          "count": "Registros",
+          "username": "Usuario",
+          "last_login_at": "Último inicio de sesión",
+          "name": "Nombre",
+          "customer_id": "ID de cliente",
+          "personal": "Personal",
+          "members": "Miembros"
+        },
+        "define": {
+          "active_users": "Personas que iniciaron sesión dentro del periodo.",
+          "posture": "Cómo están protegidas y verificadas las cuentas.",
+          "churn": "Cuentas sin inicio de sesión durante el número de días.",
+          "app_activity": "Inicios de sesión por aplicación en los últimos 30 días, las personas nuevas en ella y el total.",
+          "penetration": "Cuántas aplicaciones usa cada persona.",
+          "app_pairs": "Las aplicaciones que más a menudo usan las mismas personas.",
+          "growth": "Cuentas nuevas por semana.",
+          "quiet_users": "Las cuentas con más tiempo sin iniciar sesión.",
+          "org_rollup": "Miembros y miembros activos por organización."
+        }
       },
       "clients": {
-        "title": "Salud de los clientes"
+        "title": "Salud de los clientes",
+        "summary": "{{healthy}} de {{total}} clientes están correctos",
+        "heading": "Clientes",
+        "responseTime": "{{ms}} ms",
+        "noResponse": "sin respuesta",
+        "checked": "comprobado",
+        "errorDetails": "Ver detalles del error"
+      },
+      "definitions": "Qué significan estas cifras",
+      "refresh": "Actualizar",
+      "status": {
+        "healthy": "Correcto",
+        "unhealthy": "Con fallos",
+        "unknown": "No comprobable"
+      },
+      "providers": {
+        "one": "proveedor",
+        "summary": "{{healthy}} de {{total}} proveedores",
+        "heading": "Proveedores"
       }
     },
     "blocked": {
-      "title": "IPs bloqueadas"
+      "title": "IPs bloqueadas",
+      "table": {
+        "ip": "Dirección IP",
+        "attempts": "Intentos"
+      },
+      "unblock": "Desbloquear",
+      "enabled": "La protección contra fuerza bruta está activada. {{count}} direcciones bloqueadas ahora.",
+      "disabled": "La protección contra fuerza bruta está desactivada.",
+      "unblocked": "{{ip}} está desbloqueada.",
+      "unblockTitle": "Desbloquear la dirección",
+      "unblockBody": "{{ip}} podrá iniciar sesión de nuevo de inmediato."
     },
     "terms": {
-      "title": "Términos"
+      "title": "Términos",
+      "create": "Crear",
+      "edit": "Editar",
+      "copy": "Copiar",
+      "copyName": "Nombre de la copia",
+      "copyTitle": "Copiar {{name}}",
+      "preview": "Vista previa",
+      "delete": "Eliminar",
+      "undo": "Deshacer",
+      "public": "Público",
+      "version": "v{{version}}",
+      "updatedAt": "actualizado",
+      "orderSaved": "Orden guardado.",
+      "created": "La plantilla se ha creado.",
+      "updated": "La plantilla se ha guardado.",
+      "copied": "La plantilla se ha copiado.",
+      "deleted": "{{name}} se ha eliminado.",
+      "deleteTitle": "Eliminar la plantilla",
+      "deleteBody": "{{name}} y todos los registros de aceptación que la nombran se eliminan. Escribe \"{{keyword}}\" para confirmar.",
+      "editTitle": "Editar plantilla · {{name}}",
+      "createTitle": "Crear una plantilla",
+      "placeholders": "Marcadores:",
+      "field": {
+        "name": "Nombre",
+        "displayName": "Nombre visible",
+        "icon": "Icono",
+        "version": "Versión",
+        "type": "Tipo",
+        "public": "Público",
+        "publicAt": "Accesible públicamente en /public/policies/{{name}}",
+        "order": "Orden de visualización",
+        "content": "Contenido (Markdown)"
+      },
+      "type": {
+        "client": "Cliente (aplicaciones OAuth)",
+        "site": "Sitio (registro)",
+        "both": "Ambos"
+      }
     },
     "buttons": {
       "save": "Guardar",
@@ -530,7 +1062,8 @@
     "tabs": {
       "organization": "Organización",
       "joinRequests": "Solicitudes de Unión",
-      "invitations": "Invitaciones"
+      "invitations": "Invitaciones",
+      "members": "Miembros"
     },
     "search": {
       "joinRequests": "Buscar solicitudes de unión",
@@ -621,7 +1154,27 @@
       "token": "Token",
       "orgId": "ID de Organización",
       "sendWarning": "Advertencia: Invitación creada pero el correo puede no haberse enviado. Puedes copiar el enlace de abajo y enviarlo manualmente."
-    }
+    },
+    "website": "Sitio web",
+    "logoUrl": "URL del logotipo",
+    "locale": "Configuración regional",
+    "timezone": "Zona horaria",
+    "timezoneNone": "Sin establecer",
+    "telephone": "Teléfono",
+    "team": "Equipo",
+    "convert": "Convertir en equipo",
+    "convertName": "Nombre del equipo",
+    "converted": "La organización ahora es un equipo.",
+    "delete": "Eliminar la organización",
+    "deleteBody": "{{name}} y sus membresías se eliminan. Escribe \"{{keyword}}\" para confirmar.",
+    "deleted": "Organización eliminada.",
+    "leave": "Salir",
+    "leaveBody": "Sales de {{name}} y pierdes el acceso. Escribe \"{{keyword}}\" para confirmar.",
+    "left": "Saliste de la organización.",
+    "managedBy": "gestionado por {{source}}",
+    "lastOwner": "El último propietario no puede cambiar su propio rol",
+    "noMembers": "Sin miembros.",
+    "revokeInvite": "Revocar"
   },
   "discovery": {
     "discoverButton": "Descubrir organizaciones",
@@ -682,7 +1235,12 @@
     "loadError": "Error al cargar las notificaciones. Por favor intenta de nuevo.",
     "markReadError": "Error al marcar la notificación como leída. Por favor intenta de nuevo.",
     "dismissError": "Error al descartar la notificación. Por favor intenta de nuevo.",
-    "markAllReadError": "Error al marcar todas las notificaciones como leídas. Por favor intenta de nuevo."
+    "markAllReadError": "Error al marcar todas las notificaciones como leídas. Por favor intenta de nuevo.",
+    "markAll": "Marcar todo como leído",
+    "deleteAll": "Eliminar todo",
+    "deleteAllBody": "Se eliminan todas las notificaciones de esta página. Escribe \"{{keyword}}\" para confirmar.",
+    "delete": "Eliminar",
+    "viewDetails": "Ver detalles"
   },
   "notifications": {
     "pushSwitch": "Toasts (notificaciones del sistema) en este dispositivo",
@@ -1575,5 +2133,111 @@
     "errors": {
       "accessDenied": "Acceso denegado por la puerta del catálogo."
     }
+  },
+  "codeInput": {
+    "digit": "Dígito {{n}} de {{m}}"
+  },
+  "copyButton": {
+    "copy": "Copiar",
+    "copied": "¡Copiado!"
+  },
+  "passwordField": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña",
+    "generate": "Generar una frase de contraseña",
+    "generated": "Guárdala en tu gestor de contraseñas"
+  },
+  "stepDots": {
+    "label": "Paso {{n}} de {{m}}, {{step}}"
+  },
+  "pager": {
+    "previous": "Página anterior",
+    "next": "Página siguiente",
+    "page": "Página {{page}}",
+    "showing": "Mostrando de {{from}} a {{to}} de {{total}}"
+  },
+  "sortable": {
+    "handle": "Arrastra para reordenar {{label}}; usa las flechas para moverlo",
+    "position": "Posición {{index}} de {{count}}"
+  },
+  "organizations": {
+    "title": "Organizaciones",
+    "create": "Crear una organización",
+    "createButton": "Crear",
+    "created": "Organización creada.",
+    "name": "Nombre de la organización",
+    "join": "Unirse con un código de invitación",
+    "joinButton": "Unirse",
+    "joined": "Te uniste a la organización.",
+    "inviteCode": "Código de invitación",
+    "regenerate": "Regenerar",
+    "regenerated": "Código de invitación regenerado.",
+    "view": "Ver",
+    "manage": "Administrar",
+    "makePrimary": "Hacer principal",
+    "primarySet": "Organización principal cambiada.",
+    "leave": "Salir",
+    "personal": "Personal",
+    "primary": "Principal",
+    "yourRole": "Tu rol {{role}}",
+    "none": "Todavía no eres miembro de ninguna organización."
+  },
+  "integrations": {
+    "title": "Integraciones y cuentas conectadas",
+    "notices": {
+      "setPassword": "Establece una contraseña para poder iniciar sesión si se desvincula una cuenta vinculada.",
+      "enableTfa": "Activa la verificación en dos pasos para proteger tu cuenta."
+    },
+    "linked": {
+      "title": "Cuentas externas vinculadas",
+      "none": "No hay cuentas vinculadas.",
+      "linkedAs": "Vinculada como {{name}}",
+      "lastUsed": "último uso",
+      "status": {
+        "valid": "Activa",
+        "revoked": "Revocada",
+        "unknown": "Desconocido"
+      },
+      "unlink": "Desvincular",
+      "unlinkBody": "Desvincula {{provider}} de tu cuenta. Escribe \"{{keyword}}\" para confirmar.",
+      "unlinkReason": "Desvincular {{provider}} cambia cómo inicias sesión."
+    },
+    "available": {
+      "notLinked": "No vinculada",
+      "link": "Vincular cuenta"
+    },
+    "terms": {
+      "title": "Términos y políticas aceptados",
+      "none": "Todavía no hay términos aceptados.",
+      "version": "Versión {{version}}",
+      "accepted": "aceptado",
+      "view": "Ver",
+      "type": {
+        "site": "Sitio",
+        "client": "Cliente",
+        "both": "Ambos"
+      }
+    },
+    "apps": {
+      "title": "Aplicaciones conectadas",
+      "none": "No hay aplicaciones conectadas.",
+      "activeSessions_one": "{{count}} sesión activa",
+      "activeSessions_other": "{{count}} sesiones activas",
+      "unregistered": "No registrada",
+      "firstUsed": "Primera conexión",
+      "lastUsed": "último uso",
+      "permissions": "Permisos:",
+      "removeScope": "Quitar el permiso {{scope}}",
+      "removeScopeBody": "Quita el permiso {{scope}} de {{app}}. Escribe \"{{keyword}}\" para confirmar.",
+      "sessions": "Sesiones",
+      "revoke": "Revocar el acceso",
+      "revokeBody": "Revoca el acceso de {{app}} a tu cuenta; sus {{count}} sesiones activas terminan. Escribe \"{{keyword}}\" para confirmar.",
+      "revokeReason": "Revocar {{app}} cambia cómo tienes la sesión iniciada."
+    }
+  },
+  "dateRange": {
+    "presets": "Rangos predefinidos",
+    "days": "{{count}} días",
+    "allTime": "Todo el tiempo"
   }
 }

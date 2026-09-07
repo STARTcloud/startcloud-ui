@@ -16,6 +16,7 @@ import {
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
 import {
+  UnreadProvider,
   createNotificationsAdapter,
   createPushAdapter,
   hasNotificationsScope,
@@ -53,8 +54,8 @@ const createRuntimeAdapters = status => ({
   ...createPushAdapter({ status, client }),
 });
 
-const notificationsFor = ({ status, claims, user, notifications }) => {
-  const scoped = hasNotificationsScope(claims) || hasNotificationsScope(user);
+const notificationsFor = ({ status, cookie, claims, user, notifications }) => {
+  const scoped = cookie || hasNotificationsScope(claims) || hasNotificationsScope(user);
   return hasFeature(status, 'notifications') && scoped ? notifications : null;
 };
 
@@ -74,8 +75,10 @@ const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeO
  * profile's picture for a cookie one, the provider's picture for an
  * identity-provider one), the profile reload and
  * the terminate stream a backend session keeps, the ticket link, the
- * notification adapters, the sidebar entries the mounted features export,
- * and the shell around the routes.
+ * notification adapters (the inbox one handed to the shell's bell and to
+ * the inbox route alike, its unread count in the notifications feature's
+ * one context around them both), the sidebar entries the mounted
+ * features export, and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t } = useTranslation();
@@ -128,6 +131,7 @@ const App = ({ getSupportedLanguages }) => {
 
   const globalAdmin = isGlobalAdmin(user);
   const flags = shellFlags({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid });
+  const inbox = notificationsFor({ status, cookie, claims, user, notifications });
 
   const handleSignOut = () => {
     account.signOut();
@@ -146,34 +150,37 @@ const App = ({ getSupportedLanguages }) => {
   };
 
   return (
-    <NavbarSearchProvider appSearch={appSearch}>
-      <AppShell
-        account={account}
-        avatarUrl={avatarUrl}
-        theme={theme}
-        themePreference={themePreference}
-        toggleTheme={toggleTheme}
-        onSignOut={handleSignOut}
-        getSupportedLanguages={getSupportedLanguages}
-        collections={collections}
-        organizations={organizations}
-        ticketUrl={ticket}
-        notifications={notificationsFor({ status, claims, user, notifications })}
-        push={pushAdapter}
-        sidebar={sidebar}
-        {...flags}
-      >
-        <AppRoutes
+    <UnreadProvider>
+      <NavbarSearchProvider appSearch={appSearch}>
+        <AppShell
           account={account}
-          collections={collections}
-          context={context}
+          avatarUrl={avatarUrl}
           theme={theme}
-          setupComplete={Boolean(setupComplete)}
-          globalAdmin={globalAdmin}
-          afterSignIn={afterSignIn}
-        />
-      </AppShell>
-    </NavbarSearchProvider>
+          themePreference={themePreference}
+          toggleTheme={toggleTheme}
+          onSignOut={handleSignOut}
+          getSupportedLanguages={getSupportedLanguages}
+          collections={collections}
+          organizations={organizations}
+          ticketUrl={ticket}
+          notifications={inbox}
+          push={pushAdapter}
+          sidebar={sidebar}
+          {...flags}
+        >
+          <AppRoutes
+            account={account}
+            collections={collections}
+            context={context}
+            theme={theme}
+            setupComplete={Boolean(setupComplete)}
+            globalAdmin={globalAdmin}
+            afterSignIn={afterSignIn}
+            notifications={inbox}
+          />
+        </AppShell>
+      </NavbarSearchProvider>
+    </UnreadProvider>
   );
 };
 
