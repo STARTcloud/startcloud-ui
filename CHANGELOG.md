@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.8.0...v0.8.1) (2026-09-07)
+
+
+### Bug Fixes
+
+* linting ([f024baf](https://github.com/STARTcloud/startcloud-ui/commit/f024baf7bbd69f3bf07a759792d10f8bd3294434))
+
 ## [0.8.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.7.0...v0.8.0) (2026-09-07)
 
 
