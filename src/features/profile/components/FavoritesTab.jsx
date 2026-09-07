@@ -12,20 +12,20 @@ import { log } from '../../../lib/logger';
 const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
 
 const iconOf = app => {
-  const icon = httpsUrl(app.iconUrl);
+  const icon = httpsUrl(app.icon_url);
   if (icon) {
     return icon;
   }
-  const home = httpsUrl(app.homeUrl);
+  const home = httpsUrl(app.home_url);
   return home ? `${new URL(home).origin}/favicon.ico` : '';
 };
 
-const labelOf = app => app.customLabel || app.clientName || app.clientId;
+const labelOf = app => app.custom_label || app.client_name || app.client_id;
 
 const toBody = list =>
   list.map((app, index) => ({
-    client_id: app.clientId,
-    custom_label: app.customLabel || null,
+    client_id: app.client_id,
+    custom_label: app.custom_label || null,
     order: index,
   }));
 
@@ -87,7 +87,7 @@ AddButton.propTypes = {
  * The Favorites tab of the identity contract: the ordered favourites with
  * drag handles and Remove over `PUT /api/user/favorites`, then the
  * connected applications not yet favourited with Add; the icon chain is
- * `iconUrl`, the favicon of `homeUrl`, the app glyph, every URL drawn
+ * `icon_url`, the favicon of `home_url`, the app glyph, every URL drawn
  * only with the `https:` scheme.
  */
 const FavoritesTab = ({ account }) => {
@@ -126,20 +126,20 @@ const FavoritesTab = ({ account }) => {
     }
   };
 
-  const remove = app => save(favorites.filter(entry => entry.clientId !== app.clientId));
+  const remove = app => save(favorites.filter(entry => entry.client_id !== app.client_id));
 
   const add = app =>
     save([
       ...favorites,
       {
-        clientId: app.client_id,
-        clientName: app.client_name,
-        iconUrl: app.icon_url,
+        client_id: app.client_id,
+        client_name: app.client_name,
+        icon_url: app.icon_url,
         order: favorites.length,
       },
     ]);
 
-  const favoriteIds = new Set(favorites.map(app => app.clientId));
+  const favoriteIds = new Set(favorites.map(app => app.client_id));
   const available = apps.filter(app => !favoriteIds.has(app.client_id));
 
   return (
@@ -150,7 +150,7 @@ const FavoritesTab = ({ account }) => {
       ) : (
         <SortableList
           items={favorites}
-          keyOf={app => app.clientId}
+          keyOf={app => app.client_id}
           onReorder={save}
           className="mb-4"
           renderItem={(app, handle) => <FavoriteRow app={app} handle={handle} onRemove={remove} />}

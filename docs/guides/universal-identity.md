@@ -1352,11 +1352,11 @@ segments (`org-console`, `profile` and `organizations` already are).
   },
   "favorite_apps": [
     {
-      "clientId": "conductor",
-      "clientName": "Conductor",
-      "iconUrl": "…",
-      "homeUrl": "…",
-      "customLabel": null,
+      "client_id": "conductor",
+      "client_name": "Conductor",
+      "icon_url": "…",
+      "home_url": "…",
+      "custom_label": null,
       "order": 0
     }
   ]
@@ -1379,7 +1379,7 @@ The rest of the group's reads, all session, all under `/api/user`:
 | `GET /api/user/backup-codes/count`                 | `{ remaining }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `GET /accountconfig/backupcodes/count`                 |
 | `GET /api/user/passkeys`                           | `[{ id, label, rp_id, created_at, last_used_at }]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `GET /accountconfig/passkeys`                          |
 | `GET /api/user/sessions`                           | `[{ id, client_id, client_name, user_agent, ip_address, location, authorized_at, last_accessed_at }]`; `id` is an opaque surrogate, never the session cookie's value, because a value that unlocks the session must not be readable from a page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `GET /accountconfig/sessions`                          |
-| `GET /api/user/favorites`                          | the same `favorite_apps` list the profile carries, the one source the page and the menu read; the claims are not a third copy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `GET /user/favorites` plus `GET /api/userinfo/claims`  |
+| `GET /api/user/favorites`                          | `[{ client_id, client_name, icon_url, home_url, custom_label, order }]`, the same list the profile's `favorite_apps` carries in the same `snake_case`, the one source the page and the menu on every UI backend read, Bearer or session; a `backend` UI backend proxies the path on its own origin to the issuer with the user's token, the way it proxies the hub; the claims are not a third copy                                                                                                                                                                                                                                                                                                                                                                            | `GET /user/favorites` plus `GET /api/userinfo/claims`  |
 | `GET /api/user/organizations`                      | `{ organizations: [ … ], organizations_enabled, personal_to_team_enabled }`, one entry per membership with the console's fields: `uuid, name, personal, primary, my_role, can_manage, can_rename, is_owner, invite_code, email, website_url, logo_url, description, locale, timezone, telephone, access_mode, default_role, address{…}, members[{ user_id, email, name, role, managed_by }], pending_invites[{ id, email, role }]`; `invite_code` is present only while `can_manage`, because a plain member holding the code could grow the organization at its default role; every `logo_url` and `icon_url` the pages draw, here and in the integrations answer, is rendered only when it parses with the `https:` scheme, with `referrerpolicy="no-referrer"` on the image | the model of `user/organizations.html`                 |
 | `GET /api/user/integrations`                       | `{ linked: [{ provider_id, provider_name, provider_username, provider_email, linked_at, last_used_at, icon_url, sites, compat }], available: [{ provider_id, provider_name, icon_url }], accepted_terms: [{ name, label, icon, version, accepted_at, type }], apps: [{ client_id, client_name, icon_url, registered, first_used_at, last_used_at, active_sessions, consent_required, consent_scopes }] }`                                                                                                                                                                                                                                                                                                                                                                      | the four `GET /user/integrations/api/*` routes         |
 | `GET /api/user/integrations/providers/{id}/status` | `{ status: "valid" \| "revoked" \| "unknown" }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `GET /user/integrations/api/provider-status`           |
@@ -2213,6 +2213,23 @@ Settled before code, in the order they were raised:
 93. Every feature has the pages contract's one shape: `index.js`, `api/`,
     `components/`, then `hooks/`, `utils/`, `sidebar.js`,
     `definition.jsx` and `assets/` where the feature has them.
+94. Favorites are read from `GET /api/user/favorites` on every UI
+    backend, never from a claim; the navbar contract's principle, row
+    and checklist line say so.
+95. A `backend` UI backend proxies `GET` and `PUT /api/user/favorites` at
+    the same path on its own origin to the issuer with the user's token,
+    as it proxies the hub; the members are `snake_case` on both sides.
+96. The config contract's boot rule reads: the service user owns
+    `CONFIG_DIR` and the UI backend writes it, `postinst` seeding a
+    missing file and first boot generating the UI backend's own secrets.
+97. `favorite_apps` in `GET /api/user` and the userinfo claim carry the
+    same `snake_case` members as `GET /api/user/favorites`.
+98. The About page's Add to Favorites toggle reads and writes
+    `/api/user/favorites`, the whole list in `snake_case`; no
+    `/api/favorites` route exists on any UI backend.
+99. Every favorites read and write goes through the hub client: the
+    app's own origin on a `backend` UI backend, the identity provider
+    with the token on an `idp` or `cookie` one.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

@@ -23,6 +23,7 @@ import {
   hasNotificationsScope,
 } from '../features/notifications';
 import { loadOrganizations } from '../features/organizations';
+import { menuFavorites } from '../features/profile';
 import { useAppSearch } from '../features/search';
 import { setupApi } from '../features/setup';
 import { useAccountAvatar } from '../hooks/useAccountAvatar';
@@ -97,6 +98,7 @@ const App = ({ getSupportedLanguages }) => {
     activeOrgKey: ACTIVE_ORG_KEY,
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
+    loadFavorites: menuFavorites,
   });
   const { user, claims, organizations: memberships, activeOrgUuid, loaded, reload } = account;
   const {

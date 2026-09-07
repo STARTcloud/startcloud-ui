@@ -1,5 +1,5 @@
 import { encodePath } from '../../../lib/apiClient';
-import { client } from '../../../lib/runtime';
+import { client, hubClient } from '../../../lib/runtime';
 
 const USER = '/api/user';
 
@@ -64,6 +64,15 @@ export const revokeSession = id => client.delete(at('sessions', id));
 export const revokeSessions = () => client.delete(`${USER}/sessions`);
 
 export const favorites = () => client.get(`${USER}/favorites`);
+
+/**
+ * The favourites the user menu draws, `GET /api/user/favorites` through the
+ * hub client: the issuer itself on a `cookie` or `idp` host and the app's
+ * own proxying backend on a `backend` host.
+ *
+ * @returns {Promise<Array>} The ordered favourites
+ */
+export const menuFavorites = () => hubClient.get(`${USER}/favorites`);
 
 export const saveFavorites = list => client.put(`${USER}/favorites`, list);
 

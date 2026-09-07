@@ -136,7 +136,7 @@ does.
 Reserved first segments (never read as an organization) are the same on
 every UI backend: the universal routes `about, organizations, login, auth,
 register, invite, profile, admin, org-console, setup, callback, docs,
-schema, private, push, search, vm`, the identity provider's
+schema, private, push, search, vm, watches`, the identity provider's
 `authenticator, authenticator-method, passwordRecovery, passwordReset,
 registration, complete-onboarding, qrcode, provider-registration, public,
 oauth2, activate, activated, ciba, connect, continue,

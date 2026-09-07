@@ -1,5 +1,7 @@
-import { client } from '../../../lib/runtime';
+import { hubClient } from '../../../lib/runtime';
 
-export const getFavorites = () => client.get('/api/favorites');
+const FAVORITES = '/api/user/favorites';
 
-export const saveFavorites = favorites => client.post('/api/favorites/save', favorites);
+export const getFavorites = () => hubClient.get(FAVORITES);
+
+export const saveFavorites = favorites => hubClient.put(FAVORITES, favorites);

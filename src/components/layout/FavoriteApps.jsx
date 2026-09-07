@@ -4,16 +4,20 @@ import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaStar } from 'react-icons/fa6';
 
+import { httpsUrl } from '../common/MethodList';
+
+const iconOf = app => {
+  const icon = httpsUrl(app.icon_url);
+  if (icon) {
+    return icon;
+  }
+  const home = httpsUrl(app.home_url);
+  return home ? `${new URL(home).origin}/favicon.ico` : '';
+};
+
 const AppIcon = ({ app }) => {
   const [failed, setFailed] = useState(false);
-  let iconUrl = app.iconUrl || '';
-  if (!iconUrl && app.homeUrl) {
-    try {
-      iconUrl = `${new URL(app.homeUrl).origin}/favicon.ico`;
-    } catch {
-      iconUrl = '';
-    }
-  }
+  const iconUrl = iconOf(app);
   if (!iconUrl || failed) {
     return <FaStar className="text-warning logo-md icon-with-margin" />;
   }
@@ -22,6 +26,7 @@ const AppIcon = ({ app }) => {
       src={iconUrl}
       className="logo-md icon-with-margin"
       alt=""
+      referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
     />
   );
@@ -29,8 +34,8 @@ const AppIcon = ({ app }) => {
 
 AppIcon.propTypes = {
   app: PropTypes.shape({
-    iconUrl: PropTypes.string,
-    homeUrl: PropTypes.string,
+    icon_url: PropTypes.string,
+    home_url: PropTypes.string,
   }).isRequired,
 };
 
@@ -47,13 +52,13 @@ const FavoriteApps = ({ apps }) => {
       <Dropdown.Header className="py-0">{t('navbar.favorites')}</Dropdown.Header>
       {[...apps].sort(byOrder).map(app => (
         <Dropdown.Item
-          key={app.clientId}
-          href={app.homeUrl || '#'}
+          key={app.client_id}
+          href={httpsUrl(app.home_url) || '#'}
           target="_blank"
           rel="noopener noreferrer"
         >
           <AppIcon app={app} />
-          {app.customLabel || app.clientName || app.clientId}
+          {app.custom_label || app.client_name || app.client_id}
         </Dropdown.Item>
       ))}
     </>
@@ -63,11 +68,11 @@ const FavoriteApps = ({ apps }) => {
 FavoriteApps.propTypes = {
   apps: PropTypes.arrayOf(
     PropTypes.shape({
-      clientId: PropTypes.string.isRequired,
-      clientName: PropTypes.string,
-      customLabel: PropTypes.string,
-      iconUrl: PropTypes.string,
-      homeUrl: PropTypes.string,
+      client_id: PropTypes.string.isRequired,
+      client_name: PropTypes.string,
+      custom_label: PropTypes.string,
+      icon_url: PropTypes.string,
+      home_url: PropTypes.string,
       order: PropTypes.number,
     })
   ).isRequired,

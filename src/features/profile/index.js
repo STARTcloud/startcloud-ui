@@ -6,6 +6,7 @@ export {
   favorites,
   generateBackupCodes,
   issuerAccount,
+  menuFavorites,
   passkeyCreationOptions,
   passkeys,
   placesKey,

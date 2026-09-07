@@ -18,6 +18,7 @@ const resolveActiveOrg = (organizations, stored) => {
 export const sessionStateShape = PropTypes.shape({
   user: PropTypes.object,
   claims: PropTypes.object,
+  favorites: PropTypes.array.isRequired,
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
   oidc: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
@@ -35,11 +36,13 @@ export const sessionStateShape = PropTypes.shape({
 /**
  * The session state every estate app renders through: the provider's
  * stored session on the first render and its loaded one after, its
- * claims, the memberships in the chrome's organization shape, the active
- * organization resolved stored → primary → first and persisted under the
- * app's key, whether `load()` has confirmed the session, the ended state
- * with the page to return to, the sign-in and sign-out handlers, and the
- * push subscription kept in sync while signed in.
+ * claims, the favourites the user menu draws (read once per session
+ * through `loadFavorites`, memoized like the claims, reset on sign-out and
+ * on every reload), the memberships in the chrome's organization shape,
+ * the active organization resolved stored → primary → first and persisted
+ * under the app's key, whether `load()` has confirmed the session, the
+ * ended state with the page to return to, the sign-in and sign-out
+ * handlers, and the push subscription kept in sync while signed in.
  *
  * @param {Object} options - The app's side
  * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`
@@ -48,6 +51,7 @@ export const sessionStateShape = PropTypes.shape({
  * @param {string} options.activeOrgKey - localStorage key of the active organization
  * @param {Object} [options.push] - The functions from `createPush`
  * @param {Function} [options.onAdopt] - Called with the session, or null, before it is rendered
+ * @param {Function} [options.loadFavorites] - Answers `GET /api/user/favorites` for the signed-in person
  * @returns {Object} The session state and handlers
  */
 export const useSession = ({
@@ -57,10 +61,12 @@ export const useSession = ({
   activeOrgKey,
   push = null,
   onAdopt = null,
+  loadFavorites = null,
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const onAdoptRef = useRef(onAdopt);
+  const favoritesPromise = useRef(null);
   const [session, setSession] = useState(() => {
     const restored = provider.restore();
     if (onAdopt) {
@@ -69,6 +75,7 @@ export const useSession = ({
     return restored || EMPTY;
   });
   const [claims, setClaims] = useState(null);
+  const [favorites, setFavorites] = useState([]);
   const [activeOrgUuid, setActiveOrgUuid] = useState(() =>
     resolveActiveOrg(session.organizations, localStorage.getItem(activeOrgKey))
   );
@@ -90,6 +97,21 @@ export const useSession = ({
     [activeOrgKey]
   );
 
+  const readFavorites = useCallback(() => {
+    if (!loadFavorites) {
+      return;
+    }
+    const pending = loadFavorites()
+      .then(list => (Array.isArray(list) ? list : []))
+      .catch(() => []);
+    favoritesPromise.current = pending;
+    pending.then(list => {
+      if (favoritesPromise.current === pending) {
+        setFavorites(list);
+      }
+    });
+  }, [loadFavorites]);
+
   const adopt = useCallback(
     next => {
       const current = next || EMPTY;
@@ -100,14 +122,17 @@ export const useSession = ({
       const resolved = resolveActiveOrg(current.organizations, localStorage.getItem(activeOrgKey));
       setActiveOrgUuid(resolved);
       persistActiveOrg(resolved);
+      favoritesPromise.current = null;
       if (next) {
         setEnded(null);
         provider.claims().then(setClaims);
+        readFavorites();
       } else {
         setClaims(null);
+        setFavorites([]);
       }
     },
-    [activeOrgKey, persistActiveOrg, provider]
+    [activeOrgKey, persistActiveOrg, provider, readFavorites]
   );
 
   useEffect(() => {
@@ -167,6 +192,7 @@ export const useSession = ({
   return {
     ...session,
     claims,
+    favorites,
     activeOrgUuid,
     loaded,
     pickOrg,

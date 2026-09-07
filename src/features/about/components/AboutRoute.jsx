@@ -15,6 +15,13 @@ import AboutPage from './AboutPage';
 
 const FAVORITE_KEY = 'favorite';
 
+const toBody = list =>
+  list.map((entry, index) => ({
+    client_id: entry.client_id,
+    custom_label: entry.custom_label || null,
+    order: index,
+  }));
+
 const BOXVAULT_FEATURES = [
   'authentication',
   'boxManagement',
@@ -126,10 +133,11 @@ export const hasAbout = status => Boolean(PROFILES[status.role]);
 
 /**
  * The About route: the shared `AboutPage` fed by the host's status and the
- * locale strings of the host's role, plus the identity-provider favourite
- * toggle when the host advertises `favorites` and the viewer signed in
- * through the provider; a role with no `about.<role>.*` keys answers
- * `NotAvailableStub`.
+ * locale strings of the host's role, plus the favourite toggle over `GET`
+ * and `PUT /api/user/favorites` through the hub client, the whole ordered
+ * list written back in `snake_case`, when the host advertises `favorites`
+ * and the viewer signed in through the provider; a role with no
+ * `about.<role>.*` keys answers `NotAvailableStub`.
  */
 const AboutRoute = ({ theme, oidc }) => {
   const { t } = useTranslation();
@@ -147,7 +155,7 @@ const AboutRoute = ({ theme, oidc }) => {
     const loadFavorites = async () => {
       try {
         const current = (await getFavorites()) || [];
-        setFavorited(current.some(entry => entry.clientId === clientId));
+        setFavorited(current.some(entry => entry.client_id === clientId));
       } catch (error) {
         log.api.error('Error loading favorites', {
           error: error.message,
@@ -161,15 +169,15 @@ const AboutRoute = ({ theme, oidc }) => {
     try {
       const current = (await getFavorites()) || [];
       const next = favorited
-        ? current.filter(entry => entry.clientId !== clientId)
-        : [...current, { clientId, customLabel: null, order: current.length }];
+        ? current.filter(entry => entry.client_id !== clientId)
+        : [...current, { client_id: clientId, custom_label: null }];
       notify(
         'success',
         t(favorited ? 'boxes.messages.removedFromFavorites' : 'boxes.messages.addedToFavorites'),
         { key: FAVORITE_KEY }
       );
 
-      await saveFavorites(next);
+      await saveFavorites(toBody(next));
       setFavorited(!favorited);
     } catch (error) {
       log.component.error('Error toggling favorite', {

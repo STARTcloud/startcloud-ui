@@ -96,7 +96,8 @@ auth, with one JSON Schema 2020-12 document:
     },
     "orgCode": { "type": "string", "pattern": "^[0-9A-F]{6}$" },
     "providerName": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-    "hex": { "type": "string", "pattern": "^[a-fA-F0-9]+$" }
+    "hex": { "type": "string", "pattern": "^[a-fA-F0-9]+$" },
+    "watchId": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" }
   },
   "forms": {
     "box": {
@@ -257,6 +258,7 @@ UI with `validation.equals` and the `rule` the `custom` function names.
 | `orgCode`      | `^[0-9A-F]{6}$`                                                | the organization code as the backend stores it                                                                                                                                                                                       |
 | `providerName` | `^[a-z0-9_]+$`                                                 | the OIDC provider key, a YAML map key and a URL segment of the callback                                                                                                                                                              |
 | `hex`          | `^[a-fA-F0-9]+$`                                               | checksums; the length per type is the `checksum` rule                                                                                                                                                                                |
+| `watchId`      | `^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`                            | the id of a watch: an organization slug and an item slug joined by one slash, the key the catalog Worker stores a watch under                                                                                                        |
 
 The email regular expression, verbatim from the HTML Standard:
 

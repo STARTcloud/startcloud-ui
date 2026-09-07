@@ -44,6 +44,7 @@ const UNIVERSAL_ROUTES = [
   'push',
   'search',
   'vm',
+  'watches',
   'authenticator',
   'authenticator-method',
   'passwordRecovery',
@@ -136,7 +137,7 @@ const sidebarCrumbs = ({ groups, pathname, t }) => {
 };
 
 const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
-  const { user, claims, activeOrgUuid, issuerUrl, oidc } = account;
+  const { user, activeOrgUuid, issuerUrl, oidc } = account;
   if (!user) {
     return null;
   }
@@ -151,7 +152,7 @@ const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
     onPickOrg: account.pickOrg,
     loadOrganizations: orgs.load,
     orgMark: orgs.mark,
-    favorites: claims?.favorite_apps || [],
+    favorites: account.favorites,
     appName: status.brand.name,
     appVersion: hasFeature(status, 'footer') ? '' : status.version,
     onSignOutEverywhere: account.signOutEverywhere,

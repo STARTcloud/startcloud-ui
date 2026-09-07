@@ -253,8 +253,13 @@ paints it from `validation.<rule>` with the field's `title`.
   a failure, logging one line per failing pointer through its `app` category.
 - A key the schema does not know is logged as a warning with its pointer and
   ignored; it is never deleted from the file except by a migration.
-- A file that is missing is created from the schema's defaults in
-  `postinst`, never at boot, so a boot never writes `/etc`.
+- The service user owns `CONFIG_DIR` and the UI backend writes it: a file
+  that is missing is created from the schema's defaults in `postinst`,
+  the setup page and the admin page write through `PUT /api/setup` and
+  `PUT /api/config/<name>`, and the UI backend generates its own secrets
+  there on first boot (a VAPID pair, a setup token), because a YAML
+  configuration on a normal `/etc` path is there to be written by the
+  service that owns it, and the unit grants the write.
 
 ---
 
