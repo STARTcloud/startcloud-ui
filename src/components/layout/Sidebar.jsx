@@ -58,6 +58,7 @@ export const sidebarRowShape = PropTypes.shape({
   to: PropTypes.string.isRequired,
   end: PropTypes.bool,
   badge: PropTypes.string,
+  external: PropTypes.bool,
 });
 
 export const sidebarSectionShape = PropTypes.shape({
@@ -87,6 +88,36 @@ RowBadge.propTypes = {
   count: PropTypes.number.isRequired,
 };
 
+const SectionRow = ({ row, badges }) => {
+  const { t } = useTranslation();
+  const Icon = row.icon;
+  const label = t(row.labelKey);
+  const body = (
+    <>
+      <Icon className="sidebar-row-icon" />
+      <span className="sidebar-row-label">{label}</span>
+      {row.badge ? <RowBadge count={badges[row.badge] || 0} /> : null}
+    </>
+  );
+  if (row.external) {
+    return (
+      <a href={row.to} className="sidebar-row" title={label} data-sidebar-row>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <NavLink to={row.to} end={Boolean(row.end)} className={rowClass} title={label} data-sidebar-row>
+      {body}
+    </NavLink>
+  );
+};
+
+SectionRow.propTypes = {
+  row: sidebarRowShape.isRequired,
+  badges: PropTypes.objectOf(PropTypes.number).isRequired,
+};
+
 const SectionRows = ({ section, badges }) => {
   const { t } = useTranslation();
   if (section.items.length === 0) {
@@ -95,24 +126,9 @@ const SectionRows = ({ section, badges }) => {
   return (
     <div className="sidebar-section">
       {section.labelKey ? <div className="sidebar-section-label">{t(section.labelKey)}</div> : null}
-      {section.items.map(row => {
-        const Icon = row.icon;
-        const label = t(row.labelKey);
-        return (
-          <NavLink
-            key={row.key}
-            to={row.to}
-            end={Boolean(row.end)}
-            className={rowClass}
-            title={label}
-            data-sidebar-row
-          >
-            <Icon className="sidebar-row-icon" />
-            <span className="sidebar-row-label">{label}</span>
-            {row.badge ? <RowBadge count={badges[row.badge] || 0} /> : null}
-          </NavLink>
-        );
-      })}
+      {section.items.map(row => (
+        <SectionRow key={row.key} row={row} badges={badges} />
+      ))}
     </div>
   );
 };
@@ -127,9 +143,20 @@ const nodeShape = PropTypes.shape({
   icon: PropTypes.elementType,
   label: PropTypes.string.isRequired,
   to: PropTypes.string.isRequired,
-  status: PropTypes.string,
+  status: PropTypes.oneOf(['up', 'idle']),
   children: PropTypes.func,
 });
+
+const StatusDot = ({ status }) => {
+  if (!status) {
+    return null;
+  }
+  return <span className={status === 'up' ? 'sidebar-dot up' : 'sidebar-dot'} />;
+};
+
+StatusDot.propTypes = {
+  status: PropTypes.string,
+};
 
 const TreeNode = ({ node, depth, tree, current }) => {
   const navigate = useNavigate();
@@ -188,11 +215,8 @@ const TreeNode = ({ node, depth, tree, current }) => {
             {open ? <FaCaretDown /> : <FaCaretRight />}
           </span>
         ) : null}
-        {Icon ? (
-          <Icon className="sidebar-row-icon" />
-        ) : (
-          <span className={node.status === 'up' ? 'sidebar-dot up' : 'sidebar-dot'} />
-        )}
+        {Icon ? <Icon className="sidebar-row-icon" /> : null}
+        <StatusDot status={node.status} />
         <span className="sidebar-row-label">{node.label}</span>
       </button>
       {branch && open && kids ? (
@@ -413,10 +437,12 @@ const useResize = (asideRef, setWidth) => {
  * collapses the column to a 38px rail and expands it again; the tertiary
  * band, 260px by default and 180 to 400px by the drag handle on its right
  * edge; the section entries (an uppercase label, rows of an icon, a label
- * and an optional badge, active by route) and the tree entries (nodes
- * with a caret, lazy children, a status dot, a right-click menu, the
- * selection driven by the route, a view select when the group exports
- * more than one shape); the rail, the width, the open nodes and the
+ * and an optional badge, active by route, an `external` row followed as
+ * a top-level navigation and never active) and the tree entries (a hook
+ * answering `{ nodes, menu }`, nodes with a caret, `children()` called on
+ * expand, a status dot for `up` and `idle`, the right-click rows from
+ * `menu(node)`, the selection driven by the route, a view select when
+ * the group exports more than one shape); the rail, the width, the open nodes and the
  * chosen view persisted per origin; arrow keys between rows, Left and
  * Right on a node, Escape closing a menu; and under 900px an overlay from
  * the left the header toggle opens. Every entry comes from the mounted

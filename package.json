@@ -24,6 +24,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "themes": "node scripts/themes.js",
+    "prebuild": "npm run themes",
     "build": "vite build",
     "preview": "vite preview",
     "client": "vite dev --host 0.0.0.0",

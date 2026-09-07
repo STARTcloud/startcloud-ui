@@ -821,7 +821,7 @@
           <div class="payload">
             [data-brand=<span class="s">"switchboard"</span>] { --brand-primary:
             <span class="s">#24ADE3</span>; --brand-primary-rgb: 36, 173, 227; --brand-on-primary:
-            <span class="s">#ffffff</span>; --brand-auth-display:
+            <span class="s">#212529</span>; --brand-auth-display:
             <span class="s">'Poppins', Helvetica, Arial, sans-serif</span>; --bs-primary:
             var(--brand-primary); --bs-primary-rgb: var(--brand-primary-rgb);
             --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
@@ -834,7 +834,7 @@
           <div class="payload">
             [data-brand=<span class="s">"moonshinedev"</span>] { --brand-primary:
             <span class="s">#1f9d57</span>; --brand-primary-rgb: 31, 157, 87; --brand-on-primary:
-            <span class="s">#ffffff</span>; --brand-auth-display:
+            <span class="s">#212529</span>; --brand-auth-display:
             <span class="s">'IBM Plex Sans', system-ui, sans-serif</span>; --bs-primary:
             var(--brand-primary); --bs-primary-rgb: var(--brand-primary-rgb); } [data-brand=<span
               class="s"
@@ -871,8 +871,10 @@
               <code>&lt;link&gt;</code> into <code>index.html</code> per site in the same pass as
               <code>data-brand-theme</code>, the link after the app stylesheet, so the pack paints
               with the first frame and the shell appends nothing; on a UI backend that serves one
-              static file the shell reads the branding endpoint after <code>/api/status</code> and
-              appends the link itself; a null pack stamps nothing and links nothing</span
+              static file the shell stamps <code>data-brand</code> and appends the link from
+              <code>brand.pack</code> of <code>/api/status</code>, <code>{ name, css }</code>, and
+              calls no branding route; a payload without <code>brand.pack</code> stamps nothing and
+              links nothing</span
             >
             <span class="c k">mark</span
             ><span class="c"
@@ -938,8 +940,11 @@
         <strong>The pack's variable names</strong> are the contract's: <code>--brand-primary</code>,
         <code>--brand-on-primary</code>, the optional <code>--brand-logo</code> and
         <code>--brand-logo-color</code>, plus the <code>--bs-*</code> bridge;
-        <code>--brand-auth-display</code> is the one addition decision 5 makes, and the generator
-        refuses a pack whose primary fails 4.5:1 against its on-primary.
+        <code>--brand-auth-display</code> is the one addition decision 5 makes; the generator
+        computes <code>--brand-on-primary</code> as white or <code>#212529</code>, whichever passes
+        4.5:1 against the accent, when the YAML omits it, so Moonshine.dev and SwitchBoard.cloud
+        read dark on their accents and Nomad Services white, and refuses a pack where neither
+        passes.
       </div>
     </div>
   </div>
@@ -1155,7 +1160,7 @@
         pack: 'moonshinedev',
         theme: 'dark',
         primary: '#1f9d57',
-        onPrimary: '#ffffff',
+        onPrimary: '#212529',
         display: "'IBM Plex Sans', system-ui, sans-serif",
         mark: 'M',
         markBg: '#2a3547',
@@ -1180,7 +1185,7 @@
         pack: 'switchboard',
         theme: 'light',
         primary: '#24ADE3',
-        onPrimary: '#ffffff',
+        onPrimary: '#212529',
         display: "'Poppins', Helvetica, Arial, sans-serif",
         mark: 'SB',
         markBg: '#24ADE3',

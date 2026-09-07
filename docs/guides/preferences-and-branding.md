@@ -281,6 +281,20 @@ is never a dependency of an app's startup or of its branding.
 directly or via their own backend.** Both current consumers proxy through
 their own server; browser-direct is permitted, not assumed.
 
+**The shared UI never calls the branding endpoint.** A UI backend that
+wants a pack names it in its own `/api/status` as
+`brand.pack: { name, css }`, `name` the bare pack name for `data-brand`
+and `css` the stylesheet URL with its `?v=` hash, resolved by the UI
+backend's server from its local configuration or from the endpoint above;
+the shell stamps `data-brand` and appends the `<link>` from that member
+alone, and a payload without it stamps nothing. A UI backend that rewrites
+`index.html` per site stamps the same two values into the file and
+answers the same `brand.pack`, so the shell finds them present and
+appends nothing, the identity provider being the first such backend. One
+member, one branch, and the branding endpoint stays a server-to-server
+call, because a shell that guessed a route per UI backend would carry a
+per-app path the status payload exists to remove.
+
 **Standalone hosts serve pack CSS from their own origin, from embedded or
 seeded assets — never a remote URL.** An offline install must not hang a
 paint on a dead host. The identity provider follows the same default and
@@ -377,7 +391,11 @@ the pack's own risk.
 `--bs-*-rgb` comma triples from the hex values, exactly as the Sass
 `rgb-list()` it replaces did — plain CSS cannot emit that format, so
 hand-maintained pairs would drift. Generation also yields the content hash
-used for versioning.
+used for versioning, written beside the stylesheet as
+`public/themes/<pack>/<pack>.hash`, the SHA-256 hex of `<pack>.css` and
+nothing else in the file; a UI backend reads that file for the `?v=` it
+answers in `theme_css` and `brand.pack.css`, so the hash is computed once
+where the CSS is made and never recomputed by a server that serves it.
 
 A **raw-CSS escape hatch** exists for anything exotic. Hand-written packs
 must invert the derivation to keep one source of truth:
@@ -478,6 +496,21 @@ therefore **optional per pack**.
 CSP-blocked, or no pack configured must render the app's own mark — never a
 broken image, never a half-branded page.
 
+The files the identity provider's sites need in the shared build, every
+one supplied by the estate's owner and none drawn by the UI work; the
+shell ships the fallbacks until each lands:
+
+| File                                                          | Size                  | Used by                                                                                                             |
+| ------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `public/brand/<site>/icon.png`, one per site                  | 64×64                 | `brand.logoUrl`: the chrome's mark, the org mark, the favicon                                                       |
+| `public/brand/<site>/logo-small.png`, one per site            | 640×104               | the branding endpoint's `small` slot for relying apps                                                               |
+| `public/brand/providers/<id>.svg`, one per federated provider | square, monochrome    | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands              |
+| `public/themes/<pack>/mark.svg`, optional                     | 512×512, monochrome   | `--brand-logo` when the pack's YAML names it                                                                        |
+| `public/themes/switchboard/poppins-<weight>.woff2`            | weights 500, 600, 700 | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land |
+
+The sites are `startcloud`, `moonshinedev`, `switchboard` and
+`nomadservices`.
+
 ---
 
 ## Accessibility
@@ -493,6 +526,17 @@ is a build gate rather than a review note:
   keyboard accessibility.
 - **WCAG 2.2 §2.4.11** — focus appearance requires contrast against both the
   component and its background.
+
+The accent is the site's and is never shifted to pass: when a pack's
+YAML omits `on_primary` the generator computes `--brand-on-primary` as
+`#ffffff` or `#212529`, whichever contrasts with `--brand-primary` at
+4.5:1 or better, and refuses the pack only when neither does, because a
+brand colour is chosen by the site and the text on it is arithmetic. A
+pack that names `on_primary` is checked as named. The identity provider's
+four sites resolve to: `moonshinedev` (`#1f9d57`) `#212529`, `switchboard`
+(`#24ade3`) `#212529`, `nomadservices` (`#6c5ce7`) `#ffffff`, and
+`startcloud` has no pack; `--brand-on-primary` is also the auth column's
+button text, so those buttons read dark on the two light accents.
 
 `lang` on `<html>` must carry the user's language: screen readers take
 pronunciation from it, and the value is already stored, published and

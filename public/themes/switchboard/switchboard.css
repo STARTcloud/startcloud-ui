@@ -1,0 +1,15 @@
+[data-brand='switchboard'] {
+  --brand-primary: #24ade3;
+  --brand-primary-rgb: 36, 173, 227;
+  --brand-on-primary: #212529;
+  --brand-auth-display: 'Poppins', Helvetica, Arial, sans-serif;
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 36, 173, 227;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+}
+
+[data-brand='switchboard'][data-bs-theme='dark'] {
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+}

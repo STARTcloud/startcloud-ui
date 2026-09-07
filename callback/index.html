@@ -6,8 +6,10 @@
       (function () {
         try {
           var session = JSON.parse(localStorage.getItem('user') || 'null');
+          var site = document.documentElement.getAttribute('data-brand-theme');
+          var siteDefault = site === 'light' || site === 'dark' ? site : 'auto';
           var preference =
-            (session && session.preferredTheme) || localStorage.getItem('theme') || 'auto';
+            (session && session.preferredTheme) || localStorage.getItem('theme') || siteDefault;
           var resolved =
             preference === 'auto'
               ? window.matchMedia('(prefers-color-scheme: dark)').matches

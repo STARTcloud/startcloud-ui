@@ -1,0 +1,22 @@
+[data-brand='moonshinedev'] {
+  --brand-primary: #1f9d57;
+  --brand-primary-rgb: 31, 157, 87;
+  --brand-on-primary: #000000;
+  --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 31, 157, 87;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+}
+
+[data-brand='moonshinedev'][data-bs-theme='dark'] {
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --bs-body-bg: #23272b;
+  --bs-tertiary-bg: #2b3034;
+  --bs-secondary-bg: #32383d;
+  --bs-border-color: #41484e;
+  --bs-body-color: #d8dde1;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #9aa1a8;
+}

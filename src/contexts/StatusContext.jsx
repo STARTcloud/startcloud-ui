@@ -24,6 +24,10 @@ export const statusShape = PropTypes.shape({
     repo: PropTypes.string,
     changelog: PropTypes.string,
     theme: PropTypes.oneOf(['light', 'dark']),
+    pack: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      css: PropTypes.string.isRequired,
+    }),
   }),
   auth: PropTypes.arrayOf(PropTypes.string),
   analytics: PropTypes.shape({

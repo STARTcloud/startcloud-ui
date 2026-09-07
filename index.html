@@ -6,8 +6,10 @@
       (function () {
         try {
           var session = JSON.parse(localStorage.getItem('user') || 'null');
+          var site = document.documentElement.getAttribute('data-brand-theme');
+          var siteDefault = site === 'light' || site === 'dark' ? site : 'auto';
           var preference =
-            (session && session.preferredTheme) || localStorage.getItem('theme') || 'auto';
+            (session && session.preferredTheme) || localStorage.getItem('theme') || siteDefault;
           var resolved =
             preference === 'auto'
               ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -25,6 +27,14 @@
       })();
     </script>
     <link rel="icon" href="/startcloud.svg" id="favicon" />
+    <link rel="preload" href="/fonts/ibm-plex-sans-400.ttf" as="font" type="font/ttf" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/source-serif-4-500.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="STARTcloud" />
     <title>STARTcloud</title>

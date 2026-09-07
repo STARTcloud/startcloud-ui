@@ -26,7 +26,9 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * Overview, Accounts, Activity, Health, Security, Content (while the host
  * also advertises `policies`) and System, the Dashboard row exact-match
  * and the Blocked IPs row carrying the `blockedCount` badge the shell
- * resolves from the `admin` topic.
+ * resolves from the `admin` topic; the Configuration row carries
+ * `external: true` until the shared editor lands, a top-level navigation
+ * into the issuer's own configuration page.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -114,7 +116,13 @@ export const sidebar = (status, account) => {
   }
   sections.push(
     section('system', [
-      { key: 'config', icon: FaGear, labelKey: 'admin.tabs.configManagement', to: '/admin/config' },
+      {
+        key: 'config',
+        icon: FaGear,
+        labelKey: 'admin.tabs.configManagement',
+        to: '/admin/config',
+        external: true,
+      },
     ])
   );
   return [{ key: 'admin', labelKey: 'admin.sidebar.title', sections }];

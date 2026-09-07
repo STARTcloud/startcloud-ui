@@ -71,6 +71,9 @@ const sidebarRows = groups =>
   );
 
 const rowMatches = (row, pathname) => {
+  if (row.external) {
+    return false;
+  }
   if (row.end) {
     return pathname === row.to;
   }

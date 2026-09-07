@@ -8,8 +8,23 @@ import { log } from './logger';
 
 const PUBLIC = { auth: false };
 const DATA_ATTRIBUTE = /^data-[a-z0-9-]+$/;
+const PACK_NAME = /^[a-z0-9-]+$/;
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
+
+const applyPack = pack => {
+  if (document.documentElement.hasAttribute('data-brand')) {
+    return;
+  }
+  if (!pack?.css || !PACK_NAME.test(pack.name || '')) {
+    return;
+  }
+  document.documentElement.setAttribute('data-brand', pack.name);
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = pack.css;
+  document.head.appendChild(link);
+};
 
 const appendAnalytics = analytics => {
   if (!analytics?.script_url || !DATA_ATTRIBUTE.test(analytics.attribute || '')) {
@@ -92,16 +107,20 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * is known: the session provider and return-to helper from `createSession`,
  * the API client at the origin that serves the page (the dev proxy when
  * Vite serves it), and the notification hub client, the identity provider
- * itself for an `idp` host and the app's own backend otherwise; and the
+ * itself for an `idp` host and the app's own backend otherwise; the
  * analytics script tag with its data attribute when the status carries
- * `analytics`. Runs once per entry before anything renders; the exports
- * are live bindings.
+ * `analytics`; and the pack when the status carries `brand.pack`,
+ * `data-brand` stamped from its `name` and its `css` appended as a
+ * stylesheet link after the app's own, unless the served page already
+ * carries `data-brand`, in which case nothing is touched. Runs once per
+ * entry before anything renders; the exports are live bindings.
  *
  * @param {Object} status - The payload from `probeStatus`
  */
 export const initRuntime = status => {
   apiOrigin = __API_ORIGIN__ || window.location.origin;
   appendAnalytics(status.analytics);
+  applyPack(status.brand?.pack);
   ({ session, returnTo } = createSession(status, events));
   client = createApiClient({
     baseUrl: apiOrigin,

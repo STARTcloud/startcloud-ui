@@ -1,0 +1,22 @@
+[data-brand='nomadservices'] {
+  --brand-primary: #6c5ce7;
+  --brand-primary-rgb: 108, 92, 231;
+  --brand-on-primary: #ffffff;
+  --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 108, 92, 231;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+}
+
+[data-brand='nomadservices'][data-bs-theme='dark'] {
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --bs-body-bg: #0e0c1f;
+  --bs-tertiary-bg: #15142a;
+  --bs-secondary-bg: #1a1830;
+  --bs-border-color: #2a2a4a;
+  --bs-body-color: #e0e0f0;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #a0a0b8;
+}

@@ -1,0 +1,12 @@
+primary: '#1f9d57'
+on_primary: '#000000'
+display: "'IBM Plex Sans', system-ui, sans-serif"
+surfaces:
+  dark:
+    body-bg: '#23272b'
+    tertiary-bg: '#2b3034'
+    secondary-bg: '#32383d'
+    border-color: '#41484e'
+    body-color: '#d8dde1'
+    emphasis-color: '#ffffff'
+    secondary-color: '#9aa1a8'

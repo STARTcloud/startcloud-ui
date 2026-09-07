@@ -1343,15 +1343,15 @@ button::-moz-focus-inner {
   --auth-field-bg: var(--bs-body-bg);
   --auth-elev: var(--bs-tertiary-bg);
   --auth-soft: var(--bs-secondary-bg);
-  --auth-accent: var(--bs-primary);
-  --auth-accent-fg: #ffffff;
-  --auth-accent-hover: color-mix(in srgb, var(--bs-primary) 85%, black);
+  --auth-accent: var(--brand-primary, var(--bs-primary));
+  --auth-accent-fg: var(--brand-on-primary, #ffffff);
+  --auth-accent-hover: color-mix(in srgb, var(--auth-accent) 85%, black);
   --auth-danger: var(--bs-danger);
   --auth-danger-bg: rgba(var(--bs-danger-rgb), 0.1);
   --auth-success: var(--bs-success);
   --auth-success-bg: rgba(var(--bs-success-rgb), 0.1);
   --auth-focus: 0 0 0 4px rgba(var(--bs-primary-rgb), 0.22);
-  --auth-font-display: 'Source Serif 4', Georgia, serif;
+  --auth-font-display: var(--brand-auth-display, 'Source Serif 4', Georgia, serif);
   --auth-font-body:
     'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   display: flex;

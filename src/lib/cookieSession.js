@@ -203,7 +203,8 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     if (!current()) {
       return;
     }
-    await api.patch('/api/user/preferences', patch).catch(() => null);
+    const saved = await api.patch('/api/user/preferences', patch).catch(() => null);
+    applyAccountPreferences(saved?.preferences);
   };
 
   const signOut = async () => {
