@@ -1,5 +1,5 @@
-import { encodePath } from '../../../lib/apiClient';
-import { client } from '../../../lib/runtime';
+import { encodePath } from '../../../../lib/apiClient';
+import { client } from '../../../../lib/runtime';
 
 const PUBLIC = { auth: false };
 const WATCHES_PATH = '/api/watches';

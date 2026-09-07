@@ -1,5 +1,5 @@
-import { encodePath } from '../../../lib/apiClient';
-import { client } from '../../../lib/runtime';
+import { encodePath } from '../../../../lib/apiClient';
+import { client } from '../../../../lib/runtime';
 
 const org = organization => encodePath('api', 'organization', organization);
 const iso = (organization, name) => `${org(organization)}${encodePath('iso', name)}`;

@@ -15,20 +15,20 @@ import {
 import { architectureNames } from '../../catalog/utils/itemShape';
 import { isOrgManager } from '../boxes';
 
-import { isosAdapter } from './adapter';
+import { isosAdapter } from './api/adapter';
 import {
   IsoItemActions,
   IsoListActions,
   IsoVersionRowActions,
   IsoVersionsActions,
-} from './slots/Iso';
+} from './components/Iso';
 import {
   IsoArtifactRowActions,
   IsoArtifactsActions,
   IsoVersionActions,
   IsoVersionBannerActions,
   IsoVersionNotesActions,
-} from './slots/IsoVersion';
+} from './components/IsoVersion';
 
 export const isos = {
   key: 'isos',

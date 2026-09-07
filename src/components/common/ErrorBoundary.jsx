@@ -6,46 +6,40 @@ import { FaArrowsRotate, FaHouse, FaTriangleExclamation } from 'react-icons/fa6'
 const Fallback = ({ error, errorInfo, showErrorDetails }) => {
   const { t } = useTranslation();
   return (
-    <div className="container-fluid py-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card border-danger">
-            <div className="card-body text-center">
-              <FaTriangleExclamation className="display-4 text-danger mb-3" aria-hidden />
-              <h4 className="mb-3">{t('error.somethingWentWrong')}</h4>
-              <p className="text-body-secondary mb-4">{t('error.unexpectedErrorOccurred')}</p>
-              <div className="d-flex gap-2 justify-content-center">
-                <button
-                  type="button"
-                  className="btn btn-outline-primary d-inline-flex align-items-center gap-2"
-                  onClick={() => window.location.reload()}
-                >
-                  <FaArrowsRotate aria-hidden />
-                  {t('error.refreshPage')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary d-inline-flex align-items-center gap-2"
-                  onClick={() => window.location.assign('/')}
-                >
-                  <FaHouse aria-hidden />
-                  {t('error.goHome')}
-                </button>
-              </div>
-              {showErrorDetails && error ? (
-                <details className="mt-4">
-                  <summary className="text-body-secondary small">
-                    {t('error.errorDetailsDevelopment')}
-                  </summary>
-                  <pre className="text-start text-danger small mt-2">
-                    {error.toString()}
-                    {errorInfo?.componentStack}
-                  </pre>
-                </details>
-              ) : null}
-            </div>
-          </div>
+    <div className="auth-page">
+      <div className="auth-column error-card">
+        <div className="auth-icon-circle danger" aria-hidden="true">
+          <FaTriangleExclamation />
         </div>
+        <h2 className="error-card-title">{t('error.somethingWentWrong')}</h2>
+        <p className="auth-hint">{t('error.unexpectedErrorOccurred')}</p>
+        <div className="error-card-actions">
+          <button
+            type="button"
+            className="auth-btn auth-btn-primary"
+            onClick={() => window.location.reload()}
+          >
+            <FaArrowsRotate aria-hidden />
+            {t('error.refreshPage')}
+          </button>
+          <button
+            type="button"
+            className="auth-btn auth-btn-secondary"
+            onClick={() => window.location.assign('/')}
+          >
+            <FaHouse aria-hidden />
+            {t('error.goHome')}
+          </button>
+        </div>
+        {showErrorDetails && error ? (
+          <details className="auth-details w-100">
+            <summary>{t('error.errorDetailsDevelopment')}</summary>
+            <pre>
+              {error.toString()}
+              {errorInfo?.componentStack}
+            </pre>
+          </details>
+        ) : null}
       </div>
     </div>
   );
@@ -96,8 +90,9 @@ Boundary.propTypes = {
 
 /**
  * Catches a render error anywhere under it and draws the shared fallback
- * card, refresh and home, with the stack behind a details fold when
- * `showErrorDetails` is on; `onError` lets an app log the error its own way.
+ * card in the error page's card style, refresh and home, with the component
+ * stack behind a details fold when `showErrorDetails` is on; `onError` lets
+ * an app ship the error and its component stack its own way.
  */
 const ErrorBoundary = ({ children, showErrorDetails = false, onError = null }) => (
   <Boundary showErrorDetails={showErrorDetails} onError={onError}>

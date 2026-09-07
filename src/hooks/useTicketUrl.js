@@ -9,6 +9,8 @@ const firstValue = (...values) => values.find(value => !!value) || '';
 
 const servesTicketConfig = status => !status.ticket;
 
+const appOf = status => (status.idp ? status.idp.clientId : status.role);
+
 const ticketOf = ({ status, ticketConfig }) => {
   if (servesTicketConfig(status)) {
     if (!ticketConfig?.enabled) {
@@ -21,7 +23,7 @@ const ticketOf = ({ status, ticketConfig }) => {
       context: ticketConfig.context || '',
     };
   }
-  return { ...status.ticket, context: `${status.idp.clientId}|${status.version}` };
+  return { ...status.ticket, context: `${appOf(status)}|${status.version}` };
 };
 
 const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {

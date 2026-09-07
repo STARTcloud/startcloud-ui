@@ -1,9 +1,9 @@
-import { log } from '../../../lib/logger';
-import { fetchOrganization, logoFor, withLogos } from '../../organizations/api/logos';
+import { log } from '../../../../lib/logger';
+import { fetchOrganization, logoFor, withLogos } from '../../../organizations/api/logos';
+import { getDistroIconUrl, getOsDisplayName } from '../utils/distroIcons';
+import { readDeprecated, readDeprecationReason, readReleaseNotes } from '../utils/versionFields';
 
-import { api } from './api';
-import { getDistroIconUrl, getOsDisplayName } from './distroIcons';
-import { readDeprecated, readDeprecationReason, readReleaseNotes } from './versionFields';
+import { api } from './boxes';
 
 const { origin } = window.location;
 

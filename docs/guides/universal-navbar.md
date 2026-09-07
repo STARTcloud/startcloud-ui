@@ -732,7 +732,9 @@ Each test answers through an in-app notice card, "Test sent." or
 ## Help ticket
 
 Query parameters on the configured base URL: `req` (default `sso`),
-`customerId`, `user` (display name), `email`, `context` (`<app>|<version>`).
+`customerId`, `user` (display name), `email`, `context` (`<app>|<version>`)
+and, from the error page alone, `type` (`Backend`) beside a `context`
+that carries the reference alone.
 `customerId` resolves active org `customer_id` → user `customer_id` → the
 app's configured fallback. Hidden when the ticket system is disabled.
 

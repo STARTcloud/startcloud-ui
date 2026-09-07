@@ -14,8 +14,8 @@ import {
 } from '../../catalog/components/columns';
 import { itemShape } from '../../catalog/utils/itemShape';
 
-import { catalogAdapter } from './adapter';
-import { DeployButton, ProvisionerQuickActions, deployableVersion } from './deploy';
+import { catalogAdapter } from './api/adapter';
+import { DeployButton, ProvisionerQuickActions, deployableVersion } from './components/deploy';
 
 export const TIER_ORDER = ['diamond', 'platinum', 'gold', 'silver', 'bronze', 'unrated'];
 const VISIBLE_VERSIONS = 10;

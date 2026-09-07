@@ -52,6 +52,7 @@ import {
   collectionShape,
   pageContextShape,
 } from '../features/catalog';
+import { ErrorPage } from '../features/errors';
 import {
   IDENTITY_ADMIN_PAGES,
   IdentityAdminPage,
@@ -751,7 +752,9 @@ const homeElementFor = ({ status, cookie, fleet, account, collections, context, 
  * advertises `setup` and setup is incomplete, each feature route gated by
  * its feature token or by the host's first `auth` token, and the identity
  * contract's five groups behind the `cookie` token and their feature
- * tokens, a route the host lacks rendering `NotAvailableStub` instead.
+ * tokens, a route the host lacks rendering `NotAvailableStub` instead; on
+ * a `cookie` host `/error` and every unknown route draw the identity
+ * contract's ErrorPage, every other host sending an unknown route home.
  */
 const AppRoutes = ({
   account,
@@ -762,6 +765,7 @@ const AppRoutes = ({
   globalAdmin,
   afterSignIn,
   notifications = null,
+  ticketUrl = '',
 }) => {
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
@@ -920,7 +924,22 @@ const AppRoutes = ({
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
       )}
-      <Route path="*" element={<Navigate to="/" />} />
+      {cookie ? (
+        <Route
+          path="/error"
+          element={<ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} />}
+        />
+      ) : null}
+      <Route
+        path="*"
+        element={
+          cookie ? (
+            <ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} notFound />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
     </Routes>
   );
 };
@@ -934,6 +953,7 @@ AppRoutes.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
   afterSignIn: PropTypes.func.isRequired,
   notifications: notificationsAdapterShape,
+  ticketUrl: PropTypes.string,
 };
 
 export default AppRoutes;

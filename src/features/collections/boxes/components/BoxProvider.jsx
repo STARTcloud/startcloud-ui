@@ -14,15 +14,15 @@ import { formatFileSize } from '../../../../utils/formatFileSize';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { isVisible } from '../../../../utils/validation';
 import { architectureShape, itemShape, providerShape } from '../../../catalog/utils/itemShape';
-import { api } from '../api';
+import { api } from '../api/boxes';
 import {
   ARCHITECTURE_LABELS,
   ARCHITECTURE_SCHEMA,
   CHECKSUM_TYPES,
   PROVIDER_LABELS,
   PROVIDER_SCHEMA,
-} from '../forms';
-import { canManageBox } from '../permissions';
+} from '../utils/forms';
+import { canManageBox } from '../utils/permissions';
 
 const slotShape = {
   item: itemShape.isRequired,

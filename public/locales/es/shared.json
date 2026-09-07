@@ -3,14 +3,15 @@
   "yes": "Sí",
   "no": "No",
   "language": {
-    "changeLanguage": "Cambiar Idioma"
+    "changeLanguage": "Cambiar Idioma",
+    "control": "Cambiar idioma, {{name}}"
   },
   "error": {
     "somethingWentWrong": "Algo salió mal",
-    "unexpectedErrorOccurred": "Ocurrió un error inesperado. Por favor intenta refrescar la página o volver a la página de inicio.",
-    "refreshPage": "Refrescar Página",
-    "goHome": "Ir a Inicio",
-    "errorDetailsDevelopment": "Detalles del Error (Desarrollo)"
+    "unexpectedErrorOccurred": "Esta página falló al dibujarse. Actualiza la página o vuelve al inicio.",
+    "refreshPage": "Actualizar página",
+    "goHome": "Ir al inicio",
+    "errorDetailsDevelopment": "Detalles del error (desarrollo)"
   },
   "navbar": {
     "logout": "Cerrar Sesión",
@@ -73,7 +74,33 @@
     "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
     "unknown_code": "Ese código de invitación no coincide con ninguna organización.",
     "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
-    "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero."
+    "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero.",
+    "title": {
+      "403": "No tienes acceso a esta página",
+      "404": "Página no encontrada",
+      "500": "Algo salió mal",
+      "other": "Error {{status}}"
+    },
+    "body": {
+      "403": "Tu cuenta no tiene permiso para verla.",
+      "404": "No hay ninguna página en esta dirección. Revisa el enlace o vuelve al inicio.",
+      "500": "Algo salió mal de nuestro lado. Los detalles quedan registrados."
+    },
+    "report": "Informar de este problema",
+    "copy": "Copiar los detalles del error",
+    "copied": "¡Copiado!",
+    "reference": "Referencia",
+    "details": "Detalles técnicos",
+    "detail": {
+      "code": "Código de error",
+      "message": "Mensaje",
+      "path": "Ruta",
+      "time": "Hora",
+      "reference": "Referencia",
+      "user": "Usuario"
+    },
+    "goHome": "Ir al inicio",
+    "goBack": "Volver"
   },
   "validation": {
     "errorPrefix": "Error:",
@@ -844,6 +871,9 @@
         "site": "Sitio (registro)",
         "both": "Ambos"
       }
+    },
+    "config": {
+      "title": "Configuración"
     },
     "buttons": {
       "save": "Guardar",

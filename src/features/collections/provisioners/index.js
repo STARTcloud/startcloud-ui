@@ -1,3 +1,3 @@
-export { resetCatalogCache, setMemberships } from './adapter';
+export { resetCatalogCache, setMemberships } from './api/adapter';
+export { default as RebuildItem } from './components/RebuildItem';
 export { TIER_ORDER, provisioners } from './definition';
-export { default as RebuildItem } from './slots/RebuildItem';

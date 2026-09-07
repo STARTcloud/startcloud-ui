@@ -9,6 +9,7 @@ import { brandLogoUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
 import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { useStatus } from '../contexts/StatusContext';
+import { hasAbout } from '../features/about';
 import {
   RebuildItem,
   resetCatalogCache,
@@ -61,6 +62,7 @@ const notificationsFor = ({ status, cookie, claims, user, notifications }) => {
 
 const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid }) => ({
   loadOrganizations: backend ? loadOrganizations : null,
+  showAbout: hasAbout(status),
   showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
   showOrgConsole:
     hasFeature(status, 'org-console') && isManager(memberships, activeOrgUuid, globalAdmin),
@@ -177,6 +179,7 @@ const App = ({ getSupportedLanguages }) => {
             globalAdmin={globalAdmin}
             afterSignIn={afterSignIn}
             notifications={inbox}
+            ticketUrl={ticket}
           />
         </AppShell>
       </NavbarSearchProvider>

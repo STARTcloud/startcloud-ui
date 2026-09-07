@@ -119,7 +119,7 @@ export const sidebar = (status, account) => {
       {
         key: 'config',
         icon: FaGear,
-        labelKey: 'admin.tabs.configManagement',
+        labelKey: 'admin.config.title',
         to: '/admin/config',
         external: true,
       },

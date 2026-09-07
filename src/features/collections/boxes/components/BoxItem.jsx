@@ -10,11 +10,12 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../catalog/utils/itemShape';
-import { deleteVersionCascade } from '../adapter';
-import { api } from '../api';
-import { DeployButton, deployableVersion } from '../deploy';
-import { BOX_EDIT_LABELS, BOX_EDIT_SCHEMA, VERSION_LABELS, VERSION_SCHEMA } from '../forms';
-import { canManageBox } from '../permissions';
+import { deleteVersionCascade } from '../api/adapter';
+import { api } from '../api/boxes';
+import { BOX_EDIT_LABELS, BOX_EDIT_SCHEMA, VERSION_LABELS, VERSION_SCHEMA } from '../utils/forms';
+import { canManageBox } from '../utils/permissions';
+
+import { DeployButton, deployableVersion } from './deploy';
 
 const STARTER_VAGRANTFILE = `## Vagrant File tooling compatabile with Bhyve and Virtualbox, potentially ESXI/Vmware,KVM
 ##

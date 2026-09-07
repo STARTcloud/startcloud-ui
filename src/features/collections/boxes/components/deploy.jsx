@@ -1,7 +1,6 @@
-import { log } from '../../../lib/logger';
-import { createDeployControls, deployableVersion } from '../../deploy';
-
-import { api } from './api';
+import { log } from '../../../../lib/logger';
+import { createDeployControls, deployableVersion } from '../../../deploy';
+import { api } from '../api/boxes';
 
 export { deployableVersion };
 

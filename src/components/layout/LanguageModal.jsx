@@ -19,6 +19,14 @@ export const getLanguageDisplayName = languageCode => {
   }
 };
 
+export const getLanguageCode = languageCode => {
+  const code = languageCode || 'en';
+  if (code === 'cimode') {
+    return 'CI';
+  }
+  return code.slice(0, 2).toUpperCase();
+};
+
 export const getLanguageFlag = languageCode => {
   const code = languageCode || 'en';
   if (code === 'cimode') {
@@ -57,9 +65,12 @@ export const LanguageModal = ({ show, current, languages, onPick, onClose }) => 
               }`}
               onClick={() => onPick(lang)}
             >
-              <span>
-                <span className="me-2 flag-icon-lg">{getLanguageFlag(lang)}</span>
-                {getLanguageDisplayName(lang)}
+              <span className="d-inline-flex align-items-center gap-2">
+                <span className="lang-code">{getLanguageCode(lang)}</span>
+                <span>{getLanguageDisplayName(lang)}</span>
+                <span className="flag-icon-lg" aria-hidden="true">
+                  {getLanguageFlag(lang)}
+                </span>
               </span>
               {current === lang ? <FaCircleCheck className="text-success" aria-hidden /> : null}
             </button>
@@ -81,7 +92,7 @@ LanguageModal.propTypes = {
 export const LanguageButton = ({ languages, onPick }) => {
   const { t, i18n } = useTranslation();
   const [show, setShow] = useState(false);
-  const label = `${t('language.changeLanguage')}: ${getLanguageDisplayName(i18n.language)}`;
+  const label = t('language.control', { name: getLanguageDisplayName(i18n.language) });
 
   const pick = async lang => {
     await onPick(lang);
@@ -92,12 +103,13 @@ export const LanguageButton = ({ languages, onPick }) => {
     <li className="nav-item">
       <button
         type="button"
-        className="btn btn-link nav-link cluster-btn"
+        className="btn btn-link nav-link cluster-btn lang-btn"
         onClick={() => setShow(true)}
         title={label}
         aria-label={label}
       >
-        {getLanguageFlag(i18n.language)}
+        <FaGlobe aria-hidden />
+        <span className="lang-code">{getLanguageCode(i18n.language)}</span>
       </button>
       <LanguageModal
         show={show}

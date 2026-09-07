@@ -29,6 +29,7 @@
   "scripts": {
     "dev": "vite",
     "themes": "node scripts/themes.js",
+    "mock": "node scripts/mock-issuer.js",
     "prebuild": "npm run themes",
     "build": "vite build",
     "preview": "vite preview",

@@ -180,8 +180,10 @@ replacing the `login_method_pref` cookie the server read), `theme` and
 issuer has no upstream to try silently.
 
 The API client sends every request with credentials on the same origin;
-`hubClient` is the same client; `reportUrl` for client errors is not set
-until the issuer answers `/api/client-errors`.
+`hubClient` is the same client; `reportUrl` for client errors is
+`/api/client-errors` on the issuer as on every `backend` UI backend,
+since decision 61 opens that route to anonymous reports from the first
+release.
 
 ---
 
@@ -1865,7 +1867,7 @@ problem body with `code`.
   the reference line (reference, path, status, time), Go home, Go back
   only while the history holds a page to go back to, and while signed in
   Report this issue (the ticket URL the chrome's user menu already
-  builds, with `Type: Backend` and the reference alone in `context`, the
+  builds, with `type=Backend` and the reference alone in `context`, the
   status, path and time being read back from the reference on the
   server) and Copy error details (status, path, time, reference,
   browser, screen). The page reads `status`, `reference` and `path` from
@@ -1880,8 +1882,10 @@ problem body with `code`.
   reference alone and the trace is copied, never sent in a URL. For an
   admin the page adds a Technical details fold under the reference line,
   closed by default so the trace never fills the page on load: the trace
-  from `GET /api/admin/errors/{reference}` with the error code, message,
-  path, time, reference and user the server logged; Copy error details
+  from `GET /api/admin/errors/{reference}`, answering
+  `{ code, message, path, time, reference, user, trace }`, the error
+  code, message, path, time, reference and user the server logged and
+  the trace, each row labelled from `errors.detail.<member>`; Copy error details
   copies the trace for the ticket's description, since a trace in a URL
   would ride a query string to the ticket system (decision 18). A render
   crash inside the chrome is not this page: it is the `ErrorBoundary`
@@ -1949,7 +1953,10 @@ problem body with `code`.
 `versionShort` for the app-section header of a site without a footer;
 `errors.*` gains `title.403`, `title.404`, `title.500`, `title.other`,
 `body.403`, `body.404`, `body.500`, `report`, `copy`, `copied`,
-`reference`, `details`, `goHome`, `goBack`, `session_reset`. Every key
+`reference`, `details`, `detail.code`, `detail.message`, `detail.path`,
+`detail.time`, `detail.reference`, `detail.user`, `goHome`, `goBack`;
+`session_reset` is a code and lives with the others under
+`auth:errors.*`, where LoginPage reads it, and nowhere else. Every key
 mirrored in `es` and `cimode`.
 
 ### What this design changed for admin
@@ -2196,6 +2203,16 @@ Settled before code, in the order they were raised:
     files; the site marks and provider icons landed on 2026-09-07.
 88. Every admin table page has a `table_prefs_admin_<page>` key, the All
     organizations page's being `table_prefs_admin_organizations`.
+89. The error page's ticket URL carries `type=Backend` beside `context`.
+90. `GET /api/admin/errors/{reference}` answers
+    `{ code, message, path, time, reference, user, trace }`, the rows
+    labelled from `errors.detail.*`.
+91. `session_reset` lives under `auth:errors.*` alone.
+92. `reportUrl` is `/api/client-errors` on the issuer from the first
+    release.
+93. Every feature has the pages contract's one shape: `index.js`, `api/`,
+    `components/`, then `hooks/`, `utils/`, `sidebar.js`,
+    `definition.jsx` and `assets/` where the feature has them.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

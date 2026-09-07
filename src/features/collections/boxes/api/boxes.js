@@ -1,5 +1,5 @@
-import { encodePath } from '../../../lib/apiClient';
-import { client } from '../../../lib/runtime';
+import { encodePath } from '../../../../lib/apiClient';
+import { client } from '../../../../lib/runtime';
 
 import { uploadChunked } from './uploadChunked';
 

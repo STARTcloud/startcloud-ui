@@ -20,9 +20,9 @@ import {
   ISO_SCHEMA,
   VERSION_LABELS,
   VERSION_SCHEMA,
-} from '../../boxes/forms';
-import { deleteVersionCascade } from '../adapter';
-import { api } from '../api';
+} from '../../boxes/utils/forms';
+import { deleteVersionCascade } from '../api/adapter';
+import { api } from '../api/isos';
 
 const EMPTY_ISO = { name: '', description: '', is_public: false };
 const EMPTY_VERSION = { version_number: '', description: '' };

@@ -1,7 +1,7 @@
-import { fetchOrganization, logoFor, withLogos } from '../../organizations/api/logos';
-import { getDistroIconUrl, getOsDisplayName } from '../boxes/distroIcons';
+import { fetchOrganization, logoFor, withLogos } from '../../../organizations/api/logos';
+import { getDistroIconUrl, getOsDisplayName } from '../../boxes/utils/distroIcons';
 
-import { api } from './api';
+import { api } from './isos';
 
 const rows = data => (Array.isArray(data) ? data : []);
 

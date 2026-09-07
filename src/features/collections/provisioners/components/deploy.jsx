@@ -1,6 +1,5 @@
-import { createDeployControls, deployableVersion } from '../../deploy';
-
-import { api } from './api';
+import { createDeployControls, deployableVersion } from '../../../deploy';
+import { api } from '../api/provisioners';
 
 export { deployableVersion };
 

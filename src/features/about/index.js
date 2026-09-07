@@ -1,2 +1,2 @@
 export { default as AboutPage } from './components/AboutPage';
-export { default as AboutRoute } from './components/AboutRoute';
+export { default as AboutRoute, hasAbout } from './components/AboutRoute';

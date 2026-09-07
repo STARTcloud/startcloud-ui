@@ -76,8 +76,8 @@ const UNIVERSAL_ROUTES = [
 const SESSION_ENDED_KEY = 'session-ended';
 const PROFILE_ROUTES = ['/profile', '/user/profile'];
 
-const utilityLinks = (status, t) => {
-  const links = [{ key: 'about', label: t('navbar.about'), to: '/about' }];
+const utilityLinks = (status, t, showAbout) => {
+  const links = showAbout ? [{ key: 'about', label: t('navbar.about'), to: '/about' }] : [];
   if (status.links.contact) {
     links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
   }
@@ -282,7 +282,7 @@ ShellFooter.propTypes = {
   fetchHealth: PropTypes.func,
 };
 
-const AppRows = ({ showAdminBoard, showOrgConsole, extraRows }) => {
+const AppRows = ({ showAbout, showAdminBoard, showOrgConsole, extraRows }) => {
   const { t } = useTranslation();
   const { links } = useStatus();
   return (
@@ -300,10 +300,12 @@ const AppRows = ({ showAdminBoard, showOrgConsole, extraRows }) => {
         </Dropdown.Item>
       ) : null}
       {extraRows}
-      <Dropdown.Item as={Link} to="/about">
-        <FaCircleInfo className="me-2" />
-        {t('navbar.about')}
-      </Dropdown.Item>
+      {showAbout ? (
+        <Dropdown.Item as={Link} to="/about">
+          <FaCircleInfo className="me-2" />
+          {t('navbar.about')}
+        </Dropdown.Item>
+      ) : null}
       {links.contact ? (
         <Dropdown.Item href={links.contact} target="_blank" rel="noopener noreferrer">
           <FaEnvelope className="me-2" />
@@ -321,6 +323,7 @@ const AppRows = ({ showAdminBoard, showOrgConsole, extraRows }) => {
 };
 
 AppRows.propTypes = {
+  showAbout: PropTypes.bool.isRequired,
   showAdminBoard: PropTypes.bool.isRequired,
   showOrgConsole: PropTypes.bool.isRequired,
   extraRows: PropTypes.node,
@@ -357,6 +360,7 @@ const AppShell = ({
   ticketUrl,
   notifications = null,
   push,
+  showAbout,
   showAdminBoard,
   showOrgConsole,
   appRows = null,
@@ -425,7 +429,7 @@ const AppShell = ({
     search,
   });
 
-  const links = utilityLinks(status, t);
+  const links = utilityLinks(status, t, showAbout);
 
   const userMenu = buildUserMenu({
     account,
@@ -439,6 +443,7 @@ const AppShell = ({
       sidebar,
       rows: (
         <AppRows
+          showAbout={showAbout}
           showAdminBoard={showAdminBoard}
           showOrgConsole={showOrgConsole}
           extraRows={appRows}
@@ -511,6 +516,7 @@ AppShell.propTypes = {
   ticketUrl: PropTypes.string.isRequired,
   notifications: notificationsAdapterShape,
   push: pushAdapterShape.isRequired,
+  showAbout: PropTypes.bool.isRequired,
   showAdminBoard: PropTypes.bool.isRequired,
   showOrgConsole: PropTypes.bool.isRequired,
   appRows: PropTypes.node,

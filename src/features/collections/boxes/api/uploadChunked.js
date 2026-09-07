@@ -1,4 +1,4 @@
-import { log } from '../../../lib/logger';
+import { log } from '../../../../lib/logger';
 
 const CHUNK_SIZE = 5 * 1024 * 1024;
 const ASSEMBLY_TIMEOUT_MS = 120000;

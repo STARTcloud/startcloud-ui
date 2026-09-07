@@ -3,14 +3,15 @@
   "yes": "Yes",
   "no": "No",
   "language": {
-    "changeLanguage": "Change Language"
+    "changeLanguage": "Change Language",
+    "control": "Change language, {{name}}"
   },
   "error": {
-    "somethingWentWrong": "Something Went Wrong",
-    "unexpectedErrorOccurred": "An unexpected error occurred. Please try refreshing the page or return to the home page.",
-    "refreshPage": "Refresh Page",
-    "goHome": "Go Home",
-    "errorDetailsDevelopment": "Error Details (Development)"
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedErrorOccurred": "This page hit an error while drawing. Refresh the page or go home.",
+    "refreshPage": "Refresh page",
+    "goHome": "Go home",
+    "errorDetailsDevelopment": "Error details (development)"
   },
   "navbar": {
     "logout": "Logout",
@@ -73,7 +74,33 @@
     "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
     "unknown_code": "That invite code did not match an organization.",
     "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
-    "last_owner": "A team needs an owner; make someone else an owner first."
+    "last_owner": "A team needs an owner; make someone else an owner first.",
+    "title": {
+      "403": "You don't have access to this page",
+      "404": "Page not found",
+      "500": "Something went wrong",
+      "other": "{{status}} error"
+    },
+    "body": {
+      "403": "Your account does not have permission to view it.",
+      "404": "There is no page at this address. Check the link or go home.",
+      "500": "Something went wrong on our end. The details are recorded."
+    },
+    "report": "Report this issue",
+    "copy": "Copy error details",
+    "copied": "Copied!",
+    "reference": "Reference",
+    "details": "Technical details",
+    "detail": {
+      "code": "Error code",
+      "message": "Message",
+      "path": "Path",
+      "time": "Time",
+      "reference": "Reference",
+      "user": "User"
+    },
+    "goHome": "Go home",
+    "goBack": "Go back"
   },
   "validation": {
     "errorPrefix": "Error:",
@@ -844,6 +871,9 @@
         "site": "Site (Registration)",
         "both": "Both"
       }
+    },
+    "config": {
+      "title": "Configuration"
     },
     "buttons": {
       "save": "Save",

@@ -1,4 +1,4 @@
 server:
   port: 8080
-  api_target: https://provisioner-catalog.startcloud.com
-  auth_target: https://dev-auth.startcloud.com
+  api_target: http://localhost:3443
+  auth_target: http://localhost:3443

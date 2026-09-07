@@ -29,7 +29,81 @@ const localeDirs = fs.existsSync('./public/locales')
   : [];
 const supportedLocales = localeDirs.length ? localeDirs : ['en'];
 
+const ISSUER_PATHS = [
+  '/login',
+  '/webauthn',
+  '/authenticator',
+  '/resend-tfa',
+  '/auth-cancel',
+  '/passwordRecovery',
+  '/passwordReset',
+  '/registration',
+  '/complete-onboarding',
+  '/qrcode',
+  '/oauth2',
+  '/provider-registration',
+  '/ciba',
+  '/connect/logout',
+  '/link-account',
+  '/user/logout',
+  '/.well-known',
+  '/scim',
+];
+
+const PAGE_PATHS = [
+  '/admin',
+  '/login',
+  '/authenticator',
+  '/authenticator-method',
+  '/passwordRecovery',
+  '/passwordReset',
+  '/registration',
+  '/complete-onboarding',
+  '/qrcode',
+  '/oauth2/consent',
+  '/oauth2/code',
+  '/oauth2/accept-terms',
+  '/provider-registration/tos',
+  '/ciba/approve',
+  '/connect/logout/confirm',
+  '/connect/logout/frontchannel',
+  '/link-account-consent',
+];
+
 const proxyTo = target => ({ target, changeOrigin: true, secure: false });
+
+const isPage = pathname =>
+  PAGE_PATHS.some(page => pathname === page || pathname.startsWith(`${page}/`));
+
+const spaBypass = req => {
+  const [pathname] = req.url.split('?');
+  const accept = String(req.headers.accept || '');
+  if (req.method === 'GET' && accept.includes('text/html') && isPage(pathname)) {
+    return req.url;
+  }
+  return null;
+};
+
+const issuerProxy = () =>
+  Object.fromEntries(
+    ISSUER_PATHS.map(path => [path, { ...proxyTo(apiTarget), bypass: spaBypass }])
+  );
+
+const callbackRedirect = () => ({
+  name: 'callback-redirect',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const [pathname, query] = req.url.split('?');
+      if (req.method === 'GET' && pathname === '/callback') {
+        res.writeHead(302, { Location: `/callback/${query ? `?${query}` : ''}` });
+        res.end();
+        return;
+      }
+      next();
+    });
+  },
+});
 
 export default defineConfig(({ command }) => ({
   define: {
@@ -38,7 +112,7 @@ export default defineConfig(({ command }) => ({
     __SUPPORTED_LOCALES__: JSON.stringify(supportedLocales),
     __API_ORIGIN__: JSON.stringify(command === 'serve' ? apiTarget : ''),
   },
-  plugins: [react(), svgr()],
+  plugins: [react(), svgr(), callbackRedirect()],
   base: '/',
   publicDir: 'public',
   server: {
@@ -57,10 +131,11 @@ export default defineConfig(({ command }) => ({
       '/health.json': proxyTo(apiTarget),
       '/private': proxyTo(apiTarget),
       '/push': proxyTo(apiTarget),
-      '/admin': proxyTo(apiTarget),
+      '/admin': { ...proxyTo(apiTarget), bypass: spaBypass },
       '/watches': proxyTo(apiTarget),
       '/health': proxyTo(apiTarget),
       '/config': proxyTo(apiTarget),
+      ...issuerProxy(),
     },
   },
   build: {
@@ -81,6 +156,18 @@ export default defineConfig(({ command }) => ({
           return `assets/[name].[ext]`;
         },
         manualChunks: id => {
+          if (id.includes('node_modules/leaflet')) {
+            return 'leaflet';
+          }
+          if (id.includes('node_modules/intl-tel-input/dist/js/data')) {
+            return 'tel-data';
+          }
+          if (
+            id.includes('node_modules/intl-tel-input') ||
+            id.includes('node_modules/@intl-tel-input')
+          ) {
+            return 'tel-input';
+          }
           if (
             id.includes('node_modules/react-bootstrap') ||
             id.includes('node_modules/@restart') ||

@@ -1,32 +1,28 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaUpload, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
-import { hasFeature } from '../../../../utils/capabilities';
 import { responseMessage } from '../../../../utils/responseMessage';
-import { architectureShape, itemShape, versionShape } from '../../../catalog/utils/itemShape';
-import { isOrgManager } from '../../boxes';
+import { itemShape, providerShape, versionShape } from '../../../catalog/utils/itemShape';
+import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
+import { api } from '../api/boxes';
 import {
   DEPRECATION_LABELS,
   DEPRECATION_SCHEMA,
-  ISO_ARCHITECTURE_LABELS,
-  ISO_ARCHITECTURE_SCHEMA,
-} from '../../boxes/forms';
-import { deleteVersionCascade } from '../adapter';
-import { api } from '../api';
+  PROVIDER_LABELS,
+  PROVIDER_SCHEMA,
+  VERSION_LABELS,
+  VERSION_SCHEMA,
+} from '../utils/forms';
+import { canManageBox } from '../utils/permissions';
 
-const HOVER_DWELL_MS = 400;
-const EMPTY_ARCHITECTURE = { name: '' };
 const EMPTY_DEPRECATION = { deprecation_reason: '' };
-const UPLOAD_KEY = 'iso-upload';
 
 const slotShape = {
   item: itemShape.isRequired,
@@ -58,37 +54,77 @@ const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
       return false;
     });
 
-const VersionEditForm = ({ draft, onChange }) => {
+const VersionEditForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group">
-        <label htmlFor="description">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="description"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-        />
-      </div>
+    <form noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('version_number')}
+        label={t('boxes.version.number')}
+        error={rules.errors.version_number || ''}
+        className="form-group col-md-3"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            name="version_number"
+            value={draft.version_number}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('version_number')}
+          />
+        )}
+      </Field>
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+          />
+        )}
+      </Field>
     </form>
   );
 };
 
 VersionEditForm.propTypes = {
-  draft: PropTypes.shape({ description: PropTypes.string.isRequired }).isRequired,
+  draft: PropTypes.shape({
+    version_number: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+  }).isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
-export const IsoVersionActions = ({ item, version, ctx }) => {
+export const BoxVersionActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, org, reload, notify, setEditor } = ctx;
-  const manage = isOrgManager(user, org);
+  const manage = canManageBox(user, org, item.extras.raw);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ description: version.description || '' });
+  const [draft, setDraft] = useState({
+    version_number: version.version,
+    description: version.description || '',
+  });
   const [showDelete, setShowDelete] = useState(false);
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: VERSION_SCHEMA,
+    values: draft,
+    labels: VERSION_LABELS,
+    idPrefix: 'version-edit',
+  });
 
   const onChange = useCallback(event => {
     const { name, value } = event.target;
@@ -99,20 +135,42 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
     if (!editing) {
       return undefined;
     }
-    setEditor(<VersionEditForm draft={draft} onChange={onChange} />);
+    setEditor(<VersionEditForm draft={draft} rules={rules} onChange={onChange} />);
     return () => setEditor(null);
-  }, [editing, draft, onChange, setEditor]);
+  }, [editing, draft, rules, onChange, setEditor]);
 
-  const save = () =>
-    updateVersion({ org, item, version, fields: draft, t, notify, reload }).then(ok => {
-      if (ok) {
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
+  };
+
+  const save = () => {
+    if (!rules.validateAll()) {
+      return;
+    }
+    const renamed = draft.version_number !== version.version;
+    api.versions
+      .update(org, item.name, version.version, draft)
+      .then(() => {
+        notify('success', t('boxes.version.updated'));
         setEditing(false);
-      }
-    });
+        if (renamed) {
+          navigate(`/${org}/${item.name}/${draft.version_number}`);
+        } else {
+          reload();
+        }
+      })
+      .catch(requestError => {
+        if (rules.applyServerErrors(requestError)) {
+          return;
+        }
+        notify('danger', responseMessage(requestError, t('boxes.version.updateError')));
+      });
+  };
 
   const remove = () => {
     deleteVersionCascade(org, item.name, version.version)
-      .then(() => navigate(`/${org}/isos/${item.name}`))
+      .then(() => navigate(`/${org}/${item.name}`))
       .catch(requestError => {
         log.component.error('Error deleting version', {
           versionNumber: version.version,
@@ -123,7 +181,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
   };
 
   const back = (
-    <Link className="btn btn-dark me-2" to={`/${org}/isos/${item.name}`}>
+    <Link className="btn btn-dark me-2" to={`/${org}/${item.name}`}>
       {t('boxes.actions.back')}
     </Link>
   );
@@ -138,7 +196,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
         <button type="button" className="btn btn-success me-2" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
-        <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
+        <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
           {t('boxes.buttons.cancel')}
         </button>
         {back}
@@ -164,12 +222,12 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
   );
 };
 
-IsoVersionActions.propTypes = slotShape;
+BoxVersionActions.propTypes = slotShape;
 
-export const IsoVersionBannerActions = ({ item, version, ctx }) => {
+export const BoxVersionBannerActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
   const { user, org, reload, notify } = ctx;
-  if (!isOrgManager(user, org)) {
+  if (!canManageBox(user, org, item.extras.raw)) {
     return null;
   }
   return (
@@ -193,7 +251,7 @@ export const IsoVersionBannerActions = ({ item, version, ctx }) => {
   );
 };
 
-IsoVersionBannerActions.propTypes = slotShape;
+BoxVersionBannerActions.propTypes = slotShape;
 
 const DeprecateButton = ({ onDeprecate }) => {
   const { t } = useTranslation();
@@ -204,7 +262,7 @@ const DeprecateButton = ({ onDeprecate }) => {
     schema: DEPRECATION_SCHEMA,
     values: draft,
     labels: DEPRECATION_LABELS,
-    idPrefix: 'iso-deprecate',
+    idPrefix: 'box-deprecate',
   });
 
   const close = () => {
@@ -270,13 +328,13 @@ DeprecateButton.propTypes = {
   onDeprecate: PropTypes.func.isRequired,
 };
 
-export const IsoVersionNotesActions = ({ item, version, ctx }) => {
+export const BoxVersionNotesActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
   const { user, org, reload, notify } = ctx;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(version.releaseNotes || '');
 
-  if (!isOrgManager(user, org)) {
+  if (!canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
@@ -347,176 +405,113 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
   );
 };
 
-IsoVersionNotesActions.propTypes = slotShape;
+BoxVersionNotesActions.propTypes = slotShape;
 
-const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
+const AddProviderForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [over, setOver] = useState(false);
-  const dwell = useRef(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(dwell.current), []);
-
-  const startDwell = () => {
-    clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => setOpen(true), HOVER_DWELL_MS);
-  };
-
-  const stopDwell = () => clearTimeout(dwell.current);
-
-  const pick = file => {
-    if (file) {
-      onFile(file);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-success"
-        onClick={() => setOpen(true)}
-        onMouseEnter={startDwell}
-        onMouseLeave={stopDwell}
-      >
-        {t('pages.addNew')}
-      </button>
-    );
-  }
-
   return (
-    <div
-      role="presentation"
-      className={`upload-zone w-100 order-last${over ? ' over' : ''}`}
-      onDragOver={event => {
-        event.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={event => {
-        event.preventDefault();
-        setOver(false);
-        pick(event.dataTransfer.files[0]);
-      }}
-    >
-      <button
-        type="button"
-        className="navbar-search-tool upload-zone-close"
-        onClick={() => setOpen(false)}
-        disabled={uploading}
-        title={t('boxes.buttons.close')}
-        aria-label={t('boxes.buttons.close')}
-      >
-        <FaXmark />
-      </button>
-      <FormErrorSummary errors={rules.summary} />
-      <Field
-        id={rules.idFor('name')}
-        label={t('boxes.architecture.name')}
-        error={rules.errors.name || ''}
-        className="form-group col-md-3"
-      >
-        {aria => (
-          <input
-            {...aria}
-            type="text"
-            className="form-control form-control-sm"
-            value={form.name}
-            disabled={uploading}
-            onChange={event => onName(event.target.value)}
-            onBlur={() => rules.onBlur('name')}
-          />
-        )}
-      </Field>
-      <button
-        type="button"
-        className="upload-zone-target"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={event => {
-          if (event.key === 'Escape' && !uploading) {
-            setOpen(false);
-          }
-        }}
-        disabled={uploading}
-      >
-        <FaUpload className="upload-zone-icon" aria-hidden />
-        <span>
-          {uploading
-            ? t('boxes.iso.upload.uploading', { percent: progress })
-            : t('boxes.iso.upload.drop')}
-        </span>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        hidden
-        accept=".iso"
-        disabled={uploading}
-        onChange={event => {
-          pick(event.target.files[0]);
-          event.target.value = '';
-        }}
-      />
-      {uploading ? (
-        <div className="progress upload-zone-progress">
-          <div
-            className="progress-bar progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            style={{ width: `${progress}%` }}
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
-          />
-        </div>
-      ) : null}
-    </div>
+    <form noValidate>
+      <div className="add-provider-form">
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('name')}
+          label={t('boxes.provider.name')}
+          error={rules.errors.name || ''}
+          className="form-group col-md-3"
+        >
+          {aria => (
+            <input
+              {...aria}
+              type="text"
+              className="form-control"
+              name="name"
+              value={draft.name}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('name')}
+            />
+          )}
+        </Field>
+        <Field
+          id={rules.idFor('description')}
+          label={t('boxes.provider.description')}
+          error={rules.errors.description || ''}
+          className="form-group"
+        >
+          {aria => (
+            <textarea
+              {...aria}
+              className="form-control"
+              name="description"
+              value={draft.description}
+              onChange={onChange}
+              onBlur={() => rules.onBlur('description')}
+            />
+          )}
+        </Field>
+      </div>
+    </form>
   );
 };
 
-UploadZone.propTypes = {
-  uploading: PropTypes.bool.isRequired,
-  progress: PropTypes.number.isRequired,
-  form: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
+AddProviderForm.propTypes = {
+  draft: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+  }).isRequired,
   rules: formRulesShape.isRequired,
-  onName: PropTypes.func.isRequired,
-  onFile: PropTypes.func.isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
-export const IsoArtifactsActions = ({ item, version, ctx }) => {
+const EMPTY_PROVIDER = { name: '', description: '' };
+
+export const BoxProvidersActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
-  const status = useStatus();
-  const { user, org, reload, notify } = ctx;
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [form, setForm] = useState(EMPTY_ARCHITECTURE);
+  const { user, org, reload, notify, setForm } = ctx;
+  const [show, setShow] = useState(false);
+  const [draft, setDraft] = useState(EMPTY_PROVIDER);
   const rules = useFormRules({
-    formKey: 'architecture',
-    schema: ISO_ARCHITECTURE_SCHEMA,
-    values: form,
-    labels: ISO_ARCHITECTURE_LABELS,
-    idPrefix: 'iso-architecture',
+    formKey: 'provider',
+    schema: PROVIDER_SCHEMA,
+    values: draft,
+    labels: PROVIDER_LABELS,
+    idPrefix: 'provider-add',
   });
 
-  if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
+  const onChange = useCallback(event => {
+    const { name, value } = event.target;
+    setDraft(current => ({ ...current, [name]: value }));
+  }, []);
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(<AddProviderForm draft={draft} rules={rules} onChange={onChange} />);
+    return () => setForm(null);
+  }, [show, draft, rules, onChange, setForm]);
+
+  if (!canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
-  const upload = file => {
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_PROVIDER);
+      rules.reset();
+    }
+    setShow(!show);
+  };
+
+  const save = () => {
     if (!rules.validateAll()) {
       return;
     }
-    const architecture = form.name.trim();
-    setUploading(true);
-    setProgress(0);
-    notify('', '', { key: UPLOAD_KEY });
-    api.files
-      .upload(org, item.name, version.version, architecture, file, event => {
-        setProgress(Math.round((100 * event.loaded) / event.total));
-      })
+    api.providers
+      .create(org, item.name, version.version, draft)
       .then(() => {
-        notify('success', t('boxes.messages.operationSuccessful'), { key: UPLOAD_KEY });
-        setForm(EMPTY_ARCHITECTURE);
+        notify('success', t('boxes.provider.created'));
+        setShow(false);
+        setDraft(EMPTY_PROVIDER);
         rules.reset();
         reload();
       })
@@ -524,59 +519,57 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
         if (rules.applyServerErrors(requestError)) {
           return;
         }
-        log.api.error('Error uploading ISO file', {
-          architectureName: architecture,
-          error: requestError.message,
-        });
-        notify('danger', responseMessage(requestError, t('boxes.messages.uploadFailed')), {
-          key: UPLOAD_KEY,
-        });
-      })
-      .finally(() => setUploading(false));
+        notify('danger', responseMessage(requestError, t('boxes.provider.createError')));
+      });
   };
 
   return (
-    <UploadZone
-      uploading={uploading}
-      progress={progress}
-      form={form}
-      rules={rules}
-      onName={name => setForm({ name })}
-      onFile={upload}
-    />
+    <div>
+      <button
+        type="button"
+        className={`btn ${show ? 'btn-secondary' : 'btn-outline-success'} me-2`}
+        onClick={toggle}
+      >
+        {show ? t('boxes.buttons.cancel') : t('boxes.provider.add')}
+      </button>
+      {show ? (
+        <button type="button" className="btn btn-success me-2" onClick={save}>
+          {t('boxes.buttons.save')}
+        </button>
+      ) : null}
+    </div>
   );
 };
 
-IsoArtifactsActions.propTypes = slotShape;
+BoxProvidersActions.propTypes = slotShape;
 
-export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
+export const BoxProviderRowActions = ({ item, version, provider, ctx }) => {
   const { t } = useTranslation();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!isOrgManager(user, org)) {
+  if (!canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
   const remove = () => {
-    api.files
-      .remove(org, item.name, version.version, artifact.name)
+    deleteProviderCascade(org, item.name, version.version, provider.name)
       .then(() => {
-        notify('success', t('boxes.iso.file.deleted'));
+        notify('success', t('boxes.provider.deleted'));
         reload();
       })
       .catch(error => {
-        log.component.error('Error deleting ISO file', {
-          architectureName: artifact.name,
+        log.component.error('Error deleting provider', {
+          providerName: provider.name,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('boxes.iso.file.deleteError')));
+        notify('danger', t('boxes.provider.deleteError'));
       });
   };
 
   return (
     <>
-      <button type="button" className="btn btn-danger me-2" onClick={() => setShow(true)}>
+      <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
@@ -584,4 +577,4 @@ export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
   );
 };
 
-IsoArtifactRowActions.propTypes = { ...slotShape, artifact: architectureShape.isRequired };
+BoxProviderRowActions.propTypes = { ...slotShape, provider: providerShape.isRequired };

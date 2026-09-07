@@ -24,6 +24,22 @@ const SENSITIVE_KEYS = new Set([
 const RING_BUFFER_SIZE = 100;
 const MAX_ERROR_QUEUE_SIZE = 50;
 const ERROR_FLUSH_DEBOUNCE_MS = 1000;
+const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
+
+const cookieValue = name =>
+  document.cookie
+    .split('; ')
+    .filter(entry => entry.startsWith(`${name}=`))
+    .map(entry => decodeURIComponent(entry.slice(name.length + 1)))[0] || '';
+
+const xsrfToken = () => XSRF_COOKIES.map(cookieValue).find(Boolean) || '';
+
+const reportHeaders = () => {
+  const token = xsrfToken();
+  return token
+    ? { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token }
+    : { 'Content-Type': 'application/json' };
+};
 
 let settings;
 let markConfigured;
@@ -69,7 +85,7 @@ const flushErrors = () => {
   fetch(settings.reportUrl, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
+    headers: reportHeaders(),
     body: JSON.stringify({ errors: errorQueue.splice(0), recent: ringBuffer.slice() }),
   }).catch(() => null);
 };

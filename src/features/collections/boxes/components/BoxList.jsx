@@ -11,9 +11,9 @@ import { log } from '../../../../lib/logger';
 import { session } from '../../../../lib/runtime';
 import { responseMessage } from '../../../../utils/responseMessage';
 import { joinAsAdmin } from '../../../organizations/api/organizations';
-import { api } from '../api';
-import { BOX_LABELS, BOX_SCHEMA } from '../forms';
-import { isGlobalAdmin, isOrgManager, isOrgMember } from '../permissions';
+import { api } from '../api/boxes';
+import { BOX_LABELS, BOX_SCHEMA } from '../utils/forms';
+import { isGlobalAdmin, isOrgManager, isOrgMember } from '../utils/permissions';
 
 const EMPTY_BOX = { name: '', description: '', is_public: false };
 

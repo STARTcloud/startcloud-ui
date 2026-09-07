@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaArrowsRotate } from 'react-icons/fa6';
 
 import { useNotify } from '../../../../contexts/NoticeContext';
-import { api } from '../api';
+import { api } from '../api/provisioners';
 
 const POLL_INTERVAL_MS = 10000;
 const POLL_LIMIT = 90;

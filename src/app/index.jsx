@@ -12,6 +12,8 @@ import { authMethod } from '../utils/capabilities';
 import App from './App';
 import AppProvider from './provider';
 
+const REPORTING_METHODS = ['backend', 'cookie'];
+
 const loadSupportedLanguages = async () => {
   try {
     const data = await fetchHealth();
@@ -30,7 +32,7 @@ probeStatus()
     initRuntime(status);
     configureLogger({
       fetchHealth,
-      reportUrl: authMethod(status) === 'backend' ? '/api/client-errors' : '',
+      reportUrl: REPORTING_METHODS.includes(authMethod(status)) ? '/api/client-errors' : '',
     });
     log.app.info('STARTcloud UI starting', { role: status.role, version: status.version });
     const { i18n, ready, getSupportedLanguages } = createI18n({ loadSupportedLanguages });

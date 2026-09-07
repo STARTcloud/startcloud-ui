@@ -15,29 +15,29 @@ import {
 } from '../../catalog/components/columns';
 import { architectureNames, providerNames } from '../../catalog/utils/itemShape';
 
-import { boxesAdapter } from './adapter';
-import { BoxQuickActions } from './deploy';
-import { canManageBox } from './permissions';
+import { boxesAdapter } from './api/adapter';
 import {
   BoxCicdBar,
   BoxItemActions,
   BoxItemExtras,
   BoxVersionRowActions,
   BoxVersionsActions,
-} from './slots/BoxItem';
-import { BoxListActions } from './slots/BoxList';
+} from './components/BoxItem';
+import { BoxListActions } from './components/BoxList';
 import {
   BoxArchitectureRowActions,
   BoxArchitecturesActions,
   BoxProviderActions,
-} from './slots/BoxProvider';
+} from './components/BoxProvider';
 import {
   BoxProviderRowActions,
   BoxProvidersActions,
   BoxVersionActions,
   BoxVersionBannerActions,
   BoxVersionNotesActions,
-} from './slots/BoxVersion';
+} from './components/BoxVersion';
+import { BoxQuickActions } from './components/deploy';
+import { canManageBox } from './utils/permissions';
 
 export const boxes = {
   key: 'boxes',

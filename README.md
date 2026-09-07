@@ -93,7 +93,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
    | `links`           | `docs` and `contact`                                                                                                                                                                                                                                      |
    | `ticket`          | `{ baseUrl, reqType, fallbackCustomerId }`, or `null` when you serve them at `/api/config/ticket`                                                                                                                                                         |
 
-3. Implement the `/api/*` routes behind the tokens you advertise; the `api/` folders under `src/features/<name>/` and the one `api.js` under each `src/features/collections/<key>/` are the whole list, one call per line.
+3. Implement the `/api/*` routes behind the tokens you advertise; the `api/` folders under `src/features/<name>/` and `src/features/collections/<key>/` are the whole list, one call per line.
 4. Carry `dependency-bump.yml` so each UI release opens a `bump/startcloud-ui` pull request against your pin, for a human to merge.
 
 | Token              | Surface                                                                                                               |
@@ -133,7 +133,7 @@ src/
       api/  components/  hooks/  utils/  index.js
     collections/
       registry.js     token -> collection, mounted in status.collections order
-      boxes/  isos/  provisioners/   definition, adapter, api, slots, index.js
+      boxes/  isos/  provisioners/   definition, api/ (adapter and calls), components/, utils/, assets/, index.js
   hooks/              useSession, useTheme, useFavicon, useSearchBinding, useEventStream
   contexts/           StatusContext, NoticeContext, SearchContext
   lib/                apiClient, backendSession, browserOidc, anonymousSession, createSession, runtime, sse, eventHub, i18n, logger, ...

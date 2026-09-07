@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBook, FaBug, FaCode, FaEnvelope, FaGithub, FaHeart, FaServer } from 'react-icons/fa6';
 
 import BrandLogo from '../../../components/common/BrandLogo';
+import NotAvailableStub from '../../../components/common/NotAvailableStub';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
@@ -115,10 +116,20 @@ const PROFILES = {
 };
 
 /**
+ * Whether the host's role has an About profile, so the chrome draws an
+ * About link only where `/about` answers a page.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @returns {boolean} True when `about.<role>.*` keys exist for `status.role`
+ */
+export const hasAbout = status => Boolean(PROFILES[status.role]);
+
+/**
  * The About route: the shared `AboutPage` fed by the host's status and the
  * locale strings of the host's role, plus the identity-provider favourite
  * toggle when the host advertises `favorites` and the viewer signed in
- * through the provider.
+ * through the provider; a role with no `about.<role>.*` keys answers
+ * `NotAvailableStub`.
  */
 const AboutRoute = ({ theme, oidc }) => {
   const { t } = useTranslation();
@@ -168,6 +179,10 @@ const AboutRoute = ({ theme, oidc }) => {
       notify('danger', t('boxes.messages.failedToUpdateFavorites'), { key: FAVORITE_KEY });
     }
   };
+
+  if (!profile) {
+    return <NotAvailableStub title={t('navbar.about')} tokenLabel="about" />;
+  }
 
   const content = profile.content(t, status);
 

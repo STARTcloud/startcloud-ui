@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from './provisioners';
 
 let publicPromise = null;
 const privatePromises = new Map();
