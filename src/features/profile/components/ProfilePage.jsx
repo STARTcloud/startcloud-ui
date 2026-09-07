@@ -82,14 +82,14 @@ PageSearch.propTypes = {
 const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
 const NAME_LABELS = { name: 'profile.fields.displayName' };
 const PASSWORD_SCHEMA = {
-  required: ['new_password', 'confirmPassword'],
+  required: ['password', 'confirmPassword'],
   properties: {
-    new_password: { type: 'string' },
-    confirmPassword: { type: 'string', equals: 'new_password' },
+    password: { type: 'string' },
+    confirmPassword: { type: 'string', equals: 'password' },
   },
 };
 const PASSWORD_LABELS = {
-  new_password: 'profile.security.changePassword.newPasswordPlaceholder',
+  password: 'profile.security.changePassword.newPasswordPlaceholder',
   confirmPassword: 'profile.security.changePassword.confirmPasswordPlaceholder',
 };
 const EMAIL_SCHEMA = {
@@ -110,7 +110,7 @@ const SERVICE_ACCOUNT_LABELS = {
   description: 'profile.serviceAccounts.descriptionPlaceholder',
   expiration_days: 'profile.serviceAccounts.expires',
 };
-const EMPTY_PASSWORD = { new_password: '', confirmPassword: '' };
+const EMPTY_PASSWORD = { password: '', confirmPassword: '' };
 const EMPTY_EMAIL = { new_email: '' };
 const EXPIRATIONS = [30, 60, 90, 365];
 
@@ -595,7 +595,7 @@ const BackendProfilePage = ({
     }
     const controller = new AbortController();
     try {
-      await account.changePassword(currentUser.id, passwordForm.new_password, controller.signal);
+      await account.changePassword(currentUser.id, passwordForm.password, controller.signal);
       notify('success', t('profile.messages.passwordChanged'));
     } catch (error) {
       if (!isAbort(error) && !passwordRules.applyServerErrors(error)) {
@@ -726,9 +726,9 @@ const BackendProfilePage = ({
         <div className="col-md-3">
           <FormErrorSummary errors={passwordRules.summary} />
           <Field
-            id={passwordRules.idFor('new_password')}
+            id={passwordRules.idFor('password')}
             label={t('profile.security.changePassword.newPasswordPlaceholder')}
-            error={passwordRules.errors.new_password || ''}
+            error={passwordRules.errors.password || ''}
           >
             {aria => (
               <input
@@ -736,9 +736,9 @@ const BackendProfilePage = ({
                 type="password"
                 className="form-control"
                 autoComplete="new-password"
-                value={passwordForm.new_password}
-                onChange={e => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
-                onBlur={() => passwordRules.onBlur('new_password')}
+                value={passwordForm.password}
+                onChange={e => setPasswordForm({ ...passwordForm, password: e.target.value })}
+                onBlur={() => passwordRules.onBlur('password')}
               />
             )}
           </Field>

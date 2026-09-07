@@ -42,7 +42,7 @@ export const organizationRequests = organization => client.get(`${org(organizati
 
 export const approveRequest = (organization, requestId, assignedRole = 'member') =>
   client.post(`${org(organization)}${encodePath('requests', requestId)}/approve`, {
-    assignedRole,
+    assigned_role: assignedRole,
   });
 
 export const denyRequest = (organization, requestId) =>

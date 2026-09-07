@@ -13,7 +13,7 @@ export const adminConfig = {
   update: (configName, configData) =>
     client.put(encodePath('api', 'config', configName), configData),
   restart: () => client.post('/api/config/restart', {}),
-  testSmtp: email => client.post('/api/mail/test-smtp', { testEmail: email }),
+  testSmtp: email => client.post('/api/mail/test-smtp', { test_email: email }),
   uploadSsl: (file, targetPath) =>
     client.post('/api/config/ssl/upload', file, {
       params: { targetPath },

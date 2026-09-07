@@ -5,8 +5,8 @@ const user = userId => encodePath('api', 'users', userId);
 
 export const removeAccount = userId => client.delete(user(userId));
 
-export const changePassword = (userId, newPassword, signal) =>
-  client.put(`${user(userId)}/change-password`, { new_password: newPassword }, { signal });
+export const changePassword = (userId, password, signal) =>
+  client.put(`${user(userId)}/change-password`, { password }, { signal });
 
 export const changeEmail = (userId, newEmail, signal) =>
   client.put(`${user(userId)}/change-email`, { new_email: newEmail }, { signal });

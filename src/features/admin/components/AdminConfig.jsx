@@ -101,7 +101,7 @@ const nameOf = pointer => pointer.slice(1);
  * subsections drawn from the schema and searched from the navbar by title
  * or key, every value validated through the schema on blur and on Update
  * with the summary above the sections, the refused write painted by
- * pointer, the restart notice from the 200's `requiresRestart`, the OIDC
+ * pointer, the restart notice from the 200's `requires_restart`, the OIDC
  * providers block over `additionalProperties` of `auth.oidc.providers`,
  * update and restart, the SSL upload on upload fields and the SMTP test on
  * mail, every call through the app's `config` adapter.
@@ -150,7 +150,7 @@ const AdminConfig = ({ config: configApi }) => {
 
   const afterWrite = (configName, data) => {
     notify('success', t('configManager.updateSuccess'));
-    if (data?.requiresRestart) {
+    if (data?.requires_restart) {
       notify('warning', t('configManager.restartNeeded'));
     }
     fetchConfig(configName);

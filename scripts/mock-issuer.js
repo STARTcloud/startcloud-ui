@@ -318,14 +318,24 @@ const LINK = {
 
 const FAVORITES = [
   {
-    clientId: 'conductor',
-    clientName: 'Conductor',
-    iconUrl: '',
-    homeUrl: 'https://conductor.startcloud.com/',
-    customLabel: null,
+    client_id: 'conductor',
+    client_name: 'Conductor',
+    icon_url: '',
+    home_url: 'https://conductor.startcloud.com/',
+    custom_label: null,
     order: 0,
   },
+  {
+    client_id: 'boxvault',
+    client_name: 'BoxVault',
+    icon_url: '',
+    home_url: 'https://boxvault.startcloud.com/',
+    custom_label: null,
+    order: 1,
+  },
 ];
+
+const byOrder = (first, second) => first.order - second.order;
 
 const ADDRESS = {
   line1: '',
@@ -1357,20 +1367,24 @@ steppedRoute('DELETE', '/api/user/sessions', () => {
   endStreams();
   return ok({ next: '/login' });
 });
-sessionRoute('GET', '/api/user/favorites', () => ok(state.profile.favorite_apps));
+sessionRoute('GET', '/api/user/favorites', () =>
+  ok([...state.profile.favorite_apps].sort(byOrder))
+);
 sessionRoute('PUT', '/api/user/favorites', ctx => {
   const list = Array.isArray(ctx.body) ? ctx.body : [];
-  state.profile.favorite_apps = list.map((entry, index) => {
-    const known = FAVORITES.find(app => app.clientId === entry.client_id);
-    return {
-      clientId: entry.client_id,
-      clientName: known?.clientName || entry.client_id,
-      iconUrl: known?.iconUrl || '',
-      homeUrl: known?.homeUrl || '',
-      customLabel: entry.custom_label || null,
-      order: Number(entry.order ?? index),
-    };
-  });
+  state.profile.favorite_apps = list
+    .map((entry, index) => {
+      const known = FAVORITES.find(app => app.client_id === entry.client_id);
+      return {
+        client_id: entry.client_id,
+        client_name: known?.client_name || entry.client_id,
+        icon_url: known?.icon_url || '',
+        home_url: known?.home_url || '',
+        custom_label: entry.custom_label || null,
+        order: Number(entry.order ?? index),
+      };
+    })
+    .sort(byOrder);
   return ok(state.profile.favorite_apps);
 });
 sessionRoute('PATCH', '/api/user/preferences', ctx => {

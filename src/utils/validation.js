@@ -57,10 +57,15 @@ const TYPE_CHECKS = {
  * `/api/rules` document is loading or when the host answers none.
  */
 export const DEFS = {
-  slug: { type: 'string', pattern: '^(?!.*\\.\\.)[A-Za-z0-9.-]+$', minLength: 1, maxLength: 255 },
+  slug: {
+    type: 'string',
+    allOf: [{ pattern: '^[A-Za-z0-9.-]+$' }, { not: { pattern: '\\.\\.' } }],
+    minLength: 1,
+    maxLength: 255,
+  },
   identifier: {
     type: 'string',
-    pattern: '^(?!.*\\.\\.)[0-9a-zA-Z][0-9a-zA-Z._-]*$',
+    allOf: [{ pattern: '^[0-9a-zA-Z][0-9a-zA-Z._-]*$' }, { not: { pattern: '\\.\\.' } }],
     maxLength: 255,
   },
   email: { type: 'string', format: 'email', maxLength: 255 },
@@ -178,14 +183,38 @@ const CHECKS = [
   itemsCheck,
 ];
 
-const firstFailure = (rule, value, patternName) => {
+const subschemaFailure = ({ schema, value, patternName, document, evaluate }) => {
+  const inner = resolve(schema, document);
+  return evaluate(inner.rule, value, inner.patternName || patternName, document);
+};
+
+const allOfCheck = ({ rule, value, patternName, document, evaluate }) => {
+  for (const schema of rule.allOf || []) {
+    const failure = subschemaFailure({ schema, value, patternName, document, evaluate });
+    if (failure) {
+      return failure;
+    }
+  }
+  return null;
+};
+
+const notCheck = ({ rule, value, patternName, document, evaluate }) => {
+  if (!rule.not) {
+    return null;
+  }
+  const passed = !subschemaFailure({ schema: rule.not, value, patternName, document, evaluate });
+  return passed ? { rule: 'not', params: {} } : null;
+};
+
+const firstFailure = (rule, value, patternName, document) => {
   for (const check of CHECKS) {
     const failure = check(rule, value, patternName);
     if (failure) {
       return failure;
     }
   }
-  return null;
+  const nested = { rule, value, patternName, document, evaluate: firstFailure };
+  return allOfCheck(nested) || notCheck(nested);
 };
 
 /**
@@ -204,7 +233,7 @@ export const validateValue = (schema, value, document = FALLBACK_DOCUMENT) => {
   if (isBlank(value)) {
     return rule.required === true ? [{ pointer: '', rule: 'required', params: {} }] : [];
   }
-  const failure = firstFailure(rule, value, patternName);
+  const failure = firstFailure(rule, value, patternName, document);
   return failure ? [{ pointer: '', ...failure }] : [];
 };
 
