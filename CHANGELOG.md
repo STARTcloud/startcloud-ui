@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.8.1...v0.9.0) (2026-09-08)
+
+
+### Features
+
+* add the personName and iconName patterns from the identity contract ([a786267](https://github.com/STARTcloud/startcloud-ui/commit/a7862671b150a8496811f60b404faf78c7c4939a))
+
+
+### Bug Fixes
+
+* Refining and Improving the Contracts ([4765f56](https://github.com/STARTcloud/startcloud-ui/commit/4765f568104f1da6cdd6cc86abafadd8a4567d58))
+
 ## [0.8.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.8.0...v0.8.1) (2026-09-07)
 
 
