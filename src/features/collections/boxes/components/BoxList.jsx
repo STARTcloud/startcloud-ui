@@ -6,10 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { session } from '../../../../lib/runtime';
-import { responseMessage } from '../../../../utils/responseMessage';
+import { hasFeature } from '../../../../utils/capabilities';
 import { joinAsAdmin } from '../../../organizations/api/organizations';
 import { api } from '../api/boxes';
 import { BOX_LABELS, BOX_SCHEMA } from '../utils/forms';
@@ -17,17 +18,17 @@ import { isGlobalAdmin, isOrgManager, isOrgMember } from '../utils/permissions';
 
 const EMPTY_BOX = { name: '', description: '', is_public: false };
 
-const CreateBoxForm = ({ org, draft, rules, onChange }) => {
+const CreateBoxForm = ({ org, draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
       <h4>{t('boxes.box.organization.headers.createNewBox')}</h4>
-      <form noValidate>
+      <form onSubmit={onSubmit} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <Field
           id={rules.idFor('name')}
           label={<strong>{t('boxes.box.name')}:</strong>}
-          hint={t('boxes.box.shortDescription')}
+          hint={t('boxes.box.nameHint')}
           error={rules.errors.name || ''}
         >
           {aria => (
@@ -119,6 +120,7 @@ CreateBoxForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 const JoinAsOwner = ({ org, notify }) => {
@@ -131,7 +133,7 @@ const JoinAsOwner = ({ org, notify }) => {
       })
       .catch(error => {
         log.api.error('Error joining organization as admin', { org, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
   return (
@@ -180,7 +182,9 @@ RemoveAll.propTypes = {
 export const BoxListActions = ({ ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
+  const uploads = hasFeature(status, 'uploads');
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_BOX);
   const rules = useFormRules({
@@ -225,8 +229,13 @@ export const BoxListActions = ({ ctx }) => {
           return;
         }
         log.api.error('Error creating box', { boxName: draft.name, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.box.organization.errors.boxCreate')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
+  };
+
+  const submit = event => {
+    event.preventDefault();
+    create();
   };
 
   return (
@@ -234,7 +243,7 @@ export const BoxListActions = ({ ctx }) => {
       {isGlobalAdmin(user) && !isOrgMember(user, org) ? (
         <JoinAsOwner org={org} notify={notify} />
       ) : null}
-      {isOrgMember(user, org) ? (
+      {uploads && isOrgMember(user, org) ? (
         <>
           <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.box.organization.buttons.createBox') : t('pages.addNew')}
@@ -246,9 +255,17 @@ export const BoxListActions = ({ ctx }) => {
           ) : null}
         </>
       ) : null}
-      {isOrgManager(user, org) ? <RemoveAll org={org} reload={reload} notify={notify} /> : null}
+      {uploads && isOrgManager(user, org) ? (
+        <RemoveAll org={org} reload={reload} notify={notify} />
+      ) : null}
       {creating ? (
-        <CreateBoxForm org={org} draft={draft} rules={rules} onChange={onChange} />
+        <CreateBoxForm
+          org={org}
+          draft={draft}
+          rules={rules}
+          onChange={onChange}
+          onSubmit={submit}
+        />
       ) : null}
     </>
   );

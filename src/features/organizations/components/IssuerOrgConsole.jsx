@@ -690,7 +690,6 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   const [pending, setPending] = useState(null);
   const [showConvert, setShowConvert] = useState(false);
   const placesKey = usePlacesKey(places);
-  const tabs = tabsFor(hasFeature(status, 'invitations'));
   const currentUserId = session.restore()?.user?.id;
 
   useEffect(() => {
@@ -698,6 +697,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   }, [t]);
 
   const current = memberships?.find(entry => entry.uuid === org) || null;
+  const tabs = tabsFor(hasFeature(status, 'invitations') && Boolean(current?.can_manage));
   const members = Array.isArray(current?.members) ? current.members : [];
   const owners = ownerCount(members);
   const currentTab = tabs.some(entry => entry.key === tab) ? tab : 'organization';

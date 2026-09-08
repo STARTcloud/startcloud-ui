@@ -15,7 +15,6 @@ import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
 import { isOwner } from '../../../utils/membership';
 import { membershipsOf, organizationsShape } from '../../../utils/organizations';
-import { responseMessage } from '../../../utils/responseMessage';
 import { issuerOrganizationsShape } from '../api/issuer';
 
 import IssuerOrgConsole from './IssuerOrgConsole';
@@ -29,14 +28,17 @@ const ORG_SCHEMA = {
     organization: { type: 'string' },
     email: { type: 'string' },
     description: { type: 'string' },
-    access_mode: { type: 'string' },
-    default_role: { type: 'string' },
   },
 };
 const ORG_LABELS = {
   organization: 'orgConsole.organization.name',
   email: 'orgConsole.organization.email',
   description: 'orgConsole.organization.description',
+};
+const ACCESS_SCHEMA = {
+  properties: { access_mode: { type: 'string' }, default_role: { type: 'string' } },
+};
+const ACCESS_LABELS = {
   access_mode: 'orgConsole.organization.accessMode',
   default_role: 'orgConsole.organization.defaultRole',
 };
@@ -551,6 +553,12 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
     values: orgForm,
     labels: ORG_LABELS,
   });
+  const accessRules = useFormRules({
+    formKey: 'accessMode',
+    schema: ACCESS_SCHEMA,
+    values: orgForm,
+    labels: ACCESS_LABELS,
+  });
   const inviteRules = useFormRules({
     formKey: 'invitation',
     schema: INVITE_SCHEMA,
@@ -631,9 +639,20 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
     loadData();
   }, [org, organizations]);
 
+  const reportUpdateFailure = (formRules, error) => {
+    if (formRules.applyServerErrors(error)) {
+      return;
+    }
+    log.component.error('Error updating organization', {
+      organization: org,
+      error: error.message,
+    });
+    notify('danger', t(error.messageKey || 'errors.request'));
+  };
+
   const handleUpdateOrganization = async e => {
     e.preventDefault();
-    if (!orgRules.validateAll()) {
+    if (![orgRules.validateAll(), accessRules.validateAll()].every(Boolean)) {
       return;
     }
     const {
@@ -646,30 +665,29 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
 
     try {
       await organizations.update(org, { organization, email, description });
+    } catch (error) {
+      reportUpdateFailure(orgRules, error);
+      return;
+    }
 
-      if (organization !== org) {
-        localStorage.setItem(activeOrgKey, organization);
-        await session.refresh();
-      }
+    if (organization !== org) {
+      localStorage.setItem(activeOrgKey, organization);
+      await session.refresh();
+    }
 
-      const accessChanged =
-        accessMode !== loadedAccessRef.current.accessMode ||
-        defaultRole !== loadedAccessRef.current.defaultRole;
-      if (!isExternalOrg && accessChanged) {
+    const accessChanged =
+      accessMode !== loadedAccessRef.current.accessMode ||
+      defaultRole !== loadedAccessRef.current.defaultRole;
+    if (!isExternalOrg && accessChanged) {
+      try {
         await organizations.accessMode(organization, accessMode, defaultRole);
         loadedAccessRef.current = { accessMode, defaultRole };
-      }
-      notify('success', t('orgConsole.orgUpdateSuccess'));
-    } catch (error) {
-      if (orgRules.applyServerErrors(error)) {
+      } catch (error) {
+        reportUpdateFailure(accessRules, error);
         return;
       }
-      log.component.error('Error updating organization', {
-        organization: org,
-        error: error.message,
-      });
-      notify('danger', t('orgConsole.orgUpdateError'));
     }
+    notify('success', t('orgConsole.orgUpdateSuccess'));
   };
 
   const handleSetOrgRole = (userId, newRole) => {
@@ -724,7 +742,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
         organization: org,
         error: error.message,
       });
-      notify('danger', responseMessage(error, t('orgConsole.invitation.sendWarning')));
+      notify('danger', t(error.messageKey || 'errors.request'));
     } finally {
       try {
         setActiveInvitations(await organizations.invitations(org));
@@ -796,7 +814,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
         requestId,
         error: error.message,
       });
-      notify('danger', t('orgConsole.joinRequest.approveError', { error: error.message }));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -810,7 +828,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
         requestId,
         error: error.message,
       });
-      notify('danger', t('orgConsole.joinRequest.denyError', { error: error.message }));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -900,7 +918,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                     )}
                     {!isExternalOrg && (
                       <form onSubmit={handleUpdateOrganization} noValidate>
-                        <FormErrorSummary errors={orgRules.summary} />
+                        <FormErrorSummary errors={[...orgRules.summary, ...accessRules.summary]} />
                         <Field
                           id={orgRules.idFor('organization')}
                           label={t('orgConsole.organization.name')}
@@ -967,10 +985,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                         <div className="row">
                           <div className="col-md-6">
                             <Field
-                              id={orgRules.idFor('access_mode')}
+                              id={accessRules.idFor('access_mode')}
                               label={t('orgConsole.organization.accessMode')}
                               hint={t('orgConsole.organization.accessModeHint')}
-                              error={orgRules.errors.access_mode}
+                              error={accessRules.errors.access_mode}
                             >
                               {aria => (
                                 <select
@@ -978,7 +996,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                                   className="form-select"
                                   value={orgForm.access_mode}
                                   onChange={e => setOrgField('access_mode', e.target.value)}
-                                  onBlur={() => orgRules.onBlur('access_mode')}
+                                  onBlur={() => accessRules.onBlur('access_mode')}
                                 >
                                   <option value="private">
                                     {t('orgConsole.organization.accessModes.private')}
@@ -995,10 +1013,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                           </div>
                           <div className="col-md-6">
                             <Field
-                              id={orgRules.idFor('default_role')}
+                              id={accessRules.idFor('default_role')}
                               label={t('orgConsole.organization.defaultRole')}
                               hint={t('orgConsole.organization.defaultRoleHint')}
-                              error={orgRules.errors.default_role}
+                              error={accessRules.errors.default_role}
                             >
                               {aria => (
                                 <select
@@ -1006,7 +1024,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                                   className="form-select"
                                   value={orgForm.default_role}
                                   onChange={e => setOrgField('default_role', e.target.value)}
-                                  onBlur={() => orgRules.onBlur('default_role')}
+                                  onBlur={() => accessRules.onBlur('default_role')}
                                 >
                                   <option value="member">{t('roles.member')}</option>
                                   <option value="admin">{t('roles.admin')}</option>

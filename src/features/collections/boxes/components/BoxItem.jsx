@@ -1,14 +1,15 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
-import { responseMessage } from '../../../../utils/responseMessage';
+import { hasFeature } from '../../../../utils/capabilities';
 import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../catalog/utils/itemShape';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
@@ -363,16 +364,16 @@ EditTextField.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-const BoxEditForm = ({ org, published, draft, rules, onChange }) => {
+const BoxEditForm = ({ org, published, draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <div className="edit-form">
-      <form noValidate>
+      <form onSubmit={onSubmit} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <Field
           id={rules.idFor('name')}
           label={<strong>{t('boxes.box.name')}:</strong>}
-          hint={t('boxes.box.shortDescription')}
+          hint={t('boxes.box.nameHint')}
           error={rules.errors.name || ''}
           className="mb-1"
         >
@@ -499,14 +500,16 @@ BoxEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export const BoxItemActions = ({ item, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify, setEditor } = ctx;
   const box = item.extras.raw;
-  const manage = canManageBox(user, org, box);
+  const manage = hasFeature(status, 'uploads') && canManageBox(user, org, box);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => draftFrom(box));
   const [showDelete, setShowDelete] = useState(false);
@@ -522,28 +525,6 @@ export const BoxItemActions = ({ item, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
   }, []);
-
-  useEffect(() => {
-    if (!editing) {
-      return undefined;
-    }
-    setEditor(
-      <BoxEditForm
-        org={org}
-        published={Boolean(box.published)}
-        draft={draft}
-        rules={rules}
-        onChange={onChange}
-      />
-    );
-    return () => setEditor(null);
-  }, [editing, draft, rules, onChange, org, box.published, setEditor]);
-
-  const cancel = () => {
-    setEditing(false);
-    setDraft(draftFrom(box));
-    rules.reset();
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -565,8 +546,40 @@ export const BoxItemActions = ({ item, ctx }) => {
           return;
         }
         log.api.error('Error updating box', { boxName: box.name, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.box.updateError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!editing) {
+      return undefined;
+    }
+    setEditor(
+      <BoxEditForm
+        org={org}
+        published={Boolean(box.published)}
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onSubmit={submit}
+      />
+    );
+    return () => setEditor(null);
+  }, [editing, draft, rules, onChange, submit, org, box.published, setEditor]);
+
+  const cancel = () => {
+    setEditing(false);
+    setDraft(draftFrom(box));
+    rules.reset();
   };
 
   const publish = published => {
@@ -575,7 +588,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error('Error updating box release status', { error: error.message });
-        notify('danger', responseMessage(error, t('boxes.box.updateError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 
@@ -647,10 +660,10 @@ BoxItemActions.propTypes = {
   }).isRequired,
 };
 
-const AddVersionForm = ({ draft, rules, onChange }) => {
+const AddVersionForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('version_number')}
@@ -699,14 +712,16 @@ AddVersionForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 const EMPTY_VERSION = { version_number: '', description: '' };
 
 export const BoxVersionsActions = ({ item, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify, setForm } = ctx;
-  const manage = canManageBox(user, org, item.extras.raw);
+  const manage = hasFeature(status, 'uploads') && canManageBox(user, org, item.extras.raw);
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_VERSION);
   const rules = useFormRules({
@@ -721,26 +736,6 @@ export const BoxVersionsActions = ({ item, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
-
-  useEffect(() => {
-    if (!show) {
-      return undefined;
-    }
-    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} />);
-    return () => setForm(null);
-  }, [show, draft, rules, onChange, setForm]);
-
-  if (!manage) {
-    return null;
-  }
-
-  const toggle = () => {
-    if (show) {
-      setDraft(EMPTY_VERSION);
-      rules.reset();
-    }
-    setShow(!show);
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -759,8 +754,37 @@ export const BoxVersionsActions = ({ item, ctx }) => {
         if (rules.applyServerErrors(requestError)) {
           return;
         }
-        notify('danger', responseMessage(requestError, t('boxes.version.addError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />);
+    return () => setForm(null);
+  }, [show, draft, rules, onChange, submit, setForm]);
+
+  if (!manage) {
+    return null;
+  }
+
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_VERSION);
+      rules.reset();
+    }
+    setShow(!show);
   };
 
   return (
@@ -794,10 +818,11 @@ BoxVersionsActions.propTypes = {
 
 export const BoxVersionRowActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!canManageBox(user, org, item.extras.raw)) {
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
@@ -812,7 +837,7 @@ export const BoxVersionRowActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('boxes.version.deleteError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

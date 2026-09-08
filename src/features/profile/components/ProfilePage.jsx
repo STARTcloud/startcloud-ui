@@ -11,8 +11,8 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
+import { rules } from '../../../lib/runtime';
 import { returnToShape } from '../../../utils/auth';
-import { responseMessage } from '../../../utils/responseMessage';
 
 import IssuerProfilePage, { issuerAccountShape } from './IssuerProfilePage';
 import ProfileTabs from './ProfileTabs';
@@ -98,16 +98,16 @@ const EMAIL_SCHEMA = {
 };
 const EMAIL_LABELS = { new_email: 'profile.security.changeEmail.newEmailPlaceholder' };
 const SERVICE_ACCOUNT_SCHEMA = {
-  required: ['organization', 'description'],
+  required: ['organization_id', 'description'],
   properties: {
-    organization: { type: 'string' },
+    organization_id: { type: 'string' },
     description: { type: 'string' },
     expiration_days: { type: 'integer' },
     role: { type: 'string' },
   },
 };
 const SERVICE_ACCOUNT_LABELS = {
-  organization: 'profile.serviceAccounts.organization',
+  organization_id: 'profile.serviceAccounts.organization',
   description: 'profile.serviceAccounts.descriptionPlaceholder',
   expiration_days: 'profile.serviceAccounts.expires',
   role: 'profile.serviceAccounts.role',
@@ -116,6 +116,10 @@ const EMPTY_PASSWORD = { password: '', confirmPassword: '' };
 const EMPTY_EMAIL = { new_email: '' };
 const EXPIRATIONS = [30, 60, 90, 365];
 const SERVICE_ACCOUNT_ROLES = ['member', 'admin', 'owner'];
+const DEFAULT_MIN_LENGTH = 15;
+
+const passwordMinLength = () =>
+  Number(rules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
 
 const userOf = current => current?.user || null;
 
@@ -196,7 +200,7 @@ const BackendProfilePage = ({
   const [serviceAccounts, setServiceAccounts] = useState([]);
   const [serviceAccountOrgs, setServiceAccountOrgs] = useState([]);
   const [serviceAccountForm, setServiceAccountForm] = useState(() => ({
-    organization: activeOrgUuid,
+    organization_id: '',
     description: '',
     expiration_days: 30,
     role: 'member',
@@ -246,7 +250,7 @@ const BackendProfilePage = ({
         orgName,
         error: error.message,
       });
-      notify('danger', t('profile.errors.leaveOrganization', { error: error.message }));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -260,7 +264,7 @@ const BackendProfilePage = ({
         requestId,
         error: error.message,
       });
-      notify('danger', t('profile.messages.cancelRequestError', { error: error.message }));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -308,7 +312,7 @@ const BackendProfilePage = ({
         userId: currentUser.id,
         error: error.message,
       });
-      notify('danger', responseMessage(error, t('profile.errors.deleteAccountFailed')));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -337,7 +341,7 @@ const BackendProfilePage = ({
         orgName,
         error: error.message,
       });
-      notify('danger', t('profile.errors.setPrimaryOrganization', { error: error.message }));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -353,7 +357,7 @@ const BackendProfilePage = ({
           refreshUserData();
         })
         .catch(error => {
-          notify('danger', responseMessage(error, t('profile.errors.verificationFailed')));
+          notify('danger', t(error.messageKey || 'errors.request'));
         })
         .finally(() => {
           navigate('/profile', { replace: true });
@@ -421,6 +425,11 @@ const BackendProfilePage = ({
           if (mounted) {
             setServiceAccounts(accounts);
             setServiceAccountOrgs(orgs || []);
+            const active = (orgs || []).find(org => org.name === activeOrgUuid);
+            setServiceAccountForm(previous => ({
+              ...previous,
+              organization_id: active ? String(active.id) : '',
+            }));
           }
         } catch (error) {
           if (mounted && !isAbort(error)) {
@@ -462,7 +471,7 @@ const BackendProfilePage = ({
       mounted = false;
       controller.abort();
     };
-  }, [account, activeTab]);
+  }, [account, activeTab, activeOrgUuid]);
 
   const loadServiceAccounts = async signal => {
     try {
@@ -484,7 +493,7 @@ const BackendProfilePage = ({
     const controller = new AbortController();
     try {
       const targetOrg = serviceAccountOrgs.find(
-        org => org.name === serviceAccountForm.organization
+        org => String(org.id) === serviceAccountForm.organization_id
       );
 
       if (!targetOrg) {
@@ -507,12 +516,7 @@ const BackendProfilePage = ({
         log.api.error('Error creating service account', {
           error: error.message,
         });
-        notify(
-          'danger',
-          t('profile.errors.createServiceAccountFailed', {
-            error: responseMessage(error, error.message),
-          })
-        );
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -529,12 +533,7 @@ const BackendProfilePage = ({
           serviceAccountId: id,
           error: error.message,
         });
-        notify(
-          'danger',
-          t('profile.errors.deleteServiceAccountsFailed', {
-            error: responseMessage(error, error.message),
-          })
-        );
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -571,12 +570,7 @@ const BackendProfilePage = ({
         serviceAccountIds: ids,
         error: error.message,
       });
-      notify(
-        'danger',
-        t('profile.errors.deleteServiceAccountsFailed', {
-          error: responseMessage(error, error.message),
-        })
-      );
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
     setSelectedIds(new Set());
     await loadServiceAccounts(controller.signal);
@@ -594,7 +588,7 @@ const BackendProfilePage = ({
       await refreshUserData();
     } catch (error) {
       if (!isAbort(error)) {
-        notify('danger', t('profile.errors.resendVerificationFailed', { error: error.message }));
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -611,7 +605,7 @@ const BackendProfilePage = ({
       notify('success', t('profile.messages.passwordChanged'));
     } catch (error) {
       if (!isAbort(error) && !passwordRules.applyServerErrors(error)) {
-        notify('danger', t('profile.errors.changePasswordFailed', { error: error.message }));
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -629,7 +623,7 @@ const BackendProfilePage = ({
       await refreshUserData();
     } catch (error) {
       if (!isAbort(error) && !emailRules.applyServerErrors(error)) {
-        notify('danger', t('profile.errors.changeEmailFailed', { error: error.message }));
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -647,10 +641,7 @@ const BackendProfilePage = ({
       await refreshUserData();
     } catch (error) {
       if (!isAbort(error) && !nameRules.applyServerErrors(error)) {
-        notify(
-          'danger',
-          responseMessage(error, t('profile.errors.changeNameFailed', { error: error.message }))
-        );
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     }
     controller.abort();
@@ -740,6 +731,7 @@ const BackendProfilePage = ({
           <Field
             id={passwordRules.idFor('password')}
             label={t('profile.security.changePassword.newPasswordPlaceholder')}
+            hint={t('profile.security.password.hint', { count: passwordMinLength() })}
             error={passwordRules.errors.password || ''}
           >
             {aria => (
@@ -984,22 +976,22 @@ const BackendProfilePage = ({
         <div className="col-md-3">
           <FormErrorSummary errors={serviceAccountRules.summary} />
           <Field
-            id={serviceAccountRules.idFor('organization')}
+            id={serviceAccountRules.idFor('organization_id')}
             label={t('profile.serviceAccounts.organization')}
-            error={serviceAccountRules.errors.organization || ''}
+            error={serviceAccountRules.errors.organization_id || ''}
           >
             {aria => (
               <select
                 {...aria}
                 className="form-select"
-                value={serviceAccountForm.organization}
+                value={serviceAccountForm.organization_id}
                 onChange={e =>
-                  setServiceAccountForm({ ...serviceAccountForm, organization: e.target.value })
+                  setServiceAccountForm({ ...serviceAccountForm, organization_id: e.target.value })
                 }
-                onBlur={() => serviceAccountRules.onBlur('organization')}
+                onBlur={() => serviceAccountRules.onBlur('organization_id')}
               >
                 {serviceAccountOrgs.map(org => (
-                  <option key={org.id} value={org.name}>
+                  <option key={org.id} value={org.id}>
                     {org.name}
                   </option>
                 ))}

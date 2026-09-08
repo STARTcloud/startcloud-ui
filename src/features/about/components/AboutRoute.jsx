@@ -173,7 +173,9 @@ const AboutRoute = ({ theme, oidc }) => {
         : [...current, { client_id: clientId, custom_label: null }];
       notify(
         'success',
-        t(favorited ? 'boxes.messages.removedFromFavorites' : 'boxes.messages.addedToFavorites'),
+        t(favorited ? 'pages.about.removedFromFavorites' : 'pages.about.addedToFavorites', {
+          app: status.brand.name,
+        }),
         { key: FAVORITE_KEY }
       );
 
@@ -184,7 +186,7 @@ const AboutRoute = ({ theme, oidc }) => {
         clientId,
         error: error.message,
       });
-      notify('danger', t('boxes.messages.failedToUpdateFavorites'), { key: FAVORITE_KEY });
+      notify('danger', t('pages.about.failedToUpdateFavorites'), { key: FAVORITE_KEY });
     }
   };
 

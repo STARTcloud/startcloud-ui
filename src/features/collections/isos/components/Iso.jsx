@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck, FaGlobe, FaLock, FaPen, FaTrash, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,10 +7,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { session } from '../../../../lib/runtime';
-import { responseMessage } from '../../../../utils/responseMessage';
+import { hasFeature } from '../../../../utils/capabilities';
 import { itemShape, versionShape } from '../../../catalog/utils/itemShape';
 import { joinAsAdmin } from '../../../organizations/api/organizations';
 import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../boxes';
@@ -27,12 +28,12 @@ import { api } from '../api/isos';
 const EMPTY_ISO = { name: '', description: '', is_public: false };
 const EMPTY_VERSION = { version_number: '', description: '' };
 
-const CreateIsoForm = ({ org, draft, rules, onChange }) => {
+const CreateIsoForm = ({ org, draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
       <h4>{t('boxes.iso.createTitle')}</h4>
-      <form noValidate>
+      <form onSubmit={onSubmit} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <Field
           id={rules.idFor('name')}
@@ -128,6 +129,7 @@ CreateIsoForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 const JoinAsOwner = ({ org, notify }) => {
@@ -140,7 +142,7 @@ const JoinAsOwner = ({ org, notify }) => {
       })
       .catch(error => {
         log.api.error('Error joining organization as admin', { org, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
   return (
@@ -189,7 +191,9 @@ RemoveAll.propTypes = {
 export const IsoListActions = ({ ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
+  const uploads = hasFeature(status, 'uploads');
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_ISO);
   const rules = useFormRules({
@@ -234,8 +238,13 @@ export const IsoListActions = ({ ctx }) => {
           return;
         }
         log.api.error('Error creating ISO', { isoName: draft.name, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.iso.createError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
+  };
+
+  const submit = event => {
+    event.preventDefault();
+    create();
   };
 
   return (
@@ -243,7 +252,7 @@ export const IsoListActions = ({ ctx }) => {
       {isGlobalAdmin(user) && !isOrgMember(user, org) ? (
         <JoinAsOwner org={org} notify={notify} />
       ) : null}
-      {isOrgMember(user, org) ? (
+      {uploads && isOrgMember(user, org) ? (
         <>
           <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.iso.create') : t('pages.addNew')}
@@ -255,9 +264,17 @@ export const IsoListActions = ({ ctx }) => {
           ) : null}
         </>
       ) : null}
-      {isOrgManager(user, org) ? <RemoveAll org={org} reload={reload} notify={notify} /> : null}
+      {uploads && isOrgManager(user, org) ? (
+        <RemoveAll org={org} reload={reload} notify={notify} />
+      ) : null}
       {creating ? (
-        <CreateIsoForm org={org} draft={draft} rules={rules} onChange={onChange} />
+        <CreateIsoForm
+          org={org}
+          draft={draft}
+          rules={rules}
+          onChange={onChange}
+          onSubmit={submit}
+        />
       ) : null}
     </>
   );
@@ -287,7 +304,7 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const next = form.name.trim();
+    const next = form.name;
     api.isos
       .update(org, iso.name, { name: next })
       .then(() => {
@@ -299,7 +316,7 @@ const RenameControls = ({ iso, org, notify, onDone, onSaved }) => {
           return;
         }
         log.api.error('Error updating ISO name', { error: error.message });
-        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
   return (
@@ -354,9 +371,10 @@ RenameControls.propTypes = {
 export const IsoItemActions = ({ item, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const iso = item.extras.raw;
-  const manage = isOrgManager(user, org);
+  const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [renaming, setRenaming] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
@@ -366,7 +384,7 @@ export const IsoItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error(message, { isoName: iso.name, error: error.message });
-        notify('danger', responseMessage(error, t('boxes.messages.operationFailed')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 
@@ -455,10 +473,10 @@ IsoItemActions.propTypes = {
   }).isRequired,
 };
 
-const AddVersionForm = ({ draft, rules, onChange }) => {
+const AddVersionForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('version_number')}
@@ -507,12 +525,14 @@ AddVersionForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export const IsoVersionsActions = ({ item, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify, setForm } = ctx;
-  const manage = isOrgManager(user, org);
+  const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_VERSION);
   const rules = useFormRules({
@@ -527,26 +547,6 @@ export const IsoVersionsActions = ({ item, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
-
-  useEffect(() => {
-    if (!show) {
-      return undefined;
-    }
-    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} />);
-    return () => setForm(null);
-  }, [show, draft, rules, onChange, setForm]);
-
-  if (!manage) {
-    return null;
-  }
-
-  const toggle = () => {
-    if (show) {
-      setDraft(EMPTY_VERSION);
-      rules.reset();
-    }
-    setShow(!show);
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -565,8 +565,37 @@ export const IsoVersionsActions = ({ item, ctx }) => {
         if (rules.applyServerErrors(requestError)) {
           return;
         }
-        notify('danger', responseMessage(requestError, t('boxes.version.addError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(<AddVersionForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />);
+    return () => setForm(null);
+  }, [show, draft, rules, onChange, submit, setForm]);
+
+  if (!manage) {
+    return null;
+  }
+
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_VERSION);
+      rules.reset();
+    }
+    setShow(!show);
   };
 
   return (
@@ -600,10 +629,11 @@ IsoVersionsActions.propTypes = {
 
 export const IsoVersionRowActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!isOrgManager(user, org)) {
+  if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
   }
 
@@ -618,7 +648,7 @@ export const IsoVersionRowActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('boxes.version.deleteError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

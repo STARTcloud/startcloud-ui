@@ -11,7 +11,6 @@ import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { responseMessage } from '../../../utils/responseMessage';
 import { adminShape } from '../utils/adminShape';
 
 const NO_FILTERS = [];
@@ -29,14 +28,17 @@ const EDIT_SCHEMA = {
     org_code: { type: 'string' },
     email: { type: 'string' },
     description: { type: 'string' },
-    access_mode: { type: 'string' },
-    default_role: { type: 'string' },
   },
 };
 const EDIT_LABELS = {
   org_code: 'orgUserManager.editModal.orgCode',
   email: 'orgUserManager.editModal.orgEmail',
   description: 'orgUserManager.editModal.description',
+};
+const ACCESS_SCHEMA = {
+  properties: { access_mode: { type: 'string' }, default_role: { type: 'string' } },
+};
+const ACCESS_LABELS = {
   access_mode: 'orgUserManager.editModal.accessMode',
   default_role: 'orgUserManager.editModal.defaultRole',
 };
@@ -56,7 +58,15 @@ const editOf = details => ({
   default_role: details.default_role || 'member',
 });
 
-const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, onSave }) => {
+const EditOrganizationModal = ({
+  organization,
+  draft,
+  rules,
+  accessRules,
+  onChange,
+  onClose,
+  onSave,
+}) => {
   const { t } = useTranslation();
   return (
     <Modal show={Boolean(organization)} onHide={onClose}>
@@ -67,7 +77,7 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
+          <FormErrorSummary errors={[...rules.summary, ...accessRules.summary]} />
           <Field
             id={rules.idFor('org_code')}
             label={t('orgUserManager.editModal.orgCode')}
@@ -119,10 +129,10 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
             )}
           </Field>
           <Field
-            id={rules.idFor('access_mode')}
+            id={accessRules.idFor('access_mode')}
             label={t('orgUserManager.editModal.accessMode')}
             hint={t('orgUserManager.editModal.accessModeHint')}
-            error={rules.errors.access_mode || ''}
+            error={accessRules.errors.access_mode || ''}
           >
             {aria => (
               <select
@@ -130,7 +140,7 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
                 className="form-select"
                 value={draft.access_mode}
                 onChange={e => onChange('access_mode', e.target.value)}
-                onBlur={() => rules.onBlur('access_mode')}
+                onBlur={() => accessRules.onBlur('access_mode')}
               >
                 <option value="private">{t('orgUserManager.editModal.accessModes.private')}</option>
                 <option value="invite_only">
@@ -143,10 +153,10 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
             )}
           </Field>
           <Field
-            id={rules.idFor('default_role')}
+            id={accessRules.idFor('default_role')}
             label={t('orgUserManager.editModal.defaultRole')}
             hint={t('orgUserManager.editModal.defaultRoleHint')}
-            error={rules.errors.default_role || ''}
+            error={accessRules.errors.default_role || ''}
           >
             {aria => (
               <select
@@ -154,7 +164,7 @@ const EditOrganizationModal = ({ organization, draft, rules, onChange, onClose, 
                 className="form-select"
                 value={draft.default_role}
                 onChange={e => onChange('default_role', e.target.value)}
-                onBlur={() => rules.onBlur('default_role')}
+                onBlur={() => accessRules.onBlur('default_role')}
               >
                 <option value="member">{t('roles.member')}</option>
                 <option value="admin">{t('roles.admin')}</option>
@@ -185,6 +195,7 @@ EditOrganizationModal.propTypes = {
     default_role: PropTypes.string.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
+  accessRules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
@@ -282,6 +293,13 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
     labels: EDIT_LABELS,
     idPrefix: 'edit',
   });
+  const accessRules = useFormRules({
+    formKey: 'accessMode',
+    schema: ACCESS_SCHEMA,
+    values: draft,
+    labels: ACCESS_LABELS,
+    idPrefix: 'edit-access',
+  });
 
   useEffect(() => {
     admin.organizationsWithUsers().then(setOrganizations, () => null);
@@ -368,6 +386,12 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       .catch(() => notify('danger', t('admin.messages.operationFailed')));
   };
 
+  const reportEditFailure = (formRules, error) => {
+    if (!formRules.applyServerErrors(error)) {
+      notify('danger', t(error.messageKey || 'errors.request'));
+    }
+  };
+
   const handleRenameOrganization = async e => {
     e.preventDefault();
     if (!renameRules.validateAll()) {
@@ -392,9 +416,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       renameRules.reset();
       notify('success', t('orgUserManager.rename.success'));
     } catch (error) {
-      if (!renameRules.applyServerErrors(error)) {
-        notify('danger', t('orgUserManager.rename.error'));
-      }
+      reportEditFailure(renameRules, error);
     }
   };
 
@@ -410,11 +432,12 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
     setEditingOrg(details);
     setDraft(editOf(details));
     editRules.reset();
+    accessRules.reset();
   };
 
   const saveEdit = async e => {
     e.preventDefault();
-    if (!editRules.validateAll()) {
+    if (![editRules.validateAll(), accessRules.validateAll()].every(Boolean)) {
       return;
     }
     try {
@@ -424,14 +447,18 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
         email: draft.email,
         description: draft.description,
       });
-      await admin.accessMode(editingOrg.name, draft.access_mode, draft.default_role);
-      notify('success', t('orgUserManager.editModal.updateSuccess'));
-      setEditingOrg(null);
     } catch (error) {
-      if (!editRules.applyServerErrors(error)) {
-        notify('danger', responseMessage(error, t('orgUserManager.editModal.updateError')));
-      }
+      reportEditFailure(editRules, error);
+      return;
     }
+    try {
+      await admin.accessMode(editingOrg.name, draft.access_mode, draft.default_role);
+    } catch (error) {
+      reportEditFailure(accessRules, error);
+      return;
+    }
+    notify('success', t('orgUserManager.editModal.updateSuccess'));
+    setEditingOrg(null);
   };
 
   const term = searchTerm.toLowerCase();
@@ -539,6 +566,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
         organization={editingOrg}
         draft={draft}
         rules={editRules}
+        accessRules={accessRules}
         onChange={(field, value) => setDraft(previous => ({ ...previous, [field]: value }))}
         onClose={() => setEditingOrg(null)}
         onSave={saveEdit}

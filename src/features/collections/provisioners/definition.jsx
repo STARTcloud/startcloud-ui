@@ -313,7 +313,7 @@ CardExtras.propTypes = {
 
 const tierColumn = {
   key: 'tier',
-  labelKey: 'provisioners.search.tier',
+  labelKey: 'pages.table.tier',
   sortValue: item => TIER_ORDER.indexOf(item.extras.tier),
   render: item => <TierBadge item={item} />,
 };
@@ -365,9 +365,13 @@ export const provisioners = {
     coverageColumn,
   ],
   matches: (item, needle) =>
-    [item.name, item.label || '', item.description || '', item.extras.repo].some(text =>
-      text.toLowerCase().includes(needle)
-    ),
+    [
+      item.name,
+      item.label || '',
+      item.description || '',
+      item.organization.name,
+      item.extras.repo,
+    ].some(text => text.toLowerCase().includes(needle)),
   slots: {
     ItemChips,
     ItemHeaderExtra,

@@ -19,6 +19,7 @@ export const configFieldShape = PropTypes.shape({
   dependsOn: PropTypes.string.isRequired,
   showWhen: PropTypes.array,
   requiresRestart: PropTypes.bool.isRequired,
+  deprecated: PropTypes.bool.isRequired,
   required: PropTypes.bool.isRequired,
   additionalProperties: PropTypes.object,
 });
@@ -28,8 +29,15 @@ const NUMERIC_TYPES = ['integer', 'number'];
 
 const textOf = value => (value === null || value === undefined ? '' : String(value));
 
-const typedValue = (field, raw) =>
-  NUMERIC_TYPES.includes(field.type) && NUMBER_RE.test(raw) ? Number(raw) : raw;
+const typedValue = (field, raw) => {
+  if (!NUMERIC_TYPES.includes(field.type)) {
+    return raw;
+  }
+  if (raw === '') {
+    return undefined;
+  }
+  return NUMBER_RE.test(raw) ? Number(raw) : raw;
+};
 
 const controlProps = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -185,19 +193,23 @@ const controlFor = (field, onUpload) => {
  * password with a reveal for `writeOnly`, a comma list for an array of
  * scalars, a text input with an upload button for `upload` when the caller
  * hands an `onUpload`, and a text input otherwise; the label is the
- * property's `title` with a restart badge when it `requiresRestart`, the
- * hint its `description`.
+ * property's `title` with a restart badge when it `requiresRestart` and a
+ * deprecation note when it is `deprecated`, the hint its `description`; a
+ * blank numeric input answers `undefined` so the key leaves the write.
  */
 const ConfigField = ({ field, id, value, error = '', onChange, onBlur, onUpload = null }) => {
   const { t } = useTranslation();
   const Control = controlFor(field, onUpload);
-  const label = field.requiresRestart ? (
+  const label = (
     <>
       {field.title}
-      <span className="badge text-bg-warning ms-2">{t('configManager.restartBadge')}</span>
+      {field.requiresRestart && (
+        <span className="badge text-bg-warning ms-2">{t('configManager.restartBadge')}</span>
+      )}
+      {field.deprecated && (
+        <span className="badge text-bg-secondary ms-2">{t('configManager.deprecated')}</span>
+      )}
     </>
-  ) : (
-    field.title
   );
   return (
     <Field id={id} label={label} hint={field.description} error={error} required={field.required}>

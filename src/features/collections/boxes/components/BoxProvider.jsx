@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,6 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { formatFileSize } from '../../../../utils/formatFileSize';
-import { responseMessage } from '../../../../utils/responseMessage';
 import { isVisible } from '../../../../utils/validation';
 import { architectureShape, itemShape, providerShape } from '../../../catalog/utils/itemShape';
 import { api } from '../api/boxes';
@@ -38,10 +37,10 @@ const slotShape = {
   }).isRequired,
 };
 
-const ProviderEditForm = ({ draft, rules, onChange }) => {
+const ProviderEditForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('name')}
@@ -89,13 +88,15 @@ ProviderEditForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export const BoxProviderActions = ({ item, version, provider, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify, setEditor } = ctx;
-  const manage = canManageBox(user, org, item.extras.raw);
+  const manage = hasFeature(status, 'uploads') && canManageBox(user, org, item.extras.raw);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     name: provider.name,
@@ -114,19 +115,6 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
-
-  useEffect(() => {
-    if (!editing) {
-      return undefined;
-    }
-    setEditor(<ProviderEditForm draft={draft} rules={rules} onChange={onChange} />);
-    return () => setEditor(null);
-  }, [editing, draft, rules, onChange, setEditor]);
-
-  const cancel = () => {
-    setEditing(false);
-    rules.reset();
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -152,8 +140,32 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
           providerName: draft.name,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('boxes.provider.updateError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!editing) {
+      return undefined;
+    }
+    setEditor(
+      <ProviderEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+    );
+    return () => setEditor(null);
+  }, [editing, draft, rules, onChange, submit, setEditor]);
+
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
   };
 
   const remove = () => {
@@ -251,12 +263,12 @@ UploadProgress.propTypes = {
   progress: PropTypes.number.isRequired,
 };
 
-const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile }) => {
+const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmit }) => {
   const { t } = useTranslation();
   const { file } = draft;
   return (
     <div className="add-architecture-form">
-      <form noValidate>
+      <form onSubmit={onSubmit} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <div className="form-check form-switch">
           <input
@@ -381,6 +393,7 @@ AddArchitectureForm.propTypes = {
   progress: PropTypes.number.isRequired,
   onChange: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 const EMPTY_ARCHITECTURE = {
@@ -417,26 +430,6 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
     setDraft(current => ({ ...current, file }));
   }, []);
 
-  useEffect(() => {
-    if (!show) {
-      return undefined;
-    }
-    setForm(
-      <AddArchitectureForm
-        draft={draft}
-        rules={rules}
-        progress={progress}
-        onChange={onChange}
-        onFile={onFile}
-      />
-    );
-    return () => setForm(null);
-  }, [show, draft, rules, progress, onChange, onFile, setForm]);
-
-  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
-    return null;
-  }
-
   const onProgress = event => {
     if (event.status === 'assembling') {
       setProgress(100);
@@ -447,15 +440,6 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
     } else if (event.progress !== undefined) {
       setProgress(event.progress);
     }
-  };
-
-  const toggle = () => {
-    if (show) {
-      setDraft(EMPTY_ARCHITECTURE);
-      setProgress(0);
-      rules.reset();
-    }
-    setShow(!show);
   };
 
   const save = async () => {
@@ -493,8 +477,47 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
         return;
       }
       log.file.error('Upload failed', { error: error.message, stack: error.stack });
-      notify('danger', responseMessage(error, t(error.message)));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(
+      <AddArchitectureForm
+        draft={draft}
+        rules={rules}
+        progress={progress}
+        onChange={onChange}
+        onFile={onFile}
+        onSubmit={submit}
+      />
+    );
+    return () => setForm(null);
+  }, [show, draft, rules, progress, onChange, onFile, submit, setForm]);
+
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
+    return null;
+  }
+
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_ARCHITECTURE);
+      setProgress(0);
+      rules.reset();
+    }
+    setShow(!show);
   };
 
   return (
@@ -519,10 +542,11 @@ BoxArchitecturesActions.propTypes = slotShape;
 
 export const BoxArchitectureRowActions = ({ item, version, provider, architecture, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!canManageBox(user, org, item.extras.raw)) {
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
@@ -538,7 +562,7 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
           architectureName: architecture.name,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('boxes.architecture.deleteError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

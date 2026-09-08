@@ -46,6 +46,13 @@ const versionSummary = version => {
   };
 };
 
+const latestReleaseOf = versions =>
+  versions
+    .map(version => version.createdAt)
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
+
 const boxItem = (box, orgName, logo) => ({
   id: box.id ?? `${orgName}/${box.name}`,
   organization: { name: orgName, logo: logo || '' },
@@ -58,7 +65,7 @@ const boxItem = (box, orgName, logo) => ({
   published: Boolean(box.published),
   createdAt: box.createdAt || null,
   updatedAt: box.updatedAt || null,
-  latestReleaseAt: null,
+  latestReleaseAt: latestReleaseOf((box.versions || []).map(versionSummary)),
   downloads: box.downloadCount || 0,
   os: {
     label: getOsDisplayName(box.metadata),
@@ -121,17 +128,19 @@ const getVersion = async (org, name, version) => {
         .list(org, name, version, provider.name)
         .then(rows)
         .catch(() => []);
+      const summaries = architectures.map(architectureSummary);
       return {
         name: provider.name,
         description: provider.description || '',
         createdAt: provider.createdAt || null,
         updatedAt: provider.updatedAt || null,
-        downloads: 0,
+        downloads: summaries.reduce((sum, architecture) => sum + architecture.downloadCount, 0),
         architectures: await Promise.all(
-          architectures.map(async architecture => ({
+          architectures.map(async (architecture, index) => ({
             name: architecture.name,
             defaultBox: Boolean(architecture.defaultBox),
             downloadUrl: await downloadLink(org, name, version, provider.name, architecture.name),
+            downloadCount: summaries[index].downloadCount,
           }))
         ),
         extras: { raw: provider },

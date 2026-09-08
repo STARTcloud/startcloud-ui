@@ -4,7 +4,8 @@
   "no": "No",
   "language": {
     "changeLanguage": "Change Language",
-    "control": "Change language, {{name}}"
+    "control": "Change language, {{name}}",
+    "title": "Language: {{name}}"
   },
   "error": {
     "somethingWentWrong": "Something went wrong",
@@ -45,9 +46,13 @@
     "unknownUser": "Unknown User"
   },
   "theme": {
-    "auto": "Theme: follow system",
+    "auto": "Theme: Auto ({{variant}})",
     "light": "Theme: light",
-    "dark": "Theme: dark"
+    "dark": "Theme: dark",
+    "name": {
+      "light": "Light",
+      "dark": "Dark"
+    }
   },
   "sessionEnded": {
     "title": "You were signed out.",
@@ -119,12 +124,15 @@
     "pattern": {
       "slug": "Use only letters, digits, dashes and periods in {{label}}.",
       "identifier": "Use only letters, digits, dashes, underscores and periods in {{label}}, not starting with a dash or period.",
+      "email": "Enter {{label}} in the form name@example.com.",
       "hex": "Use only hexadecimal digits in {{label}}.",
       "orgCode": "Enter {{label}} as 6 hexadecimal characters (0-9, A-F).",
       "providerName": "Use only lowercase letters, digits and underscores in {{label}}.",
       "watchId": "Enter {{label}} as an organization slug and an item slug joined by one slash, such as startcloud/alma9-server.",
       "personName": "Enter {{label}} starting with a letter, using letters, spaces, periods, apostrophes and hyphens.",
-      "iconName": "Use only lowercase letters, digits, spaces and dashes in {{label}}, up to 64 characters."
+      "iconName": "Use only lowercase letters, digits, spaces and dashes in {{label}}, up to 64 characters.",
+      "languageTag": "Enter {{label}} as a language tag such as en or es-MX.",
+      "timezone": "Enter {{label}} as a time zone such as America/Chicago or UTC."
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",
@@ -950,6 +958,7 @@
     "restartFailed": "Failed to restart server",
     "restartNeeded": "Restart the server to apply the changed values.",
     "restartBadge": "restart",
+    "deprecated": "Deprecated",
     "testingSmtp": "Sending test email...",
     "testSmtpSuccess": "Test email sent successfully! Check the recipient's inbox.",
     "testSmtpError": "Failed to send test email",
@@ -1264,7 +1273,7 @@
     "channelTitle": "Notification Channel Notifications",
     "empty": "No notifications yet.",
     "markAllRead": "Mark all read",
-    "markRead": "Mark read",
+    "markRead": "Mark as read",
     "dismiss": "Dismiss",
     "viewAll": "View all notifications",
     "loadError": "Failed to load notifications. Please try again.",
@@ -1273,7 +1282,7 @@
     "markAllReadError": "Failed to mark all notifications as read. Please try again.",
     "markAll": "Mark all as read",
     "deleteAll": "Delete all",
-    "deleteAllBody": "Every notification on this page is deleted. Type \"{{keyword}}\" to confirm.",
+    "deleteAllBody": "Every notification of yours is deleted. Type \"{{keyword}}\" to confirm.",
     "delete": "Delete",
     "viewDetails": "View details"
   },
@@ -1656,7 +1665,7 @@
       "updated": "Updated",
       "released": "Latest release",
       "downloads": "Downloads",
-      "versions": "# Versions",
+      "versions": "Versions",
       "providers": "Providers",
       "architectures": "Architectures",
       "actions": "Actions",
@@ -1666,7 +1675,8 @@
       "download": "Download",
       "defaultBox": "Default box",
       "fileSize": "File size",
-      "checksumType": "Checksum type"
+      "checksumType": "Checksum type",
+      "tier": "Tier"
     },
     "status": {
       "published": "Published",
@@ -1739,7 +1749,10 @@
       "support": "Help and community",
       "addToFavorites": "Add to Favorites",
       "removeFromFavorites": "Remove from Favorites",
-      "runningVersion": "Running version {{version}}"
+      "runningVersion": "Running version {{version}}",
+      "addedToFavorites": "Added {{app}} to favorites!",
+      "removedFromFavorites": "Removed {{app}} from favorites",
+      "failedToUpdateFavorites": "Failed to update favorites"
     }
   },
   "about": {
@@ -1990,6 +2003,7 @@
       "updateError": "An error occurred while updating the box.",
       "deleteError": "An error occurred while deleting the box.",
       "name": "Box Name",
+      "nameHint": "Letters, digits, dash and period; this is the URL and the folder.",
       "status": "Status",
       "visibility": "Visibility",
       "description": "Description",

@@ -24,6 +24,8 @@ const POSTURE_KEYS = [
   'with_linked_provider',
 ];
 const CHURN_KEYS = ['quiet_30', 'quiet_60', 'quiet_90', 'enabled_total'];
+const LEAD_LISTS = ['app_activity', 'penetration', 'app_pairs', 'growth'];
+const DEFINED = ['active_users', 'posture', ...LEAD_LISTS, 'churn', 'quiet_users', 'org_rollup'];
 
 const text = key => ({ key, render: row => row[key] ?? '' });
 const number = key => ({ key, className: 'text-end', render: row => row[key] ?? 0 });
@@ -139,13 +141,30 @@ SmallTable.propTypes = {
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
+const listOf = key => LISTS.find(list => list.key === key);
+const rowsOf = (data, key) => (Array.isArray(data[key]) ? data[key] : []);
+
+const ListSection = ({ listKey, data }) => {
+  const { t } = useTranslation();
+  return (
+    <Section title={t(`admin.health.insights.${listKey}`)}>
+      <SmallTable list={listOf(listKey)} rows={rowsOf(data, listKey)} />
+    </Section>
+  );
+};
+
+ListSection.propTypes = {
+  listKey: PropTypes.string.isRequired,
+  data: PropTypes.object.isRequired,
+};
+
 /**
- * Health › Insights over the members of the insights read: the
- * active-user, security-posture and churn cards, then app activity, apps
- * per user, top combinations, registrations per week, the quietest
- * accounts and the organizations rollup as small tables over their named
- * members, their definitions in an info fold on the page rather than in
- * header tooltips.
+ * Health › Insights over the members of the insights read, in the
+ * contract's order: the active-user and security-posture cards, then app
+ * activity, apps per user, top combinations and registrations per week as
+ * small tables, the churn cards with the quietest accounts inside them,
+ * and the organizations rollup, their definitions in an info fold on the
+ * page rather than in header tooltips.
  */
 const InsightsPage = () => {
   const { t } = useTranslation();
@@ -191,8 +210,11 @@ const InsightsPage = () => {
           ))}
         </div>
       </Section>
+      {LEAD_LISTS.map(key => (
+        <ListSection key={key} listKey={key} data={data} />
+      ))}
       <Section title={t('admin.health.insights.churn')}>
-        <div className="stat-grid stat-grid-4">
+        <div className="stat-grid stat-grid-4 mb-3">
           {CHURN_KEYS.map(key => (
             <StatCard
               key={key}
@@ -201,16 +223,13 @@ const InsightsPage = () => {
             />
           ))}
         </div>
+        <SmallTable list={listOf('quiet_users')} rows={rowsOf(data, 'quiet_users')} />
       </Section>
-      {LISTS.map(list => (
-        <Section key={list.key} title={t(`admin.health.insights.${list.key}`)}>
-          <SmallTable list={list} rows={Array.isArray(data[list.key]) ? data[list.key] : []} />
-        </Section>
-      ))}
+      <ListSection listKey="org_rollup" data={data} />
       <details>
         <summary>{t('admin.health.definitions')}</summary>
         <dl className="row mt-2 mb-0 small">
-          {['active_users', 'posture', 'churn', ...LISTS.map(list => list.key)].map(key => (
+          {DEFINED.map(key => (
             <div key={key} className="row">
               <dt className="col-sm-3">{t(`admin.health.insights.${key}`)}</dt>
               <dd className="col-sm-9">{t(`admin.health.insights.define.${key}`)}</dd>

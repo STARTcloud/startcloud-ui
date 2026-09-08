@@ -1,7 +1,10 @@
 import PropTypes from 'prop-types';
+import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaCheck, FaCrown } from 'react-icons/fa6';
+
+import { gravatarProfile } from '../../utils/gravatar';
 
 const ROLE_CLASSES = {
   OWNER: 'bg-danger',
@@ -17,26 +20,50 @@ export const organizationShape = PropTypes.shape({
   primary: PropTypes.bool,
   personal: PropTypes.bool,
   logo: PropTypes.string,
+  emailHash: PropTypes.string,
 });
 
-export const OrgLogo = ({ org, size = 20, className = 'rounded-circle me-2', fallback = null }) =>
-  org.logo ? (
+const useOrgGravatar = (emailHash, wanted) => {
+  const [gravatar, setGravatar] = useState(null);
+
+  useEffect(() => {
+    if (!wanted || !emailHash) {
+      return undefined;
+    }
+    const controller = new AbortController();
+    gravatarProfile(emailHash, controller.signal).then(profile => {
+      setGravatar({ emailHash, url: profile?.avatar_url || '' });
+    });
+    return () => {
+      controller.abort();
+    };
+  }, [emailHash, wanted]);
+
+  return gravatar && gravatar.emailHash === emailHash ? gravatar.url : '';
+};
+
+export const OrgLogo = ({ org, size = 20, className = 'rounded-circle me-2', fallback = null }) => {
+  const [failed, setFailed] = useState([]);
+  const logo = org.logo && !failed.includes(org.logo) ? org.logo : '';
+  const gravatar = useOrgGravatar(org.emailHash || '', !logo);
+  const src = logo || (gravatar && !failed.includes(gravatar) ? gravatar : '');
+  if (!src) {
+    return fallback || <FaBuilding className="logo-md icon-with-margin" aria-hidden />;
+  }
+  return (
     <img
-      src={org.logo}
+      src={src}
       alt=""
       width={size}
       height={size}
       className={className}
-      onError={event => {
-        event.currentTarget.style.display = 'none';
-      }}
+      onError={() => setFailed(previous => [...previous, src])}
     />
-  ) : (
-    fallback || <FaBuilding className="logo-md icon-with-margin" aria-hidden />
   );
+};
 
 OrgLogo.propTypes = {
-  org: PropTypes.shape({ logo: PropTypes.string }).isRequired,
+  org: PropTypes.shape({ logo: PropTypes.string, emailHash: PropTypes.string }).isRequired,
   size: PropTypes.number,
   className: PropTypes.string,
   fallback: PropTypes.node,
@@ -105,7 +132,7 @@ export const OrgSwitcherModal = ({
   const rows = [...organizations].sort(byPersonalLastThenName);
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           <FaBuilding className="me-2" />

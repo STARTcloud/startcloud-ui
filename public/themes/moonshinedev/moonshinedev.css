@@ -3,6 +3,7 @@
   --brand-primary-rgb: 31, 157, 87;
   --brand-on-primary: #000000;
   --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --brand-focus-ring: rgba(31, 157, 87, 0.89);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 31, 157, 87;
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
@@ -11,6 +12,7 @@
 }
 
 [data-brand='moonshinedev'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(31, 157, 87, 0.75);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-body-bg: #23272b;
   --bs-tertiary-bg: #2b3034;

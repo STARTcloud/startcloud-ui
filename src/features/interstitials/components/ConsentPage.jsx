@@ -157,7 +157,7 @@ const ConsentPage = ({ session, returnTo }) => {
         <p className="auth-foot">
           {t('consent.signedInAs', { principal: answer.principal })} {t('consent.notYou')}{' '}
           <button type="button" className="auth-link" onClick={signOut}>
-            {t('shared:navbar.logout')}
+            {t('consent.signOut')}
           </button>
         </p>
       ) : null}

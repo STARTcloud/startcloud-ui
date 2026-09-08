@@ -41,7 +41,9 @@ const SentState = ({ email, problem, resent, onResend }) => {
           disabled={wait > 0}
           onClick={onResend}
         >
-          {wait > 0 ? `${t('register.sent.resend')} · ${wait}s` : t('register.sent.resend')}
+          {wait > 0
+            ? t('register.sent.resendIn', { label: t('register.sent.resend'), n: wait })
+            : t('register.sent.resend')}
         </button>
         <Link to="/login" className="auth-btn auth-btn-secondary auth-btn-block">
           {t('register.sent.return')}

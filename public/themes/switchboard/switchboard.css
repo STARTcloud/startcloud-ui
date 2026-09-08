@@ -27,6 +27,7 @@
   --brand-primary-rgb: 36, 173, 227;
   --brand-on-primary: #000000;
   --brand-auth-display: 'Poppins', Helvetica, Arial, sans-serif;
+  --brand-focus-ring: rgba(32, 156, 204, 0.96);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 36, 173, 227;
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
@@ -35,5 +36,6 @@
 }
 
 [data-brand='switchboard'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(36, 173, 227, 0.6);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
 }

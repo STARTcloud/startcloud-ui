@@ -1,12 +1,13 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaFileContract, FaPlug, FaPuzzlePiece, FaXmark } from 'react-icons/fa6';
+import { FaPlug, FaPuzzlePiece, FaXmark } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
 import { errorKeys, useStepUp } from '../../../components/common/StepUpDialog';
+import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { log } from '../../../lib/logger';
 import { formatRelativeTime } from '../../../utils/relativeTime';
@@ -228,12 +229,14 @@ const AcceptedTerms = ({ terms }) => {
         {terms.map(entry => (
           <MethodRow
             key={`${entry.name}:${entry.version}`}
-            icon={<FaFileContract aria-hidden />}
+            icon={<TermIcon icon={entry.icon} aria-hidden />}
             label={entry.label}
             badges={
               entry.type ? (
                 <span className="badge bg-secondary">
-                  {t(`integrations.terms.type.${entry.type}`, { defaultValue: entry.type })}
+                  {t(`integrations.terms.type.${String(entry.type).toLowerCase()}`, {
+                    defaultValue: entry.type,
+                  })}
                 </span>
               ) : null
             }

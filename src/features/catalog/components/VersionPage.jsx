@@ -123,6 +123,9 @@ const providerColumns = (org, name, version) => [
         {(provider.architectures || []).map(architecture => (
           <span key={architecture.name} className="d-inline-flex align-items-center gap-1">
             <span className="badge bg-secondary badge-xs">{architecture.name}</span>
+            {typeof architecture.downloadCount === 'number' ? (
+              <span className="small text-body-secondary">{architecture.downloadCount}</span>
+            ) : null}
             {architecture.downloadUrl ? (
               <a
                 href={architecture.downloadUrl}

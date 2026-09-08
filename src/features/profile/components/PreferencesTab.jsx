@@ -1,14 +1,28 @@
 import PropTypes from 'prop-types';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Field from '../../../components/common/Field';
+import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useFormRules } from '../../../hooks/useFormRules';
 import { useTheme } from '../../../hooks/useTheme';
 
 const THEMES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
+const SCHEMA = {
+  properties: {
+    timezone: { $ref: '#/$defs/timezone' },
+    ciba_channel: { type: 'string', enum: CHANNELS },
+    ciba_user_code: { type: 'string' },
+  },
+};
+const LABELS = {
+  timezone: 'profile.preferences.timezone',
+  ciba_channel: 'profile.preferences.channel.label',
+  ciba_user_code: 'profile.preferences.pin',
+};
 
 const timeZones = () => {
   try {
@@ -35,7 +49,7 @@ const languageName = code => {
 };
 
 const settingsOf = preferences => ({
-  timezone: preferences?.timezone || detectedZone(),
+  timezone: preferences?.timezone || '',
   ciba_channel: preferences?.ciba_channel || 'PUSH',
 });
 
@@ -71,30 +85,47 @@ PinStatus.propTypes = {
  * detected zone preselected while none is set, the sign-in approval
  * channel (SMS while a verified number exists) and the approval PIN with
  * its status line, saved together by one Save through
- * `PATCH /api/user/preferences`; the theme goes through the shared
+ * `PATCH /api/user/preferences`, the time zone in the patch only when the
+ * person chose one that differs from the stored value, so a detected
+ * preselection is never written; the theme goes through the shared
  * `useTheme` and the language through the shared `i18n`, the same the
- * chrome reads; the page remounts it with every re-read of the record.
+ * chrome reads and writes; the page remounts it with every re-read of the
+ * record.
  */
 const PreferencesTab = ({ account, profile, session, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
-  const persistTheme = useCallback(theme => session.savePreferences({ theme }), [session]);
-  const { preference: themePreference, setPreference: setThemePreference } = useTheme({
-    onPersist: persistTheme,
-  });
+  const { preference: themePreference, setPreference: setThemePreference } = useTheme();
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
   const [settings, setSettings] = useState(() => settingsOf(preferences));
   const [pin, setPin] = useState('');
   const [clearPin, setClearPin] = useState(false);
   const zones = useMemo(() => timeZones(), []);
+  const [detected] = useState(detectedZone);
+  const zone = settings.timezone || detected;
   const smsAllowed = Boolean(profile.mobile_number?.verified);
   const channels = smsAllowed ? CHANNELS : CHANNELS.filter(channel => channel !== 'SMS');
+  const values = useMemo(
+    () => ({
+      timezone: settings.timezone,
+      ciba_channel: settings.ciba_channel,
+      ciba_user_code: pin,
+    }),
+    [settings, pin]
+  );
+  const rules = useFormRules({
+    formKey: 'preferences',
+    schema: SCHEMA,
+    values,
+    labels: LABELS,
+    idPrefix: 'profile-preferences',
+  });
 
   const set = (field, value) => setSettings(previous => ({ ...previous, [field]: value }));
 
   const changeLanguage = async language => {
-    await session.savePreferences({ language });
+    session.savePreferences({ language });
     await i18n.changeLanguage(language);
   };
 
@@ -102,7 +133,13 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
 
   const save = async event => {
     event.preventDefault();
-    const patch = { ...settings };
+    if (!rules.validateAll()) {
+      return;
+    }
+    const patch = { ciba_channel: settings.ciba_channel };
+    if (settings.timezone && settings.timezone !== (preferences.timezone || '')) {
+      patch.timezone = settings.timezone;
+    }
     if (pin) {
       patch.ciba_user_code = pin;
     }
@@ -113,10 +150,13 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
       await account.preferences(patch);
       setPin('');
       setClearPin(false);
+      rules.reset();
       notify('success', t('profile.preferences.saved'));
       await onSaved();
     } catch (error) {
-      notify('danger', t(errorKeys(error)));
+      if (!rules.applyServerErrors(error)) {
+        notify('danger', t(errorKeys(error)));
+      }
     }
   };
 
@@ -171,26 +211,27 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
         </div>
       </div>
       <form onSubmit={save} noValidate>
+        <FormErrorSummary errors={rules.summary} />
         <div className="row">
           <div className="col-md-6">
             <Field
-              id="profile-preferences-timezone"
+              id={rules.idFor('timezone')}
               label={t('profile.preferences.timezone')}
               hint={t('profile.preferences.timezoneHint')}
+              error={rules.errors.timezone || ''}
             >
               {aria => (
                 <select
                   {...aria}
                   className="form-select"
-                  value={settings.timezone}
+                  value={zone}
                   onChange={event => set('timezone', event.target.value)}
+                  onBlur={() => rules.onBlur('timezone')}
                 >
-                  {zones.includes(settings.timezone) ? null : (
-                    <option value={settings.timezone}>{settings.timezone}</option>
-                  )}
-                  {zones.map(zone => (
-                    <option key={zone} value={zone}>
-                      {zone}
+                  {zones.includes(zone) ? null : <option value={zone}>{zone}</option>}
+                  {zones.map(name => (
+                    <option key={name} value={name}>
+                      {name}
                     </option>
                   ))}
                 </select>
@@ -199,9 +240,10 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
           </div>
           <div className="col-md-6">
             <Field
-              id="profile-preferences-channel"
+              id={rules.idFor('ciba_channel')}
               label={t('profile.preferences.channel.label')}
               hint={t('profile.preferences.channelHint')}
+              error={rules.errors.ciba_channel || ''}
             >
               {aria => (
                 <select
@@ -209,6 +251,7 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
                   className="form-select"
                   value={settings.ciba_channel}
                   onChange={event => set('ciba_channel', event.target.value)}
+                  onBlur={() => rules.onBlur('ciba_channel')}
                 >
                   {channels.map(channel => (
                     <option key={channel} value={channel}>
@@ -224,9 +267,10 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
               <PinStatus pinSet={pinSet} onClear={() => setClearPin(true)} />
             </p>
             <Field
-              id="profile-preferences-pin"
+              id={rules.idFor('ciba_user_code')}
               label={t('profile.preferences.pin')}
               hint={t('profile.preferences.pinHint')}
+              error={rules.errors.ciba_user_code || ''}
             >
               {aria => (
                 <input
@@ -236,6 +280,7 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
                   autoComplete="off"
                   value={pin}
                   onChange={event => setPin(event.target.value)}
+                  onBlur={() => rules.onBlur('ciba_user_code')}
                 />
               )}
             </Field>

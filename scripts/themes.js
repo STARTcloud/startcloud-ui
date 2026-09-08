@@ -78,16 +78,75 @@ const textFailures = (pack, source, variant) => {
   );
 };
 
+const logoColorsOf = source => {
+  const light = source.logo_color?.light || source.primary;
+  return { light, dark: source.logo_color?.dark || light };
+};
+
+const bodyBg = (source, variant) => ({
+  name: `--bs-body-bg (${variant})`,
+  value: surfacesOf(source, variant)['body-bg'],
+});
+
+const RING_MIN = 3;
+const RING_ALPHA_FLOOR = 20;
+const NUDGE_STEP = 5;
+const NUDGE_TARGET = { light: '#000000', dark: '#ffffff' };
+
+const mixToward = (from, toward, share) =>
+  rgbOf(from).map((value, index) => value * (1 - share) + rgbOf(toward)[index] * share);
+
+const compositeOver = (rgb, alpha, page) =>
+  rgb.map((value, index) => value * alpha + rgbOf(page)[index] * (1 - alpha));
+
+const luminanceOf = rgb => {
+  const [red, green, blue] = rgb.map(channel);
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+};
+
+const contrastOf = (rgb, page) => {
+  const lighter = Math.max(luminanceOf(rgb), luminance(page));
+  const darker = Math.min(luminanceOf(rgb), luminance(page));
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+const ringBase = (accent, page, toward) => {
+  for (let share = 0; share <= 100; share += NUDGE_STEP) {
+    const base = mixToward(accent, toward, share / 100);
+    if (contrastOf(base, page) >= RING_MIN) {
+      return base;
+    }
+  }
+  return rgbOf(toward);
+};
+
+const ringAlpha = (base, page) => {
+  for (let alpha = RING_ALPHA_FLOOR; alpha <= 100; alpha += 1) {
+    if (contrastOf(compositeOver(base, alpha / 100, page), page) >= RING_MIN) {
+      return alpha;
+    }
+  }
+  return 100;
+};
+
+const focusRingOf = (source, variant) => {
+  const page = surfacesOf(source, variant)['body-bg'];
+  const base = ringBase(source.primary, page, NUDGE_TARGET[variant]);
+  const alpha = ringAlpha(base, page);
+  const [red, green, blue] = base.map(Math.round);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha / 100})`;
+};
+
 const markFailures = (pack, source) => {
-  const mark = source.logo_color || (source.logo ? source.primary : '');
-  if (!mark) {
+  if (!source.logo && !source.logo_color) {
     return [];
   }
+  const colors = logoColorsOf(source);
   return VARIANTS.map(variant =>
     failing(
       pack,
-      { name: '--brand-logo-color', value: mark },
-      { name: `--bs-body-bg (${variant})`, value: surfacesOf(source, variant)['body-bg'] },
+      { name: `--brand-logo-color (${variant})`, value: colors[variant] },
+      bodyBg(source, variant),
       MARK_MIN
     )
   );
@@ -153,7 +212,7 @@ const brandLines = (pack, source) => {
   }
   if (source.logo) {
     lines.push(`  --brand-logo: url('/themes/${pack}/${source.logo}');`);
-    lines.push(`  --brand-logo-color: ${(source.logo_color || source.primary).toLowerCase()};`);
+    lines.push(`  --brand-logo-color: ${logoColorsOf(source).light.toLowerCase()};`);
   }
   if (source.display) {
     lines.push(`  --brand-auth-display: ${source.display};`);
@@ -181,12 +240,21 @@ const surfaceLines = (source, variant) =>
     ([key, value]) => `  --bs-${key}: ${String(value).toLowerCase()};`
   );
 
-const stylesheetOf = (pack, source) => {
+const darkLogoLines = source =>
+  source.logo && source.logo_color?.dark
+    ? [`  --brand-logo-color: ${logoColorsOf(source).dark.toLowerCase()};`]
+    : [];
+
+const focusRingsOf = source =>
+  Object.fromEntries(VARIANTS.map(variant => [variant, focusRingOf(source, variant)]));
+
+const stylesheetOf = (pack, source, rings) => {
   const blocks = (source.fonts || []).map(font => fontFace(pack, font));
   blocks.push(
     [
       `[data-brand='${pack}'] {`,
       ...brandLines(pack, source),
+      `  --brand-focus-ring: ${rings.light};`,
       ...bridgeLines(source),
       ...surfaceLines(source, 'light'),
       '}',
@@ -195,7 +263,9 @@ const stylesheetOf = (pack, source) => {
   blocks.push(
     [
       `[data-brand='${pack}'][data-bs-theme='dark'] {`,
+      `  --brand-focus-ring: ${rings.dark};`,
       '  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);',
+      ...darkLogoLines(source),
       ...surfaceLines(source, 'dark'),
       '}',
     ].join('\n')
@@ -237,8 +307,10 @@ const writePack = (pack, css) => {
  * whichever contrasts more with `primary`, and refuses the pack only when
  * that better one is under 4.5:1), `warning` and `on_warning` (hex,
  * optional, together), `logo`
- * (a file in the pack directory, optional) with `logo_color` (hex, the
- * primary when absent), `display` (the auth column's headline face as a
+ * (a file in the pack directory, optional) with `logo_color` (optional,
+ * `light` and `dark` hex values, the light one the primary when absent and
+ * the dark one the light one when absent, emitted under the dark selector
+ * only when named), `display` (the auth column's headline face as a
  * CSS font-family list, optional), `fonts` (optional, one entry per file
  * served with the pack: `family`, `file`, `weight`, `style`, `format`,
  * each declared with font-display swap) and `surfaces` (optional, `light`
@@ -250,8 +322,16 @@ const writePack = (pack, css) => {
  * pair, when `primary` against `on_primary` (or `warning` against
  * `on_warning`) is under 4.5:1, when a text colour a variant sets is under
  * 4.5:1 against any surface of that variant, the pack's own or stock
- * Bootstrap's where the pack names none, or when the mark colour is under
- * 3:1 against the body background of either variant.
+ * Bootstrap's where the pack names none, or when a variant's mark colour
+ * is under 3:1 against that variant's body background.
+ *
+ * The focus ring is the chrome's and never a pack input: for each variant
+ * the generator emits `--brand-focus-ring` as an rgba of the accent, nudged
+ * toward black on the light variant or white on the dark one in 5% steps
+ * only until the opaque colour reaches 3:1 against that variant's body
+ * background, at the lowest alpha from 20% up whose colour composited
+ * over that background reaches 3:1, and prints both values beside the
+ * hash.
  *
  * @returns {number} The exit code, 0 when every pack was written
  */
@@ -264,8 +344,11 @@ export const generateThemes = () => {
       refused.push(...failures);
       return;
     }
-    const hash = writePack(pack, stylesheetOf(pack, source));
-    console.log(`${pack}: public/themes/${pack}/${pack}.css ${hash.slice(0, 12)}`);
+    const rings = focusRingsOf(source);
+    const hash = writePack(pack, stylesheetOf(pack, source, rings));
+    console.log(
+      `${pack}: public/themes/${pack}/${pack}.css ${hash.slice(0, 12)} light ${rings.light} dark ${rings.dark}`
+    );
   });
   refused.forEach(line => console.error(`refused ${line}`));
   return refused.length > 0 ? 1 : 0;

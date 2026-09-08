@@ -14,7 +14,6 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { responseMessage } from '../../../utils/responseMessage';
 import { schemaSections, setValueAt, valueAt } from '../utils/schemaSections';
 
 import OidcProviders from './OidcProviders';
@@ -27,11 +26,11 @@ const EMPTY_SCHEMA = { properties: {} };
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 const SMTP_TEST_SCHEMA = {
-  required: ['email'],
-  properties: { email: { $ref: '#/$defs/email' } },
+  required: ['test_email'],
+  properties: { test_email: { $ref: '#/$defs/email' } },
 };
-const SMTP_TEST_LABELS = { email: 'configManager.smtpTest.recipient' };
-const EMPTY_SMTP_TEST = { email: '' };
+const SMTP_TEST_LABELS = { test_email: 'configManager.smtpTest.recipient' };
+const EMPTY_SMTP_TEST = { test_email: '' };
 
 const SmtpTest = ({ onTest }) => {
   const { t } = useTranslation();
@@ -45,7 +44,7 @@ const SmtpTest = ({ onTest }) => {
   const send = event => {
     event.preventDefault();
     if (rules.validateAll()) {
-      onTest(form.email);
+      onTest(form.test_email, rules);
     }
   };
   return (
@@ -60,10 +59,10 @@ const SmtpTest = ({ onTest }) => {
         <form onSubmit={send} noValidate>
           <FormErrorSummary errors={rules.summary} />
           <Field
-            id={rules.idFor('email')}
+            id={rules.idFor('test_email')}
             label={t('configManager.smtpTest.recipient')}
             hint={t('configManager.smtpTest.hint')}
-            error={rules.errors.email || ''}
+            error={rules.errors.test_email || ''}
           >
             {aria => (
               <div className="input-group">
@@ -71,9 +70,9 @@ const SmtpTest = ({ onTest }) => {
                   {...aria}
                   type="email"
                   className="form-control"
-                  value={form.email}
-                  onChange={e => setForm({ email: e.target.value })}
-                  onBlur={() => rules.onBlur('email')}
+                  value={form.test_email}
+                  onChange={e => setForm({ test_email: e.target.value })}
+                  onBlur={() => rules.onBlur('test_email')}
                   placeholder={t('configManager.smtpTest.placeholder')}
                 />
                 <button className="btn btn-outline-primary" type="submit">
@@ -170,7 +169,7 @@ const AdminConfig = ({ config: configApi }) => {
           configName: selectedConfig,
           error: error.message,
         });
-        notify('danger', t('configManager.updateError'));
+        notify('danger', t(error.messageKey || 'errors.request'));
       }
     );
   };
@@ -180,7 +179,7 @@ const AdminConfig = ({ config: configApi }) => {
       .update(selectedConfig, setValueAt(config, PROVIDERS_POINTER, providers))
       .then(data => afterWrite(selectedConfig, data));
 
-  const handleTestSmtp = testEmail => {
+  const handleTestSmtp = (testEmail, testRules) => {
     notify('info', t('configManager.testingSmtp'), { key: SMTP_TEST_KEY });
     configApi
       .testSmtp(testEmail)
@@ -190,10 +189,11 @@ const AdminConfig = ({ config: configApi }) => {
         });
       })
       .catch(error => {
-        const resMessage = responseMessage(error, error.message || error.toString());
-        notify('danger', `${t('configManager.testSmtpError')}: ${resMessage}`, {
-          key: SMTP_TEST_KEY,
-        });
+        if (testRules.applyServerErrors(error)) {
+          notify('', '', { key: SMTP_TEST_KEY });
+          return;
+        }
+        notify('danger', t(error.messageKey || 'errors.request'), { key: SMTP_TEST_KEY });
       });
   };
 

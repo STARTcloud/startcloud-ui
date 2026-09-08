@@ -86,9 +86,11 @@ const FilterGroups = ({ binding, onClearFilters }) => {
   const { t } = useTranslation();
   return (
     <>
-      {binding.groups.map(group => (
-        <FilterGroup key={group.key} group={group} />
-      ))}
+      {binding.groups
+        .filter(group => Object.keys(group.entries).length > 0)
+        .map(group => (
+          <FilterGroup key={group.key} group={group} />
+        ))}
       <div className="navbar-search-foot">
         <span>{t('search.activeFilters', { count: activeFilterCount(binding) })}</span>
         <span className="flex-grow-1" />

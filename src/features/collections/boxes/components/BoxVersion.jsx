@@ -1,14 +1,15 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
-import { responseMessage } from '../../../../utils/responseMessage';
+import { hasFeature } from '../../../../utils/capabilities';
 import { itemShape, providerShape, versionShape } from '../../../catalog/utils/itemShape';
 import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
@@ -38,26 +39,23 @@ const slotShape = {
 };
 
 const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
-  api.versions
-    .update(org, item.name, version.version, fields)
-    .then(() => {
-      notify('success', t('boxes.version.updated'));
-      reload();
-      return true;
-    })
-    .catch(error => {
-      log.api.error('Error updating version', {
-        versionNumber: version.version,
-        error: error.message,
-      });
-      notify('danger', responseMessage(error, t('boxes.version.updateError')));
-      return false;
-    });
+  api.versions.update(org, item.name, version.version, fields).then(() => {
+    notify('success', t('boxes.version.updated'));
+    reload();
+  });
 
-const VersionEditForm = ({ draft, rules, onChange }) => {
+const versionFailure = ({ error, version, t, notify }) => {
+  log.api.error('Error updating version', {
+    versionNumber: version.version,
+    error: error.message,
+  });
+  notify('danger', t(error.messageKey || 'errors.request'));
+};
+
+const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('version_number')}
@@ -105,13 +103,15 @@ VersionEditForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export const BoxVersionActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify, setEditor } = ctx;
-  const manage = canManageBox(user, org, item.extras.raw);
+  const manage = hasFeature(status, 'uploads') && canManageBox(user, org, item.extras.raw);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     version_number: version.version,
@@ -130,19 +130,6 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
-
-  useEffect(() => {
-    if (!editing) {
-      return undefined;
-    }
-    setEditor(<VersionEditForm draft={draft} rules={rules} onChange={onChange} />);
-    return () => setEditor(null);
-  }, [editing, draft, rules, onChange, setEditor]);
-
-  const cancel = () => {
-    setEditing(false);
-    rules.reset();
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -164,8 +151,32 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
         if (rules.applyServerErrors(requestError)) {
           return;
         }
-        notify('danger', responseMessage(requestError, t('boxes.version.updateError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!editing) {
+      return undefined;
+    }
+    setEditor(
+      <VersionEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+    );
+    return () => setEditor(null);
+  }, [editing, draft, rules, onChange, submit, setEditor]);
+
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
   };
 
   const remove = () => {
@@ -176,7 +187,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('boxes.version.deleteError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
   };
 
@@ -226,8 +237,9 @@ BoxVersionActions.propTypes = slotShape;
 
 export const BoxVersionBannerActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
-  if (!canManageBox(user, org, item.extras.raw)) {
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
   }
   return (
@@ -243,7 +255,7 @@ export const BoxVersionBannerActions = ({ item, version, ctx }) => {
           t,
           notify,
           reload,
-        })
+        }).catch(error => versionFailure({ error, version, t, notify }))
       }
     >
       {t('boxes.version.undeprecate')}
@@ -253,7 +265,7 @@ export const BoxVersionBannerActions = ({ item, version, ctx }) => {
 
 BoxVersionBannerActions.propTypes = slotShape;
 
-const DeprecateButton = ({ onDeprecate }) => {
+const DeprecateButton = ({ onDeprecate, onFailure }) => {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
   const [draft, setDraft] = useState(EMPTY_DEPRECATION);
@@ -276,9 +288,13 @@ const DeprecateButton = ({ onDeprecate }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const ok = await onDeprecate(draft.deprecation_reason.trim());
-    if (ok) {
+    try {
+      await onDeprecate(draft.deprecation_reason);
       close();
+    } catch (error) {
+      if (!rules.applyServerErrors(error)) {
+        onFailure(error);
+      }
     }
   };
 
@@ -326,15 +342,17 @@ const DeprecateButton = ({ onDeprecate }) => {
 
 DeprecateButton.propTypes = {
   onDeprecate: PropTypes.func.isRequired,
+  onFailure: PropTypes.func.isRequired,
 };
 
 export const BoxVersionNotesActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(version.releaseNotes || '');
 
-  if (!canManageBox(user, org, item.extras.raw)) {
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 
@@ -347,11 +365,9 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
       t,
       notify,
       reload,
-    }).then(ok => {
-      if (ok) {
-        setEditing(false);
-      }
-    });
+    })
+      .then(() => setEditing(false))
+      .catch(error => versionFailure({ error, version, t, notify }));
 
   if (editing) {
     return (
@@ -399,6 +415,7 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
               reload,
             })
           }
+          onFailure={error => versionFailure({ error, version, t, notify })}
         />
       )}
     </div>
@@ -407,10 +424,10 @@ export const BoxVersionNotesActions = ({ item, version, ctx }) => {
 
 BoxVersionNotesActions.propTypes = slotShape;
 
-const AddProviderForm = ({ draft, rules, onChange }) => {
+const AddProviderForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <div className="add-provider-form">
         <FormErrorSummary errors={rules.summary} />
         <Field
@@ -460,12 +477,14 @@ AddProviderForm.propTypes = {
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 const EMPTY_PROVIDER = { name: '', description: '' };
 
 export const BoxProvidersActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify, setForm } = ctx;
   const [show, setShow] = useState(false);
   const [draft, setDraft] = useState(EMPTY_PROVIDER);
@@ -481,26 +500,6 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
-
-  useEffect(() => {
-    if (!show) {
-      return undefined;
-    }
-    setForm(<AddProviderForm draft={draft} rules={rules} onChange={onChange} />);
-    return () => setForm(null);
-  }, [show, draft, rules, onChange, setForm]);
-
-  if (!canManageBox(user, org, item.extras.raw)) {
-    return null;
-  }
-
-  const toggle = () => {
-    if (show) {
-      setDraft(EMPTY_PROVIDER);
-      rules.reset();
-    }
-    setShow(!show);
-  };
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -519,8 +518,37 @@ export const BoxProvidersActions = ({ item, version, ctx }) => {
         if (rules.applyServerErrors(requestError)) {
           return;
         }
-        notify('danger', responseMessage(requestError, t('boxes.provider.createError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
+  useEffect(() => {
+    if (!show) {
+      return undefined;
+    }
+    setForm(<AddProviderForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />);
+    return () => setForm(null);
+  }, [show, draft, rules, onChange, submit, setForm]);
+
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
+    return null;
+  }
+
+  const toggle = () => {
+    if (show) {
+      setDraft(EMPTY_PROVIDER);
+      rules.reset();
+    }
+    setShow(!show);
   };
 
   return (
@@ -545,10 +573,11 @@ BoxProvidersActions.propTypes = slotShape;
 
 export const BoxProviderRowActions = ({ item, version, provider, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!canManageBox(user, org, item.extras.raw)) {
+  if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
   }
 

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBook, FaBuilding, FaCircleInfo, FaEnvelope, FaGear } from 'react-icons/fa6';
@@ -79,11 +79,11 @@ const PROFILE_ROUTES = ['/profile', '/user/profile'];
 
 const utilityLinks = (status, t, showAbout) => {
   const links = showAbout ? [{ key: 'about', label: t('navbar.about'), to: '/about' }] : [];
-  if (status.links.contact) {
-    links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
-  }
   if (status.links.docs) {
     links.push({ key: 'docs', label: t('navbar.docs'), href: status.links.docs });
+  }
+  if (status.links.contact) {
+    links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
   }
   return links;
 };
@@ -194,11 +194,12 @@ const useRouteOrgLogo = (routeOrg, signedIn, logoFor) => {
 const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) => {
   const route = parseRoute(pathname, { reserved, collections });
   const routeOrg = route?.org || '';
-  const memberLogo = orgs.organizations.find(entry => entry.name === routeOrg)?.logo || '';
+  const member = orgs.organizations.find(entry => entry.name === routeOrg) || null;
+  const memberLogo = member?.logo || '';
   const fetchedLogo = useRouteOrgLogo(memberLogo ? '' : routeOrg, signedIn, orgs.logoFor);
   const orgIcon = (
     <OrgLogo
-      org={{ logo: memberLogo || fetchedLogo }}
+      org={{ logo: memberLogo || fetchedLogo, emailHash: member?.emailHash || '' }}
       size={16}
       className="rounded-circle avatar-sm"
       fallback={orgs.crumbMark || null}
@@ -235,13 +236,13 @@ const useSidebarOverlay = pathname => {
   };
 };
 
-const menuFor = ({ cookie, onAuthPage, sidebar, rows, adapters }) => {
+const menuFor = ({ cookie, issuerUrl, onAuthPage, sidebar, rows, adapters }) => {
   const profileInSidebar = sidebarRows(sidebar).some(entry =>
     PROFILE_ROUTES.includes(entry.row.to)
   );
   return {
     appRows: cookie && onAuthPage ? null : rows,
-    showPreferences: !cookie && !profileInSidebar,
+    showPreferences: (cookie || Boolean(issuerUrl)) && !profileInSidebar,
     ...adapters,
   };
 };
@@ -283,51 +284,52 @@ ShellFooter.propTypes = {
   fetchHealth: PropTypes.func,
 };
 
-const AppRows = ({ showAbout, showAdminBoard, showOrgConsole, extraRows }) => {
-  const { t } = useTranslation();
-  const { links } = useStatus();
-  return (
-    <>
-      {showAdminBoard ? (
-        <Dropdown.Item as={Link} to="/admin">
-          <FaGear className="me-2" />
-          {t('navbar.admin')}
-        </Dropdown.Item>
-      ) : null}
-      {showOrgConsole ? (
-        <Dropdown.Item as={Link} to="/org-console">
-          <FaBuilding className="me-2" />
-          {t('navbar.orgConsole')}
-        </Dropdown.Item>
-      ) : null}
-      {extraRows}
-      {showAbout ? (
-        <Dropdown.Item as={Link} to="/about">
-          <FaCircleInfo className="me-2" />
-          {t('navbar.about')}
-        </Dropdown.Item>
-      ) : null}
-      {links.contact ? (
-        <Dropdown.Item href={links.contact} target="_blank" rel="noopener noreferrer">
-          <FaEnvelope className="me-2" />
-          {t('navbar.contact')}
-        </Dropdown.Item>
-      ) : null}
-      {links.docs ? (
-        <Dropdown.Item href={links.docs}>
-          <FaBook className="me-2" />
-          {t('navbar.docs')}
-        </Dropdown.Item>
-      ) : null}
-    </>
-  );
-};
-
-AppRows.propTypes = {
-  showAbout: PropTypes.bool.isRequired,
-  showAdminBoard: PropTypes.bool.isRequired,
-  showOrgConsole: PropTypes.bool.isRequired,
-  extraRows: PropTypes.node,
+const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, links, t }) => {
+  const rows = [];
+  if (showAdminBoard) {
+    rows.push(
+      <Dropdown.Item key="admin" as={Link} to="/admin">
+        <FaGear className="me-2" />
+        {t('navbar.admin')}
+      </Dropdown.Item>
+    );
+  }
+  if (showOrgConsole) {
+    rows.push(
+      <Dropdown.Item key="org-console" as={Link} to="/org-console">
+        <FaBuilding className="me-2" />
+        {t('navbar.orgConsole')}
+      </Dropdown.Item>
+    );
+  }
+  if (extraRows) {
+    rows.push(<Fragment key="extra">{extraRows}</Fragment>);
+  }
+  if (showAbout) {
+    rows.push(
+      <Dropdown.Item key="about" as={Link} to="/about">
+        <FaCircleInfo className="me-2" />
+        {t('navbar.about')}
+      </Dropdown.Item>
+    );
+  }
+  if (links.contact) {
+    rows.push(
+      <Dropdown.Item key="contact" href={links.contact} target="_blank" rel="noopener noreferrer">
+        <FaEnvelope className="me-2" />
+        {t('navbar.contact')}
+      </Dropdown.Item>
+    );
+  }
+  if (links.docs) {
+    rows.push(
+      <Dropdown.Item key="docs" href={links.docs}>
+        <FaBook className="me-2" />
+        {t('navbar.docs')}
+      </Dropdown.Item>
+    );
+  }
+  return rows.length > 0 ? rows : null;
 };
 
 /**
@@ -440,16 +442,17 @@ const AppShell = ({
     orgs,
     menu: menuFor({
       cookie,
+      issuerUrl: account.issuerUrl,
       onAuthPage,
       sidebar,
-      rows: (
-        <AppRows
-          showAbout={showAbout}
-          showAdminBoard={showAdminBoard}
-          showOrgConsole={showOrgConsole}
-          extraRows={appRows}
-        />
-      ),
+      rows: appRowsFor({
+        showAbout,
+        showAdminBoard,
+        showOrgConsole,
+        extraRows: appRows,
+        links: status.links,
+        t,
+      }),
       adapters: { notifications, push, ticketUrl, onSignOut },
     }),
   });
@@ -467,7 +470,7 @@ const AppShell = ({
         links={links}
         crumbs={crumbs}
         LinkComponent={Link}
-        theme={{ preference: themePreference, onToggle: toggleTheme }}
+        theme={{ preference: themePreference, resolved: theme, onToggle: toggleTheme }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
         onSignIn={signIn.onSignIn}

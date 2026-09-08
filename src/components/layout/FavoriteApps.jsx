@@ -50,17 +50,24 @@ const FavoriteApps = ({ apps }) => {
     <>
       <Dropdown.Divider />
       <Dropdown.Header className="py-0">{t('navbar.favorites')}</Dropdown.Header>
-      {[...apps].sort(byOrder).map(app => (
-        <Dropdown.Item
-          key={app.client_id}
-          href={httpsUrl(app.home_url) || '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <AppIcon app={app} />
-          {app.custom_label || app.client_name || app.client_id}
-        </Dropdown.Item>
-      ))}
+      {[...apps].sort(byOrder).map(app => {
+        const home = httpsUrl(app.home_url);
+        const label = app.custom_label || app.client_name || app.client_id;
+        if (!home) {
+          return (
+            <Dropdown.ItemText key={app.client_id} className="d-flex align-items-center">
+              <AppIcon app={app} />
+              {label}
+            </Dropdown.ItemText>
+          );
+        }
+        return (
+          <Dropdown.Item key={app.client_id} href={home} target="_blank" rel="noopener noreferrer">
+            <AppIcon app={app} />
+            {label}
+          </Dropdown.Item>
+        );
+      })}
     </>
   );
 };

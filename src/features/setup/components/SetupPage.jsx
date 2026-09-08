@@ -177,7 +177,7 @@ const SetupPage = ({ setup }) => {
           return;
         }
         log.api.error('Error updating configuration', { error: error.message });
-        notify('danger', t('setup.updateError'));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

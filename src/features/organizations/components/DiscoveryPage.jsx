@@ -13,12 +13,11 @@ import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { organizationsShape } from '../../../utils/organizations';
-import { responseMessage } from '../../../utils/responseMessage';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 
-const JOIN_SCHEMA = { required: ['message'], properties: { message: { type: 'string' } } };
+const JOIN_SCHEMA = { properties: { message: { type: 'string' } } };
 const JOIN_LABELS = { message: 'discovery.modal.messageLabel' };
 const EMPTY_JOIN = { message: '' };
 
@@ -246,7 +245,7 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
         orgName,
         error: error.message,
       });
-      notify('danger', responseMessage(error, t('discovery.errors.requestFailed', { orgName })));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 

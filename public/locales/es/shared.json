@@ -4,7 +4,8 @@
   "no": "No",
   "language": {
     "changeLanguage": "Cambiar Idioma",
-    "control": "Cambiar idioma, {{name}}"
+    "control": "Cambiar idioma, {{name}}",
+    "title": "Idioma: {{name}}"
   },
   "error": {
     "somethingWentWrong": "Algo salió mal",
@@ -45,9 +46,13 @@
     "unknownUser": "Usuario Desconocido"
   },
   "theme": {
-    "auto": "Tema: seguir el sistema",
+    "auto": "Tema: Automático ({{variant}})",
     "light": "Tema: claro",
-    "dark": "Tema: oscuro"
+    "dark": "Tema: oscuro",
+    "name": {
+      "light": "Claro",
+      "dark": "Oscuro"
+    }
   },
   "sessionEnded": {
     "title": "Se cerró tu sesión.",
@@ -119,12 +124,15 @@
     "pattern": {
       "slug": "Usa solo letras, dígitos, guiones y puntos en {{label}}.",
       "identifier": "Usa solo letras, dígitos, guiones, guiones bajos y puntos en {{label}}, sin empezar por guion ni punto.",
+      "email": "Introduce {{label}} con la forma nombre@ejemplo.com.",
       "hex": "Usa solo dígitos hexadecimales en {{label}}.",
       "orgCode": "Introduce {{label}} como 6 caracteres hexadecimales (0-9, A-F).",
       "providerName": "Usa solo letras minúsculas, dígitos y guiones bajos en {{label}}.",
       "watchId": "Introduce {{label}} como un slug de organización y un slug de elemento unidos por una sola barra, como startcloud/alma9-server.",
       "personName": "Introduce {{label}} empezando por una letra, con letras, espacios, puntos, apóstrofos y guiones.",
-      "iconName": "Usa solo letras minúsculas, dígitos, espacios y guiones en {{label}}, hasta 64 caracteres."
+      "iconName": "Usa solo letras minúsculas, dígitos, espacios y guiones en {{label}}, hasta 64 caracteres.",
+      "languageTag": "Introduce {{label}} como una etiqueta de idioma, como es o es-MX.",
+      "timezone": "Introduce {{label}} como una zona horaria, como America/Chicago o UTC."
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
@@ -950,6 +958,7 @@
     "restartFailed": "Error al reiniciar el servidor",
     "restartNeeded": "Reinicia el servidor para aplicar los valores cambiados.",
     "restartBadge": "reinicio",
+    "deprecated": "Obsoleto",
     "testingSmtp": "Enviando correo de prueba...",
     "testSmtpSuccess": "¡Correo de prueba enviado con éxito! Revisa la bandeja de entrada del destinatario.",
     "testSmtpError": "Error al enviar el correo de prueba",
@@ -1273,7 +1282,7 @@
     "markAllReadError": "Error al marcar todas las notificaciones como leídas. Por favor intenta de nuevo.",
     "markAll": "Marcar todo como leído",
     "deleteAll": "Eliminar todo",
-    "deleteAllBody": "Se eliminan todas las notificaciones de esta página. Escribe \"{{keyword}}\" para confirmar.",
+    "deleteAllBody": "Se eliminan todas tus notificaciones. Escribe \"{{keyword}}\" para confirmar.",
     "delete": "Eliminar",
     "viewDetails": "Ver detalles"
   },
@@ -1656,7 +1665,7 @@
       "updated": "Actualizado",
       "released": "Último lanzamiento",
       "downloads": "Descargas",
-      "versions": "# Versiones",
+      "versions": "Versiones",
       "providers": "Proveedores",
       "architectures": "Arquitecturas",
       "actions": "Acciones",
@@ -1666,7 +1675,8 @@
       "download": "Descargar",
       "defaultBox": "Box predeterminada",
       "fileSize": "Tamaño de archivo",
-      "checksumType": "Tipo de checksum"
+      "checksumType": "Tipo de checksum",
+      "tier": "Nivel"
     },
     "status": {
       "published": "Publicado",
@@ -1739,7 +1749,10 @@
       "support": "Ayuda y comunidad",
       "addToFavorites": "Añadir a Favoritos",
       "removeFromFavorites": "Eliminar de Favoritos",
-      "runningVersion": "Versión {{version}} en ejecución"
+      "runningVersion": "Versión {{version}} en ejecución",
+      "addedToFavorites": "¡{{app}} añadido a favoritos!",
+      "removedFromFavorites": "{{app}} eliminado de favoritos",
+      "failedToUpdateFavorites": "Error al actualizar favoritos"
     }
   },
   "about": {
@@ -1990,6 +2003,7 @@
       "updateError": "Ocurrió un error al actualizar la box.",
       "deleteError": "Ocurrió un error al eliminar la box.",
       "name": "Nombre de la box",
+      "nameHint": "Letras, dígitos, guion y punto; es la URL y la carpeta.",
       "status": "Estado",
       "visibility": "Visibilidad",
       "description": "Descripción",

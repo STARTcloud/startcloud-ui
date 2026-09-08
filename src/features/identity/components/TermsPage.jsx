@@ -9,6 +9,7 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SortableList from '../../../components/common/SortableList';
+import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import {
@@ -23,7 +24,7 @@ import { PLACEHOLDERS, TERMS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TermDialog, { TERM_ICONS, termShape } from './TermDialog';
+import TermDialog, { termShape } from './TermDialog';
 
 const COPY_SCHEMA = { required: ['name'], properties: { name: { $ref: '#/$defs/slug' } } };
 const COPY_LABELS = { name: 'admin.terms.field.name' };
@@ -35,19 +36,18 @@ const keyOf = term => term.name;
 
 const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
   const { t } = useTranslation();
-  const Icon = TERM_ICONS[term.icon] || TERM_ICONS['file-text'];
   return (
     <>
       {handle}
       <div className="flex-grow-1 min-width-0">
         <div className="d-flex flex-wrap align-items-center gap-2">
-          <Icon className={term.icon} aria-hidden="true" />
+          <TermIcon icon={term.icon} className={term.icon} aria-hidden="true" />
           <strong>{term.friendly_name || term.name}</strong>
           {term.is_public ? (
             <span className="badge bg-success">{t('admin.terms.public')}</span>
           ) : null}
           <span className="badge bg-info text-dark">
-            {t(`admin.terms.type.${term.type}`, { defaultValue: term.type })}
+            {t(`admin.terms.type.${String(term.type).toLowerCase()}`, { defaultValue: term.type })}
           </span>
         </div>
         <div className="small text-muted">

@@ -233,14 +233,7 @@ const OidcProviders = ({ providers, schema, onProvidersUpdate }) => {
       setForm(emptyForm(schema));
     } catch (error) {
       if (!rules.applyServerErrors(itemErrors(error, form.name))) {
-        notify(
-          'danger',
-          t('oidc.errors.apiError', {
-            action: editingProvider ? t('oidc.actions.updating') : t('oidc.actions.adding'),
-            error: error.serverMessage || error.message,
-          }),
-          { key: OIDC_PROVIDER_KEY }
-        );
+        notify('danger', t(error.messageKey || 'errors.request'), { key: OIDC_PROVIDER_KEY });
       }
     } finally {
       setBusy(false);
@@ -272,11 +265,7 @@ const OidcProviders = ({ providers, schema, onProvidersUpdate }) => {
         key: OIDC_PROVIDER_KEY,
       });
     } catch (error) {
-      notify(
-        'danger',
-        t('oidc.errors.deleteError', { error: error.serverMessage || error.message }),
-        { key: OIDC_PROVIDER_KEY }
-      );
+      notify('danger', t(error.messageKey || 'errors.request'), { key: OIDC_PROVIDER_KEY });
     } finally {
       closeDelete();
     }

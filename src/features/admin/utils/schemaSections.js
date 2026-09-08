@@ -32,6 +32,7 @@ export const fieldOf = ({ pointer, key, property, required, index = 0 }) => ({
   dependsOn: property.dependsOn || '',
   showWhen: Array.isArray(property.showWhen) ? property.showWhen : null,
   requiresRestart: Boolean(property.requiresRestart),
+  deprecated: Boolean(property.deprecated),
   required,
   order: typeof property.order === 'number' ? property.order : 0,
   index,
@@ -44,7 +45,7 @@ const sectionOf = (schema, key) => {
   const entry = schema.sections?.[key] || {};
   return {
     key,
-    title: entry.title || '',
+    title: entry.title || key,
     order: typeof entry.order === 'number' ? entry.order : 0,
     index: Object.keys(schema.sections || {}).indexOf(key),
     fields: [],
@@ -64,7 +65,7 @@ const placeField = ({ sections, schema, sectionKey, subsectionKey, subsectionTit
   if (!section.subsections.has(subsectionKey)) {
     section.subsections.set(subsectionKey, {
       key: subsectionKey,
-      title: subsectionTitle,
+      title: subsectionTitle || subsectionKey,
       order: section.subsections.size,
       index: section.subsections.size,
       fields: [],
@@ -119,8 +120,9 @@ const walkProperties = ({
  * the config pages draw, from `sections`, `section`, `subsection` and
  * `order`, each field carrying its `pointer`, `title`, `description`,
  * `type`, `format`, `enum`, `writeOnly`, `readOnly`, `upload`, `dependsOn`,
- * `showWhen` and `requiresRestart`; a free subtree the schema does not
- * describe is not drawn.
+ * `showWhen`, `requiresRestart` and `deprecated`; a section or subsection
+ * labelled by its `title`, its key when there is none; a free subtree the
+ * schema does not describe is not drawn.
  *
  * @param {Object} schema - The file's schema from `GET /api/config/<name>/schema`
  * @returns {Array<{ key: string, title: string, fields: Array<Object>, subsections: Array<{ key: string, title: string, fields: Array<Object> }> }>}

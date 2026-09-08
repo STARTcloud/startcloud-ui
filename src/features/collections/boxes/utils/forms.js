@@ -11,10 +11,11 @@ const checksumFailure = (value, values) => {
   if (!value) {
     return { rule: 'required', params: {} };
   }
+  if (!HEX_RE.test(value)) {
+    return { rule: 'pattern', params: { pattern: 'hex' } };
+  }
   const length = CHECKSUM_LENGTHS[type];
-  return HEX_RE.test(value) && value.length === length
-    ? null
-    : { rule: 'checksum', params: { type, length } };
+  return value.length === length ? null : { rule: 'checksum', params: { type, length } };
 };
 
 const fileFailure = value => (value ? null : { rule: 'required', params: {} });
@@ -70,6 +71,8 @@ export const VERSION_LABELS = {
   version_number: 'boxes.version.number',
   description: 'boxes.provider.description',
 };
+
+export const ISO_VERSION_SCHEMA = { properties: { description: { type: 'string' } } };
 
 export const DEPRECATION_SCHEMA = {
   required: ['deprecation_reason'],

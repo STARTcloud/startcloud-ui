@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { Fragment } from 'react';
-import { Dropdown } from 'react-bootstrap';
 
 const CRUMB_CLASS = 'nav-link py-0 px-2 d-inline-flex align-items-center gap-2 crumb';
 
@@ -10,18 +9,6 @@ export const crumbShape = PropTypes.shape({
   icon: PropTypes.node,
   href: PropTypes.string,
   to: PropTypes.string,
-  onClick: PropTypes.func,
-  picker: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string.isRequired,
-      label: PropTypes.node.isRequired,
-      icon: PropTypes.node,
-      hint: PropTypes.node,
-      active: PropTypes.bool,
-      disabled: PropTypes.bool,
-      onPick: PropTypes.func.isRequired,
-    })
-  ),
 });
 
 const Separator = () => (
@@ -47,19 +34,11 @@ const CrumbLink = ({ crumb, LinkComponent }) => {
       </a>
     );
   }
-  if (!crumb.onClick) {
-    return (
-      <span className={CRUMB_CLASS}>
-        {crumb.icon}
-        {crumb.label}
-      </span>
-    );
-  }
   return (
-    <button type="button" className={CRUMB_CLASS} onClick={crumb.onClick}>
+    <span className={CRUMB_CLASS}>
       {crumb.icon}
       {crumb.label}
-    </button>
+    </span>
   );
 };
 
@@ -68,51 +47,13 @@ CrumbLink.propTypes = {
   LinkComponent: PropTypes.elementType.isRequired,
 };
 
-const CrumbPicker = ({ crumb }) => (
-  <Dropdown as="li" className="nav-item">
-    <Dropdown.Toggle
-      as="button"
-      type="button"
-      bsPrefix="nav-link"
-      className={`${CRUMB_CLASS} dropdown-toggle`}
-    >
-      {crumb.icon}
-      {crumb.label}
-    </Dropdown.Toggle>
-    <Dropdown.Menu>
-      {crumb.picker.map(item => (
-        <Dropdown.Item
-          key={item.key}
-          as="button"
-          type="button"
-          active={Boolean(item.active)}
-          disabled={Boolean(item.disabled)}
-          onClick={item.onPick}
-        >
-          {item.icon}
-          {item.label}
-          {item.hint ? <small className="ms-2 text-body-secondary">{item.hint}</small> : null}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
-);
-
-CrumbPicker.propTypes = {
-  crumb: crumbShape.isRequired,
-};
-
 const Crumbs = ({ crumbs, LinkComponent = 'a' }) =>
   crumbs.map(crumb => (
     <Fragment key={crumb.key}>
       <Separator />
-      {crumb.picker ? (
-        <CrumbPicker crumb={crumb} />
-      ) : (
-        <li className="nav-item">
-          <CrumbLink crumb={crumb} LinkComponent={LinkComponent} />
-        </li>
-      )}
+      <li className="nav-item">
+        <CrumbLink crumb={crumb} LinkComponent={LinkComponent} />
+      </li>
     </Fragment>
   ));
 

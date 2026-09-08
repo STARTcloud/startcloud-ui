@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -52,10 +52,13 @@ const PasswordResetPage = ({ session, returnTo }) => {
   const [problem, setProblem] = useState(null);
   const rules = useFormRules({ formKey: 'password', schema: SCHEMA, values, labels: LABELS });
 
+  useLayoutEffect(() => {
+    navigate('/passwordReset', { replace: true });
+  }, [navigate]);
+
   useEffect(() => {
     document.title = t('reset.title');
-    navigate('/passwordReset', { replace: true });
-  }, [navigate, t]);
+  }, [t]);
 
   if (signedIn) {
     return null;

@@ -31,8 +31,12 @@ const PASSWORD_SCHEMA = {
   required: ['username', 'password'],
   properties: { username: { type: 'string' }, password: { type: 'string' } },
 };
-const MAGIC_SCHEMA = { required: ['username'], properties: { username: { type: 'string' } } };
-const LABELS = { username: 'auth:login.email', password: 'auth:login.password' };
+const MAGIC_SCHEMA = { required: ['email'], properties: { email: { type: 'string' } } };
+const LABELS = {
+  username: 'auth:login.email',
+  email: 'auth:login.email',
+  password: 'auth:login.password',
+};
 const SAFE_PATH = /^\/(?![/\\])/;
 
 const enabledMethods = answer => (answer?.methods || []).filter(method => method.enabled);
@@ -166,16 +170,17 @@ PolicyLinks.propTypes = {
   ).isRequired,
 };
 
-const LoginForm = ({ mode, values, rules, revealed, wait, conditional, handlers }) => {
+const LoginForm = ({ mode, values, rules, revealed, wait, conditional, handlers, formRef }) => {
   const { t } = useTranslation(['auth']);
   const password = mode === 'password';
+  const address = password ? 'username' : 'email';
   return (
-    <form className="auth-form" onSubmit={handlers.onSubmit} noValidate>
+    <form className="auth-form" onSubmit={handlers.onSubmit} noValidate ref={formRef}>
       <FormErrorSummary errors={rules.summary} />
       <Field
-        id={rules.idFor('username')}
+        id={rules.idFor(address)}
         label={t('login.email')}
-        error={rules.errors.username || ''}
+        error={rules.errors[address] || ''}
         className="auth-field"
       >
         {aria => (
@@ -187,7 +192,7 @@ const LoginForm = ({ mode, values, rules, revealed, wait, conditional, handlers 
               autoComplete={conditional ? 'username webauthn' : 'username'}
               value={values.username}
               onChange={handlers.onChange}
-              onBlur={() => rules.onBlur('username')}
+              onBlur={() => rules.onBlur(address)}
             />
           </div>
         )}
@@ -268,6 +273,7 @@ LoginForm.propTypes = {
     ready: PropTypes.bool.isRequired,
     busy: PropTypes.bool.isRequired,
   }).isRequired,
+  formRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
 };
 
 const LoginExtras = ({ answer, providers, mode, busy, onSwitch, onCancel, session, appName }) => {
@@ -354,7 +360,9 @@ const SentState = ({ email, answer, problem, resent, onResend, onDifferent }) =>
           disabled={wait > 0}
           onClick={onResend}
         >
-          {wait > 0 ? `${t('login.sent.resend')} · ${wait}s` : t('login.sent.resend')}
+          {wait > 0
+            ? t('login.sent.resendIn', { label: t('login.sent.resend'), n: wait })
+            : t('login.sent.resend')}
         </button>
         <button
           type="button"
@@ -471,14 +479,20 @@ const CookieLogin = ({ session, returnTo, auth, appName }) => {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(null);
   const [resent, setResent] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const form = useRef(null);
 
   const stored = localStorage.getItem(auth.loginMethodKey) || '';
   const resolved = resolveMode({ params, stored, answer });
   const mode = availableModes(answer).includes(chosenMode) ? chosenMode : resolved;
+  const ruleValues = useMemo(
+    () => (mode === 'password' ? values : { ...values, email: values.username }),
+    [mode, values]
+  );
   const rules = useFormRules({
     formKey: 'login',
     schema: mode === 'password' ? PASSWORD_SCHEMA : MAGIC_SCHEMA,
-    values,
+    values: ruleValues,
     labels: LABELS,
   });
   const wait = useWait(problem);
@@ -501,6 +515,16 @@ const CookieLogin = ({ session, returnTo, auth, appName }) => {
       returnTo.remember(from);
     }
   }, [params, returnTo]);
+
+  useEffect(() => {
+    if (!focusRequest) {
+      return;
+    }
+    const inputs = ['username', 'password']
+      .map(name => form.current?.querySelector(`input[name="${name}"]`))
+      .filter(Boolean);
+    inputs.find(input => !input.value)?.focus();
+  }, [focusRequest]);
 
   if (signedIn) {
     return null;
@@ -553,6 +577,7 @@ const CookieLogin = ({ session, returnTo, auth, appName }) => {
           wait={wait}
           conditional={conditional}
           handlers={handlers}
+          formRef={form}
         />
       ) : null}
       {!loading && !mode && providers.length === 0 ? (
@@ -567,6 +592,7 @@ const CookieLogin = ({ session, returnTo, auth, appName }) => {
           setChosenMode(next);
           storeLoginMethod(auth.loginMethodKey, next);
           setProblem(null);
+          setFocusRequest(count => count + 1);
         }}
         onCancel={actions.cancel}
         session={session}

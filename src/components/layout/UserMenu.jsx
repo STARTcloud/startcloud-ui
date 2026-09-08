@@ -13,7 +13,7 @@ import { OrgLogo, OrgSwitcherModal, organizationShape } from './OrgSwitcherModal
 
 export const SignInButton = ({ onSignIn = null, signInTo = '', LinkComponent = 'a' }) => {
   const { t } = useTranslation();
-  const className = 'btn btn-primary btn-sm d-inline-flex align-items-center gap-2';
+  const className = 'btn btn-primary sign-in d-inline-flex align-items-center gap-2';
   return (
     <li className="nav-item">
       {signInTo ? (
@@ -127,7 +127,7 @@ const UserMenu = ({
             </Dropdown.Item>
           ) : null}
 
-          {issuerUrl && showPreferences ? (
+          {showPreferences && issuerUrl ? (
             <Dropdown.Item
               href={`${issuerUrl}/user/profile#preferences`}
               target="_blank"

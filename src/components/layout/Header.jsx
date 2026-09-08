@@ -95,7 +95,9 @@ const Header = ({
 }) => {
   const { t } = useTranslation();
   const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
-  const themeLabel = t(`theme.${theme.preference}`);
+  const themeLabel = t(`theme.${theme.preference}`, {
+    variant: t(`theme.name.${theme.resolved}`),
+  });
 
   return (
     <nav className="navbar navbar-expand-lg shadow-sm bg-body-tertiary border-bottom">
@@ -154,6 +156,7 @@ Header.propTypes = {
   LinkComponent: PropTypes.elementType,
   theme: PropTypes.shape({
     preference: PropTypes.string.isRequired,
+    resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
     onToggle: PropTypes.func.isRequired,
   }).isRequired,
   language: PropTypes.shape({

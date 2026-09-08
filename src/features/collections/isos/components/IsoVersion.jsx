@@ -11,7 +11,6 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { responseMessage } from '../../../../utils/responseMessage';
 import { architectureShape, itemShape, versionShape } from '../../../catalog/utils/itemShape';
 import { isOrgManager } from '../../boxes';
 import {
@@ -19,6 +18,8 @@ import {
   DEPRECATION_SCHEMA,
   ISO_ARCHITECTURE_LABELS,
   ISO_ARCHITECTURE_SCHEMA,
+  ISO_VERSION_SCHEMA,
+  VERSION_LABELS,
 } from '../../boxes/utils/forms';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
@@ -42,73 +43,110 @@ const slotShape = {
 };
 
 const updateVersion = ({ org, item, version, fields, t, notify, reload }) =>
-  api.versions
-    .update(org, item.name, version.version, fields)
-    .then(() => {
-      notify('success', t('boxes.version.updated'));
-      reload();
-      return true;
-    })
-    .catch(error => {
-      log.api.error('Error updating version', {
-        versionNumber: version.version,
-        error: error.message,
-      });
-      notify('danger', responseMessage(error, t('boxes.version.updateError')));
-      return false;
-    });
+  api.versions.update(org, item.name, version.version, fields).then(() => {
+    notify('success', t('boxes.version.updated'));
+    reload();
+  });
 
-const VersionEditForm = ({ draft, onChange }) => {
+const versionFailure = ({ error, version, t, notify }) => {
+  log.api.error('Error updating version', {
+    versionNumber: version.version,
+    error: error.message,
+  });
+  notify('danger', t(error.messageKey || 'errors.request'));
+};
+
+const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form>
-      <div className="form-group">
-        <label htmlFor="description">{t('boxes.provider.description')}</label>
-        <textarea
-          className="form-control"
-          id="description"
-          name="description"
-          value={draft.description}
-          onChange={onChange}
-        />
-      </div>
+    <form onSubmit={onSubmit} noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('description')}
+        label={t('boxes.provider.description')}
+        error={rules.errors.description || ''}
+        className="form-group"
+      >
+        {aria => (
+          <textarea
+            {...aria}
+            className="form-control"
+            name="description"
+            value={draft.description}
+            onChange={onChange}
+            onBlur={() => rules.onBlur('description')}
+          />
+        )}
+      </Field>
     </form>
   );
 };
 
 VersionEditForm.propTypes = {
   draft: PropTypes.shape({ description: PropTypes.string.isRequired }).isRequired,
+  rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
 };
 
 export const IsoVersionActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const status = useStatus();
   const { user, org, reload, notify, setEditor } = ctx;
-  const manage = isOrgManager(user, org);
+  const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ description: version.description || '' });
   const [showDelete, setShowDelete] = useState(false);
+  const rules = useFormRules({
+    formKey: 'version',
+    schema: ISO_VERSION_SCHEMA,
+    values: draft,
+    labels: VERSION_LABELS,
+    idPrefix: 'iso-version-edit',
+  });
 
   const onChange = useCallback(event => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
+  const save = () => {
+    if (!rules.validateAll()) {
+      return;
+    }
+    updateVersion({ org, item, version, fields: draft, t, notify, reload })
+      .then(() => setEditing(false))
+      .catch(error => {
+        if (!rules.applyServerErrors(error)) {
+          versionFailure({ error, version, t, notify });
+        }
+      });
+  };
+
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+  const submit = useCallback(event => {
+    event.preventDefault();
+    saveRef.current();
+  }, []);
+
   useEffect(() => {
     if (!editing) {
       return undefined;
     }
-    setEditor(<VersionEditForm draft={draft} onChange={onChange} />);
+    setEditor(
+      <VersionEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+    );
     return () => setEditor(null);
-  }, [editing, draft, onChange, setEditor]);
+  }, [editing, draft, rules, onChange, submit, setEditor]);
 
-  const save = () =>
-    updateVersion({ org, item, version, fields: draft, t, notify, reload }).then(ok => {
-      if (ok) {
-        setEditing(false);
-      }
-    });
+  const cancel = () => {
+    setEditing(false);
+    rules.reset();
+  };
 
   const remove = () => {
     deleteVersionCascade(org, item.name, version.version)
@@ -118,7 +156,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('boxes.version.deleteError')));
+        notify('danger', t(requestError.messageKey || 'errors.request'));
       });
   };
 
@@ -138,7 +176,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
         <button type="button" className="btn btn-success me-2" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
-        <button type="button" className="btn btn-secondary me-2" onClick={() => setEditing(false)}>
+        <button type="button" className="btn btn-secondary me-2" onClick={cancel}>
           {t('boxes.buttons.cancel')}
         </button>
         {back}
@@ -168,8 +206,9 @@ IsoVersionActions.propTypes = slotShape;
 
 export const IsoVersionBannerActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
-  if (!isOrgManager(user, org)) {
+  if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
   }
   return (
@@ -185,7 +224,7 @@ export const IsoVersionBannerActions = ({ item, version, ctx }) => {
           t,
           notify,
           reload,
-        })
+        }).catch(error => versionFailure({ error, version, t, notify }))
       }
     >
       {t('boxes.version.undeprecate')}
@@ -195,7 +234,7 @@ export const IsoVersionBannerActions = ({ item, version, ctx }) => {
 
 IsoVersionBannerActions.propTypes = slotShape;
 
-const DeprecateButton = ({ onDeprecate }) => {
+const DeprecateButton = ({ onDeprecate, onFailure }) => {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
   const [draft, setDraft] = useState(EMPTY_DEPRECATION);
@@ -218,9 +257,13 @@ const DeprecateButton = ({ onDeprecate }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const ok = await onDeprecate(draft.deprecation_reason.trim());
-    if (ok) {
+    try {
+      await onDeprecate(draft.deprecation_reason);
       close();
+    } catch (error) {
+      if (!rules.applyServerErrors(error)) {
+        onFailure(error);
+      }
     }
   };
 
@@ -268,15 +311,17 @@ const DeprecateButton = ({ onDeprecate }) => {
 
 DeprecateButton.propTypes = {
   onDeprecate: PropTypes.func.isRequired,
+  onFailure: PropTypes.func.isRequired,
 };
 
 export const IsoVersionNotesActions = ({ item, version, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(version.releaseNotes || '');
 
-  if (!isOrgManager(user, org)) {
+  if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
   }
 
@@ -289,11 +334,9 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
       t,
       notify,
       reload,
-    }).then(ok => {
-      if (ok) {
-        setEditing(false);
-      }
-    });
+    })
+      .then(() => setEditing(false))
+      .catch(error => versionFailure({ error, version, t, notify }));
 
   if (editing) {
     return (
@@ -341,6 +384,7 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
               reload,
             })
           }
+          onFailure={error => versionFailure({ error, version, t, notify })}
         />
       )}
     </div>
@@ -506,7 +550,7 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const architecture = form.name.trim();
+    const architecture = form.name;
     setUploading(true);
     setProgress(0);
     notify('', '', { key: UPLOAD_KEY });
@@ -528,9 +572,7 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
           architectureName: architecture,
           error: requestError.message,
         });
-        notify('danger', responseMessage(requestError, t('boxes.messages.uploadFailed')), {
-          key: UPLOAD_KEY,
-        });
+        notify('danger', t(requestError.messageKey || 'errors.request'), { key: UPLOAD_KEY });
       })
       .finally(() => setUploading(false));
   };
@@ -551,10 +593,11 @@ IsoArtifactsActions.propTypes = slotShape;
 
 export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const { user, org, reload, notify } = ctx;
   const [show, setShow] = useState(false);
 
-  if (!isOrgManager(user, org)) {
+  if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
   }
 
@@ -570,7 +613,7 @@ export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
           architectureName: artifact.name,
           error: error.message,
         });
-        notify('danger', responseMessage(error, t('boxes.iso.file.deleteError')));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

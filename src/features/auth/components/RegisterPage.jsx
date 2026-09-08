@@ -8,6 +8,7 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
+import { rules as hostRules } from '../../../lib/runtime';
 import {
   authShape,
   readStoredLoginMethod,
@@ -15,7 +16,6 @@ import {
   sortMethodsByDefault,
   storeLoginMethod,
 } from '../../../utils/auth';
-import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from './AuthShell';
 import CookieRegister from './CookieRegister';
@@ -36,6 +36,10 @@ const REGISTER_LABELS = {
   email: 'auth:register.email',
   password: 'auth:register.password',
 };
+const DEFAULT_MIN_LENGTH = 15;
+
+const passwordMinLength = () =>
+  Number(hostRules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
 
 const resolveInitialMode = ({ localAllowed, hasOidc, loginMethodKey }) => {
   if (!localAllowed) {
@@ -107,7 +111,7 @@ RegisterField.propTypes = {
 };
 
 const LocalRegisterForm = ({ formValues, rules, onChange, onSubmit, loading }) => {
-  const { t } = useTranslation(['auth']);
+  const { t } = useTranslation(['auth', 'shared']);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -144,6 +148,7 @@ const LocalRegisterForm = ({ formValues, rules, onChange, onSubmit, loading }) =
       <RegisterField
         name="password"
         label={t('register.password')}
+        hint={t('shared:profile.security.password.hint', { count: passwordMinLength() })}
         type={showPassword ? 'text' : 'password'}
         autoComplete="new-password"
         value={formValues.password}
@@ -423,10 +428,7 @@ const BackendRegisterPage = ({ session, returnTo, auth }) => {
       })
       .catch(error => {
         if (!rules.applyServerErrors(error)) {
-          setStatus({
-            success: false,
-            message: responseMessage(error, error.message || error.toString()),
-          });
+          setStatus({ success: false, message: t(error.messageKey || 'errors.request') });
         }
         setIsSubmitting(false);
       });

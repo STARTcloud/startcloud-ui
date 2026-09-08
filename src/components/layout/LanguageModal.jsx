@@ -47,7 +47,7 @@ export const getLanguageFlag = languageCode => {
 export const LanguageModal = ({ show, current, languages, onPick, onClose }) => {
   const { t } = useTranslation();
   return (
-    <Modal show={show} onHide={onClose} centered>
+    <Modal show={show} onHide={onClose} dialogClassName="chrome-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           <FaGlobe className="me-2" />
@@ -60,19 +60,19 @@ export const LanguageModal = ({ show, current, languages, onPick, onClose }) => 
             <button
               key={lang}
               type="button"
-              className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
+              className={`list-group-item list-group-item-action d-flex align-items-center gap-3 ${
                 current === lang ? 'border-primary border-2' : ''
               }`}
               onClick={() => onPick(lang)}
             >
+              <span className="lang-row-code">{getLanguageCode(lang)}</span>
+              <span className="flex-grow-1 fw-bold">{getLanguageDisplayName(lang)}</span>
               <span className="d-inline-flex align-items-center gap-2">
-                <span className="lang-code">{getLanguageCode(lang)}</span>
-                <span>{getLanguageDisplayName(lang)}</span>
                 <span className="flag-icon-lg" aria-hidden="true">
                   {getLanguageFlag(lang)}
                 </span>
+                {current === lang ? <FaCircleCheck className="text-success" aria-hidden /> : null}
               </span>
-              {current === lang ? <FaCircleCheck className="text-success" aria-hidden /> : null}
             </button>
           ))}
         </div>
@@ -92,7 +92,7 @@ LanguageModal.propTypes = {
 export const LanguageButton = ({ languages, onPick }) => {
   const { t, i18n } = useTranslation();
   const [show, setShow] = useState(false);
-  const label = t('language.control', { name: getLanguageDisplayName(i18n.language) });
+  const name = getLanguageDisplayName(i18n.language);
 
   const pick = async lang => {
     await onPick(lang);
@@ -105,8 +105,8 @@ export const LanguageButton = ({ languages, onPick }) => {
         type="button"
         className="btn btn-link nav-link cluster-btn lang-btn"
         onClick={() => setShow(true)}
-        title={label}
-        aria-label={label}
+        title={t('language.title', { name })}
+        aria-label={t('language.control', { name })}
       >
         <FaGlobe aria-hidden />
         <span className="lang-code">{getLanguageCode(i18n.language)}</span>

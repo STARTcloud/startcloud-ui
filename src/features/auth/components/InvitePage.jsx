@@ -6,7 +6,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { authShape, returnToShape } from '../../../utils/auth';
 import { isMember } from '../../../utils/membership';
-import { responseMessage } from '../../../utils/responseMessage';
 
 /**
  * The landing page of an organization invitation link, `/invite/:token`:
@@ -44,7 +43,7 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(responseMessage(err, t('inviteAccept.invalid')));
+          setError(t(err.messageKey || 'errors.request'));
         }
       } finally {
         if (!cancelled) {
@@ -69,7 +68,7 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
       window.location.href = `/${org}`;
     } catch (err) {
       setAccepting(false);
-      notify('danger', responseMessage(err, t('inviteAccept.error')));
+      notify('danger', t(err.messageKey || 'errors.request'));
     }
   };
 

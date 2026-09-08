@@ -314,16 +314,25 @@ Content-Type: application/json
 - **Auth is dual-principal**: a same-origin session with CSRF token, or the
   acting user's Bearer access token (Mode B, as the org-invite API).
 - **An omitted key is left unchanged.** A key present with `null` or `""`
-  clears it. All three keys are optional.
+  clears it. Every key is optional.
+- Two more members are writable beside the three above, the identity
+  provider's sign-in approval settings the shared Preferences tab saves
+  through the same call: `ciba_channel`, one of `PUSH`, `EMAIL` or `SMS`
+  (`SMS` only while a verified mobile number exists), and `ciba_user_code`,
+  the approval PIN, `null` clearing it; the PIN is never read back.
 - Validation: well-formed BCP 47 with no length cap, since RFC 5646 §2.1
   sets none and `ca-ES-valencia` is a registered fourteen-character tag;
-  `light|dark|auto`; a known IANA zone id. A violation answers the
-  validation contract's `422` problem body with a pointer per failing
-  member, never a `400 { "error" }`, so the shared form paints it inline.
+  `light|dark|auto`; a known IANA zone id; `PUSH|EMAIL|SMS`. A violation
+  answers the validation contract's `422` problem body with a pointer per
+  failing member, never a `400 { "error" }`, so the shared form paints it
+  inline.
 - `GET` on the same path returns the five members the identity provider
   stores: `language`, `theme`, `timezone`, `ciba_channel` and
   `ciba_user_code_set`, the last two the sign-in approval channel and
   whether an approval PIN is set.
+- The shared Preferences tab sends `timezone` only when the person chose
+  one that differs from the stored value; the zone it detects and
+  preselects while none is stored is never written on its own.
 - A successful write triggers the SCIM push, so subscribing apps converge
   without polling.
 
@@ -434,7 +443,7 @@ manages packs and none offers a UI for them.
   --brand-primary: #8b5cf6;
   --brand-on-primary: #ffffff;
   --brand-logo: url('https://…/mark.svg');
-  --brand-logo-color: var(--brand-primary);
+  --brand-logo-color: #8b5cf6;
 
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 139, 92, 246;
@@ -446,7 +455,12 @@ manages packs and none offers a UI for them.
 }
 ```
 
-Only genuine inversions repeat under the variant selector.
+Only genuine inversions repeat under the variant selector. The mark's
+paint is per variant in the YAML, `logo_color: { light, dark }`, the same
+shape as `surfaces`: the `light` value (the primary when absent) is
+emitted in the brand block, and the `dark` value repeats under the dark
+selector only when the YAML names one, each checked at 3:1 against the
+`--bs-body-bg` of its own variant.
 
 ### Pack names
 
@@ -523,7 +537,14 @@ is a build gate rather than a review note:
 - **WCAG 2.2 §1.4.11** — 3:1 for non-text contrast: the brand mark and,
   critically, **focus indicators**. A pack changing `--bs-primary` changes
   Bootstrap's focus ring, so a pack can pass text contrast and still fail
-  keyboard accessibility.
+  keyboard accessibility. The focus ring is therefore the chrome's and
+  never the pack's: the generator emits one `--brand-focus-ring` per
+  variant, computed from the accent, nudged toward black on the light
+  variant or white on the dark one in 5% steps only until the opaque
+  colour reaches 3:1 against that variant's body background, at the
+  lowest alpha whose colour composited over that background reaches 3:1,
+  measured composited as WCAG technique G195 measures a partially
+  transparent indicator; a pack never sets a ring.
 - **WCAG 2.2 §2.4.11** — focus appearance requires contrast against both the
   component and its background.
 

@@ -106,7 +106,11 @@ const App = ({ getSupportedLanguages }) => {
     preference: themePreference,
     setPreference: setThemePreference,
     toggleTheme,
-  } = useTheme({ initialPreference: initialThemeOf(backend), onPersist: persistTheme });
+  } = useTheme({
+    initialPreference: initialThemeOf(backend),
+    siteTheme: status.brand.theme || '',
+    onPersist: persistTheme,
+  });
   const setupComplete = useSetupGate({
     enabled: hasFeature(status, 'setup'),
     checkStatus: setupApi.status,

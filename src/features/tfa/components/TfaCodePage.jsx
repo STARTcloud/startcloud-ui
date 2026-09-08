@@ -84,7 +84,9 @@ const ResendButton = ({ after, since, onResend }) => {
       disabled={remaining > 0}
       onClick={onResend}
     >
-      {remaining > 0 ? `${t('tfa.resend')} · ${remaining}s` : t('tfa.resend')}
+      {remaining > 0
+        ? t('tfa.resendIn', { label: t('tfa.resend'), n: remaining })
+        : t('tfa.resend')}
     </button>
   );
 };

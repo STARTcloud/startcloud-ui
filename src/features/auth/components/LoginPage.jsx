@@ -15,7 +15,6 @@ import {
   sortMethodsByDefault,
   storeLoginMethod,
 } from '../../../utils/auth';
-import { responseMessage } from '../../../utils/responseMessage';
 
 import AuthShell, { AuthAlert, AuthSpinner } from './AuthShell';
 import CookieLogin from './CookieLogin';
@@ -483,7 +482,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
       .catch(error => {
         setLoading(false);
         if (!rules.applyServerErrors(error)) {
-          setStatusMessage(responseMessage(error, error.message || error.toString()));
+          setStatusMessage(t(error.messageKey || 'errors.request'));
         }
       });
   };

@@ -220,7 +220,7 @@ const Subsection = ({ sectionKey, subsection, ...drawing }) => {
         <h6 className="mb-0">
           {collapsed ? <FaChevronRight className="me-2" /> : <FaChevronDown className="me-2" />}
           <SectionIcon sectionKey={sectionKey} />
-          {subsection.title || t(`configManager.subsections.${subsection.key}`)}
+          {subsection.title}
           <span className="badge bg-light text-dark ms-2">
             {t('configManager.settingsCount', { count: scalarCount(shown) })}
           </span>
@@ -243,6 +243,9 @@ Subsection.propTypes = {
 
 const Section = ({ section, ...drawing }) => {
   const { t } = useTranslation();
+  const shown = section.fields.filter(field =>
+    isVisible(field, scopesFor(drawing.config, field.pointer))
+  );
   return (
     <div>
       {section.fields.length > 0 && (
@@ -250,9 +253,9 @@ const Section = ({ section, ...drawing }) => {
           <div className="card-header">
             <h5 className="mb-0">
               <SectionIcon sectionKey={section.key} />
-              {section.title || t(`configManager.sections.${section.key}`)}
+              {section.title}
               <span className="badge bg-light text-dark ms-2">
-                {t('configManager.settingsCount', { count: scalarCount(section.fields) })}
+                {t('configManager.settingsCount', { count: scalarCount(shown) })}
               </span>
             </h5>
           </div>

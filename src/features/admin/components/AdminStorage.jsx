@@ -6,7 +6,6 @@ import { FaHardDrive, FaCompactDisc } from 'react-icons/fa6';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { log } from '../../../lib/logger';
 import { formatFileSize } from '../../../utils/formatFileSize';
-import { responseMessage } from '../../../utils/responseMessage';
 
 const progressClass = percent => {
   if (percent > 90) {
@@ -84,7 +83,7 @@ const AdminStorage = ({ storage }) => {
       .then(setStorageInfo)
       .catch(err => {
         log.api.error('Failed to fetch storage info', { error: err.message });
-        notify('danger', responseMessage(err, t('admin.storage.fetchError')));
+        notify('danger', t(err.messageKey || 'errors.request'));
       })
       .finally(() => setLoading(false));
   }, [notify, storage, t]);

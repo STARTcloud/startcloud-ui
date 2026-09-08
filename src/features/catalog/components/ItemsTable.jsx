@@ -78,7 +78,7 @@ const ItemsTable = ({
 }) => {
   const { t } = useTranslation();
   const columns = collection.columns.filter(
-    column => !hiddenColumns.has(column.key) && (!column.when || column.when(ctx))
+    column => !hiddenColumns.has(column.key) && (!column.when || column.when(items))
   );
   const { ItemQuickActions, RowActions } = collection.slots;
   const columnCount = columns.length + 1 + (ItemQuickActions ? 1 : 0) + (RowActions ? 1 : 0);

@@ -20,9 +20,10 @@ import {
   visibilityOf,
 } from '../utils/itemShape';
 
-import { createdColumn, downloadsColumn, updatedColumn } from './columns';
 import ItemFacts from './ItemFacts';
 import SubTable, { hasAny } from './SubTable';
+
+const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
 const Readme = ({ readme }) => {
   const { t } = useTranslation();
@@ -226,9 +227,13 @@ const versionColumns = (org, name) => [
       </>
     ),
   },
-  { ...createdColumn, defaultHidden: false, when: hasAny(version => version.createdAt) },
-  { ...updatedColumn, defaultHidden: false, when: hasAny(version => version.updatedAt) },
-  { ...downloadsColumn, when: hasAny(version => typeof version.downloads === 'number') },
+  {
+    key: 'released',
+    labelKey: 'pages.version.released',
+    sortValue: version => new Date(version.createdAt || 0).getTime(),
+    when: hasAny(version => version.createdAt),
+    render: version => localeDate(version.createdAt),
+  },
   {
     key: 'details',
     labelKey: 'pages.table.details',

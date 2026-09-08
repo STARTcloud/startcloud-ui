@@ -41,6 +41,7 @@ export const loadOrganizations = async () => {
         primary: Boolean(membership.isPrimary),
         personal: Boolean(membership.personal),
         logo: await organizationLogo(membership),
+        emailHash: membership.emailHash || membership.organization?.emailHash || '',
       };
     })
   );

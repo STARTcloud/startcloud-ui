@@ -5,16 +5,20 @@ const HOSTNAME_RE =
 const IPV4_RE = /^(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\.(?:25[0-5]|2[0-4]\d|[01]?\d\d?)){3}$/;
 const INTEGER_RE = /^-?\d+$/;
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
+const SECRET_MASK = '********';
 
 const PATTERN_KEYS = [
   'slug',
   'identifier',
+  'email',
   'hex',
   'orgCode',
   'providerName',
   'watchId',
   'personName',
   'iconName',
+  'languageTag',
+  'timezone',
 ];
 const RULE_KEYS = [
   'required',
@@ -77,7 +81,7 @@ export const DEFS = {
     allOf: [{ pattern: '^[0-9a-zA-Z][0-9a-zA-Z._-]*$' }, { not: { pattern: '\\.\\.' } }],
     maxLength: 255,
   },
-  email: { type: 'string', format: 'email', maxLength: 255 },
+  email: { type: 'string', pattern: EMAIL_RE.source, maxLength: 255 },
   orgCode: { type: 'string', pattern: '^[0-9A-F]{6}$' },
   providerName: { type: 'string', pattern: '^[a-z0-9_]+$' },
   hex: { type: 'string', pattern: '^[a-fA-F0-9]+$' },
@@ -89,14 +93,13 @@ export const DEFS = {
     maxLength: 255,
   },
   iconName: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
+  languageTag: { type: 'string', pattern: '^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$', maxLength: 10 },
+  timezone: { type: 'string', pattern: '^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$' },
 };
 
 const FALLBACK_DOCUMENT = { $defs: DEFS };
 
-const isBlank = value =>
-  value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
-
-const isPresent = value => !isBlank(value) && value !== false;
+const isBlank = value => value === undefined || value === null || value === '';
 
 const refTarget = (ref, document) => {
   if (typeof ref !== 'string' || !ref.startsWith('#/')) {
@@ -234,8 +237,9 @@ const firstFailure = (rule, value, patternName, document) => {
 };
 
 /**
- * Evaluate one value against one schema: `type`, `required` (a blank
- * string counts as missing when the schema says `required: true`),
+ * Evaluate one value against one schema: `type`, `required` (undefined,
+ * null and the empty string count as missing when the schema says
+ * `required: true`),
  * `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `enum`,
  * `format`, `minItems`, `maxItems`, with `$ref` resolved within `document`.
  *
@@ -294,13 +298,23 @@ export const scopesFor = (values, pointer) => {
   return scopes;
 };
 
+const passesIf = (condition, values) =>
+  Boolean(condition) &&
+  (condition.required || []).every(name => !isBlank(values[name])) &&
+  Object.entries(condition.properties || {}).every(
+    ([name, rule]) => !Object.hasOwn(rule, 'const') || values[name] === rule.const
+  );
+
 const requiredOf = (schema, values) => {
   const required = new Set(schema.required || []);
   Object.entries(schema.dependentRequired || {}).forEach(([key, needs]) => {
-    if (isPresent(values[key])) {
+    if (!isBlank(values[key])) {
       needs.forEach(name => required.add(name));
     }
   });
+  if (passesIf(schema.if, values)) {
+    (schema.then?.required || []).forEach(name => required.add(name));
+  }
   return required;
 };
 
@@ -351,6 +365,9 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
       walkMap({ ...next, document, errors, walk: walkObject });
       return;
     }
+    if (rule.writeOnly && (isBlank(value) || value === SECRET_MASK)) {
+      return;
+    }
     const own = validateValue({ ...property, required: required.has(name) }, value, document);
     const failure = own.length > 0 ? own[0] : clientFailure(rule, value, values);
     if (failure) {
@@ -361,7 +378,8 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
 
 /**
  * Evaluate an object against an object schema: `required`,
- * `dependentRequired`, every property through `validateValue` (nested
+ * `dependentRequired`, `then.required` while the `if` subschema's `const`
+ * and `required` entries hold, every property through `validateValue` (nested
  * objects and `additionalProperties` maps walked, pointers `/name`,
  * `/sql/port`), a property hidden by `dependsOn`/`showWhen` skipped, and the
  * client-only `equals` and `custom` entries a form schema may carry.
@@ -383,8 +401,8 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
 /**
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
- * `identifier`, `hex`, `orgCode`, `providerName`, `watchId`, `personName`,
- * `iconName`), a format and a type by theirs; a rule the UI does not know
+ * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
+ * `personName`, `iconName`, `languageTag`, `timezone`), a format and a type by theirs; a rule the UI does not know
  * through `validation.unknown` with the
  * field's label, the error's `detail` never shown.
  *

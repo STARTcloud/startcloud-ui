@@ -255,7 +255,7 @@ const PhoneStep = ({ returnTo }) => {
               disabled={step.busy || !step.codeReady}
             />
             <ResendCode
-              after={state?.phone?.resend_after_seconds || 0}
+              after={step.changed ? 0 : state?.phone?.resend_after_seconds || 0}
               since={step.sent.at}
               onResend={step.send}
             />
@@ -267,7 +267,7 @@ const PhoneStep = ({ returnTo }) => {
           className={`auth-btn auth-btn-primary auth-btn-block${step.busy ? ' is-loading' : ''}`}
           disabled={step.busy || step.changed}
         >
-          {step.codeReady ? t('onboarding.phone.verify') : t('onboarding.phone.send')}
+          {step.sent.to ? t('onboarding.phone.verify') : t('onboarding.phone.send')}
         </button>
       </form>
       {purpose === 'tfa' ? (

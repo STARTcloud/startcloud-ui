@@ -36,7 +36,9 @@ const SentState = ({ email, minutes, problem, onResend }) => {
           disabled={wait > 0}
           onClick={onResend}
         >
-          {wait > 0 ? `${t('recovery.sent.resend')} · ${wait}s` : t('recovery.sent.resend')}
+          {wait > 0
+            ? t('recovery.sent.resendIn', { label: t('recovery.sent.resend'), n: wait })
+            : t('recovery.sent.resend')}
         </button>
         <Link to="/login" className="auth-btn auth-btn-secondary auth-btn-block">
           {t('recovery.returnToSite')}

@@ -81,9 +81,16 @@ const collectNames = ({ schema, values, base, names }) => {
       return;
     }
     if (property.additionalProperties && typeof property.additionalProperties === 'object') {
-      Object.keys(values?.[key] && typeof values[key] === 'object' ? values[key] : {}).forEach(
-        entry => names.push(`${name}/${entry}`)
-      );
+      const item = property.additionalProperties;
+      const entries = values?.[key] && typeof values[key] === 'object' ? values[key] : {};
+      Object.keys(entries).forEach(entry => {
+        const entryName = `${name}/${entry}`;
+        if (item.properties) {
+          collectNames({ schema: item, values: entries[entry], base: entryName, names });
+          return;
+        }
+        names.push(entryName);
+      });
       return;
     }
     names.push(name);

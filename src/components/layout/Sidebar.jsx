@@ -165,6 +165,13 @@ const TreeNode = ({ node, depth, tree, current }) => {
   const kids = tree.kids[node.key] || null;
   const branch = Boolean(node.children);
   const active = current === node.to;
+  const { load } = tree;
+
+  useEffect(() => {
+    if (branch && open && !kids) {
+      load(node);
+    }
+  }, [branch, open, kids, node, load]);
 
   const onKeyDown = event => {
     if (event.key === 'ArrowLeft' && branch && open) {
@@ -242,6 +249,7 @@ TreeNode.propTypes = {
   tree: PropTypes.shape({
     open: PropTypes.arrayOf(PropTypes.string).isRequired,
     kids: PropTypes.object.isRequired,
+    load: PropTypes.func.isRequired,
     toggle: PropTypes.func.isRequired,
     menu: PropTypes.func,
     openMenu: PropTypes.func.isRequired,
@@ -307,22 +315,11 @@ const TreeView = ({ groupKey, useTree, current }) => {
         localStorage.setItem(openKeyOf(groupKey), JSON.stringify(next));
         return next;
       });
-      if (!kids[node.key] && node.children) {
-        load(node);
-      }
     },
-    [groupKey, kids, load]
+    [groupKey]
   );
 
-  useEffect(() => {
-    nodes.forEach(node => {
-      if (open.includes(node.key) && node.children && !kids[node.key]) {
-        load(node);
-      }
-    });
-  }, [nodes, open, kids, load]);
-
-  const tree = { open, kids, toggle, menu, openMenu: setContextMenu };
+  const tree = { open, kids, load, toggle, menu, openMenu: setContextMenu };
 
   return (
     <div

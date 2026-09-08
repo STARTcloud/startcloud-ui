@@ -3,6 +3,7 @@
   --brand-primary-rgb: 108, 92, 231;
   --brand-on-primary: #ffffff;
   --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --brand-focus-ring: rgba(108, 92, 231, 0.74);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 108, 92, 231;
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
@@ -11,6 +12,7 @@
 }
 
 [data-brand='nomadservices'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(108, 92, 231, 0.82);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-body-bg: #0e0c1f;
   --bs-tertiary-bg: #15142a;

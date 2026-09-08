@@ -188,6 +188,9 @@ export const sortVersionsNewestFirst = versions =>
   );
 
 export const latestReleaseTime = item => {
+  if (item.latestReleaseAt) {
+    return new Date(item.latestReleaseAt).getTime();
+  }
   const versions = item.versions || [];
   const latest = versions.reduce((newest, version) => {
     const time = new Date(version.createdAt || 0).getTime();

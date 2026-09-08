@@ -2,32 +2,16 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import {
-  FaFileContract,
-  FaFileLines,
-  FaLock,
-  FaScaleBalanced,
-  FaShield,
-  FaShieldHalved,
-} from 'react-icons/fa6';
 import ReactMarkdown from 'react-markdown';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import { TERM_ICON_NAMES } from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { createTerm, updateTerm } from '../api/content';
 
-export const TERM_ICONS = {
-  'file-text': FaFileLines,
-  'file-contract': FaFileContract,
-  shield: FaShield,
-  'shield-lock': FaShieldHalved,
-  lock: FaLock,
-  scale: FaScaleBalanced,
-};
-
-export const TERM_TYPES = ['client', 'site', 'both'];
+export const TERM_TYPES = ['CLIENT', 'SITE', 'BOTH'];
 
 export const termShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
@@ -49,7 +33,7 @@ export const placeholderShape = PropTypes.shape({
 });
 
 const SCHEMA = {
-  required: ['name', 'friendly_name', 'version'],
+  required: ['name', 'version', 'type', 'content'],
   properties: {
     name: { $ref: '#/$defs/slug' },
     friendly_name: { type: 'string' },
@@ -78,7 +62,7 @@ const EMPTY = {
   friendly_name: '',
   icon: 'file-text',
   version: '1.0',
-  type: 'site',
+  type: 'SITE',
   is_public: false,
   display_order: 0,
   content: '',
@@ -87,9 +71,9 @@ const EMPTY = {
 const formOf = term => ({
   name: term.name || '',
   friendly_name: term.friendly_name || '',
-  icon: TERM_ICONS[term.icon] ? term.icon : 'file-text',
+  icon: TERM_ICON_NAMES.includes(term.icon) ? term.icon : 'file-text',
   version: term.version || '',
-  type: TERM_TYPES.includes(term.type) ? term.type : 'site',
+  type: TERM_TYPES.includes(term.type) ? term.type : 'SITE',
   is_public: Boolean(term.is_public),
   display_order: Number(term.display_order) || 0,
   content: term.content || '',
@@ -231,7 +215,7 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
                 form={form}
                 rules={rules}
                 onChange={onChange}
-                options={Object.keys(TERM_ICONS)}
+                options={TERM_ICON_NAMES}
                 labelOf={name => name}
               />
             </div>
@@ -245,7 +229,7 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
                 rules={rules}
                 onChange={onChange}
                 options={TERM_TYPES}
-                labelOf={type => t(`admin.terms.type.${type}`)}
+                labelOf={type => t(`admin.terms.type.${type.toLowerCase()}`)}
               />
             </div>
             <div className="col-md-4">

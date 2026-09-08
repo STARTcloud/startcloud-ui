@@ -939,7 +939,7 @@
             <div class="payload">
               { <span class="k">"message"</span>:
               <span class="s">"Configuration updated successfully."</span>,
-              <span class="k">"requiresRestart"</span>: true }
+              <span class="k">"requires_restart"</span>: true }
             </div>
             <h2>What the UI does with the answer</h2>
             <div class="tbl" style="grid-template-columns: 70px 1fr">
@@ -955,7 +955,7 @@
               <span class="c k">200</span
               ><span class="c"
                 >the success card, the file re-read; a warning card "Restart the server to apply"
-                when <code>requiresRestart</code> is true</span
+                when <code>requires_restart</code> is true</span
               >
               <span class="c k">else</span><span class="c">one danger card, the values kept</span>
             </div>
@@ -1104,7 +1104,7 @@
           with a sentence (hyperweaver-agent)</span
         ><span class="c"
           >validate, 422 with pointers, then merge and write, on every UI backend; 200 carries
-          <code>requiresRestart</code></span
+          <code>requires_restart</code></span
         >
         <span class="c k">boot</span
         ><span class="c was">the file is read as is (hyperweaver-agent excepted)</span

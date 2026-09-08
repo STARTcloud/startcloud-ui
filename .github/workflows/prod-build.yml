@@ -50,4 +50,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tar -czf "startcloud-ui-${{ inputs.version }}.tar.gz" -C dist .
-          gh release upload "${{ inputs.tag_name }}" "startcloud-ui-${{ inputs.version }}.tar.gz" --clobber
+          node -e "const html = require('fs').readFileSync('dist/index.html', 'utf8'); const match = html.match(/<script>([\s\S]*?)<\/script>/); if (!match) { process.exit(1); } process.stdout.write(require('crypto').createHash('sha256').update(match[1]).digest('base64'));" > "startcloud-ui-${{ inputs.version }}.prepaint.sha256"
+          gh release upload "${{ inputs.tag_name }}" "startcloud-ui-${{ inputs.version }}.tar.gz" "startcloud-ui-${{ inputs.version }}.prepaint.sha256" --clobber
