@@ -8,6 +8,11 @@ const MESSAGE_KEYS = {
   409: 'errors.conflict',
   422: 'errors.validation',
 };
+const TYPE_KEYS = {
+  'bad-gateway': 'errors.badGateway',
+  'not-configured': 'errors.notConfigured',
+  'method-not-allowed': 'errors.methodNotAllowed',
+};
 const PROBLEM_TYPE = 'application/problem+json';
 const OPTIONAL_AUTH = 'optional';
 
@@ -53,10 +58,10 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = response?.status || 0;
     this.code = textOf(fields.error) || textOf(fields.code);
-    this.messageKey = ApiError.keyFor(this.status, cause, messageKeys);
+    this.problem = problemOf(response, fields);
+    this.messageKey = ApiError.keyFor(this.status, cause, messageKeys, this.problem);
     this.serverMessage = serverMessage;
     this.data = body ?? null;
-    this.problem = problemOf(response, fields);
     this.fieldErrors = Array.isArray(this.problem?.errors) ? this.problem.errors : [];
     this.response = response
       ? { status: response.status, data: body, headers: response.headers }
@@ -65,9 +70,13 @@ export class ApiError extends Error {
     this.cause = cause;
   }
 
-  static keyFor(status, cause, messageKeys) {
+  static keyFor(status, cause, messageKeys, problem) {
     if (messageKeys[status]) {
       return messageKeys[status];
+    }
+    const typeKey = TYPE_KEYS[textOf(problem?.type).split('/').pop()];
+    if (typeKey) {
+      return typeKey;
     }
     if (status === 0) {
       return cause.isAxiosError ? 'errors.network' : 'errors.request';

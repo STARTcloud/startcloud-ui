@@ -73,6 +73,9 @@
     "request": "The request failed.",
     "validation": "The request did not pass validation.",
     "conflict": "A value is already taken.",
+    "badGateway": "A service behind the server did not answer. Try again in a moment.",
+    "notConfigured": "This feature is not set up on this server. Ask your administrator to configure it.",
+    "methodNotAllowed": "The request used a method the server does not accept. Refresh the page and try again.",
     "step_up_required": "Confirm it's you to continue.",
     "step_up_failed": "That did not match; try again.",
     "last_method": "Remove another method first; the last method cannot be removed.",
@@ -1306,6 +1309,15 @@
     "isosCount_other": "{{count}} ISOs"
   },
   "vdi": {
+    "sidebar": {
+      "title": "Fleet",
+      "fleet": "Fleet",
+      "pools": "Pools",
+      "sessions": "Sessions",
+      "byPool": "By pool",
+      "byState": "By session state",
+      "open": "Open"
+    },
     "search": {
       "placeholder": "Search hostname, user, IP, MAC, pool…"
     },

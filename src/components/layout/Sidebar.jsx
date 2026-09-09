@@ -294,11 +294,16 @@ ContextMenu.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-const TreeView = ({ groupKey, useTree, current }) => {
+const TreeView = ({ groupKey, useTree, current, onTree }) => {
   const { nodes, menu = null } = useTree();
   const [open, setOpen] = useState(() => storedOpen(groupKey));
   const [kids, setKids] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
+
+  useEffect(() => {
+    onTree?.(groupKey, { nodes, kids });
+    return () => onTree?.(groupKey, null);
+  }, [groupKey, nodes, kids, onTree]);
 
   const load = useCallback(node => {
     Promise.resolve(node.children()).then(children => {
@@ -343,9 +348,10 @@ TreeView.propTypes = {
   groupKey: PropTypes.string.isRequired,
   useTree: PropTypes.func.isRequired,
   current: PropTypes.string.isRequired,
+  onTree: PropTypes.func,
 };
 
-const GroupView = ({ group, badges, current }) => {
+const GroupView = ({ group, badges, current, onTree }) => {
   const { t } = useTranslation();
   const [view, setView] = useState(
     () => localStorage.getItem(viewKeyOf(group.key)) || group.views?.[0]?.key || ''
@@ -383,6 +389,7 @@ const GroupView = ({ group, badges, current }) => {
           groupKey={group.key}
           useTree={useTree}
           current={current}
+          onTree={onTree}
         />
       ) : null}
     </div>
@@ -393,6 +400,7 @@ GroupView.propTypes = {
   group: sidebarGroupShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   current: PropTypes.string.isRequired,
+  onTree: PropTypes.func,
 };
 
 const useResize = (asideRef, setWidth) => {
@@ -444,8 +452,11 @@ const useResize = (asideRef, setWidth) => {
  * Right on a node, Escape closing a menu; and under 900px an overlay from
  * the left the header toggle opens. Every entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
+ * `onTree(groupKey, { nodes, kids } | null)` reports each tree's root
+ * nodes and the children it has loaded so the shell can draw the crumbs
+ * of a route a tree node matches.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose }) => {
+const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
   const asideRef = useRef(null);
@@ -500,7 +511,13 @@ const Sidebar = ({ entries, brand, badges, open, onClose }) => {
         <nav className="sidebar-nav" aria-label={t('navbar.sidebar.navigation')}>
           <div ref={navRef} role="presentation" onKeyDown={onKeyDown}>
             {entries.map(group => (
-              <GroupView key={group.key} group={group} badges={badges} current={current} />
+              <GroupView
+                key={group.key}
+                group={group}
+                badges={badges}
+                current={current}
+                onTree={onTree}
+              />
             ))}
           </div>
         </nav>
@@ -533,6 +550,7 @@ Sidebar.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  onTree: PropTypes.func,
 };
 
 export default Sidebar;

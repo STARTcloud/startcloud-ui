@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { sortStackOf, toggleIn } from '../../../utils/prefs';
@@ -321,6 +322,12 @@ const buildGroups = ({ vms, counts, filters, hidden, columns, setPrefs, t }) => 
   return groups;
 };
 
+const routeFilters = (filters, pool, session) => ({
+  ...filters,
+  ...(pool ? { pool: { include: new Set([pool]), exclude: new Set() } } : {}),
+  ...(session ? { session: new Set([session]) } : {}),
+});
+
 const filtering = (needle, filters) =>
   needle !== '' ||
   TRISTATE.some(
@@ -335,6 +342,9 @@ const filtering = (needle, filters) =>
  * neutral → include → exclude), Session, Cache, Drives and Publication,
  * then Columns; the sort stack over the given columns with hostname as
  * the tiebreak; every choice and the pool fold persisted under `prefsKey`.
+ * A `pool` or `session` member of the route's query, the routes the
+ * sidebar tree's pool and session-state nodes carry, is laid over the
+ * saved filters as the Pool include or the Session filter while present.
  *
  * @param {Object} options - The page's data
  * @param {Array<Object>} options.vms - Every vm object
@@ -345,16 +355,25 @@ const filtering = (needle, filters) =>
  */
 export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
   const { t } = useTranslation();
+  const { search } = useLocation();
   const [query, setQuery] = useState('');
   const [prefs, setPrefs] = useState(() => readPrefs(prefsKey, columns));
+  const params = new URLSearchParams(search);
+  const poolParam = params.get('pool') || '';
+  const sessionParam = params.get('session') || '';
 
   useEffect(() => {
     writePrefs(prefsKey, prefs);
   }, [prefsKey, prefs]);
 
+  const filters = useMemo(
+    () => routeFilters(prefs.filters, poolParam, sessionParam),
+    [prefs.filters, poolParam, sessionParam]
+  );
+
   const needle = query.trim().toLowerCase();
   const passing = vms.filter(
-    vm => (needle === '' || matchesQuery(vm, needle)) && passesFilters(vm, prefs.filters, now)
+    vm => (needle === '' || matchesQuery(vm, needle)) && passesFilters(vm, filters, now)
   );
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
   const rows = sortItems([...passing].sort(byHostname), prefs.sort, shown);
@@ -369,7 +388,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
     groups: buildGroups({
       vms,
       counts,
-      filters: prefs.filters,
+      filters,
       hidden: prefs.hiddenColumns,
       columns,
       setPrefs,
@@ -379,7 +398,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
   });
 
   const filterState = (dimension, value) => {
-    const sets = prefs.filters[dimension];
+    const sets = filters[dimension];
     if (sets.include.has(value)) {
       return 'include';
     }
@@ -389,7 +408,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
   return {
     rows,
     total: vms.length,
-    filtering: filtering(needle, prefs.filters),
+    filtering: filtering(needle, filters),
     sort: prefs.sort,
     setSort: (column, options) =>
       setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) })),

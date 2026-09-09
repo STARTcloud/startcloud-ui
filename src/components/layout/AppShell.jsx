@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBook, FaBuilding, FaCircleInfo, FaEnvelope, FaGear } from 'react-icons/fa6';
@@ -134,6 +134,34 @@ const sidebarCrumbs = ({ groups, pathname, t }) => {
     { key: 'group', label: t(match.group.labelKey) },
     { key: 'row', label: t(match.row.labelKey), to: match.row.to },
   ];
+};
+
+const pathTo = (nodes, kids, current, acc) => {
+  for (const node of nodes) {
+    const next = [...acc, node];
+    if (node.to === current) {
+      return next;
+    }
+    const hit = kids[node.key] ? pathTo(kids[node.key], kids, current, next) : null;
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
+};
+
+const treeCrumbs = ({ groups, trees, current, t }) => {
+  for (const group of groups) {
+    const tree = trees[group.key];
+    const path = tree ? pathTo(tree.nodes, tree.kids, current, []) : null;
+    if (path) {
+      return [
+        { key: 'group', label: t(group.labelKey) },
+        ...path.map(node => ({ key: node.key, label: node.label, to: node.to })),
+      ];
+    }
+  }
+  return [];
 };
 
 const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
@@ -337,7 +365,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * sidebar first when the mounted features exported entries for it, then
  * the header with the brand from `status.brand` (in the sidebar's top
  * while one draws), the utility links from `status.links`, the route
- * crumbs (`<group> › <row>` on a route a sidebar row matches), the user
+ * crumbs (`<group> › <row>` on a route a sidebar row matches, and
+ * `<group> › <node> › …` down the loaded tree on a route a tree node
+ * matches, the way the sidebar mock's `pathTo` walks it), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
  * the chrome; and the footer while the host lists the `footer` token. The
@@ -399,10 +429,18 @@ const AppShell = ({
   const signInHidden = cookie && onAuthPage;
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
+  const [trees, setTrees] = useState({});
+  const onTree = useCallback((key, tree) => {
+    setTrees(previous => ({ ...previous, [key]: tree }));
+  }, []);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
   const routeCrumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
+  const nodeCrumbs = showSidebar
+    ? treeCrumbs({ groups: sidebar, trees, current: `${pathname}${search}`, t })
+    : [];
   const rowCrumbs = showSidebar ? sidebarCrumbs({ groups: sidebar, pathname, t }) : [];
-  const crumbs = rowCrumbs.length > 0 ? rowCrumbs : routeCrumbs;
+  const sidebarMatch = nodeCrumbs.length > 0 ? nodeCrumbs : rowCrumbs;
+  const crumbs = sidebarMatch.length > 0 ? sidebarMatch : routeCrumbs;
   useSessionEndedBanner(
     Boolean(account.sessionEnded) && !signedIn && !anonymous,
     bannerSignInFor({ account, hidden: signInHidden })
@@ -502,6 +540,7 @@ const AppShell = ({
         badges={badges}
         open={overlay.open}
         onClose={overlay.close}
+        onTree={onTree}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>

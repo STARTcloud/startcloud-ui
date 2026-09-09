@@ -8,3 +8,4 @@ export {
 } from './api/fleet';
 export { default as FleetPage } from './components/FleetPage';
 export { default as VmPage } from './components/VmPage';
+export { sidebar } from './sidebar';

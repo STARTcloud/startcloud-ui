@@ -73,6 +73,9 @@
     "request": "La solicitud falló.",
     "validation": "La solicitud no pasó la validación.",
     "conflict": "Un valor ya está en uso.",
+    "badGateway": "Un servicio detrás del servidor no respondió. Inténtalo de nuevo en un momento.",
+    "notConfigured": "Esta función no está configurada en este servidor. Pide a tu administrador que la configure.",
+    "methodNotAllowed": "La solicitud usó un método que el servidor no acepta. Actualiza la página e inténtalo de nuevo.",
     "step_up_required": "Confirma que eres tú para continuar.",
     "step_up_failed": "No coincidió; inténtalo de nuevo.",
     "last_method": "Quita otro método primero; el último método no se puede quitar.",
@@ -1306,6 +1309,15 @@
     "isosCount_other": "{{count}} ISOs"
   },
   "vdi": {
+    "sidebar": {
+      "title": "Flota",
+      "fleet": "Flota",
+      "pools": "Pools",
+      "sessions": "Sesiones",
+      "byPool": "Por pool",
+      "byState": "Por estado de sesión",
+      "open": "Abrir"
+    },
     "search": {
       "placeholder": "Buscar por hostname, usuario, IP, MAC, pool…"
     },

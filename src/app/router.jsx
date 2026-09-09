@@ -123,7 +123,7 @@ import {
 import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
-import { FleetPage, VmPage } from '../features/vdi';
+import { FleetPage, VmPage, sidebar as vdiSidebar } from '../features/vdi';
 import { sessionStateShape } from '../hooks/useSession';
 import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
@@ -207,8 +207,9 @@ const firstAdminPage = admin => (admin.organizationsWithUsers ? 'organizations' 
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
  * in the order the column draws them: the profile feature's Account
  * group, the identity feature's operator group while the host's first
- * `auth` token is `cookie`, and the shared admin feature's entries over
- * the admin adapter the host gets; empty means no column.
+ * `auth` token is `cookie`, the vdi feature's Fleet group while the host
+ * advertises `fleet`, and the shared admin feature's entries over the
+ * admin adapter the host gets; empty means no column.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -220,6 +221,7 @@ export const sidebarEntries = ({ status, account }) => {
   return [
     ...profileSidebar(status, account),
     ...(method === 'cookie' ? identitySidebar(status, account) : []),
+    ...vdiSidebar(status, account),
     ...adminSidebar(status, account, adminAdapterFor(method)),
   ];
 };
