@@ -1505,7 +1505,7 @@ replays inside its window and a guessing run meets `429` with
     for those three.
   - **Favorites**: the ordered list with drag handles and Remove, then
     "Available applications" from the connected apps not yet favorited with
-    Add; icon chain `iconUrl` → favicon of `homeUrl` → the app glyph.
+    Add; icon chain `icon_url` → favicon of `home_url` → the app glyph.
   - **Sessions**: "Active sessions" (client, device from the user agent,
     location and address, authorized time, each row's absolute time in
     its tooltip) with Sign out per row and "Revoke all sessions, this
@@ -2153,7 +2153,7 @@ Settled before code, in the order they were raised:
     cached for a day, so gravatar.com never learns who is signed in.
 61. `POST /api/client-errors` admits anonymous reports under a
     per-address limit and an 8 KB cap.
-62. Every URL member a page draws (`homeUrl`, `iconUrl`, `icon_url`,
+62. Every URL member a page draws (`home_url`, `icon_url`,
     `logo_url`, `base_url`, `locations[]`) is rendered only with the
     `https:` scheme or as a same-origin path matching `^/(?![/\\])`,
     images with `referrerpolicy="no-referrer"`, new-tab
