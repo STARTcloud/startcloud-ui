@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
+import ProblemAlert from '../../../components/common/ProblemAlert';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
 import { returnToShape } from '../../../utils/auth';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { useProblemReporter } from '../../auth/problem';
 import { frontChannelDone, frontChannelState } from '../api/interstitials';
 
 const MIN_SECONDS = 20;

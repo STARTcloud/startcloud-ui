@@ -1411,7 +1411,7 @@
         id: 'contact',
         label: 'Contact email',
         hint: 'Where release notices for this box go.',
-        rules: { required: true, format: 'email', maxLength: 255 },
+        rules: { required: true, pattern: 'email', maxLength: 255 },
       },
     ];
     var MESSAGES = {
@@ -1419,6 +1419,9 @@
         return 'Enter ' + article(f.label) + '.';
       },
       pattern: function (f, p) {
+        if (p === 'email') {
+          return 'Enter ' + article(f.label) + ' in the form name@example.com.';
+        }
         return p === 'slug'
           ? 'Use only letters, digits, dashes and periods in the ' + f.label.toLowerCase() + '.'
           : 'Use only letters, digits, dashes, underscores and periods in the ' +
@@ -1427,9 +1430,6 @@
       },
       maxLength: function (f, p) {
         return f.label + ' must be ' + p + ' characters or fewer.';
-      },
-      format: function (f) {
-        return 'Enter ' + article(f.label) + ' in the form name@example.com.';
       },
       unique: function (f, p, v) {
         return (
@@ -1458,8 +1458,8 @@
       if (r.maxLength && v.length > r.maxLength) {
         return { rule: 'maxLength', params: r.maxLength };
       }
-      if (r.format === 'email' && !EMAIL.test(v)) {
-        return { rule: 'format' };
+      if (r.pattern === 'email' && !EMAIL.test(v)) {
+        return { rule: 'pattern', params: 'email' };
       }
       return null;
     };

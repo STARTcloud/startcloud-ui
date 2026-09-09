@@ -10,7 +10,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
-import { schemaSections, setValueAt } from '../../admin/utils/schemaSections';
+import { schemaSections, setValueAt } from '../../../utils/schemaSections';
 
 const SETUP_KEY = 'setup';
 const REDIRECT_DELAY_MS = 5000;
@@ -132,7 +132,7 @@ const SetupPage = ({ setup }) => {
       )
       .catch(error => {
         log.api.error('Error verifying setup token', { error: error.message });
-        notify('danger', t('setup.invalidToken'));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 
@@ -155,7 +155,7 @@ const SetupPage = ({ setup }) => {
       })
       .catch(error => {
         log.api.error('Error uploading SSL file', { error: error.message });
-        notify('danger', t('admin.messages.uploadFailed'));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

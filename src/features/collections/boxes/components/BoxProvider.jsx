@@ -11,17 +11,17 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { formatFileSize } from '../../../../utils/formatFileSize';
-import { isVisible } from '../../../../utils/validation';
-import { architectureShape, itemShape, providerShape } from '../../../catalog/utils/itemShape';
-import { api } from '../api/boxes';
 import {
   ARCHITECTURE_LABELS,
   ARCHITECTURE_SCHEMA,
   CHECKSUM_TYPES,
   PROVIDER_LABELS,
   PROVIDER_SCHEMA,
-} from '../utils/forms';
-import { canManageBox } from '../utils/permissions';
+} from '../../../../utils/forms';
+import { architectureShape, itemShape, providerShape } from '../../../../utils/itemShape';
+import { canManageBox } from '../../../../utils/permissions';
+import { isVisible } from '../../../../utils/validation';
+import { api } from '../api/boxes';
 
 const slotShape = {
   item: itemShape.isRequired,

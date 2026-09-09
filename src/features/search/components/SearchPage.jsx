@@ -4,14 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
+import { KindGlyph } from '../../../components/common/SearchResults';
+import SubTable from '../../../components/common/SubTable';
 import { EMPTY_APP_RESULTS, NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
-import SubTable from '../../catalog/components/SubTable';
-import { useDetailSearch } from '../../catalog/hooks/useDetailSearch';
-import { pageContextShape } from '../../catalog/utils/itemShape';
-import { SEARCH_KINDS, searchRowPath } from '../utils/searchRow';
-
-import { KindGlyph } from './SearchResults';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { pageContextShape } from '../../../utils/itemShape';
+import { SEARCH_KINDS, searchRowPath } from '../../../utils/searchRow';
 
 const PAGE_LIMIT = 50;
 const MIN_QUERY = 2;

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBell } from 'react-icons/fa6';
 
 import { useStatus } from '../../contexts/StatusContext';
-import { useUnread } from '../../features/notifications/context/UnreadContext';
+import { useUnread } from '../../contexts/UnreadContext';
 import { useEventStream } from '../../hooks/useEventStream';
 import { hasFeature } from '../../utils/capabilities';
 
@@ -67,7 +67,7 @@ const NotificationsItem = ({
         className="d-flex align-items-center"
       >
         <FaBell className="me-2" />
-        <span className="flex-grow-1">{t('inbox.title')}</span>
+        <span className="flex-grow-1">{t('navbar.notifications')}</span>
         {unread > 0 ? <span className="badge rounded-pill bg-danger ms-2">{unread}</span> : null}
       </Dropdown.Item>
       <NotificationsModal

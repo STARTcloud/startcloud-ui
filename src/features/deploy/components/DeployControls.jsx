@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { hasFeature } from '../../../utils/capabilities';
-import { itemShape, sortVersionsNewestFirst } from '../../catalog/utils/itemShape';
+import { itemShape, sortVersionsNewestFirst } from '../../../utils/itemShape';
 
 import HyperweaverGlyph from './HyperweaverGlyph';
 

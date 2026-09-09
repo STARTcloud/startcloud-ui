@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
 import ScopeList, { DetailRow } from '../../../components/common/ScopeList';
-import AuthShell, { AuthAlert, AuthSpinner } from '../../auth/components/AuthShell';
-import { useProblemReporter } from '../../auth/problem';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { ciba as fetchCiba, cibaApprove, cibaDeny } from '../api/interstitials';
 
 const REASONS = ['not_found', 'expired', 'wrong_user'];

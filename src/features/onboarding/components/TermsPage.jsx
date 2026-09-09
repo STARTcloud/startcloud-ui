@@ -3,18 +3,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import PhoneInput from '../../../components/common/PhoneInput';
+import ProblemAlert from '../../../components/common/ProblemAlert';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { loadCountries, regionsFor } from '../../../lib/countries';
+import { followNext } from '../../../lib/next';
+import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
-import { cancelSignIn } from '../../auth/api/signin';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { useProblemReporter } from '../../auth/problem';
+import { NON_BLANK } from '../../../utils/validation';
 import { acceptProviderTerms, acceptTerms, terms as fetchTerms } from '../api/onboarding';
 
 const PROVIDER_ROUTE = '/provider-registration/tos';
@@ -37,7 +38,10 @@ const schemaFor = fields => ({
     fields: {
       required: fields.filter(field => field.required).map(field => field.param),
       properties: Object.fromEntries(
-        fields.map(field => [field.param, { type: 'string', title: field.label }])
+        fields.map(field => [
+          field.param,
+          { ...(field.required ? NON_BLANK : { type: 'string' }), title: field.label },
+        ])
       ),
     },
   },

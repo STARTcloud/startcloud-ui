@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
+import AuthShell, { AuthAlert } from '../../../components/common/AuthShell';
 import CopyButton from '../../../components/common/CopyButton';
-import AuthShell, { AuthAlert } from '../../auth/components/AuthShell';
 
 const SCHEME = 'swb://auth/login';
 

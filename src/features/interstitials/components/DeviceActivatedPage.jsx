@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import AuthShell from '../../auth/components/AuthShell';
+import AuthShell from '../../../components/common/AuthShell';
 
 /**
  * `/activated`: "Device connected" and "You can close this window and

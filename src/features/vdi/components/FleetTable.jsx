@@ -6,8 +6,8 @@ import { FaTriangleExclamation } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import { CollapseButton } from '../../../components/common/GroupHeading';
-import SubTable from '../../catalog/components/SubTable';
-import { sortShape } from '../../catalog/utils/itemShape';
+import SubTable from '../../../components/common/SubTable';
+import { sortShape } from '../../../utils/itemShape';
 import { useVmHistory } from '../hooks/useVmHistory';
 import { cacheSortKey } from '../utils/cacheLevel';
 import { vmHasNoSession, vmIsDecommissioned, vmIsStandby, vmKey } from '../utils/vmStatus';

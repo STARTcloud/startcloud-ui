@@ -1,5 +1,6 @@
-import { profileMemberships } from '../../../../lib/backendSession';
-import { isManager, isMember, isOwner } from '../../../../utils/membership';
+import { profileMemberships } from '../lib/backendSession';
+
+import { isManager, isMember, isOwner } from './membership';
 
 /** Whether the user holds the global admin role (matches App.jsx / backend isAdmin). */
 export const isGlobalAdmin = user =>

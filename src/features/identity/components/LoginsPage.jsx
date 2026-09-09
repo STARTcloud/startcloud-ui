@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Pager from '../../../components/common/Pager';
-import SubTable from '../../catalog/components/SubTable';
-import { useDetailSearch } from '../../catalog/hooks/useDetailSearch';
+import SubTable from '../../../components/common/SubTable';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { logins } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
 import { LOGINS } from '../utils/examples';

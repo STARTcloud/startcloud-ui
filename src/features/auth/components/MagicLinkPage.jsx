@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
+import { magicLinkConsume } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
-import { magicLinkConsume } from '../api/signin';
 
 import LinkConsumePage from './LinkConsumePage';
 

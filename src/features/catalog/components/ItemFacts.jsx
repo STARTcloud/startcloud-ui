@@ -2,11 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { itemShape } from '../utils/itemShape';
-
-import ChecksumCell from './ChecksumCell';
-
-const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
+import { itemShape } from '../../../utils/itemShape';
 
 const formatMemory = memoryMb => {
   const mb = Number(memoryMb);
@@ -91,35 +87,6 @@ const metadataRows = (item, t) => {
   return rows;
 };
 
-const artifactRows = (item, formatFileSize) => {
-  const { artifact } = item;
-  if (!artifact) {
-    return [];
-  }
-  const rows = [];
-  if (artifact.fileSize) {
-    rows.push({ key: 'size', content: formatFileSize(artifact.fileSize) });
-  }
-  if (artifact.checksum) {
-    rows.push({
-      key: 'checksum',
-      content: (
-        <ChecksumCell checksum={artifact.checksum} checksumType={artifact.checksumType || ''} />
-      ),
-    });
-  }
-  if (item.createdAt) {
-    rows.push({ key: 'created', content: localeDate(item.createdAt) });
-  }
-  if (item.updatedAt) {
-    rows.push({ key: 'updated', content: localeDate(item.updatedAt) });
-  }
-  if (typeof artifact.downloadCount === 'number') {
-    rows.push({ key: 'downloads', content: artifact.downloadCount });
-  }
-  return rows;
-};
-
 const PasswordRow = ({ password }) => {
   const { t } = useTranslation();
   const [show, setShow] = useState(false);
@@ -144,9 +111,9 @@ PasswordRow.propTypes = {
   password: PropTypes.string.isRequired,
 };
 
-const ItemFacts = ({ item, formatFileSize }) => {
+const ItemFacts = ({ item }) => {
   const { t } = useTranslation();
-  const rows = [...metadataRows(item, t), ...artifactRows(item, formatFileSize)];
+  const rows = metadataRows(item, t);
   if (rows.length === 0) {
     return null;
   }
@@ -175,7 +142,6 @@ const ItemFacts = ({ item, formatFileSize }) => {
 
 ItemFacts.propTypes = {
   item: itemShape.isRequired,
-  formatFileSize: PropTypes.func.isRequired,
 };
 
 export default ItemFacts;

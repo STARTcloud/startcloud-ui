@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
+import ProblemAlert from '../../../components/common/ProblemAlert';
 import StepDots from '../../../components/common/StepDots';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert from '../../auth/components/ProblemAlert';
-import { problemShape } from '../../auth/problem';
+import { problemShape } from '../../../hooks/useProblemReporter';
 import { onboardingShape } from '../useOnboarding';
 
 const STEP_LABELS = {

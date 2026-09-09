@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import OptionList, { Option } from '../../../components/common/OptionList';
+import ProblemAlert from '../../../components/common/ProblemAlert';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
+import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
-import { cancelSignIn } from '../../auth/api/signin';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { useProblemReporter } from '../../auth/problem';
 import { pickTfaMethod, tfaMethods } from '../api/tfa';
 
 const keyOf = (method, id) => (id ? `${method}:${id}` : method);

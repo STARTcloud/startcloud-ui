@@ -523,8 +523,8 @@ Native theme files, one of each in the repository:
   (brand slot, empty while a sidebar is drawn, crumbs slot, the cluster
   with search, theme, language and account, the search panel),
   `Sidebar.jsx` (the Sidebar section: the top button, the sections and
-  tree entries, the rail, the foot), `Breadcrumbs.jsx` (plain crumbs; the picker
-  shape exists but no estate app uses it), `UserMenu.jsx` with
+  tree entries, the rail, the foot), `Breadcrumbs.jsx` (plain crumbs from the
+  route alone), `UserMenu.jsx` with
   `IdentityCard.jsx`, `LogoutItem.jsx`, `FavoriteApps.jsx` and
   `NotificationsItem.jsx`, the three modals `LanguageModal.jsx`,
   `OrgSwitcherModal.jsx` and `NotificationsModal.jsx`, `Footer.jsx`,

@@ -12,8 +12,9 @@ import {
   updatedColumn,
   versionsColumn,
   visibilityColumn,
-} from '../../catalog/components/columns';
-import { architectureNames, providerNames } from '../../catalog/utils/itemShape';
+} from '../../../components/common/columns';
+import { architectureNames, providerNames } from '../../../utils/itemShape';
+import { canManageBox } from '../../../utils/permissions';
 
 import { boxesAdapter } from './api/adapter';
 import {
@@ -37,7 +38,6 @@ import {
   BoxVersionNotesActions,
 } from './components/BoxVersion';
 import { BoxQuickActions } from './components/deploy';
-import { canManageBox } from './utils/permissions';
 
 export const boxes = {
   key: 'boxes',

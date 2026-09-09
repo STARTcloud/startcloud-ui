@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { followNext } from '../auth/next';
-import { useProblemReporter } from '../auth/problem';
+import { useProblemReporter } from '../../hooks/useProblemReporter';
+import { followNext } from '../../lib/next';
 
 import { onboardingState } from './api/onboarding';
 

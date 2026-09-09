@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 
-import { useCountdown } from '../../../components/common/Countdown';
-import { problemShape } from '../problem';
+import { problemShape } from '../../hooks/useProblemReporter';
 
 import { AuthAlert } from './AuthShell';
+import { useCountdown } from './Countdown';
 
 /**
  * The seconds a problem's guessing gate still holds, zero when it carried

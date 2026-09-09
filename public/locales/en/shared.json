@@ -22,6 +22,7 @@
     "accountMenu": "Account menu",
     "preferences": "Preferences",
     "favorites": "Favorites",
+    "notifications": "Notifications",
     "help": "Help",
     "profileModeTitle": "Switch between identity provider and local profile",
     "about": "About",
@@ -122,6 +123,7 @@
     "minLength": "Enter {{label}} of at least {{minLength}} characters.",
     "maxLength": "Enter {{label}} of {{maxLength}} characters or fewer.",
     "pattern": {
+      "nonBlank": "Enter {{label}}.",
       "slug": "Use only letters, digits, dashes and periods in {{label}}.",
       "identifier": "Use only letters, digits, dashes, underscores and periods in {{label}}, not starting with a dash or period.",
       "email": "Enter {{label}} in the form name@example.com.",
@@ -139,7 +141,6 @@
     "range": "Enter {{label}} between {{minimum}} and {{maximum}}.",
     "enum": "Choose one of {{enum}} for {{label}}.",
     "format": {
-      "email": "Enter {{label}} in the form name@example.com.",
       "uri": "Enter {{label}} as a full URL, such as https://example.com.",
       "hostname": "Enter {{label}} as a hostname.",
       "ipv4": "Enter {{label}} as an IPv4 address, such as 192.168.1.10."
@@ -368,7 +369,6 @@
       "leftOrganization": "Successfully left organization {{orgName}}",
       "primaryOrganizationSet": "{{orgName}} is now your primary organization",
       "requestCancelled": "Join request cancelled successfully",
-      "cancelRequestError": "Could not cancel the join request. Please try again.",
       "serviceAccountCreated": "Service account created successfully!",
       "serviceAccountsDeleted": "Selected service accounts deleted successfully!",
       "passwordChanged": "Password changed successfully!",
@@ -377,17 +377,7 @@
       "emailNotVerified": "Your email is not verified."
     },
     "errors": {
-      "deleteAccountFailed": "Failed to delete account. Please try again.",
-      "verificationFailed": "Failed to verify email. Please try again or contact support.",
-      "activeOrgNotFound": "Error: Could not find active organization",
-      "createServiceAccountFailed": "Error creating service account: {{error}}",
-      "deleteServiceAccountsFailed": "Error deleting service accounts: {{error}}",
-      "resendVerificationFailed": "Error sending verification email: {{error}}",
-      "changePasswordFailed": "Error changing password: {{error}}",
-      "changeEmailFailed": "Error changing email: {{error}}",
-      "changeNameFailed": "Error changing display name: {{error}}",
-      "leaveOrganization": "Error leaving organization: {{error}}",
-      "setPrimaryOrganization": "Error setting primary organization: {{error}}"
+      "activeOrgNotFound": "Error: Could not find active organization"
     },
     "buttons": {
       "resendVerification": "Resend verification email",
@@ -479,6 +469,7 @@
         "SMS": "SMS"
       },
       "channelHint": "How you are notified when an application asks to sign you in on another device.",
+      "channelSmsHint": "SMS needs a verified mobile number.",
       "pin": "Sign-in approval PIN",
       "pinHint": "Optional PIN an application must present before a sign-in request reaches you.",
       "pinSet": "A PIN is set",
@@ -900,10 +891,7 @@
       "copy": "Copy"
     },
     "messages": {
-      "operationSuccessful": "Operation completed successfully",
-      "operationFailed": "Operation failed",
-      "deleteFailed": "Delete failed",
-      "uploadFailed": "Upload failed"
+      "operationSuccessful": "Operation completed successfully"
     },
     "storage": {
       "title": "Storage Usage",
@@ -912,8 +900,7 @@
       "pathNotConfigured": "{{path}} path is not configured or accessible.",
       "used": "Used: {{percent}}%",
       "free": "Free: {{space}}",
-      "total": "Total: {{space}}",
-      "fetchError": "Failed to fetch storage information."
+      "total": "Total: {{space}}"
     },
     "update": {
       "title": "Update Available",
@@ -928,8 +915,7 @@
     "ssoManagedHint": "This organization is managed by your identity provider. Membership, roles, renaming, and deletion are handled there and synced automatically.",
     "rename": {
       "name": "New name",
-      "success": "Organization renamed successfully!",
-      "error": "Error renaming organization. Please try again."
+      "success": "Organization renamed successfully!"
     },
     "editModal": {
       "title": "Edit Organization: {{orgName}}",
@@ -947,21 +933,17 @@
       "accessModeHint": "Controls organization visibility and join methods",
       "defaultRole": "Default Role",
       "defaultRoleHint": "Default role for new members",
-      "updateSuccess": "Organization updated successfully!",
-      "updateError": "Error updating organization"
+      "updateSuccess": "Organization updated successfully!"
     }
   },
   "configManager": {
     "updateSuccess": "Configuration updated successfully.",
-    "updateError": "Error updating configuration.",
     "restartInitiated": "Server restart initiated",
-    "restartFailed": "Failed to restart server",
     "restartNeeded": "Restart the server to apply the changed values.",
     "restartBadge": "restart",
     "deprecated": "Deprecated",
     "testingSmtp": "Sending test email...",
     "testSmtpSuccess": "Test email sent successfully! Check the recipient's inbox.",
-    "testSmtpError": "Failed to send test email",
     "search": "Search settings",
     "smtpTest": {
       "title": "Test SMTP Configuration",
@@ -981,45 +963,6 @@
     "buttons": {
       "update": "Update Configuration",
       "restart": "Restart Server"
-    },
-    "sections": {
-      "authentication": "Authentication",
-      "application": "Application",
-      "database": "Database",
-      "mail": "Mail",
-      "general": "General"
-    },
-    "subsections": {
-      "generalSettings": "General",
-      "jwtSettings": "JWT Settings",
-      "localAuthentication": "Local Authentication",
-      "externalProviders": "External Providers",
-      "oidcProviders": "OIDC Providers",
-      "boxvaultSettings": "BoxVault Settings",
-      "gravatarSettings": "Gravatar Settings",
-      "sslSettings": "SSL Settings",
-      "databaseConnection": "Database Connection",
-      "connectionPool": "Connection Pool",
-      "smtpConnection": "SMTP Connection",
-      "smtpSettings": "SMTP Settings",
-      "smtpAuthentication": "SMTP Authentication",
-      "loggingSettings": "Logging Settings",
-      "loggingCategories": "Logging Categories",
-      "rateLimiting": "Rate Limiting",
-      "fileOperations": "File Operations",
-      "ticketSystem": "Ticket System",
-      "hyperweaverSettings": "Hyperweaver Settings",
-      "frontendLogging": "Frontend Logging",
-      "frontendLoggingCategories": "Frontend Logging Categories",
-      "oidcSettings": "OIDC Settings",
-      "s2sSettings": "S2S Delegation",
-      "vdiSettings": "VDI Health Settings",
-      "database": "Database",
-      "agents": "Agents",
-      "udsDb": "UDS Database",
-      "grafana": "Grafana",
-      "authentication": "Authentication",
-      "internationalization": "Internationalization"
     }
   },
   "configField": {
@@ -1033,9 +976,7 @@
     "verifyToken": "Verify Token",
     "submitAll": "Submit All Configurations",
     "oidcNote": "OIDC provider configuration is managed via the Admin interface after setup is complete. Go to Admin → Configuration Management → Auth Config to add OIDC providers.",
-    "updateSuccess": "Configuration updated successfully. Redirecting to registration page in 5 seconds...",
-    "updateError": "Error updating configuration.",
-    "invalidToken": "Invalid setup token."
+    "updateSuccess": "Configuration updated successfully. Redirecting to registration page in 5 seconds..."
   },
   "oidc": {
     "title": "OIDC Providers",
@@ -1079,10 +1020,6 @@
       "title": "Delete OIDC Provider",
       "message": "Are you sure you want to delete the OIDC provider '{{providerName}}'? This cannot be undone."
     },
-    "errors": {
-      "apiError": "Error {{action}} OIDC provider: {{error}}",
-      "deleteError": "Error deleting OIDC provider: {{error}}"
-    },
     "messages": {
       "updating": "Updating OIDC provider...",
       "adding": "Adding OIDC provider...",
@@ -1102,7 +1039,6 @@
     "title": "Organization Console",
     "noActiveOrganization": "No active organization is selected. Pick one from the organization switcher to manage it.",
     "orgUpdateSuccess": "Organization updated successfully!",
-    "orgUpdateError": "Error updating organization. Please try again.",
     "tabs": {
       "organization": "Organization",
       "joinRequests": "Join Requests",
@@ -1122,9 +1058,7 @@
       "deleteUser": "Delete User"
     },
     "messages": {
-      "operationSuccessful": "Operation completed successfully",
-      "operationFailed": "Operation failed",
-      "deleteFailed": "Delete failed"
+      "operationSuccessful": "Operation completed successfully"
     },
     "organization": {
       "title": "Organization Details",
@@ -1159,8 +1093,7 @@
       "boxes": "Boxes",
       "roles": "Roles",
       "suspended": "Suspended",
-      "removeSuccess": "Member removed from the organization.",
-      "removeError": "Could not remove the member. Please try again."
+      "removeSuccess": "Member removed from the organization."
     },
     "joinRequest": {
       "title": "Pending Join Requests",
@@ -1175,9 +1108,7 @@
       "approveAsAdmin": "Approve as Admin",
       "deny": "Deny",
       "approved": "Join request approved successfully!",
-      "approveError": "Error approving request: {{error}}",
-      "denied": "Join request denied.",
-      "denyError": "Error denying request: {{error}}"
+      "denied": "Join request denied."
     },
     "invitation": {
       "manageTitle": "Manage Invitations",
@@ -1196,8 +1127,7 @@
       "managedByIdp": "Sent by identity provider",
       "actions": "Actions",
       "token": "Token",
-      "orgId": "Organization ID",
-      "sendWarning": "Warning: Invitation created but email might not have been sent. You can copy the link below and send it manually."
+      "orgId": "Organization ID"
     },
     "website": "Website",
     "logoUrl": "Logo URL",
@@ -1244,10 +1174,6 @@
       "messageLabel": "Message",
       "placeholder": "Enter your reason for wanting to join this organization..."
     },
-    "errors": {
-      "load": "Error loading organizations",
-      "requestFailed": "Failed to request to join {{orgName}}"
-    },
     "messages": {
       "requestSent": "Join request sent to {{orgName}} successfully!"
     }
@@ -1265,11 +1191,10 @@
     "register": "Create one to join",
     "alreadyMember": "You're already a member of {{organization}}.",
     "emailMismatch": "This invitation was sent to {{email}}, but you're signed in as {{current}}.",
-    "goToOrg": "Go to {{organization}}",
-    "error": "Could not accept the invitation. Please try again."
+    "goToOrg": "Go to {{organization}}"
   },
   "inbox": {
-    "title": "Notifications",
+    "title": "Inbox",
     "channelTitle": "Notification Channel Notifications",
     "empty": "No notifications yet.",
     "markAllRead": "Mark all read",
@@ -1727,10 +1652,13 @@
     },
     "provider": {
       "edit": "Edit provider",
-      "architecturesFor": "Architectures for provider {{provider}}",
+      "title": "Architectures for provider {{provider}}",
       "clickToCopy": "Click to copy checksum",
       "checksumCopied": "Checksum copied to clipboard.",
       "copyFailed": "Could not copy the checksum."
+    },
+    "architecture": {
+      "title": "Architecture {{architecture}}"
     },
     "watch": {
       "watch": "Watch",
@@ -1913,10 +1841,7 @@
       "deleteFailed": "Delete failed",
       "copyFailed": "Copy failed",
       "operationSuccessful": "Operation completed successfully",
-      "operationFailed": "Operation failed",
-      "addedToFavorites": "Added BoxVault to favorites!",
-      "removedFromFavorites": "Removed BoxVault from favorites",
-      "failedToUpdateFavorites": "Failed to update favorites"
+      "operationFailed": "Operation failed"
     },
     "errors": {
       "upload": {

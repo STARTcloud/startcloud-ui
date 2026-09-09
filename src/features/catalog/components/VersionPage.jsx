@@ -4,23 +4,23 @@ import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import { Link } from 'react-router-dom';
 
+import { createdColumn, updatedColumn } from '../../../components/common/columns';
 import DeprecationBanner from '../../../components/common/DeprecationBanner';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
+import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { providerPath } from '../../../utils/routes';
-import { useDetailSearch } from '../hooks/useDetailSearch';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import {
   collectionShape,
   detailSearchShape,
   pageContextShape,
   versionShape,
-} from '../utils/itemShape';
-import { sortItems } from '../utils/sort';
+} from '../../../utils/itemShape';
+import { providerPath } from '../../../utils/routes';
+import { sortItems } from '../../../utils/sort';
 
 import ChecksumCell from './ChecksumCell';
-import { createdColumn, downloadsColumn, updatedColumn } from './columns';
-import SubTable, { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -104,9 +104,6 @@ const providerColumns = (org, name, version) => [
       </Link>
     ),
   },
-  { ...createdColumn, defaultHidden: false, when: hasAny(provider => provider.createdAt) },
-  { ...updatedColumn, defaultHidden: false, when: hasAny(provider => provider.updatedAt) },
-  { ...downloadsColumn, when: hasAny(provider => typeof provider.downloads === 'number') },
   {
     key: 'details',
     labelKey: 'pages.table.details',
@@ -150,12 +147,19 @@ const providerMatches = (provider, needle) =>
     ...(provider.architectures || []).map(architecture => architecture.name),
   ].some(value => (value || '').toLowerCase().includes(needle));
 
-const artifactColumns = [
+const artifactColumnsFor = (org, name, version) => [
   {
     key: 'name',
     labelKey: 'pages.table.name',
     sortValue: artifact => artifact.name.toLowerCase(),
-    render: artifact => artifact.name,
+    render: (artifact, ctx) =>
+      ctx.collection.hasProviders ? (
+        artifact.name
+      ) : (
+        <Link to={providerPath(ctx.collection, org, name, version, artifact.name)}>
+          {artifact.name}
+        </Link>
+      ),
   },
   { ...createdColumn, defaultHidden: false, when: hasAny(artifact => artifact.createdAt) },
   { ...updatedColumn, defaultHidden: false, when: hasAny(artifact => artifact.updatedAt) },
@@ -261,7 +265,7 @@ ProvidersSection.propTypes = {
   slotProps: PropTypes.object.isRequired,
 };
 
-const ArtifactsSection = ({ collection, rows, search, form, slotProps }) => {
+const ArtifactsSection = ({ collection, columns, rows, search, form, slotProps }) => {
   const { t } = useTranslation();
   const { ArtifactsActions, ArtifactRowActions } = collection.slots;
   return (
@@ -272,7 +276,7 @@ const ArtifactsSection = ({ collection, rows, search, form, slotProps }) => {
       </div>
       {form}
       <SubTable
-        columns={artifactColumns}
+        columns={columns}
         rows={rows}
         rowKey={artifact => artifact.name}
         RowActions={ArtifactRowActions}
@@ -290,6 +294,7 @@ const ArtifactsSection = ({ collection, rows, search, form, slotProps }) => {
 
 ArtifactsSection.propTypes = {
   collection: collectionShape.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   rows: PropTypes.array.isRequired,
   search: detailSearchShape.isRequired,
   form: PropTypes.node,
@@ -303,12 +308,12 @@ const detailRows = (collection, entry) => {
   return collection.hasProviders ? entry.providers || [] : entry.artifacts || [];
 };
 
-const sideArtifacts = (artifacts, search) => {
+const sideArtifacts = (artifacts, search, columns) => {
   const needle = search.query.trim().toLowerCase();
   const shown = search.filtering
     ? artifacts.filter(artifact => artifactMatches(artifact, needle))
     : artifacts;
-  return sortItems(shown, search.sort, artifactColumns);
+  return sortItems(shown, search.sort, columns);
 };
 
 /**
@@ -330,6 +335,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
   const ready = data.key === key;
   const { item, entry } = data;
   const columns = providerColumns(org, name, version);
+  const artifactColumns = artifactColumnsFor(org, name, version);
   const detail = collection.hasProviders
     ? { matches: providerMatches, placeholderKey: 'pages.search.providers', columns }
     : {
@@ -411,7 +417,8 @@ const VersionPage = ({ collection, org, name, version, context }) => {
       {collection.hasProviders && artifacts.length > 0 ? (
         <ArtifactsSection
           collection={collection}
-          rows={sideArtifacts(artifacts, search)}
+          columns={artifactColumns}
+          rows={sideArtifacts(artifacts, search, artifactColumns)}
           search={search}
           slotProps={slotProps}
         />
@@ -427,6 +434,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
       ) : (
         <ArtifactsSection
           collection={collection}
+          columns={artifactColumns}
           rows={search.rows}
           search={search}
           form={form}

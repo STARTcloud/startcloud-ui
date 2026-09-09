@@ -15,6 +15,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
+import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
 const ROLES = ['MEMBER', 'ADMIN', 'OWNER'];
@@ -39,7 +40,7 @@ const RECORD_FIELDS = [
 const RECORD_SCHEMA = {
   required: ['name'],
   properties: {
-    name: { type: 'string' },
+    name: NON_BLANK,
     email: { type: 'string' },
     description: { type: 'string' },
     website_url: { type: 'string' },
@@ -65,13 +66,13 @@ const RECORD_LABELS = {
 };
 const INVITE_SCHEMA = {
   required: ['email', 'role'],
-  properties: { email: { type: 'string' }, role: { type: 'string' } },
+  properties: { email: NON_BLANK, role: NON_BLANK },
 };
 const INVITE_LABELS = {
   email: 'orgConsole.invitation.email',
   role: 'orgConsole.invitation.assignRole',
 };
-const CONVERT_SCHEMA = { required: ['name'], properties: { name: { type: 'string' } } };
+const CONVERT_SCHEMA = { required: ['name'], properties: { name: NON_BLANK } };
 const CONVERT_LABELS = { name: 'orgConsole.convertName' };
 const EMPTY_INVITE = { email: '', role: 'MEMBER' };
 

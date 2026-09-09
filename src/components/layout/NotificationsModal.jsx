@@ -5,10 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaArrowUpRightFromSquare, FaDesktop, FaPaperPlane } from 'react-icons/fa6';
 
 import { useNotify } from '../../contexts/NoticeContext';
-import InboxList, {
-  extractEntries,
-  linkOf,
-} from '../../features/notifications/components/InboxList';
+import InboxList, { extractEntries, linkOf } from '../common/InboxList';
 
 export const notificationsAdapterShape = PropTypes.shape({
   list: PropTypes.func.isRequired,

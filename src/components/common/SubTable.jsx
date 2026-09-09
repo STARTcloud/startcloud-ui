@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
-import { sortShape } from '../utils/itemShape';
+import { sortShape } from '../../utils/itemShape';
 
 import SortHeader from './SortHeader';
 

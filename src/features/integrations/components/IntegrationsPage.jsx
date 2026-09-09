@@ -5,7 +5,7 @@ import { FaPlug, FaPuzzlePiece, FaXmark } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import { errorKeys, useStepUp } from '../../../components/common/StepUpDialog';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -406,7 +406,7 @@ const followNext = next => {
   if (typeof next !== 'string') {
     return;
   }
-  if (SAFE_PATH.test(next) || next.startsWith(`${window.location.origin}/`)) {
+  if (SAFE_PATH.test(next) || next.startsWith(`${window.location.origin}/`) || httpsUrl(next)) {
     window.location.assign(next);
   }
 };

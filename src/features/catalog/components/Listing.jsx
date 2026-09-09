@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { FaList, FaTableCellsLarge } from 'react-icons/fa6';
 
 import { useNotify } from '../../../contexts/NoticeContext';
+import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
-import { collectionShape, pageContextShape } from '../utils/itemShape';
 
 import ItemCards from './ItemCards';
 import ItemsTable from './ItemsTable';

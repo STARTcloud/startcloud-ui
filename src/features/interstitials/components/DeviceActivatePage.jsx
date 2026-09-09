@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
+import AuthShell from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import NativeForm from '../../../components/common/NativeForm';
-import AuthShell from '../../auth/components/AuthShell';
 
 const CODE = /[^A-Z0-9-]/g;
 

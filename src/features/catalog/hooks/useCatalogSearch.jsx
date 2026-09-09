@@ -7,9 +7,9 @@ import {
   WATCHED_GROUP,
   defaultMatches,
   filterGroupsOf,
-} from '../utils/itemShape';
-import { emptyFilters, readPrefs, toggleIn, writePrefs } from '../utils/prefs';
-import { nextSort, sortItems } from '../utils/sort';
+} from '../../../utils/itemShape';
+import { emptyFilters, readPrefs, toggleIn, writePrefs } from '../../../utils/prefs';
+import { nextSort, sortItems } from '../../../utils/sort';
 
 const groupShown = (group, { signedIn, org, items }) =>
   (!group.signedInOnly || signedIn) &&

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { itemPath, providerPath, versionPath } from '../../../utils/routes';
+import { itemPath, providerPath, versionPath } from './routes';
 
 export const SEARCH_KINDS = [
   'organization',
@@ -38,7 +38,8 @@ export const collectionOfRow = (row, collections) =>
  * The in-app path a search row leads to: the organization page for an
  * organization, the org console or the admin board for a user, and for
  * everything else the deepest page of the row's collection the row names
- * (provider, version, else item).
+ * (provider, an architecture where the collection has no providers,
+ * version, else item).
  *
  * @param {Object} row - One search result row
  * @param {Array<Object>} collections - The collections the host mounts
@@ -57,6 +58,9 @@ export const searchRowPath = (row, collections) => {
   }
   if (row.provider && collection.hasProviders) {
     return providerPath(collection, row.org, row.name, row.version, row.provider);
+  }
+  if (row.architecture && collection.hasVersions && !collection.hasProviders) {
+    return providerPath(collection, row.org, row.name, row.version, row.architecture);
   }
   if (row.version && collection.hasVersions) {
     return versionPath(collection, row.org, row.name, row.version);

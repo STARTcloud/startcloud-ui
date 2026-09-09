@@ -10,18 +10,18 @@ import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
+import { joinOrganizationAsAdmin } from '../../../../lib/organizations';
 import { session } from '../../../../lib/runtime';
 import { hasFeature } from '../../../../utils/capabilities';
-import { itemShape, versionShape } from '../../../catalog/utils/itemShape';
-import { joinAsAdmin } from '../../../organizations/api/organizations';
-import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../boxes';
 import {
   ISO_LABELS,
   ISO_RENAME_SCHEMA,
   ISO_SCHEMA,
   VERSION_LABELS,
   VERSION_SCHEMA,
-} from '../../boxes/utils/forms';
+} from '../../../../utils/forms';
+import { itemShape, versionShape } from '../../../../utils/itemShape';
+import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
 
@@ -135,7 +135,7 @@ CreateIsoForm.propTypes = {
 const JoinAsOwner = ({ org, notify }) => {
   const { t } = useTranslation();
   const join = () => {
-    joinAsAdmin(org)
+    joinOrganizationAsAdmin(org)
       .then(async () => {
         await session.reload();
         window.location.reload();

@@ -11,6 +11,7 @@ import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { NON_BLANK } from '../../../utils/validation';
 import { adminShape } from '../utils/adminShape';
 
 const NO_FILTERS = [];
@@ -18,7 +19,7 @@ const clearNothing = () => undefined;
 
 const RENAME_SCHEMA = {
   required: ['organization'],
-  properties: { organization: { type: 'string' } },
+  properties: { organization: NON_BLANK },
 };
 const RENAME_LABELS = { organization: 'orgUserManager.rename.name' };
 const EMPTY_RENAME = { organization: '' };
@@ -305,6 +306,8 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
     admin.organizationsWithUsers().then(setOrganizations, () => null);
   }, [admin]);
 
+  const reportFailure = error => notify('danger', t(error.messageKey || 'errors.request'));
+
   const dropMember = (predicate, userId) =>
     setOrganizations(previous =>
       previous.map(org =>
@@ -318,14 +321,14 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       .then(() => {
         setOrganizations(previous => previous.filter(org => org.name !== organizationName));
       })
-      .catch(() => notify('danger', t('admin.messages.deleteFailed')));
+      .catch(reportFailure);
   };
 
   const handleDeleteUser = userId => {
     admin
       .removeUser(userId)
       .then(() => dropMember(() => true, userId))
-      .catch(() => notify('danger', t('admin.messages.deleteFailed')));
+      .catch(reportFailure);
   };
 
   const askDelete = item => {
@@ -350,7 +353,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
       admin
         .removeMember(itemToDelete.orgName, itemToDelete.id)
         .then(() => dropMember(org => org.name === itemToDelete.orgName, itemToDelete.id))
-        .catch(() => notify('danger', t('orgConsole.users.removeError')));
+        .catch(reportFailure);
     }
     closeDelete();
   };
@@ -368,7 +371,7 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
           }))
         );
       })
-      .catch(() => notify('danger', t('admin.messages.operationFailed')));
+      .catch(reportFailure);
   };
 
   const handleSuspendOrResumeOrganization = (organizationName, isSuspended) => {
@@ -383,12 +386,12 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
           )
         );
       })
-      .catch(() => notify('danger', t('admin.messages.operationFailed')));
+      .catch(reportFailure);
   };
 
   const reportEditFailure = (formRules, error) => {
     if (!formRules.applyServerErrors(error)) {
-      notify('danger', t(error.messageKey || 'errors.request'));
+      reportFailure(error);
     }
   };
 

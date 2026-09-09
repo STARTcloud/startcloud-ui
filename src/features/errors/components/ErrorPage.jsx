@@ -3,9 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell from '../../../components/common/AuthShell';
 import BrandLogo from '../../../components/common/BrandLogo';
 import { useNotify } from '../../../contexts/NoticeContext';
-import AuthShell from '../../auth/components/AuthShell';
 import { errorDetails } from '../api/errors';
 
 const STATUS = /^\d{3}$/;

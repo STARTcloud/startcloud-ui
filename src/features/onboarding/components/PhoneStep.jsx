@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
+import { AuthAlert } from '../../../components/common/AuthShell';
 import CodeInput from '../../../components/common/CodeInput';
 import { useCountdown } from '../../../components/common/Countdown';
 import Field from '../../../components/common/Field';
@@ -11,7 +12,6 @@ import PhoneInput from '../../../components/common/PhoneInput';
 import { useStatus } from '../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { returnToShape } from '../../../utils/auth';
-import { AuthAlert } from '../../auth/components/AuthShell';
 import { geoCountry, sendPhoneCode, verifyPhone } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 

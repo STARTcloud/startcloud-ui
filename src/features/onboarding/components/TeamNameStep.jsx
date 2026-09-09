@@ -6,12 +6,13 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { returnToShape } from '../../../utils/auth';
+import { NON_BLANK } from '../../../utils/validation';
 import { submitTeamName } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 
 import OnboardingFrame from './OnboardingFrame';
 
-const SCHEMA = { required: ['team_name'], properties: { team_name: { type: 'string' } } };
+const SCHEMA = { required: ['team_name'], properties: { team_name: NON_BLANK } };
 const LABELS = { team_name: 'auth:onboarding.team.name' };
 
 /**

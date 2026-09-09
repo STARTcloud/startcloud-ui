@@ -11,8 +11,8 @@ import {
   FaShieldHalved,
 } from 'react-icons/fa6';
 
-import { fieldOf, valueAt } from '../../features/admin/utils/schemaSections';
 import { formRulesShape } from '../../hooks/useFormRules';
+import { fieldOf, valueAt } from '../../utils/schemaSections';
 import { isVisible, scopesFor } from '../../utils/validation';
 
 import ConfigField, { configFieldShape } from './ConfigField';

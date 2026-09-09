@@ -36,6 +36,7 @@ Before creating an issue, please:
 - Follow existing React / JavaScript conventions
 - **ESLint** (strict React + hooks + jsx-a11y + import rules) and **Prettier** enforce style — run `npm run quality` / `npm run fix`
 - The tree is feature-first (`src/app`, `components`, `features`, `hooks`, `contexts`, `lib`, `utils`, `config`); there is no per-app code, anything one host differs in arrives in its `/api/status` and is gated with `hasFeature`
+- A feature imports only from `src/components/`, `src/hooks/`, `src/contexts/`, `src/lib/`, `src/utils/`, its own folder, the collections registry (`src/features/collections/registry.js`) and `src/features/deploy`; never from another feature. Anything two features share lives in the shared layer its kind dictates: components in `src/components/common/` (`AuthShell`, `ProblemAlert`, `SubTable`, `SortHeader`, `SearchResults`, `InboxList`, `columns`), hooks in `src/hooks/` (`useDetailSearch`, `useProblemReporter`), contexts in `src/contexts/` (`UnreadContext`), API calls and session helpers in `src/lib/` (`organizations`, `signin`, `passkeys`, `next`), pure helpers in `src/utils/` (`itemShape`, `permissions`, `forms`, `distroIcons`, `prefs`, `sort`, `schemaSections`, `searchRow`, `auth`); `src/components/`, `src/hooks/` and `src/contexts/` never import from `src/features/`
 - Every string goes through i18next; add it to every language under `public/locales`
 
 ### What We're Looking For

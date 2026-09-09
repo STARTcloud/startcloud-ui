@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { readDetailPrefs, toggleIn, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
+
+import { useNavbarSearchBinding } from './useSearchBinding';
 
 const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
   key: 'columns',

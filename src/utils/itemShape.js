@@ -13,15 +13,6 @@ export const architectureShape = PropTypes.shape({
   updatedAt: PropTypes.string,
 });
 
-export const artifactShape = PropTypes.shape({
-  fileName: PropTypes.string,
-  fileSize: PropTypes.number,
-  checksum: PropTypes.string,
-  checksumType: PropTypes.string,
-  downloadUrl: PropTypes.string,
-  downloadCount: PropTypes.number,
-});
-
 export const providerShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   description: PropTypes.string,
@@ -71,7 +62,6 @@ export const itemShape = PropTypes.shape({
   os: PropTypes.shape({ label: PropTypes.string, iconUrl: PropTypes.string }),
   metadata: PropTypes.object,
   readme: PropTypes.string,
-  artifact: artifactShape,
   links: PropTypes.object,
   extras: PropTypes.object,
   versions: PropTypes.arrayOf(versionShape),

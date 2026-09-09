@@ -202,70 +202,22 @@ PhoneChange.propTypes = {
   onDone: PropTypes.func.isRequired,
 };
 
-const AddressForm = ({ account, profile, placesKey, onSaved }) => {
-  const { t } = useTranslation();
-  const notify = useNotify();
-  const [address, setAddress] = useState(() => ({ ...EMPTY_ADDRESS, ...(profile.address || {}) }));
-
-  const put = async next => {
-    try {
-      await account.address(next);
-      notify('success', t('profile.address.saved'));
-      await onSaved();
-    } catch (error) {
-      notify('danger', t(errorKeys(error)));
-    }
-  };
-
-  const save = event => {
-    event.preventDefault();
-    put(address);
-  };
-
-  return (
-    <form onSubmit={save} noValidate>
-      <h5>{t('profile.address.title')}</h5>
-      <AddressFields
-        value={address}
-        onChange={setAddress}
-        idPrefix="profile-address"
-        placesKey={placesKey}
-      />
-      <div className="d-flex gap-2">
-        <button type="submit" className="btn btn-primary">
-          {t('profile.address.save')}
-        </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          onClick={() => put(EMPTY_ADDRESS)}
-        >
-          {t('profile.address.clear')}
-        </button>
-      </div>
-    </form>
-  );
-};
-
-AddressForm.propTypes = {
-  account: PropTypes.shape({ address: PropTypes.func.isRequired }).isRequired,
-  profile: PropTypes.shape({ address: PropTypes.object }).isRequired,
-  placesKey: PropTypes.string.isRequired,
-  onSaved: PropTypes.func.isRequired,
-};
+const addressOf = profile => ({ ...EMPTY_ADDRESS, ...(profile?.address || {}) });
 
 /**
  * The Profile tab in its identity-provider form: the seven details of
  * `PATCH /api/user`, the read-only email with a Change link to the
  * Security tab's email section, the masked mobile with Change opening the
  * phone entry and the code, and the address block over
- * `PUT /api/user/address` with Save and Clear address; the page remounts
- * it with every re-read of the record.
+ * `PUT /api/user/address`, one Save writing the details and the address
+ * together and Clear address emptying the address at once; the page
+ * remounts it with every re-read of the record.
  */
 const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [values, setValues] = useState(() => detailsOf(profile));
+  const [address, setAddress] = useState(() => addressOf(profile));
   const [changingPhone, setChangingPhone] = useState(false);
   const rules = useFormRules({
     schema: DETAILS_SCHEMA,
@@ -283,12 +235,24 @@ const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChang
     }
     try {
       await account.details(changedOf(values, profile));
+      await account.address(address);
       notify('success', t('profile.details.saved'));
       await onSaved();
     } catch (error) {
       if (!rules.applyServerErrors(error)) {
         notify('danger', t(errorKeys(error)));
       }
+    }
+  };
+
+  const clearAddress = async () => {
+    try {
+      await account.address(EMPTY_ADDRESS);
+      setAddress(EMPTY_ADDRESS);
+      notify('success', t('profile.address.saved'));
+      await onSaved();
+    } catch (error) {
+      notify('danger', t(errorKeys(error)));
     }
   };
 
@@ -368,39 +332,48 @@ const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChang
             </div>
           </div>
         </div>
-        <button type="submit" className="btn btn-primary">
-          {t('profile.buttons.save')}
-        </button>
-      </form>
-
-      <h5>{t('profile.details.mobile')}</h5>
-      <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
-        <span className="badge bg-secondary">
-          {mobile?.masked || t('profile.details.noMobile')}
-        </span>
-        {mobile?.verified ? (
-          <span className="badge bg-success">{t('profile.details.verified')}</span>
+        <h5>{t('profile.details.mobile')}</h5>
+        <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
+          <span className="badge bg-secondary">
+            {mobile?.masked || t('profile.details.noMobile')}
+          </span>
+          {mobile?.verified ? (
+            <span className="badge bg-success">{t('profile.details.verified')}</span>
+          ) : null}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setChangingPhone(previous => !previous)}
+          >
+            {t('profile.details.change')}
+          </button>
+        </div>
+        {changingPhone ? (
+          <PhoneChange
+            account={account}
+            guard={guard}
+            onDone={async () => {
+              setChangingPhone(false);
+              await onSaved();
+            }}
+          />
         ) : null}
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => setChangingPhone(previous => !previous)}
-        >
-          {t('profile.details.change')}
-        </button>
-      </div>
-      {changingPhone ? (
-        <PhoneChange
-          account={account}
-          guard={guard}
-          onDone={async () => {
-            setChangingPhone(false);
-            await onSaved();
-          }}
+        <h5>{t('profile.address.title')}</h5>
+        <AddressFields
+          value={address}
+          onChange={setAddress}
+          idPrefix="profile-address"
+          placesKey={placesKey}
         />
-      ) : null}
-
-      <AddressForm account={account} profile={profile} placesKey={placesKey} onSaved={onSaved} />
+        <div className="d-flex gap-2">
+          <button type="submit" className="btn btn-primary">
+            {t('profile.buttons.save')}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={clearAddress}>
+            {t('profile.address.clear')}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

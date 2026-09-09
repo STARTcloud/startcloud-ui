@@ -3,17 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
 import CodeInput from '../../../components/common/CodeInput';
 import { useCountdown } from '../../../components/common/Countdown';
 import Field from '../../../components/common/Field';
-import { authenticate, isAbort } from '../../../lib/passkeys';
+import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
+import { problemOf, useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
+import { authenticate, isAbort, passkeyRequestOptions, passkeyVerify } from '../../../lib/passkeys';
+import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
-import { passkeyRequestOptions, passkeyVerify } from '../../auth/api/passkeys';
-import { cancelSignIn } from '../../auth/api/signin';
-import AuthShell, { AuthAlert, AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert, { useWait } from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { problemOf, useProblemReporter } from '../../auth/problem';
 import { resendTfa, sendTfa, tfaState, verifyTfa } from '../api/tfa';
 
 const CODE_METHODS = ['SMS', 'APP'];
@@ -42,9 +41,18 @@ const useTfaState = ({ method, onLocked }) => {
   useEffect(() => {
     let active = true;
     const adopt = answer => {
-      if (active) {
-        setState(answer);
-        setLoadedAt(Date.now());
+      if (!active) {
+        return;
+      }
+      setState(answer);
+      setLoadedAt(Date.now());
+      if (answer.wait_seconds > 0) {
+        setProblem({
+          code: 'throttled',
+          status: 429,
+          wait: answer.wait_seconds,
+          since: Date.now(),
+        });
       }
     };
     const fail = error => {

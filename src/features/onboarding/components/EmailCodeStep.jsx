@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AuthAlert } from '../../../components/common/AuthShell';
 import CodeInput from '../../../components/common/CodeInput';
 import { useCountdown } from '../../../components/common/Countdown';
 import { returnToShape } from '../../../utils/auth';
-import { AuthAlert } from '../../auth/components/AuthShell';
 import { resendEmailCode, verifyEmailCode } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import CodeInput from '../../../components/common/CodeInput';
 import PasswordField from '../../../components/common/PasswordField';
+import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
 import { returnToShape } from '../../../utils/auth';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert, { useWait } from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { useProblemReporter } from '../../auth/problem';
 import { linkConfirm, linkState } from '../api/interstitials';
 
 const FIELD_CODES = ['bad_password', 'invalid_code'];

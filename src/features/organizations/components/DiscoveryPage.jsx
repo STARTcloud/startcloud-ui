@@ -204,7 +204,7 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
           log.api.error('Error loading discoverable organizations', {
             error: error.message,
           });
-          notify('danger', t('discovery.errors.load'));
+          notify('danger', t(error.messageKey || 'errors.request'));
         }
       } finally {
         if (!cancelled) {

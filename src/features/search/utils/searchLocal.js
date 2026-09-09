@@ -1,4 +1,4 @@
-import { SEARCH_KINDS } from './searchRow';
+import { SEARCH_KINDS } from '../../../utils/searchRow';
 
 const MIN_CHECKSUM_PREFIX = 6;
 

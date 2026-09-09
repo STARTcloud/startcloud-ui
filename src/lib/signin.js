@@ -1,4 +1,4 @@
-import { client } from '../../../lib/runtime';
+import { client } from './runtime';
 
 const OPTIONS = { auth: 'optional', headers: { Accept: 'application/json' } };
 

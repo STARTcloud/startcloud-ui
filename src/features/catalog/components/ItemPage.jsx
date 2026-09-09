@@ -7,9 +7,9 @@ import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
+import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { providerPath, versionPath } from '../../../utils/routes';
-import { useDetailSearch } from '../hooks/useDetailSearch';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import {
   collectionShape,
   detailSearchShape,
@@ -18,10 +18,10 @@ import {
   sortVersionsNewestFirst,
   statusOf,
   visibilityOf,
-} from '../utils/itemShape';
+} from '../../../utils/itemShape';
+import { providerPath, versionPath } from '../../../utils/routes';
 
 import ItemFacts from './ItemFacts';
-import SubTable, { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -187,8 +187,8 @@ ItemHeading.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
-const ItemDetails = ({ item, formatFileSize }) => {
-  const facts = Boolean(item.metadata || item.artifact);
+const ItemDetails = ({ item }) => {
+  const facts = Boolean(item.metadata);
   if (!facts && !item.readme) {
     return null;
   }
@@ -196,7 +196,7 @@ const ItemDetails = ({ item, formatFileSize }) => {
     <div className="row g-3 mb-4 mx-0 px-0">
       {facts ? (
         <div className="col-lg-5 col-xl-4">
-          <ItemFacts item={item} formatFileSize={formatFileSize} />
+          <ItemFacts item={item} />
         </div>
       ) : null}
       {item.readme ? (
@@ -210,7 +210,6 @@ const ItemDetails = ({ item, formatFileSize }) => {
 
 ItemDetails.propTypes = {
   item: itemShape.isRequired,
-  formatFileSize: PropTypes.func.isRequired,
 };
 
 const versionColumns = (org, name) => [
@@ -423,7 +422,7 @@ const ItemPage = ({ collection, org, name, context }) => {
         ctx={ctx}
       />
       {ItemExtras ? <ItemExtras item={item} ctx={ctx} /> : null}
-      <ItemDetails item={item} formatFileSize={context.formatFileSize} />
+      <ItemDetails item={item} />
       {collection.hasVersions ? (
         <VersionsSection
           collection={collection}

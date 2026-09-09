@@ -1,6 +1,6 @@
 import { log } from '../../../../lib/logger';
-import { fetchOrganization, logoFor, withLogos } from '../../../organizations/api/logos';
-import { getDistroIconUrl, getOsDisplayName } from '../utils/distroIcons';
+import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
+import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
 import { readDeprecated, readDeprecationReason, readReleaseNotes } from '../utils/versionFields';
 
 import { api } from './boxes';
@@ -73,7 +73,6 @@ const boxItem = (box, orgName, logo) => ({
   },
   metadata: box.metadata || null,
   readme: box.readme || null,
-  artifact: null,
   links: {
     repo: box.githubRepo ? `https://github.com/${box.githubRepo}` : '',
     pipeline: box.cicdUrl || '',

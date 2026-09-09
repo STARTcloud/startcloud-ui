@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { useUnread } from '../features/notifications/context/UnreadContext';
+import { useUnread } from '../contexts/UnreadContext';
 import { client } from '../lib/runtime';
 import { hasFeature } from '../utils/capabilities';
 

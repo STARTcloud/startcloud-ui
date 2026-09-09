@@ -1,3 +1,7 @@
+import { client } from './runtime';
+
+const OPTIONS = { auth: 'optional', headers: { Accept: 'application/json' } };
+
 const toBase64Url = buffer => {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -134,6 +138,11 @@ export const encodeAttestation = credential => {
   }
   return encoded;
 };
+
+export const passkeyRequestOptions = () =>
+  client.post('/webauthn/authenticate/options', null, OPTIONS);
+
+export const passkeyVerify = assertion => client.post('/login/webauthn', assertion, OPTIONS);
 
 /**
  * Whether a rejection is the abort of a pending request rather than a failure.

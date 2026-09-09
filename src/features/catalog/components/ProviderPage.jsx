@@ -2,14 +2,14 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { createdColumn, updatedColumn } from '../../../components/common/columns';
 import PageHeader from '../../../components/common/PageHeader';
+import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useDetailSearch } from '../hooks/useDetailSearch';
-import { collectionShape, pageContextShape } from '../utils/itemShape';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
 import ChecksumCell from './ChecksumCell';
-import { createdColumn, updatedColumn } from './columns';
-import SubTable, { hasAny } from './SubTable';
 
 const architectureColumns = [
   {
@@ -162,7 +162,12 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
       )}
       <div className="list-table mt-2">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4>{t('pages.provider.architecturesFor', { provider: entry.name })}</h4>
+          <h4>
+            {t(collection.hasProviders ? 'pages.provider.title' : 'pages.architecture.title', {
+              provider: entry.name,
+              architecture: entry.name,
+            })}
+          </h4>
           {ArchitecturesActions ? <ArchitecturesActions {...slotProps} /> : null}
         </div>
         {form}

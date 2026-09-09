@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { sortStackOf, toggleIn } from '../../catalog/utils/prefs';
-import { nextSort, sortItems } from '../../catalog/utils/sort';
+import { sortStackOf, toggleIn } from '../../../utils/prefs';
+import { nextSort, sortItems } from '../../../utils/sort';
 import { CACHE_KEYS, cacheKey } from '../utils/cacheLevel';
 import {
   STATUS_KEYS,

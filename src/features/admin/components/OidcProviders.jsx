@@ -10,7 +10,7 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
-import { fieldOf } from '../utils/schemaSections';
+import { fieldOf } from '../../../utils/schemaSections';
 
 const OIDC_PROVIDER_KEY = 'oidc-provider';
 const LABELS = { name: 'oidc.form.name.label' };

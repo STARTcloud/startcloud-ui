@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import SubTable from '../../catalog/components/SubTable';
 import { bruteForce, unblock } from '../api/security';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { BRUTE_FORCE } from '../utils/examples';

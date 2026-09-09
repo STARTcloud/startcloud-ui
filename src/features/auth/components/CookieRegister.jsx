@@ -3,17 +3,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { problemShape, useProblemReporter } from '../../../hooks/useProblemReporter';
 import { returnToShape } from '../../../utils/auth';
 import { registration, resendRegistration } from '../api/registration';
-import { problemShape, useProblemReporter } from '../problem';
 import { useMethods } from '../useMethods';
 import { useSignedInRedirect } from '../useSignedInRedirect';
 
-import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from './AuthShell';
-import ProblemAlert, { useWait } from './ProblemAlert';
 import ProviderButtons from './ProviderButtons';
 
 const SCHEMA = { required: ['email'], properties: { email: { type: 'string' } } };

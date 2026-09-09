@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
-import { organizationShape } from '../../features/catalog/utils/itemShape';
+import { organizationShape } from '../../utils/itemShape';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
 
 export const CollapseButton = ({ collapsed, onToggle }) => {

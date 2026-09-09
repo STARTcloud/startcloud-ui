@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * The page a sign-in lands on: runs the provider's exchange exactly once,
  * hands the session to `onDone`, and shows the failure with a way home.
- * A failure carrying `messageKey` is shown through that translation key.
+ * A failure is shown through its `messageKey`, else `errors.request`; the
+ * server's own message is never rendered.
  */
 const CallbackPage = ({ complete, onDone, homeHref = '/' }) => {
   const { t } = useTranslation();
@@ -20,7 +21,7 @@ const CallbackPage = ({ complete, onDone, homeHref = '/' }) => {
     started.current = true;
     complete()
       .then(onDone)
-      .catch(failure => setError(failure.messageKey ? t(failure.messageKey) : failure.message));
+      .catch(failure => setError(t(failure.messageKey || 'errors.request')));
   }, [complete, onDone, t]);
 
   return (

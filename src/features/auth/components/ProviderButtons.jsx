@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-const SAFE_PATH = /^\/(?![/\\])/;
+const ICON_URL = /^(?:https:\/\/|\/(?![/\\]))/;
 
 const hideBrokenIcon = event => {
   event.target.style.display = 'none';
@@ -27,7 +27,7 @@ const ProviderButtons = ({
           disabled={loading || Boolean(loadingProvider)}
           onClick={() => onSelect(providerName)}
         >
-          {SAFE_PATH.test(method.icon_url || '') && (
+          {ICON_URL.test(method.icon_url || '') && (
             <img
               src={method.icon_url}
               className="auth-provider-icon"

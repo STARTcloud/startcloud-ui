@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 import CodeInput from '../../../components/common/CodeInput';
 import CopyButton from '../../../components/common/CopyButton';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { returnToShape } from '../../../utils/auth';
-import { useProblemReporter } from '../../auth/problem';
 import { tfaEnrolment, verifyApp } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 

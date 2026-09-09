@@ -3,12 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import InboxList, { extractEntries, linkOf } from '../../../components/common/InboxList';
 import Pager from '../../../components/common/Pager';
 import { notificationsAdapterShape } from '../../../components/layout/NotificationsModal';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useUnread } from '../context/UnreadContext';
-
-import InboxList, { extractEntries, linkOf } from './InboxList';
+import { useUnread } from '../../../contexts/UnreadContext';
 
 const PAGE_SIZE = 25;
 
@@ -74,8 +73,8 @@ const InboxPage = ({ notifications }) => {
       setEntries(previous =>
         previous.map(item => (item.id === entry.id ? { ...item, readAt: readNow() } : item))
       );
-    } catch {
-      notify('danger', t('inbox.markReadError'));
+    } catch (error) {
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -99,8 +98,8 @@ const InboxPage = ({ notifications }) => {
         adjustUnread(-1);
       }
       await load();
-    } catch {
-      notify('danger', t('inbox.dismissError'));
+    } catch (error) {
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -111,8 +110,8 @@ const InboxPage = ({ notifications }) => {
       setEntries(previous =>
         previous.map(item => (item.readAt ? item : { ...item, readAt: readNow() }))
       );
-    } catch {
-      notify('danger', t('inbox.markAllReadError'));
+    } catch (error) {
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -122,8 +121,8 @@ const InboxPage = ({ notifications }) => {
       adjustUnread(-Infinity);
       setPage(0);
       await load();
-    } catch {
-      notify('danger', t('inbox.dismissError'));
+    } catch (error) {
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 

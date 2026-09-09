@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Field from '../../../components/common/Field';
@@ -58,16 +58,20 @@ const supportedLanguages = i18n =>
     code => code !== 'cimode'
   );
 
-const PinStatus = ({ pinSet, onClear }) => {
+const PinStatus = ({ pinSet, onSet, onClear }) => {
   const { t } = useTranslation();
-  if (!pinSet) {
-    return <span className="badge bg-secondary">{t('profile.preferences.pinNone')}</span>;
-  }
   return (
     <>
-      <span className="badge bg-success me-2">{t('profile.preferences.pinSet')}</span>
-      <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={onClear}>
-        {t('profile.preferences.clear')}
+      <span className={`badge ${pinSet ? 'bg-success' : 'bg-secondary'}`}>
+        {t(pinSet ? 'profile.preferences.pinSet' : 'profile.preferences.pinNone')}
+      </span>
+      {' · '}
+      <button
+        type="button"
+        className="btn btn-link btn-sm p-0 align-baseline"
+        onClick={pinSet ? onClear : onSet}
+      >
+        {t(pinSet ? 'profile.preferences.clear' : 'profile.preferences.set')}
       </button>
     </>
   );
@@ -75,6 +79,7 @@ const PinStatus = ({ pinSet, onClear }) => {
 
 PinStatus.propTypes = {
   pinSet: PropTypes.bool.isRequired,
+  onSet: PropTypes.func.isRequired,
   onClear: PropTypes.func.isRequired,
 };
 
@@ -83,8 +88,10 @@ PinStatus.propTypes = {
  * and theme as selects that write through on change, the same values the
  * chrome's controls write; the time zone from the `Intl` list with the
  * detected zone preselected while none is set, the sign-in approval
- * channel (SMS while a verified number exists) and the approval PIN with
- * its status line, saved together by one Save through
+ * channel (SMS disabled with a hint while no verified number exists, the
+ * stored value kept selected) and the approval PIN with its status line,
+ * "No PIN · Set" revealing and focusing the PIN input or "A PIN is set ·
+ * Clear", saved together by one Save through
  * `PATCH /api/user/preferences`, the time zone in the patch only when the
  * person chose one that differs from the stored value, so a detected
  * preselection is never written; the theme goes through the shared
@@ -101,11 +108,12 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
   const [settings, setSettings] = useState(() => settingsOf(preferences));
   const [pin, setPin] = useState('');
   const [clearPin, setClearPin] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const pinRef = useRef(null);
   const zones = useMemo(() => timeZones(), []);
   const [detected] = useState(detectedZone);
   const zone = settings.timezone || detected;
   const smsAllowed = Boolean(profile.mobile_number?.verified);
-  const channels = smsAllowed ? CHANNELS : CHANNELS.filter(channel => channel !== 'SMS');
   const values = useMemo(
     () => ({
       timezone: settings.timezone,
@@ -121,6 +129,12 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
     labels: LABELS,
     idPrefix: 'profile-preferences',
   });
+
+  useEffect(() => {
+    if (showPin) {
+      pinRef.current?.focus();
+    }
+  }, [showPin]);
 
   const set = (field, value) => setSettings(previous => ({ ...previous, [field]: value }));
 
@@ -150,6 +164,7 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
       await account.preferences(patch);
       setPin('');
       setClearPin(false);
+      setShowPin(false);
       rules.reset();
       notify('success', t('profile.preferences.saved'));
       await onSaved();
@@ -161,6 +176,12 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
   };
 
   const pinSet = Boolean(preferences.ciba_user_code_set) && !clearPin;
+  const channelHint = (
+    <>
+      {t('profile.preferences.channelHint')}
+      {smsAllowed ? null : ` ${t('profile.preferences.channelSmsHint')}`}
+    </>
+  );
 
   return (
     <div className="tab-pane fade show active">
@@ -242,7 +263,7 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
             <Field
               id={rules.idFor('ciba_channel')}
               label={t('profile.preferences.channel.label')}
-              hint={t('profile.preferences.channelHint')}
+              hint={channelHint}
               error={rules.errors.ciba_channel || ''}
             >
               {aria => (
@@ -253,8 +274,12 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
                   onChange={event => set('ciba_channel', event.target.value)}
                   onBlur={() => rules.onBlur('ciba_channel')}
                 >
-                  {channels.map(channel => (
-                    <option key={channel} value={channel}>
+                  {CHANNELS.map(channel => (
+                    <option
+                      key={channel}
+                      value={channel}
+                      disabled={channel === 'SMS' && !smsAllowed}
+                    >
                       {t(`profile.preferences.channel.${channel}`)}
                     </option>
                   ))}
@@ -264,26 +289,33 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
           </div>
           <div className="col-md-6">
             <p className="small mb-1">
-              <PinStatus pinSet={pinSet} onClear={() => setClearPin(true)} />
+              <PinStatus
+                pinSet={pinSet}
+                onSet={() => setShowPin(true)}
+                onClear={() => setClearPin(true)}
+              />
             </p>
-            <Field
-              id={rules.idFor('ciba_user_code')}
-              label={t('profile.preferences.pin')}
-              hint={t('profile.preferences.pinHint')}
-              error={rules.errors.ciba_user_code || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="password"
-                  className="form-control"
-                  autoComplete="off"
-                  value={pin}
-                  onChange={event => setPin(event.target.value)}
-                  onBlur={() => rules.onBlur('ciba_user_code')}
-                />
-              )}
-            </Field>
+            {showPin ? (
+              <Field
+                id={rules.idFor('ciba_user_code')}
+                label={t('profile.preferences.pin')}
+                hint={t('profile.preferences.pinHint')}
+                error={rules.errors.ciba_user_code || ''}
+              >
+                {aria => (
+                  <input
+                    {...aria}
+                    ref={pinRef}
+                    type="password"
+                    className="form-control"
+                    autoComplete="off"
+                    value={pin}
+                    onChange={event => setPin(event.target.value)}
+                    onBlur={() => rules.onBlur('ciba_user_code')}
+                  />
+                )}
+              </Field>
+            ) : null}
           </div>
         </div>
         <button type="submit" className="btn btn-primary">

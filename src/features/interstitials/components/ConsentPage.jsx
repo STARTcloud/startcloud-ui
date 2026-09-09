@@ -1,17 +1,16 @@
-import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import FieldError from '../../../components/common/FieldError';
 import NativeForm from '../../../components/common/NativeForm';
+import ProblemAlert from '../../../components/common/ProblemAlert';
 import ScopeList, { DetailRow } from '../../../components/common/ScopeList';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
+import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
-import { cancelSignIn } from '../../auth/api/signin';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
-import ProblemAlert from '../../auth/components/ProblemAlert';
-import { followNext } from '../../auth/next';
-import { useProblemReporter } from '../../auth/problem';
 import { consent as fetchConsent } from '../api/interstitials';
 
 const LOCKED = ['openid'];
@@ -31,9 +30,9 @@ const scopeRows = (scopes, t) =>
  * locked, the authorization details, Approve and Deny as one real form
  * post to the answer's `action` through `NativeForm`, Approve refusing
  * inline while no scope is checked, and "You are logged in as … Not you?
- * Sign out", which signs out and posts `/auth-cancel`.
+ * Sign out", which posts `/auth-cancel` and follows its `next`.
  */
-const ConsentPage = ({ session, returnTo }) => {
+const ConsentPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,9 +94,9 @@ const ConsentPage = ({ session, returnTo }) => {
   };
 
   const signOut = () =>
-    Promise.resolve(session.signOut())
-      .then(() => cancelSignIn())
-      .catch(() => null);
+    cancelSignIn()
+      .then(result => followNext({ next: result?.next, navigate, returnTo }))
+      .catch(error => setProblem(report(error)));
 
   const scopes = answer ? scopeRows(answer.scopes, t) : [];
   const details = answer?.authorization_details || [];
@@ -166,7 +165,6 @@ const ConsentPage = ({ session, returnTo }) => {
 };
 
 ConsentPage.propTypes = {
-  session: PropTypes.object.isRequired,
   returnTo: returnToShape.isRequired,
 };
 

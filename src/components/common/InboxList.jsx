@@ -11,8 +11,9 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 
-import { followableUrl } from '../../../components/common/MethodList';
-import { formatRelativeTime } from '../../../utils/relativeTime';
+import { formatRelativeTime } from '../../utils/relativeTime';
+
+import { followableUrl } from './MethodList';
 
 const TYPE_ICONS = {
   SECURITY: FaShieldHalved,

@@ -1,11 +1,18 @@
-import { fetchOrganization, logoFor, withLogos } from '../../../organizations/api/logos';
-import { getDistroIconUrl, getOsDisplayName } from '../../boxes/utils/distroIcons';
+import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
+import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
 
 import { api } from './isos';
 
 const rows = data => (Array.isArray(data) ? data : []);
 
 const sumDownloads = entries => entries.reduce((sum, entry) => sum + (entry.downloads || 0), 0);
+
+const latestReleaseOf = versions =>
+  versions
+    .map(version => version.createdAt)
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
 
 const fileArtifact = file => ({
   name: file.architecture,
@@ -50,7 +57,7 @@ const isoItem = (iso, orgName, logo) => {
     published: Boolean(iso.published),
     createdAt: iso.createdAt || null,
     updatedAt: iso.updatedAt || null,
-    latestReleaseAt: null,
+    latestReleaseAt: latestReleaseOf(versions),
     downloads: sumDownloads(versions),
     os: {
       label: getOsDisplayName(iso.metadata),
@@ -58,7 +65,6 @@ const isoItem = (iso, orgName, logo) => {
     },
     metadata: iso.metadata || null,
     readme: null,
-    artifact: null,
     links: {},
     extras: { raw: iso },
     versions,
@@ -93,6 +99,15 @@ const getVersion = async (org, name, version) => {
   return { ...entry, artifacts };
 };
 
+const getProvider = async (org, name, version, architecture) => {
+  const entry = await getVersion(org, name, version);
+  const artifact = entry.artifacts.find(candidate => candidate.name === architecture);
+  if (!artifact) {
+    throw new Error(`${org}/${name}@${version}/${architecture} not found`);
+  }
+  return { name: artifact.name, description: '', architectures: [artifact] };
+};
+
 export const deleteVersionCascade = (org, name, version) =>
   api.versions
     .get(org, name, version)
@@ -117,6 +132,7 @@ export const isosAdapter = {
   getItem,
   getItemSummary,
   getVersion,
+  getProvider,
   getOrganization: fetchOrganization,
   watches,
 };

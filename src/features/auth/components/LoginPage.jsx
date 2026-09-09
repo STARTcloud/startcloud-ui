@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
+import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
@@ -16,7 +17,6 @@ import {
   storeLoginMethod,
 } from '../../../utils/auth';
 
-import AuthShell, { AuthAlert, AuthSpinner } from './AuthShell';
 import CookieLogin from './CookieLogin';
 import ProviderButtons from './ProviderButtons';
 
@@ -453,7 +453,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     } catch (err) {
       log.auth.error('Invalid OIDC provider selected', { error: err.message });
       setLoadingProvider(null);
-      setStatusMessage(t('errors.invalidProvider'));
+      setStatusMessage(t(err.messageKey || 'errors.request'));
     }
   };
 

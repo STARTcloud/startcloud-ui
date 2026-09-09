@@ -398,7 +398,7 @@ members the `backend` UI backends answer, grown for the issuer:
 
 | Member                                             | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                               | Source today                                                                                                      |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `methods[]`                                        | the sign-in methods this site offers, in display order; `local`, `magic-link` and `passkey` are the issuer's own, `oidc-<id>` the federated providers allowed for the site; `?oidc_provider=a,b` on the page narrows the federated ones the way the server's `oidc_provider` parameter does; `icon_url` is a path on the serving origin, never another host, because the sign-in page loads no third-party resource (RFC 9700 §4.2.4) | `LoginController.login`: `enabledProviders` sorted by `displayOrder`, `passkeysEnabled`, the site's login methods |
+| `methods[]`                                        | the sign-in methods this site offers, in display order; `local`, `magic-link` and `passkey` are the issuer's own, `oidc-<id>` the federated providers allowed for the site; `?oidc_provider=a,b` on the page narrows the federated ones the way the server's `oidc_provider` parameter does; `icon_url` is an `https:` URL or a same-origin path matching `^/(?![/\\])`, as decision 62 says of every URL member which the pages draw | `LoginController.login`: `enabledProviders` sorted by `displayOrder`, `passkeysEnabled`, the site's login methods |
 | `login_mode`                                       | which of `magic_link` and `password` the page opens in when the visitor has no stored choice; the order is `?login=` for one visit and never stored, then the stored `login_method`, then `login_mode`, then the first enabled method, the order the server resolves today, so a link from a mail that says `?login=password` is honoured over a stored choice                                                                        | `resolveInitialLoginMode`: the query, then the cookie, then `sites.<id>.default_login_method`                     |
 | `local_registration_enabled`                       | whether the foot shows "Create an account" and whether the magic-link request creates a lead for an unknown address                                                                                                                                                                                                                                                                                                                   | `siteService.isRegistrationEnabled`                                                                               |
 | `cancel`                                           | whether a client's authorization request is parked in the session, so the page draws Cancel only when there is something to cancel; a Cancel on a plain visit would loop `/auth-cancel` → `/` → `/login`                                                                                                                                                                                                                              | `requestCache.getRequest` non-null                                                                                |
@@ -460,7 +460,7 @@ A `200` carries `next`; a failure is `application/problem+json` with
 | second factor, verify | `POST /authenticator`, form-encoded `code`, `tfaMethod`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `{ "next": "…" }` from the saved request or `/`                                                                              | `403` `authentication`, `code` one of `invalid`, `expired`, the session being live; `409` `method-locked`, `code: locked` when the method's lockout closed it; `429` `throttled` with `wait_seconds` while the gate is armed                                                                                                                                                                          |
 | second factor, resend | `POST /resend-tfa`, no body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `{ "sent": true }`                                                                                                           | `409` `code: not_set_up`, `503` `code: send_failed` with `Retry-After` (a `502` names a gateway fault, RFC 9110 §15.6.3, and the sender is not one), `429` `throttled` with `wait_seconds`                                                                                                                                                                                                            |
 | second factor, pick   | `POST /authenticator-method`, form-encoded `tfaMethod`, `authenticatorId`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | the `GET /api/auth/tfa` shape; the page navigates to `/authenticator?method=<method>`                                        | `409` `code` one of `not_set_up`, `locked`; `503` `send_failed`                                                                                                                                                                                                                                                                                                                                       |
-| cancel                | `POST /auth-cancel`, no body, the CSRF header; the Cancel link posts it and follows `next`, because the cancel clears the parked request and a GET must not                                                                                                                                                                                                                                                                                                                                                                                                                 | `{ "next": "<the client's cancel URL, its redirect_uri with error=access_denied, or />" }`                                   | none                                                                                                                                                                                                                                                                                                                                                                                                  |
+| cancel                | `POST /auth-cancel`, no body, the CSRF header; the Cancel link posts it and follows `next`, because the cancel clears the parked request and a GET must not; from the consent page's "Not you? Sign out" the same one request also ends the session, the server answering `next` as the client's `redirect_uri` with `error=access_denied` (RFC 6749 §4.1.2.1)                                                                                                                                                                                                              | `{ "next": "<the client's cancel URL, its redirect_uri with error=access_denied, or />" }`                                   | none                                                                                                                                                                                                                                                                                                                                                                                                  |
 | recovery request      | `POST /passwordRecovery`, JSON `{ "email" }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `202 { "sent": true }` always                                                                                                | `422` with `errors[]` on `/email`, a rule failure being never a `400`; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                                                          |
 | reset                 | `POST /passwordReset`, JSON `{ "email", "token", "password" }`; the server binds the token to the address it issued it for and ignores a posted `email` that differs, so the token is the only thing that proves the request                                                                                                                                                                                                                                                                                                                                                | `{ "next": "/login?reset=complete" }`                                                                                        | `422` with `errors[]` on `/password` (`minLength`, `maxLength`, `blocklist`); `403` `code: reset_invalid` when the token is unknown or expired                                                                                                                                                                                                                                                        |
 
@@ -547,9 +547,14 @@ session contract's sign-in page) by the states the issuer has:
   absolute URL). A path is accepted only when it matches `^/(?![/\\])`,
   because `/\evil.com` passes a "starts with one slash" test and a browser
   resolves it as `//evil.com`; an absolute `next` is followed only when its
-  origin is the serving origin, the two exceptions being the front-channel
-  page's `continuation` and the logout-cancel `next`, both of which the
-  server validated against the client's registered URIs before answering.
+  origin is the serving origin, the four exceptions being the front-channel
+  page's `continuation`, the logout-cancel `next`, the provider
+  authorization URL the integrations link route answers, and the `next` of
+  a cancel or deny answer (`POST /auth-cancel`, the consent deny), each of
+  which the server validated before answering: the first two and the
+  fourth against the client's registered redirect and cancel URIs in the
+  server's configuration, the third against the provider's configured
+  authorization endpoint.
 
 **TfaCodePage** at `/authenticator`: the subhead names the method and
 target ("We sent a code to {{target}}", "Enter the code from the
@@ -628,19 +633,22 @@ validation follows the validation contract on every field.
 `auth.json`: `login.*` gains `continueWithEmail`, `useEmailLink`,
 `usePasskey`, `passkeyFailed`, `forgotPassword`, `cancel`, `sent.title`,
 `sent.body`, `sent.bodyHedged`, `sent.expires`, `sent.resend`,
-`sent.differentEmail`, `sent.resent`, `sent.validFor`, `loggedOut`,
+`sent.resendIn`, `sent.differentEmail`, `sent.resent`, `sent.validFor`,
+`loggedOut`,
 `stepUp`, `resetComplete`, `email`, `password`, `keepSignedIn`,
 `magic.title`, `magic.invalid`, `magic.requestAnother`; `tfa.*`
 (`title`, `subhead.sms`, `subhead.app`,
 `subhead.backup`, `subhead.passkey`, `code`, `backupCode`, `resend`,
-`resent`, `locked`, `waitCountdown`, `waitReady`, `changeMethod`,
+`resendIn`, `resent`, `locked`, `waitCountdown`, `waitReady`,
+`changeMethod`,
 `choose.title`, `choose.subhead`, `method.sms`, `method.smsHelp`,
 `method.smsRisk`, `method.app`, `method.passkey`, `method.passkeyHelp`,
 `method.backup`, `method.backupHelp`, `method.backupNone`,
 `method.locked`, `continue`); `recovery.*` (`title`, `subhead`,
-`sent.title`, `sent.body`, `sent.ttl`, `remembered`, `signIn`,
-`returnToSite`); `reset.*` (`title`, `subhead`, `newPassword`,
-`continue`, `invalid`); `errors.*` gains one key per `code` above.
+`sent.title`, `sent.body`, `sent.ttl`, `sent.resend`, `sent.resendIn`,
+`remembered`, `signIn`, `returnToSite`); `reset.*` (`title`, `subhead`,
+`newPassword`, `continue`, `invalid`); `errors.*` gains one key per `code`
+above.
 `shared.json` gains the shared pieces' own words: `codeInput.digit`,
 `copyButton.*` (`copy`, `copied`), `passwordField.*` (`show`, `hide`,
 `generate`, `generated`), `stepDots.label`, `pager.*` (`previous`,
@@ -962,7 +970,8 @@ from every step; it becomes the one `401` code.
 ### Onboarding keys
 
 `auth.json`: `register.*` gains `emailOnly`, `sent.title`, `sent.body`,
-`sent.hint`, `sent.resend`, `sent.resent`, `sent.return`, `linkInvalid`,
+`sent.hint`, `sent.resend`, `sent.resendIn`, `sent.resent`, `sent.return`,
+`linkInvalid`,
 `sendNewLink`; `onboarding.*` (`welcome`, `welcomePlain`, `subhead`,
 `password`, `confirm`,
 `generatePassphrase`, `passphraseHint`, `continueTo2fa`, `complete`,
@@ -1138,8 +1147,11 @@ false never reaches this page at all.
   `description` as the label and the machine `type` in a tooltip,
   locations, actions, data types, identifier and privileges each only
   when present; Approve, Deny, and "You are logged in as {{principal}}.
-  Not you? Sign out", the link calling `session.signOut()` and then
-  posting `/auth-cancel`.
+  Not you? Sign out", the link making one request, `POST /auth-cancel`,
+  and following its `next`; the server ends the session as part of that
+  cancel and answers `next` as the client's `redirect_uri` with
+  `error=access_denied` (RFC 6749 §4.1.2.1), so the page never calls
+  `session.signOut()` first.
 - **DeviceActivatePage**: the code field with its label, uppercase,
   `XXXX-XXXX`, prefilled from `?user_code`, the `?error=invalid_user_code`
   alert painted on the field, "Continue"; **DeviceActivatedPage**:
@@ -1202,7 +1214,8 @@ false never reaches this page at all.
 ### Interstitial keys
 
 `auth.json`: `consent.*` (`title`, `subhead`, `willBeAbleTo`,
-`specificAccess`, `approve`, `deny`, `signedInAs`, `notYou`, `noScope`,
+`specificAccess`, `approve`, `deny`, `signedInAs`, `notYou`, `signOut`,
+`noScope`,
 `scope.openid`, `scope.profile`, `scope.email`, `scope.organizations`,
 `scope.offline_access`, `scope.unknown` and one key per standard scope
 the issuer offers, `detail.locations`, `detail.actions`,
@@ -2140,7 +2153,8 @@ Settled before code, in the order they were raised:
     per-address limit and an 8 KB cap.
 62. Every URL member a page draws (`homeUrl`, `iconUrl`, `icon_url`,
     `logo_url`, `base_url`, `locations[]`) is rendered only with the
-    `https:` scheme, images with `referrerpolicy="no-referrer"`, new-tab
+    `https:` scheme or as a same-origin path matching `^/(?![/\\])`,
+    images with `referrerpolicy="no-referrer"`, new-tab
     links with `rel="noopener noreferrer"`, and the favourites keep
     working because the server answers the registered URLs itself.
 63. The front-channel logout frames are sandboxed and the page never

@@ -22,6 +22,7 @@
     "accountMenu": "Menú de cuenta",
     "preferences": "Preferencias",
     "favorites": "Favoritos",
+    "notifications": "Notificaciones",
     "help": "Ayuda",
     "profileModeTitle": "Cambiar entre el perfil del proveedor de identidad y el perfil local",
     "about": "Acerca de",
@@ -122,6 +123,7 @@
     "minLength": "Introduce {{label}} de al menos {{minLength}} caracteres.",
     "maxLength": "Introduce {{label}} de {{maxLength}} caracteres o menos.",
     "pattern": {
+      "nonBlank": "Introduce {{label}}.",
       "slug": "Usa solo letras, dígitos, guiones y puntos en {{label}}.",
       "identifier": "Usa solo letras, dígitos, guiones, guiones bajos y puntos en {{label}}, sin empezar por guion ni punto.",
       "email": "Introduce {{label}} con la forma nombre@ejemplo.com.",
@@ -139,7 +141,6 @@
     "range": "Introduce {{label}} entre {{minimum}} y {{maximum}}.",
     "enum": "Elige uno de {{enum}} para {{label}}.",
     "format": {
-      "email": "Introduce {{label}} con la forma nombre@ejemplo.com.",
       "uri": "Introduce {{label}} como una URL completa, como https://ejemplo.com.",
       "hostname": "Introduce {{label}} como un nombre de host.",
       "ipv4": "Introduce {{label}} como una dirección IPv4, como 192.168.1.10."
@@ -368,7 +369,6 @@
       "leftOrganization": "Has dejado exitosamente la organización {{orgName}}",
       "primaryOrganizationSet": "{{orgName}} ahora es tu organización principal",
       "requestCancelled": "Solicitud de unión cancelada exitosamente",
-      "cancelRequestError": "No se pudo cancelar la solicitud de unión. Por favor intenta de nuevo.",
       "serviceAccountCreated": "¡Cuenta de servicio creada exitosamente!",
       "serviceAccountsDeleted": "¡Cuentas de servicio seleccionadas eliminadas exitosamente!",
       "passwordChanged": "¡Contraseña cambiada exitosamente!",
@@ -377,17 +377,7 @@
       "emailNotVerified": "Tu correo electrónico no está verificado."
     },
     "errors": {
-      "deleteAccountFailed": "Error al eliminar la cuenta. Por favor intenta de nuevo.",
-      "verificationFailed": "Error al verificar el correo. Por favor intenta de nuevo o contacta soporte.",
-      "activeOrgNotFound": "Error: No se pudo encontrar la organización activa",
-      "createServiceAccountFailed": "Error al crear cuenta de servicio: {{error}}",
-      "deleteServiceAccountsFailed": "Error al eliminar cuentas de servicio: {{error}}",
-      "resendVerificationFailed": "Error al enviar correo de verificación: {{error}}",
-      "changePasswordFailed": "Error al cambiar contraseña: {{error}}",
-      "changeEmailFailed": "Error al cambiar correo: {{error}}",
-      "changeNameFailed": "Error al cambiar el nombre visible: {{error}}",
-      "leaveOrganization": "Error al dejar la organización: {{error}}",
-      "setPrimaryOrganization": "Error al establecer la organización principal: {{error}}"
+      "activeOrgNotFound": "Error: No se pudo encontrar la organización activa"
     },
     "buttons": {
       "resendVerification": "Reenviar correo de verificación",
@@ -479,6 +469,7 @@
         "SMS": "SMS"
       },
       "channelHint": "Cómo se te avisa cuando una aplicación pide iniciar tu sesión en otro dispositivo.",
+      "channelSmsHint": "El SMS necesita un número de móvil verificado.",
       "pin": "PIN de aprobación de inicio de sesión",
       "pinHint": "PIN opcional que una aplicación debe presentar antes de que una solicitud de inicio de sesión te llegue.",
       "pinSet": "Hay un PIN establecido",
@@ -900,10 +891,7 @@
       "copy": "Copiar"
     },
     "messages": {
-      "operationSuccessful": "Operación completada exitosamente",
-      "operationFailed": "Operación fallida",
-      "deleteFailed": "Eliminación fallida",
-      "uploadFailed": "Carga fallida"
+      "operationSuccessful": "Operación completada exitosamente"
     },
     "storage": {
       "title": "Uso de Almacenamiento",
@@ -912,8 +900,7 @@
       "pathNotConfigured": "La ruta {{path}} no está configurada o accesible.",
       "used": "Usado: {{percent}}%",
       "free": "Libre: {{space}}",
-      "total": "Total: {{space}}",
-      "fetchError": "Error al obtener información de almacenamiento."
+      "total": "Total: {{space}}"
     },
     "update": {
       "title": "Actualización Disponible",
@@ -928,8 +915,7 @@
     "ssoManagedHint": "Esta organización está gestionada por tu proveedor de identidad. La membresía, los roles, el renombrado y la eliminación se gestionan allí y se sincronizan automáticamente.",
     "rename": {
       "name": "Nuevo nombre",
-      "success": "¡Organización renombrada exitosamente!",
-      "error": "Error al renombrar la organización. Por favor intenta de nuevo."
+      "success": "¡Organización renombrada exitosamente!"
     },
     "editModal": {
       "title": "Editar Organización: {{orgName}}",
@@ -947,21 +933,17 @@
       "accessModeHint": "Controla la visibilidad de la organización y métodos de unión",
       "defaultRole": "Rol Predeterminado",
       "defaultRoleHint": "Rol predeterminado para nuevos miembros",
-      "updateSuccess": "¡Organización actualizada exitosamente!",
-      "updateError": "Error al actualizar la organización"
+      "updateSuccess": "¡Organización actualizada exitosamente!"
     }
   },
   "configManager": {
     "updateSuccess": "Configuración actualizada exitosamente.",
-    "updateError": "Error al actualizar la configuración.",
     "restartInitiated": "Reinicio del servidor iniciado",
-    "restartFailed": "Error al reiniciar el servidor",
     "restartNeeded": "Reinicia el servidor para aplicar los valores cambiados.",
     "restartBadge": "reinicio",
     "deprecated": "Obsoleto",
     "testingSmtp": "Enviando correo de prueba...",
     "testSmtpSuccess": "¡Correo de prueba enviado con éxito! Revisa la bandeja de entrada del destinatario.",
-    "testSmtpError": "Error al enviar el correo de prueba",
     "search": "Buscar configuraciones",
     "smtpTest": {
       "title": "Probar la configuración SMTP",
@@ -981,45 +963,6 @@
     "buttons": {
       "update": "Actualizar Configuración",
       "restart": "Reiniciar Servidor"
-    },
-    "sections": {
-      "authentication": "Autenticación",
-      "application": "Aplicación",
-      "database": "Base de Datos",
-      "mail": "Correo",
-      "general": "General"
-    },
-    "subsections": {
-      "generalSettings": "General",
-      "jwtSettings": "Configuración JWT",
-      "localAuthentication": "Autenticación Local",
-      "externalProviders": "Proveedores Externos",
-      "oidcProviders": "Proveedores OIDC",
-      "boxvaultSettings": "Configuración BoxVault",
-      "gravatarSettings": "Configuración Gravatar",
-      "sslSettings": "Configuración SSL",
-      "databaseConnection": "Conexión Base de Datos",
-      "connectionPool": "Pool de Conexiones",
-      "smtpConnection": "Conexión SMTP",
-      "smtpSettings": "Configuración SMTP",
-      "smtpAuthentication": "Autenticación SMTP",
-      "loggingSettings": "Configuración de Registro",
-      "loggingCategories": "Categorías de Registro",
-      "rateLimiting": "Limitación de Velocidad",
-      "fileOperations": "Operaciones de Archivo",
-      "ticketSystem": "Sistema de Tickets",
-      "hyperweaverSettings": "Configuración de Hyperweaver",
-      "frontendLogging": "Registro Frontend",
-      "frontendLoggingCategories": "Categorías de Registro Frontend",
-      "oidcSettings": "Configuración OIDC",
-      "s2sSettings": "Delegación S2S",
-      "vdiSettings": "Configuración VDI Health",
-      "database": "Base de Datos",
-      "agents": "Agentes",
-      "udsDb": "Base de Datos UDS",
-      "grafana": "Grafana",
-      "authentication": "Autenticación",
-      "internationalization": "Internacionalización"
     }
   },
   "configField": {
@@ -1033,9 +976,7 @@
     "verifyToken": "Verificar Token",
     "submitAll": "Enviar Todas las Configuraciones",
     "oidcNote": "La configuración del proveedor OIDC se gestiona a través de la interfaz de Administración después de completar la configuración. Ve a Admin → Gestión de Configuración → Config Auth para añadir proveedores OIDC.",
-    "updateSuccess": "Configuración actualizada exitosamente. Redirigiendo a la página de registro en 5 segundos...",
-    "updateError": "Error al actualizar la configuración.",
-    "invalidToken": "Token de configuración inválido."
+    "updateSuccess": "Configuración actualizada exitosamente. Redirigiendo a la página de registro en 5 segundos..."
   },
   "oidc": {
     "title": "Proveedores OIDC",
@@ -1079,10 +1020,6 @@
       "title": "Eliminar Proveedor OIDC",
       "message": "¿Estás seguro de que quieres eliminar el proveedor OIDC '{{providerName}}'? Esto no se puede deshacer."
     },
-    "errors": {
-      "apiError": "Error {{action}} proveedor OIDC: {{error}}",
-      "deleteError": "Error al eliminar proveedor OIDC: {{error}}"
-    },
     "messages": {
       "updating": "Actualizando proveedor OIDC...",
       "adding": "Añadiendo proveedor OIDC...",
@@ -1102,7 +1039,6 @@
     "title": "Consola de la Organización",
     "noActiveOrganization": "No hay una organización activa seleccionada. Elige una en el selector de organizaciones para administrarla.",
     "orgUpdateSuccess": "¡Organización actualizada exitosamente!",
-    "orgUpdateError": "Error al actualizar la organización. Por favor intenta de nuevo.",
     "tabs": {
       "organization": "Organización",
       "joinRequests": "Solicitudes de Unión",
@@ -1122,9 +1058,7 @@
       "deleteUser": "Eliminar Usuario"
     },
     "messages": {
-      "operationSuccessful": "Operación completada exitosamente",
-      "operationFailed": "Operación fallida",
-      "deleteFailed": "Eliminación fallida"
+      "operationSuccessful": "Operación completada exitosamente"
     },
     "organization": {
       "title": "Detalles de la Organización",
@@ -1159,8 +1093,7 @@
       "boxes": "Boxes",
       "roles": "Roles",
       "suspended": "Suspendido",
-      "removeSuccess": "Miembro eliminado de la organización.",
-      "removeError": "No se pudo eliminar al miembro. Por favor intenta de nuevo."
+      "removeSuccess": "Miembro eliminado de la organización."
     },
     "joinRequest": {
       "title": "Solicitudes de Unión Pendientes",
@@ -1175,9 +1108,7 @@
       "approveAsAdmin": "Aprobar como Administrador",
       "deny": "Denegar",
       "approved": "¡Solicitud de unión aprobada exitosamente!",
-      "approveError": "Error al aprobar solicitud: {{error}}",
-      "denied": "Solicitud de unión denegada.",
-      "denyError": "Error al denegar solicitud: {{error}}"
+      "denied": "Solicitud de unión denegada."
     },
     "invitation": {
       "manageTitle": "Gestionar Invitaciones",
@@ -1196,8 +1127,7 @@
       "managedByIdp": "Enviada por el proveedor de identidad",
       "actions": "Acciones",
       "token": "Token",
-      "orgId": "ID de Organización",
-      "sendWarning": "Advertencia: Invitación creada pero el correo puede no haberse enviado. Puedes copiar el enlace de abajo y enviarlo manualmente."
+      "orgId": "ID de Organización"
     },
     "website": "Sitio web",
     "logoUrl": "URL del logotipo",
@@ -1244,10 +1174,6 @@
       "messageLabel": "Mensaje",
       "placeholder": "Ingresa tu razón para querer unirte a esta organización..."
     },
-    "errors": {
-      "load": "Error al cargar organizaciones",
-      "requestFailed": "Error al solicitar unirse a {{orgName}}"
-    },
     "messages": {
       "requestSent": "¡Solicitud de unión enviada a {{orgName}} exitosamente!"
     }
@@ -1265,11 +1191,10 @@
     "register": "Crea una para unirte",
     "alreadyMember": "Ya eres miembro de {{organization}}.",
     "emailMismatch": "Esta invitación fue enviada a {{email}}, pero has iniciado sesión como {{current}}.",
-    "goToOrg": "Ir a {{organization}}",
-    "error": "No se pudo aceptar la invitación. Por favor intenta de nuevo."
+    "goToOrg": "Ir a {{organization}}"
   },
   "inbox": {
-    "title": "Notificaciones",
+    "title": "Bandeja de entrada",
     "channelTitle": "Notificaciones del canal de notificaciones",
     "empty": "Aún no hay notificaciones.",
     "markAllRead": "Marcar todas como leídas",
@@ -1727,10 +1652,13 @@
     },
     "provider": {
       "edit": "Editar proveedor",
-      "architecturesFor": "Arquitecturas para el proveedor {{provider}}",
+      "title": "Arquitecturas para el proveedor {{provider}}",
       "clickToCopy": "Clic para copiar el checksum",
       "checksumCopied": "Checksum copiado al portapapeles.",
       "copyFailed": "No se pudo copiar el checksum."
+    },
+    "architecture": {
+      "title": "Arquitectura {{architecture}}"
     },
     "watch": {
       "watch": "Seguir",
@@ -1913,10 +1841,7 @@
       "deleteFailed": "Eliminación fallida",
       "copyFailed": "Copia fallida",
       "operationSuccessful": "Operación completada exitosamente",
-      "operationFailed": "Operación fallida",
-      "addedToFavorites": "¡BoxVault añadido a favoritos!",
-      "removedFromFavorites": "BoxVault eliminado de favoritos",
-      "failedToUpdateFavorites": "Error al actualizar favoritos"
+      "operationFailed": "Operación fallida"
     },
     "errors": {
       "upload": {

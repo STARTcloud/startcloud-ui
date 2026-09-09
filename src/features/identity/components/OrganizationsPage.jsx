@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import SubTable from '../../catalog/components/SubTable';
-import { useDetailSearch } from '../../catalog/hooks/useDetailSearch';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { deleteOrganization, organizations, updateOrganization } from '../api/accounts';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { ORGANIZATIONS } from '../utils/examples';

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
-import { collectionShape, pageContextShape } from '../utils/itemShape';
+import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
 import Listing from './Listing';
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaDesktop, FaKey } from 'react-icons/fa6';
 
 import StatCard from '../../../components/common/StatCard';
-import SubTable from '../../catalog/components/SubTable';
+import SubTable from '../../../components/common/SubTable';
 import { serviceUsage } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SERVICE_USAGE } from '../utils/examples';

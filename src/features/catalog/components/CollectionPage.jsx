@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo } from 'react';
 
-import { collectionShape, pageContextShape } from '../utils/itemShape';
+import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
 import Listing from './Listing';
 

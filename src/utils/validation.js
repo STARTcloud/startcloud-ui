@@ -6,8 +6,11 @@ const IPV4_RE = /^(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\.(?:25[0-5]|2[0-4]\d|[01]?\
 const INTEGER_RE = /^-?\d+$/;
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 const SECRET_MASK = '********';
+const NON_BLANK_PATTERN = '\\S';
+const PATTERN_NAMES = { [NON_BLANK_PATTERN]: 'nonBlank' };
 
 const PATTERN_KEYS = [
+  'nonBlank',
   'slug',
   'identifier',
   'email',
@@ -48,7 +51,6 @@ const isUri = value => {
 };
 
 const FORMATS = {
-  email: value => EMAIL_RE.test(value),
   uri: isUri,
   hostname: value => HOSTNAME_RE.test(value),
   ipv4: value => IPV4_RE.test(value),
@@ -97,9 +99,13 @@ export const DEFS = {
   timezone: { type: 'string', pattern: '^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$' },
 };
 
+export const NON_BLANK = { type: 'string', minLength: 1, pattern: NON_BLANK_PATTERN };
+
 const FALLBACK_DOCUMENT = { $defs: DEFS };
 
-const isBlank = value => value === undefined || value === null || value === '';
+const isBlank = value => value === undefined || value === null;
+
+const keepsSecret = value => isBlank(value) || value === '' || value === SECRET_MASK;
 
 const refTarget = (ref, document) => {
   if (typeof ref !== 'string' || !ref.startsWith('#/')) {
@@ -127,6 +133,13 @@ const typeCheck = (rule, value) => {
   return check && !check(value) ? { rule: 'type', params: { type: rule.type } } : null;
 };
 
+const nonBlankCheck = (rule, value) => {
+  if (rule.pattern !== NON_BLANK_PATTERN || typeof value !== 'string' || /\S/.test(value)) {
+    return null;
+  }
+  return { rule: 'pattern', params: { pattern: PATTERN_NAMES[NON_BLANK_PATTERN] } };
+};
+
 const lengthCheck = (rule, value) => {
   if (typeof value !== 'string') {
     return null;
@@ -144,7 +157,10 @@ const patternCheck = (rule, value, patternName) => {
   if (typeof value !== 'string' || !rule.pattern || new RegExp(rule.pattern).test(value)) {
     return null;
   }
-  return { rule: 'pattern', params: { pattern: patternName || rule.pattern } };
+  return {
+    rule: 'pattern',
+    params: { pattern: patternName || PATTERN_NAMES[rule.pattern] || rule.pattern },
+  };
 };
 
 const boundsCheck = (rule, value) => {
@@ -194,6 +210,7 @@ const itemsCheck = (rule, value) => {
 
 const CHECKS = [
   typeCheck,
+  nonBlankCheck,
   lengthCheck,
   patternCheck,
   boundsCheck,
@@ -237,9 +254,9 @@ const firstFailure = (rule, value, patternName, document) => {
 };
 
 /**
- * Evaluate one value against one schema: `type`, `required` (undefined,
- * null and the empty string count as missing when the schema says
- * `required: true`),
+ * Evaluate one value against one schema: `type`, `required` (presence
+ * alone: undefined and null count as missing when the schema says
+ * `required: true`, a blank string is judged by `minLength` and `pattern`),
  * `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `enum`,
  * `format`, `minItems`, `maxItems`, with `$ref` resolved within `document`.
  *
@@ -365,7 +382,7 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
       walkMap({ ...next, document, errors, walk: walkObject });
       return;
     }
-    if (rule.writeOnly && (isBlank(value) || value === SECRET_MASK)) {
+    if (rule.writeOnly && keepsSecret(value)) {
       return;
     }
     const own = validateValue({ ...property, required: required.has(name) }, value, document);
@@ -402,9 +419,10 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
  * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
- * `personName`, `iconName`, `languageTag`, `timezone`), a format and a type by theirs; a rule the UI does not know
- * through `validation.unknown` with the
- * field's label, the error's `detail` never shown.
+ * `personName`, `iconName`, `languageTag`, `timezone`) or `nonBlank` for
+ * the contract's whitespace rule, a format and a type by theirs; a rule
+ * the UI does not know through `validation.unknown` with the field's
+ * label, the error's `detail` never shown.
  *
  * @param {{ rule: string, params?: Object, detail?: string }} error - The error
  * @param {string} label - The field's label

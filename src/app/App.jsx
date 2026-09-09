@@ -9,6 +9,7 @@ import { brandLogoUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
 import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { useStatus } from '../contexts/StatusContext';
+import { UnreadProvider } from '../contexts/UnreadContext';
 import { hasAbout } from '../features/about';
 import {
   RebuildItem,
@@ -17,12 +18,10 @@ import {
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
 import {
-  UnreadProvider,
   createNotificationsAdapter,
   createPushAdapter,
   hasNotificationsScope,
 } from '../features/notifications';
-import { loadOrganizations } from '../features/organizations';
 import { menuFavorites } from '../features/profile';
 import { useAppSearch } from '../features/search';
 import { setupApi } from '../features/setup';
@@ -35,6 +34,7 @@ import { useSessionKeepalive } from '../hooks/useSessionKeepalive';
 import { useSetupGate } from '../hooks/useSetupGate';
 import { useTheme } from '../hooks/useTheme';
 import { useTicketUrl } from '../hooks/useTicketUrl';
+import { loadOrganizations } from '../lib/organizations';
 import { client, events, fetchHealth, hubClient, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';

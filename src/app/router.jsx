@@ -91,7 +91,6 @@ import {
   createJoinRequest,
   denyRequest,
   discoverOrganizations,
-  getOrganization,
   issuerOrganizations,
   organizationRequests,
   organizationUsers,
@@ -103,7 +102,6 @@ import {
   setMemberRole,
   suspendOrganization,
   updateOrganization,
-  userOrganizations,
 } from '../features/organizations';
 import { PolicyPage } from '../features/policies';
 import {
@@ -127,6 +125,7 @@ import { SetupPage, setupApi } from '../features/setup';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage } from '../features/vdi';
 import { sessionStateShape } from '../hooks/useSession';
+import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
 import { gravatarProfile } from '../utils/gravatar';
@@ -429,7 +428,7 @@ const collectionRoutes = ({ collection, collections, organizations, context }) =
       />
     );
   }
-  if (collection.hasVersions && collection.hasProviders) {
+  if (collection.hasVersions) {
     routes.push(
       <Route
         key={`${base}/:name/:version/:provider`}
@@ -598,12 +597,7 @@ const interstitialRoutes = ({ status, cookie }) => {
     token: 'interstitials',
   });
   return gatedRoutes([
-    row(
-      '/oauth2/consent',
-      signedIn,
-      <ConsentPage session={session} returnTo={returnTo} />,
-      'auth:consent.title'
-    ),
+    row('/oauth2/consent', signedIn, <ConsentPage returnTo={returnTo} />, 'auth:consent.title'),
     row('/activate', open, <DeviceActivatePage />, 'auth:device.title'),
     row('/activated', open, <DeviceActivatedPage />, 'auth:device.connected'),
     row('/ciba/approve', signedIn, <CibaApprovePage />, 'auth:ciba.title'),

@@ -602,7 +602,10 @@
       90px 32px;
   }
   .grid.isos {
-    grid-template-columns: 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 90px minmax(120px, 1fr);
+    grid-template-columns: 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px 70px minmax(
+        120px,
+        1fr
+      );
   }
   .grid .th {
     font-size: 11px;
@@ -1195,17 +1198,18 @@
     <p>
       The picture of the Universal Pages Contract; where the two disagree, the contract's text wins.
       One page set for every estate app that serves packaged things: an organization owns items, an
-      item has versions, a version has providers, a provider has architectures or artifacts, and a
-      single-file item such as an ISO has one artifact. BoxVault serves boxes and ISOs this way
-      today, the provisioner catalog serves provisioners the same way, and provisioners become a
-      third BoxVault collection later, so nothing on these pages knows which collection it is
-      drawing. The header is the Universal Navbar as it ships; the breadcrumb comes from the route
-      and nothing else; the navbar search and its filter panel are how a page is narrowed, to one
-      collection, one visibility, one provider. The first frame is live: click the brand, a crumb,
-      an organization, a row, a version or a provider and the header and the page follow the route;
-      fold an organization; flip the one list / cards toggle; pick a Collection or Visibility pill
-      in the filter panel; open the user menu and switch organization and only the active
-      organization changes, the page stays where it is.
+      item has versions, a version has providers or architectures, a provider has architectures, and
+      an architecture has one file. BoxVault serves boxes and ISOs this way today, the ISOs gaining
+      the same fields as the boxes (the Debian ISO has versions and architectures like any box), the
+      provisioner catalog serves provisioners the same way, and provisioners become a third BoxVault
+      collection later, so nothing on these pages knows which collection it is drawing. The header
+      is the Universal Navbar as it ships; the breadcrumb comes from the route and nothing else; the
+      navbar search and its filter panel are how a page is narrowed, to one collection, one
+      visibility, one provider. The first frame is live: click the brand, a crumb, an organization,
+      a row, a version or a provider and the header and the page follow the route; fold an
+      organization; flip the one list / cards toggle; pick a Collection or Visibility pill in the
+      filter panel; open the user menu and switch organization and only the active organization
+      changes, the page stays where it is.
     </p>
     <span class="legend"
       ><span class="sw"></span>a yellow note marks what this design changed against the apps as they
@@ -1251,8 +1255,11 @@
       <div class="callout">
         <strong>Existing BoxVault paths stay:</strong> <code>/</code>, <code>/{org}</code>,
         <code>/{org}/{box}</code>, <code>…/{version}</code>, <code>…/{provider}</code>;
-        <code>/isos</code>, <code>/{org}/isos</code> and <code>/{org}/isos/{iso}</code> are
-        additive, and the Vagrant handler keys on the user agent before any of them.
+        <code>/isos</code>, <code>/{org}/isos</code>, <code>/{org}/isos/{iso}</code>,
+        <code>/{org}/isos/{iso}/{version}</code> and <code>/{org}/isos/{iso}/{version}/{arch}</code>
+        are additive and carry no backwards compatibility, the architecture drawn by the shared leaf
+        page a box provider draws, and the Vagrant handler keys on the user agent before any of
+        them.
       </div>
     </div>
   </div>
@@ -1661,8 +1668,9 @@
         <div class="grid isos">
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
-          ><span class="th">Downloads</span><span class="th">Status</span
-          ><span class="th">Size</span><span class="th">Checksum</span>
+          ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
+          ><span class="th">Latest release</span><span class="th">Versions</span
+          ><span class="th">Architectures</span>
           <span class="grp"
             ><span class="fold">▾</span><span class="mark row"></span
             ><span class="lnk">STARTcloud</span><span class="countb">2 ISOs</span></span
@@ -1675,8 +1683,8 @@
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">692.85 MB</span
-          ><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
+          ><span class="td odd">1</span><span class="td odd">amd64</span>
           <span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
@@ -1684,8 +1692,8 @@
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
           ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">7.85 GB</span
-          ><span class="td"><span class="sha">7262f4b806f8…</span></span>
+          ><span class="td">Windows 2025</span><span class="td">2 months ago</span
+          ><span class="td">1</span><span class="td">amd64</span>
           <span class="grp"
             ><span class="fold">▾</span><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard</span><span class="countb">1 ISO</span></span
@@ -1698,8 +1706,8 @@
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">1</span
           ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">2.07 GB</span
-          ><span class="td odd"><span class="sha">19f8cf0e68d5…</span></span>
+          ><span class="td odd">OPNsense 26</span><span class="td odd">2 months ago</span
+          ><span class="td odd">1</span><span class="td odd">amd64</span>
         </div>
       </div>
       <div class="site-footer">
@@ -1731,8 +1739,9 @@
       <div class="callout changed">
         <strong>Changed: shared columns first and identical</strong> on every table: star cell, Name
         with the org logo and <code>org/name</code> as a link, Visibility, Created, Updated,
-        Downloads; then the columns only that collection has. Downloads for ISOs needs a
-        <code>downloadCount</code> column and one increment in the ISO download controller.
+        Downloads; then the columns only that collection has. An ISO gains the same fields as a box,
+        so its Downloads sums its files' <code>downloadCount</code>, incremented in the ISO download
+        controller, and its own columns are the box's without Providers.
       </div>
       <div class="callout changed">
         <strong>Changed: a collection with no rows is still drawn</strong>, heading, count and a
@@ -2002,8 +2011,9 @@
         <div class="grid isos">
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
-          ><span class="th">Downloads</span><span class="th">Status</span
-          ><span class="th">Size</span><span class="th">Checksum</span>
+          ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
+          ><span class="th">Latest release</span><span class="th">Versions</span
+          ><span class="th">Architectures</span>
           <span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
@@ -2012,8 +2022,8 @@
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">692.85 MB</span
-          ><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
+          ><span class="td odd">1</span><span class="td odd">amd64</span>
           <span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
@@ -2021,8 +2031,8 @@
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
           ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">7.85 GB</span
-          ><span class="td"><span class="sha">7262f4b806f8…</span></span>
+          ><span class="td">Windows 2025</span><span class="td">2 months ago</span
+          ><span class="td">1</span><span class="td">amd64</span>
         </div>
       </div>
       <div class="site-footer">
@@ -2257,8 +2267,9 @@
         <div class="grid isos">
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
-          ><span class="th">Downloads</span><span class="th">Status</span
-          ><span class="th">Size</span><span class="th">Checksum</span>
+          ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
+          ><span class="th">Latest release</span><span class="th">Versions</span
+          ><span class="th">Architectures</span>
           <span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
@@ -2267,8 +2278,8 @@
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">692.85 MB</span
-          ><span class="td odd"><span class="sha">bbe6166ad86a…</span></span>
+          ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
+          ><span class="td odd">1</span><span class="td odd">amd64</span>
           <span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
@@ -2276,8 +2287,8 @@
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
           ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">7.85 GB</span
-          ><span class="td"><span class="sha">7262f4b806f8…</span></span>
+          ><span class="td">Windows 2025</span><span class="td">2 months ago</span
+          ><span class="td">1</span><span class="td">amd64</span>
         </div>
       </div>
       <div class="site-footer">
@@ -2291,8 +2302,8 @@
         <strong>The Visibility and Watched groups are shared:</strong> every collection gets them,
         in both apps, Visibility whenever private rows exist on the page and Watched whenever the
         viewer is signed in and a watched row is on the page, after the Collection group where there
-        is one and before the collection's own groups (boxes: Provider · Architecture · OS; ISOs
-        across orgs: Organization; provisioners: Tier · Provider).
+        is one and before the collection's own groups (boxes: Provider · Architecture · OS; ISOs:
+        Organization across orgs · Architecture · OS; provisioners: Tier · Provider).
       </div>
       <div class="callout">
         <strong>On a single-collection page</strong> the heading row is the page's top row, so the
@@ -2310,8 +2321,8 @@
 
   <div class="state">
     <div class="state-label">
-      ItemPage for a single-file item — /STARTcloud/isos/virtio-win-0.1.271.iso: hero, actions, one
-      Facts card, no versions
+      ItemPage for an ISO — /STARTcloud/isos/virtio-win-0.1.271.iso: hero, actions, versions newest
+      first with Released and Artifacts, the same component a box draws
     </div>
     <div class="frame">
       <div class="navbar">
@@ -2407,33 +2418,22 @@
             </div>
           </div>
           <div class="actions">
-            <span class="btn primary">Download</span><span class="btn">Copy checksum</span
-            ><span class="btn">Make public</span><span class="btn warning">Unpublish</span
+            <span class="btn">Make public</span><span class="btn warning">Unpublish</span
             ><span class="btn">Rename</span><span class="btn danger">Delete</span
             ><span class="btn dark">Back</span>
           </div>
         </div>
-        <div class="cards">
-          <div class="card">
-            <div class="card-h">Facts</div>
-            <div class="card-b">
-              <dl class="facts">
-                <dt>Size</dt>
-                <dd>692.85 MB</dd>
-                <dt>Checksum</dt>
-                <dd>
-                  <span class="sha">bbe6166ad86a3f0e…9c41</span>
-                  <span class="status secondary">sha256</span>
-                </dd>
-                <dt>Created</dt>
-                <dd>6/25/2026</dd>
-                <dt>Updated</dt>
-                <dd>6/25/2026</dd>
-                <dt>Downloads</dt>
-                <dd>12</dd>
-              </dl>
-            </div>
-          </div>
+        <div class="sect">
+          <h2>Versions <span class="countb">1</span></h2>
+          <span class="btn sm success">Add Version</span>
+        </div>
+        <div class="grid" style="grid-template-columns: 160px 110px 1fr 110px">
+          <span class="th">Version</span><span class="th">Released</span
+          ><span class="th">Artifacts</span><span class="th">Actions</span>
+          <span class="td first odd"><span class="lnk">0.1.271</span></span
+          ><span class="td odd">6/25/2026</span
+          ><span class="td odd"><span class="status secondary">amd64</span></span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
         </div>
       </div>
       <div class="site-footer">
@@ -2444,16 +2444,20 @@
     </div>
     <div class="callouts">
       <div class="callout changed">
-        <strong>New page, same component.</strong> <code>ItemPage</code> draws it from the item
-        shape with <code>hasVersions: false</code> and an item-level <code>artifact</code> (file
-        name, size, checksum, checksum type, download URL, download count), which the Facts card
-        renders when there is no metadata block.
+        <strong>Same component, same shape.</strong> <code>ItemPage</code> draws the ISO from the
+        item shape with <code>hasVersions: true</code>: the ISO gains the same fields as a box, item
+        → versions → architectures → file, so the versions table lists each version's artifacts, one
+        per architecture, the version page lists the files with size, checksum and download, and
+        each architecture links to the shared leaf page a box provider draws, at
+        <code>/{org}/isos/{iso}/{version}/{arch}</code>. There is no single-file shape and no
+        item-level artifact.
       </div>
       <div class="callout">
-        <strong>Slots:</strong> Download, Copy checksum, Make public / Make private, Publish /
-        Unpublish, Rename and Delete are BoxVault's ISO actions in the page's
-        <code>ItemActions</code> slot, gated by org admin/owner as today; an unpublished ISO is
-        visible to members only, exactly as a pending box; the catalog passes none.
+        <strong>Slots:</strong> Make public / Make private, Publish / Unpublish, Rename and Delete
+        are BoxVault's ISO actions in the page's <code>ItemActions</code> slot, gated by org
+        admin/owner as today; Add Version, the version row actions, the upload zone and the artifact
+        row actions are the same slots a box fills; an unpublished ISO is visible to members only,
+        exactly as a pending box; the catalog passes none.
       </div>
     </div>
   </div>
@@ -2893,12 +2897,14 @@
         <span class="c k">ISO routes and fields</span
         ><span class="c was"
           >the organization ISO list required a token and public ISOs had a second route, so the
-          adapter picked one by membership; ISOs had no published state; the ISO row said filename
-          and boxes summed download counts in the browser</span
+          adapter picked one by membership; ISOs had no published state; an ISO was one file with no
+          versions</span
         ><span class="c"
           >one organization list and one item route reading the optional token like the box routes;
-          ISOs carry published, a Status column and Publish / Unpublish; every row says isPublic,
-          fileName and downloadCount, the box total summed by the API</span
+          the ISO gains the same fields as a box, item → versions → architectures → file, at
+          /{org}/isos/{iso}, /{org}/isos/{iso}/{version} and /{org}/isos/{iso}/{version}/{arch} with
+          no backwards compatibility on the ISO paths; ISOs carry published, a Status column and
+          Publish / Unpublish</span
         >
         <span class="c k">ISO actions</span
         ><span class="c was">five buttons in every table row</span
@@ -2912,8 +2918,9 @@
           no Updated anywhere; no ISO download count</span
         ><span class="c"
           >shared columns first and identical: star cell, Name with logo and org/name link,
-          Visibility, Created, Updated, Downloads; then the collection's own; ISOs gain a
-          downloadCount column and one increment in the download controller</span
+          Visibility, Created, Updated, Downloads; then the collection's own, the ISO's being the
+          box's without Providers; ISOs sum their files' downloadCount, incremented in the download
+          controller</span
         >
         <span class="c k">view toggle</span
         ><span class="c was">per collection, stored per collection, twice on the org page</span
@@ -3010,10 +3017,10 @@
         ><span class="c">updatedAt</span><span class="c">updatedAt</span
         ><span class="c">hidden</span> <span class="c k">Downloads</span
         ><span class="c">sum of file downloadCount</span
-        ><span class="c">new downloadCount on the ISO row</span
-        ><span class="c">health downloads</span> <span class="c k">then</span
+        ><span class="c">sum of file downloadCount</span><span class="c">health downloads</span>
+        <span class="c k">then</span
         ><span class="c">Status · OS · Latest release · Versions · Providers · Architectures</span
-        ><span class="c">Status · Size · Checksum</span
+        ><span class="c">Status · OS · Latest release · Versions · Architectures</span
         ><span class="c">Tier · Latest release · Versions · Providers</span>
         <span class="c k">row actions</span><span class="c">none, on the item page</span
         ><span class="c">none, on the item page</span><span class="c">none</span>
@@ -3024,7 +3031,7 @@
         <span class="c k">home, org page</span
         ><span class="c"
           >Collection (Boxes / ISOs) · Visibility · Watched · Boxes: Provider, Architecture, OS ·
-          ISOs across orgs: Organization</span
+          ISOs: Organization across orgs, Architecture, OS</span
         >
         <span class="c k">one collection</span
         ><span class="c">Visibility · that collection's own groups</span>
@@ -3046,9 +3053,12 @@
         ><span class="c">› STARTcloud › ISOs</span> <span class="c k">item</span
         ><span class="c">/{org}/{box} · /{org}/isos/{iso}</span
         ><span class="c">/{org}/{provisioner}</span><span class="c">› … › alma9-server</span>
-        <span class="c k">version</span><span class="c">/{org}/{box}/{version}</span
+        <span class="c k">version</span
+        ><span class="c">/{org}/{box}/{version} · /{org}/isos/{iso}/{version}</span
         ><span class="c">/{org}/{provisioner}/{version}</span><span class="c">› … › 1.2.3</span>
-        <span class="c k">provider</span><span class="c">…/{version}/{provider}</span
+        <span class="c k">provider</span
+        ><span class="c"
+          >…/{version}/{provider} · /{org}/isos/{iso}/{version}/{arch}, one leaf page</span
         ><span class="c">same</span><span class="c">› … › zone</span>
       </div>
       <h2>Rules the picture keeps</h2>
@@ -3115,7 +3125,6 @@ item {
   isPublic, published, createdAt, updatedAt, latestReleaseAt, downloads,
   os { label, iconUrl } | null,
   metadata | null, readme | null,
-  artifact { fileName, fileSize, checksum, checksumType, downloadUrl, downloadCount } | null,
   links { repo, homepage, issues, pipeline, badge },
   extras { … }            app-only data for slots, never read by a page
   versions [ version ]
@@ -3149,15 +3158,19 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         <span class="c k">ItemPage</span
         ><span class="c"
           >PageHeader (media, title + watch, subtitle, chips, actions slot, children), extras slot,
-          facts from metadata or artifact, README, versions when the collection has them, then the
-          collection's item sections (the catalog's Quality)</span
+          facts from metadata, README, versions when the collection has them (an ISO's list its
+          artifacts per architecture), then the collection's item sections (the catalog's
+          Quality)</span
         >
         <span class="c k">VersionPage</span
         ><span class="c"
           >PageHeader with the deprecated chip, banner, release notes, meta row, artifacts,
           providers</span
         >
-        <span class="c k">ProviderPage</span><span class="c">PageHeader, architectures</span>
+        <span class="c k">ProviderPage</span
+        ><span class="c"
+          >PageHeader, architectures; the same leaf for an ISO architecture and its one file</span
+        >
       </div>
     </div>
   </div>
@@ -3246,20 +3259,38 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         },
         isos: {
           'virtio-win-0.1.271.iso': {
+            os: 'Windows',
             pub: false,
-            size: '692.85 MB',
-            sha: 'bbe6166ad86a',
+            published: true,
             created: '6/25/2026',
             updated: '6/25/2026',
+            released: '2 months ago',
             downloads: 12,
+            desc: 'Windows guest drivers',
+            versions: {
+              '0.1.271': {
+                released: '6/25/2026',
+                artifacts: [
+                  { arch: 'amd64', size: '692.85 MB', sha: 'bbe6166ad86a', downloads: 12 },
+                ],
+              },
+            },
           },
           'Server2025.ISO': {
+            os: 'Windows 2025',
             pub: false,
-            size: '7.85 GB',
-            sha: '7262f4b806f8',
+            published: true,
             created: '6/25/2026',
             updated: '6/25/2026',
+            released: '2 months ago',
             downloads: 3,
+            desc: 'Windows Server 2025 installer',
+            versions: {
+              26100: {
+                released: '6/25/2026',
+                artifacts: [{ arch: 'amd64', size: '7.85 GB', sha: '7262f4b806f8', downloads: 3 }],
+              },
+            },
           },
         },
       },
@@ -3296,12 +3327,20 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         },
         isos: {
           'OPNsense-26.1.6-dvd-amd64.iso': {
+            os: 'OPNsense 26',
             pub: false,
-            size: '2.07 GB',
-            sha: '19f8cf0e68d5',
+            published: true,
             created: '6/25/2026',
             updated: '6/25/2026',
+            released: '2 months ago',
             downloads: 1,
+            desc: 'OPNsense 26.1.6 installer',
+            versions: {
+              '26.1.6': {
+                released: '6/25/2026',
+                artifacts: [{ arch: 'amd64', size: '2.07 GB', sha: '19f8cf0e68d5', downloads: 1 }],
+              },
+            },
           },
         },
       },
@@ -3382,9 +3421,9 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
     var BOX_HEAD =
       '<span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span><span class="th">Latest release</span><span class="th">Versions</span><span class="th">Providers</span><span class="th">Architectures</span><span class="th"></span>';
     var ISO_HEAD =
-      '<span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">Size</span><span class="th">Checksum</span>';
+      '<span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span><span class="th">Created</span><span class="th">Updated</span><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span><span class="th">Latest release</span><span class="th">Versions</span><span class="th">Architectures</span>';
     var TRY =
-      '<div class="try">Try: brand → home · the gear in the search box opens the filter panel: Collection narrows the page to Boxes or ISOs, Visibility to Public or Private, × clears · every organization row folds with its chevron · the list / cards toggle is drawn once per page and holds there · an organization → its page · a row → the item · an ISO row → the ISO page · a version → the version · a provider → the provider · any crumb → back up · name → menu → the organization row → switcher: the active organization changes, the page does not move.</div>';
+      '<div class="try">Try: brand → home · the gear in the search box opens the filter panel: Collection narrows the page to Boxes or ISOs, Visibility to Public or Private, × clears · every organization row folds with its chevron · the list / cards toggle is drawn once per page and holds there · an organization → its page · a row → the item · an ISO row → the ISO page, versioned like a box · a version → the version · a provider → the provider · any crumb → back up · name → menu → the organization row → switcher: the active organization changes, the page does not move.</div>';
     var FOOTER =
       '<div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.61.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>';
 
@@ -3471,6 +3510,17 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         route: { org: org, collection: 'boxes', item: name },
       };
     };
+    var architecturesOf = function (iso) {
+      var out = [];
+      Object.keys(iso.versions).forEach(function (v) {
+        iso.versions[v].artifacts.forEach(function (a) {
+          if (out.indexOf(a.arch) === -1) {
+            out.push(a.arch);
+          }
+        });
+      });
+      return out.join(', ');
+    };
     var isoRow = function (org, name) {
       var s = DATA[org].isos[name];
       return {
@@ -3486,10 +3536,13 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         created: s.created,
         updated: s.updated,
         downloads: String(s.downloads),
-        os: '',
-        size: s.size,
-        sha: s.sha + '…',
-        desc: 'sha256 ' + s.sha + '…',
+        statusLabel: s.published ? 'Published' : 'Pending',
+        statusClass: s.published ? 'success' : 'warning',
+        os: s.os,
+        released: s.released || '—',
+        versions: String(Object.keys(s.versions).length),
+        architectures: architecturesOf(s),
+        desc: s.desc,
         route: { org: org, collection: 'isos', item: name },
       };
     };
@@ -3604,9 +3657,11 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         cell(z, r.created) +
         cell(z, r.updated) +
         cell(z, r.downloads) +
-        cell(z, '<span class="status success">Published</span>') +
-        cell(z, r.size) +
-        cell(z, '<span class="sha">' + r.sha + '</span>')
+        cell(z, '<span class="status ' + r.statusClass + '">' + r.statusLabel + '</span>') +
+        cell(z, esc(r.os)) +
+        cell(z, r.released) +
+        cell(z, r.versions) +
+        cell(z, esc(r.architectures))
       );
     };
     var grpRow = function (o) {
@@ -3654,15 +3709,13 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         '">' +
         r.pubLabel +
         '</span>' +
-        (r.isBox
-          ? '<span class="status ' +
-            r.statusClass +
-            '">' +
-            r.statusLabel +
-            '</span><span class="status os">' +
-            esc(r.os) +
-            '</span>'
-          : '<span class="status secondary">' + r.size + '</span>');
+        '<span class="status ' +
+        r.statusClass +
+        '">' +
+        r.statusLabel +
+        '</span><span class="status os">' +
+        esc(r.os) +
+        '</span>';
       return (
         '<div class="icard"><div class="head"><span class="mark lg ' +
         r.markClass +
@@ -3764,36 +3817,142 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
     };
     var isoHtml = function (r, org) {
       var s = DATA[r.org].isos[r.item];
+      var names = Object.keys(s.versions);
       var manage = org.member
         ? '<span class="btn">' +
           (s.pub ? 'Make private' : 'Make public') +
-          '</span><span class="btn warning">Unpublish</span><span class="btn">Rename</span><span class="btn danger">Delete</span>'
+          '</span><span class="btn warning">' +
+          (s.published ? 'Unpublish' : 'Publish') +
+          '</span><span class="btn">Rename</span><span class="btn danger">Delete</span>'
         : '';
+      var rows = names
+        .map(function (v, i) {
+          var e = s.versions[v];
+          var z = zebra(i);
+          var artifacts = e.artifacts
+            .map(function (a) {
+              return '<span class="status secondary">' + esc(a.arch) + '</span>';
+            })
+            .join('');
+          return (
+            '<span class="td first ' +
+            z +
+            '"><span class="lnk"' +
+            go({ org: r.org, collection: 'isos', item: r.item, version: v }) +
+            '>' +
+            esc(v) +
+            '</span></span>' +
+            cell(z, e.released) +
+            cell(z, artifacts) +
+            cell(z, org.member ? '<span class="btn sm danger">Delete</span>' : '')
+          );
+        })
+        .join('');
       return (
         '<div class="page-head"><div class="hero"><div class="hero-text"><div class="title">' +
         esc(r.item) +
         '</div><div class="subtitle">' +
         esc(r.org + ' / ' + r.item) +
-        '</div><div class="chips"><span class="status success">Published</span><span class="status ' +
+        '</div><div class="chips"><span class="status ' +
+        (s.published ? 'success' : 'warning') +
+        '">' +
+        (s.published ? 'Published' : 'Pending') +
+        '</span><span class="status ' +
         (s.pub ? 'info' : 'secondary') +
         '">' +
         (s.pub ? 'Public' : 'Private') +
-        '</span></div></div></div><div class="actions"><span class="btn primary">Download</span><span class="btn">Copy checksum</span>' +
+        '</span><span class="status os">' +
+        esc(s.os) +
+        '</span></div><div>' +
+        esc(s.desc) +
+        '</div></div></div><div class="actions">' +
         manage +
         '<span class="btn dark"' +
         go({ org: r.org, collection: 'isos' }) +
         '>Back</span></div></div>' +
-        '<div class="cards"><div class="card"><div class="card-h">Facts</div><div class="card-b"><dl class="facts"><dt>Size</dt><dd>' +
-        s.size +
-        '</dd><dt>Checksum</dt><dd><span class="sha">' +
-        s.sha +
-        '…</span> <span class="status secondary">sha256</span></dd><dt>Created</dt><dd>' +
-        s.created +
-        '</dd><dt>Updated</dt><dd>' +
-        s.updated +
-        '</dd><dt>Downloads</dt><dd>' +
-        s.downloads +
-        '</dd></dl></div></div></div>'
+        '<div class="sect"><h2>Versions <span class="countb">' +
+        names.length +
+        '</span></h2>' +
+        (org.member ? '<span class="btn sm success">Add Version</span>' : '') +
+        '</div>' +
+        '<div class="grid" style="grid-template-columns: 160px 110px 1fr 110px;"><span class="th">Version</span><span class="th">Released</span><span class="th">Artifacts</span><span class="th">Actions</span>' +
+        rows +
+        '</div>'
+      );
+    };
+    var isoVersionHtml = function (r, org) {
+      var e = org.isos[r.item].versions[r.version];
+      var rows = e.artifacts
+        .map(function (a, i) {
+          var z = zebra(i);
+          return (
+            '<span class="td first ' +
+            z +
+            '"><span class="lnk"' +
+            go({
+              org: r.org,
+              collection: 'isos',
+              item: r.item,
+              version: r.version,
+              provider: a.arch,
+            }) +
+            '>' +
+            esc(a.arch) +
+            '</span></span>' +
+            cell(z, a.size) +
+            cell(z, '<span class="sha">' + a.sha + '…</span>') +
+            cell(z, '<span class="btn sm outline">Download (' + a.downloads + ')</span>') +
+            cell(z, org.member ? '<span class="btn sm danger">Delete</span>' : '')
+          );
+        })
+        .join('');
+      return (
+        '<div class="page-head"><div class="hero-text"><div class="title">Version ' +
+        esc(r.version) +
+        '</div></div><div class="actions">' +
+        (org.member
+          ? '<span class="btn primary">Edit</span><span class="btn danger">Delete</span>'
+          : '') +
+        '<span class="btn dark"' +
+        go({ org: r.org, collection: 'isos', item: r.item }) +
+        '>Back</span></div></div>' +
+        '<div class="meta"><span>Created: <strong>' +
+        esc(e.released) +
+        '</strong></span></div>' +
+        '<div class="sect"><h2>Artifacts <span class="countb">' +
+        e.artifacts.length +
+        '</span></h2>' +
+        (org.member ? '<span class="btn sm success">Add New</span>' : '') +
+        '</div>' +
+        '<div class="grid" style="grid-template-columns: 140px 110px 1fr 150px 110px;"><span class="th">Name</span><span class="th">File size</span><span class="th">Checksum</span><span class="th">Download</span><span class="th">Actions</span>' +
+        rows +
+        '</div>'
+      );
+    };
+    var isoArchHtml = function (r, org) {
+      var a = org.isos[r.item].versions[r.version].artifacts.filter(function (entry) {
+        return entry.arch === r.provider;
+      })[0];
+      return (
+        '<div class="page-head"><div class="hero-text"><div class="title">' +
+        esc(r.provider) +
+        '</div><div class="subtitle">' +
+        esc(r.item + ' ' + r.version) +
+        '</div></div><div class="actions"><span class="btn dark"' +
+        go({ org: r.org, collection: 'isos', item: r.item, version: r.version }) +
+        '>Back</span></div></div>' +
+        '<div class="sect"><h2>Architectures for provider ' +
+        esc(r.provider) +
+        ' <span class="countb">1</span></h2></div>' +
+        '<div class="grid" style="grid-template-columns: 120px 100px 1fr 120px 150px;"><span class="th">Name</span><span class="th">File size</span><span class="th">Checksum</span><span class="th">Checksum type</span><span class="th">Download</span><span class="td first">' +
+        esc(a.arch) +
+        '</span><span class="td">' +
+        a.size +
+        '</span><span class="td"><span class="sha">' +
+        a.sha +
+        '…</span></span><span class="td">SHA256</span><span class="td"><span class="btn sm outline">Download (' +
+        a.downloads +
+        ')</span></span></div>'
       );
     };
     var boxHtml = function (r, org) {
@@ -4084,10 +4243,12 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
       var isOrg = Boolean(r.org) && !r.collection;
       var isCollection = Boolean(r.org) && Boolean(r.collection) && !r.item;
       var isListing = isHome || isOrg || isCollection;
-      var isIso = Boolean(r.item) && r.collection === 'isos';
+      var isIso = Boolean(r.item) && r.collection === 'isos' && !r.version;
+      var isIsoVersion = Boolean(r.version) && r.collection === 'isos' && !r.provider;
+      var isIsoArch = Boolean(r.provider) && r.collection === 'isos';
       var isBox = Boolean(r.item) && r.collection === 'boxes' && !r.version;
-      var isVersion = Boolean(r.version) && !r.provider;
-      var isProvider = Boolean(r.provider);
+      var isVersion = Boolean(r.version) && r.collection === 'boxes' && !r.provider;
+      var isProvider = Boolean(r.provider) && r.collection === 'boxes';
       var org = r.org ? DATA[r.org] : null;
       var pageOrgs = r.org ? [r.org] : ORGS;
       var kindsAll = r.collection ? [r.collection] : ['boxes', 'isos'];
@@ -4198,6 +4359,10 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         });
       } else if (isIso) {
         body = isoHtml(r, org);
+      } else if (isIsoVersion) {
+        body = isoVersionHtml(r, org);
+      } else if (isIsoArch) {
+        body = isoArchHtml(r, org);
       } else if (isBox) {
         body = boxHtml(r, org);
       } else if (isVersion) {

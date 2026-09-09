@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { versionShape } from '../../features/catalog/utils/itemShape';
+import { versionShape } from '../../utils/itemShape';
 
 const DeprecationBanner = ({ version, children = null }) => {
   const { t } = useTranslation();

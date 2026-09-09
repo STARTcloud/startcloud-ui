@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
 
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
-import { collectionShape, itemShape, sortShape } from '../utils/itemShape';
-
-import SortHeader from './SortHeader';
+import SortHeader from '../../../components/common/SortHeader';
+import { collectionShape, itemShape, sortShape } from '../../../utils/itemShape';
 
 const WatchStar = ({ watched, onToggle }) => {
   const { t } = useTranslation();

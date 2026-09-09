@@ -10,11 +10,16 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../catalog/utils/itemShape';
+import {
+  BOX_EDIT_LABELS,
+  BOX_EDIT_SCHEMA,
+  VERSION_LABELS,
+  VERSION_SCHEMA,
+} from '../../../../utils/forms';
+import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../../utils/itemShape';
+import { canManageBox } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
-import { BOX_EDIT_LABELS, BOX_EDIT_SCHEMA, VERSION_LABELS, VERSION_SCHEMA } from '../utils/forms';
-import { canManageBox } from '../utils/permissions';
 
 import { DeployButton, deployableVersion } from './deploy';
 

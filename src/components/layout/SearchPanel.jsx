@@ -13,7 +13,7 @@ import {
   useNavbarSearch,
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
-import SearchResults from '../../features/search/components/SearchResults';
+import SearchResults from '../common/SearchResults';
 
 const MIN_QUERY = 2;
 

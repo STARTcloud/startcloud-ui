@@ -704,7 +704,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
           userId,
           error: error.message,
         });
-        notify('danger', t('orgConsole.messages.operationFailed'));
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 
@@ -779,7 +779,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
             invitationId: itemToDelete.id,
             error: error.message,
           });
-          notify('danger', t('orgConsole.messages.deleteFailed'));
+          notify('danger', t(error.messageKey || 'errors.request'));
           handleCloseDeleteModal();
         });
     }
@@ -798,7 +798,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
             organization: org,
             error: error.message,
           });
-          notify('danger', t('orgConsole.users.removeError'));
+          notify('danger', t(error.messageKey || 'errors.request'));
           handleCloseDeleteModal();
         });
     }

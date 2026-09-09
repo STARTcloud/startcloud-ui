@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useNotify } from '../../contexts/NoticeContext';
+import { useNotify } from '../contexts/NoticeContext';
 
 export const problemShape = PropTypes.shape({
   code: PropTypes.string.isRequired,

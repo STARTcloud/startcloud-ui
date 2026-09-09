@@ -1,5 +1,9 @@
 import PropTypes from 'prop-types';
 
+import { rules as hostRules } from '../lib/runtime';
+
+const DEFAULT_PASSWORD_MINIMUM = 15;
+
 /**
  * The app's side of the shared sign-in, registration and invitation pages:
  * the backend calls those pages make and the two localStorage keys they
@@ -44,3 +48,10 @@ export const readStoredLoginMethod = key =>
 export const storeLoginMethod = (key, method) => {
   localStorage.setItem(key, method);
 };
+
+/**
+ * The minimum length the issuer publishes for a password, 15 by default.
+ * @returns {number}
+ */
+export const passwordMinimum = () =>
+  hostRules?.forms?.password?.properties?.password?.minLength || DEFAULT_PASSWORD_MINIMUM;

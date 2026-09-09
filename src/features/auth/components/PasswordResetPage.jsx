@@ -3,35 +3,25 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
+import AuthShell from '../../../components/common/AuthShell';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PasswordField from '../../../components/common/PasswordField';
+import ProblemAlert from '../../../components/common/ProblemAlert';
 import { useFormRules } from '../../../hooks/useFormRules';
-import { rules as hostRules } from '../../../lib/runtime';
-import { returnToShape } from '../../../utils/auth';
-import { passwordReset } from '../api/signin';
-import { followNext } from '../next';
-import { useProblemReporter } from '../problem';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
+import { passwordReset } from '../../../lib/signin';
+import { passwordMinimum, returnToShape } from '../../../utils/auth';
 import { useSignedInRedirect } from '../useSignedInRedirect';
-
-import AuthShell from './AuthShell';
-import ProblemAlert from './ProblemAlert';
 
 const SCHEMA = { required: ['password'], properties: { password: { type: 'string' } } };
 const LABELS = { password: 'auth:reset.newPassword' };
-const DEFAULT_MINIMUM = 15;
 const INVALID = { code: 'reset_invalid', status: 403, wait: 0, since: 0 };
 
 const readOnce = () => {
   const params = new URLSearchParams(window.location.search);
   return { email: params.get('email') || '', token: params.get('token') || '' };
 };
-
-/**
- * The minimum length the issuer publishes for a password, 15 by default.
- * @returns {number}
- */
-export const passwordMinimum = () =>
-  hostRules?.forms?.password?.properties?.password?.minLength || DEFAULT_MINIMUM;
 
 /**
  * `/passwordReset`: reads `email` and `token` from the URL once and replaces

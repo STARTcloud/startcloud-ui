@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import SubTable from '../../catalog/components/SubTable';
-import { useDetailSearch } from '../../catalog/hooks/useDetailSearch';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { revokeSession, sessions } from '../api/activity';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SESSIONS } from '../utils/examples';

@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom';
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
 import StatusChips from '../../../components/common/StatusChips';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
+import { collectionShape, itemShape, statusOf, visibilityOf } from '../../../utils/itemShape';
 import { itemPath } from '../../../utils/routes';
-import { collectionShape, itemShape, statusOf, visibilityOf } from '../utils/itemShape';
 
 const CardMedia = ({ item, ctx }) => {
   if (item.artwork || item.icon) {

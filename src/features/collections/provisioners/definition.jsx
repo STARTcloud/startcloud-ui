@@ -4,15 +4,15 @@ import { Accordion, Badge, Button, ListGroup } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBug, FaCubes, FaGithub, FaHouse } from 'react-icons/fa6';
 
-import { CollapseButton } from '../../../components/common/GroupHeading';
 import {
   downloadsColumn,
   labelColumn,
   releasedColumn,
   versionsColumn,
   visibilityColumn,
-} from '../../catalog/components/columns';
-import { itemShape } from '../../catalog/utils/itemShape';
+} from '../../../components/common/columns';
+import { CollapseButton } from '../../../components/common/GroupHeading';
+import { itemShape } from '../../../utils/itemShape';
 
 import { catalogAdapter } from './api/adapter';
 import { DeployButton, ProvisionerQuickActions, deployableVersion } from './components/deploy';

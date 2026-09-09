@@ -1,8 +1,17 @@
-import { gravatarProfile } from '../../../utils/gravatar';
+import { gravatarProfile } from '../utils/gravatar';
 
-import { getOrganization, userOrganizations } from './organizations';
+import { encodePath } from './apiClient';
+import { client } from './runtime';
+
+const org = organization => encodePath('api', 'organization', organization);
 
 const logoPromises = new Map();
+
+export const getOrganization = organization => client.get(org(organization));
+
+export const userOrganizations = () => client.get('/api/user/organizations');
+
+export const joinOrganizationAsAdmin = organization => client.post(`${org(organization)}/join`, {});
 
 export const organizationLogo = async organization => {
   const logo = organization.logo || organization.organization?.logo;

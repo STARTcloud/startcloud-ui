@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AuthAlert } from '../../../components/common/AuthShell';
 import CopyButton from '../../../components/common/CopyButton';
 import FieldError from '../../../components/common/FieldError';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { returnToShape } from '../../../utils/auth';
-import { AuthAlert } from '../../auth/components/AuthShell';
-import { useProblemReporter } from '../../auth/problem';
 import { backupCodes, confirmBackupCodes } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 

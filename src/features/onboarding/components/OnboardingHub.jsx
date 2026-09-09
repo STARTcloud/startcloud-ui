@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PasswordField from '../../../components/common/PasswordField';
 import { useFormRules } from '../../../hooks/useFormRules';
-import { returnToShape } from '../../../utils/auth';
-import { passwordMinimum } from '../../auth/components/PasswordResetPage';
-import { followNext } from '../../auth/next';
+import { followNext } from '../../../lib/next';
+import { passwordMinimum, returnToShape } from '../../../utils/auth';
+import { NON_BLANK } from '../../../utils/validation';
 import { submitPassword } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 
@@ -16,7 +16,7 @@ import OnboardingFrame from './OnboardingFrame';
 const HUB = '/complete-onboarding';
 const SCHEMA = {
   required: ['password', 'confirm'],
-  properties: { password: { type: 'string' }, confirm: { type: 'string', equals: 'password' } },
+  properties: { password: { type: 'string' }, confirm: { ...NON_BLANK, equals: 'password' } },
 };
 const LABELS = { password: 'auth:onboarding.password', confirm: 'auth:onboarding.confirm' };
 

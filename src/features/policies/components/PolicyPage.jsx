@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import { useNotify } from '../../../contexts/NoticeContext';
-import AuthShell, { AuthSpinner } from '../../auth/components/AuthShell';
 import { policy as fetchPolicy } from '../api/policies';
 
 const EMPTY = { name: '', answer: null, failed: false };

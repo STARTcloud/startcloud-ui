@@ -14,7 +14,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { schemaSections, setValueAt, valueAt } from '../utils/schemaSections';
+import { schemaSections, setValueAt, valueAt } from '../../../utils/schemaSections';
 
 import OidcProviders from './OidcProviders';
 
@@ -211,7 +211,7 @@ const AdminConfig = ({ config: configApi }) => {
       );
     } catch (error) {
       log.component.error('Error uploading file', { error: error.message });
-      notify('danger', t('admin.messages.uploadFailed'));
+      notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
 
@@ -221,8 +221,8 @@ const AdminConfig = ({ config: configApi }) => {
       .then(() => {
         notify('success', t('configManager.restartInitiated'));
       })
-      .catch(() => {
-        notify('danger', t('configManager.restartFailed'));
+      .catch(error => {
+        notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
 

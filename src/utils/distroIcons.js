@@ -1,4 +1,4 @@
-const iconModules = import.meta.glob('../assets/distro-icons/*.svg', {
+const iconModules = import.meta.glob('../features/collections/boxes/assets/distro-icons/*.svg', {
   eager: true,
   query: '?url',
   import: 'default',

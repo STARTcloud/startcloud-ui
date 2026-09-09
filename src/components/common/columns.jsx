@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 
-import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
-import { formatRelativeTime } from '../../../utils/relativeTime';
-import { itemPath } from '../../../utils/routes';
-import { architectureNames, latestReleaseTime, providerNames } from '../utils/itemShape';
+import { architectureNames, latestReleaseTime, providerNames } from '../../utils/itemShape';
+import { formatRelativeTime } from '../../utils/relativeTime';
+import { itemPath } from '../../utils/routes';
+import { OrgLogo } from '../layout/OrgSwitcherModal';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 

@@ -3,35 +3,37 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PasswordField from '../../../components/common/PasswordField';
+import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { problemOf, problemShape, useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
 import {
   authenticate,
   conditionalMediationAvailable,
   isAbort,
   isSupported,
+  passkeyRequestOptions,
+  passkeyVerify,
 } from '../../../lib/passkeys';
+import { cancelSignIn, magicLinkRequest } from '../../../lib/signin';
 import { authShape, returnToShape, storeLoginMethod } from '../../../utils/auth';
-import { passkeyRequestOptions, passkeyVerify } from '../api/passkeys';
-import { cancelSignIn, magicLinkRequest } from '../api/signin';
-import { followNext } from '../next';
-import { problemOf, problemShape, useProblemReporter } from '../problem';
+import { NON_BLANK } from '../../../utils/validation';
 import { useMethods } from '../useMethods';
 import { useSignedInRedirect } from '../useSignedInRedirect';
 
-import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from './AuthShell';
-import ProblemAlert, { useWait } from './ProblemAlert';
 import ProviderButtons from './ProviderButtons';
 
 const MODES = ['magic_link', 'password'];
 const MODE_OF = { 'magic-link': 'magic_link', local: 'password' };
 const PASSWORD_SCHEMA = {
   required: ['username', 'password'],
-  properties: { username: { type: 'string' }, password: { type: 'string' } },
+  properties: { username: NON_BLANK, password: NON_BLANK },
 };
-const MAGIC_SCHEMA = { required: ['email'], properties: { email: { type: 'string' } } };
+const MAGIC_SCHEMA = { required: ['email'], properties: { email: NON_BLANK } };
 const LABELS = {
   username: 'auth:login.email',
   email: 'auth:login.email',

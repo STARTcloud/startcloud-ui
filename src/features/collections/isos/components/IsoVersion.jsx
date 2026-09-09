@@ -11,8 +11,6 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { architectureShape, itemShape, versionShape } from '../../../catalog/utils/itemShape';
-import { isOrgManager } from '../../boxes';
 import {
   DEPRECATION_LABELS,
   DEPRECATION_SCHEMA,
@@ -20,7 +18,9 @@ import {
   ISO_ARCHITECTURE_SCHEMA,
   ISO_VERSION_SCHEMA,
   VERSION_LABELS,
-} from '../../boxes/utils/forms';
+} from '../../../../utils/forms';
+import { architectureShape, itemShape, versionShape } from '../../../../utils/itemShape';
+import { isOrgManager } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
 

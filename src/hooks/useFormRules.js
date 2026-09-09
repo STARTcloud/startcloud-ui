@@ -7,6 +7,7 @@ import { DEFS, messageFor, validateObject } from '../utils/validation';
 
 const FALLBACK_DOCUMENT = { $defs: DEFS };
 const CLIENT_KEYS = ['equals', 'custom', 'dependsOn', 'showWhen', 'title'];
+const PAGE_KEYS = [...CLIENT_KEYS, 'minLength', 'pattern'];
 const EMPTY_SERVER = { fields: {}, orphans: [] };
 
 export const formRulesShape = PropTypes.shape({
@@ -32,7 +33,7 @@ const requiredOnly = schema => ({
   properties: Object.fromEntries(
     Object.entries(schema.properties || {}).map(([name, property]) => [
       name,
-      pick(property, CLIENT_KEYS),
+      pick(property, PAGE_KEYS),
     ])
   ),
 });
@@ -117,8 +118,9 @@ const without = (map, name) =>
  * the properties the page's `schema` declares and to no other (the page
  * contributes its own `required` and its client-only `equals`, `custom`,
  * `dependsOn` and `showWhen` entries), the page's `schema` reduced to
- * `required` when the host does not list it, and the `schema` itself when
- * no `formKey` is given (the config pages).
+ * `required` and the `minLength` and `pattern` a required string carries
+ * when the host does not list it, and the `schema` itself when no
+ * `formKey` is given (the config pages).
  * Nothing runs while typing; `onBlur(name)` marks a failing field, a marked
  * field is re-evaluated on every change so its error clears the moment the
  * value is right, `validateAll()` marks every failing field and answers

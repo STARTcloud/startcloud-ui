@@ -11,9 +11,9 @@ import {
   updatedColumn,
   versionsColumn,
   visibilityColumn,
-} from '../../catalog/components/columns';
-import { architectureNames } from '../../catalog/utils/itemShape';
-import { isOrgManager } from '../boxes';
+} from '../../../components/common/columns';
+import { architectureNames } from '../../../utils/itemShape';
+import { isOrgManager } from '../../../utils/permissions';
 
 import { isosAdapter } from './api/adapter';
 import {

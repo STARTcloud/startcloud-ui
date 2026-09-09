@@ -11,14 +11,12 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
+import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
-const CREATE_SCHEMA = { required: ['name'], properties: { name: { type: 'string' } } };
+const CREATE_SCHEMA = { required: ['name'], properties: { name: NON_BLANK } };
 const CREATE_LABELS = { name: 'organizations.name' };
-const JOIN_SCHEMA = {
-  required: ['invite_code'],
-  properties: { invite_code: { type: 'string' } },
-};
+const JOIN_SCHEMA = { required: ['invite_code'], properties: { invite_code: NON_BLANK } };
 const JOIN_LABELS = { invite_code: 'organizations.inviteCode' };
 const EMPTY = { organizations: [], organizations_enabled: false, personal_to_team_enabled: false };
 

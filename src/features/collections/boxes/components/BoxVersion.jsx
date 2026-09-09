@@ -10,9 +10,6 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { itemShape, providerShape, versionShape } from '../../../catalog/utils/itemShape';
-import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
-import { api } from '../api/boxes';
 import {
   DEPRECATION_LABELS,
   DEPRECATION_SCHEMA,
@@ -20,8 +17,11 @@ import {
   PROVIDER_SCHEMA,
   VERSION_LABELS,
   VERSION_SCHEMA,
-} from '../utils/forms';
-import { canManageBox } from '../utils/permissions';
+} from '../../../../utils/forms';
+import { itemShape, providerShape, versionShape } from '../../../../utils/itemShape';
+import { canManageBox } from '../../../../utils/permissions';
+import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
+import { api } from '../api/boxes';
 
 const EMPTY_DEPRECATION = { deprecation_reason: '' };
 

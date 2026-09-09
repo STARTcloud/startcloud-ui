@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaCube, FaFile, FaMicrochip, FaServer, FaTag, FaUser } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
-import { SEARCH_KINDS, collectionOfRow, searchRowPath, searchRowShape } from '../utils/searchRow';
+import {
+  SEARCH_KINDS,
+  collectionOfRow,
+  searchRowPath,
+  searchRowShape,
+} from '../../utils/searchRow';
 
 const KIND_ICONS = {
   organization: FaBuilding,

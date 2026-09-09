@@ -7,8 +7,6 @@ export const organizationsWithUsers = () => client.get('/api/organizations-with-
 
 export const organizationUsers = organization => client.get(`${org(organization)}/users`);
 
-export const getOrganization = organization => client.get(org(organization));
-
 export const updateOrganization = (organization, body) => client.put(org(organization), body);
 
 export const suspendOrganization = organization => client.put(`${org(organization)}/suspend`, {});
@@ -30,10 +28,6 @@ export const setMemberRole = (organization, userId, role) =>
 
 export const removeMember = (organization, userId) =>
   client.delete(`${org(organization)}${encodePath('members', userId)}`);
-
-export const joinAsAdmin = organization => client.post(`${org(organization)}/join`, {});
-
-export const userOrganizations = () => client.get('/api/user/organizations');
 
 export const createJoinRequest = (organization, message = null) =>
   client.post(`${org(organization)}/requests`, { message });

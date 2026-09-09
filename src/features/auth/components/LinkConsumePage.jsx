@@ -3,12 +3,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
+import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
+import ProblemAlert from '../../../components/common/ProblemAlert';
+import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { followNext } from '../../../lib/next';
 import { returnToShape } from '../../../utils/auth';
-import { followNext } from '../next';
-import { useProblemReporter } from '../problem';
-
-import AuthShell, { AuthSpinner } from './AuthShell';
-import ProblemAlert from './ProblemAlert';
 
 const readOnce = () => {
   const params = new URLSearchParams(window.location.search);

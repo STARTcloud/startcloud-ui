@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa6';
 
-import { sortShape } from '../utils/itemShape';
+import { sortShape } from '../../utils/itemShape';
 
 const SortIcon = ({ column, sort }) => {
   const index = sort.findIndex(entry => entry.column === column);

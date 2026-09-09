@@ -9,12 +9,12 @@ import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
+import { joinOrganizationAsAdmin } from '../../../../lib/organizations';
 import { session } from '../../../../lib/runtime';
 import { hasFeature } from '../../../../utils/capabilities';
-import { joinAsAdmin } from '../../../organizations/api/organizations';
+import { BOX_LABELS, BOX_SCHEMA } from '../../../../utils/forms';
+import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../../../utils/permissions';
 import { api } from '../api/boxes';
-import { BOX_LABELS, BOX_SCHEMA } from '../utils/forms';
-import { isGlobalAdmin, isOrgManager, isOrgMember } from '../utils/permissions';
 
 const EMPTY_BOX = { name: '', description: '', is_public: false };
 
@@ -126,7 +126,7 @@ CreateBoxForm.propTypes = {
 const JoinAsOwner = ({ org, notify }) => {
   const { t } = useTranslation();
   const join = () => {
-    joinAsAdmin(org)
+    joinOrganizationAsAdmin(org)
       .then(async () => {
         await session.reload();
         window.location.reload();
