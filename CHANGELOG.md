@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.10.1...v0.11.0) (2026-09-09)
+
+
+### Features
+
+* VDI Health sidebar tree with pool and session views, tree crumbs, query-driven fleet filters, and the registry types for gateway, configuration and method faults ([a9d68ed](https://github.com/STARTcloud/startcloud-ui/commit/a9d68ed6d900bcd240d116f3742d20bd83396c25))
+
+
+### Bug Fixes
+
+* codeqlwarning and docs ([ce71064](https://github.com/STARTcloud/startcloud-ui/commit/ce71064ce3a092652c36d15019a379c80b497b31))
+* docs ([641420b](https://github.com/STARTcloud/startcloud-ui/commit/641420b307cd3fc8d63cb2ad125d7b3287951cd1))
+
 ## [0.10.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.10.0...v0.10.1) (2026-09-09)
 
 
