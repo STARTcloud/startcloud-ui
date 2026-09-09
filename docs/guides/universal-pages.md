@@ -227,7 +227,7 @@ adapter, registers the search binding, and renders:
   item's `links` (repository, homepage, issues, pipeline, each drawn only
   when present) with the collection's `ItemQuickActions` slot at the
   row's right, and `CardExtras`. A table draws the same `ItemQuickActions`
-  slot in one unlabelled cell after the collection's columns; both apps
+  slot in one unlabeled cell after the collection's columns; both apps
   put the Deploy control there, the Hyperweaver glyph of
   `features/deploy`, for every box or provisioner the viewer may deploy
   while the UI backend advertises `deploy`, aimed at the item's newest
@@ -436,12 +436,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   page header in the PageHeader shape with the brand, the title, the
   version chip (the UI backend's `/api/status` version through `useStatus()`,
   the same value the footer shows), the description, the goal as a quote and, when the app
-  passes one, the favourite toggle as the header's action; then Start here
+  passes one, the favorite toggle as the header's action; then Start here
   (the documentation links as a list, the getting-started guide first)
   beside What you can do here (features as a check grid), How it fits
   together (components as headed cards) and Help and community (support
   links as a footer strip). Every link on the page appears once; BoxVault
-  feeds it its backend's public content and its favourite toggle, the
+  feeds it its backend's public content and its favorite toggle, the
   catalog its own locale text.
 - **LoginPage**, **RegisterPage** and **InvitePage**: the account pages of
   the [Universal Session Contract](universal-session/), drawn from the
@@ -543,7 +543,7 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   through `useFleet` (`fleet-snapshot`, `vm-updated`, `vm-removed`,
   `vm-events`, `pools-updated`, a five-second tick re-deriving relative
   times and stale flags). `FleetPage` is the home route `/`: five
-  `StatusCards` (ratio colour, the no-session breakdown line, a click
+  `StatusCards` (ratio color, the no-session breakdown line, a click
   cycling the Status filter), one `PoolCards` card per pool (total, cache
   badges, agents-healthy line, publication, capacity, a click cycling the
   Pool filter, the fold kept in prefs), the toolbar (JSON and CSV export
@@ -587,13 +587,13 @@ The search module and its panel are the navbar contract's; a listing page
 registers one binding over every collection it shows. Groups appear in
 this order:
 
-| Group                | When                                                                      | Values                                                                                                                                                                                                                                    |
-| -------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Collection           | the page lists more than one collection                                   | one pill per collection (Boxes, ISOs), counts of rows                                                                                                                                                                                     |
-| Visibility           | private rows exist on the page                                            | Public, Private                                                                                                                                                                                                                           |
-| Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                                                      |
-| the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs: Organization (primary) across organizations · Architecture (info) · OS (success); catalog provisioners: Tier (badge colours) · Provider (primary) |
-| Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                                                                    |
+| Group                | When                                                                      | Values                                                                                                                                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Collection           | the page lists more than one collection                                   | one pill per collection (Boxes, ISOs), counts of rows                                                                                                                                                                                    |
+| Visibility           | private rows exist on the page                                            | Public, Private                                                                                                                                                                                                                          |
+| Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                                                     |
+| the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs: Organization (primary) across organizations · Architecture (info) · OS (success); catalog provisioners: Tier (badge colors) · Provider (primary) |
+| Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                                                                   |
 
 Query matches: BoxVault name, label, description and organization; the
 catalog also the repository. Picking a Collection pill hides the other

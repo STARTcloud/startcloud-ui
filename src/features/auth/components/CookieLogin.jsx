@@ -440,7 +440,7 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
 
   const cancel = () =>
     cancelSignIn()
-      .then(answer => follow(answer?.next))
+      .then(answer => followNext({ next: answer?.next, navigate, returnTo, trusted: true }))
       .catch(fail);
 
   const passkey = () =>

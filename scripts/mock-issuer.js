@@ -179,7 +179,7 @@ const TFA_METHODS = {
   sms_risk_notice: true,
 };
 
-const ENROL = { qr: PNG, secret: 'JBSWY3DPEHPK3PXP', issuer: 'STARTcloud' };
+const ENROLL = { qr: PNG, secret: 'JBSWY3DPEHPK3PXP', issuer: 'STARTcloud' };
 
 const BACKUP_CODES = [
   'A1B2C3D4',
@@ -1080,7 +1080,7 @@ onboardingRoute('POST', '/complete-onboarding/choose-2fa-method', ctx => {
   state.onboarding.purpose = 'tfa';
   return ok({ next: onboardingNext(state.onboarding) });
 });
-onboardingRoute('GET', '/api/auth/tfa/enrol', () => ok(ENROL));
+onboardingRoute('GET', '/api/auth/tfa/enroll', () => ok(ENROLL));
 onboardingRoute('POST', '/qrcode/verify', ctx => {
   const refused = codeProblem(String(ctx.body.code || ''));
   if (refused) {
@@ -1259,7 +1259,7 @@ steppedRoute('PUT', '/api/user/password', ctx => {
   return passwordProblem(ctx.body.password) || noContent();
 });
 sessionRoute('GET', '/api/user/tfa/methods', () => ok(state.tfaMethods));
-sessionRoute('GET', '/api/user/tfa/enrol', () => ok(ENROL));
+sessionRoute('GET', '/api/user/tfa/enroll', () => ok(ENROLL));
 sessionRoute('POST', '/api/user/tfa/sms/send', ctx =>
   String(ctx.body.mobile_number || '').endsWith('0000') ? throttled() : ok({ sent: true }, 202)
 );

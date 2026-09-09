@@ -121,7 +121,7 @@ const walkProperties = ({
  * `order`, each field carrying its `pointer`, `title`, `description`,
  * `type`, `format`, `enum`, `writeOnly`, `readOnly`, `upload`, `dependsOn`,
  * `showWhen`, `requiresRestart` and `deprecated`; a section or subsection
- * labelled by its `title`, its key when there is none; a free subtree the
+ * labeled by its `title`, its key when there is none; a free subtree the
  * schema does not describe is not drawn.
  *
  * @param {Object} schema - The file's schema from `GET /api/config/<name>/schema`

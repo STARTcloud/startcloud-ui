@@ -213,7 +213,10 @@ and what `useFleet` seeds its keyed map from after `GET /api/vdi/fleet`.
 
 The UI backend whose `role` is `auth-server` streams one app topic,
 admitted to `ROLE_ADMIN` alone and answered `403` to everyone else, so
-that nothing an operator must know is learned by a timer:
+that nothing an operator must know is learned by a timer; `admin` is
+listed in `events.topics` only for a session holding `ROLE_ADMIN`, so the
+stream never refuses a topic the same session's status listed; the `403`
+remains for a caller who asks for `admin` unlisted:
 
 | Event              | Data                                                                                                                                                                                                                                                                                           |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -296,7 +299,7 @@ returns a stop function.
   blank line, `id:`, `event:`, `data:` and `retry:` read, comment lines
   dropped, `data` parsed as JSON before `onEvent(name, data, id)` is
   called.
-- `retry:` is honoured as the base delay; reconnects use jittered
+- `retry:` is honored as the base delay; reconnects use jittered
   exponential backoff from it, capped at 30 seconds, and every reconnect
   carries `Last-Event-ID` with the last id seen.
 - `headers` is an object or a function answering one, resolved on every

@@ -1983,8 +1983,8 @@
     <div class="callouts inline">
       <div class="callout">
         <strong>Groups are the page's own:</strong> label, entries with counts, the active set, the
-        active colour (or a per-value class — the catalog's tier pills use the tier badge colours)
-        and a toggle. Inactive pills sit in the muted secondary tint, exactly BoxVault's
+        active color (or a per-value class — the catalog's tier pills use the tier badge colors) and
+        a toggle. Inactive pills sit in the muted secondary tint, exactly BoxVault's
         <code>FilterPillGroup</code> look.
       </div>
       <div class="callout">
@@ -2332,8 +2332,8 @@
         <strong>Collection and Visibility come first</strong> on any page that lists more than one
         collection or has private rows — Boxes / ISOs and Public / Private as pills, so "only ISOs"
         is a filter, never a page or a tab. Watched follows them, one shared pill over boxes and
-        ISOs alike while signed in. Then the groups and colours are BoxVault's own: Provider
-        (primary), Architecture (info), OS distro (success), each pill labelled
+        ISOs alike while signed in. Then the groups and colors are BoxVault's own: Provider
+        (primary), Architecture (info), OS distro (success), each pill labeled
         <code>value (count)</code> exactly as its <code>FilterPillGroup</code> renders today; a
         value stays in the panel at count 0 rather than vanishing.
       </div>
@@ -2912,12 +2912,12 @@
       </div>
       <div class="callout">
         <strong>Right, the status cluster:</strong> the health indicator only where the app lists
-        <code>health</code> beside <code>footer</code> — the heart coloured by the overall state,
-        the per-service words on hover, its state arriving on the events stream where the app
-        advertises <code>events</code> and by a 60-second poll only where it does not, one document
-        shape for every app (BoxVault <code>/api/health</code>, the catalog Worker's
-        <code>/health</code>); no health → the slot is empty; no <code>footer</code> → no footer at
-        all, and the version moves to the user menu's app-section header.
+        <code>health</code> beside <code>footer</code> — the heart colored by the overall state, the
+        per-service words on hover, its state arriving on the events stream where the app advertises
+        <code>events</code> and by a 60-second poll only where it does not, one document shape for
+        every app (BoxVault <code>/api/health</code>, the catalog Worker's <code>/health</code>); no
+        health → the slot is empty; no <code>footer</code> → no footer at all, and the version moves
+        to the user menu's app-section header.
       </div>
     </div>
   </section>
@@ -3033,11 +3033,11 @@
 
   <section class="spec wide">
     <div class="spec-col">
-      <h2>Behaviours — universal rule, and where each lives</h2>
+      <h2>Behaviors — universal rule, and where each lives</h2>
       <div class="table-wrap">
         <table>
           <tr>
-            <th>Behaviour</th>
+            <th>Behavior</th>
             <th>Universal rule</th>
             <th>Today, by file</th>
           </tr>
@@ -3295,7 +3295,7 @@
               in the foot; gear omitted without groups.
             </td>
             <td>
-              Catalog: Visibility · Watched (localStorage watches) · Tier (badge colours) · Provider
+              Catalog: Visibility · Watched (localStorage watches) · Tier (badge colors) · Provider
               from <code>health.json</code>, persisted as <code>catalog_table_prefs_*</code>;
               BoxVault home and org pages: Collection · Visibility · Watched · Provider ·
               Architecture · OS, ISOs across organizations: Visibility · Organization, all under
@@ -3330,7 +3330,7 @@
           <tr>
             <th>App · page</th>
             <th>Query matches</th>
-            <th>Filter groups (source, colour when active)</th>
+            <th>Filter groups (source, color when active)</th>
           </tr>
           <tr>
             <td>BoxVault · home, org page</td>
@@ -3364,7 +3364,7 @@
             <td>name, description, repo, label (<code>collections.jsx</code> matcher)</td>
             <td>
               Visibility (Public / Private, when a private catalog is loaded) · Watched (Worker
-              watches, warning, signed in) · Tier (health.tier, tier badge colours; only tiers
+              watches, warning, signed in) · Tier (health.tier, tier badge colors; only tiers
               present on the page) · Provider (health.versions — verified image in any recorded
               version, primary); counts are provisioners per value; persisted per page in
               <code>catalog_table_prefs_*</code>

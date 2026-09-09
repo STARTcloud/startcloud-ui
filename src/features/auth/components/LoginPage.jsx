@@ -391,12 +391,12 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
   }, [methodsLoading, silentLogin, defaultProvider, urlParams, enabledAuthMethods, session, auth]);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
 
     const loadAuthMethods = async () => {
       try {
         const result = await auth.methods();
-        if (cancelled) {
+        if (canceled) {
           return;
         }
         setAuthMethods(result.methods || []);
@@ -404,14 +404,14 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
         setSilentLogin(!!result.silent_login);
         setLocalRegistrationEnabled(!!result.local_registration_enabled);
       } catch (error) {
-        if (!cancelled) {
+        if (!canceled) {
           log.auth.error('Error loading auth methods', {
             error: error.message,
           });
           setAuthMethods([{ id: 'local', name: t('login.localAccount'), enabled: true }]);
         }
       } finally {
-        if (!cancelled) {
+        if (!canceled) {
           setMethodsLoading(false);
         }
       }
@@ -420,7 +420,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     loadAuthMethods();
 
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [auth, t]);
 

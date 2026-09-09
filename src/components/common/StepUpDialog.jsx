@@ -124,7 +124,7 @@ StepUpDialog.propTypes = {
  * reason)` runs the call and, on a `403 step_up_required`, opens the
  * dialog, arms the window through `stepUp({ password } | { code })` and
  * retries the same call unchanged, resolving with its answer or rejecting
- * with the call's own failure; a cancelled dialog rejects with the
+ * with the call's own failure; a canceled dialog rejects with the
  * original refusal. `dialog` is the element the page mounts once.
  *
  * @param {Object} options - The page's side

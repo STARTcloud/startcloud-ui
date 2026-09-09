@@ -84,9 +84,9 @@ AddButton.propTypes = {
 };
 
 /**
- * The Favorites tab of the identity contract: the ordered favourites with
+ * The Favorites tab of the identity contract: the ordered favorites with
  * drag handles and Remove over `PUT /api/user/favorites`, then the
- * connected applications not yet favourited with Add; the icon chain is
+ * connected applications not yet favorited with Add; the icon chain is
  * `icon_url`, the favicon of `home_url`, the app glyph, every URL drawn
  * only with the `https:` scheme.
  */

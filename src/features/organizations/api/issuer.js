@@ -42,7 +42,7 @@ export const setPrimaryOrganization = uuid =>
  * organization console and the organizations page: one read of every
  * membership with the console's fields, and the fourteen writes of the
  * identity contract's group 4 under `/api/user/organizations`, each
- * re-fetching the record afterwards; it carries no `requests` and no
+ * re-fetching the record afterward; it carries no `requests` and no
  * `discover`, so the console draws neither Join requests nor Discovery.
  */
 export const issuerOrganizations = {

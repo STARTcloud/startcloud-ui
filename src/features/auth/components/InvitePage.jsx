@@ -33,20 +33,20 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
   }, [t]);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
 
     const validate = async () => {
       try {
         const data = await auth.validateInvitation(token);
-        if (!cancelled) {
+        if (!canceled) {
           setInvitation(data);
         }
       } catch (err) {
-        if (!cancelled) {
+        if (!canceled) {
           setError(t(err.messageKey || 'errors.request'));
         }
       } finally {
-        if (!cancelled) {
+        if (!canceled) {
           setLoading(false);
         }
       }
@@ -55,7 +55,7 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
     validate();
 
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [auth, token, t]);
 

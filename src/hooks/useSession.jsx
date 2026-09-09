@@ -36,7 +36,7 @@ export const sessionStateShape = PropTypes.shape({
 /**
  * The session state every estate app renders through: the provider's
  * stored session on the first render and its loaded one after, its
- * claims, the favourites the user menu draws (read once per session
+ * claims, the favorites the user menu draws (read once per session
  * through `loadFavorites`, memoized like the claims, reset on sign-out and
  * on every reload), the memberships in the chrome's organization shape,
  * the active organization resolved stored → primary → first and persisted
@@ -48,6 +48,7 @@ export const sessionStateShape = PropTypes.shape({
  * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`
  * @param {Object} options.events - The bus from `createSessionEvents`
  * @param {Object} options.returnTo - The helper from `createReturnTo`
+ * @param {Function} options.navigate - The router's `navigate`, handed to the provider's `load`, `reload`, `refresh` and `begin`
  * @param {string} options.activeOrgKey - localStorage key of the active organization
  * @param {Object} [options.push] - The functions from `createPush`
  * @param {Function} [options.onAdopt] - Called with the session, or null, before it is rendered
@@ -58,6 +59,7 @@ export const useSession = ({
   provider,
   events,
   returnTo,
+  navigate,
   activeOrgKey,
   push = null,
   onAdopt = null,
@@ -140,12 +142,12 @@ export const useSession = ({
       adopt(null);
       setEnded({ returnTo: detail?.returnTo || '/' });
     });
-    const offLogin = events.on('login', () => provider.load().then(adopt));
+    const offLogin = events.on('login', () => provider.load({ navigate }).then(adopt));
     const offLogout = events.on('logout', () => {
       provider.signOut();
       adopt(null);
     });
-    provider.load().then(next => {
+    provider.load({ navigate }).then(next => {
       adopt(next);
       setLoaded(true);
     });
@@ -154,7 +156,7 @@ export const useSession = ({
       offLogin();
       offLogout();
     };
-  }, [adopt, events, provider]);
+  }, [adopt, events, navigate, provider]);
 
   useEffect(() => {
     if (!loaded || !session.user || !push || !push.isPushEnabled()) {
@@ -177,7 +179,7 @@ export const useSession = ({
     const onAuthPage = returnTo.onAuthPage(window.location.pathname);
     returnTo.remember(ended?.returnTo || (onAuthPage ? '' : currentPath()));
     setEnded(null);
-    return provider.begin({});
+    return provider.begin({ navigate });
   };
 
   const signOut = () => {
@@ -185,9 +187,15 @@ export const useSession = ({
     adopt(null);
   };
 
-  const refresh = useCallback(() => provider.refresh().then(adopt), [adopt, provider]);
+  const refresh = useCallback(
+    () => provider.refresh({ navigate }).then(adopt),
+    [adopt, navigate, provider]
+  );
 
-  const reload = useCallback(() => provider.reload().then(adopt), [adopt, provider]);
+  const reload = useCallback(
+    () => provider.reload({ navigate }).then(adopt),
+    [adopt, navigate, provider]
+  );
 
   return {
     ...session,

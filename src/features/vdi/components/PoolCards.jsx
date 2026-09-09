@@ -70,7 +70,7 @@ PoolCard.propTypes = {
 
 /**
  * One card per UDS pool under a foldable heading: the VM count, one badge
- * per cache level, the agents-healthy line coloured by its ratio with the
+ * per cache level, the agents-healthy line colored by its ratio with the
  * current publication, and the capacity line with the stale-image count
  * on a dynamic pool; a click cycles the Pool filter and the fold persists
  * with the page's other preferences. Nothing without pools.

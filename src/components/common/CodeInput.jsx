@@ -17,7 +17,7 @@ const replaceAt = (digits, index, digit) =>
 
 /**
  * A one-time code entry: a `role="group"` of `length` numeric boxes each
- * labelled "Digit n of m", the first carrying `autocomplete="one-time-code"`
+ * labeled "Digit n of m", the first carrying `autocomplete="one-time-code"`
  * so a phone's autofill lands, Backspace moving back, the arrows moving
  * between boxes, and a paste of the whole code filling every box and
  * calling `onComplete`. Typed entry never submits on its own; the value is

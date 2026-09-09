@@ -122,6 +122,12 @@ security:
 (`/oauth2/authorize` never supports CORS by design — it is a redirect
 target, not a fetch target. Everything else honors the allowlist.)
 
+One client per browser app, and it is yours alone. A confidential client
+shared across apps is never used from a browser — a secret a static origin
+can see is no secret, and a shared `client_id` makes every app's redirect
+URIs, scopes, and consent one another's. Each browser app registers its own
+public PKCE client, exactly as above, with only its own redirect URIs.
+
 ### Confidential web app / BFF
 
 Your side: your backend holds the credential and does the code exchange;
@@ -308,6 +314,15 @@ Register `logout-redirect-uris` (exact match) and send the user to
 URL. Register a `back-channel-logout-uri` to be told when the user's
 session dies elsewhere (signed `logout+jwt`, correlate by the stored
 `sid`), or a `frontchannel-logout-uri` for the iframe variant.
+
+Logout is a navigation, not an API call: a top-level redirect or a form
+POST to `/connect/logout`, never a `fetch`. The
+[Universal Navbar Contract](universal-navbar/) already fixes this for the
+chrome's logout item, and every app follows the same rule. A fetch does
+work today, but only because the protocol chain is CSRF-exempt and
+CORS-enabled — an accident of the server's configuration, not a contract,
+and a fetch never carries the browser through the redirect that ends the
+session on our side.
 
 ## Issuer cutover checklist
 

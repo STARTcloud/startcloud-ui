@@ -10,20 +10,26 @@ const dotClass = ({ step, current, done }) => {
 
 /**
  * The progress dots of a multi-step flow: one dot per step in chain
- * order, the cleared ones and the current one marked, the whole labelled
- * "Step n of m, <step>" for a screen reader from the current step's label.
+ * order, the cleared ones and the current one marked, the group labeled
+ * "Step n of m, <step>" from the current step, each dot carrying its own
+ * visually hidden "Step n of m, <step>" and the current one
+ * `aria-current="step"`, so a screen reader hears the progress.
  */
 const StepDots = ({ steps, done, current, labels }) => {
   const { t } = useTranslation();
-  const n = steps.indexOf(current) + 1;
+  const m = steps.length;
+  const label = step =>
+    t('stepDots.label', { n: steps.indexOf(step) + 1, m, step: labels[step] || step });
   return (
-    <div
-      className="step-dots"
-      role="img"
-      aria-label={t('stepDots.label', { n, m: steps.length, step: labels[current] || current })}
-    >
+    <div className="step-dots" role="group" aria-label={label(current)}>
       {steps.map(step => (
-        <span key={step} className={dotClass({ step, current, done })} />
+        <span
+          key={step}
+          className={dotClass({ step, current, done })}
+          aria-current={step === current ? 'step' : undefined}
+        >
+          <span className="visually-hidden">{label(step)}</span>
+        </span>
       ))}
     </div>
   );

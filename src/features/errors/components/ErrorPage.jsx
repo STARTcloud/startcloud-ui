@@ -140,7 +140,7 @@ const useCopied = () => {
  * the server stamped on `<html>`, from the URL after a `303`, or `404` with
  * the current path for an unknown route, each accepted only under its
  * pattern, else the generic 500. For an admin the closed Technical details
- * fold draws `GET /api/admin/errors/{reference}`, its rows labelled from
+ * fold draws `GET /api/admin/errors/{reference}`, its rows labeled from
  * `errors.detail.*` and its trace copied, never sent in a URL.
  */
 const ErrorPage = ({ theme, ticketUrl = '', admin = false, notFound = false }) => {

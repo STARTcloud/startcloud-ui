@@ -23,7 +23,7 @@ export const resendEmailCode = () =>
 export const chooseTfaMethod = body =>
   client.post('/complete-onboarding/choose-2fa-method', body, OPTIONS);
 
-export const tfaEnrolment = () => client.get('/api/auth/tfa/enrol', OPTIONS);
+export const tfaEnrollment = () => client.get('/api/auth/tfa/enroll', OPTIONS);
 
 export const verifyApp = body => client.post('/qrcode/verify', body, OPTIONS);
 

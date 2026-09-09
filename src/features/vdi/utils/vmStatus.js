@@ -115,9 +115,9 @@ export const noCheckinLabel = vm => {
 };
 
 /**
- * A colour from red through orange to green for a ratio of 0 to 1.
+ * A color from red through orange to green for a ratio of 0 to 1.
  * @param {number} ratio - The ratio
- * @returns {string} An `rgb()` colour
+ * @returns {string} An `rgb()` color
  */
 export const ratioColor = ratio => {
   const r = Math.max(0, Math.min(1, ratio));

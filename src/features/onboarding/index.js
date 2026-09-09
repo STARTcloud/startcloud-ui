@@ -6,5 +6,5 @@ export { default as OnboardingHub } from './components/OnboardingHub';
 export { default as PhoneStep } from './components/PhoneStep';
 export { default as TeamNameStep } from './components/TeamNameStep';
 export { default as TermsPage } from './components/TermsPage';
-export { default as TfaEnrolChoiceStep } from './components/TfaEnrolChoiceStep';
-export { default as TotpEnrolPage } from './components/TotpEnrolPage';
+export { default as TfaEnrollChoiceStep } from './components/TfaEnrollChoiceStep';
+export { default as TotpEnrollPage } from './components/TotpEnrollPage';

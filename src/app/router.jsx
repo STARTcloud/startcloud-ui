@@ -80,8 +80,8 @@ import {
   PhoneStep,
   TeamNameStep,
   TermsPage,
-  TfaEnrolChoiceStep,
-  TotpEnrolPage,
+  TfaEnrollChoiceStep,
+  TotpEnrollPage,
 } from '../features/onboarding';
 import {
   DiscoveryPage,
@@ -192,7 +192,7 @@ const backendAdminMembers = {
 
 const adminAdapterFor = method => {
   if (method === 'cookie') {
-    return { updateStatus };
+    return {};
   }
   return {
     ...(method === 'backend' ? backendAdminMembers : {}),
@@ -548,11 +548,11 @@ const onboardingRoutes = ({ status, cookie }) => {
     step(
       '/complete-onboarding/choose-2fa-method',
       onboarding && tfa,
-      TfaEnrolChoiceStep,
+      TfaEnrollChoiceStep,
       'auth:onboarding.tfa.title',
       'tfa'
     ),
-    step('/qrcode', tfa, TotpEnrolPage, 'auth:onboarding.qr.title', 'tfa'),
+    step('/qrcode', tfa, TotpEnrollPage, 'auth:onboarding.qr.title', 'tfa'),
     step(
       '/complete-onboarding/backup-codes',
       onboarding,
@@ -719,6 +719,17 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
     />
   ));
 
+const sharedAdminRoutes = ({ cookie, globalAdmin }) =>
+  cookie
+    ? null
+    : ['config', 'system'].map(page => (
+        <Route
+          key={`/admin/${page}`}
+          path={`/admin/${page}`}
+          element={<AdminRoute globalAdmin={globalAdmin} page={page} />}
+        />
+      ));
+
 const homeElementFor = ({
   status,
   cookie,
@@ -756,9 +767,12 @@ const homeElementFor = ({
  * advertises `setup` and setup is incomplete, each feature route gated by
  * its feature token or by the host's first `auth` token, and the identity
  * contract's five groups behind the `cookie` token and their feature
- * tokens, a route the host lacks rendering `NotAvailableStub` instead; on
- * a `cookie` host `/error` and every unknown route draw the identity
- * contract's ErrorPage, every other host sending an unknown route home.
+ * tokens, a route the host lacks rendering `NotAvailableStub` instead; the
+ * shared admin pages at `/admin/config` and `/admin/system` are not
+ * mounted on a `cookie` host, whose sidebar reaches the issuer's own
+ * configuration page as a top-level navigation; on a `cookie` host
+ * `/error` and every unknown route draw the identity contract's ErrorPage,
+ * every other host sending an unknown route home.
  */
 const AppRoutes = ({
   account,
@@ -924,14 +938,7 @@ const AppRoutes = ({
         }
       />
       {identityAdminRoutes({ cookie, globalAdmin, user: account.user })}
-      <Route
-        path="/admin/config"
-        element={<AdminRoute globalAdmin={globalAdmin} page="config" />}
-      />
-      <Route
-        path="/admin/system"
-        element={<AdminRoute globalAdmin={globalAdmin} page="system" />}
-      />
+      {sharedAdminRoutes({ cookie, globalAdmin })}
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
       )}

@@ -33,7 +33,7 @@ side-by-side screenshot in the PR.
 
 ## Principles
 
-- The order, labels, conditions, and behaviour of universal rows are
+- The order, labels, conditions, and behavior of universal rows are
   fixed. An app never re-orders, renames, or relocates a universal row.
 - Universal rows render with the app's own component library, icon set,
   and theme. The contract fixes what appears and in what order, not how it
@@ -134,8 +134,8 @@ identical in every app.
   collapses back to the icon. Escape collapses when the query is empty.
 - **Panel**: drops out under the header at full width, on the tertiary
   band with a top border, one row per group: an uppercase group label and
-  pills labelled `value (count)`, each toggling that value, active pills
-  in the group's colour and inactive pills in the muted secondary tint. The
+  pills labeled `value (count)`, each toggling that value, active pills
+  in the group's color and inactive pills in the muted secondary tint. The
   label column sizes to the longest label on the page, and a group with no
   values on the page is not drawn. A foot row shows the active-filter count
   and a "Clear filters" link, which empties the sets but keeps the query and
@@ -162,7 +162,7 @@ identical in every app.
   are listed. Every app brings the filters it already has, not new ones:
   BoxVault's boxes bring Provider (primary), Architecture (info) and OS
   (success); its ISOs bring Organization (primary) across organizations;
-  the catalog brings Tier (the tier badge colours) and Provider (primary).
+  the catalog brings Tier (the tier badge colors) and Provider (primary).
 - After a collection's own groups, while the page is in list view, a
   **Columns** group for that collection, prefixed the same way: one pill
   per column of that collection's table, drawn without a count and active
@@ -242,7 +242,7 @@ here, not in any one app's backlog.
   by app. The mode switch is the expanded box's leading magnifier; no
   scope row, no pills for scopes. Planned and owned by the identity
   provider; the channel is built there first and each client's part is
-  handed out from it afterwards, nothing is built in a client ahead of it.
+  handed out from it afterward, nothing is built in a client ahead of it.
 - **Contract**: the list and the page live once in the shared chrome
   (`src/features/search/` and the search module), and a checklist row is
   added per app that exposes a search endpoint.
@@ -395,7 +395,7 @@ packaging already keeps its own version (the VDI Health Monitor as
 server as `version` in `packaging/config/ui-version.yaml` beside its
 `version.yaml`). The backend's CI fetches that tarball into `ui/` before
 the build runs (`curl -fsSL … | tar -xz -C ui`); the build tool and the
-built artefact never fetch it and never contain it, because an artefact
+built artifact never fetch it and never contain it, because an artifact
 copied between hosts must run with no network and a build must be
 reproducible from the checkout plus the pinned tarball, which only CI has
 the network to fetch. The package carries `ui/` as a folder on disk
@@ -637,7 +637,7 @@ the footer away.
 
 ## User menu, top to bottom
 
-| #   | Row                                                                | Shown when                                                                                                                                                                                                                                                                 | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| #   | Row                                                                | Shown when                                                                                                                                                                                                                                                                 | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Identity card: avatar, name, email, target glyph, trailing chevron | signed in                                                                                                                                                                                                                                                                  | Whole card is one link → `{issuer}/user/profile`. Email line only when it differs from the name; neither is truncated — the menu grows with them as it does with any row. The glyph and chevron sit in a fixed-width `user-card-actions` slot so the card measures the same in every app: an id-badge glyph marks the IdP profile as the target, a user glyph marks a local profile. Apps with both a local profile page and an IdP session make the glyph a mode toggle that flips the target without navigating (the card body navigates to the shown target); everywhere else it is a static indicator. Apps may additionally list the local profile in their own section. |
 | 2   | Active organization: org logo + org name                           | `organizations` claim has ≥ 2 memberships                                                                                                                                                                                                                                  | Opens the organization switcher modal. No subline, no role badge, no chevron.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -692,7 +692,7 @@ keys keep them apart:
 | **In-app notices**                     | what the app itself tells the user on the page: the Notices section's banners and cards (failed actions, validation, the session ending) |
 
 Title "Notification Channel Notifications", header action "Mark all read",
-close button; the dialog is 720px wide. Rows: type icon coloured by
+close button; the dialog is 720px wide. Rows: type icon colored by
 severity, title (bold when unread, followed by an open-in glyph when the
 row carries an `https://` `navigate` link), body, relative time, unread
 dot, and on hover a per-row mark-read (unread rows only) beside the

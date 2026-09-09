@@ -15,10 +15,17 @@ const PATHS = {
     unsubscribeOptions: endpoint => ({ body: { endpoint } }),
   },
   idp: {
-    vapidKey: '/api/push/vapid-key',
-    subscriptions: '/api/push/subscriptions',
-    testToast: '/api/push/test-toast',
-    testChannel: '/api/push/test-channel',
+    vapidKey: '/push/vapid-key',
+    subscriptions: '/push/subscriptions',
+    testToast: '/push/test-toast',
+    testChannel: '/push/test-channel',
+    unsubscribeOptions: endpoint => ({ params: { endpoint } }),
+  },
+  cookie: {
+    vapidKey: '/api/notifications/vapid-key',
+    subscriptions: '/api/notifications/subscriptions',
+    testToast: '/api/notifications/test/toast',
+    testChannel: '/api/notifications/test/channel',
     unsubscribeOptions: endpoint => ({ params: { endpoint } }),
   },
 };
@@ -27,7 +34,7 @@ const PATHS = {
  * The inbox adapter the user menu's bell reads: the hub client's five
  * calls plus the host's channel test, its path chosen by the first `auth`
  * token (the app's own backend proxies the hub for `backend`, the Worker's
- * push routes answer for `idp`).
+ * push routes answer for `idp`, the hub's own routes for `cookie`).
  *
  * @param {Object} options - The runtime pieces
  * @param {Object} options.status - The payload from `probeStatus`

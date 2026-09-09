@@ -133,7 +133,7 @@ export const hasAbout = status => Boolean(PROFILES[status.role]);
 
 /**
  * The About route: the shared `AboutPage` fed by the host's status and the
- * locale strings of the host's role, plus the favourite toggle over `GET`
+ * locale strings of the host's role, plus the favorite toggle over `GET`
  * and `PUT /api/user/favorites` through the hub client, the whole ordered
  * list written back in `snake_case`, when the host advertises `favorites`
  * and the viewer signed in through the provider; a role with no

@@ -654,7 +654,7 @@
       surfaces, accent and display face in one attribute. On the shared chrome the same four sites
       are two independent axes: the variant, <code>light</code> or <code>dark</code>, chosen by the
       person and stamped as <code>data-bs-theme</code>, and the pack, a bare brand name stamped as
-      <code>data-brand</code>, whose stylesheet carries colours, surfaces, artwork and the auth
+      <code>data-brand</code>, whose stylesheet carries colors, surfaces, artwork and the auth
       column's face, never geometry. The site's own default variant travels as
       <code>brand.theme</code> in <code>/api/status</code>, answered per site by hostname, and the
       pack and its stylesheet come from the branding endpoint. The first frame is live: pick a site
@@ -679,7 +679,7 @@
         <strong>What this frame proves.</strong> One chrome, one sign-in column, four looks, and
         every difference is a value of a pack file: <code>--brand-primary</code>,
         <code>--brand-on-primary</code>, the mark, the surfaces where the pack names them and, for
-        the auth column alone, the display face. Moonshine's greys and Nomad's purple-black are pack
+        the auth column alone, the display face. Moonshine's grays and Nomad's purple-black are pack
         values under the dark variant; a person on the Moonshine.dev site who picks light gets
         Moonshine's green on whatever light surfaces the pack names, and Bootstrap's where it names
         none.
@@ -694,8 +694,8 @@
       </div>
       <div class="callout changed">
         <strong>Changed: surfaces are the pack's to set.</strong> The surface palettes of
-        <code>auth.css</code> move into the packs as <code>--bs-*</code> colours per variant:
-        Moonshine's neutral greys and Nomad's purple-black under
+        <code>auth.css</code> move into the packs as <code>--bs-*</code> colors per variant:
+        Moonshine's neutral grays and Nomad's purple-black under
         <code>[data-brand][data-bs-theme="dark"]</code>, a light twin where the site wants one; the
         stock variant is the fallback wherever a pack names nothing, and geometry is never a pack's.
       </div>
@@ -884,8 +884,8 @@
             >
             <span class="c k">surfaces</span
             ><span class="c"
-              >a pack may set the <code>--bs-*</code> surface and text colours per variant; the
-              shell adds nothing, Bootstrap's own variables carry them, and the stock variant fills
+              >a pack may set the <code>--bs-*</code> surface and text colors per variant; the shell
+              adds nothing, Bootstrap's own variables carry them, and the stock variant fills
               whatever the pack leaves unset</span
             >
             <span class="c k">auth column</span

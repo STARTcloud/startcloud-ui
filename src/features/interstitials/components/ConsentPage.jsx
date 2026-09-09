@@ -95,7 +95,7 @@ const ConsentPage = ({ returnTo }) => {
 
   const signOut = () =>
     cancelSignIn()
-      .then(result => followNext({ next: result?.next, navigate, returnTo }))
+      .then(result => followNext({ next: result?.next, navigate, returnTo, trusted: true }))
       .catch(error => setProblem(report(error)));
 
   const scopes = answer ? scopeRows(answer.scopes, t) : [];

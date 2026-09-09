@@ -413,7 +413,7 @@ const TermsPage = ({ returnTo }) => {
 
   const decline = () =>
     cancelSignIn()
-      .then(answer => followNext({ next: answer?.next, navigate, returnTo }))
+      .then(answer => followNext({ next: answer?.next, navigate, returnTo, trusted: true }))
       .catch(error => setProblem(report(error)));
 
   const collecting = Boolean(state?.collecting);

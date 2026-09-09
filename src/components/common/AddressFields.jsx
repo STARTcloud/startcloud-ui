@@ -96,10 +96,10 @@ const usePlacesAutocomplete = ({ inputRef, placesKey, onPlace }) => {
       return undefined;
     }
     let autocomplete = null;
-    let cancelled = false;
+    let canceled = false;
     loadPlaces(placesKey)
       .then(places => {
-        if (cancelled || !inputRef.current) {
+        if (canceled || !inputRef.current) {
           return;
         }
         autocomplete = new places.Autocomplete(inputRef.current, {
@@ -112,7 +112,7 @@ const usePlacesAutocomplete = ({ inputRef, placesKey, onPlace }) => {
       })
       .catch(() => null);
     return () => {
-      cancelled = true;
+      canceled = true;
       if (autocomplete && window.google?.maps?.event) {
         window.google.maps.event.clearInstanceListeners(autocomplete);
       }

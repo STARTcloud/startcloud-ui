@@ -95,7 +95,7 @@ HealthIndicator.propTypes = {
 /**
  * The footer row of the navbar contract's Footer status section: the
  * app's name, year and version on the left as the repository link, the
- * changelog link or plain text; "Powered by" in the centre; and the health
+ * changelog link or plain text; "Powered by" in the center; and the health
  * heart on the right while the app hands a `fetchHealth`, its state read
  * once on mount, then while `streamed` read again on every `ready` of
  * the tab's stream and kept by its `health` event, and by a 60-second

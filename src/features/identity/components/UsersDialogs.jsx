@@ -33,31 +33,31 @@ const CUSTOMER_ID_SCHEMA = { properties: { customer_id: { $ref: '#/$defs/orgCode
 const CUSTOMER_ID_LABELS = { customer_id: 'admin.users.customerId.label' };
 
 /**
- * The catalogue of roles from `GET /api/admin/roles`, read once per
+ * The catalog of roles from `GET /api/admin/roles`, read once per
  * mount; the contract's example while the route answers 404.
  *
  * @returns {string[]} The role names
  */
-export const useRoleCatalogue = () => {
-  const [catalogue, setCatalogue] = useState([]);
+export const useRoleCatalog = () => {
+  const [catalog, setCatalog] = useState([]);
   useEffect(() => {
     let mounted = true;
     readRoles()
       .then(list => {
         if (mounted) {
-          setCatalogue(Array.isArray(list) ? list : []);
+          setCatalog(Array.isArray(list) ? list : []);
         }
       })
       .catch(error => {
         if (mounted && error.status === 404) {
-          setCatalogue(ROLES);
+          setCatalog(ROLES);
         }
       });
     return () => {
       mounted = false;
     };
   }, []);
-  return catalogue;
+  return catalog;
 };
 
 const DialogFooter = ({ busy, label, onClose }) => {
@@ -82,9 +82,9 @@ DialogFooter.propTypes = {
 
 /**
  * The Roles dialog of a Users row: one checkbox per role of the
- * catalogue, saved in one `PUT` with the whole set; mounted per user.
+ * catalog, saved in one `PUT` with the whole set; mounted per user.
  */
-export const RolesDialog = ({ user, catalogue, onClose, onSaved }) => {
+export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [chosen, setChosen] = useState(() => new Set(user.roles));
@@ -114,7 +114,7 @@ export const RolesDialog = ({ user, catalogue, onClose, onSaved }) => {
       .finally(() => setBusy(false));
   };
 
-  const names = [...new Set([...catalogue, ...user.roles])];
+  const names = [...new Set([...catalog, ...user.roles])];
 
   return (
     <Modal show onHide={onClose}>
@@ -146,7 +146,7 @@ export const RolesDialog = ({ user, catalogue, onClose, onSaved }) => {
 
 RolesDialog.propTypes = {
   user: adminUserShape.isRequired,
-  catalogue: PropTypes.arrayOf(PropTypes.string).isRequired,
+  catalog: PropTypes.arrayOf(PropTypes.string).isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };

@@ -14,7 +14,7 @@ import OnboardingFrame from './OnboardingFrame';
  * one and the risk notice when the site asks for it, Continue posting the
  * choice and following `next`.
  */
-const TfaEnrolChoiceStep = ({ returnTo }) => {
+const TfaEnrollChoiceStep = ({ returnTo }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const { run, busy, problem } = useStepAction(returnTo);
@@ -76,8 +76,8 @@ const TfaEnrolChoiceStep = ({ returnTo }) => {
   );
 };
 
-TfaEnrolChoiceStep.propTypes = {
+TfaEnrollChoiceStep.propTypes = {
   returnTo: returnToShape.isRequired,
 };
 
-export default TfaEnrolChoiceStep;
+export default TfaEnrollChoiceStep;

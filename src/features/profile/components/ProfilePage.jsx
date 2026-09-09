@@ -257,10 +257,10 @@ const BackendProfilePage = ({
   const handleCancelJoinRequest = async requestId => {
     try {
       await account.cancelRequest(requestId);
-      notify('success', t('profile.messages.requestCancelled'));
+      notify('success', t('profile.messages.requestCanceled'));
       setJoinRequests((await account.requests()) || []);
     } catch (error) {
-      log.api.error('Error cancelling join request', {
+      log.api.error('Error canceling join request', {
         requestId,
         error: error.message,
       });

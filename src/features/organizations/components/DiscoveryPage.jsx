@@ -179,12 +179,12 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
   useEffect(() => {
     document.title = t('discovery.title');
 
-    let cancelled = false;
+    let canceled = false;
 
     const loadDiscoverableOrganizations = async () => {
       try {
         const orgs = (await organizations.discover()) || [];
-        if (cancelled) {
+        if (canceled) {
           return;
         }
         setRows(orgs);
@@ -200,14 +200,14 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
 
         await fetchOrgGravatars(orgs);
       } catch (error) {
-        if (!cancelled) {
+        if (!canceled) {
           log.api.error('Error loading discoverable organizations', {
             error: error.message,
           });
           notify('danger', t(error.messageKey || 'errors.request'));
         }
       } finally {
-        if (!cancelled) {
+        if (!canceled) {
           setLoading(false);
         }
       }
@@ -216,7 +216,7 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
     loadDiscoverableOrganizations();
 
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [fetchOrgGravatars, joinIntentKey, notify, organizations, t]);
 

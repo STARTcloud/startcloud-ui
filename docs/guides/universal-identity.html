@@ -1709,7 +1709,7 @@
         <strong>What this frame proves.</strong> One page, two modes (<code>magic_link</code>,
         <code>password</code>), the mode chosen from <code>?login=</code> for one visit, then the
         stored <code>login_method</code>, then the methods answer's <code>login_mode</code>, then
-        the first enabled method; the same labelled email field serves the link and the password;
+        the first enabled method; the same labeled email field serves the link and the password;
         "Keep me logged in" is offered in both modes; a <code>202</code> moves the URL to
         <code>/login?sent</code> with the address in router state, never in the URL; a
         <code>401</code> paints a danger alert from <code>code</code>; a <code>200</code> follows
@@ -1911,7 +1911,7 @@
                   ><span class="l">SMS — Work phone</span
                   ><span class="h"
                     >This method is disabled after too many failed attempts; use another and
-                    re-enrol it from your profile.</span
+                    re-enroll it from your profile.</span
                   ></span
                 ></label
               >
@@ -1947,7 +1947,7 @@
             <div class="auth-form">
               <div class="a-field">
                 <label id="tfa-l">Two-factor code</label>
-                <div class="otp" role="group" aria-labelledby="tfa-l">
+                <div class="otp" role="group" aria-labeledby="tfa-l">
                   <input
                     value="4"
                     aria-label="Digit 1 of 6"
@@ -1988,7 +1988,7 @@
       </div>
       <div class="callout">
         <strong>The code entry</strong> draws <code>GET /api/auth/tfa</code>: the subhead by method,
-        <code>CodeInput</code> for SMS and APP (a <code>role="group"</code> of six boxes labelled
+        <code>CodeInput</code> for SMS and APP (a <code>role="group"</code> of six boxes labeled
         "Digit n of 6", the first carrying <code>autocomplete="one-time-code"</code> so a phone's
         autofill lands, Backspace moving back; a six-digit paste fills and submits, typed entry
         submits only through Sign in and never while <code>wait_seconds</code> is non-zero, so a
@@ -2495,7 +2495,7 @@
               </div>
               <div class="a-field">
                 <label id="pc-l">Verification code</label>
-                <div class="otp" role="group" aria-labelledby="pc-l">
+                <div class="otp" role="group" aria-labeledby="pc-l">
                   <input
                     value="4"
                     aria-label="Digit 1 of 6"
@@ -2606,7 +2606,7 @@
       <div class="callout">
         <strong>One state call.</strong> Every step page reads
         <code>GET /api/auth/onboarding</code>: <code>next</code> names the step,
-        <code>steps</code> and <code>done</code> draw the dots, each labelled "Step n of m" with the
+        <code>steps</code> and <code>done</code> draw the dots, each labeled "Step n of m" with the
         step's name for a screen reader, and the per-step members (<code>phone.purpose</code>,
         <code>tfa.verified_phone</code>, <code>org.required_by_client</code>) shape the page. A
         step's <code>200</code> answers the next <code>next</code>; the button always reads
@@ -2656,7 +2656,7 @@
 
   <div class="state">
     <div class="state-label">
-      Second-factor enrolment — the choice, the authenticator app with its setup key, and the
+      Second-factor enrollment — the choice, the authenticator app with its setup key, and the
       one-time backup codes
     </div>
     <div class="frame">
@@ -2714,7 +2714,7 @@
             </div>
             <div class="a-field">
               <label id="qr-l">Enter the code from your authenticator app</label>
-              <div class="otp" role="group" aria-labelledby="qr-l">
+              <div class="otp" role="group" aria-labeledby="qr-l">
                 <input
                   value=""
                   aria-label="Digit 1 of 6"
@@ -2781,9 +2781,9 @@
     </div>
     <div class="callouts">
       <div class="callout">
-        <strong>The QR and the key</strong> come from <code>GET /api/auth/tfa/enrol</code>, the
+        <strong>The QR and the key</strong> come from <code>GET /api/auth/tfa/enroll</code>, the
         secret held in the session until <code>POST /qrcode/verify</code> proves possession; this
-        page is the onboarding chain's alone, and the profile enrols an app inline on its Security
+        page is the onboarding chain's alone, and the profile enrolls an app inline on its Security
         tab so a signed-in person never leaves the tabs. The codes come from
         <code>POST /api/auth/tfa/backup-codes</code>, a POST because a one-time secret on a GET is
         consumed by a prefetch, and are held in the session and answered again on every call until
@@ -3559,7 +3559,7 @@
               </div>
               <span class="a-hint"
                 >the last method's Remove is disabled with "Remove another method first" as its
-                tooltip; a locked method draws a notice with "Re-enrol now"; the app enrols inline
+                tooltip; a locked method draws a notice with "Re-enroll now"; the app enrolls inline
                 here with the QR, the setup key, the code and a label</span
               >
               <h3 style="margin-top: 8px">Recovery <span class="a-badge">6 remaining</span></h3>
@@ -3621,7 +3621,8 @@
 
   <div class="state">
     <div class="state-label">
-      Organizations as cards opening the shared console; integrations; the inbox page
+      Organizations under the one view toggle, list or cards, opening the shared console;
+      integrations; the inbox page
     </div>
     <div class="frame">
       <div class="three-up">
@@ -3812,11 +3813,12 @@
       <div class="callout changed">
         <strong>Changed: organizations.</strong> Today one long page holds every membership's whole
         console (rename, profile, address, invite code, members, invites, leave, delete) as fourteen
-        form posts each redirecting with a flash. Now the card list here, every input labelled, the
-        invite code shown and regenerable only while <code>can_manage</code>, and the shared
-        OrgConsolePage over the active organization, grown by the issuer's fields; every card opens
-        the console, Manage for a manager and View for a plain member, who sees the record and the
-        members read-only; <code>#&lt;uuid&gt;</code> in the URL sets the active organization so the
+        form posts each redirecting with a flash. Now the memberships here under the pages
+        contract's one view toggle, list or cards, every input labeled, the invite code shown and
+        regenerable only while <code>can_manage</code>, and the shared OrgConsolePage over the
+        active organization, grown by the issuer's fields; every row or card opens the console,
+        Manage for a manager and View for a plain member, who sees the record and the members
+        read-only; <code>#&lt;uuid&gt;</code> in the URL sets the active organization so the
         estate's "manage at the provider" links still land (decision 13). The switcher on the issuer
         is console context only; Make primary here is the one place the primary organization
         changes.
@@ -3828,7 +3830,7 @@
         session, because a link that starts on a GET can be started for a victim by any page;
         unlinking, revoking and removing a scope are <code>DELETE</code>s with a confirm that lists
         the sessions they end; the <code>openid</code> chip carries no remove control since the
-        application breaks without it, every other chip's control is a 24px target labelled "Remove
+        application breaks without it, every other chip's control is a 24px target labeled "Remove
         {{scope}} permission", and the button to the profile's Sessions tab reads "Sessions"; every
         <code>icon_url</code> is drawn only with the <code>https:</code> scheme and
         <code>referrerpolicy="no-referrer"</code>.
@@ -3836,7 +3838,7 @@
       <div class="callout">
         <strong>The inbox page</strong>, the sidebar's Inbox row, is the modal's rows and adapter on
         a page: the same <code>InboxList</code>, twenty-five per page with <code>Pager</code>, the
-        row controls labelled "Mark as read" and "Delete", every relative time carrying the absolute
+        row controls labeled "Mark as read" and "Delete", every relative time carrying the absolute
         time in its tooltip, "View details" following <code>navigate</code> when it is
         <code>https://</code> or a same-origin path, the chrome's badge updated through the same
         <code>onUnreadDelta</code> and the <code>unread-count</code> event. The navbar contract's
@@ -4024,8 +4026,7 @@
         <code>/admin/dashboard</code>; on the shared chrome those are rows of the column, the crumbs
         open the header row, and the rows are the contract's. The switcher is context, never
         location: picking an organization changes what the console and the ticket id act on and
-        moves no page, and the switcher's subline on the issuer says so, "Console context; the
-        primary organization is set on the Organizations page".
+        moves no page.
       </div>
     </div>
   </div>
@@ -4383,7 +4384,7 @@
       <div class="callout">
         <strong>Disable two-factor</strong> steps up and calls <code>PUT /api/user/tfa</code> with
         <code>enabled: false</code>; <strong>Delete account</strong> is the email confirmation over
-        an empty field labelled with the address, the understanding box and a line naming exactly
+        an empty field labeled with the address, the understanding box and a line naming exactly
         what is destroyed, then <code>POST /api/user/deletion</code>, stepped up; the server
         invalidates every session of the account before answering <code>{ next: "/login" }</code>,
         and the page drops its cache and navigates there; a sole-owner refusal is <code>409</code>
@@ -4674,9 +4675,10 @@
       <div class="callout changed">
         <strong>Changed: fourteen form posts become one record.</strong>
         <code>user/organizations.html</code> draws every membership's whole console on one long page
-        with a form and a flash redirect per action; the card list of the earlier frame opens this
-        console for one organization, the active one, and every action re-fetches the record. The
-        Invitations tab needs the <code>invitations</code> token, which the issuer advertises.
+        with a form and a flash redirect per action; the memberships of the earlier frame, under the
+        one view toggle, list or cards, open this console for one organization, the active one, and
+        every action re-fetches the record. The Invitations tab needs the
+        <code>invitations</code> token, which the issuer advertises.
       </div>
     </div>
   </div>
@@ -5180,9 +5182,9 @@
         select (one value, since a status is exclusive), the 2FA and Customer ID pills and the
         Active after <code>DateRange</code> above the table, because an operator scanning a table
         looks for its controls beside it and not behind a gear in the header; the Sessions page
-        alone binds the navbar search, having no other filter. Row actions are labelled buttons and
-        a row menu, never bare glyphs, and a badge never acts on its own: Set primary organization
-        and Edit customer ID are rows of the menu behind a confirm.
+        alone binds the navbar search, having no other filter. Row actions are labeled buttons and a
+        row menu, never bare glyphs, and a badge never acts on its own: Set primary organization and
+        Edit customer ID are rows of the menu behind a confirm.
       </div>
       <div class="callout changed">
         <strong>Changed: the routes.</strong> The <code>/admin/*</code> form posts and ad-hoc maps
@@ -5194,7 +5196,7 @@
       <div class="callout changed">
         <strong>Changed: roles and bulk.</strong> One <code>PUT</code> with the whole role set
         replaces a toggle call per change and a reload; <code>GET /api/admin/roles</code> replaces
-        reading the first selected user's roles to learn the catalogue; the bulk actions are
+        reading the first selected user's roles to learn the catalog; the bulk actions are
         <code>enable</code>, <code>suspend</code>, <code>add_role</code>,
         <code>remove_role</code> and <code>delete</code>, the last stepped up; every action
         re-fetches the list instead of <code>location.reload()</code>; a paged list answers
@@ -5207,8 +5209,8 @@
         <code>admin</code> events topic as <code>restart-required</code> and draws the Dashboard
         card above and the Configuration page's card, the blocked count rides it as
         <code>blocked-count</code> for the sidebar badge, and the footer's heart, drawn only while
-        the site lists <code>footer</code> and <code>health</code>, takes its colour from the
-        topic's <code>health</code> event; no page of the issuer runs a timer.
+        the site lists <code>footer</code> and <code>health</code>, takes its color from the topic's
+        <code>health</code> event; no page of the issuer runs a timer.
       </div>
       <div class="callout">
         <strong>The configuration editor.</strong> The shared editor of the config contract over
@@ -6267,7 +6269,7 @@ TypeError: Cannot read properties of undefined (reading 'items')
       return (
         '<div class="auth-heading"><h1 class="auth-headline">Two-factor authentication</h1><p class="auth-subhead">Enter the code from the authenticator app you named <strong>Phone</strong>.</p></div>' +
         alertHtml() +
-        '<form class="auth-form" data-form novalidate><div class="a-field"><label id="live-tfa-l">Two-factor code</label><div class="otp" role="group" aria-labelledby="live-tfa-l"><input maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 2 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 3 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 4 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 5 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 6 of 6"></div></div><button class="a-btn p" type="submit" data-act="code"' +
+        '<form class="auth-form" data-form novalidate><div class="a-field"><label id="live-tfa-l">Two-factor code</label><div class="otp" role="group" aria-labeledby="live-tfa-l"><input maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 2 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 3 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 4 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 5 of 6"><input maxlength="1" inputmode="numeric" aria-label="Digit 6 of 6"></div></div><button class="a-btn p" type="submit" data-act="code"' +
         (state.wait > 0 ? ' disabled' : '') +
         '>Sign in</button></form>' +
         '<p class="a-foot"><span class="a-link muted">Choose a different method</span> &nbsp;·&nbsp; <button class="a-link muted" type="button" data-act="different">Cancel</button></p>'

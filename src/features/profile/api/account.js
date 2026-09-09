@@ -28,7 +28,7 @@ export const changePassword = body => client.put(`${USER}/password`, body);
 
 export const tfaMethods = () => client.get(`${USER}/tfa/methods`);
 
-export const tfaEnrol = () => client.get(`${USER}/tfa/enrol`);
+export const tfaEnroll = () => client.get(`${USER}/tfa/enroll`);
 
 export const sendTfaSms = mobileNumber =>
   client.post(`${USER}/tfa/sms/send`, { mobile_number: mobileNumber });
@@ -66,11 +66,11 @@ export const revokeSessions = () => client.delete(`${USER}/sessions`);
 export const favorites = () => client.get(`${USER}/favorites`);
 
 /**
- * The favourites the user menu draws, `GET /api/user/favorites` through the
+ * The favorites the user menu draws, `GET /api/user/favorites` through the
  * hub client: the issuer itself on a `cookie` or `idp` host and the app's
  * own proxying backend on a `backend` host.
  *
- * @returns {Promise<Array>} The ordered favourites
+ * @returns {Promise<Array>} The ordered favorites
  */
 export const menuFavorites = () => hubClient.get(`${USER}/favorites`);
 
@@ -105,7 +105,7 @@ export const issuerAccount = {
   password: changePassword,
   tfa: {
     methods: tfaMethods,
-    enrol: tfaEnrol,
+    enroll: tfaEnroll,
     sms: { send: sendTfaSms, verify: verifyTfaSms },
     app: { verify: verifyTfaApp },
     prefer: preferTfa,

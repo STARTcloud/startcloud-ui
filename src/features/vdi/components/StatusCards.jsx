@@ -45,7 +45,7 @@ const ratioOf = (value, denominator, inverted = false) => {
  * The five status cards: Healthy over the checked-in VMs, CIFS broken and
  * Icons missing over the VMs with a session, Stale (the agent score) over
  * the checked-in VMs, and VDIs without a user session over every VM with
- * its cache-level breakdown; the number is coloured by its ratio and a
+ * its cache-level breakdown; the number is colored by its ratio and a
  * click cycles the Status filter through include, exclude and off.
  */
 const StatusCards = ({ vms, now, filterState, onCycle }) => {

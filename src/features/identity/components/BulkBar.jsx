@@ -16,11 +16,11 @@ const ROLE_ACTIONS = ['add_role', 'remove_role'];
  * behind the shared confirm, the delete action stepped up, the result
  * line naming processed, skipped and errors, and the list re-fetched.
  */
-const BulkBar = ({ selected, catalogue, onClear, onDone }) => {
+const BulkBar = ({ selected, catalog, onClear, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
-  const [role, setRole] = useState(catalogue[0] || '');
+  const [role, setRole] = useState(catalog[0] || '');
   const [pending, setPending] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +32,7 @@ const BulkBar = ({ selected, catalogue, onClear, onDone }) => {
   const send = () => {
     const body = { action: pending, user_ids: selected };
     if (ROLE_ACTIONS.includes(pending)) {
-      body.role = role || catalogue[0] || '';
+      body.role = role || catalog[0] || '';
     }
     setBusy(true);
     guard(() => bulk(body), t('admin.users.bulk.stepUpReason'))
@@ -73,10 +73,10 @@ const BulkBar = ({ selected, catalogue, onClear, onDone }) => {
       <select
         id="bulk-role"
         className="form-select form-select-sm w-auto"
-        value={role || catalogue[0] || ''}
+        value={role || catalog[0] || ''}
         onChange={event => setRole(event.target.value)}
       >
-        {catalogue.map(name => (
+        {catalog.map(name => (
           <option key={name} value={name}>
             {name}
           </option>
@@ -121,7 +121,7 @@ const BulkBar = ({ selected, catalogue, onClear, onDone }) => {
 
 BulkBar.propTypes = {
   selected: PropTypes.array.isRequired,
-  catalogue: PropTypes.arrayOf(PropTypes.string).isRequired,
+  catalog: PropTypes.arrayOf(PropTypes.string).isRequired,
   onClear: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
 };

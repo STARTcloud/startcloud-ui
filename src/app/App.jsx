@@ -49,8 +49,6 @@ const persistTheme = preference => session.savePreferences({ theme: preference }
 
 const adoptMemberships = next => setMemberships(next?.organizations || []);
 
-const initialThemeOf = backend => (backend ? session.current()?.preferredTheme || '' : '');
-
 const createRuntimeAdapters = status => ({
   notifications: createNotificationsAdapter({ status, client, hubClient }),
   ...createPushAdapter({ status, client }),
@@ -95,6 +93,7 @@ const App = ({ getSupportedLanguages }) => {
     provider: session,
     events,
     returnTo,
+    navigate,
     activeOrgKey: ACTIVE_ORG_KEY,
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
@@ -106,11 +105,7 @@ const App = ({ getSupportedLanguages }) => {
     preference: themePreference,
     setPreference: setThemePreference,
     toggleTheme,
-  } = useTheme({
-    initialPreference: initialThemeOf(backend),
-    siteTheme: status.brand.theme || '',
-    onPersist: persistTheme,
-  });
+  } = useTheme({ siteTheme: status.brand.theme || '', onPersist: persistTheme });
   const setupComplete = useSetupGate({
     enabled: hasFeature(status, 'setup'),
     checkStatus: setupApi.status,

@@ -344,7 +344,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * column and the app section are hidden on the auth routes of the
  * session's return-path helper, and on a `cookie` host the cluster's Sign
  * in button is hidden there too, the session-ended banner carrying its
- * own Sign in in its place. The app supplies the session state, the
+ * own Sign in in its place; on a `cookie` host the menu draws no
+ * Organization console row, the sidebar's Organizations row being that
+ * destination. The app supplies the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
  * features unlock.
@@ -448,7 +450,7 @@ const AppShell = ({
       rows: appRowsFor({
         showAbout,
         showAdminBoard,
-        showOrgConsole,
+        showOrgConsole: showOrgConsole && !cookie,
         extraRows: appRows,
         links: status.links,
         t,

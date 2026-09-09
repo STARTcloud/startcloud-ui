@@ -6,7 +6,7 @@ import CodeInput from '../../../components/common/CodeInput';
 import CopyButton from '../../../components/common/CopyButton';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { returnToShape } from '../../../utils/auth';
-import { tfaEnrolment, verifyApp } from '../api/onboarding';
+import { tfaEnrollment, verifyApp } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 
 import OnboardingFrame from './OnboardingFrame';
@@ -15,16 +15,16 @@ const DATA_IMAGE = /^data:image\/(?:png|svg\+xml|jpeg|gif);base64,/;
 
 /**
  * `/qrcode`: the QR image and the setup key with its copy button from
- * `GET /api/auth/tfa/enrol`, the `CodeInput`, "Verify code" posting
+ * `GET /api/auth/tfa/enroll`, the `CodeInput`, "Verify code" posting
  * `/qrcode/verify` and following `next`, and "Choose a different method";
  * the onboarding chain's page alone.
  */
-const TotpEnrolPage = ({ returnTo }) => {
+const TotpEnrollPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
   const { state } = useOnboarding();
   const { run, busy, problem, setProblem } = useStepAction(returnTo);
-  const [enrolment, setEnrolment] = useState(null);
+  const [enrollment, setEnrollment] = useState(null);
   const [code, setCode] = useState('');
 
   useEffect(() => {
@@ -33,10 +33,10 @@ const TotpEnrolPage = ({ returnTo }) => {
 
   useEffect(() => {
     let active = true;
-    tfaEnrolment()
+    tfaEnrollment()
       .then(answer => {
         if (active) {
-          setEnrolment(answer);
+          setEnrollment(answer);
         }
       })
       .catch(error => {
@@ -68,10 +68,10 @@ const TotpEnrolPage = ({ returnTo }) => {
       subtitle={t('onboarding.qr.scan')}
       problem={problem}
     >
-      {enrolment ? (
+      {enrollment ? (
         <form className="auth-form" onSubmit={submit} noValidate>
-          {DATA_IMAGE.test(enrolment.qr || '') ? (
-            <img className="auth-qr" src={enrolment.qr} alt="" />
+          {DATA_IMAGE.test(enrollment.qr || '') ? (
+            <img className="auth-qr" src={enrollment.qr} alt="" />
           ) : null}
           <div className="field auth-field">
             <label className="form-label" htmlFor="totp-secret">
@@ -79,9 +79,9 @@ const TotpEnrolPage = ({ returnTo }) => {
             </label>
             <div className="auth-row">
               <div className="auth-input-wrap auth-grow">
-                <input id="totp-secret" type="text" value={enrolment.secret || ''} readOnly />
+                <input id="totp-secret" type="text" value={enrollment.secret || ''} readOnly />
               </div>
-              <CopyButton text={enrolment.secret || ''} className="auth-btn auth-btn-secondary" />
+              <CopyButton text={enrollment.secret || ''} className="auth-btn auth-btn-secondary" />
             </div>
           </div>
           <CodeInput
@@ -110,8 +110,8 @@ const TotpEnrolPage = ({ returnTo }) => {
   );
 };
 
-TotpEnrolPage.propTypes = {
+TotpEnrollPage.propTypes = {
   returnTo: returnToShape.isRequired,
 };
 
-export default TotpEnrolPage;
+export default TotpEnrollPage;

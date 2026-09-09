@@ -14,7 +14,7 @@ const teamsOf = error =>
 /**
  * The Delete account section of the Security tab: the line naming what
  * is destroyed, then the dialog with the email confirmation over an empty
- * field labelled with the address, the understanding checkbox and the
+ * field labeled with the address, the understanding checkbox and the
  * sole-owner refusal naming the teams, over `POST /api/user/deletion`,
  * stepped up; the answer's `next` is handed to `onDeleted`.
  */

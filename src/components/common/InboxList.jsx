@@ -66,7 +66,7 @@ const absoluteTime = (value, language) => {
 };
 
 /**
- * One notification row: the type icon coloured by severity, the title
+ * One notification row: the type icon colored by severity, the title
  * (bold while unread, with the open-in glyph when the row carries a link
  * the page may follow), the body, the relative time with the absolute
  * time in its tooltip, the unread dot, and the mark-read and delete

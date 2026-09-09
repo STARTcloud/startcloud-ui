@@ -140,7 +140,7 @@ const TfaMethodPage = ({ returnTo }) => {
 
   const cancel = () =>
     cancelSignIn()
-      .then(result => followNext({ next: result?.next, navigate, returnTo }))
+      .then(result => followNext({ next: result?.next, navigate, returnTo, trusted: true }))
       .catch(fail);
 
   return (

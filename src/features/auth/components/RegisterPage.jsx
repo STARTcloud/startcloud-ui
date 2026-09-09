@@ -306,19 +306,19 @@ const BackendRegisterPage = ({ session, returnTo, auth }) => {
   const [chosenMode, setChosenMode] = useState(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
 
     const loadAuthMethods = async () => {
       try {
         const result = await auth.methods();
-        if (cancelled) {
+        if (canceled) {
           return;
         }
         setAuthMethods(result.methods || []);
         setDefaultProvider(result.default_provider || null);
         setLocalRegistrationEnabled(!!result.local_registration_enabled);
       } catch (error) {
-        if (!cancelled) {
+        if (!canceled) {
           log.auth.error('Error loading auth methods', {
             error: error.message,
           });
@@ -326,7 +326,7 @@ const BackendRegisterPage = ({ session, returnTo, auth }) => {
           setLocalRegistrationEnabled(true);
         }
       } finally {
-        if (!cancelled) {
+        if (!canceled) {
           setMethodsLoading(false);
         }
       }
@@ -335,7 +335,7 @@ const BackendRegisterPage = ({ session, returnTo, auth }) => {
     loadAuthMethods();
 
     return () => {
-      cancelled = true;
+      canceled = true;
     };
   }, [auth, t]);
 

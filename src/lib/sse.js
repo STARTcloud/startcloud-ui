@@ -79,7 +79,7 @@ const backoffMs = (retryMs, attempt) => {
 /**
  * Open the universal event stream of the events contract over `fetch`, so
  * the session's headers travel with the request: the spec's frame parser,
- * `retry` honoured, `Last-Event-ID` sent on every reconnect, a jittered
+ * `retry` honored, `Last-Event-ID` sent on every reconnect, a jittered
  * exponential backoff capped at thirty seconds, the connection closed while
  * the document is hidden and reopened from the last id when it is visible
  * again, a 401 handed to `onUnauthorized`, and a 403, a 204 or a response

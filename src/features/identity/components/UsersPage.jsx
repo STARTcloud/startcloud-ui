@@ -24,7 +24,7 @@ import {
   PrimaryOrgDialog,
   RolesDialog,
   adminUserShape,
-  useRoleCatalogue,
+  useRoleCatalog,
 } from './UsersDialogs';
 import UsersFilters, { EMPTY_USER_FILTERS, usersParamsOf } from './UsersFilters';
 
@@ -187,14 +187,14 @@ const useSelection = rows => {
   return { selected, toggle, toggleAll, allSelected, clear };
 };
 
-const UserDialogs = ({ open, catalogue, onClose, onSaved }) => {
+const UserDialogs = ({ open, catalog, onClose, onSaved }) => {
   const { t } = useTranslation();
   const { kind, user } = open;
   if (!user) {
     return null;
   }
   if (kind === 'roles') {
-    return <RolesDialog user={user} catalogue={catalogue} onClose={onClose} onSaved={onSaved} />;
+    return <RolesDialog user={user} catalog={catalog} onClose={onClose} onSaved={onSaved} />;
   }
   if (kind === 'primary') {
     return <PrimaryOrgDialog user={user} onClose={onClose} onSaved={onSaved} />;
@@ -219,7 +219,7 @@ const UserDialogs = ({ open, catalogue, onClose, onSaved }) => {
 
 UserDialogs.propTypes = {
   open: PropTypes.shape({ kind: PropTypes.string.isRequired, user: adminUserShape }).isRequired,
-  catalogue: PropTypes.arrayOf(PropTypes.string).isRequired,
+  catalog: PropTypes.arrayOf(PropTypes.string).isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
@@ -234,7 +234,7 @@ const serverSortOf = sort => {
  * for a query over the rows the page holds and the Columns group with the
  * sort and the hidden columns under `table_prefs_admin_users`, the sort
  * sent to the read as `sort` and `direction`; the table with the roles,
- * organizations and 2FA badges, the row actions as labelled buttons and
+ * organizations and 2FA badges, the row actions as labeled buttons and
  * one row menu (Suspend or Enable, Roles, Set primary organization, Edit
  * customer ID, Rate limits, Delete behind the confirm and the step-up),
  * the select-all box and the bulk bar, and the pager; every action
@@ -244,7 +244,7 @@ const UsersPage = () => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
-  const catalogue = useRoleCatalogue();
+  const catalog = useRoleCatalog();
   const [draft, setDraft] = useState(EMPTY_USER_FILTERS);
   const [applied, setApplied] = useState(EMPTY_USER_FILTERS);
   const [page, setPage] = useState(0);
@@ -349,7 +349,7 @@ const UsersPage = () => {
       </div>
       <BulkBar
         selected={[...selection.selected]}
-        catalogue={catalogue}
+        catalog={catalog}
         onClear={selection.clear}
         onDone={() => {
           selection.clear();
@@ -384,7 +384,7 @@ const UsersPage = () => {
           onChange={setPage}
         />
       ) : null}
-      <UserDialogs open={open} catalogue={catalogue} onClose={close} onSaved={reload} />
+      <UserDialogs open={open} catalog={catalog} onClose={close} onSaved={reload} />
       <ConfirmModal
         show={open.kind === 'delete'}
         handleClose={close}

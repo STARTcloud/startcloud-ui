@@ -29,7 +29,7 @@ const channel = value => {
 const rgbOf = hex => {
   const match = HEX.exec(String(hex));
   if (!match) {
-    throw new Error(`${hex} is not a six-digit hex colour`);
+    throw new Error(`${hex} is not a six-digit hex color`);
   }
   const { digits } = match.groups;
   return [0, 2, 4].map(index => parseInt(digits.slice(index, index + 2), 16));
@@ -314,22 +314,22 @@ const writePack = (pack, css) => {
  * CSS font-family list, optional), `fonts` (optional, one entry per file
  * served with the pack: `family`, `file`, `weight`, `style`, `format`,
  * each declared with font-display swap) and `surfaces` (optional, `light`
- * and `dark` maps of Bootstrap colour names without the `--bs-` prefix,
+ * and `dark` maps of Bootstrap color names without the `--bs-` prefix,
  * such as `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`,
  * `body-color`, `emphasis-color`, `secondary-color`, `link-color`).
  *
  * A pack is refused, and the process exits non-zero naming every failing
  * pair, when `primary` against `on_primary` (or `warning` against
- * `on_warning`) is under 4.5:1, when a text colour a variant sets is under
+ * `on_warning`) is under 4.5:1, when a text color a variant sets is under
  * 4.5:1 against any surface of that variant, the pack's own or stock
- * Bootstrap's where the pack names none, or when a variant's mark colour
+ * Bootstrap's where the pack names none, or when a variant's mark color
  * is under 3:1 against that variant's body background.
  *
  * The focus ring is the chrome's and never a pack input: for each variant
  * the generator emits `--brand-focus-ring` as an rgba of the accent, nudged
  * toward black on the light variant or white on the dark one in 5% steps
- * only until the opaque colour reaches 3:1 against that variant's body
- * background, at the lowest alpha from 20% up whose colour composited
+ * only until the opaque color reaches 3:1 against that variant's body
+ * background, at the lowest alpha from 20% up whose color composited
  * over that background reaches 3:1, and prints both values beside the
  * hash.
  *

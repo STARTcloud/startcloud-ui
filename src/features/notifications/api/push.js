@@ -79,7 +79,7 @@ export const createPush = ({
    * Re-register the browser's subscription with the server on every signed-in
    * load, replacing it when the server's VAPID key has rotated and clearing
    * the switch when the browser has dropped it.
-   * @returns {Promise<boolean>} Whether a subscription is registered afterwards
+   * @returns {Promise<boolean>} Whether a subscription is registered afterward
    */
   const syncSubscription = async () => {
     if (!isPushEnabled() || !isPushSupported()) {

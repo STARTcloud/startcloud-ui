@@ -69,7 +69,7 @@ keeps working unchanged, and its bundled assets remain its fallback forever.
 **Never compose them into one value.** Bootstrap is consumed as precompiled
 CSS, and its entire dark layer sits behind exact-match selectors
 (`[data-bs-theme=dark] { … }`). A composed value such as
-`moonshinedev-dark` matches none of them, so body colours, borders, form
+`moonshinedev-dark` matches none of them, so body colors, borders, form
 controls and dropdowns silently revert to light while the brand appears to
 apply. This is the single most expensive mistake available here; an earlier
 draft of this page recommended it.
@@ -141,9 +141,9 @@ app ever adopts Layer 2. Three apps in this estate shipped this defect
 independently: one hardcoded `data-bs-theme="dark"`, one stamped the
 attribute from a post-mount effect, one put a pack name in the variant slot.
 
-Without it, the page paints in the wrong colour scheme and repaints once the
+Without it, the page paints in the wrong color scheme and repaints once the
 app resolves the variant — the whole page, not an accent. That is a
-materially worse artefact than a late-arriving brand, and the two should
+materially worse artifact than a late-arriving brand, and the two should
 never be traded off against each other as one problem.
 
 An inline script in `<head>`, before first paint, stamps `data-bs-theme`
@@ -190,7 +190,7 @@ A UI backend that rewrites `index.html` per site stamps `data-brand` and
 the pack's `<link>` in the same pass, the link after the app stylesheet,
 so the pack paints with the first frame. A pack may set surfaces, and a
 pack that arrives after the mount repaints the whole page from stock
-Bootstrap to the site's own greys or purple-black, the same defect this
+Bootstrap to the site's own grays or purple-black, the same defect this
 section removes for the variant; a server that already knows the site by
 hostname has no reason to leave that to a fetch. The shell then finds
 `data-brand` and the link already present and appends nothing.
@@ -343,7 +343,7 @@ New local signups seed `language` from the request locale.
 ## Packs
 
 A pack is **variables only — never rules.** Rules are app-shaped: precompiled
-Bootstrap bakes colour into components, so `.btn-primary`, `.btn-outline-*`,
+Bootstrap bakes color into components, so `.btn-primary`, `.btn-outline-*`,
 `.form-check-input:checked`, `.nav-pills`, `.pagination` and friends must be
 re-declared by each app. That boilerplate is identical everywhere and is
 documented app-side; it is not pack content.
@@ -353,13 +353,13 @@ including the button component variables. That is what makes a pack
 self-sufficient and a re-brand a file swap; if each app owned its bridge,
 every new override would mean touching every app.
 
-**Scope: colours, artwork and one face — never geometry.** A pack may set
-the whole `--bs-*` colour set, surfaces included: `--bs-body-bg`,
+**Scope: colors, artwork and one face — never geometry.** A pack may set
+the whole `--bs-*` color set, surfaces included: `--bs-body-bg`,
 `--bs-tertiary-bg`, `--bs-secondary-bg`, `--bs-border-color`,
 `--bs-body-color`, `--bs-emphasis-color`, `--bs-link-color` and the button
 variables, each under `[data-brand="x"]` for the light variant and under
 `[data-brand="x"][data-bs-theme="dark"]` for the dark one, so a site whose
-surfaces are its own keeps them (Moonshine's neutral greys, Nomad's
+surfaces are its own keeps them (Moonshine's neutral grays, Nomad's
 purple-black) and the stock variant is the fallback wherever a pack names
 nothing. A pack does not set geometry, radius or spacing — the moment it
 can, it can break layouts it has never been tested against; layout is the
@@ -373,22 +373,22 @@ Neutral prefix so a pack is authored once for the whole estate:
 
 | Variable               | Purpose                                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `--brand-primary`      | brand colour                                                                                           |
-| `--brand-on-primary`   | text/icon colour ON primary                                                                            |
-| `--brand-warning`      | brand warning colour                                                                                   |
-| `--brand-on-warning`   | text/icon colour ON warning                                                                            |
+| `--brand-primary`      | brand color                                                                                            |
+| `--brand-on-primary`   | text/icon color ON primary                                                                             |
+| `--brand-warning`      | brand warning color                                                                                    |
+| `--brand-on-warning`   | text/icon color ON warning                                                                             |
 | `--brand-logo`         | stencil URL for the mask pattern (optional)                                                            |
-| `--brand-logo-color`   | paint colour for the stencil (optional)                                                                |
+| `--brand-logo-color`   | paint color for the stencil (optional)                                                                 |
 | `--brand-auth-display` | the auth column's headline face (optional; Source Serif 4 when absent), its files served with the pack |
 
-`--brand-on-*` exists because a single colour cannot express its own
+`--brand-on-*` exists because a single color cannot express its own
 contrast pairing: a light brand needs dark text on it, a dark brand needs
 light. Without it, a dark-primary pack renders unreadable buttons in every
 app.
 
 Surfaces carry no `--brand-*` alias: a pack that sets them writes the
 `--bs-*` names directly, per variant, and the generator checks every text
-colour it sets against the surface it sits on at the same 4.5:1.
+color it sets against the surface it sits on at the same 4.5:1.
 
 App-specific namespaces (`--hw-*`, `--bv-*`) remain for genuinely app-only
 surfaces. Packs may technically reach them; doing so is undocumented and at
@@ -468,7 +468,7 @@ selector only when the YAML names one, each checked at 3:1 against the
 `public/themes/` is the canonical source of what a pack name means**, one
 directory per name; the authorization server's site configuration names one
 of them per site. Standalone hosts carry vendored snapshots that may lag it —
-that is expected behaviour, not a fault.
+that is expected behavior, not a fault.
 
 ---
 
@@ -487,8 +487,8 @@ Prefer a **monochrome stencil painted by CSS** over per-variant image files:
 ```
 
 One file per brand, works cross-origin, no variants, no inlining, no
-JavaScript. Defaulting the colour to `currentColor` makes the mark inherit
-the themed text colour with no rule at all.
+JavaScript. Defaulting the color to `currentColor` makes the mark inherit
+the themed text color with no rule at all.
 
 **Riders, all required:**
 
@@ -499,9 +499,9 @@ the themed text colour with no rule at all.
   `background-color`, so a masked mark **disappears** there. Provide an
   `@media (forced-colors: active)` branch with a real `<img>` or
   `forced-color-adjust`.
-- **Print drops background colours** — accept it or add print CSS.
+- **Print drops background colors** — accept it or add print CSS.
 
-**Multi-colour marks cannot be masked** — masking discards colour. Choose
+**Multi-color marks cannot be masked** — masking discards color. Choose
 artwork that reads on both light and dark and needs no switching, or ship
 `light`/`dark` variants. `--brand-logo` and `--brand-logo-color` are
 therefore **optional per pack**.
@@ -541,8 +541,8 @@ is a build gate rather than a review note:
   never the pack's: the generator emits one `--brand-focus-ring` per
   variant, computed from the accent, nudged toward black on the light
   variant or white on the dark one in 5% steps only until the opaque
-  colour reaches 3:1 against that variant's body background, at the
-  lowest alpha whose colour composited over that background reaches 3:1,
+  color reaches 3:1 against that variant's body background, at the
+  lowest alpha whose color composited over that background reaches 3:1,
   measured composited as WCAG technique G195 measures a partially
   transparent indicator; a pack never sets a ring.
 - **WCAG 2.2 §2.4.11** — focus appearance requires contrast against both the
@@ -552,7 +552,7 @@ The accent is the site's and is never shifted to pass: when a pack's
 YAML omits `on_primary` the generator computes `--brand-on-primary` as
 `#ffffff` or `#000000`, whichever contrasts with `--brand-primary` more,
 and refuses the pack only when the better of the two is under 4.5:1,
-because a brand colour is chosen by the site, the text on it is
+because a brand color is chosen by the site, the text on it is
 arithmetic, and the two extremes are the only pair no accent can defeat
 that white can pass. A pack that names `on_primary` is checked as named.
 The identity provider's four sites resolve to: `moonshinedev` (`#1f9d57`)
@@ -621,12 +621,12 @@ bundled-fallback rules exist to forbid (RFC 9111).
 Server-side injection is the recorded end state. For a first pass it is
 **deferred**, because the two flashes it addresses are not the same size:
 
-| Item                                | Status                                                                                                 | Reason                                                                                                                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pre-paint variant script            | **Ship**                                                                                               | Wrong-variant paint is the whole page; it is also a live defect independent of packs                                                                                              |
-| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while packs set colours only; a pack that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
-| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                              |
-| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                     |
+| Item                                | Status                                                                                                 | Reason                                                                                                                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pre-paint variant script            | **Ship**                                                                                               | Wrong-variant paint is the whole page; it is also a live defect independent of packs                                                                                             |
+| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while packs set colors only; a pack that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
+| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                             |
+| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                    |
 
 **Client hints are an enhancement, not a mechanism.** `Sec-CH-Prefers-Color-Scheme`
 is opt-in by protocol (RFC 8942) — the first request never carries it, and a
@@ -666,7 +666,7 @@ login, which is accepted. SCIM is additive, never required.
 
 Recorded so they surface as decisions rather than discoveries:
 
-- **Typography.** v1 is colours and marks, with the one exception above:
+- **Typography.** v1 is colors and marks, with the one exception above:
   `--brand-auth-display` and its files on the theme host, `font-src`
   joining the CSP list for it. No other face is a pack's. Every face,
   bundled or a pack's, is declared with `font-display: swap`, and the
@@ -675,7 +675,7 @@ Recorded so they surface as decisions rather than discoveries:
   gap; a face that blocks paint or swaps late on the sign-in page is the
   most visible flash a visitor can meet.
 - **`prefers-reduced-motion`.** The same user-preference shape as the
-  variant axis, and a WCAG 2.3.3 concern, but not modelled here.
+  variant axis, and a WCAG 2.3.3 concern, but not modeled here.
 
 ---
 

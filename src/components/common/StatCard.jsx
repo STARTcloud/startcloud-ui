@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 /**
  * The icon, count and label tile of a dashboard or a report: a link into
  * the page the count comes from while `to` is given, a plain tile
- * otherwise; `tone` colours the icon.
+ * otherwise; `tone` colors the icon.
  */
 const StatCard = ({ icon, count, label, to = '', tone = 'primary' }) => {
   const body = (

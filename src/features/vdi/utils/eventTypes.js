@@ -48,7 +48,7 @@ export const EVT_CONFIG = {
 };
 
 /**
- * The glyph, colour class and label of one state event type; an unknown
+ * The glyph, color class and label of one state event type; an unknown
  * type gets a dot and its own name.
  * @param {string} type - The `event_type`
  * @param {Function} t - The translator

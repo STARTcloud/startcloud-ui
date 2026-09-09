@@ -89,6 +89,11 @@ export const accountMemberships = user =>
  * restores or loads is `{ user, organizations, oidc, issuerUrl }`, the
  * user being the cached display fields and `oidc` always false. The API
  * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`.
+ * `load({ navigate })` and `begin({ method, navigate })` take the router's
+ * `navigate` from `useSession`: a `403 onboarding_required` caches the
+ * pending profile the body carries and moves in-router to its `next`, and
+ * `begin` with no method, `local` or `magic-link` moves in-router to
+ * `/login`, while `oidc-<id>` stays a top-level navigation.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
@@ -141,7 +146,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
 
   const restore = () => sessionOf(current());
 
-  const load = async () => {
+  const load = async ({ navigate }) => {
     claimsPromise = null;
     try {
       const profile = await api.get('/api/user', OPTIONAL);
@@ -154,16 +159,17 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
         return null;
       }
       if (error.status === 403 && error.code === 'onboarding_required') {
-        const next = safeNext(error.data?.next, baseUrl);
-        if (next) {
-          window.location.assign(next);
+        store(error.data);
+        const next = typeof error.data?.next === 'string' ? error.data.next : '';
+        if (SAFE_PATH.test(next)) {
+          navigate(next, { replace: true });
         }
       }
       return restore();
     }
   };
 
-  const begin = ({ method = '' } = {}) => {
+  const begin = ({ method = '', navigate } = {}) => {
     if (method.startsWith('oidc-')) {
       const id = method.slice('oidc-'.length);
       if (!PROVIDER_NAME.test(id)) {
@@ -175,7 +181,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     if (method === 'silent') {
       return;
     }
-    window.location.assign('/login');
+    navigate('/login');
   };
 
   const login = async (username, password, stayLoggedIn = false) => {

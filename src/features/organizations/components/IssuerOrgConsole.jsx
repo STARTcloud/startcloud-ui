@@ -714,13 +714,13 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
     await load();
   };
 
-  const act = async (call, done, afterwards = load) => {
+  const act = async (call, done, afterward = load) => {
     try {
       await call();
       if (done) {
         notify('success', t(done));
       }
-      await afterwards();
+      await afterward();
     } catch (error) {
       notify('danger', t(errorKeys(error)));
     }

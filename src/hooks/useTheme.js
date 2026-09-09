@@ -32,12 +32,10 @@ const resolveTheme = ({ preference, site, system }) => {
 
 export const isThemePreference = value => THEME_VALUES.includes(value);
 
-const initStore = ({ initialPreference, siteTheme, onPersist }) => {
+const initStore = ({ siteTheme, onPersist }) => {
   if (store.preference === null) {
     store.site = siteDefault(siteTheme);
-    store.preference = isThemePreference(initialPreference)
-      ? initialPreference
-      : localStorage.getItem('theme') || (store.site ? '' : 'auto');
+    store.preference = localStorage.getItem('theme') || (store.site ? '' : 'auto');
   }
   if (onPersist) {
     store.onPersist = onPersist;
@@ -60,18 +58,19 @@ const writePreference = next => {
 /**
  * Theme state shared by every estate app, one store behind every call so
  * the header's button and the profile's Preferences tab read and write the
- * same preference, resolved in the order the pre-paint script uses: the
- * account preference handed in, else localStorage.theme, else the site
- * default the served page carries as data-brand-theme, or as `brand.theme`
- * of `/api/status` handed in as siteTheme when the served page carries no
- * attribute, else auto against the operating system scheme. The result is
- * stamped on the document as data-bs-theme; a preference the person or the
- * account holds is mirrored to localStorage.theme, the site default never
- * is, and every user toggle is handed to onPersist so the app can write it
- * through to the account.
+ * same preference, resolved in the order the pre-paint script uses:
+ * localStorage.theme, else the site default the served page carries as
+ * data-brand-theme, or as `brand.theme` of `/api/status` handed in as
+ * siteTheme when the served page carries no attribute, else auto against
+ * the operating system scheme; the account value arrives through
+ * setPreference once the profile loads and overwrites the store. The
+ * result is stamped on the document as data-bs-theme; a preference the
+ * person or the account holds is mirrored to localStorage.theme, the site
+ * default never is, and every user toggle is handed to onPersist so the
+ * app can write it through to the account.
  */
-export const useTheme = ({ initialPreference = '', siteTheme = '', onPersist = null } = {}) => {
-  useState(() => initStore({ initialPreference, siteTheme, onPersist }));
+export const useTheme = ({ siteTheme = '', onPersist = null } = {}) => {
+  useState(() => initStore({ siteTheme, onPersist }));
   const preference = useSyncExternalStore(subscribePreference, readPreference);
   const prefersDark = useSyncExternalStore(subscribeToColorScheme, systemPrefersDark);
   const system = (prefersDark && 'dark') || 'light';

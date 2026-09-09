@@ -186,7 +186,7 @@ const TfaCodePage = ({ returnTo }) => {
 
   const cancel = () =>
     cancelSignIn()
-      .then(answer => follow(answer?.next))
+      .then(answer => followNext({ next: answer?.next, navigate, returnTo, trusted: true }))
       .catch(fail);
 
   const codeEntry = state && CODE_METHODS.includes(state.method);

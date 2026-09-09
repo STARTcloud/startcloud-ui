@@ -73,9 +73,12 @@ url)` is the one source, and the shared API client of the
 
 ## Session state
 
-`useSession({ provider, events, returnTo, activeOrgKey, push, onAdopt })`
+`useSession({ provider, events, returnTo, navigate, activeOrgKey, push, onAdopt })`
 returns the object below; `sessionStateShape` in `session/useSession.jsx`
-is its prop-type and every shell takes it as `account`.
+is its prop-type and every shell takes it as `account`; `navigate` is the
+router's own, handed by the hook to the provider's `load`, `reload`,
+`refresh` and `begin`, so a provider that must move the page moves it
+in-router.
 
 | Field                    | Meaning                                                                                                                                    |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -94,7 +97,7 @@ is its prop-type and every shell takes it as `account`.
 | `reload()`               | the provider's profile re-read, then the new state                                                                                         |
 | `savePreferences(patch)` | the provider's preferences write                                                                                                           |
 
-Behaviour fixed by the hook:
+Behavior fixed by the hook:
 
 - The initial state is `provider.restore()`; `onAdopt` is called with every
   session the hook adopts, before it is rendered, so an app can seed what
@@ -204,7 +207,9 @@ clears the cache without ending the session on the bus), `login()` a
 form-encoded `POST /login` with `Accept: application/json` answering
 `next`, `begin({ method })` an in-router move to `/login` for `local` and
 `magic-link` and a top-level navigation to `/oauth2/authorization/<id>`
-for `oidc-<id>`, `retryAuth()` false, `signOut()` and
+for `oidc-<id>`, `begin` and `load` receiving the router's `navigate`
+through the hook and never setting `window.location` for a same-origin
+path, `retryAuth()` false, `signOut()` and
 `signOutEverywhere()` both `POST /user/logout` (the local session is the
 SSO session, so the logout row draws plain), `claims()`
 `GET /api/userinfo/claims`, `savePreferences()`
@@ -316,7 +321,7 @@ cluster's Sign in carries that page, and dismissing the banner keeps it.
   `preferredTheme` and `preferredLanguage` from the profile whenever the
   session is adopted.
 - `claims()` is memoized per session and reset by a sign-out or a reload,
-  so the user menu, the favourites and the ticket URL read one fetch.
+  so the user menu, the favorites and the ticket URL read one fetch.
 
 ---
 
@@ -427,7 +432,7 @@ optional-auth read routes, and the discover routes' user resolution — in
 the order session JWT on `x-access-token`, identity-provider token on
 `Authorization`, raw service-account key; the refresh route takes the
 session JWT alone. Every delegated call to the identity provider
-(favourites, claims, preferences, invitations, notifications) uses the
+(favorites, claims, preferences, invitations, notifications) uses the
 presented token itself. The refresh endpoint keeps `id_token`,
 `oidc_access_token`, `oidc_refresh_token`, `oidc_expires_at` and the
 token's `provider` tag, so a backend-provider session keeps its issuer

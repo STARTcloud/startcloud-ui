@@ -22,7 +22,7 @@ const seenClass = ({ score, age }) => {
 };
 
 /**
- * When a VM last checked in as a relative time, coloured by its staleness,
+ * When a VM last checked in as a relative time, colored by its staleness,
  * with a half-stale mark naming the agent that fell silent when one of
  * two did; Powered off or No check-in for a VM that never reported.
  */

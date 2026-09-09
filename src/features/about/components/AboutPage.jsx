@@ -201,7 +201,7 @@ SupportStrip.propTypes = {
 /**
  * The About page every estate app draws the same way, from props alone: a
  * PageHeader carrying the brand, the title, the version chip, the
- * description, the goal as a quote and the favourite toggle as its action;
+ * description, the goal as a quote and the favorite toggle as its action;
  * Start here (the documentation links as a list) beside What you can do
  * here (features as a check grid); How it fits together (components as
  * headed cards); and Help and community (support links as a footer strip).
@@ -219,7 +219,7 @@ SupportStrip.propTypes = {
  * @param {string} props.docsIntro - The sentence above the documentation links
  * @param {Array<{key: string, href: string, label: string, Icon: Function}>} props.support - The help and community links
  * @param {string} props.supportIntro - The sentence beside the support links
- * @param {{active: boolean, onToggle: Function}|null} [props.favorite] - The identity-provider favourite toggle, or null when the session has none
+ * @param {{active: boolean, onToggle: Function}|null} [props.favorite] - The identity-provider favorite toggle, or null when the session has none
  * @returns {import('react').ReactElement} The page
  */
 const AboutPage = ({

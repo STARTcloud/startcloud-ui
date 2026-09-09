@@ -65,7 +65,7 @@ const AddPhone = ({ account, guard, onDone, onFail }) => {
     try {
       await guard(
         () => account.tfa.sms.verify({ mobile_number: sent, code, label }),
-        t('profile.security.tfa.enrolReason')
+        t('profile.security.tfa.enrollReason')
       );
       notify('success', t('profile.security.tfa.enrolled'));
       await onDone();
@@ -125,17 +125,17 @@ AddPhone.propTypes = {
 const AddApp = ({ account, guard, onDone, onFail }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [enrolment, setEnrolment] = useState(null);
+  const [enrollment, setEnrollment] = useState(null);
   const [code, setCode] = useState('');
   const [label, setLabel] = useState('');
 
   useEffect(() => {
     let mounted = true;
     account.tfa
-      .enrol()
+      .enroll()
       .then(data => {
         if (mounted) {
-          setEnrolment(data);
+          setEnrollment(data);
         }
       })
       .catch(onFail);
@@ -148,7 +148,7 @@ const AddApp = ({ account, guard, onDone, onFail }) => {
     try {
       await guard(
         () => account.tfa.app.verify({ code, label }),
-        t('profile.security.tfa.enrolReason')
+        t('profile.security.tfa.enrollReason')
       );
       notify('success', t('profile.security.tfa.enrolled'));
       await onDone();
@@ -157,7 +157,7 @@ const AddApp = ({ account, guard, onDone, onFail }) => {
     }
   };
 
-  if (!enrolment) {
+  if (!enrollment) {
     return <p>{t('loading')}</p>;
   }
 
@@ -166,7 +166,7 @@ const AddApp = ({ account, guard, onDone, onFail }) => {
       <h6>{t('profile.security.tfa.addApp')}</h6>
       <p className="small text-body-secondary">{t('profile.security.tfa.scan')}</p>
       <img
-        src={enrolment.qr}
+        src={enrollment.qr}
         alt={t('profile.security.tfa.qrAlt')}
         width={160}
         height={160}
@@ -181,11 +181,11 @@ const AddApp = ({ account, guard, onDone, onFail }) => {
             id="profile-tfa-secret"
             type="text"
             className="form-control font-monospace"
-            value={enrolment.secret}
+            value={enrollment.secret}
             readOnly
           />
           <CopyButton
-            text={enrolment.secret}
+            text={enrollment.secret}
             label={t('profile.security.tfa.copyKey')}
             className="btn btn-outline-secondary text-nowrap"
           />
@@ -311,7 +311,7 @@ ToggleButton.propTypes = {
 /**
  * The Two-factor section of the Security tab: the enrolled methods with
  * the Preferred badge, Set preferred and Remove (the last method's Remove
- * disabled with a tooltip), the locked-method notices with Re-enrol now,
+ * disabled with a tooltip), the locked-method notices with Re-enroll now,
  * the SMS risk notice, Add phone number and Add authenticator app inline,
  * and Enable or Disable two-factor, the disable dialog stepping up; every
  * change is stepped up and re-reads the methods.
@@ -409,7 +409,7 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
             className="btn btn-sm btn-outline-secondary"
             onClick={() => setAdding(method === 'SMS' ? 'phone' : 'app')}
           >
-            {t('profile.security.tfa.reenrol')}
+            {t('profile.security.tfa.reenroll')}
           </button>
         </div>
       ))}

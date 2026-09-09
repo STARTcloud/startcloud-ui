@@ -26,7 +26,7 @@ export {
   sessions,
   setTfa,
   stepUp,
-  tfaEnrol,
+  tfaEnroll,
   tfaMethods,
   updateAddress,
   updateDetails,

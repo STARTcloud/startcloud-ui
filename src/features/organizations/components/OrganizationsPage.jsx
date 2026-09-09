@@ -1,13 +1,15 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
+import { Card, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding } from 'react-icons/fa6';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import { errorKeys } from '../../../components/common/StepUpDialog';
+import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
@@ -19,8 +21,26 @@ const CREATE_LABELS = { name: 'organizations.name' };
 const JOIN_SCHEMA = { required: ['invite_code'], properties: { invite_code: NON_BLANK } };
 const JOIN_LABELS = { invite_code: 'organizations.inviteCode' };
 const EMPTY = { organizations: [], organizations_enabled: false, personal_to_team_enabled: false };
+const VIEW_KEY = 'table_prefs_organizations';
+const VIEWS = ['table', 'cards'];
 
 const hashUuid = hash => decodeURIComponent(hash.replace(/^#/, ''));
+
+const storedView = () => {
+  const saved = localStorage.getItem(VIEW_KEY);
+  return VIEWS.includes(saved) ? saved : 'table';
+};
+
+const membershipShape = PropTypes.shape({
+  uuid: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  logo_url: PropTypes.string,
+  personal: PropTypes.bool,
+  primary: PropTypes.bool,
+  my_role: PropTypes.string,
+  can_manage: PropTypes.bool,
+  invite_code: PropTypes.string,
+});
 
 const InlineForm = ({ id, label, value, rules, onChange, onSubmit, button, primary }) => {
   const { t } = useTranslation();
@@ -75,7 +95,7 @@ const MembershipBadges = ({ org }) => {
 };
 
 MembershipBadges.propTypes = {
-  org: PropTypes.shape({ personal: PropTypes.bool, primary: PropTypes.bool }).isRequired,
+  org: membershipShape.isRequired,
 };
 
 const MembershipSubline = ({ org, onRegenerate }) => {
@@ -101,11 +121,7 @@ const MembershipSubline = ({ org, onRegenerate }) => {
 };
 
 MembershipSubline.propTypes = {
-  org: PropTypes.shape({
-    my_role: PropTypes.string,
-    can_manage: PropTypes.bool,
-    invite_code: PropTypes.string,
-  }).isRequired,
+  org: membershipShape.isRequired,
   onRegenerate: PropTypes.func.isRequired,
 };
 
@@ -134,7 +150,7 @@ const MembershipActions = ({ org, onMakePrimary, onOpen }) => {
 };
 
 MembershipActions.propTypes = {
-  org: PropTypes.shape({ primary: PropTypes.bool, can_manage: PropTypes.bool }).isRequired,
+  org: membershipShape.isRequired,
   onMakePrimary: PropTypes.func.isRequired,
   onOpen: PropTypes.func.isRequired,
 };
@@ -151,11 +167,76 @@ const MembershipRow = ({ org, onMakePrimary, onRegenerate, onOpen }) => (
 );
 
 MembershipRow.propTypes = {
-  org: PropTypes.shape({
-    uuid: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    logo_url: PropTypes.string,
-  }).isRequired,
+  org: membershipShape.isRequired,
+  onMakePrimary: PropTypes.func.isRequired,
+  onRegenerate: PropTypes.func.isRequired,
+  onOpen: PropTypes.func.isRequired,
+};
+
+const MembershipCard = ({ org, onMakePrimary, onRegenerate, onOpen }) => {
+  const image = httpsUrl(org.logo_url || '');
+  return (
+    <Card className="h-100 shadow-sm">
+      <Card.Body className="d-flex flex-column gap-2">
+        <div className="d-flex align-items-start gap-2">
+          <span
+            className="d-inline-flex justify-content-center flex-shrink-0"
+            style={{ width: 28 }}
+          >
+            {image ? (
+              <img src={image} alt="" width={24} height={24} referrerPolicy="no-referrer" />
+            ) : (
+              <FaBuilding aria-hidden />
+            )}
+          </span>
+          <div className="flex-grow-1 min-width-0">
+            <Card.Title className="h6 mb-1 d-flex align-items-center flex-wrap gap-2">
+              <span className="text-truncate">{org.name}</span>
+              <MembershipBadges org={org} />
+            </Card.Title>
+            <div className="small text-body-secondary">
+              <MembershipSubline org={org} onRegenerate={onRegenerate} />
+            </div>
+          </div>
+        </div>
+        <div className="mt-auto d-flex flex-wrap gap-2">
+          <MembershipActions org={org} onMakePrimary={onMakePrimary} onOpen={onOpen} />
+        </div>
+      </Card.Body>
+    </Card>
+  );
+};
+
+MembershipCard.propTypes = {
+  org: membershipShape.isRequired,
+  onMakePrimary: PropTypes.func.isRequired,
+  onRegenerate: PropTypes.func.isRequired,
+  onOpen: PropTypes.func.isRequired,
+};
+
+const MembershipCards = ({ organizations, empty, onMakePrimary, onRegenerate, onOpen }) => {
+  if (organizations.length === 0) {
+    return <p className="text-body-secondary small mb-0">{empty}</p>;
+  }
+  return (
+    <Row xs={1} md={2} xl={3} className="g-3">
+      {organizations.map(org => (
+        <Col key={org.uuid}>
+          <MembershipCard
+            org={org}
+            onMakePrimary={onMakePrimary}
+            onRegenerate={onRegenerate}
+            onOpen={onOpen}
+          />
+        </Col>
+      ))}
+    </Row>
+  );
+};
+
+MembershipCards.propTypes = {
+  organizations: PropTypes.arrayOf(membershipShape).isRequired,
+  empty: PropTypes.string.isRequired,
   onMakePrimary: PropTypes.func.isRequired,
   onRegenerate: PropTypes.func.isRequired,
   onOpen: PropTypes.func.isRequired,
@@ -164,11 +245,13 @@ MembershipRow.propTypes = {
 /**
  * The organizations page of the identity contract at `/user/organizations`:
  * Create an organization while the answer says `organizations_enabled`,
- * Join with an invite code, then one row per membership with its badges,
- * the person's role, Make primary, the invite code with Regenerate while
- * the person can manage it, and View or Manage, which makes that
- * organization the active one under `activeOrgKey` and opens the shared
- * console; a `#<uuid>` in the URL does the same on load.
+ * Join with an invite code, then the memberships under the pages contract's
+ * one view toggle, a row or a card per membership with its badges, the
+ * person's role, Make primary, the invite code with Regenerate while the
+ * person can manage it, and View or Manage, which makes that organization
+ * the active one under `activeOrgKey` and opens the shared console; a
+ * `#<uuid>` in the URL does the same on load, and the chosen view persists
+ * under `table_prefs_organizations`.
  */
 const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => {
   const { t } = useTranslation();
@@ -177,6 +260,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const location = useLocation();
   const [data, setData] = useState(EMPTY);
   const [loaded, setLoaded] = useState(false);
+  const [view, setView] = useState(storedView);
   const [createForm, setCreateForm] = useState({ name: '' });
   const [joinForm, setJoinForm] = useState({ invite_code: '' });
   const createRules = useFormRules({
@@ -236,6 +320,11 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
     }
   }, [data.organizations, loaded, location.hash, open]);
 
+  const changeView = next => {
+    localStorage.setItem(VIEW_KEY, next);
+    setView(next);
+  };
+
   const submit = async ({ rules, call, done, reset }) => {
     if (!rules.validateAll()) {
       return;
@@ -292,9 +381,14 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const regenerate = org =>
     act(() => organizations.regenerateInviteCode(org.uuid), 'organizations.regenerated');
 
+  const empty = loaded ? t('organizations.none') : t('loading');
+
   return (
     <div className="list">
-      <h3 className="mb-3">{t('organizations.title')}</h3>
+      <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <h3 className="mb-0">{t('organizations.title')}</h3>
+        <ViewToggle view={view} onChange={changeView} />
+      </div>
       {data.organizations_enabled ? (
         <InlineForm
           id="name"
@@ -317,17 +411,27 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
         button="organizations.joinButton"
         primary={false}
       />
-      <MethodList empty={loaded ? t('organizations.none') : t('loading')}>
-        {data.organizations.map(org => (
-          <MembershipRow
-            key={org.uuid}
-            org={org}
-            onMakePrimary={makePrimary}
-            onRegenerate={regenerate}
-            onOpen={open}
-          />
-        ))}
-      </MethodList>
+      {view === 'cards' ? (
+        <MembershipCards
+          organizations={data.organizations}
+          empty={empty}
+          onMakePrimary={makePrimary}
+          onRegenerate={regenerate}
+          onOpen={open}
+        />
+      ) : (
+        <MethodList empty={empty}>
+          {data.organizations.map(org => (
+            <MembershipRow
+              key={org.uuid}
+              org={org}
+              onMakePrimary={makePrimary}
+              onRegenerate={regenerate}
+              onOpen={open}
+            />
+          ))}
+        </MethodList>
+      )}
     </div>
   );
 };
