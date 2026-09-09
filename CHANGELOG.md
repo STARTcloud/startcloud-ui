@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.10.0...v0.10.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* CI/CD ([14f3079](https://github.com/STARTcloud/startcloud-ui/commit/14f307934e9a86787d629ceaf2ae77cce08bdbf1))
+* CI/CD ([7997efc](https://github.com/STARTcloud/startcloud-ui/commit/7997efc5af5fb910874d66089dcda14e6aa93e7d))
+
 ## [0.10.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.9.0...v0.10.0) (2026-09-09)
 
 
