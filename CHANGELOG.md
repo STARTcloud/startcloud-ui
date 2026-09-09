@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.9.0...v0.10.0) (2026-09-09)
+
+
+### Features
+
+* apply the contracts across the audit, chrome-owned focus ring, versioned ISO leaf, feature import boundary ([b84c691](https://github.com/STARTcloud/startcloud-ui/commit/b84c691e8beafef272819bfe66d3bc5b6d7aed7c))
+* close the identity gap audit, in-router cookie provider, step dot labels, organizations under the shared view toggle, per-host push paths with the issuer entry ([09e35a2](https://github.com/STARTcloud/startcloud-ui/commit/09e35a2a47921f0bac145582504c1fa8e407ce1e))
+
 ## [0.9.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.8.1...v0.9.0) (2026-09-08)
 
 
