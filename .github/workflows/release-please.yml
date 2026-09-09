@@ -65,7 +65,7 @@ jobs:
         consumer:
           - Makr91/BoxVault
           - STARTcloud/provisioner-catalog
-          - STARTcloud/VDI-CIFS-Health-private
+          - Prominic/VDI-CIFS-Health-private
           - STARTcloud/authorization-server-private
     steps:
       - name: Split owner and repo
