@@ -2195,7 +2195,7 @@
     </div>
     <div class="callouts inline">
       <div class="callout">
-        <strong>From the route only.</strong> <code>chrome/routeCrumbs.js</code> parses org ·
+        <strong>From the route only.</strong> <code>src/utils/routes.js</code> parses org ·
         collection · item · version · provider off the path with the app's route table; one crumb
         per present level, each a plain link up the route, the last linking to itself. A reserved
         first segment (about, login, admin, docs…) yields no crumbs.
@@ -2864,9 +2864,9 @@
       <div class="callout">
         <strong>One hook.</strong>
         <code>notify(kind, text, { tier, key, sticky, action })</code> from
-        <code>chrome/notices.jsx</code>; pages, slots and every app screen raise through it and keep
-        no alert state of their own. Field validation, a form's submit error, the error boundary and
-        the callback page stay inline.
+        <code>src/components/layout/Notices.jsx</code>; pages, slots and every app screen raise
+        through it and keep no alert state of their own. Field validation, a form's submit error,
+        the error boundary and the callback page stay inline.
       </div>
     </div>
   </section>
@@ -3098,8 +3098,10 @@
               <code>notify(kind, text, { tier, key, sticky, action })</code>.
             </td>
             <td>
-              Both apps: shared <code>chrome/notices.jsx</code> (<code>NoticeProvider</code> in
-              <code>mountApp</code>, <code>useNotify</code>, <code>NoticeBanners</code> in the
+              Both apps: shared <code>src/components/layout/Notices.jsx</code> (<code
+                >NoticeProvider</code
+              >
+              in <code>mountApp</code>, <code>useNotify</code>, <code>NoticeBanners</code> in the
               <code>Header</code>, <code>NoticeToasts</code> in <code>AppChrome</code>); every page,
               slot and BoxVault screen raises through <code>useNotify</code>
             </td>
@@ -3173,7 +3175,7 @@
               row sets the active organization and closes.
             </td>
             <td>
-              Both apps: shared <code>chrome/OrgSwitcherModal.jsx</code>; hyperweaver
+              Both apps: shared <code>src/components/layout/OrgSwitcherModal.jsx</code>; hyperweaver
               <code>OrgSwitcherModal.jsx</code> (adds "All organizations")
             </td>
           </tr>
@@ -3283,7 +3285,7 @@
               Both apps: <code>NavbarSearch.jsx</code> (byte-identical) — provider at the root,
               control first in the cluster, panel as the last child of <code>&lt;nav&gt;</code>;
               every listing page registers its binding through
-              <code>pages/useCatalogSearch.jsx</code>
+              <code>src/features/catalog/hooks/useCatalogSearch.jsx</code>
             </td>
           </tr>
           <tr>
@@ -3311,10 +3313,10 @@
               navigates.
             </td>
             <td>
-              Both apps: <code>chrome/routeCrumbs.js</code> + <code>chrome/Crumbs.jsx</code>; the
-              active organization in <code>localStorage</code>
-              <code>activeOrganization</code> (BoxVault by name, catalog by uuid), validated against
-              the claim, primary → first
+              Both apps: <code>src/utils/routes.js</code> +
+              <code>src/components/layout/Breadcrumbs.jsx</code>; the active organization in
+              <code>localStorage</code> <code>activeOrganization</code> (BoxVault by name, catalog
+              by uuid), validated against the claim, primary → first
             </td>
           </tr>
         </table>

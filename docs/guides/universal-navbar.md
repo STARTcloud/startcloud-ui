@@ -769,7 +769,7 @@ One red row. The icon is a scope toggle, the text logs out.
 ## Notices
 
 The in-app notices: one surface for everything an app tells the user
-outside the data itself, drawn by the chrome from `chrome/notices.jsx`
+outside the data itself, drawn by the chrome from `src/components/layout/Notices.jsx`
 and raised through one hook, in two tiers (a toast is something else, see
 the Notifications modal's vocabulary):
 

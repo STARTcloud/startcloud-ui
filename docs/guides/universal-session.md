@@ -74,7 +74,7 @@ url)` is the one source, and the shared API client of the
 ## Session state
 
 `useSession({ provider, events, returnTo, navigate, activeOrgKey, push, onAdopt })`
-returns the object below; `sessionStateShape` in `session/useSession.jsx`
+returns the object below; `sessionStateShape` in `src/hooks/useSession.jsx`
 is its prop-type and every shell takes it as `account`; `navigate` is the
 router's own, handed by the hook to the provider's `load`, `reload`,
 `refresh` and `begin`, so a provider that must move the page moves it

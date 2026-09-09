@@ -1767,7 +1767,7 @@ problem body with `code`.
 ### What the admin pages draw
 
 - **The admin pages** are one page per sidebar entry in
-  `src/features/admin/`, each reading its own calls and drawing in the
+  `src/features/identity/`, each reading its own calls and drawing in the
   scroll region beside the column; the shared Organizations and users
   and System pages are not among the issuer's entries because its adapter
   carries neither `organizationsWithUsers` nor `storage`.
@@ -1940,12 +1940,12 @@ problem body with `code`.
 
 ### Shared components admin adds
 
-| Component                                           | Where                                        | Why shared                                                                                                            |
-| --------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `StatCard`                                          | `src/components/common/StatCard.jsx`         | the icon, count, label tile that links somewhere; the dashboard, the usage report, the insights                       |
-| `DateRange`                                         | `src/components/common/DateRange.jsx`        | start and end dates with preset buttons (30, 60, 90, 120 days, All time); every activity table, any report page later |
-| `LoginMap`                                          | `src/features/admin/components/LoginMap.jsx` | Leaflet and markercluster, the one map in the estate; feature-local until a second UI backend draws one               |
-| `SubTable`, `Pager`, `ConfirmModal`, `SortableList` | already shared                               | the tables, the paging, the confirms, the terms order                                                                 |
+| Component                                           | Where                                           | Why shared                                                                                                            |
+| --------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `StatCard`                                          | `src/components/common/StatCard.jsx`            | the icon, count, label tile that links somewhere; the dashboard, the usage report, the insights                       |
+| `DateRange`                                         | `src/components/common/DateRange.jsx`           | start and end dates with preset buttons (30, 60, 90, 120 days, All time); every activity table, any report page later |
+| `LoginMap`                                          | `src/features/identity/components/LoginMap.jsx` | Leaflet and markercluster, the one map in the estate; feature-local until a second UI backend draws one               |
+| `SubTable`, `Pager`, `ConfirmModal`, `SortableList` | already shared                                  | the tables, the paging, the confirms, the terms order                                                                 |
 
 ### Admin keys
 
@@ -1978,7 +1978,7 @@ mirrored in `es` and `cimode`.
 
 | Where              | Before                                                                                                                                       | After                                                                                                                                                                                                                                                                                                               |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| the pages          | ten Thymeleaf pages under `layout/layout` with its own sidebar, jQuery, `bootstrap-notify`, Leaflet loaded per page                          | one page per entry in `src/features/admin/`, the entries exported to the chrome's Sidebar with the brand at its top; the Thymeleaf sidebar and its jQuery gone                                                                                                                                                      |
+| the pages          | ten Thymeleaf pages under `layout/layout` with its own sidebar, jQuery, `bootstrap-notify`, Leaflet loaded per page                          | one page per entry in `src/features/identity/`, the entries exported to the chrome's Sidebar with the brand at its top; the Thymeleaf sidebar and its jQuery gone                                                                                                                                                   |
 | the routes         | `/admin/*` form posts and ad-hoc JSON, CSRF from the cookie, `/api/admin/**` Bearer-only                                                     | `/api/admin/*` JSON with problem bodies, session or Bearer; the browser paths kept as the entries' routes                                                                                                                                                                                                           |
 | roles              | one toggle call per changed role, then a reload                                                                                              | one `PUT` with the whole set                                                                                                                                                                                                                                                                                        |
 | the bulk catalog   | the first selected user's roles call                                                                                                         | `GET /api/admin/roles`                                                                                                                                                                                                                                                                                              |
