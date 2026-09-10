@@ -12,6 +12,7 @@ import {
   SILENT_SSO_KEY,
   UPDATE_COMMAND,
 } from '../config/constants';
+import { GuardProvider } from '../contexts/GuardContext';
 import { useStatus } from '../contexts/StatusContext';
 import { AboutRoute } from '../features/about';
 import {
@@ -190,13 +191,16 @@ const backendAdminMembers = {
   storage,
 };
 
-const adminAdapterFor = method => {
+const hasConfigFiles = status => Array.isArray(status?.config) && status.config.length > 0;
+
+const adminAdapterFor = status => {
+  const method = authMethod(status);
   if (method === 'cookie') {
     return {};
   }
   return {
     ...(method === 'backend' ? backendAdminMembers : {}),
-    config: adminConfig,
+    ...(hasConfigFiles(status) ? { config: adminConfig } : {}),
     updateStatus,
   };
 };
@@ -222,7 +226,7 @@ export const sidebarEntries = ({ status, account }) => {
     ...profileSidebar(status, account),
     ...(method === 'cookie' ? identitySidebar(status, account) : []),
     ...vdiSidebar(status, account),
-    ...adminSidebar(status, account, adminAdapterFor(method)),
+    ...adminSidebar(status, account, adminAdapterFor(status)),
   ];
 };
 
@@ -236,27 +240,30 @@ Stub.propTypes = {
   token: PropTypes.string.isRequired,
 };
 
-const AdminRoute = ({ globalAdmin, page = '' }) => {
+const AdminRoute = ({ globalAdmin, user = null, page = '' }) => {
   const status = useStatus();
-  const admin = adminAdapterFor(authMethod(status));
+  const admin = adminAdapterFor(status);
   if (!hasFeature(status, 'admin')) {
     return <Stub titleKey="admin.pageTitle" token="admin" />;
   }
   return (
-    <AdminPage
-      session={session}
-      returnTo={returnTo}
-      allowed={globalAdmin}
-      admin={admin}
-      activeOrgKey={ACTIVE_ORG_KEY}
-      updateCommand={UPDATE_COMMAND(status.role)}
-      page={page || firstAdminPage(admin)}
-    />
+    <GuardProvider stepUp={stepUp} hasPassword={Boolean(user?.has_local_auth)}>
+      <AdminPage
+        session={session}
+        returnTo={returnTo}
+        allowed={globalAdmin}
+        admin={admin}
+        activeOrgKey={ACTIVE_ORG_KEY}
+        updateCommand={UPDATE_COMMAND(status.role)}
+        page={page || firstAdminPage(admin)}
+      />
+    </GuardProvider>
   );
 };
 
 AdminRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
   page: PropTypes.string,
 };
 
@@ -721,14 +728,14 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
     />
   ));
 
-const sharedAdminRoutes = ({ cookie, globalAdmin }) =>
+const sharedAdminRoutes = ({ cookie, globalAdmin, user }) =>
   cookie
     ? null
     : ['config', 'system'].map(page => (
         <Route
           key={`/admin/${page}`}
           path={`/admin/${page}`}
-          element={<AdminRoute globalAdmin={globalAdmin} page={page} />}
+          element={<AdminRoute globalAdmin={globalAdmin} user={user} page={page} />}
         />
       ));
 
@@ -765,8 +772,9 @@ const homeElementFor = ({
  * `/vm/:instance` while the host advertises `fleet`, else the home page
  * and the collection routes from the registry in the host's order (the
  * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
- * to sign in with `/` as the return path), the setup gate while the host
- * advertises `setup` and setup is incomplete, each feature route gated by
+ * to sign in with `/` as the return path), the setup page at `/setup` while the host
+ * advertises `setup`, every other route sent there until setup is complete
+ * and the page drawing its complete state after, each feature route gated by
  * its feature token or by the host's first `auth` token, and the identity
  * contract's five groups behind the `cookie` token and their feature
  * tokens, a route the host lacks rendering `NotAvailableStub` instead; the
@@ -793,10 +801,7 @@ const AppRoutes = ({
   const fleet = hasFeatureStrict(status, 'fleet');
   const { activeOrgUuid, organizations, oidc, issuerUrl } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
-    <Route
-      path="/setup"
-      element={setupComplete ? <Navigate to="/register" replace /> : <SetupPage setup={setupApi} />}
-    />
+    <Route path="/setup" element={<SetupPage setup={setupApi} />} />
   ) : null;
 
   if (hasFeature(status, 'setup') && !setupComplete) {
@@ -935,12 +940,12 @@ const AppRoutes = ({
           cookie ? (
             <IdentityAdminRoute globalAdmin={globalAdmin} user={account.user} page="dashboard" />
           ) : (
-            <AdminRoute globalAdmin={globalAdmin} />
+            <AdminRoute globalAdmin={globalAdmin} user={account.user} />
           )
         }
       />
       {identityAdminRoutes({ cookie, globalAdmin, user: account.user })}
-      {sharedAdminRoutes({ cookie, globalAdmin })}
+      {sharedAdminRoutes({ cookie, globalAdmin, user: account.user })}
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
       )}

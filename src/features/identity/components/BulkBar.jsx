@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { errorKeys } from '../../../components/common/StepUpDialog';
+import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { bulk } from '../api/accounts';
-import { useGuard } from '../hooks/useGuard';
 
 const ROLE_ACTIONS = ['add_role', 'remove_role'];
 

@@ -1,0 +1,12 @@
+{
+  "restart_required": true,
+  "requires_restart": [
+    {
+      "pointer": "/boxvault/api_listen_port_encrypted",
+      "title": "HTTPS port",
+      "reason": "the listener is bound at boot"
+    }
+  ],
+  "last_modified_by": "mark@m4kr.net",
+  "last_modified_time": "2026-09-06T13:58:00Z"
+}

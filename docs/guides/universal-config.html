@@ -16,7 +16,9 @@
     --danger: #e2533a;
     --danger-bg: #fdeeeb;
     --warning: #d99a16;
+    --warning-bg: #fff6e0;
     --success: #13a37f;
+    --success-bg: #e6f7f1;
     --info: #539bff;
     --outline: #6c757d;
     --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
@@ -39,7 +41,9 @@
       --danger: #fa896b;
       --danger-bg: #3b2a26;
       --warning: #f0b429;
+      --warning-bg: #3a3320;
       --success: #13deb9;
+      --success-bg: #1f3a35;
       --outline: #8b9bb4;
       --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
       --changed: #3a3320;
@@ -60,7 +64,9 @@
     --danger: #fa896b;
     --danger-bg: #3b2a26;
     --warning: #f0b429;
+    --warning-bg: #3a3320;
     --success: #13deb9;
+    --success-bg: #1f3a35;
     --outline: #8b9bb4;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
     --changed: #3a3320;
@@ -656,10 +662,13 @@
       that says what every value is, what it may be, how it is drawn and whether changing it needs a
       restart. The schema is the validation contract's rule set, JSON Schema 2020-12 keywords, so
       the admin page, the setup page and the write route evaluate one document and refuse a bad
-      value the same way with the same body. Two environment variables, <code>CONFIG_DIR</code> and
-      the environment switch, and no more. The first frame is live on the VDI Health Monitor, the
-      one-file UI backend: set a check-in interval past its maximum, clear the origin and press
-      Update, then let the UI backend answer 422 for a value the browser could not know was wrong.
+      value the same way with the same body. One environment variable, <code>CONFIG_DIR</code>, no
+      more; which config directory exists chooses the environment. There is no secrets handling:
+      every value travels in the clear and <code>writeOnly</code> is the form's reveal hint alone.
+      The first frame is live on BoxVault's <code>app</code> file, the contract's own example: set
+      the HTTPS port past its maximum, clear the origin and press Update, then let the UI backend
+      answer 422 for a value the browser could not know was wrong, and 200 with the restart card fed
+      by <code>restart-status</code>.
     </p>
     <span class="legend"
       ><span class="sw"></span>a yellow note marks what this design changed against the apps as they
@@ -669,19 +678,21 @@
 
   <div class="state">
     <div class="state-label">
-      Live — the VDI Health Monitor's Configuration tab: app.config.yaml drawn from its schema,
-      validated on blur and on Update, the PUT's 422 painted by pointer, the restart badge from
-      requiresRestart
+      Live — BoxVault's Configuration tab: app.config.yaml drawn from its schema, the tab labelled
+      by the schema's root title, validated on blur and on Update, the PUT's 422 painted by pointer,
+      the restart badge from requiresRestart, the restart card from restart-status
     </div>
     <div class="frame live" id="live"></div>
     <div class="callouts">
       <div class="callout">
         <strong>What this frame proves.</strong> Two documents, one form: the values come from
         <code>GET /api/config/app</code>, the labels, hints, types, bounds and enums from
-        <code>GET /api/config/app/schema</code>, and the route evaluates the same schema, so a
-        check-in interval past its <code>maximum</code> fails in the browser on blur, and a value
-        the browser cannot judge (a UDS host it cannot reach) comes back as a 422 whose pointer
-        <code>/uds_db/host</code> lands on the same field.
+        <code>GET /api/config/app/schema</code>, and the route evaluates the same schema, so an
+        HTTPS port past its <code>maximum</code> fails in the browser on blur, and a value the
+        browser cannot judge (a log directory the service user cannot write) comes back as a 422
+        whose <code>writable</code> entry carries <code>params: { "user": "boxvault" }</code> and
+        paints from <code>validation.writable</code>; a pointer that names no field goes to the
+        summary alone.
       </div>
       <div class="callout changed">
         <strong>Changed: the file is plain.</strong> A leaf holds its value and nothing else; the
@@ -696,25 +707,39 @@
       </div>
       <div class="callout">
         <strong>Unchanged:</strong> the sections and foldable subsections, the navbar search over
-        labels and keys, the password reveal, the SSL upload on <code>upload</code> fields, the
-        secret masking on read and its restore on write, Update and Restart.
+        titles and keys, the password reveal, Update and Restart.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: no secrets handling.</strong> <code>writeOnly</code> values were masked as
+        <code>********</code> on read, the mask or a blank on write keeping the stored value. Now
+        every value is in the clear in the file, on read and on write; <code>writeOnly</code> only
+        hides the characters in the form, a password input with a reveal button, the raw value shown
+        on click; the evaluator's <code>SECRET_MASK</code> and <code>keepsSecret</code> go.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: <code>default</code> is drawn, never written.</strong> The value a missing
+        key takes in memory at <code>load</code> is the placeholder of an empty text or numeric
+        control and the hint <code>Default: &lt;value&gt;</code> after the description of a boolean
+        or an enum, the control staying unset until the administrator sets it; no route, migration
+        or boot step writes it into the file.
       </div>
     </div>
   </div>
 
   <div class="state">
     <div class="state-label">
-      Setup — BoxVault's first-run page, four files, on the same schemas: the summary on Submit all,
-      the tab that carries an error marked, a select from an enum, a dependsOn field hidden
+      Setup — BoxVault's first-run page, four files, on the same schemas: the tabs labelled by each
+      schema's root title, the summary on Submit all, the tab that carries an error marked, a select
+      from an enum with its default hint, a default as placeholder, a dependsOn field hidden
     </div>
     <div class="frame">
       <div class="demo">
         <h2 style="font-size: 20px; text-align: center">Setup</h2>
         <div class="tabs">
-          <button type="button" class="tab on" style="color: var(--danger)">App Config ●</button
-          ><button type="button" class="tab">Auth Config</button
-          ><button type="button" class="tab" style="color: var(--success)">DB Config ✓</button
-          ><button type="button" class="tab" style="color: var(--success)">Email Config ✓</button
+          <button type="button" class="tab on" style="color: var(--danger)">Application ●</button
+          ><button type="button" class="tab">Authentication</button
+          ><button type="button" class="tab" style="color: var(--success)">Database ✓</button
+          ><button type="button" class="tab" style="color: var(--success)">Mail ✓</button
           ><button type="button" class="tab right">Submit all configurations</button>
         </div>
         <div class="summary" role="alert" tabindex="-1">
@@ -748,9 +773,10 @@
               >
             </div>
             <div class="field">
-              <label for="c3">HTTP port</label><input id="c3" type="text" value="80" /><span
+              <label for="c3">HTTP port</label
+              ><input id="c3" type="text" inputmode="numeric" value="" placeholder="80" /><span
                 class="hint"
-                >The port BoxVault listens on for HTTP (may not be the proxied port)</span
+                >The port BoxVault listens on for HTTP; the proxied port is a separate value</span
               >
             </div>
             <div class="field invalid">
@@ -775,7 +801,7 @@
                 <option>warn</option>
                 <option selected>info</option>
                 <option>debug</option></select
-              ><span class="hint">Default logging level for all categories</span>
+              ><span class="hint">Default logging level for all categories<br />Default: info</span>
             </div>
           </div>
         </div>
@@ -828,93 +854,386 @@
         field's <code>title</code> and bounds interpolated, the same keys the validation contract's
         forms use.
       </div>
+      <div class="callout changed">
+        <strong>Changed: the tab label.</strong> <code>configManager.tabs.&lt;name&gt;</code> goes;
+        the label is the schema's root <code>title</code>, English text that crosses the wire and is
+        drawn as it is, the one carve-out from the translation rule, so a fifth file has a label
+        without a UI release.
+      </div>
     </div>
   </div>
 
   <div class="state">
     <div class="state-label">
-      The wire — the file on disk, its schema beside the code, the GET with the secret masked, the
-      PUT refused
+      Setup — the gate and the token card: setup_complete true draws one link and nothing else; a
+      403 on verify-token paints setup.tokenInvalid on the token field
     </div>
     <div class="frame">
       <div class="demo">
         <div class="two">
           <div class="spec-col">
-            <h2>/etc/vdi-health/app.config.yaml</h2>
-            <div class="payload">
-              <span class="k">schemaVersion</span>: 1 <span class="k">vdi</span>:
-              <span class="k">origin</span>:
-              <span class="s">https://vdi-health.s2.prominic.work</span>
-              <span class="k">api_listen_port_unencrypted</span>: 8080
-              <span class="k">api_listen_port_encrypted</span>: 8443 <span class="k">agents</span>:
-              <span class="k">auth</span>: <span class="s">key</span> <span class="k">key</span>:
-              <span class="s">7c3e…</span> <span class="k">check_interval_sec</span>: 300
-              <span class="k">critical_drives</span>: [<span class="s">H</span>]
-              <span class="k">uds_db</span>: <span class="k">enabled</span>: true
-              <span class="k">host</span>: <span class="s">uds-db.prominic.net</span>
-              <span class="k">port</span>: 3306 <span class="k">password</span>:
-              <span class="s">…</span> <span class="k">pools</span>: <span class="k">default</span>:
-              <span class="k">icon_threshold</span>: 4
-            </div>
-            <h2>vdi_health/schema/app.schema.yaml</h2>
-            <div class="payload">
-              <span class="k">$schema</span>:
-              <span class="s">https://json-schema.org/draft/2020-12/schema</span>
-              <span class="k">title</span>: <span class="s">App Config</span>
-              <span class="k">schemaVersion</span>: 1 <span class="k">sections</span>:
-              <span class="k">application</span>: { <span class="k">title</span>:
-              <span class="s">Application</span>, <span class="k">order</span>: 1 }
-              <span class="k">properties</span>: <span class="k">agents</span>:
-              <span class="k">type</span>: <span class="s">object</span>
-              <span class="k">section</span>: <span class="s">application</span>
-              <span class="k">subsection</span>: <span class="s">agents</span>
-              <span class="k">title</span>: <span class="s">Agents</span>
-              <span class="k">required</span>: [<span class="s">auth</span>,
-              <span class="s">check_interval_sec</span>] <span class="k">properties</span>:
-              <span class="k">auth</span>: { <span class="k">type</span>:
-              <span class="s">string</span>, <span class="k">enum</span>: [<span class="s"
-                >none</span
-              >, <span class="s">key</span>], <span class="k">default</span>:
-              <span class="s">none</span>, <span class="k">title</span>:
-              <span class="s">Check-in authentication</span>, <span class="k">order</span>: 1 }
-              <span class="k">key</span>: { <span class="k">type</span>:
-              <span class="s">string</span>, <span class="k">writeOnly</span>: true,
-              <span class="k">title</span>: <span class="s">Agent key</span>,
-              <span class="k">dependsOn</span>: <span class="s">auth</span>,
-              <span class="k">showWhen</span>: [<span class="s">key</span>],
-              <span class="k">order</span>: 2 } <span class="k">check_interval_sec</span>:
-              <span class="k">type</span>: <span class="s">integer</span>
-              <span class="k">minimum</span>: 30 <span class="k">maximum</span>: 3600
-              <span class="k">default</span>: 300 <span class="k">title</span>:
-              <span class="s">Check-in interval (seconds)</span> <span class="k">description</span>:
-              <span class="s">Sent to the agents on every check-in</span>
-              <span class="k">order</span>: 3 <span class="k">uds_db</span>:
-              <span class="k">type</span>: <span class="s">object</span>
-              <span class="k">section</span>: <span class="s">application</span>
-              <span class="k">subsection</span>: <span class="s">udsDb</span>
-              <span class="k">properties</span>: <span class="k">host</span>: {
-              <span class="k">type</span>: <span class="s">string</span>,
-              <span class="k">format</span>: <span class="s">hostname</span>,
-              <span class="k">title</span>: <span class="s">UDS host</span>,
-              <span class="k">requiresRestart</span>: true, <span class="k">order</span>: 2 }
-              <span class="k">password</span>: { <span class="k">type</span>:
-              <span class="s">string</span>, <span class="k">writeOnly</span>: true,
-              <span class="k">title</span>: <span class="s">UDS password</span>,
-              <span class="k">order</span>: 5 } <span class="k">pools</span>:
-              <span class="k">type</span>: <span class="s">object</span>
-              <span class="k">x-pool</span>: true
+            <h2 style="font-size: 20px; text-align: center">Setup</h2>
+            <div class="card">
+              <div class="card-h">Enter the setup token</div>
+              <div class="card-b" style="grid-template-columns: 1fr">
+                <div class="field invalid">
+                  <label for="tk1">Setup token</label
+                  ><input
+                    id="tk1"
+                    type="text"
+                    value="4c1d…"
+                    aria-invalid="true"
+                    aria-describedby="tk1-error"
+                    aria-errormessage="tk1-error"
+                  /><span class="field-error" id="tk1-error"
+                    ><span
+                      ><span class="vh">Error:</span>The setup token did not match; check the token
+                      the service logged at start.</span
+                    ></span
+                  >
+                </div>
+                <div class="actions"><span class="btn primary">Verify token</span></div>
+              </div>
             </div>
           </div>
           <div class="spec-col">
-            <h2>GET /api/config/app · 200, secrets masked</h2>
+            <h2 style="font-size: 20px; text-align: center">Setup</h2>
+            <div
+              class="card"
+              style="border-color: var(--success); background: var(--success-bg, var(--surface))"
+            >
+              <div class="card-b" style="grid-template-columns: 1fr">
+                <span
+                  >Setup is complete.
+                  <a href="#" class="lnk" style="font-weight: 600">Sign in</a></span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>The gate is <code>setup_complete</code>:</strong>
+        <code>GET /api/setup/status</code> answers <code>{ "setup_complete": true }</code> exactly
+        when <code>setup.token</code> does not exist; then the page draws
+        <code>setup.complete</code> with one link, to <code>/login</code> on a backend with accounts
+        and to <code>/</code>
+        otherwise, and no token card and no tabs.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: the verify answer.</strong>
+        <code>POST /api/setup/verify-token</code> answers 204 on a constant-time match and hands
+        nothing back; the browser keeps the token it sent as the bearer of every later setup call;
+        403 <code>forbidden</code> otherwise, painted on the token field; 404
+        <code>not-found</code> when setup is complete.
+      </div>
+      <div class="callout">
+        <strong>The token</strong> follows the first-boot pattern of Jenkins and Grafana:
+        <code>postinst</code> creates an empty <code>setup.token</code> on first install,
+        <code>load</code> fills it with 64 hex characters and logs its path, and the
+        <code>PUT /api/setup</code> that succeeds deletes it.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      The empty state — a backend whose status.config is [] draws configManager.noFiles and no tab,
+      no Update and no Restart
+    </div>
+    <div class="frame">
+      <div class="demo">
+        <h2 style="text-align: center; font-size: 20px">Admin Panel</h2>
+        <div
+          class="card"
+          style="border-color: var(--info); padding: 12px 14px; color: var(--heading)"
+        >
+          This backend has no configuration files to edit.
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong><code>status.config</code> is exactly the names list:</strong> <code>[]</code> on a
+        backend with no files, a missing member read as <code>[]</code>; on such a backend the admin
+        adapter carries no <code>config</code> member, the sidebar draws no Configuration row, and
+        the empty state is reached by URL alone.
+      </div>
+      <div class="callout changed">
+        <strong>Changed:</strong> the editor fell back to <code>['app']</code> when the member was
+        absent and requested <code>GET /api/config/undefined</code> on <code>[]</code>; that goes.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      Maps — every additionalProperties field through one generic map component: cards with Add and
+      Delete for an item with properties, key and value rows with Add and Remove for a scalar item,
+      the key dialog validated against propertyNames and unique
+    </div>
+    <div class="frame">
+      <div class="demo">
+        <div class="two">
+          <div class="spec-col">
+            <div class="card">
+              <div class="card-h">
+                OIDC providers <span class="countb">2</span
+                ><span class="btn primary sm" style="margin-left: auto">+ Add</span>
+              </div>
+              <div class="card-b">
+                <div class="card">
+                  <div class="card-h">github</div>
+                  <div class="card-b" style="grid-template-columns: 1fr; gap: 4px">
+                    <span class="hint"><strong>Issuer:</strong> https://github.com</span>
+                    <span class="hint"><strong>Client ID:</strong> Iv1.8a2c…</span>
+                    <div class="actions" style="justify-content: flex-end">
+                      <span class="btn sm">Edit</span><span class="btn sm">Delete</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-h">google</div>
+                  <div class="card-b" style="grid-template-columns: 1fr; gap: 4px">
+                    <span class="hint"><strong>Issuer:</strong> https://accounts.google.com</span>
+                    <span class="hint"><strong>Client ID:</strong> 4102…</span>
+                    <div class="actions" style="justify-content: flex-end">
+                      <span class="btn sm">Edit</span><span class="btn sm">Delete</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h">Log categories <span class="countb">2</span></div>
+              <div class="card-b" style="grid-template-columns: 1fr 1fr auto; align-items: end">
+                <div class="field">
+                  <label for="mk1">Key</label><input id="mk1" type="text" value="app" readonly />
+                </div>
+                <div class="field">
+                  <label for="mv1">Value</label
+                  ><select id="mv1">
+                    <option>error</option>
+                    <option>warn</option>
+                    <option selected>info</option>
+                    <option>debug</option>
+                  </select>
+                </div>
+                <span class="btn sm">Remove</span>
+                <div class="field">
+                  <label for="mk2">Key</label><input id="mk2" type="text" value="api" readonly />
+                </div>
+                <div class="field">
+                  <label for="mv2">Value</label
+                  ><select id="mv2">
+                    <option>error</option>
+                    <option>warn</option>
+                    <option selected>info</option>
+                    <option>debug</option>
+                  </select>
+                </div>
+                <span class="btn sm">Remove</span>
+                <div class="field">
+                  <label for="mk3">Key</label><input id="mk3" type="text" value="" />
+                </div>
+                <div class="field">
+                  <label for="mv3">Value</label
+                  ><select id="mv3">
+                    <option value="" selected></option>
+                    <option>error</option>
+                    <option>warn</option>
+                    <option>info</option>
+                    <option>debug</option>
+                  </select>
+                </div>
+                <span class="btn primary sm">+ Add</span>
+              </div>
+            </div>
+          </div>
+          <div class="spec-col">
+            <div class="card">
+              <div class="card-h">Add to OIDC providers</div>
+              <div class="card-b">
+                <div class="field invalid">
+                  <label for="dk1">Key</label
+                  ><input
+                    id="dk1"
+                    type="text"
+                    value="github"
+                    aria-invalid="true"
+                    aria-describedby="dk1-error"
+                    aria-errormessage="dk1-error"
+                  /><span class="field-error" id="dk1-error"
+                    ><span
+                      ><span class="vh">Error:</span>github is already taken in OIDC providers;
+                      enter a different key.</span
+                    ></span
+                  >
+                </div>
+                <div class="field">
+                  <label for="di1">Issuer</label
+                  ><input id="di1" type="text" value="" placeholder="" /><span class="hint"
+                    >The provider's issuer URL</span
+                  >
+                </div>
+                <div class="field">
+                  <label for="dc1">Client ID</label><input id="dc1" type="text" value="" />
+                </div>
+                <div class="field">
+                  <label for="ds1">Client secret</label
+                  ><span style="display: flex; gap: 6px"
+                    ><input id="ds1" type="password" value="" style="flex: 1" /><span class="btn"
+                      >👁</span
+                    ></span
+                  >
+                </div>
+                <div class="actions" style="grid-column: 1 / -1; justify-content: flex-end">
+                  <span class="btn">Cancel</span><span class="btn primary">Save</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed">
+        <strong>Changed: one generic map component.</strong> The providers cards and dialog were
+        hard-wired to the pointer <code>/auth/oidc/providers</code> and every other map drew
+        <code>[object Object]</code>. Now a collection of like entries is
+        <code>type: object</code> with <code>additionalProperties</code> describing one entry and
+        <code>propertyNames</code> describing the key; an item with <code>properties</code> draws as
+        cards, one per key, each showing the key and every item property carrying
+        <code>order</code> 1 or 2, the dialog the rest; a scalar item draws as key and value rows
+        with Add and Remove.
+      </div>
+      <div class="callout">
+        <strong>The key:</strong> the dialog validates it against the map's
+        <code>propertyNames</code> and against the existing keys with the validation contract's
+        <code>unique</code> rule, <code>params.scope</code> the map's <code>title</code>, in the
+        browser, because the whole map is one value on the wire.
+      </div>
+      <div class="callout">
+        <strong>The write:</strong> Add, Delete and Remove change the form alone and reach the
+        backend only in the merge patch of the next Update, the changed entries under their keys and
+        <code>null</code> for a deleted one; a refused write points into the map,
+        <code>/auth/oidc/providers/&lt;key&gt;/issuer</code>, and the dialog paints it on the field
+        the last segment names.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      The wire — the file on disk, its schema beside the code, the GET as the file holds it, the PUT
+      refused, the 200 with its list, the pending list on restart-status
+    </div>
+    <div class="frame">
+      <div class="demo">
+        <div class="two">
+          <div class="spec-col">
+            <h2>/etc/boxvault/app.config.yaml</h2>
             <div class="payload">
-              { <span class="k">"schemaVersion"</span>: 1, <span class="k">"agents"</span>: {
-              <span class="k">"auth"</span>: <span class="s">"key"</span>,
-              <span class="k">"key"</span>: <span class="s">"********"</span>,
-              <span class="k">"check_interval_sec"</span>: 300, … },
-              <span class="k">"uds_db"</span>: { <span class="k">"host"</span>:
-              <span class="s">"uds-db.prominic.net"</span>, <span class="k">"password"</span>:
-              <span class="s">"********"</span>, … }, … }
+              <span class="k">schemaVersion</span>: 1 <span class="k">boxvault</span>:
+              <span class="k">origin</span>: <span class="s">https://boxvault.startcloud.com</span>
+              <span class="k">api_listen_port_unencrypted</span>: 80
+              <span class="k">api_listen_port_encrypted</span>: 443
+              <span class="k">box_storage_directory</span>:
+              <span class="s">/var/lib/boxvault/storage</span> <span class="k">trust_proxy</span>:
+              true <span class="k">gravatar</span>: <span class="k">api_key</span>:
+              <span class="s">3f9c…</span> <span class="k">logging</span>:
+              <span class="k">level</span>: <span class="s">info</span>
+              <span class="k">categories</span>: <span class="k">app</span>:
+              <span class="s">info</span> <span class="k">api</span>: <span class="s">info</span>
+            </div>
+            <h2>backend/app/config/schema/app.schema.yaml</h2>
+            <div class="payload">
+              <span class="k">$schema</span>:
+              <span class="s">https://json-schema.org/draft/2020-12/schema</span>
+              <span class="k">title</span>: <span class="s">Application</span>
+              <span class="k">schemaVersion</span>: 1 <span class="k">sections</span>:
+              <span class="k">application</span>: <span class="k">title</span>:
+              <span class="s">Application</span> <span class="k">order</span>: 1
+              <span class="k">action</span>: { <span class="k">kind</span>:
+              <span class="s">test</span>, <span class="k">route</span>:
+              <span class="s">/api/config/app/test</span>, <span class="k">method</span>:
+              <span class="s">POST</span>, <span class="k">body</span>: <span class="s">form</span>,
+              <span class="k">step_up</span>: false } <span class="k">properties</span>:
+              <span class="k">schemaVersion</span>: { <span class="k">type</span>:
+              <span class="s">integer</span>, <span class="k">readOnly</span>: true,
+              <span class="k">default</span>: 1, <span class="k">title</span>:
+              <span class="s">Schema version</span> } <span class="k">boxvault</span>:
+              <span class="k">type</span>: <span class="s">object</span>
+              <span class="k">section</span>: <span class="s">application</span>
+              <span class="k">subsection</span>: <span class="s">boxvaultSettings</span>
+              <span class="k">title</span>: <span class="s">BoxVault Settings</span>
+              <span class="k">properties</span>: <span class="k">origin</span>: {
+              <span class="k">type</span>: <span class="s">string</span>,
+              <span class="k">format</span>: <span class="s">uri</span>,
+              <span class="k">title</span>: <span class="s">Origin</span>,
+              <span class="k">description</span>:
+              <span class="s">The origin URL for BoxVault</span>, <span class="k">order</span>: 1,
+              <span class="k">requiresRestart</span>: true, <span class="k">restartReason</span>:
+              <span class="s">the listener and the OIDC redirect are bound at boot</span> }
+              <span class="k">api_listen_port_encrypted</span>: { <span class="k">type</span>:
+              <span class="s">integer</span>, <span class="k">minimum</span>: 1,
+              <span class="k">maximum</span>: 65535, <span class="k">default</span>: 443,
+              <span class="k">title</span>: <span class="s">HTTPS port</span>,
+              <span class="k">order</span>: 4, <span class="k">requiresRestart</span>: true,
+              <span class="k">restartReason</span>:
+              <span class="s">the listener is bound at boot</span> }
+              <span class="k">required</span>: [<span class="s">origin</span>,
+              <span class="s">api_listen_port_unencrypted</span>,
+              <span class="s">api_listen_port_encrypted</span>] <span class="k">gravatar</span>:
+              <span class="k">type</span>: <span class="s">object</span>
+              <span class="k">section</span>: <span class="s">application</span>
+              <span class="k">subsection</span>: <span class="s">gravatarSettings</span>
+              <span class="k">properties</span>: <span class="k">api_key</span>: {
+              <span class="k">type</span>: <span class="s">string</span>,
+              <span class="k">writeOnly</span>: true, <span class="k">title</span>:
+              <span class="s">Gravatar API key</span>, <span class="k">order</span>: 2 }
+              <span class="k">logging</span>: <span class="k">type</span>:
+              <span class="s">object</span> <span class="k">section</span>:
+              <span class="s">application</span> <span class="k">subsection</span>:
+              <span class="s">loggingSettings</span> <span class="k">properties</span>:
+              <span class="k">level</span>: { <span class="k">type</span>:
+              <span class="s">string</span>, <span class="k">enum</span>: [<span class="s"
+                >error</span
+              >, <span class="s">warn</span>, <span class="s">info</span>,
+              <span class="s">debug</span>], <span class="k">default</span>:
+              <span class="s">info</span>, <span class="k">title</span>:
+              <span class="s">Log level</span>, <span class="k">order</span>: 1 }
+              <span class="k">categories</span>: <span class="k">type</span>:
+              <span class="s">object</span> <span class="k">subsection</span>:
+              <span class="s">loggingCategories</span> <span class="k">title</span>:
+              <span class="s">Log categories</span> <span class="k">propertyNames</span>: {
+              <span class="k">type</span>: <span class="s">string</span>,
+              <span class="k">pattern</span>: <span class="s">^[a-z][a-z0-9_]*$</span> }
+              <span class="k">additionalProperties</span>: { <span class="k">type</span>:
+              <span class="s">string</span>, <span class="k">enum</span>: [<span class="s"
+                >error</span
+              >, <span class="s">warn</span>, <span class="s">info</span>,
+              <span class="s">debug</span>] }
+            </div>
+          </div>
+          <div class="spec-col">
+            <h2>GET /api/config/app · 200, the raw file and nothing else</h2>
+            <div class="payload">
+              { <span class="k">"schemaVersion"</span>: 1, <span class="k">"boxvault"</span>: {
+              <span class="k">"origin"</span>:
+              <span class="s">"https://boxvault.startcloud.com"</span>,
+              <span class="k">"api_listen_port_unencrypted"</span>: 80,
+              <span class="k">"api_listen_port_encrypted"</span>: 443,
+              <span class="k">"box_storage_directory"</span>:
+              <span class="s">"/var/lib/boxvault/storage"</span>,
+              <span class="k">"trust_proxy"</span>: true }, <span class="k">"gravatar"</span>: {
+              <span class="k">"api_key"</span>: <span class="s">"3f9c…"</span> },
+              <span class="k">"logging"</span>: { <span class="k">"level"</span>:
+              <span class="s">"info"</span>, <span class="k">"categories"</span>: {
+              <span class="k">"app"</span>: <span class="s">"info"</span>,
+              <span class="k">"api"</span>: <span class="s">"info"</span> } } }
             </div>
             <h2>PUT /api/config/app · 422, two values refused</h2>
             <div class="payload">
@@ -925,37 +1244,60 @@
               <span class="k">"title"</span>:
               <span class="s">"The configuration did not pass validation."</span>,
               <span class="k">"status"</span>: 422, <span class="k">"errors"</span>: [ {
-              <span class="k">"pointer"</span>: <span class="s">"/agents/check_interval_sec"</span>,
+              <span class="k">"pointer"</span>:
+              <span class="s">"/boxvault/api_listen_port_encrypted"</span>,
               <span class="k">"rule"</span>: <span class="s">"maximum"</span>,
-              <span class="k">"params"</span>: { <span class="k">"maximum"</span>: 3600 },
+              <span class="k">"params"</span>: { <span class="k">"maximum"</span>: 65535 },
               <span class="k">"detail"</span>:
-              <span class="s">"check_interval_sec must be at most 3600"</span> }, {
-              <span class="k">"pointer"</span>: <span class="s">"/uds_db/host"</span>,
-              <span class="k">"rule"</span>: <span class="s">"reachable"</span>,
-              <span class="k">"params"</span>: {}, <span class="k">"detail"</span>:
-              <span class="s">"uds-db.prominic.net:3306 did not answer"</span> } ] }
+              <span class="s">"api_listen_port_encrypted must be at most 65535"</span> }, {
+              <span class="k">"pointer"</span>: <span class="s">"/logging/log_directory"</span>,
+              <span class="k">"rule"</span>: <span class="s">"writable"</span>,
+              <span class="k">"params"</span>: { <span class="k">"user"</span>:
+              <span class="s">"boxvault"</span> }, <span class="k">"detail"</span>:
+              <span class="s">"/var/log/boxvault is not writable by boxvault"</span> } ] }
             </div>
-            <h2>PUT /api/config/app · 200</h2>
+            <h2>PUT /api/config/app · 200, the list of changed flagged leaves</h2>
             <div class="payload">
-              { <span class="k">"message"</span>:
-              <span class="s">"Configuration updated successfully."</span>,
-              <span class="k">"requires_restart"</span>: true }
+              { <span class="k">"message"</span>: <span class="s">"Configuration saved."</span>,
+              <span class="k">"requires_restart"</span>: [ { <span class="k">"pointer"</span>:
+              <span class="s">"/boxvault/api_listen_port_encrypted"</span>,
+              <span class="k">"title"</span>: <span class="s">"HTTPS port"</span>,
+              <span class="k">"reason"</span>:
+              <span class="s">"the listener is bound at boot"</span>
+              } ] }
+            </div>
+            <h2>GET /api/config/restart-status · 200, the pending list until the restart</h2>
+            <div class="payload">
+              { <span class="k">"restart_required"</span>: true,
+              <span class="k">"requires_restart"</span>: [ { <span class="k">"pointer"</span>:
+              <span class="s">"/boxvault/api_listen_port_encrypted"</span>,
+              <span class="k">"title"</span>: <span class="s">"HTTPS port"</span>,
+              <span class="k">"reason"</span>:
+              <span class="s">"the listener is bound at boot"</span> } ],
+              <span class="k">"last_modified_by"</span>: <span class="s">"mark@m4kr.net"</span>,
+              <span class="k">"last_modified_time"</span>:
+              <span class="s">"2026-09-06T13:58:00Z"</span> }
             </div>
             <h2>What the UI does with the answer</h2>
             <div class="tbl" style="grid-template-columns: 70px 1fr">
               <span class="hc">Status</span><span class="hc">Surface</span>
               <span class="c k">422</span
               ><span class="c"
-                >each <code>errors[]</code> pointer is a field path; the error paints there and in
-                the summary; a rule outside the schema's vocabulary (<code>reachable</code>,
-                <code>writable</code>) is one of the validation contract's named rules and paints
-                from <code>validation.reachable</code> with the field's title; the host's
-                <code>detail</code> is never shown</span
+                >each <code>errors[]</code> pointer is into the body as sent; the error paints on
+                the field the pointer names and in the summary; a rule the schema cannot express
+                (<code>writable</code> with <code>params: { user }</code>,
+                <code>reachable</code> with <code>params: { host, port }</code>) is code on the
+                route and paints from <code>validation.&lt;rule&gt;</code> with the field's
+                <code>title</code>; a pointer that names no field goes to the summary alone; the
+                host's <code>detail</code> is never shown</span
               >
               <span class="c k">200</span
               ><span class="c"
-                >the success card, the file re-read; a warning card "Restart the server to apply"
-                when <code>requires_restart</code> is true</span
+                >the UI's own success card <code>configManager.updateSuccess</code>, never the
+                server's <code>message</code>; the file re-read; <code>restart-status</code> re-read
+                and the restart card drawn from it, listing each entry's <code>title</code> and
+                <code>reason</code> until <code>POST /api/config/restart</code> answers 202; the
+                editor never draws the <code>PUT</code>'s own list</span
               >
               <span class="c k">else</span><span class="c">one danger card, the values kept</span>
             </div>
@@ -976,10 +1318,10 @@
         value.
       </div>
       <div class="callout">
-        <strong>A free subtree</strong> (the VDI <code>pools</code> overrides) is a
-        <code>type: object</code> the schema marks with the UI backend's own
-        <code>x-</code> annotation; the page does not draw it, the route still checks the types it
-        declares.
+        <strong>A free subtree</strong> is a <code>type: object</code> with neither
+        <code>properties</code> nor <code>additionalProperties</code>: not drawn, not evaluated and
+        not walked for unknown keys; a per-pool or per-site subtree the editor draws gains an item
+        schema and becomes a map.
       </div>
     </div>
   </div>
@@ -992,16 +1334,16 @@
           <div class="spec-col">
             <h2>postinst, 0.8.0 → 0.9.0</h2>
             <div class="payload">
-              vdi-health: config schemaVersion 1 → 2 migrate 2: rename uds_db.refresh_interval_sec →
-              uds_db.poll_interval_sec fill agents.min_desktop_icons = 4 (default) warn
-              logging.performance_threshold_ms unknown to schema 2, kept write
-              /etc/vdi-health/app.config.yaml (backup app.config.yaml.1757112000)
+              boxvault: config app schemaVersion 1 → 2 migrate 2: rename gravatar.api_key →
+              gravatar.key warn logging.performance_threshold_ms unknown to schema 2, kept write
+              /etc/boxvault/app.config.yaml (backup app.config.yaml.bak)
             </div>
             <h2>boot, on a file that fails</h2>
             <div class="payload">
-              vdi-health app ERROR config /etc/vdi-health/app.config.yaml failed validation
-              /agents/auth: enum, expected one of none, key, got "token" /uds_db/port: maximum,
-              expected at most 65535, got 70000 vdi-health app ERROR refusing to start
+              boxvault app ERROR config /etc/boxvault/app.config.yaml failed validation
+              /logging/level: enum, expected one of error, warn, info, debug, got "verbose"
+              /boxvault/api_listen_port_encrypted: maximum, expected at most 65535, got 70000
+              boxvault app ERROR refusing to start
             </div>
           </div>
           <div class="spec-col">
@@ -1009,9 +1351,8 @@
               <span class="hc">Case</span><span class="hc">What happens</span>
               <span class="c k">a new key</span
               ><span class="c"
-                >its <code>default</code> fills at boot for the running process and is written into
-                the file by <code>postinst</code> on the next upgrade, so what the admin reads
-                matches what runs</span
+                >its <code>default</code> is filled in memory at <code>load</code>; the file gains
+                the key only when an administrator writes it</span
               >
               <span class="c k">a removed key</span
               ><span class="c"
@@ -1020,8 +1361,11 @@
               >
               <span class="c k">a renamed key</span
               ><span class="c"
-                >one entry in the UI backend's migration list, one function per release, run in
-                order from the file's <code>schemaVersion</code> to the schema's</span
+                >one entry in the UI backend's migration list, one function per release, run by
+                <code>postinst</code> as the service user in order from the file's
+                <code>schemaVersion</code> to the schema's; it reads the old key, writes the new
+                key, drops the old key and stamps <code>schemaVersion</code>; it writes nothing
+                else</span
               >
               <span class="c k">a tightened rule</span
               ><span class="c"
@@ -1040,8 +1384,11 @@
     <div class="callouts">
       <div class="callout changed">
         <strong>Changed: upgrades stop being a template diff.</strong> Every release shipped a whole
-        new node tree and left the merge to the admin; now the schema's defaults and the migration
-        list do it, and the admin's file keeps its comments and order.
+        new node tree and left the merge to the admin, or a migration materialized every default;
+        now <code>default</code> lives in memory, <code>schemaVersion</code> and the migration list
+        carry the change, a migration writes only what it changes with one
+        <code>&lt;name&gt;.config.yaml.bak</code> beside it, and the admin's file keeps its comments
+        and order.
       </div>
     </div>
   </div>
@@ -1094,8 +1441,8 @@
           <code>secret_fields</code>, own routes; BoxVault's <code>type: object</code> with
           <code>providers</code> drawn by a special block</span
         ><span class="c"
-          >a <code>type: object</code> with <code>additionalProperties</code> describing an item,
-          drawn as a list of items; the OIDC providers block is the first user</span
+          >a <code>type: object</code> with <code>additionalProperties</code> and
+          <code>propertyNames</code>, drawn by one generic map component</span
         >
         <span class="c k">PUT</span
         ><span class="c was"
@@ -1103,8 +1450,39 @@
           hyperweaver-server); one key checked (zoneweaver-agent); the whole document validated, 500
           with a sentence (hyperweaver-agent)</span
         ><span class="c"
-          >validate, 422 with pointers, then merge and write, on every UI backend; 200 carries
-          <code>requires_restart</code></span
+          >a JSON Merge Patch, validated, 422 with pointers, then an atomic write, on every UI
+          backend</span
+        >
+        <span class="c k">GET</span
+        ><span class="c was"
+          >the defaults-filled tree with <code>writeOnly</code> values masked (BoxVault, VDI)</span
+        ><span class="c">the raw file</span> <span class="c k">secrets</span
+        ><span class="c was"
+          ><code>writeOnly</code> values masked as <code>********</code> on read, the mask or a
+          blank on write keeping the stored value; <code>${ENV:}</code> placeholders on the
+          authorization server</span
+        ><span class="c"
+          >no secrets handling: every value in the clear in the file, on read and on write;
+          <code>writeOnly</code> only hides the characters in the form; no placeholder in any
+          file</span
+        >
+        <span class="c k">restart</span
+        ><span class="c was"
+          ><code>requires_restart: true</code> on the 200, the card naming nothing; an unconditional
+          flag and a 204 (the authorization server)</span
+        ><span class="c"
+          ><code>requires_restart</code> a list of the changed flagged leaves with
+          <code>title</code> and <code>reason</code>;
+          <code>GET /api/config/restart-status</code> carrying the pending list; the card draws it
+          until the restart</span
+        >
+        <span class="c k">actions</span
+        ><span class="c was"
+          ><code>upload: true</code> with two routes and two bodies; the SMTP test a card in page
+          code; rotate-key a <code>button</code> type in metadata</span
+        ><span class="c"
+          ><code>action: { kind, route, method, body, step_up }</code> in the schema, one component
+          per kind, one upload route per name</span
         >
         <span class="c k">boot</span
         ><span class="c was">the file is read as is (hyperweaver-agent excepted)</span
@@ -1126,6 +1504,10 @@
           ><code>schemaSections(schema)</code> draws, <code>useFormRules</code> validates on blur
           and submit, the 422 paints by pointer</span
         >
+        <span class="c k">the empty backend</span
+        ><span class="c was"
+          ><code>status.config</code> omitted; the editor falling back to <code>['app']</code></span
+        ><span class="c"><code>config: []</code>; the editor's empty state</span>
         <span class="c k">the Worker</span
         ><span class="c was"><code>wrangler.toml</code> vars and secrets, no admin surface</span
         ><span class="c">unchanged and named the one UI backend with no configuration files</span>
@@ -1151,50 +1533,73 @@
         >
         <span class="c k">environment</span
         ><span class="c"
-          ><code>CONFIG_DIR</code> (default <code>/etc/&lt;app&gt;</code>) and the environment
-          switch (<code>NODE_ENV</code>, <code>VDI_HEALTH_ENV</code>); any other setting in an
-          environment variable is a defect</span
+          ><code>CONFIG_DIR</code> (default <code>/etc/&lt;app&gt;</code>), one variable, no more;
+          when that directory does not exist the backend runs in development on
+          <code>config/</code> at the repository root; no other environment variable is read by any
+          backend with files</span
         >
         <span class="c k">names</span
         ><span class="c"
-          ><code>status.config</code> lists them; each is a tab; a name outside the list is
-          404</span
+          ><code>status.config</code> is exactly the code-fixed list; each is a tab labelled by its
+          schema's root <code>title</code>; <code>[]</code> draws the empty state; a name outside
+          the list is 404 <code>not-found</code></span
         >
         <span class="c k">secrets</span
         ><span class="c"
-          ><code>writeOnly</code> values read back as <code>********</code>; a write carrying the
-          mask or blank keeps the stored value; the schema decides which keys, never the
-          client</span
+          >none: every key and every value in plain text in the file, mode <code>0600</code>, owned
+          by the service user; no mask, no sentinel, no presence flag, no
+          <code>${ENV}</code> placeholder; <code>writeOnly</code> is the form's reveal hint
+          alone</span
         >
         <span class="c k">write</span
         ><span class="c"
-          >validate, then deep merge onto the file, never through <code>__proto__</code>,
-          <code>constructor</code>, <code>prototype</code>; atomic with a backup beside; a restart
-          is the admin's separate action</span
+          >the body a JSON Merge Patch (RFC 7396): a sent key replaces, an omitted key is untouched,
+          <code>null</code> removes, a blank is written blank; validate the filled merge, then the
+          temp file renamed over the target, mode <code>0600</code>, with one
+          <code>&lt;name&gt;.config.yaml.bak</code> beside it; a read never rewrites the file; a
+          restart is the admin's separate action behind a confirm</span
         >
       </div>
       <h2>Schema keywords</h2>
       <div class="tbl" style="grid-template-columns: 150px 1fr">
         <span class="hc">Keyword</span><span class="hc">Meaning</span>
         <span class="c k"
-          >type, enum, minimum, maximum, minLength, maxLength, pattern, format, required,
-          additionalProperties</span
+          >type, enum, minimum, maximum, minLength, maxLength, pattern, format, required, minItems,
+          maxItems, items, additionalProperties, propertyNames</span
         ><span class="c"
-          >the rules, as the validation contract fixes them (JSON Schema 2020-12 Validation §6,
-          §7)</span
+          >the rules, as the validation contract fixes them (JSON Schema 2020-12 Validation §6, §7);
+          <code>format</code> is a rule, never a control; scalar <code>items</code> draw as a comma
+          list, <code>items.enum</code> as a multi-select</span
         >
-        <span class="c k">default</span><span class="c">what a missing key takes (§9.2)</span>
+        <span class="c k">default</span
+        ><span class="c"
+          >what a missing key takes in memory at <code>load</code>; the placeholder of an empty text
+          or numeric control, the <code>Default: &lt;value&gt;</code> hint on a boolean or an enum;
+          never written into the file (§9.2)</span
+        >
         <span class="c k">title, description</span
-        ><span class="c">the label and the hint (§9.1)</span>
+        ><span class="c"
+          >the label and the hint; the root <code>title</code> is the tab label (§9.1)</span
+        >
         <span class="c k">readOnly, writeOnly, deprecated</span
-        ><span class="c">never editable; a secret; drawn with a note (§9.3, §9.4)</span>
+        ><span class="c"
+          >never editable, <code>schemaVersion</code> alone; the reveal hint alone; drawn with a
+          note (§9.3, §9.4)</span
+        >
         <span class="c k">section, subsection, order, sections</span
         ><span class="c"
-          >where and in what order the field is drawn; the tab's groups and titles</span
+          >where and in what order the field is drawn; <code>sections</code> at the root names and
+          orders the groups, <code>{ title, order, action }</code></span
         >
-        <span class="c k">upload, dependsOn, showWhen, requiresRestart</span
+        <span class="c k">action</span
         ><span class="c"
-          >the upload button; the one conditional form; the restart flag the 200 reports</span
+          ><code>{ kind, route, method, body, step_up }</code> on a property or a section:
+          <code>upload</code>, <code>test</code> or <code>run</code>, one component per kind</span
+        >
+        <span class="c k">dependsOn, showWhen, requiresRestart, restartReason</span
+        ><span class="c"
+          >the one conditional form, equal by JSON value; the restart flag and its sentence on a
+          leaf, listed by the 200 and by <code>restart-status</code></span
         >
         <span class="c k">x-…</span
         ><span class="c">a UI backend's own annotation, ignored by the shared UI</span>
@@ -1205,13 +1610,13 @@
       <div class="tbl" style="grid-template-columns: 130px 1fr">
         <span class="hc">Host</span><span class="hc">State</span> <span class="c k">BoxVault</span
         ><span class="c"
-          >four node-tree files today; <code>postinst</code> flattens them once and ships four
-          schemas; the routes validate; the OIDC providers block becomes the item object</span
+          ><code>/etc/boxvault</code>; <code>["app", "auth", "db", "mail"]</code>; the Node source
+          of the module; the providers map drawn by the generic map component</span
         >
         <span class="c k">VDI Health</span
         ><span class="c"
-          >one node-tree file today; the same flattening and one schema; the
-          <code>pools</code> subtree stays a marked free object</span
+          ><code>/etc/vdi-health</code>; <code>["app"]</code>; the Python source of the module;
+          <code>pools</code> becomes an <code>additionalProperties</code> map</span
         >
         <span class="c k">hyperweaver-server</span
         ><span class="c"
@@ -1223,18 +1628,26 @@
           >already plain files with a served schema; the spelling of bounds, the 422 body and the
           pointer logging are what remain</span
         >
-        <span class="c k">Catalog</span><span class="c">n/a, no configuration files</span>
+        <span class="c k">Catalog</span
+        ><span class="c"><code>config: []</code>, no configuration files, no config routes</span>
         <span class="c k">Auth server</span
-        ><span class="c">Spring's own YAML and surface, outside the contract</span>
+        ><span class="c"
+          ><code>/opt/prominic/authorization-server/config</code>; phase one one file
+          <code>application</code>; the Groovy source of the module; every leaf flagged with the one
+          reason <code>configuration is bound at boot</code></span
+        >
       </div>
       <h2>Specification anchors</h2>
       <div class="tbl" style="grid-template-columns: 1fr">
         <span class="c"
           >JSON Schema 2020-12 Validation §6, §7, §9 and Core §7.7.1 (unknown keywords as
-          annotations), §10.3.2.3 (<code>additionalProperties</code>) · RFC 9457 Problem Details and
-          RFC 6901 JSON Pointer for the refused write · RFC 9110 §15.5.21 · YAML 1.2 · the Universal
-          Validation Contract for the evaluator, the body, the surfaces and the accessibility of the
-          forms</span
+          annotations), §10.3.1.2 (<code>items</code>), §10.3.2.3
+          (<code>additionalProperties</code>), §10.3.2.4 (<code>propertyNames</code>) · RFC 7396
+          JSON Merge Patch for the <code>PUT</code> · RFC 9457 Problem Details and RFC 6901 JSON
+          Pointer for the refused write · RFC 9110 §15.3.3, §15.5.5, §15.5.14 · RFC 3339 §5.6 · YAML
+          1.2 core schema · POSIX.1-2017 <code>rename()</code> · GOV.UK Design System, password
+          input · the Universal Validation Contract for the evaluator, the body, the surfaces and
+          the accessibility of the forms</span
         >
       </div>
     </div>
@@ -1247,146 +1660,103 @@
     if (!live) {
       return;
     }
+    var LEVELS = ['error', 'warn', 'info', 'debug'];
     var SCHEMA = {
+      title: 'Application',
       sections: [
         {
-          key: 'vdiSettings',
-          title: 'VDI Health Settings',
-          paths: [
-            'vdi/origin',
-            'vdi/api_listen_port_unencrypted',
-            'vdi/api_listen_port_encrypted',
-            'vdi/trust_proxy',
+          key: 'application',
+          title: 'Application',
+          action: {
+            kind: 'test',
+            route: '/api/config/app/test',
+            method: 'POST',
+            body: 'form',
+            step_up: false,
+          },
+          subsections: [
+            {
+              key: 'boxvaultSettings',
+              title: 'BoxVault Settings',
+              paths: ['boxvault/origin', 'boxvault/api_listen_port_encrypted'],
+            },
+            { key: 'gravatarSettings', title: 'gravatarSettings', paths: ['gravatar/api_key'] },
+            { key: 'loggingSettings', title: 'loggingSettings', paths: ['logging/level'] },
+            { key: 'loggingCategories', title: 'Log categories', map: 'logging/categories' },
           ],
-        },
-        {
-          key: 'agents',
-          title: 'Agents',
-          paths: [
-            'agents/auth',
-            'agents/key',
-            'agents/check_interval_sec',
-            'agents/min_desktop_icons',
-          ],
-        },
-        {
-          key: 'udsDb',
-          title: 'UDS Database',
-          paths: ['uds_db/enabled', 'uds_db/host', 'uds_db/port', 'uds_db/password'],
         },
       ],
       properties: {
-        'vdi/origin': {
+        'boxvault/origin': {
           type: 'string',
           format: 'uri',
           title: 'Origin',
-          description: 'The origin URL for VDI Health Monitor',
+          description: 'The origin URL for BoxVault',
           required: true,
           requiresRestart: true,
+          restartReason: 'the listener and the OIDC redirect are bound at boot',
         },
-        'vdi/api_listen_port_unencrypted': {
+        'boxvault/api_listen_port_encrypted': {
           type: 'integer',
           minimum: 1,
           maximum: 65535,
-          title: 'HTTP port',
-          description: 'The port the monitor listens on for HTTP',
-          required: true,
-          requiresRestart: true,
-        },
-        'vdi/api_listen_port_encrypted': {
-          type: 'integer',
-          minimum: 1,
-          maximum: 65535,
+          default: 443,
           title: 'HTTPS port',
-          description: 'The port the monitor listens on for HTTPS',
+          description:
+            'The port BoxVault listens on for HTTPS; the proxied port is a separate value',
           required: true,
           requiresRestart: true,
+          restartReason: 'the listener is bound at boot',
         },
-        'vdi/trust_proxy': {
-          type: 'boolean',
-          title: 'Trust proxy',
-          description: 'Trust the X-Forwarded-For header from a proxy in front',
-        },
-        'agents/auth': {
-          type: 'string',
-          enum: ['none', 'key'],
-          title: 'Check-in authentication',
-          description: 'key requires the X-Agent-Key header on every check-in',
-          required: true,
-        },
-        'agents/key': {
+        'gravatar/api_key': {
           type: 'string',
           writeOnly: true,
-          title: 'Agent key',
-          description: 'The shared key the agents send as X-Agent-Key',
-          dependsOn: 'agents/auth',
-          showWhen: ['key'],
+          title: 'Gravatar API key',
+          description: '',
         },
-        'agents/check_interval_sec': {
-          type: 'integer',
-          minimum: 30,
-          maximum: 3600,
-          title: 'Check-in interval (seconds)',
-          description: 'Sent to the agents on every check-in',
-          required: true,
-        },
-        'agents/min_desktop_icons': {
-          type: 'integer',
-          minimum: 0,
-          maximum: 1000,
-          title: 'Minimum desktop icons',
-          description: 'Below this a VM reports icons_missing',
-          required: true,
-        },
-        'uds_db/enabled': {
-          type: 'boolean',
-          title: 'UDS sync enabled',
-          description: 'Enrich each VM with its pool and session from the UDS database',
-        },
-        'uds_db/host': {
+        'logging/level': {
           type: 'string',
-          format: 'hostname',
-          title: 'UDS host',
-          description: 'UDS MariaDB server hostname or IP',
-          dependsOn: 'uds_db/enabled',
-          showWhen: [true],
-          requiresRestart: true,
+          enum: LEVELS,
+          default: 'info',
+          title: 'Log level',
+          description: '',
         },
-        'uds_db/port': {
-          type: 'integer',
-          minimum: 1,
-          maximum: 65535,
-          title: 'UDS port',
-          description: 'UDS MariaDB port',
-          dependsOn: 'uds_db/enabled',
-          showWhen: [true],
-        },
-        'uds_db/password': {
-          type: 'string',
-          writeOnly: true,
-          title: 'UDS password',
-          description: 'UDS MariaDB password',
-          dependsOn: 'uds_db/enabled',
-          showWhen: [true],
+      },
+      maps: {
+        'logging/categories': {
+          title: 'Log categories',
+          propertyNames: /^[a-z][a-z0-9_]*$/,
+          item: { type: 'string', enum: LEVELS, title: 'Value' },
         },
       },
     };
     var CONFIG = {
-      'vdi/origin': 'https://vdi-health.s2.prominic.work',
-      'vdi/api_listen_port_unencrypted': 8080,
-      'vdi/api_listen_port_encrypted': 8443,
-      'vdi/trust_proxy': true,
-      'agents/auth': 'key',
-      'agents/key': '********',
-      'agents/check_interval_sec': 300,
-      'agents/min_desktop_icons': 4,
-      'uds_db/enabled': true,
-      'uds_db/host': 'uds-db.prominic.net',
-      'uds_db/port': 3306,
-      'uds_db/password': '********',
+      'boxvault/origin': 'https://boxvault.startcloud.com',
+      'boxvault/api_listen_port_encrypted': 443,
+      'gravatar/api_key': '3f9c…',
+      'logging/level': 'info',
     };
-    var HOST_RE =
-      /^(?=.{1,255}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)(?:\.(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?))*$/;
+    var CATEGORIES = { app: 'info', api: 'info' };
+    var RESTART_STATUS = {
+      restart_required: true,
+      requires_restart: [
+        {
+          pointer: '/boxvault/api_listen_port_encrypted',
+          title: 'HTTPS port',
+          reason: 'the listener is bound at boot',
+        },
+      ],
+      last_modified_by: 'mark@m4kr.net',
+      last_modified_time: '2026-09-06T13:58:00Z',
+    };
+    var PUT_422 = [
+      {
+        pointer: '/boxvault/api_listen_port_encrypted',
+        rule: 'maximum',
+        params: { maximum: 65535 },
+      },
+      { pointer: '/logging/log_directory', rule: 'writable', params: { user: 'boxvault' } },
+    ];
     var MESSAGES = {
       required: function (n) {
         return 'Enter ' + n.title.toLowerCase() + '.';
@@ -1394,83 +1764,108 @@
       integer: function (n) {
         return 'Enter a whole number for ' + n.title.toLowerCase() + '.';
       },
-      range: function (n) {
-        return (
-          'Enter a value between ' +
-          n.minimum +
-          ' and ' +
-          n.maximum +
-          ' for ' +
-          n.title.toLowerCase() +
-          '.'
-        );
+      minimum: function (n, p) {
+        return n.title + ' must be at least ' + p.minimum + '.';
       },
-      uri: function (n) {
+      maximum: function (n, p) {
+        return n.title + ' must be at most ' + p.maximum + '.';
+      },
+      format: function (n) {
         return (
           'Enter the ' +
           n.title.toLowerCase() +
-          ' as a full URL, such as https://vdi-health.example.com.'
+          ' as a full URL, such as https://boxvault.example.com.'
         );
-      },
-      hostname: function (n) {
-        return 'Enter ' + n.title.toLowerCase() + ' as a hostname or IP address.';
       },
       enum: function (n) {
         return 'Choose one of ' + n.enum.join(', ') + ' for ' + n.title.toLowerCase() + '.';
       },
-      reachable: function (n) {
-        return 'The ' + n.title.toLowerCase() + ' did not answer; check the host and port.';
+      writable: function (n, p) {
+        return n.title + ' is not writable by ' + p.user + '.';
+      },
+      pattern: function (n) {
+        return (
+          'Use only lowercase letters, digits and underscores in the ' + n.title.toLowerCase() + '.'
+        );
+      },
+      unique: function (n, p) {
+        return (
+          p.value +
+          ' is already taken in ' +
+          p.scope +
+          '; enter a different ' +
+          n.title.toLowerCase() +
+          '.'
+        );
       },
     };
-    var visible = function (path) {
-      var n = SCHEMA.properties[path];
-      if (!n.dependsOn) {
-        return true;
-      }
-      return n.showWhen.indexOf(state.values[n.dependsOn]) !== -1;
-    };
     var evaluate = function (n, v) {
-      var s = String(v === null || v === undefined ? '' : v).trim();
-      if (n.required && n.type !== 'boolean' && !s) {
-        return 'required';
+      var s = String(v === null || v === undefined ? '' : v);
+      if (n.required && !s) {
+        return { rule: 'required' };
       }
-      if (!s || n.type === 'boolean') {
+      if (!s) {
         return null;
       }
       if (n.type === 'integer') {
         if (!/^-?\d+$/.test(s)) {
-          return 'integer';
+          return { rule: 'integer' };
         }
         var num = Number(s);
-        if (num < n.minimum || num > n.maximum) {
-          return 'range';
+        if (n.minimum !== undefined && num < n.minimum) {
+          return { rule: 'minimum', params: { minimum: n.minimum } };
+        }
+        if (n.maximum !== undefined && num > n.maximum) {
+          return { rule: 'maximum', params: { maximum: n.maximum } };
         }
       }
       if (n.format === 'uri') {
         try {
           new URL(s);
         } catch (e) {
-          return 'uri';
+          return { rule: 'format' };
         }
       }
-      if (n.format === 'hostname' && !HOST_RE.test(s)) {
-        return 'hostname';
-      }
       if (n.enum && n.enum.indexOf(s) === -1) {
-        return 'enum';
+        return { rule: 'enum' };
+      }
+      return null;
+    };
+    var evaluateKey = function (key) {
+      var n = { title: 'Key', required: true };
+      var m = SCHEMA.maps['logging/categories'];
+      if (!key) {
+        return { rule: 'required', node: n };
+      }
+      if (!m.propertyNames.test(key)) {
+        return { rule: 'pattern', node: n };
+      }
+      if (Object.prototype.hasOwnProperty.call(state.categories, key)) {
+        return { rule: 'unique', node: n, params: { value: key, scope: m.title } };
       }
       return null;
     };
     var state = {
       values: {},
+      categories: {},
+      newKey: '',
+      newValue: '',
+      keyTouched: false,
+      revealed: {},
       touched: {},
       submitted: false,
       server: {},
+      orphans: [],
+      restart: null,
+      confirming: false,
       cards: [],
       focusSummary: false,
     };
     Object.keys(CONFIG).forEach(function (k) {
       state.values[k] = CONFIG[k];
+    });
+    Object.keys(CATEGORIES).forEach(function (k) {
+      state.categories[k] = CATEGORIES[k];
     });
     var esc = function (s) {
       return String(s)
@@ -1480,98 +1875,190 @@
         .replace(/"/g, '&quot;');
     };
     var idOf = function (p) {
-      return p.replace(/\//g, '-');
+      return 'config:app/' + p;
+    };
+    var byId = function (id) {
+      return id ? document.getElementById(id) : null;
+    };
+    var messageOf = function (n, e) {
+      return MESSAGES[e.rule](n, e.params || {});
     };
     var errorFor = function (path) {
       var n = SCHEMA.properties[path];
-      if (!visible(path)) {
-        return '';
-      }
       var s = state.server[path];
       if (s) {
-        return MESSAGES[s.rule](n);
+        return messageOf(n, s);
       }
       if (!state.touched[path] && !state.submitted) {
         return '';
       }
       var r = evaluate(n, state.values[path]);
-      return r ? MESSAGES[r](n) : '';
+      return r ? messageOf(n, r) : '';
+    };
+    var keyError = function () {
+      if (!state.keyTouched && !state.submitted) {
+        return '';
+      }
+      var r = evaluateKey(state.newKey);
+      return r ? messageOf(r.node, r) : '';
+    };
+    var ariaOf = function (id, err) {
+      return err
+        ? ' aria-invalid="true" aria-describedby="' +
+            id +
+            '-error" aria-errormessage="' +
+            id +
+            '-error"'
+        : '';
+    };
+    var selectHtml = function (id, name, options, value, aria, blank) {
+      return (
+        '<select id="' +
+        id +
+        '" ' +
+        name +
+        aria +
+        '>' +
+        (blank ? '<option value=""' + (value === '' ? ' selected' : '') + '></option>' : '') +
+        options
+          .map(function (o) {
+            return '<option' + (o === value ? ' selected' : '') + '>' + o + '</option>';
+          })
+          .join('') +
+        '</select>'
+      );
     };
     var control = function (path, n, err) {
       var id = idOf(path);
-      var aria = err
-        ? ' aria-invalid="true" aria-describedby="' +
-          id +
-          '-error" aria-errormessage="' +
-          id +
-          '-error"'
-        : '';
-      if (n.type === 'boolean') {
-        return (
-          '<span class="check"><span class="box" style="background: ' +
-          (state.values[path] ? 'var(--primary)' : 'transparent') +
-          ';" data-toggle="' +
-          path +
-          '"></span>' +
-          n.title +
-          '</span>'
-        );
-      }
+      var aria = ariaOf(id, err);
+      var v = state.values[path];
+      var text = v === null || v === undefined ? '' : String(v);
       if (n.enum) {
-        return (
-          '<select id="' +
-          id +
-          '" data-node="' +
-          path +
-          '"' +
-          aria +
-          '>' +
-          n.enum
-            .map(function (o) {
-              return (
-                '<option' + (o === state.values[path] ? ' selected' : '') + '>' + o + '</option>'
-              );
-            })
-            .join('') +
-          '</select>'
-        );
+        return selectHtml(id, 'data-node="' + path + '"', n.enum, text, aria, true);
       }
-      return (
+      var placeholder = n.default === undefined ? '' : ' placeholder="' + esc(n.default) + '"';
+      var input =
         '<input id="' +
         id +
         '" type="' +
-        (n.writeOnly ? 'password' : 'text') +
-        '" data-node="' +
+        (n.writeOnly && !state.revealed[path] ? 'password' : 'text') +
+        '"' +
+        (n.type === 'integer' ? ' inputmode="numeric"' : '') +
+        ' data-node="' +
         path +
         '" value="' +
-        esc(state.values[path]) +
+        esc(text) +
         '"' +
+        placeholder +
         aria +
-        '>'
+        (n.writeOnly ? ' style="flex: 1"' : '') +
+        '>';
+      if (!n.writeOnly) {
+        return input;
+      }
+      return (
+        '<span style="display: flex; gap: 6px">' +
+        input +
+        '<button type="button" class="btn" data-reveal="' +
+        path +
+        '" aria-label="' +
+        (state.revealed[path] ? 'Hide' : 'Show') +
+        '">' +
+        (state.revealed[path] ? '🙈' : '👁') +
+        '</button></span>'
+      );
+    };
+    var hintHtml = function (n) {
+      var lines = [];
+      if (n.description) {
+        lines.push(esc(n.description));
+      }
+      if (n.enum && n.default !== undefined) {
+        lines.push('Default: ' + esc(n.default));
+      }
+      return lines.length ? '<span class="hint">' + lines.join('<br>') + '</span>' : '';
+    };
+    var errorHtml = function (id, err) {
+      return (
+        '<span class="field-error" id="' +
+        id +
+        '-error"><span><span class="vh">Error:</span>' +
+        esc(err) +
+        '</span></span>'
       );
     };
     var fieldHtml = function (path) {
       var n = SCHEMA.properties[path];
-      if (!visible(path)) {
-        return '';
-      }
       var err = errorFor(path);
       var id = idOf(path);
       var badge = n.requiresRestart ? ' <span class="restart">restart</span>' : '';
       return (
         '<div class="field ' +
         (err ? 'invalid' : '') +
+        '"><label for="' +
+        id +
         '">' +
-        (n.type === 'boolean' ? '' : '<label for="' + id + '">' + n.title + badge + '</label>') +
+        n.title +
+        badge +
+        '</label>' +
         control(path, n, err) +
-        (err
-          ? '<span class="field-error" id="' +
-            id +
-            '-error"><span><span class="vh">Error:</span>' +
-            esc(err) +
-            '</span></span>'
-          : '<span class="hint">' + esc(n.description) + '</span>') +
+        (err ? errorHtml(id, err) : hintHtml(n)) +
         '</div>'
+      );
+    };
+    var mapHtml = function (sub) {
+      var m = SCHEMA.maps[sub.map];
+      var keys = Object.keys(state.categories);
+      var kerr = keyError();
+      var kid = idOf(sub.map + ':key');
+      var rows = keys
+        .map(function (k) {
+          var id = idOf(sub.map + '/' + k);
+          return (
+            '<div class="field"><label for="' +
+            id +
+            ':key">Key</label><input id="' +
+            id +
+            ':key" type="text" value="' +
+            esc(k) +
+            '" readonly></div><div class="field"><label for="' +
+            id +
+            '">' +
+            m.item.title +
+            '</label>' +
+            selectHtml(id, 'data-entry="' + k + '"', m.item.enum, state.categories[k], '', false) +
+            '</div><button type="button" class="btn sm" data-remove="' +
+            k +
+            '">Remove</button>'
+          );
+        })
+        .join('');
+      return (
+        '<div class="card"><div class="card-h">' +
+        m.title +
+        ' <span class="countb">' +
+        keys.length +
+        '</span></div><div class="card-b" style="grid-template-columns: 1fr 1fr auto; align-items: end">' +
+        rows +
+        '<div class="field ' +
+        (kerr ? 'invalid' : '') +
+        '"><label for="' +
+        kid +
+        '">Key</label><input id="' +
+        kid +
+        '" type="text" data-key value="' +
+        esc(state.newKey) +
+        '"' +
+        ariaOf(kid, kerr) +
+        '>' +
+        (kerr ? errorHtml(kid, kerr) : '') +
+        '</div><div class="field"><label for="' +
+        kid +
+        ':value">' +
+        m.item.title +
+        '</label>' +
+        selectHtml(kid + ':value', 'data-value', m.item.enum, state.newValue, '', true) +
+        '</div><button type="button" class="btn primary sm" data-add>+ Add</button></div></div>'
       );
     };
     var summaryHtml = function () {
@@ -1579,11 +2066,28 @@
         .map(function (p) {
           var e = errorFor(p);
           return e
-            ? '<li><a href="#' + idOf(p) + '" data-jump="' + idOf(p) + '">' + esc(e) + '</a></li>'
+            ? '<li><a href="#" data-jump="' + esc(idOf(p)) + '">' + esc(e) + '</a></li>'
             : '';
         })
         .join('');
-      if (!lines || (!state.submitted && !Object.keys(state.server).length)) {
+      var kerr = keyError();
+      if (kerr) {
+        lines +=
+          '<li><a href="#" data-jump="' +
+          esc(idOf('logging/categories:key')) +
+          '">' +
+          esc(kerr) +
+          '</a></li>';
+      }
+      lines += state.orphans
+        .map(function (o) {
+          return '<li>' + esc(o) + '</li>';
+        })
+        .join('');
+      if (
+        !lines ||
+        (!state.submitted && !Object.keys(state.server).length && !state.orphans.length)
+      ) {
         return '';
       }
       return (
@@ -1614,29 +2118,69 @@
         '</div>'
       );
     };
-    var sectionHtml = function (s) {
-      var shown = s.paths.filter(visible);
+    var subsectionHtml = function (sub) {
+      if (sub.map) {
+        return mapHtml(sub);
+      }
       return (
         '<div class="card"><div class="card-h">' +
-        s.title +
+        sub.title +
         ' <span class="countb">' +
-        shown.length +
+        sub.paths.length +
         ' settings</span></div><div class="card-b">' +
-        shown.map(fieldHtml).join('') +
+        sub.paths.map(fieldHtml).join('') +
+        '</div></div>'
+      );
+    };
+    var sectionHtml = function (s) {
+      var head = s.action
+        ? '<div class="card"><div class="card-h">' +
+          s.title +
+          '<button type="button" class="btn sm" style="margin-left: auto" data-action="' +
+          s.action.kind +
+          '">Test</button></div></div>'
+        : '';
+      return head + s.subsections.map(subsectionHtml).join('');
+    };
+    var restartHtml = function () {
+      var r = state.restart;
+      if (!r || !r.restart_required) {
+        return '';
+      }
+      var entries = r.requires_restart
+        .map(function (entry) {
+          return '<li>' + esc(entry.title) + ' — ' + esc(entry.reason) + '</li>';
+        })
+        .join('');
+      var confirm = state.confirming
+        ? '<div class="actions"><span>Restart the server now? The pending list is cleared before the answer.</span><button type="button" class="btn sm" data-restart="cancel">Cancel</button><button type="button" class="btn sm primary" data-restart="confirm">Restart</button></div>'
+        : '';
+      return (
+        '<div class="card" role="status" style="border-color: var(--changed-border); background: var(--warning-bg)"><div class="card-h">⚠ A restart is required to apply these settings<button type="button" class="btn sm" style="margin-left: auto" data-restart="open">Restart</button></div><div class="card-b" style="grid-template-columns: 1fr; gap: 6px"><span class="hint">Changed by ' +
+        esc(r.last_modified_by) +
+        ' at ' +
+        esc(r.last_modified_time) +
+        '</span><ul style="margin: 0; padding-left: 18px">' +
+        entries +
+        '</ul>' +
+        confirm +
         '</div></div>'
       );
     };
     var render = function () {
       live.innerHTML =
-        '<div class="navbar"><span class="brand"><span class="brand-mark vdi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg></span>VDI Health Monitor</span><div class="nav"></div><div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon"><span class="flag"></span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div></div>' +
+        '<div class="navbar"><span class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"></path></svg></span>BoxVault</span><div class="nav"></div><div class="cluster"><span class="btn icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg></span><span class="btn icon"><span class="flag"></span></span><span class="btn account"><span class="name">Mark Gilbert</span><span class="avatar"></span></span></div></div>' +
         cardsHtml() +
         '<div class="demo"><h2 style="text-align: center; font-size: 20px;">Admin Panel</h2><div class="tabs"><button type="button" class="tab on">Configuration Management</button></div>' +
-        '<form data-form novalidate style="display: flex; flex-direction: column; gap: 14px;"><div class="tabs"><button type="button" class="tab on">App Config</button><button type="submit" class="tab right">Update Configuration</button><button type="button" class="tab">Restart Server</button></div>' +
+        '<form data-form novalidate style="display: flex; flex-direction: column; gap: 14px;"><div class="tabs"><button type="button" class="tab on">' +
+        SCHEMA.title +
+        '</button><button type="button" class="tab">Authentication</button><button type="button" class="tab">Database</button><button type="button" class="tab">Mail</button><button type="submit" class="tab right">Update</button></div>' +
+        restartHtml() +
         summaryHtml() +
         SCHEMA.sections.map(sectionHtml).join('') +
-        '</form><div class="actions"><span style="font-size: 12px; color: var(--muted);">Simulate the host answering the PUT:</span><button type="button" class="btn sm ghost" data-act="422">422, UDS host unreachable</button><button type="button" class="btn sm ghost" data-act="200">200 updated, restart needed</button></div></div>' +
-        '<div class="try">Try: set the check-in interval to 9000 and tab away · clear Origin and press Update Configuration, the summary takes focus · put the origin back, the error clears as you type · switch check-in authentication to none and the agent key field folds away · untick UDS sync and the three UDS fields go · then the 422 the browser could not have known.</div>' +
-        '<div class="site-footer"><span class="lnk">VDI Health Monitor © 2026 · v0.8.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>';
+        '</form><div class="actions"><span style="font-size: 12px; color: var(--muted);">Simulate the host answering the PUT:</span><button type="button" class="btn sm ghost" data-act="422">422, port too high and a log directory not writable</button><button type="button" class="btn sm ghost" data-act="200">200 saved, HTTPS port changed</button></div></div>' +
+        '<div class="try">Try: set the HTTPS port to 70000 and tab away · clear Origin and press Update, the summary takes focus · put the origin back, the error clears as you type · click the eye on the Gravatar API key, the raw value shows · clear the HTTPS port, the default 443 shows as its placeholder · add a log category named App, the key rule refuses it · then the 422 the browser could not have known, and the 200 whose restart card comes from restart-status.</div>' +
+        '<div class="site-footer"><span class="lnk">BoxVault © 2026 · v0.78.0</span><span class="c">Powered by <span class="m"></span>STARTcloud</span><span class="heart">♥</span></div>';
       if (state.focusSummary) {
         var s = live.querySelector('#summary');
         if (s) {
@@ -1645,7 +2189,26 @@
         state.focusSummary = false;
       }
     };
+    var refocus = function (el, id) {
+      var pos = el.selectionStart;
+      render();
+      var again = byId(id);
+      if (again) {
+        again.focus();
+        try {
+          again.setSelectionRange(pos, pos);
+        } catch (x) {}
+      }
+    };
     live.addEventListener('input', function (e) {
+      var key = e.target.closest('[data-key]');
+      if (key) {
+        state.newKey = key.value;
+        if ((state.keyTouched || state.submitted) && !keyError()) {
+          refocus(key, key.id);
+        }
+        return;
+      }
       var el = e.target.closest('[data-node]');
       if (!el) {
         return;
@@ -1653,38 +2216,47 @@
       var p = el.getAttribute('data-node');
       state.values[p] = el.value;
       delete state.server[p];
-      if (state.touched[p] || state.submitted) {
-        if (!errorFor(p) && el.closest('.field').classList.contains('invalid')) {
-          var pos = el.selectionStart;
-          render();
-          var again = live.querySelector('#' + idOf(p));
-          if (again) {
-            again.focus();
-            try {
-              again.setSelectionRange(pos, pos);
-            } catch (x) {}
-          }
+      if ((state.touched[p] || state.submitted) && !errorFor(p)) {
+        if (el.closest('.field').classList.contains('invalid')) {
+          refocus(el, idOf(p));
         }
       }
     });
     live.addEventListener('change', function (e) {
+      var entry = e.target.closest('select[data-entry]');
+      if (entry) {
+        state.categories[entry.getAttribute('data-entry')] = entry.value;
+        return;
+      }
+      var value = e.target.closest('select[data-value]');
+      if (value) {
+        state.newValue = value.value;
+        return;
+      }
       var el = e.target.closest('select[data-node]');
       if (!el) {
         return;
       }
-      state.values[el.getAttribute('data-node')] = el.value;
+      var p = el.getAttribute('data-node');
+      state.values[p] = el.value;
+      delete state.server[p];
       render();
     });
     live.addEventListener('focusout', function (e) {
+      var key = e.target.closest('[data-key]');
       var el = e.target.closest('[data-node]');
-      if (!el) {
+      if (!key && !el) {
         return;
       }
-      state.touched[el.getAttribute('data-node')] = true;
+      if (key) {
+        state.keyTouched = true;
+      } else {
+        state.touched[el.getAttribute('data-node')] = true;
+      }
       var next = e.relatedTarget;
       render();
       if (next && next.id) {
-        var n = live.querySelector('#' + next.id);
+        var n = byId(next.id);
         if (n) {
           n.focus();
         }
@@ -1694,29 +2266,30 @@
       e.preventDefault();
       state.submitted = true;
       state.server = {};
+      state.orphans = [];
       var failing = Object.keys(SCHEMA.properties).filter(function (p) {
-        return visible(p) && evaluate(SCHEMA.properties[p], state.values[p]);
+        return evaluate(SCHEMA.properties[p], state.values[p]);
       });
-      if (failing.length) {
+      if (failing.length || (state.newKey && evaluateKey(state.newKey))) {
         state.focusSummary = true;
         render();
         return;
       }
-      state.cards.unshift({ kind: 'success', text: 'Configuration updated successfully.' });
+      state.cards.unshift({ kind: 'success', text: 'Configuration saved.' });
       render();
     });
     live.addEventListener('click', function (e) {
-      var toggle = e.target.closest('[data-toggle]');
-      if (toggle) {
-        var tp = toggle.getAttribute('data-toggle');
-        state.values[tp] = !state.values[tp];
+      var reveal = e.target.closest('[data-reveal]');
+      if (reveal) {
+        var rp = reveal.getAttribute('data-reveal');
+        state.revealed[rp] = !state.revealed[rp];
         render();
         return;
       }
       var jump = e.target.closest('[data-jump]');
       if (jump) {
         e.preventDefault();
-        var t = live.querySelector('#' + jump.getAttribute('data-jump'));
+        var t = byId(jump.getAttribute('data-jump'));
         if (t) {
           t.focus();
         }
@@ -1728,22 +2301,67 @@
         render();
         return;
       }
+      var remove = e.target.closest('[data-remove]');
+      if (remove) {
+        delete state.categories[remove.getAttribute('data-remove')];
+        render();
+        return;
+      }
+      if (e.target.closest('[data-add]')) {
+        state.keyTouched = true;
+        if (!evaluateKey(state.newKey) && state.newValue) {
+          state.categories[state.newKey] = state.newValue;
+          state.newKey = '';
+          state.newValue = '';
+          state.keyTouched = false;
+        }
+        render();
+        return;
+      }
+      var action = e.target.closest('[data-action]');
+      if (action) {
+        state.cards.unshift({ kind: 'success', text: 'The test passed.' });
+        render();
+        return;
+      }
+      var restart = e.target.closest('[data-restart]');
+      if (restart) {
+        var step = restart.getAttribute('data-restart');
+        if (step === 'confirm') {
+          state.restart = null;
+          state.confirming = false;
+          state.cards.unshift({ kind: 'success', text: 'Restarting.' });
+        } else {
+          state.confirming = step === 'open';
+        }
+        render();
+        return;
+      }
       var el = e.target.closest('[data-act]');
       if (!el) {
         return;
       }
       var act = el.getAttribute('data-act');
       if (act === '422') {
-        state.values['uds_db/enabled'] = true;
-        state.server = { 'uds_db/host': { rule: 'reachable' } };
+        state.values['boxvault/api_listen_port_encrypted'] = 70000;
+        state.server = {};
+        state.orphans = [];
+        PUT_422.forEach(function (entry) {
+          var path = entry.pointer.slice(1);
+          if (SCHEMA.properties[path]) {
+            state.server[path] = entry;
+          } else {
+            state.orphans.push(
+              messageOf({ title: path.split('/').pop() }, entry) + ' (' + entry.pointer + ')'
+            );
+          }
+        });
         state.focusSummary = true;
       } else if (act === '200') {
         state.server = {};
-        state.cards.unshift({
-          kind: 'warning',
-          text: 'Restart the server to apply the changed values.',
-        });
-        state.cards.unshift({ kind: 'success', text: 'Configuration updated successfully.' });
+        state.orphans = [];
+        state.restart = RESTART_STATUS;
+        state.cards.unshift({ kind: 'success', text: 'Configuration saved.' });
       }
       render();
     });

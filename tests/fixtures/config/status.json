@@ -1,0 +1,7 @@
+{
+  "role": "boxvault",
+  "version": "0.78.0",
+  "auth": ["cookie"],
+  "features": ["admin", "local-accounts"],
+  "config": ["app", "auth", "db", "mail"]
+}

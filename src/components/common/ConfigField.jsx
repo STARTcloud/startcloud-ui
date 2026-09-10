@@ -13,31 +13,52 @@ export const configFieldShape = PropTypes.shape({
   type: PropTypes.string.isRequired,
   format: PropTypes.string.isRequired,
   enum: PropTypes.array,
+  default: PropTypes.any,
   writeOnly: PropTypes.bool.isRequired,
   readOnly: PropTypes.bool.isRequired,
-  upload: PropTypes.bool.isRequired,
+  action: PropTypes.object,
   dependsOn: PropTypes.string.isRequired,
   showWhen: PropTypes.array,
   requiresRestart: PropTypes.bool.isRequired,
+  restartReason: PropTypes.string.isRequired,
   deprecated: PropTypes.bool.isRequired,
   required: PropTypes.bool.isRequired,
+  order: PropTypes.number,
+  index: PropTypes.number,
+  items: PropTypes.object,
   additionalProperties: PropTypes.object,
+  propertyNames: PropTypes.object,
 });
 
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 const NUMERIC_TYPES = ['integer', 'number'];
 
-const textOf = value => (value === null || value === undefined ? '' : String(value));
+const isUnset = value => value === null || value === undefined;
 
-const typedValue = (field, raw) => {
-  if (!NUMERIC_TYPES.includes(field.type)) {
+const textOf = value => (isUnset(value) ? '' : String(value));
+
+const castTo = (type, raw) => {
+  if (!NUMERIC_TYPES.includes(type)) {
     return raw;
   }
   if (raw === '') {
-    return undefined;
+    return null;
   }
   return NUMBER_RE.test(raw) ? Number(raw) : raw;
 };
+
+const typedValue = (field, raw) => castTo(field.type, raw);
+
+const memberValue = (field, raw) => castTo(field.items?.type || 'string', raw);
+
+const defaultText = value => {
+  if (isUnset(value)) {
+    return '';
+  }
+  return Array.isArray(value) ? value.join(',') : String(value);
+};
+
+const placeholderOf = field => (isUnset(field.default) ? undefined : defaultText(field.default));
 
 const controlProps = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -79,6 +100,7 @@ const SelectControl = ({ field, value, aria, onChange, onBlur }) => (
     onChange={event => onChange(typedValue(field, event.target.value))}
     onBlur={onBlur}
   >
+    {isUnset(value) ? <option value="" /> : null}
     {field.enum.map(option => (
       <option key={String(option)} value={String(option)}>
         {String(option)}
@@ -89,6 +111,28 @@ const SelectControl = ({ field, value, aria, onChange, onBlur }) => (
 
 SelectControl.propTypes = controlShape;
 
+const MultiSelectControl = ({ field, value, aria, onChange, onBlur }) => (
+  <select
+    {...aria}
+    multiple
+    className="form-select"
+    value={(Array.isArray(value) ? value : []).map(String)}
+    disabled={field.readOnly}
+    onChange={event =>
+      onChange([...event.target.selectedOptions].map(option => memberValue(field, option.value)))
+    }
+    onBlur={onBlur}
+  >
+    {field.items.enum.map(option => (
+      <option key={String(option)} value={String(option)}>
+        {String(option)}
+      </option>
+    ))}
+  </select>
+);
+
+MultiSelectControl.propTypes = controlShape;
+
 const PasswordControl = ({ field, value, aria, onChange, onBlur }) => {
   const [shown, setShown] = useState(false);
   return (
@@ -98,6 +142,7 @@ const PasswordControl = ({ field, value, aria, onChange, onBlur }) => {
         type={shown ? 'text' : 'password'}
         className="form-control"
         value={textOf(value)}
+        placeholder={placeholderOf(field)}
         readOnly={field.readOnly}
         onChange={event => onChange(event.target.value)}
         onBlur={onBlur}
@@ -124,8 +169,11 @@ const ArrayControl = ({ field, value, aria, onChange, onBlur }) => {
       className="form-control"
       value={Array.isArray(value) ? value.join(',') : textOf(value)}
       readOnly={field.readOnly}
-      placeholder={t('configField.commaSeparated')}
-      onChange={event => onChange(event.target.value.split(','))}
+      placeholder={placeholderOf(field) ?? t('configField.commaSeparated')}
+      onChange={event => {
+        const raw = event.target.value;
+        onChange(raw === '' ? [] : raw.split(',').map(member => memberValue(field, member)));
+      }}
       onBlur={onBlur}
     />
   );
@@ -140,6 +188,7 @@ const TextControl = ({ field, value, aria, onChange, onBlur }) => (
     inputMode={NUMERIC_TYPES.includes(field.type) ? 'numeric' : undefined}
     className={`form-control${field.readOnly ? ' readonly-input' : ''}`}
     value={textOf(value)}
+    placeholder={placeholderOf(field)}
     readOnly={field.readOnly}
     onChange={event => onChange(typedValue(field, event.target.value))}
     onBlur={onBlur}
@@ -148,30 +197,7 @@ const TextControl = ({ field, value, aria, onChange, onBlur }) => (
 
 TextControl.propTypes = controlShape;
 
-const UploadControl = ({ field, value, aria, onChange, onBlur, onUpload }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="input-group">
-      <input
-        {...aria}
-        type="text"
-        className="form-control"
-        value={textOf(value)}
-        readOnly={field.readOnly}
-        onChange={event => onChange(event.target.value)}
-        onBlur={onBlur}
-      />
-      <label className="btn btn-outline-secondary">
-        {t('admin.buttons.upload')}
-        <input type="file" hidden onChange={event => onUpload(event.target.files[0])} />
-      </label>
-    </div>
-  );
-};
-
-UploadControl.propTypes = { ...controlShape, onUpload: PropTypes.func.isRequired };
-
-const controlFor = (field, onUpload) => {
+const controlFor = field => {
   if (field.type === 'boolean') {
     return BooleanControl;
   }
@@ -182,24 +208,33 @@ const controlFor = (field, onUpload) => {
     return PasswordControl;
   }
   if (field.type === 'array') {
-    return ArrayControl;
+    return Array.isArray(field.items?.enum) ? MultiSelectControl : ArrayControl;
   }
-  return field.upload && onUpload ? UploadControl : TextControl;
+  return TextControl;
 };
 
+const showsDefaultHint = field =>
+  !isUnset(field.default) && (field.type === 'boolean' || Array.isArray(field.enum));
+
 /**
- * One configuration schema property drawn by its `type` and `format`
- * through `Field`: a switch for a boolean, a select over `enum`, a
- * password with a reveal for `writeOnly`, a comma list for an array of
- * scalars, a text input with an upload button for `upload` when the caller
- * hands an `onUpload`, and a text input otherwise; the label is the
- * property's `title` with a restart badge when it `requiresRestart` and a
- * deprecation note when it is `deprecated`, the hint its `description`; a
- * blank numeric input answers `undefined` so the key leaves the write.
+ * One configuration schema property drawn by its `type` through `Field`:
+ * a switch for a boolean, a select over `enum`, a password with a reveal
+ * for `writeOnly`, a comma list evaluated per member for an array whose
+ * `items` is a scalar type, a multi-select for an array whose `items`
+ * carries `enum`, a text input with `inputmode="numeric"` for a number and
+ * a text input otherwise; the label is the property's `title` with a
+ * restart badge when it `requiresRestart` and a deprecation note when it is
+ * `deprecated`, the hint its `description`; `default` is the placeholder
+ * of a text or numeric control and the `configManager.defaultHint` line
+ * after the description on a boolean or an `enum`, whose control stays
+ * unset until set; a `readOnly` control is disabled; a JSON `null` draws
+ * as an empty control, a cleared text control answers `""` and a cleared
+ * numeric control `null`; `action` is the property-level action element
+ * drawn beside the control.
  */
-const ConfigField = ({ field, id, value, error = '', onChange, onBlur, onUpload = null }) => {
+const ConfigField = ({ field, id, value, error = '', onChange, onBlur, action = null }) => {
   const { t } = useTranslation();
-  const Control = controlFor(field, onUpload);
+  const Control = controlFor(field);
   const label = (
     <>
       {field.title}
@@ -211,18 +246,31 @@ const ConfigField = ({ field, id, value, error = '', onChange, onBlur, onUpload 
       )}
     </>
   );
+  const hint = showsDefaultHint(field) ? (
+    <>
+      {field.description}
+      <span className="d-block">
+        {t('configManager.defaultHint', { value: defaultText(field.default) })}
+      </span>
+    </>
+  ) : (
+    field.description
+  );
   return (
-    <Field id={id} label={label} hint={field.description} error={error} required={field.required}>
-      {aria => (
-        <Control
-          field={field}
-          value={value}
-          aria={aria}
-          onChange={onChange}
-          onBlur={onBlur}
-          onUpload={onUpload}
-        />
-      )}
+    <Field id={id} label={label} hint={hint} error={error} required={field.required}>
+      {aria => {
+        const control = (
+          <Control field={field} value={value} aria={aria} onChange={onChange} onBlur={onBlur} />
+        );
+        return action ? (
+          <>
+            {control}
+            {action}
+          </>
+        ) : (
+          control
+        );
+      }}
     </Field>
   );
 };
@@ -234,7 +282,7 @@ ConfigField.propTypes = {
   error: PropTypes.string,
   onChange: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
-  onUpload: PropTypes.func,
+  action: PropTypes.node,
 };
 
 export default ConfigField;

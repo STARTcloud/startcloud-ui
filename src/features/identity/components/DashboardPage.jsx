@@ -10,15 +10,12 @@ import {
 } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
-import ConfirmModal from '../../../components/common/ConfirmModal';
+import RestartCard from '../../../components/common/RestartCard';
 import StatCard from '../../../components/common/StatCard';
-import { errorKeys } from '../../../components/common/StepUpDialog';
-import { useNotify } from '../../../contexts/NoticeContext';
-import { useEventStream } from '../../../hooks/useEventStream';
+import { useGuard } from '../../../contexts/GuardContext';
 import { loginHeatmap, restart, restartStatus, stats } from '../api/overview';
 import { useAdminRead } from '../hooks/useAdminRead';
-import { useGuard } from '../hooks/useGuard';
-import { HEATMAP, RESTART_STATUS, STATS } from '../utils/examples';
+import { HEATMAP, STATS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
@@ -27,92 +24,6 @@ const LoginMap = lazy(() => import('./LoginMap'));
 
 const MAP_DAYS = [7, 30, 90];
 const DEFAULT_DAYS = 30;
-
-const RestartCard = ({ status }) => {
-  const { t } = useTranslation();
-  const notify = useNotify();
-  const guard = useGuard();
-  const [confirming, setConfirming] = useState(false);
-
-  if (!status?.restart_required) {
-    return null;
-  }
-
-  const doRestart = () => {
-    guard(restart, t('admin.dashboard.restart.stepUpReason'))
-      .then(() => notify('success', t('admin.dashboard.restart.started')))
-      .catch(error => {
-        if (error?.code !== 'step_up_required') {
-          notify('danger', t(errorKeys(error)));
-        }
-      });
-  };
-
-  return (
-    <div className="alert alert-warning d-flex flex-wrap align-items-center gap-2" role="status">
-      <FaTriangleExclamation aria-hidden="true" />
-      <span className="flex-grow-1">
-        <strong>{t('admin.dashboard.restart.title')}</strong>{' '}
-        {t('admin.dashboard.restart.body', { by: status.last_modified_by || '' })}{' '}
-        <DateCell value={status.last_modified_time} />
-      </span>
-      <button type="button" className="btn btn-sm btn-warning" onClick={() => setConfirming(true)}>
-        {t('admin.dashboard.restart.button')}
-      </button>
-      <ConfirmModal
-        show={confirming}
-        handleClose={() => setConfirming(false)}
-        handleConfirm={doRestart}
-        title={t('admin.dashboard.restart.confirmTitle')}
-        message={t('admin.dashboard.restart.confirmBody', { keyword: t('pages.confirm.keyword') })}
-      />
-    </div>
-  );
-};
-
-RestartCard.propTypes = {
-  status: PropTypes.shape({
-    restart_required: PropTypes.bool,
-    last_modified_by: PropTypes.string,
-    last_modified_time: PropTypes.string,
-  }),
-};
-
-const restartOf = data => ({
-  restart_required: Boolean(data.required),
-  last_modified_by: data.last_modified_by || null,
-  last_modified_time: data.last_modified_time || null,
-});
-
-const useRestartRequired = () => {
-  const [status, setStatus] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    restartStatus()
-      .then(data => {
-        if (mounted) {
-          setStatus(data);
-        }
-      })
-      .catch(error => {
-        if (mounted && error.status === 404) {
-          setStatus(RESTART_STATUS);
-        }
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEventStream('restart-required', data => {
-    if (data && typeof data === 'object') {
-      setStatus(restartOf(data));
-    }
-  });
-
-  return status;
-};
 
 const MapCard = () => {
   const { t } = useTranslation();
@@ -195,12 +106,13 @@ RecentList.propTypes = {
  * Overview › Dashboard: the five stat cards, each a link into its entry
  * with the filter preset, the login map over the heatmap answer with its
  * 7, 30 and 90 day buttons, the recent logins and registrations with View
- * all, and the restart card while the `admin` topic's `restart-required`
- * says a restart is pending, after one read of `restart-status`.
+ * all, and the shared `RestartCard` of the config contract, fed by
+ * `restart-status` and re-read on the `admin` topic's `restart-required`,
+ * its Restart behind the page's step-up guard and the confirm dialog.
  */
 const DashboardPage = () => {
   const { t } = useTranslation();
-  const restartState = useRestartRequired();
+  const guard = useGuard();
   const { data, loading } = useAdminRead({ read: stats, example: STATS });
 
   useEffect(() => {
@@ -236,7 +148,7 @@ const DashboardPage = () => {
 
   return (
     <div>
-      <RestartCard status={restartState} />
+      <RestartCard restartStatus={restartStatus} restart={restart} guard={guard} />
       <div className="stat-grid mb-3">
         <StatCard
           icon={<FaUsers />}

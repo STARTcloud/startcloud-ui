@@ -20,7 +20,7 @@ export default [
       '.vite/**/*',
       'public/**/*',
       '*.log',
-      '*.json',
+      '**/*.json',
       '*.lock',
       'package-lock.json',
       'package.json',

@@ -10,7 +10,7 @@ import { log } from '../lib/logger';
  *
  * @param {Object} options - The gate
  * @param {boolean} options.enabled - Whether the host advertises `setup`
- * @param {() => Promise<{ setupComplete: boolean }>} options.checkStatus - The host's setup status call
+ * @param {() => Promise<{ setup_complete: boolean }>} options.checkStatus - The host's setup status call
  * @returns {boolean|null} True or false once known, null while the host is asked
  */
 export const useSetupGate = ({ enabled, checkStatus }) => {
@@ -27,8 +27,8 @@ export const useSetupGate = ({ enabled, checkStatus }) => {
         if (!mounted) {
           return;
         }
-        setSetupComplete(setupStatus.setupComplete);
-        if (!setupStatus.setupComplete) {
+        setSetupComplete(setupStatus.setup_complete);
+        if (!setupStatus.setup_complete) {
           navigate('/setup');
         }
       })

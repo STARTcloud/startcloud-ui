@@ -4,17 +4,20 @@ const PUBLIC = { auth: false };
 
 const setupAuth = token => ({ ...PUBLIC, headers: { Authorization: `Bearer ${token}` } });
 
-const uploadSslForm = (token, file) => {
-  const form = new FormData();
-  form.append('file', file);
-  return client.post('/api/setup/upload-ssl', form, { ...setupAuth(token), contentType: 'form' });
-};
+const contentTypeOf = body => (body instanceof FormData ? 'form' : 'json');
 
 export const setupApi = {
-  verifyToken: token => client.post('/api/setup/verify-token', { token }, PUBLIC),
-  configs: token => client.get('/api/setup', setupAuth(token)),
-  schemas: token => client.get('/api/setup/schema', setupAuth(token)),
-  update: (token, configs) => client.put('/api/setup', { configs }, setupAuth(token)),
   status: () => client.get('/api/setup/status', PUBLIC),
-  uploadSsl: uploadSslForm,
+  verify: token => client.post('/api/setup/verify-token', { token }, PUBLIC),
+  get: token => client.get('/api/setup', setupAuth(token)),
+  schema: token => client.get('/api/setup/schema', setupAuth(token)),
+  update: (token, configs) => client.put('/api/setup', { configs }, setupAuth(token)),
+  action: (token, route, method, body) =>
+    client.request({
+      method,
+      path: route,
+      body,
+      contentType: contentTypeOf(body),
+      ...setupAuth(token),
+    }),
 };

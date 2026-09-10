@@ -84,6 +84,7 @@ const collectNames = ({ schema, values, base, names }) => {
     if (property.additionalProperties && typeof property.additionalProperties === 'object') {
       const item = property.additionalProperties;
       const entries = values?.[key] && typeof values[key] === 'object' ? values[key] : {};
+      names.push(name);
       Object.keys(entries).forEach(entry => {
         const entryName = `${name}/${entry}`;
         if (item.properties) {
@@ -125,10 +126,13 @@ const without = (map, name) =>
  * field is re-evaluated on every change so its error clears the moment the
  * value is right, `validateAll()` marks every failing field and answers
  * whether the form may submit, and `applyServerErrors(apiError)` paints an
- * `ApiError`'s `fieldErrors` by pointer, entries matching no field kept for
- * the summary. `labels` maps a field name to the translation key of its
- * label and must be a stable object; a config schema's `title` is the label
- * when no entry names it.
+ * `ApiError`'s `fieldErrors` by pointer (a map's own pointer among the
+ * fields, so a `propertyNames` refusal paints on the map and a `readOnly`
+ * refusal on its field), entries matching no field kept for the summary.
+ * `labels` maps a field name to the translation key of its label and must
+ * be a stable object; a config schema's `title` is the label when no entry
+ * names it. `idFor(name)` answers `${idPrefix}${pointer}` with the pointer
+ * verbatim, `/` included, for every form.
  *
  * @param {Object} options - The form
  * @param {string} [options.formKey] - The host form the values belong to
@@ -154,7 +158,7 @@ export const useFormRules = ({ formKey = '', schema, values, labels = null, idPr
     [effective, values, document]
   );
 
-  const idFor = useCallback(name => `${prefix}-${name.replace(/\//g, '-')}`, [prefix]);
+  const idFor = useCallback(name => `${prefix}/${name}`, [prefix]);
 
   const labelFor = useCallback(
     name => {

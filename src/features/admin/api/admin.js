@@ -3,6 +3,8 @@ import { client } from '../../../lib/runtime';
 
 const user = userId => encodePath('api', 'users', userId);
 
+const contentTypeOf = body => (body instanceof FormData ? 'form' : 'json');
+
 export const suspendUser = userId => client.put(`${user(userId)}/suspend`, {});
 
 export const resumeUser = userId => client.put(`${user(userId)}/resume`, {});
@@ -10,15 +12,11 @@ export const resumeUser = userId => client.put(`${user(userId)}/resume`, {});
 export const adminConfig = {
   get: configName => client.get(encodePath('api', 'config', configName)),
   schema: configName => client.get(encodePath('api', 'config', configName, 'schema')),
-  update: (configName, configData) =>
-    client.put(encodePath('api', 'config', configName), configData),
+  update: (configName, patch) => client.put(encodePath('api', 'config', configName), patch),
+  restartStatus: () => client.get('/api/config/restart-status'),
   restart: () => client.post('/api/config/restart', {}),
-  testSmtp: email => client.post('/api/mail/test-smtp', { test_email: email }),
-  uploadSsl: (file, targetPath) =>
-    client.post('/api/config/ssl/upload', file, {
-      params: { targetPath },
-      contentType: 'octet-stream',
-    }),
+  action: (route, method, body) =>
+    client.request({ method, path: route, body, contentType: contentTypeOf(body) }),
 };
 
 export const storage = () => client.get('/api/system/storage');

@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types';
 import { createContext, useContext } from 'react';
 
-import { useStepUp } from '../../../components/common/StepUpDialog';
+import { useStepUp } from '../components/common/StepUpDialog';
 
 const GuardContext = createContext(null);
 
 /**
- * The one step-up window of the operator pages: `guard(call, reason)` of
- * the shared `StepUpDialog`, created once around every page so the
- * restart, the user delete and the bulk delete open the same dialog,
- * mounted here once.
+ * The one step-up window of the admin pages: `guard(call, reason)` of the
+ * shared `StepUpDialog`, created once around every page by the shell so
+ * the restart, a schema action with `step_up: true`, the user delete and
+ * the bulk delete open the same dialog, mounted here once.
  */
 export const GuardProvider = ({ stepUp, hasPassword, children }) => {
   const { guard, dialog } = useStepUp({ stepUp, hasPassword });

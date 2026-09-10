@@ -1,35 +1,35 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCircleInfo } from 'react-icons/fa6';
-import { useNavigate } from 'react-router-dom';
 
 import ConfigSections from '../../../components/common/ConfigSections';
+import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
-import { schemaSections, setValueAt } from '../../../utils/schemaSections';
+import { hasFeature } from '../../../utils/capabilities';
+import { patchOf, schemaSections, setValueAt } from '../../../utils/schemaSections';
 
-const SETUP_KEY = 'setup';
-const REDIRECT_DELAY_MS = 5000;
-const PROVIDERS_POINTER = '/auth/oidc/providers';
 const EMPTY = {};
 const EMPTY_SCHEMA = { properties: {} };
+const EMPTY_NAMES = [];
+const TOKEN_ID = 'setup-token';
 
 /**
- * The app's side of the shared setup page: the setup token check, the
- * configuration files and their schemas read under that token, the write,
- * the setup status and the SSL upload.
+ * The app's side of the shared setup page: the setup status, the token
+ * check, the configuration files and their schemas read under that token,
+ * the write of every file's merge patch, and the one
+ * `action(token, route, method, body)` every schema-declared action calls.
  */
 export const setupShape = PropTypes.shape({
   status: PropTypes.func.isRequired,
-  verifyToken: PropTypes.func.isRequired,
-  configs: PropTypes.func.isRequired,
-  schemas: PropTypes.func.isRequired,
+  verify: PropTypes.func.isRequired,
+  get: PropTypes.func.isRequired,
+  schema: PropTypes.func.isRequired,
   update: PropTypes.func.isRequired,
-  uploadSsl: PropTypes.func.isRequired,
+  action: PropTypes.func.isRequired,
 });
 
 const combinedSchema = schemas => ({
@@ -37,24 +37,6 @@ const combinedSchema = schemas => ({
     Object.entries(schemas).map(([name, schema]) => [name, { ...schema, type: 'object' }])
   ),
 });
-
-const OidcInfo = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="col-12 mb-3">
-      <div className="alert alert-info" role="status">
-        <h6>
-          <FaCircleInfo className="me-2" />
-          {t('oidc.title')}
-        </h6>
-        <p className="mb-0">{t('setup.oidcNote')}</p>
-      </div>
-    </div>
-  );
-};
-
-const renderMap = field =>
-  field.pointer === PROVIDERS_POINTER ? <OidcInfo key={field.pointer} /> : null;
 
 const withoutConfigsPrefix = error => ({
   fieldErrors: (error.fieldErrors || []).map(entry => ({
@@ -71,29 +53,39 @@ const tabStatusClass = ({ configName, errors, summary }) => {
   return summary.length > 0 ? 'text-success' : '';
 };
 
+const patchesOf = (originals, configs, names) =>
+  Object.fromEntries(
+    names.map(name => [name, patchOf(originals[name] || EMPTY, configs[name] || EMPTY)])
+  );
+
 /**
  * The first-run setup page of an app that configures itself in the
- * browser: the setup token gate, then one tab per configuration file the
- * host's status names in `config` (`app` alone when it names none), each
- * drawn from its schema and validated through it on blur and on Submit
- * all, the summary above the tabs listing every file's errors and the
- * tab carrying one marked, a refused write's `/configs/<name>/…` pointers
- * landing on the fields they name, the SSL upload on upload fields, and
- * Submit all, which writes every file through the app's `setup` adapter
- * and sends the visitor to register.
+ * browser: the gate is `setup_complete`, and when it is true the page
+ * draws `setup.complete` with one link, to `/login` on a backend with
+ * accounts and to `/` otherwise, and neither the token card nor the tabs;
+ * then the token card, whose 403 paints `setup.tokenInvalid` on the token
+ * field and whose 204 keeps the token the page sent as the bearer of every
+ * later call; then one tab per configuration file the host's status names
+ * in `config`, labelled by its schema's root `title`, each drawn from its
+ * schema and validated through it on blur and on Submit all, the summary
+ * above the tabs listing every file's errors and the tab carrying one
+ * marked, a refused write's `/configs/<name>/…` pointers landing on the
+ * fields they name, every action through the one upload route, and Submit
+ * all, which writes every file's merge patch through the app's `setup`
+ * adapter and draws the complete state on 200.
  */
 const SetupPage = ({ setup }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const navigate = useNavigate();
   const status = useStatus();
-  const configNames = status.config || ['app'];
+  const configNames = Array.isArray(status.config) ? status.config : EMPTY_NAMES;
+  const [phase, setPhase] = useState('loading');
+  const [token, setToken] = useState('');
+  const [tokenError, setTokenError] = useState('');
+  const [originals, setOriginals] = useState(EMPTY);
   const [configs, setConfigs] = useState(EMPTY);
   const [schemas, setSchemas] = useState(null);
-  const [setupComplete, setSetupComplete] = useState(false);
-  const [setupToken, setSetupToken] = useState('');
-  const [authorizedSetupToken, setAuthorizedSetupToken] = useState('');
-  const [activeTab, setActiveTab] = useState(configNames[0]);
+  const [activeTab, setActiveTab] = useState(configNames[0] || '');
   const schema = useMemo(() => (schemas ? combinedSchema(schemas) : EMPTY_SCHEMA), [schemas]);
   const sectionsByName = useMemo(
     () =>
@@ -109,28 +101,47 @@ const SetupPage = ({ setup }) => {
   }, [t]);
 
   useEffect(() => {
+    let mounted = true;
     setup
       .status()
-      .then(setupStatus => setSetupComplete(setupStatus.setupComplete))
+      .then(setupStatus => {
+        if (mounted) {
+          setPhase(setupStatus.setup_complete ? 'complete' : 'token');
+        }
+      })
       .catch(error => {
         log.api.error('Error checking setup status', { error: error.message });
       });
+    return () => {
+      mounted = false;
+    };
   }, [setup]);
 
-  const handleVerifyToken = () => {
+  const verifyToken = event => {
+    event.preventDefault();
+    if (!token) {
+      setTokenError(t('validation.required', { label: t('setup.token') }));
+      return;
+    }
+    setTokenError('');
     setup
-      .verifyToken(setupToken)
-      .then(verified =>
-        Promise.all([
-          setup.configs(verified.authorizedSetupToken),
-          setup.schemas(verified.authorizedSetupToken),
-        ]).then(([data, schemaData]) => {
-          setAuthorizedSetupToken(verified.authorizedSetupToken);
-          setConfigs(data.configs);
-          setSchemas(schemaData.schemas);
-        })
-      )
+      .verify(token)
+      .then(() => Promise.all([setup.get(token), setup.schema(token)]))
+      .then(([data, schemaData]) => {
+        setOriginals(data.configs || EMPTY);
+        setConfigs(data.configs || EMPTY);
+        setSchemas(schemaData.schemas || EMPTY);
+        setPhase('form');
+      })
       .catch(error => {
+        if (error.status === 403) {
+          setTokenError(t('setup.tokenInvalid'));
+          return;
+        }
+        if (error.status === 404) {
+          setPhase('complete');
+          return;
+        }
         log.api.error('Error verifying setup token', { error: error.message });
         notify('danger', t(error.messageKey || 'errors.request'));
       });
@@ -143,34 +154,15 @@ const SetupPage = ({ setup }) => {
     }));
   };
 
-  const handleFileUpload = (configName, pointer, file) => {
-    if (!file) {
-      return;
-    }
-    setup
-      .uploadSsl(authorizedSetupToken, file)
-      .then(({ path: storedPath }) => {
-        handleConfigChange(configName, pointer, storedPath);
-        notify('success', t('admin.messages.operationSuccessful'));
-      })
-      .catch(error => {
-        log.api.error('Error uploading SSL file', { error: error.message });
-        notify('danger', t(error.messageKey || 'errors.request'));
-      });
-  };
-
   const handleSubmit = () => {
     if (!rules.validateAll()) {
       return;
     }
     setup
-      .update(authorizedSetupToken, configs)
+      .update(token, patchesOf(originals, configs, configNames))
       .then(() => {
-        notify('success', t('setup.updateSuccess'), { key: SETUP_KEY, sticky: true });
-        setTimeout(() => {
-          notify('', '', { key: SETUP_KEY });
-          navigate('/register');
-        }, REDIRECT_DELAY_MS);
+        notify('success', t('setup.updateSuccess'));
+        setPhase('complete');
       })
       .catch(error => {
         if (rules.applyServerErrors(withoutConfigsPrefix(error))) {
@@ -181,82 +173,104 @@ const SetupPage = ({ setup }) => {
       });
   };
 
-  const renderBody = () => {
-    if (setupComplete) {
-      return (
-        <div className="alert alert-success" role="status">
-          {t('setup.alreadyComplete')}
-        </div>
-      );
-    }
-    if (!authorizedSetupToken) {
-      return (
-        <div className="card">
-          <div className="card-body">
-            <h5 className="card-title">{t('setup.enterToken')}</h5>
-            <div className="input-group mb-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder={t('setup.tokenPlaceholder')}
-                value={setupToken}
-                onChange={e => setSetupToken(e.target.value)}
-              />
-              <button type="button" className="btn btn-primary" onClick={handleVerifyToken}>
-                {t('setup.verifyToken')}
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
+  const callAction = (route, method, body) => setup.action(token, route, method, body);
+
+  const renderComplete = () => {
+    const accounts = hasFeature(status, 'local-accounts');
     return (
-      <div>
-        <ul className="nav nav-tabs mb-4 d-flex">
-          {configNames.map(configName => (
-            <li className="nav-item" key={configName}>
-              <button
-                type="button"
-                className={`nav-link ${activeTab === configName ? 'active' : ''} ${tabStatusClass({
-                  configName,
-                  errors: rules.errors,
-                  summary: rules.summary,
-                })}`}
-                onClick={() => setActiveTab(configName)}
-              >
-                {t(`configManager.tabs.${configName}`)}
-              </button>
-            </li>
-          ))}
-          <li className="nav-item ms-auto">
-            <button type="button" className="nav-link cursor-pointer" onClick={handleSubmit}>
-              {t('setup.submitAll')}
-            </button>
-          </li>
-        </ul>
-
-        <FormErrorSummary errors={rules.summary} />
-
-        <div className="tab-content">
-          {configNames.map(configName => (
-            <div
-              key={configName}
-              className={`tab-pane ${activeTab === configName ? 'active' : ''}`}
-            >
-              <ConfigSections
-                sections={sectionsByName[configName] || []}
-                config={configs[configName] || EMPTY}
-                rules={rules}
-                nameFor={pointer => `${configName}${pointer}`}
-                onChange={(pointer, value) => handleConfigChange(configName, pointer, value)}
-                onUpload={(pointer, file) => handleFileUpload(configName, pointer, file)}
-                renderMap={renderMap}
-              />
-            </div>
-          ))}
-        </div>
+      <div className="alert alert-success" role="status">
+        {t('setup.complete')}{' '}
+        <a href={accounts ? '/login' : '/'} className="alert-link">
+          {accounts ? t('setup.signIn') : t('setup.home')}
+        </a>
       </div>
     );
+  };
+
+  const renderToken = () => (
+    <div className="card">
+      <div className="card-body">
+        <h5 className="card-title">{t('setup.enterToken')}</h5>
+        <form onSubmit={verifyToken} noValidate>
+          <Field id={TOKEN_ID} label={t('setup.token')} error={tokenError} required>
+            {aria => (
+              <div className="input-group">
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  value={token}
+                  onChange={event => setToken(event.target.value)}
+                />
+                <button type="submit" className="btn btn-primary">
+                  {t('setup.verifyToken')}
+                </button>
+              </div>
+            )}
+          </Field>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderForm = () => (
+    <div>
+      <ul className="nav nav-tabs mb-4 d-flex">
+        {configNames.map(configName => (
+          <li className="nav-item" key={configName}>
+            <button
+              type="button"
+              className={`nav-link ${activeTab === configName ? 'active' : ''} ${tabStatusClass({
+                configName,
+                errors: rules.errors,
+                summary: rules.summary,
+              })}`}
+              onClick={() => setActiveTab(configName)}
+            >
+              {schemas?.[configName]?.title || configName}
+            </button>
+          </li>
+        ))}
+        <li className="nav-item ms-auto">
+          <button type="button" className="nav-link cursor-pointer" onClick={handleSubmit}>
+            {t('setup.submitAll')}
+          </button>
+        </li>
+      </ul>
+
+      <FormErrorSummary errors={rules.summary} />
+
+      {configNames.length === 0 ? (
+        <div className="alert alert-info" role="status">
+          {t('configManager.noFiles')}
+        </div>
+      ) : null}
+
+      <div className="tab-content">
+        {configNames.map(configName => (
+          <div key={configName} className={`tab-pane ${activeTab === configName ? 'active' : ''}`}>
+            <ConfigSections
+              sections={sectionsByName[configName] || []}
+              config={configs[configName] || EMPTY}
+              rules={rules}
+              nameFor={pointer => `${configName}${pointer}`}
+              onChange={(pointer, value) => handleConfigChange(configName, pointer, value)}
+              callAction={callAction}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderBody = () => {
+    if (phase === 'loading') {
+      return <p>{t('loading')}</p>;
+    }
+    if (phase === 'complete') {
+      return renderComplete();
+    }
+    return phase === 'token' ? renderToken() : renderForm();
   };
 
   return (

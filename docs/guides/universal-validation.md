@@ -240,6 +240,7 @@ verbatim, plus one estate extension:
 | `enum`                   | the allowed values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | §6.1.2               |
 | `format`                 | `uri`, `hostname`, `ipv4`; the spec makes `format` an annotation by default and permits assertion (§7.2), and this estate's evaluator asserts it; the address grammar is the named `$defs.email` pattern rather than `format: email`, because the spec's `email` is RFC 5321 §4.1.2 and a stock validator would disagree with the HTML grammar this estate uses                                                                                                                                                                                                                                    | §7                   |
 | `minItems`, `maxItems`   | array size bounds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | §6.4.2, §6.4.1       |
+| `propertyNames`          | on an `additionalProperties` map, the schema every key of the map meets; the Universal Config Contract's map key rule: the browser evaluates a new key against it and against the map's existing keys with `unique`, `params.scope` the map's `title`, because the whole map is one value on the wire; a failure reports `rule: "propertyNames"` at the map's pointer with `params.key` the key that failed                                                                                                                                                                                        | Core §10.3.2.4       |
 | `unique`                 | the estate's extension: the value must not already exist within the named scope (`organization`, `box`, `version`, `provider`, `global`); only the route can decide it, the UI only paints its answer; a failure is always 409, and its `params.scope` carries the name of the scope the value collided in (the organization's name, the box's name); a name that is a reserved first segment of the pages contract is refused the same way with `params.scope: "reserved"`, because to the person it reads as taken and to the route it is one check on one member                                | this contract        |
 
 ### Rules outside the vocabulary
@@ -254,8 +255,8 @@ with the field's label, and the `detail` is never shown.
 | ----------- | ------------------------------------------------------------ | ---------------- |
 | `checksum`  | the checksum is not the length its type requires             | `type`, `length` |
 | `blocklist` | the password is on the route's blocklist                     | none             |
-| `writable`  | a configured directory cannot be written by the service user | none             |
-| `reachable` | a configured host and port did not answer                    | none             |
+| `writable`  | a configured directory cannot be written by the service user | `user`           |
+| `reachable` | a configured host and port did not answer                    | `host`, `port`   |
 
 The client-only `equals` and `custom` keywords of a page schema answer in the
 UI with `validation.equals` and the `rule` the `custom` function names.
@@ -498,7 +499,7 @@ SMTP test recipient, the setup page and the admin configuration tab.
 RFC 9457 Problem Details for HTTP APIs (§3, §3.1.4, §3.2, §4) · RFC 6901
 JSON Pointer · RFC 9110 HTTP Semantics (§15.5.1, §15.5.4, §15.5.5, §15.5.10,
 §15.5.21) · JSON Schema 2020-12 Validation (§6.1 to §6.5, §7, §9) and Core
-(§12.3 output units) · OpenAPI 3.1 Schema Object, a superset of JSON Schema
+(§10.3.2.4 `propertyNames`, §12.3 output units) · OpenAPI 3.1 Schema Object, a superset of JSON Schema
 2020-12 · RFC 3986 URI Generic Syntax (§2.3 unreserved, §3.3 path segments,
 §5.2.4 dot-segments) · NIST SP 800-63B rev 4 (August 2025) §3.1.1.2 · HTML
 Standard, valid e-mail address · WCAG 2.2 SC 3.3.1 Error Identification (A),

@@ -141,7 +141,6 @@
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
-    "range": "Introduce {{label}} entre {{minimum}} y {{maximum}}.",
     "enum": "Elige uno de {{enum}} para {{label}}.",
     "format": {
       "uri": "Introduce {{label}} como una URL completa, como https://ejemplo.com.",
@@ -150,12 +149,14 @@
     },
     "minItems": "Introduce al menos {{minItems}} entradas para {{label}}.",
     "maxItems": "Introduce como máximo {{maxItems}} entradas para {{label}}.",
+    "propertyNames": "Introduce otra clave para {{label}}; {{key}} no está permitida.",
+    "readOnly": "{{label}} no se puede cambiar; déjalo como está.",
     "unique": "{{value}} ya está en uso en {{scope}}; introduce otro valor para {{label}}.",
     "equals": "{{label}} debe coincidir con {{other}}.",
     "checksum": "Introduce un checksum {{type}} de {{length}} caracteres hexadecimales.",
     "blocklist": "Introduce otra {{label}}; esta es demasiado común.",
-    "writable": "Introduce un directorio en el que el servicio pueda escribir para {{label}}.",
-    "reachable": "Introduce un host y un puerto que respondan para {{label}}.",
+    "writable": "Introduce un directorio en el que {{user}} pueda escribir para {{label}}.",
+    "reachable": "Introduce un host y un puerto que respondan para {{label}}; {{host}}:{{port}} no respondió.",
     "unknown": "Revisa {{label}}."
   },
   "session": {
@@ -551,16 +552,7 @@
       },
       "recentLogins": "Actividad reciente de inicio de sesión",
       "recentRegistrations": "Registros recientes",
-      "viewAll": "Ver todo",
-      "restart": {
-        "title": "Reinicio necesario.",
-        "body": "Configuración cambiada por {{by}} el",
-        "button": "Reiniciar",
-        "started": "Reinicio iniciado.",
-        "confirmTitle": "Reiniciar el servidor",
-        "confirmBody": "Las sesiones se conservan, pero las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar.",
-        "stepUpReason": "Reiniciar el servidor cambia cómo inicia sesión todo el mundo hasta que vuelva."
-      }
+      "viewAll": "Ver todo"
     },
     "users": {
       "title": "Usuarios",
@@ -941,31 +933,44 @@
   },
   "configManager": {
     "updateSuccess": "Configuración actualizada exitosamente.",
-    "restartInitiated": "Reinicio del servidor iniciado",
-    "restartNeeded": "Reinicia el servidor para aplicar los valores cambiados.",
     "restartBadge": "reinicio",
     "deprecated": "Obsoleto",
-    "testingSmtp": "Enviando correo de prueba...",
-    "testSmtpSuccess": "¡Correo de prueba enviado con éxito! Revisa la bandeja de entrada del destinatario.",
     "search": "Buscar configuraciones",
-    "smtpTest": {
-      "title": "Probar la configuración SMTP",
-      "recipient": "Correo del destinatario",
-      "placeholder": "Introduce una dirección de correo",
-      "send": "Enviar correo de prueba",
-      "hint": "Envía un correo de prueba para verificar que tu configuración SMTP es correcta."
-    },
+    "noFiles": "Este servidor no tiene archivos de configuración que editar.",
+    "defaultHint": "Predeterminado: {{value}}",
+    "restarting": "Reiniciando.",
     "settingsCount_one": "{{count}} configuración",
     "settingsCount_other": "{{count}} configuraciones",
-    "tabs": {
-      "app": "Config App",
-      "auth": "Config Auth",
-      "db": "Config BD",
-      "mail": "Config Correo"
-    },
     "buttons": {
-      "update": "Actualizar Configuración",
-      "restart": "Reiniciar Servidor"
+      "update": "Actualizar Configuración"
+    },
+    "actions": {
+      "test": "Probar",
+      "run": "Ejecutar",
+      "uploaded": "Subido a {{path}}.",
+      "testPassed": "La prueba pasó.",
+      "runStarted": "Iniciado.",
+      "runConfirm": "Ejecuta {{title}} ahora. Escribe \"{{keyword}}\" para confirmar."
+    },
+    "restart": {
+      "heading": "Reinicio necesario.",
+      "by": "Último cambio por {{by}} el {{time}}.",
+      "entry": "{{title}}: {{reason}}",
+      "button": "Reiniciar",
+      "confirmTitle": "Reiniciar el servidor",
+      "confirmBody": "Las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar."
+    },
+    "map": {
+      "key": "Clave",
+      "value": "Valor",
+      "add": "Añadir",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "remove": "Quitar",
+      "save": "Guardar",
+      "empty": "Todavía no hay entradas.",
+      "addTitle": "Añadir a {{title}}",
+      "editTitle": "Editar {{key}}"
     }
   },
   "configField": {
@@ -973,69 +978,15 @@
   },
   "setup": {
     "title": "Configuración inicial",
-    "alreadyComplete": "La configuración ya está completa.",
     "enterToken": "Ingresar Token de Configuración",
-    "tokenPlaceholder": "Token de Configuración",
+    "token": "Token de configuración",
+    "tokenInvalid": "Ese token no coincidió; introduce el token de configuración del servidor.",
     "verifyToken": "Verificar Token",
     "submitAll": "Enviar Todas las Configuraciones",
-    "oidcNote": "La configuración del proveedor OIDC se gestiona a través de la interfaz de Administración después de completar la configuración. Ve a Admin → Gestión de Configuración → Config Auth para añadir proveedores OIDC.",
-    "updateSuccess": "Configuración actualizada exitosamente. Redirigiendo a la página de registro en 5 segundos..."
-  },
-  "oidc": {
-    "title": "Proveedores OIDC",
-    "providerCount_one": "{{count}} proveedor",
-    "providerCount_other": "{{count}} proveedores",
-    "description": "Gestiona proveedores de autenticación OpenID Connect para integración de inicio de sesión único. Haz clic en una tarjeta de proveedor para editar su configuración.",
-    "enabled": "Habilitado",
-    "issuer": "Emisor",
-    "clientId": "ID de Cliente",
-    "scope": "Alcance",
-    "noProvidersConfigured": "No hay proveedores OIDC configurados aún. Haz clic en \"Añadir Proveedor OIDC\" para configurar autenticación con proveedores como Google, Microsoft, GitHub, etc.",
-    "buttons": {
-      "add": "Añadir Proveedor OIDC",
-      "delete": "Eliminar Proveedor",
-      "update": "Actualizar Proveedor",
-      "updating": "Actualizando...",
-      "adding": "Añadiendo..."
-    },
-    "modal": {
-      "editTitle": "Editar Proveedor OIDC",
-      "addTitle": "Añadir Proveedor OIDC",
-      "description": "Configura un nuevo proveedor de autenticación OpenID Connect. Necesitarás registrar tu aplicación con el proveedor primero para obtener el ID de cliente y el secreto de cliente."
-    },
-    "form": {
-      "name": {
-        "label": "Nombre del Proveedor",
-        "placeholder": "p. ej., miempresa, enterprise, provider1",
-        "hint": "Identificador interno (minúsculas, letras, números y guiones bajos solamente)"
-      }
-    },
-    "instructions": {
-      "title": "Instrucciones de Configuración",
-      "step1": "Registra tu aplicación con la consola de desarrollador de tu proveedor OIDC",
-      "step2": "Añade",
-      "step2_cont": "como una URI de redirección permitida",
-      "step3": "Copia el ID de Cliente y el Secreto de Cliente de la consola de tu proveedor",
-      "step4": "Encuentra la URL del emisor de tu proveedor en su documentación",
-      "step5": "Completa el formulario de arriba y prueba la configuración"
-    },
-    "deleteModal": {
-      "title": "Eliminar Proveedor OIDC",
-      "message": "¿Estás seguro de que quieres eliminar el proveedor OIDC '{{providerName}}'? Esto no se puede deshacer."
-    },
-    "messages": {
-      "updating": "Actualizando proveedor OIDC...",
-      "adding": "Añadiendo proveedor OIDC...",
-      "deleting": "Eliminando proveedor OIDC...",
-      "success": "¡Proveedor OIDC '{{displayName}}' {{action}} exitosamente!",
-      "deleteSuccess": "¡Proveedor OIDC '{{providerName}}' eliminado exitosamente!"
-    },
-    "actions": {
-      "updated": "actualizado",
-      "added": "añadido",
-      "updating": "actualizando",
-      "adding": "añadiendo"
-    }
+    "updateSuccess": "Configuración inicial completada.",
+    "complete": "La configuración inicial está completa.",
+    "signIn": "Iniciar sesión",
+    "home": "Ir al inicio"
   },
   "orgConsole": {
     "pageTitle": "Consola de Org",

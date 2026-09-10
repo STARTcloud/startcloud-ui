@@ -18,8 +18,9 @@ export const ADMIN_PAGES = ['organizations', 'config', 'system'];
  * One admin page per sidebar entry of an app with configuration of its
  * own: the update notice when the app's `updateStatus` reports one, then
  * the page the route names, Organizations and users while the adapter
- * carries `organizationsWithUsers`, Configuration while it carries
- * `config`, System while it carries `storage`, every call through the
+ * carries `organizationsWithUsers`, Configuration on every host, its empty
+ * state when the adapter carries no `config` and reached by URL alone,
+ * System while it carries `storage`, every call through the
  * app's `admin` adapter; the sidebar rows are the one navigation and no
  * tab strip is drawn; a visitor is sent to sign in and a signed-in
  * non-admin home, `allowed` being the app's global-admin flag.
@@ -64,7 +65,7 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
         {page === 'organizations' && admin.organizationsWithUsers ? (
           <AdminOrganizations session={session} activeOrgKey={activeOrgKey} admin={admin} />
         ) : null}
-        {page === 'config' && admin.config ? <AdminConfig config={admin.config} /> : null}
+        {page === 'config' ? <AdminConfig config={admin.config || null} /> : null}
         {page === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
       </div>
     </div>

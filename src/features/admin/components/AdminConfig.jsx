@@ -1,136 +1,101 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaEnvelopeOpenText } from 'react-icons/fa6';
 
 import ConfigSections, {
   countFields,
   filterSections,
 } from '../../../components/common/ConfigSections';
-import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import RestartCard from '../../../components/common/RestartCard';
+import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { schemaSections, setValueAt, valueAt } from '../../../utils/schemaSections';
+import { patchOf, schemaSections, setValueAt } from '../../../utils/schemaSections';
 
-import OidcProviders from './OidcProviders';
-
-const SMTP_TEST_KEY = 'smtp-test';
-const PROVIDERS_POINTER = '/auth/oidc/providers';
 const EMPTY_CONFIG = {};
 const EMPTY_SCHEMA = { properties: {} };
-
+const EMPTY_NAMES = [];
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
-const SMTP_TEST_SCHEMA = {
-  required: ['test_email'],
-  properties: { test_email: { $ref: '#/$defs/email' } },
-};
-const SMTP_TEST_LABELS = { test_email: 'configManager.smtpTest.recipient' };
-const EMPTY_SMTP_TEST = { test_email: '' };
-
-const SmtpTest = ({ onTest }) => {
-  const { t } = useTranslation();
-  const [form, setForm] = useState(EMPTY_SMTP_TEST);
-  const rules = useFormRules({
-    schema: SMTP_TEST_SCHEMA,
-    values: form,
-    labels: SMTP_TEST_LABELS,
-    idPrefix: 'smtp-test',
-  });
-  const send = event => {
-    event.preventDefault();
-    if (rules.validateAll()) {
-      onTest(form.test_email, rules);
-    }
-  };
-  return (
-    <div className="card mb-4">
-      <div className="card-header">
-        <h5 className="mb-0">
-          <FaEnvelopeOpenText className="me-2" />
-          {t('configManager.smtpTest.title')}
-        </h5>
-      </div>
-      <div className="card-body">
-        <form onSubmit={send} noValidate>
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('test_email')}
-            label={t('configManager.smtpTest.recipient')}
-            hint={t('configManager.smtpTest.hint')}
-            error={rules.errors.test_email || ''}
-          >
-            {aria => (
-              <div className="input-group">
-                <input
-                  {...aria}
-                  type="email"
-                  className="form-control"
-                  value={form.test_email}
-                  onChange={e => setForm({ test_email: e.target.value })}
-                  onBlur={() => rules.onBlur('test_email')}
-                  placeholder={t('configManager.smtpTest.placeholder')}
-                />
-                <button className="btn btn-outline-primary" type="submit">
-                  {t('configManager.smtpTest.send')}
-                </button>
-              </div>
-            )}
-          </Field>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-SmtpTest.propTypes = {
-  onTest: PropTypes.func.isRequired,
-};
 
 const nameOf = pointer => pointer.slice(1);
 
 /**
- * The Configuration tab of the admin page: one tab per configuration file
- * the host's status names in `config` (`app` alone when it names none),
- * the file and its schema fetched together, the sections and foldable
- * subsections drawn from the schema and searched from the navbar by title
- * or key, every value validated through the schema on blur and on Update
- * with the summary above the sections, the refused write painted by
- * pointer, the restart notice from the 200's `requires_restart`, the OIDC
- * providers block over `additionalProperties` of `auth.oidc.providers`,
- * update and restart, the SSL upload on upload fields and the SMTP test on
- * mail, every call through the app's `config` adapter.
+ * The Configuration page of the admin feature: one tab per name in the
+ * host's `status.config`, labelled by the file's schema root `title`;
+ * `config: []`, a missing member and an adapter without `config` draw the
+ * empty state `configManager.noFiles` and no tab, no Update and no
+ * Restart; the selected file and its schema fetched together, the sections
+ * and foldable subsections drawn through `ConfigSections` and searched
+ * from the navbar by title or key, every value validated through the
+ * schema on blur and on Update with the summary above the sections, the
+ * `PUT` sending the merge patch `patchOf(before, after)` of the changed
+ * paths, the refused write painted by pointer, the tab that carries an
+ * error marked, every control id `config:<name><pointer>`, the shared
+ * `RestartCard` fed by `restart-status` on mount and after every write,
+ * and every `action` through the adapter's `action(route, method, body)`,
+ * the restart and every action running through the shell's `useGuard` so a
+ * `403 step_up_required` opens the step-up dialog and retries.
  */
-const AdminConfig = ({ config: configApi }) => {
+const AdminConfig = ({ config: configApi = null }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const guard = useGuard();
   const status = useStatus();
-  const configNames = status.config || ['app'];
-  const [selectedConfig, setSelectedConfig] = useState(configNames[0]);
-  const [loaded, setLoaded] = useState({ name: '', config: null, schema: null });
+  const configNames = Array.isArray(status.config) ? status.config : EMPTY_NAMES;
+  const [selectedConfig, setSelectedConfig] = useState(configNames[0] || '');
+  const [schemas, setSchemas] = useState({});
+  const [loaded, setLoaded] = useState({ name: '', original: null, config: null });
+  const [refresh, setRefresh] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const ready = loaded.name === selectedConfig && loaded.config && loaded.schema;
+  const schema = schemas[selectedConfig] || null;
+  const ready = Boolean(configApi && schema && loaded.name === selectedConfig && loaded.config);
   const config = ready ? loaded.config : EMPTY_CONFIG;
-  const schema = ready ? loaded.schema : EMPTY_SCHEMA;
-  const rules = useFormRules({ schema, values: config, idPrefix: `config-${selectedConfig}` });
+  const rules = useFormRules({
+    schema: schema || EMPTY_SCHEMA,
+    values: config,
+    idPrefix: `config:${selectedConfig}`,
+  });
   const { reset } = rules;
+
+  useEffect(() => {
+    if (!configApi) {
+      return undefined;
+    }
+    let mounted = true;
+    configNames.forEach(configName => {
+      configApi.schema(configName).then(
+        fileSchema => {
+          if (mounted) {
+            setSchemas(current => ({ ...current, [configName]: fileSchema }));
+          }
+        },
+        error => {
+          log.api.error('Error fetching config schema', { configName, error: error.message });
+        }
+      );
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [configApi, configNames]);
 
   const fetchConfig = useCallback(
     configName => {
-      Promise.all([configApi.get(configName), configApi.schema(configName)]).then(
-        ([file, fileSchema]) => {
-          setLoaded({ name: configName, config: file, schema: fileSchema });
+      if (!configApi || !configName) {
+        return;
+      }
+      configApi.get(configName).then(
+        file => {
+          setLoaded({ name: configName, original: file, config: file });
           reset();
         },
         error => {
-          log.api.error('Error fetching config', {
-            configName,
-            error: error.message,
-          });
+          log.api.error('Error fetching config', { configName, error: error.message });
         }
       );
     },
@@ -141,26 +106,22 @@ const AdminConfig = ({ config: configApi }) => {
     fetchConfig(selectedConfig);
   }, [selectedConfig, fetchConfig]);
 
-  const sections = useMemo(() => schemaSections(schema), [schema]);
+  const sections = useMemo(() => schemaSections(schema || EMPTY_SCHEMA), [schema]);
 
   const handleFieldChange = (pointer, value) => {
     setLoaded(current => ({ ...current, config: setValueAt(current.config, pointer, value) }));
-  };
-
-  const afterWrite = (configName, data) => {
-    notify('success', t('configManager.updateSuccess'));
-    if (data?.requires_restart) {
-      notify('warning', t('configManager.restartNeeded'));
-    }
-    fetchConfig(configName);
   };
 
   const updateConfig = () => {
     if (!rules.validateAll()) {
       return;
     }
-    configApi.update(selectedConfig, config).then(
-      data => afterWrite(selectedConfig, data),
+    configApi.update(selectedConfig, patchOf(loaded.original, config)).then(
+      () => {
+        notify('success', t('configManager.updateSuccess'));
+        setRefresh(current => current + 1);
+        fetchConfig(selectedConfig);
+      },
       error => {
         if (rules.applyServerErrors(error)) {
           return;
@@ -173,69 +134,6 @@ const AdminConfig = ({ config: configApi }) => {
       }
     );
   };
-
-  const handleProvidersUpdate = providers =>
-    configApi
-      .update(selectedConfig, setValueAt(config, PROVIDERS_POINTER, providers))
-      .then(data => afterWrite(selectedConfig, data));
-
-  const handleTestSmtp = (testEmail, testRules) => {
-    notify('info', t('configManager.testingSmtp'), { key: SMTP_TEST_KEY });
-    configApi
-      .testSmtp(testEmail)
-      .then(data => {
-        notify('success', data.message || t('configManager.testSmtpSuccess'), {
-          key: SMTP_TEST_KEY,
-        });
-      })
-      .catch(error => {
-        if (testRules.applyServerErrors(error)) {
-          notify('', '', { key: SMTP_TEST_KEY });
-          return;
-        }
-        notify('danger', t(error.messageKey || 'errors.request'), { key: SMTP_TEST_KEY });
-      });
-  };
-
-  const handleFileUpload = async (pointer, file) => {
-    const targetPath = valueAt(config, pointer);
-    if (!file || !targetPath) {
-      return;
-    }
-
-    try {
-      await configApi.uploadSsl(file, targetPath);
-      notify(
-        'success',
-        `${t('admin.messages.operationSuccessful')}. ${t('configManager.restartInitiated')}`
-      );
-    } catch (error) {
-      log.component.error('Error uploading file', { error: error.message });
-      notify('danger', t(error.messageKey || 'errors.request'));
-    }
-  };
-
-  const restart = () => {
-    configApi
-      .restart()
-      .then(() => {
-        notify('success', t('configManager.restartInitiated'));
-      })
-      .catch(error => {
-        notify('danger', t(error.messageKey || 'errors.request'));
-      });
-  };
-
-  const renderMap = field =>
-    field.pointer === PROVIDERS_POINTER ? (
-      <div key={field.pointer} className="col-12">
-        <OidcProviders
-          providers={valueAt(config, field.pointer) || {}}
-          schema={field.additionalProperties}
-          onProvidersUpdate={handleProvidersUpdate}
-        />
-      </div>
-    ) : null;
 
   const visibleSections = filterSections(sections, searchTerm.toLowerCase());
   const hasErrors = Object.keys(rules.errors).length > 0;
@@ -250,6 +148,16 @@ const AdminConfig = ({ config: configApi }) => {
     onClearFilters: clearNothing,
   });
 
+  if (!configApi || configNames.length === 0) {
+    return (
+      <div className="mt-5">
+        <div className="alert alert-info" role="status">
+          {t('configManager.noFiles')}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5">
       <ul className="nav nav-tabs d-flex">
@@ -262,7 +170,7 @@ const AdminConfig = ({ config: configApi }) => {
               }`}
               onClick={() => setSelectedConfig(configName)}
             >
-              {t(`configManager.tabs.${configName}`)}
+              {schemas[configName]?.title || configName}
             </button>
           </li>
         ))}
@@ -271,13 +179,14 @@ const AdminConfig = ({ config: configApi }) => {
             {t('configManager.buttons.update')}
           </button>
         </li>
-        <li className="nav-item">
-          <button type="button" className="nav-link" onClick={restart}>
-            {t('configManager.buttons.restart')}
-          </button>
-        </li>
       </ul>
       <div className="config-container mt-3">
+        <RestartCard
+          restartStatus={configApi.restartStatus}
+          restart={configApi.restart}
+          refresh={refresh}
+          guard={guard}
+        />
         <FormErrorSummary errors={rules.summary} />
         {searchTerm !== '' && visibleSections.length === 0 && (
           <div className="alert alert-info">{t('pages.noMatches')}</div>
@@ -289,13 +198,12 @@ const AdminConfig = ({ config: configApi }) => {
             rules={rules}
             nameFor={nameOf}
             onChange={handleFieldChange}
-            onUpload={handleFileUpload}
-            renderMap={renderMap}
+            callAction={configApi.action}
+            guard={guard}
           />
         ) : (
           <p>{t('loading')}</p>
         )}
-        {selectedConfig === 'mail' && <SmtpTest onTest={handleTestSmtp} />}
       </div>
     </div>
   );
@@ -306,10 +214,10 @@ AdminConfig.propTypes = {
     get: PropTypes.func.isRequired,
     schema: PropTypes.func.isRequired,
     update: PropTypes.func.isRequired,
+    restartStatus: PropTypes.func.isRequired,
     restart: PropTypes.func.isRequired,
-    testSmtp: PropTypes.func.isRequired,
-    uploadSsl: PropTypes.func.isRequired,
-  }).isRequired,
+    action: PropTypes.func.isRequired,
+  }),
 };
 
 export default AdminConfig;

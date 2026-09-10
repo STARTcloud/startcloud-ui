@@ -12,10 +12,12 @@ import {
 } from 'react-icons/fa6';
 
 import { formRulesShape } from '../../hooks/useFormRules';
-import { fieldOf, valueAt } from '../../utils/schemaSections';
+import { valueAt } from '../../utils/schemaSections';
 import { isVisible, scopesFor } from '../../utils/validation';
 
+import ConfigAction from './ConfigAction';
 import ConfigField, { configFieldShape } from './ConfigField';
+import ConfigMap from './ConfigMap';
 
 const SECTION_ICONS = {
   authentication: FaShieldHalved,
@@ -33,6 +35,7 @@ const subsectionShape = PropTypes.shape({
 export const sectionShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
+  action: PropTypes.object,
   fields: PropTypes.arrayOf(configFieldShape).isRequired,
   subsections: PropTypes.arrayOf(subsectionShape).isRequired,
 });
@@ -42,8 +45,8 @@ const drawingShape = {
   rules: formRulesShape.isRequired,
   nameFor: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func,
-  renderMap: PropTypes.func,
+  callAction: PropTypes.func,
+  guard: PropTypes.func,
 };
 
 const matchesField = (field, term) =>
@@ -94,6 +97,24 @@ export const countFields = sections =>
 
 const wideField = field => field.type === 'array' || field.type === 'object';
 
+const parentOf = pointer => pointer.split('/').slice(0, -1).join('/');
+
+const refusalOf = (error, base, nameFor) => ({
+  fieldErrors: (error?.fieldErrors || []).map(entry => ({
+    ...entry,
+    pointer: `/${nameFor(`${base}${String(entry.pointer || '')}`)}`,
+  })),
+});
+
+const sectionValues = (section, config) => {
+  const keys = new Set(
+    [...section.fields, ...section.subsections.flatMap(subsection => subsection.fields)].map(
+      field => field.pointer.split('/')[1]
+    )
+  );
+  return Object.fromEntries([...keys].map(key => [key, valueAt(config, `/${key}`)]));
+};
+
 const SectionIcon = ({ sectionKey }) => {
   const Icon = SECTION_ICONS[sectionKey] || FaGear;
   return <Icon className="me-2" />;
@@ -103,8 +124,21 @@ SectionIcon.propTypes = {
   sectionKey: PropTypes.string.isRequired,
 };
 
-const FieldCell = ({ field, config, rules, nameFor, onChange, onUpload = null }) => {
+const FieldCell = ({ field, config, rules, nameFor, onChange, callAction = null, guard }) => {
   const name = nameFor(field.pointer);
+  const parent = parentOf(field.pointer);
+  const action =
+    field.action && callAction ? (
+      <ConfigAction
+        action={field.action}
+        title={field.title}
+        pointer={field.pointer}
+        values={valueAt(config, parent)}
+        call={callAction}
+        guard={guard}
+        onRefused={error => rules.applyServerErrors(refusalOf(error, parent, nameFor))}
+      />
+    ) : null;
   return (
     <div className={wideField(field) ? 'col-12' : 'col-md-6'}>
       <ConfigField
@@ -114,87 +148,48 @@ const FieldCell = ({ field, config, rules, nameFor, onChange, onUpload = null })
         error={rules.errors[name] || ''}
         onChange={value => onChange(field.pointer, value)}
         onBlur={() => rules.onBlur(name)}
-        onUpload={onUpload && field.upload ? file => onUpload(field.pointer, file) : null}
+        action={action}
       />
     </div>
   );
 };
 
 FieldCell.propTypes = {
+  ...drawingShape,
   field: configFieldShape.isRequired,
-  config: PropTypes.object.isRequired,
-  rules: formRulesShape.isRequired,
-  nameFor: PropTypes.func.isRequired,
-  onChange: PropTypes.func.isRequired,
-  onUpload: PropTypes.func,
 };
 
-const MapFields = ({ field, config, rules, nameFor, onChange }) => {
-  const entries = valueAt(config, field.pointer);
-  return Object.keys(entries && typeof entries === 'object' ? entries : {}).map(key => {
-    const pointer = `${field.pointer}/${key}`;
-    const entry = fieldOf({ pointer, key, property: field.additionalProperties, required: false });
-    return (
-      <FieldCell
-        key={pointer}
-        field={entry}
-        config={config}
-        rules={rules}
-        nameFor={nameFor}
-        onChange={onChange}
-      />
-    );
-  });
-};
-
-MapFields.propTypes = {
-  field: configFieldShape.isRequired,
-  config: PropTypes.object.isRequired,
-  rules: formRulesShape.isRequired,
-  nameFor: PropTypes.func.isRequired,
-  onChange: PropTypes.func.isRequired,
-};
-
-const ConfigFields = ({
-  fields,
-  config,
-  rules,
-  nameFor,
-  onChange,
-  onUpload = null,
-  renderMap = null,
-}) => (
+const ConfigFields = ({ fields, config, rules, nameFor, onChange, callAction = null, guard }) => (
   <div className="row">
     {fields
       .filter(field => isVisible(field, scopesFor(config, field.pointer)))
-      .map(field => {
-        if (!field.additionalProperties) {
-          return (
-            <FieldCell
-              key={field.pointer}
-              field={field}
-              config={config}
+      .map(field =>
+        field.additionalProperties ? (
+          <div key={field.pointer} className="col-12">
+            <ConfigMap
+              pointer={field.pointer}
+              title={field.title}
+              item={field.additionalProperties}
+              propertyNames={field.propertyNames}
+              value={valueAt(config, field.pointer)}
+              onChange={value => onChange(field.pointer, value)}
               rules={rules}
               nameFor={nameFor}
-              onChange={onChange}
-              onUpload={onUpload}
             />
-          );
-        }
-        const custom = renderMap ? renderMap(field) : null;
-        return (
-          custom || (
-            <MapFields
-              key={field.pointer}
-              field={field}
-              config={config}
-              rules={rules}
-              nameFor={nameFor}
-              onChange={onChange}
-            />
-          )
-        );
-      })}
+          </div>
+        ) : (
+          <FieldCell
+            key={field.pointer}
+            field={field}
+            config={config}
+            rules={rules}
+            nameFor={nameFor}
+            onChange={onChange}
+            callAction={callAction}
+            guard={guard}
+          />
+        )
+      )}
   </div>
 );
 
@@ -246,11 +241,22 @@ const Section = ({ section, ...drawing }) => {
   const shown = section.fields.filter(field =>
     isVisible(field, scopesFor(drawing.config, field.pointer))
   );
+  const action =
+    section.action && drawing.callAction ? (
+      <ConfigAction
+        action={section.action}
+        title={section.title}
+        values={sectionValues(section, drawing.config)}
+        call={drawing.callAction}
+        guard={drawing.guard}
+        onRefused={error => drawing.rules.applyServerErrors(refusalOf(error, '', drawing.nameFor))}
+      />
+    ) : null;
   return (
     <div>
-      {section.fields.length > 0 && (
+      {section.fields.length > 0 || action ? (
         <div className="card mb-4">
-          <div className="card-header">
+          <div className="card-header d-flex justify-content-between align-items-center">
             <h5 className="mb-0">
               <SectionIcon sectionKey={section.key} />
               {section.title}
@@ -258,12 +264,15 @@ const Section = ({ section, ...drawing }) => {
                 {t('configManager.settingsCount', { count: scalarCount(shown) })}
               </span>
             </h5>
+            {action}
           </div>
-          <div className="card-body">
-            <ConfigFields fields={section.fields} {...drawing} />
-          </div>
+          {section.fields.length > 0 ? (
+            <div className="card-body">
+              <ConfigFields fields={section.fields} {...drawing} />
+            </div>
+          ) : null}
         </div>
-      )}
+      ) : null}
       {section.subsections.map(subsection => (
         <Subsection
           key={subsection.key}
@@ -282,9 +291,11 @@ Section.propTypes = { ...drawingShape, section: sectionShape.isRequired };
  * The sections and foldable subsections of one configuration file, every
  * field drawn through `ConfigField` with the value the pointer names in
  * `config`, the error `rules` holds under `nameFor(pointer)`, and a field
- * hidden by `dependsOn`/`showWhen` folded away; a map field
- * (`additionalProperties`) is drawn as one field per entry unless
- * `renderMap(field)` answers an element for it.
+ * hidden by `dependsOn`/`showWhen` folded away; every map field
+ * (`additionalProperties`) through the generic `ConfigMap`; a
+ * property-level `action` beside its control and a section-level `action`
+ * at the section head, each calling `callAction(route, method, body)`
+ * through `guard` and painting a 422's pointers on the form.
  */
 const ConfigSections = ({ sections, ...drawing }) =>
   sections.map(section => <Section key={section.key} section={section} {...drawing} />);

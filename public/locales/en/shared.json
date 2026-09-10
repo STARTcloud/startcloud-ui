@@ -141,7 +141,6 @@
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",
-    "range": "Enter {{label}} between {{minimum}} and {{maximum}}.",
     "enum": "Choose one of {{enum}} for {{label}}.",
     "format": {
       "uri": "Enter {{label}} as a full URL, such as https://example.com.",
@@ -150,12 +149,14 @@
     },
     "minItems": "Enter at least {{minItems}} entries for {{label}}.",
     "maxItems": "Enter at most {{maxItems}} entries for {{label}}.",
+    "propertyNames": "Enter a different key for {{label}}; {{key}} is not allowed.",
+    "readOnly": "{{label}} cannot be changed; leave it as it is.",
     "unique": "{{value}} is already taken in {{scope}}; enter a different {{label}}.",
     "equals": "{{label}} must match {{other}}.",
     "checksum": "Enter a {{type}} checksum of {{length}} hexadecimal characters.",
     "blocklist": "Enter a different {{label}}; this one is too common.",
-    "writable": "Enter a directory the service can write to for {{label}}.",
-    "reachable": "Enter a host and port that answer for {{label}}.",
+    "writable": "Enter a directory that {{user}} can write to for {{label}}.",
+    "reachable": "Enter a host and port that answer for {{label}}; {{host}}:{{port}} did not answer.",
     "unknown": "Check {{label}}."
   },
   "session": {
@@ -551,16 +552,7 @@
       },
       "recentLogins": "Recent login activity",
       "recentRegistrations": "Recent registrations",
-      "viewAll": "View all",
-      "restart": {
-        "title": "Restart required.",
-        "body": "Configuration changed by {{by}} at",
-        "button": "Restart",
-        "started": "Restart started.",
-        "confirmTitle": "Restart the server",
-        "confirmBody": "Every session stays signed in, but requests fail while the server restarts. Type \"{{keyword}}\" to confirm.",
-        "stepUpReason": "Restarting the server changes how everyone signs in until it is back."
-      }
+      "viewAll": "View all"
     },
     "users": {
       "title": "Users",
@@ -941,31 +933,44 @@
   },
   "configManager": {
     "updateSuccess": "Configuration updated successfully.",
-    "restartInitiated": "Server restart initiated",
-    "restartNeeded": "Restart the server to apply the changed values.",
     "restartBadge": "restart",
     "deprecated": "Deprecated",
-    "testingSmtp": "Sending test email...",
-    "testSmtpSuccess": "Test email sent successfully! Check the recipient's inbox.",
     "search": "Search settings",
-    "smtpTest": {
-      "title": "Test SMTP Configuration",
-      "recipient": "Recipient Email",
-      "placeholder": "Enter email address",
-      "send": "Send Test Email",
-      "hint": "Sends a test email to verify your SMTP settings are correct."
-    },
+    "noFiles": "This server has no configuration files to edit.",
+    "defaultHint": "Default: {{value}}",
+    "restarting": "Restarting.",
     "settingsCount_one": "{{count}} setting",
     "settingsCount_other": "{{count}} settings",
-    "tabs": {
-      "app": "App Config",
-      "auth": "Auth Config",
-      "db": "DB Config",
-      "mail": "Email Config"
-    },
     "buttons": {
-      "update": "Update Configuration",
-      "restart": "Restart Server"
+      "update": "Update Configuration"
+    },
+    "actions": {
+      "test": "Test",
+      "run": "Run",
+      "uploaded": "Uploaded to {{path}}.",
+      "testPassed": "The test passed.",
+      "runStarted": "Started.",
+      "runConfirm": "Run {{title}} now. Type \"{{keyword}}\" to confirm."
+    },
+    "restart": {
+      "heading": "Restart required.",
+      "by": "Last changed by {{by}} at {{time}}.",
+      "entry": "{{title}}: {{reason}}",
+      "button": "Restart",
+      "confirmTitle": "Restart the server",
+      "confirmBody": "Requests fail while the server restarts. Type \"{{keyword}}\" to confirm."
+    },
+    "map": {
+      "key": "Key",
+      "value": "Value",
+      "add": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
+      "remove": "Remove",
+      "save": "Save",
+      "empty": "No entries yet.",
+      "addTitle": "Add to {{title}}",
+      "editTitle": "Edit {{key}}"
     }
   },
   "configField": {
@@ -973,69 +978,15 @@
   },
   "setup": {
     "title": "Setup",
-    "alreadyComplete": "Setup is already complete.",
     "enterToken": "Enter Setup Token",
-    "tokenPlaceholder": "Setup Token",
+    "token": "Setup token",
+    "tokenInvalid": "That token did not match; enter the setup token from the server.",
     "verifyToken": "Verify Token",
     "submitAll": "Submit All Configurations",
-    "oidcNote": "OIDC provider configuration is managed via the Admin interface after setup is complete. Go to Admin → Configuration Management → Auth Config to add OIDC providers.",
-    "updateSuccess": "Configuration updated successfully. Redirecting to registration page in 5 seconds..."
-  },
-  "oidc": {
-    "title": "OIDC Providers",
-    "providerCount_one": "{{count}} provider",
-    "providerCount_other": "{{count}} providers",
-    "description": "Manage OpenID Connect authentication providers for Single Sign-On integration. Click on a provider card to edit its configuration.",
-    "enabled": "Enabled",
-    "issuer": "Issuer",
-    "clientId": "Client ID",
-    "scope": "Scope",
-    "noProvidersConfigured": "No OIDC providers configured yet. Click \"Add OIDC Provider\" to set up authentication with providers like Google, Microsoft, GitHub, etc.",
-    "buttons": {
-      "add": "Add OIDC Provider",
-      "delete": "Delete Provider",
-      "update": "Update Provider",
-      "updating": "Updating...",
-      "adding": "Adding..."
-    },
-    "modal": {
-      "editTitle": "Edit OIDC Provider",
-      "addTitle": "Add OIDC Provider",
-      "description": "Configure a new OpenID Connect authentication provider. You will need to register your application with the provider first to obtain the Client ID and Client Secret."
-    },
-    "form": {
-      "name": {
-        "label": "Provider Name",
-        "placeholder": "e.g., mycompany, enterprise, provider1",
-        "hint": "Internal identifier (lowercase letters, numbers, and underscores only)"
-      }
-    },
-    "instructions": {
-      "title": "Configuration Instructions",
-      "step1": "Register your application with your OIDC provider's developer console",
-      "step2": "Add",
-      "step2_cont": "as an allowed redirect URI",
-      "step3": "Copy the Client ID and Client Secret from your provider's console",
-      "step4": "Find your provider's Issuer URL in their documentation",
-      "step5": "Complete the form above and test the configuration"
-    },
-    "deleteModal": {
-      "title": "Delete OIDC Provider",
-      "message": "Are you sure you want to delete the OIDC provider '{{providerName}}'? This cannot be undone."
-    },
-    "messages": {
-      "updating": "Updating OIDC provider...",
-      "adding": "Adding OIDC provider...",
-      "deleting": "Deleting OIDC provider...",
-      "success": "OIDC provider '{{displayName}}' {{action}} successfully!",
-      "deleteSuccess": "OIDC provider '{{providerName}}' deleted successfully!"
-    },
-    "actions": {
-      "updated": "updated",
-      "added": "added",
-      "updating": "updating",
-      "adding": "adding"
-    }
+    "updateSuccess": "Setup complete.",
+    "complete": "Setup is complete.",
+    "signIn": "Sign in",
+    "home": "Go home"
   },
   "orgConsole": {
     "pageTitle": "Org Console",

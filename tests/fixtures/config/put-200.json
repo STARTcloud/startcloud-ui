@@ -1,0 +1,10 @@
+{
+  "message": "Configuration saved.",
+  "requires_restart": [
+    {
+      "pointer": "/boxvault/api_listen_port_encrypted",
+      "title": "HTTPS port",
+      "reason": "the listener is bound at boot"
+    }
+  ]
+}

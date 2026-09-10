@@ -1166,10 +1166,8 @@
             <span class="s">'fleet'</span>) ? [{ key: <span class="s">'fleet'</span>, labelKey:
             <span class="s">'vdi.sidebar.title'</span>, views: [ { key:
             <span class="s">'pool'</span>, labelKey: <span class="s">'vdi.sidebar.byPool'</span>,
-            useTree: usePoolTree }, { key: <span class="s">'host'</span>, labelKey:
-            <span class="s">'vdi.sidebar.byHost'</span>, useTree: useHostTree }, { key:
-            <span class="s">'state'</span>, labelKey: <span class="s">'vdi.sidebar.byState'</span>,
-            useTree: useStateTree } ] }] : [];
+            useTree: usePoolTree }, { key: <span class="s">'state'</span>, labelKey:
+            <span class="s">'vdi.sidebar.byState'</span>, useTree: useStateTree } ] }] : [];
 
             <span class="k">const</span> usePoolTree = () =&gt; ({ nodes: pools.map(pool =&gt; ({
             key: pool.id, icon: FaLayerGroup, label: pool.name, to:
@@ -1308,8 +1306,8 @@
       </div>
       <div class="callout">
         <strong>Views on a tree.</strong> A tree may export more than one shape and a select at its
-        top switches between them, Proxmox's manner: VDI Health offers by pool, by host and by
-        session state, the same VMs under different parents; the open nodes are kept per view.
+        top switches between them, Proxmox's manner: VDI Health offers by pool and by session state,
+        the same VMs under different parents; the open nodes are kept per view.
       </div>
       <div class="callout">
         <strong>Entries only from features.</strong> `/api/status` adds no links today; an ad-hoc
@@ -1517,37 +1515,6 @@
                     to: '/?pool=fin',
                     open: false,
                     children: [],
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            key: 'host',
-            label: 'By host',
-            tree: [
-              {
-                key: 'hosts',
-                icon: '▣',
-                label: 'Hosts',
-                to: '/',
-                open: true,
-                children: [
-                  {
-                    key: 'host-1',
-                    icon: '▣',
-                    label: 'vdi-host-01',
-                    to: '/?host=1',
-                    open: true,
-                    children: [{ key: 'vm-1', label: 'vdi-eng-014', to: '/vm/1', dot: 'up' }],
-                  },
-                  {
-                    key: 'host-2',
-                    icon: '▣',
-                    label: 'vdi-host-02',
-                    to: '/?host=2',
-                    open: false,
-                    children: [{ key: 'vm-2', label: 'vdi-eng-022', to: '/vm/2', dot: '' }],
                   },
                 ],
               },
@@ -1934,7 +1901,7 @@
         ' · features=[' +
         esc(b.features.join(', ')) +
         ']</span></span></div>' +
-        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the brand at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool, host and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
+        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the brand at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
     };
     var onClick = function (e) {
       var el = e.target.closest('[data-backend], [data-act], [data-toggle], [data-pick]');

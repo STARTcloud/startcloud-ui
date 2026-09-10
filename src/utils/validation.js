@@ -5,7 +5,6 @@ const HOSTNAME_RE =
 const IPV4_RE = /^(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\.(?:25[0-5]|2[0-4]\d|[01]?\d\d?)){3}$/;
 const INTEGER_RE = /^-?\d+$/;
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
-const SECRET_MASK = '********';
 const NON_BLANK_PATTERN = '\\S';
 const PATTERN_NAMES = { [NON_BLANK_PATTERN]: 'nonBlank' };
 
@@ -29,10 +28,11 @@ const RULE_KEYS = [
   'maxLength',
   'minimum',
   'maximum',
-  'range',
   'enum',
   'minItems',
   'maxItems',
+  'propertyNames',
+  'readOnly',
   'unique',
   'equals',
   'checksum',
@@ -105,7 +105,7 @@ const FALLBACK_DOCUMENT = { $defs: DEFS };
 
 const isBlank = value => value === undefined || value === null;
 
-const keepsSecret = value => isBlank(value) || value === '' || value === SECRET_MASK;
+const jsonEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 const refTarget = (ref, document) => {
   if (typeof ref !== 'string' || !ref.startsWith('#/')) {
@@ -168,16 +168,13 @@ const boundsCheck = (rule, value) => {
   if (Number.isNaN(number) || (rule.minimum === undefined && rule.maximum === undefined)) {
     return null;
   }
-  const below = rule.minimum !== undefined && number < rule.minimum;
-  const above = rule.maximum !== undefined && number > rule.maximum;
-  if (!below && !above) {
-    return null;
+  if (rule.minimum !== undefined && number < rule.minimum) {
+    return { rule: 'minimum', params: { minimum: rule.minimum } };
   }
-  const params = { minimum: rule.minimum, maximum: rule.maximum };
-  if (rule.minimum !== undefined && rule.maximum !== undefined) {
-    return { rule: 'range', params };
+  if (rule.maximum !== undefined && number > rule.maximum) {
+    return { rule: 'maximum', params: { maximum: rule.maximum } };
   }
-  return { rule: below ? 'minimum' : 'maximum', params };
+  return null;
 };
 
 const enumCheck = (rule, value) => {
@@ -208,6 +205,8 @@ const itemsCheck = (rule, value) => {
   return null;
 };
 
+const BLANK_CHECKS = [nonBlankCheck, lengthCheck, patternCheck];
+
 const CHECKS = [
   typeCheck,
   nonBlankCheck,
@@ -218,6 +217,20 @@ const CHECKS = [
   formatCheck,
   itemsCheck,
 ];
+
+const membersCheck = (rule, value, document, evaluate) => {
+  if (!Array.isArray(value) || !rule.items || typeof rule.items !== 'object') {
+    return null;
+  }
+  const item = resolve(rule.items, document);
+  for (const member of value) {
+    const failure = evaluate(item.rule, member, item.patternName, document);
+    if (failure) {
+      return failure;
+    }
+  }
+  return null;
+};
 
 const subschemaFailure = ({ schema, value, patternName, document, evaluate }) => {
   const inner = resolve(schema, document);
@@ -243,22 +256,29 @@ const notCheck = ({ rule, value, patternName, document, evaluate }) => {
 };
 
 const firstFailure = (rule, value, patternName, document) => {
-  for (const check of CHECKS) {
+  const checks = value === '' ? BLANK_CHECKS : CHECKS;
+  for (const check of checks) {
     const failure = check(rule, value, patternName);
     if (failure) {
       return failure;
     }
   }
   const nested = { rule, value, patternName, document, evaluate: firstFailure };
-  return allOfCheck(nested) || notCheck(nested);
+  return (
+    allOfCheck(nested) || notCheck(nested) || membersCheck(rule, value, document, firstFailure)
+  );
 };
 
 /**
  * Evaluate one value against one schema: `type`, `required` (presence
  * alone: undefined and null count as missing when the schema says
- * `required: true`, a blank string is judged by `minLength` and `pattern`),
- * `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `enum`,
- * `format`, `minItems`, `maxItems`, with `$ref` resolved within `document`.
+ * `required: true`; a blank string is evaluated against `minLength` and
+ * `pattern` alone and skips `type`, `format`, `enum`, `minimum` and
+ * `maximum`), `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`
+ * (whichever bound was crossed, never a `range`), `enum`, `format`,
+ * `minItems`, `maxItems` and `items` evaluated per member, with `$ref`
+ * resolved within `document`; a `writeOnly` value is evaluated like any
+ * string.
  *
  * @param {Object} schema - The value's schema
  * @param {*} value - The value
@@ -276,8 +296,10 @@ export const validateValue = (schema, value, document = FALLBACK_DOCUMENT) => {
 
 /**
  * Whether a property is drawn and evaluated: without `dependsOn` always,
- * else while the nearest enclosing object carrying the named key holds one
- * of the `showWhen` values.
+ * else while the nearest enclosing object carrying the named key holds a
+ * value equal by JSON value to one of the `showWhen` values, so
+ * `showWhen: [true]` matches the boolean `true` and never the string
+ * `"true"`.
  *
  * @param {Object} rule - The property's schema
  * @param {Array<Object>} scopes - The value objects from the root down to the property's parent
@@ -291,7 +313,7 @@ export const isVisible = (rule, scopes) => {
     .reverse()
     .find(entry => entry && typeof entry === 'object' && Object.hasOwn(entry, rule.dependsOn));
   const current = scope ? scope[rule.dependsOn] : undefined;
-  return (rule.showWhen || []).map(String).includes(String(current));
+  return (rule.showWhen || []).some(expected => jsonEqual(expected, current));
 };
 
 /**
@@ -342,9 +364,20 @@ const clientFailure = (rule, value, values) => {
   return rule.custom ? rule.custom(value, values) : null;
 };
 
-const walkMap = ({ item, values, scopes, base, document, errors, walk }) => {
+const mapSchemas = (rule, document) => ({
+  item: resolve(rule.additionalProperties, document).rule,
+  keys:
+    rule.propertyNames && typeof rule.propertyNames === 'object'
+      ? resolve(rule.propertyNames, document).rule
+      : null,
+});
+
+const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) => {
   Object.entries(values && typeof values === 'object' ? values : {}).forEach(([key, entry]) => {
     const pointer = `${base}/${key}`;
+    if (keys && validateValue(keys, key, document).length > 0) {
+      errors.push({ pointer: base, rule: 'propertyNames', params: { key } });
+    }
     if (item.properties) {
       const child = entry || {};
       walk({
@@ -355,6 +388,11 @@ const walkMap = ({ item, values, scopes, base, document, errors, walk }) => {
         document,
         errors,
       });
+      return;
+    }
+    if (item.additionalProperties && typeof item.additionalProperties === 'object') {
+      const next = { ...mapSchemas(item, document), values: entry, scopes: [...scopes, entry] };
+      walkMap({ ...next, base: pointer, document, errors, walk });
       return;
     }
     validateValue(item, entry, document).forEach(error => errors.push({ ...error, pointer }));
@@ -377,12 +415,8 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
       return;
     }
     if (rule.additionalProperties && typeof rule.additionalProperties === 'object') {
-      const item = resolve(rule.additionalProperties, document).rule;
-      const next = { item, values: value, scopes: [...scopes, value], base: pointer };
-      walkMap({ ...next, document, errors, walk: walkObject });
-      return;
-    }
-    if (rule.writeOnly && keepsSecret(value)) {
+      const next = { ...mapSchemas(rule, document), values: value, scopes: [...scopes, value] };
+      walkMap({ ...next, base: pointer, document, errors, walk: walkObject });
       return;
     }
     const own = validateValue({ ...property, required: required.has(name) }, value, document);
@@ -397,9 +431,12 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
  * Evaluate an object against an object schema: `required`,
  * `dependentRequired`, `then.required` while the `if` subschema's `const`
  * and `required` entries hold, every property through `validateValue` (nested
- * objects and `additionalProperties` maps walked, pointers `/name`,
- * `/sql/port`), a property hidden by `dependsOn`/`showWhen` skipped, and the
- * client-only `equals` and `custom` entries a form schema may carry.
+ * objects and `additionalProperties` maps walked, maps within maps included,
+ * pointers `/name`, `/sql/port`; a map's keys evaluated against its
+ * `propertyNames`, a failing key reported as rule `propertyNames` at the
+ * map's pointer with `params.key`), a property hidden by
+ * `dependsOn`/`showWhen` skipped, and the client-only `equals` and `custom`
+ * entries a form schema may carry.
  *
  * @param {Object} schema - The object schema
  * @param {Object} values - The object
@@ -420,9 +457,12 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * and the rule's params; a pattern by its `$defs` name (`slug`,
  * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
  * `personName`, `iconName`, `languageTag`, `timezone`) or `nonBlank` for
- * the contract's whitespace rule, a format and a type by theirs; a rule
- * the UI does not know through `validation.unknown` with the field's
- * label, the error's `detail` never shown.
+ * the contract's whitespace rule, a format and a type by theirs; the
+ * config contract's `propertyNames` (`params.key`), `readOnly`,
+ * `writable` (`params.user`) and `reachable` (`params.host`, `params.port`)
+ * by their own keys; a rule the UI does not know through
+ * `validation.unknown` with the field's label, the error's `detail` never
+ * shown.
  *
  * @param {{ rule: string, params?: Object, detail?: string }} error - The error
  * @param {string} label - The field's label

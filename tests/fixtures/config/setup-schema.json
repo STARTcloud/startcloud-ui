@@ -1,0 +1,99 @@
+{
+  "schemas": {
+    "app": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Application",
+      "schemaVersion": 1,
+      "sections": {
+        "application": {
+          "title": "Application",
+          "order": 1,
+          "action": {
+            "kind": "test",
+            "route": "/api/config/app/test",
+            "method": "POST",
+            "body": "form",
+            "step_up": false
+          }
+        }
+      },
+      "properties": {
+        "schemaVersion": {
+          "type": "integer",
+          "readOnly": true,
+          "default": 1,
+          "title": "Schema version"
+        },
+        "boxvault": {
+          "type": "object",
+          "section": "application",
+          "subsection": "boxvaultSettings",
+          "title": "BoxVault Settings",
+          "properties": {
+            "origin": {
+              "type": "string",
+              "format": "uri",
+              "title": "Origin",
+              "description": "The origin URL for BoxVault",
+              "order": 1,
+              "requiresRestart": true,
+              "restartReason": "the listener and the OIDC redirect are bound at boot"
+            },
+            "api_listen_port_encrypted": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "default": 443,
+              "title": "HTTPS port",
+              "description": "The port BoxVault listens on for HTTPS; the proxied port is a separate value",
+              "order": 4,
+              "requiresRestart": true,
+              "restartReason": "the listener is bound at boot"
+            }
+          },
+          "required": ["origin", "api_listen_port_unencrypted", "api_listen_port_encrypted"]
+        },
+        "gravatar": {
+          "type": "object",
+          "section": "application",
+          "subsection": "gravatarSettings",
+          "properties": {
+            "api_key": {
+              "type": "string",
+              "writeOnly": true,
+              "title": "Gravatar API key",
+              "order": 2
+            }
+          }
+        },
+        "logging": {
+          "type": "object",
+          "section": "application",
+          "subsection": "loggingSettings",
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["error", "warn", "info", "debug"],
+              "default": "info",
+              "title": "Log level",
+              "order": 1
+            },
+            "categories": {
+              "type": "object",
+              "subsection": "loggingCategories",
+              "title": "Log categories",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["error", "warn", "info", "debug"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

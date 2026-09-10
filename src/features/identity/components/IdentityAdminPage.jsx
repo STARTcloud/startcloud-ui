@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 
+import { GuardProvider } from '../../../contexts/GuardContext';
 import { returnToShape } from '../../../utils/auth';
 import { useAdminGate } from '../hooks/useAdminGate';
-import { GuardProvider } from '../hooks/useGuard';
 
 import BlockedIpsPage from './BlockedIpsPage';
 import ClientHealthPage from './ClientHealthPage';
