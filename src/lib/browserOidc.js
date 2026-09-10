@@ -25,7 +25,7 @@ const applyAccountPreferences = preferences => {
     localStorage.setItem('theme', preferences.theme);
   }
   if (preferences.language) {
-    localStorage.setItem('i18nextLng', preferences.language);
+    localStorage.setItem('language', preferences.language);
   }
 };
 
@@ -205,6 +205,11 @@ export const createBrowserOidc = ({
 
   const load = async () => sessionOf(await getAccessToken());
 
+  const reload = () => {
+    claimsPromise = null;
+    return load();
+  };
+
   const fetchClaims = async token => {
     try {
       const { userinfo_endpoint } = await discover();
@@ -338,7 +343,7 @@ export const createBrowserOidc = ({
     issuerUrl: issuer,
     restore,
     load,
-    reload: load,
+    reload,
     begin,
     complete,
     headers,

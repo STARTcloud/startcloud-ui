@@ -9,6 +9,7 @@ import { log } from './logger';
 const PUBLIC = { auth: false };
 const DATA_ATTRIBUTE = /^data-[a-z0-9-]+$/;
 const PACK_NAME = /^[a-z0-9-]+$/;
+const SAME_ORIGIN_PATH = /^\/(?![/\\])/;
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
 
@@ -86,12 +87,17 @@ export const loadRules = () => {
 /**
  * Open the tab's one event stream at the path the host's status names,
  * subscribed to every topic it advertises, the session's headers on the
- * request; a 401 ends the session on the bus.
+ * request; a 401 ends the session on the bus. A path carrying a scheme or
+ * a protocol-relative prefix is ignored, so the status payload can never
+ * point the session's headers at another host.
  *
  * @param {Object} status - The payload from `probeStatus`
  */
 export const connectEventStream = status => {
   const { path, topics } = status.events;
+  if (!SAME_ORIGIN_PATH.test(path || '')) {
+    return;
+  }
   eventHub.connect({
     url: `${requestOriginFor(apiOrigin)}${path}`,
     topics,

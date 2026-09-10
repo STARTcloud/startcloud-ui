@@ -34,7 +34,7 @@ const applyAccountPreferences = preferences => {
     localStorage.setItem('theme', preferences.theme);
   }
   if (preferences.language) {
-    localStorage.setItem('i18nextLng', preferences.language);
+    localStorage.setItem('language', preferences.language);
   }
 };
 

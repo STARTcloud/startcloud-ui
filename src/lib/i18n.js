@@ -49,6 +49,7 @@ export const createI18n = ({ loadSupportedLanguages, debug = false }) => {
         supportedLngs,
         detection: {
           order: ['localStorage', 'navigator'],
+          lookupLocalStorage: 'language',
           caches: ['localStorage'],
         },
         backend: {

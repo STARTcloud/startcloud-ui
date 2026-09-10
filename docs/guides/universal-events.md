@@ -328,7 +328,7 @@ connects while the UI backend advertises `events` and either answers
 `auth: []` or has a signed-in user confirmed by `load()`, never from the
 restored cache alone, because a stale cache would open the stream, meet a
 `401` and raise the session-ended banner for a visitor who was never
-signed in; it reconnects when the session's token changes, and answers
+signed in; it reconnects when the adopted session changes, and answers
 `session-terminated` with `events.endSession()`, so a back-channel logout
 at the identity provider reaches every open tab through the one
 connection. `events.path` is a same-origin path; a value carrying a

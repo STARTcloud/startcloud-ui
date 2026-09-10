@@ -73,7 +73,7 @@ url)` is the one source, and the shared API client of the
 
 ## Session state
 
-`useSession({ provider, events, returnTo, navigate, activeOrgKey, push, onAdopt })`
+`useSession({ provider, events, returnTo, navigate, activeOrgKey, push, onAdopt, loadFavorites })`
 returns the object below; `sessionStateShape` in `src/hooks/useSession.jsx`
 is its prop-type and every shell takes it as `account`; `navigate` is the
 router's own, handed by the hook to the provider's `load`, `reload`,
@@ -84,6 +84,7 @@ in-router.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `user`                   | the provider's user: the access token's claims on the browser OIDC provider, the stored profile on the backend provider; `null` signed out |
 | `claims`                 | the provider's memoized claims (`/userinfo` on the IdP, `/api/userinfo/claims` through a backend), `null` until loaded or signed out       |
+| `favorites`              | the list `loadFavorites` answers, read once per session, reset on sign-out and on every reload; `[]` until loaded or signed out            |
 | `organizations`          | memberships in the chrome's organization shape `{ uuid, name, roles, primary }`                                                            |
 | `oidc`                   | whether the session came from an OpenID Connect sign-in (the backend provider's local, LDAP and service sessions answer `false`)           |
 | `issuerUrl`              | the identity provider behind the session, empty when there is none or it is not yet resolved                                               |
@@ -333,6 +334,7 @@ the `idp.storagePrefix` the UI backend names for its tokens.
 | Value                             | `idp` UI backend (the catalog)                                                                                                                                                                                        | `backend` UI backend (BoxVault)                                                    |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | session                           | `<storagePrefix>.access_token`, `.refresh_token`, `.id_token`, `.token_type`, `.expires_at` in `localStorage`; `<storagePrefix>.oidc_discovery` in `sessionStorage`; the DPoP key in IndexedDB `<storagePrefix>-dpop` | `user` in `localStorage`: the profile, the JWT, `stayLoggedIn`, `tokenRefreshTime` |
+| sign-in round trip                | `<storagePrefix>.pkce_verifier`, `<storagePrefix>.pkce_state`, kept for the one round trip and dropped by `complete()`                                                                                                | n/a — the backend holds the verifier                                               |
 | return path                       | `intended_url`                                                                                                                                                                                                        | `intended_url`                                                                     |
 | active organization               | `activeOrganization` (uuid)                                                                                                                                                                                           | `activeOrganization` (organization name)                                           |
 | push switch                       | `push_enabled`                                                                                                                                                                                                        | `push_enabled`                                                                     |

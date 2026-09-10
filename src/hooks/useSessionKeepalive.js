@@ -5,23 +5,14 @@ import { useStatus } from '../contexts/StatusContext';
 import { connectEventStream, disconnectEventStream, eventHub, events } from '../lib/runtime';
 import { authMethod, hasFeature } from '../utils/capabilities';
 
-const hasSession = ({ method, user, loaded }) => {
-  if (method === 'none') {
-    return true;
-  }
-  if (method === 'cookie') {
-    return loaded && Boolean(user);
-  }
-  return Boolean(user);
-};
+const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded && Boolean(user));
 
 /**
  * What a session keeps running: the profile reload on its interval for a
  * backend session, and the tab's event stream while the host advertises
- * `events` and either needs no session or has one, a `cookie` session
- * only once `load()` confirmed its user and never from the restored cache
- * alone, with the stream's `session-terminated` event ending the session
- * on the bus.
+ * `events` and either needs no session or has a signed-in user confirmed
+ * by `load()`, never from the restored cache alone, with the stream's
+ * `session-terminated` event ending the session on the bus.
  *
  * @param {Object} options - The session
  * @param {boolean} options.enabled - Whether the session is the app's own backend
@@ -33,7 +24,6 @@ export const useSessionKeepalive = ({ enabled, user, loaded, reload }) => {
   const status = useStatus();
   const streaming = hasFeature(status, 'events') && Boolean(status.events);
   const connected = streaming && hasSession({ method: authMethod(status), user, loaded });
-  const accessToken = user?.accessToken || '';
 
   useEffect(() => {
     if (!enabled || !user) {
@@ -51,7 +41,7 @@ export const useSessionKeepalive = ({ enabled, user, loaded, reload }) => {
     }
     connectEventStream(status);
     return disconnectEventStream;
-  }, [connected, status, accessToken]);
+  }, [connected, status, user]);
 
   useEffect(() => eventHub.subscribe('session-terminated', () => events.endSession()), []);
 };
