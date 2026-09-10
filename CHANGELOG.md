@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.2](https://github.com/STARTcloud/startcloud-ui/compare/v0.12.1...v0.12.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* events and session contracts met line by line, the keepalive follows the adopted session, language stored under one key ([01d531e](https://github.com/STARTcloud/startcloud-ui/commit/01d531e0cc201facfb532828cca290fdea98d829))
+
 ## [0.12.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.12.0...v0.12.1) (2026-09-10)
 
 
