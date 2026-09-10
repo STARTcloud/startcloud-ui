@@ -112,18 +112,75 @@ Each step names the contract sections it is built from, the files it touches, th
 
 - Nothing; every decision through 104, a–g and h–ad is made and written into the contracts, the decisions 27 to 104 in the identity contract's own list, 65 to 104 answering the gaps of startcloud-ui's NOTIFICATIONS.md (2026-09-07); the Poppins files of decision 73 are Mark's to supply, the marks and provider icons landed. The UI work may begin, the shared UI first (decision in §0).
 
-## 6. Handoff (state as of 2026-09-07; the planning is complete)
+## 6. Handoff (state as of 2026-09-10)
 
-State of every artifact, so the next session reads before it acts:
+Written for a fresh auth-server session, above all one resuming after a compaction: print the banner first, then read every file named here in full, then act only on Mark's go.
 
-- Every contract in G:\Projects\startcloud-ui\docs\guides is final for this conversion: universal-navbar, universal-session, universal-pages, universal-events, universal-validation, universal-config, preferences-and-branding and universal-identity, the last carrying decisions 1 to 104. Every ruling of the four review rounds (nonsense, spec, security, UX) is written into them as a rule with its reason; nothing is left in chat alone. Read every file in full before touching it.
-- The five mockups beside them match the contracts: universal-identity.html (five groups, the signed-in chrome, the admin pages, the errors), universal-sidebar.html, universal-navbar.html, universal-pages.html and preferences-and-branding.html, each viewed as file:///G:/Projects/startcloud-ui/docs/guides/<file>. Where a mockup and a contract disagree the contract wins and the mockup is corrected.
-- Auth-server stubs in its docs/guides point at the moved files with the GitHub URL and the local path.
-- Next UI work is the UI growth of §3a, step 1 first, each step closed by its own check; next server work is the build and serving item and then the server endpoints in their stated order; the config editor is last. Never say "twins": name the endpoint.
+### 6.1 Where the work stands
 
-The brief for the startcloud-ui session, in one paragraph: read this guide in full, then every contract and mockup named above in full, then start §3a at step 1 and stop at each step's "closed when"; every route, token, topic, storage key, component and locale key you write already has a line in a contract, and when a page, shape or key you need is not in one, write the gap into G:\Projects\startcloud-ui\NOTIFICATIONS.md as §0 says and carry on with the next thing that is, because the contract is amended from the auth-server side and never by a local invention; the local authorization server answers only what its server work has landed, so mock the rest from the contracts' example payloads; the other apps keep working because every new surface sits behind a token or an adapter member they do not advertise; Mark's global rules apply in that session as here.
+| Area                                               | State                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts in G:\Projects\startcloud-ui\docs\guides | Final for this conversion: universal-navbar, universal-session, universal-pages, universal-events, universal-validation, preferences-and-branding, universal-identity (decisions 1 to 104).                                                                                                                                                                                                                |
+| Configuration contract `universal-config.md`       | Final at 86 decisions, confirmed by every repo. BoxVault, VDI Health, the catalog and the UI have complied.                                                                                                                                                                                                                                                                                                |
+| Rows 6, 7 and 8 of §3                              | On disk and committed in G:\Projects\authorization-server-private: every JSON route of the identity contract beside the templates, `/api/status`, `/api/health`, `/api/rules`, `/api/events`, `/api/user/*`, `/api/auth/*`, `/api/admin/*`, `/api/policies/*`, the error store and `/api/client-errors`, the `ui/` serving with the stamped fallback, the CI fetch of the pinned UI, the deb `ui/` folder. |
+| Row 9, the config editor                           | The auth server's compliance runs in the four slices of 6.2; slice A is written and unreviewed by compile.                                                                                                                                                                                                                                                                                                 |
+| Row 10, the retirements                            | Not started; after the cutover, one discussed change.                                                                                                                                                                                                                                                                                                                                                      |
 
-- Mark's rules that bit this session: the compaction banner must be the first output after any compaction, before any tool call; no comments anywhere; reread before any edit, the file's modification time deciding; no shell that changes anything, and no PowerShell at all; the subagent is only for reads he asks for; anger is not an instruction.
+### 6.2 The auth server's config compliance, four slices
+
+| Slice         | Content                                                                                                                                                                                                                                                                                                    | State                                                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| A · engine    | `ConfigEngine.groovy` module with the nine-entry seam, `SchemaGenerator`, the committed `src/main/resources/config/schema/application.schema.yaml`, `config: ["application"]` in the status payload, `ConfigEngineTest`.                                                                                   | Written; awaits Mark's compile and the commit `feat: the configuration engine module, its schema and the status config list`. |
+| B · packaging | Seed `packaging/config/application.config.yaml` copied by postinst only where absent; the empty `setup.token`; the unit's `CONFIG_DIR` and `ReadWritePaths=` with `ProtectSystem=strict`; the dev file under repo `config/`; `bootRun` pointed at it; every `${ENV:}` placeholder replaced by its literal. | Next.                                                                                                                         |
+| C · routes    | The module's routes beside the old ones: `GET`/`PUT /api/config/application`, `/schema`, `restart-status`, `POST /api/config/restart` as 202 then JVM exit behind step-up, the upload route, the setup routes; `load` before `SpringApplication.run` with `writable` only.                                 | After B.                                                                                                                      |
+| D · cutover   | Delete `/admin/config/*`, `config-metadata.yml`, `ConfigMetadataService`, `ConfigEditorService`, `ConfigRestartService`, `config.html`.                                                                                                                                                                    | Waits until the UI's editor release is pinned here, so the admin never loses the page.                                        |
+
+Landmines of slice B:
+
+| Landmine                                                         | Handling                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| The schema's `required` list                                     | Must match what the installed file holds.                                      |
+| `allowed-sites`, `allowed-clients`, `redirect-uris`, `tos-names` | Comma strings in YAML, typed arrays in the schema: a converter at each reader. |
+| Provider `icon-url` values                                       | Relative paths, so `format: uri` comes off them.                               |
+
+### 6.3 The queue after config
+
+| Order | Item                                                                                           |
+| ----- | ---------------------------------------------------------------------------------------------- |
+| 1     | The identity cutover queue in order.                                                           |
+| 2     | The branding endpoint `GET /api/public/site/branding`.                                         |
+| 3     | A proof run of the shared UI's dev server against this server.                                 |
+| 4     | The chain flip: page GETs permitAll answering the stamped index.html, error dispatch in place. |
+| 5     | The template retirement in one discussed change.                                               |
+| 6     | Config phase two: the split into named files.                                                  |
+
+### 6.4 Local test recipe
+
+| Piece               | Value                                                                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database            | Postgres in WSL, role `startcloud`, password `startcloud`, database `startcloud_auth`.                                                                                                                      |
+| Run                 | `JAVA_HOME=~/.sdkman/candidates/java/25-tem ./gradlew bootRun --console=plain -q --args='--spring.datasource.url=jdbc:postgresql://localhost:5432/startcloud_auth --spring.datasource.password=startcloud'` |
+| Dev port            | 9595                                                                                                                                                                                                        |
+| UI pin              | `packaging/config/ui-version.yaml`                                                                                                                                                                          |
+| Fetch `ui/` by hand | `mkdir -p ui && curl -fsSL https://github.com/STARTcloud/startcloud-ui/releases/download/v<pin>/startcloud-ui-<pin>.tar.gz \| tar -xz -C ui`                                                                |
+| Compile and test    | `JAVA_HOME=~/.sdkman/candidates/java/25-tem ./gradlew compileGroovy compileTestGroovy --console=plain -q && JAVA_HOME=~/.sdkman/candidates/java/25-tem ./gradlew test --console=plain -q`                   |
+
+### 6.5 Mark's standing rulings from this round
+
+| Ruling                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No British spelling anywhere, American only, including identifiers.                                                                                                                                    |
+| The notifications files are requests to a repo or answers owed to one, never trackers; every done row leaves; goal zero lines.                                                                         |
+| There is no secrets handling of any kind: no encryption, hashing, masking, env vars or secret files for config values; the YAML is the plain-text source of truth; the UI may draw an eye-reveal only. |
+| Every client redirect, logout and cancel URI stays in the backend config and is always honored; a server-validated `next` may leave the origin.                                                        |
+| A question from Mark gets an answer and no action.                                                                                                                                                     |
+| Rulings and gaps go into the contracts by the auth-server session, never a local invention.                                                                                                            |
+| Every backend runs as its own service user and writes its own config directory.                                                                                                                        |
+| Subagents do every read and write and report short; the main session protects its context.                                                                                                             |
+| hyperweaver is outside this round.                                                                                                                                                                     |
+| The compaction banner is the first output after any compaction, then every relevant file is re-read whole.                                                                                             |
+
+Never say "twins": name the endpoint. Where a mockup and a contract disagree the contract wins and the mockup is corrected.
 
 ## 7. Footnotes
 
