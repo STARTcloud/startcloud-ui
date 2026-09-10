@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.11.0...v0.12.0) (2026-09-10)
+
+
+### Features
+
+* the configuration editor built to the settled config contract, the generic map, action components, the shared restart card, the empty state, merge-patch saves, the setup states, and the fixture and visual reference ([7c710d2](https://github.com/STARTcloud/startcloud-ui/commit/7c710d2fa63be4363bc3427b94e73dd0184671c5))
+
 ## [0.11.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.10.1...v0.11.0) (2026-09-09)
 
 
