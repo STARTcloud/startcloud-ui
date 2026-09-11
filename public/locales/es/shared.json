@@ -163,6 +163,7 @@
     "blocklist": "Introduce otra {{label}}; esta es demasiado común.",
     "writable": "Introduce un directorio en el que {{user}} pueda escribir para {{label}}.",
     "reachable": "Introduce un host y un puerto que respondan para {{label}}; {{host}}:{{port}} no respondió.",
+    "placeholder": "Define {{name}} en el entorno o da un valor predeterminado a {{label}}.",
     "unknown": "Revisa {{label}}."
   },
   "session": {

@@ -146,7 +146,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
 
   const restore = () => sessionOf(current());
 
-  const load = async ({ navigate }) => {
+  const load = async ({ navigate } = {}) => {
     claimsPromise = null;
     try {
       const profile = await api.get('/api/user', OPTIONAL);
@@ -161,7 +161,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
       if (error.status === 403 && error.code === 'onboarding_required') {
         store(error.data);
         const next = typeof error.data?.next === 'string' ? error.data.next : '';
-        if (SAFE_PATH.test(next)) {
+        if (navigate && SAFE_PATH.test(next)) {
           navigate(next, { replace: true });
         }
       }

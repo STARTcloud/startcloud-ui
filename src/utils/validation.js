@@ -39,6 +39,7 @@ const RULE_KEYS = [
   'blocklist',
   'writable',
   'reachable',
+  'placeholder',
 ];
 
 const isUri = value => {
@@ -459,8 +460,9 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * `personName`, `iconName`, `languageTag`, `timezone`) or `nonBlank` for
  * the contract's whitespace rule, a format and a type by theirs; the
  * config contract's `propertyNames` (`params.key`), `readOnly`,
- * `writable` (`params.user`) and `reachable` (`params.host`, `params.port`)
- * by their own keys; a rule the UI does not know through
+ * `writable` (`params.user`), `reachable` (`params.host`, `params.port`)
+ * and `placeholder` (`params.name`) by their own keys; a rule the UI does
+ * not know through
  * `validation.unknown` with the field's label, the error's `detail` never
  * shown.
  *

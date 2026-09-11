@@ -163,6 +163,7 @@
     "blocklist": "Enter a different {{label}}; this one is too common.",
     "writable": "Enter a directory that {{user}} can write to for {{label}}.",
     "reachable": "Enter a host and port that answer for {{label}}; {{host}}:{{port}} did not answer.",
+    "placeholder": "Set {{name}} in the environment or give {{label}} a default.",
     "unknown": "Check {{label}}."
   },
   "session": {
