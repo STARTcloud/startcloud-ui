@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.12.2...v0.13.0) (2026-09-11)
+
+
+### Features
+
+* brand links home on every host, root crumb, no lone tab strip ([83a21ba](https://github.com/STARTcloud/startcloud-ui/commit/83a21bab5f285eea00662de498c96b39fc61df61))
+
 ## [0.12.2](https://github.com/STARTcloud/startcloud-ui/compare/v0.12.1...v0.12.2) (2026-09-10)
 
 
