@@ -4023,10 +4023,10 @@
       <div class="callout changed">
         <strong>Changed: the dropdown.</strong> <code>userDropdown.js</code> builds Organizations
         and Integrations into the app section and its Admin row goes to
-        <code>/admin/dashboard</code>; on the shared chrome those are rows of the column, the crumbs
-        open the header row, and the rows are the contract's. The switcher is context, never
-        location: picking an organization changes what the console and the ticket id act on and
-        moves no page.
+        <code>/admin/dashboard</code>; on the shared chrome those are rows of the column, the header
+        row opens with the root crumb, the product name linking to <code>/</code>, then the crumbs,
+        and the rows are the contract's. The switcher is context, never location: picking an
+        organization changes what the console and the ticket id act on and moves no page.
       </div>
     </div>
   </div>
@@ -4661,16 +4661,17 @@
       </div>
       <div class="callout">
         <strong>Members and invitations</strong> are the tabs the shared console already draws, one
-        tab's content on screen at a time: the role select for an owner (ADMIN invitable by an owner
-        only), disabled on the last owner's own row so a team is never left without one, Remove
-        while <code>can_manage</code>, a managed row's source in place of the controls, Invite with
-        email and role, the pending list with Revoke; Leave hides for a solo owner and Delete
-        confirms with the solo-owner wording. A member without <code>can_manage</code> sees the
-        record and the members list read-only: the rename and profile fields need
-        <code>can_rename</code>, the invite code, Remove, Invite and the pending list need
-        <code>can_manage</code>, the role select, the default role and Delete need
-        <code>is_owner</code>. Every <code>logo_url</code> is drawn only with the
-        <code>https:</code> scheme.
+        tab's content on screen at a time, and a console whose tabs number one, the Organization tab
+        of an SSO-managed organization, draws no tab strip, that tab's content standing under the
+        page heading: the role select for an owner (ADMIN invitable by an owner only), disabled on
+        the last owner's own row so a team is never left without one, Remove while
+        <code>can_manage</code>, a managed row's source in place of the controls, Invite with email
+        and role, the pending list with Revoke; Leave hides for a solo owner and Delete confirms
+        with the solo-owner wording. A member without <code>can_manage</code> sees the record and
+        the members list read-only: the rename and profile fields need <code>can_rename</code>, the
+        invite code, Remove, Invite and the pending list need <code>can_manage</code>, the role
+        select, the default role and Delete need <code>is_owner</code>. Every
+        <code>logo_url</code> is drawn only with the <code>https:</code> scheme.
       </div>
       <div class="callout changed">
         <strong>Changed: fourteen form posts become one record.</strong>
@@ -5173,9 +5174,10 @@
         <code>sidebar(status, account)</code>, mounted by the <code>cookie</code> token and never a
         role branch inside the shared admin feature; the shell draws the column on every page of the
         issuer, the brand at its top per the navbar contract's Sidebar section, the header row
-        opening with the crumbs; one page per row, the row's route the deep link (decision 17); no
-        page draws a tab strip of the same names, since one navigation on screen twice is one too
-        many; the chrome's user menu carries no Admin row on the issuer.
+        opening with the root crumb, the product name linking to <code>/</code>, then the crumbs;
+        one page per row, the row's route the deep link (decision 17); no page draws a tab strip of
+        the same names, since one navigation on screen twice is one too many; the chrome's user menu
+        carries no Admin row on the issuer.
       </div>
       <div class="callout">
         <strong>Filters are on the page.</strong> The Users page draws its search field, a Status

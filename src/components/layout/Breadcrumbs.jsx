@@ -17,8 +17,8 @@ const Separator = () => (
   </li>
 );
 
-const CrumbLink = ({ crumb, LinkComponent }) => {
-  if (crumb.to) {
+const CrumbLink = ({ crumb, last, LinkComponent }) => {
+  if (!last && crumb.to) {
     return (
       <LinkComponent to={crumb.to} className={CRUMB_CLASS}>
         {crumb.icon}
@@ -26,7 +26,7 @@ const CrumbLink = ({ crumb, LinkComponent }) => {
       </LinkComponent>
     );
   }
-  if (crumb.href) {
+  if (!last && crumb.href) {
     return (
       <a href={crumb.href} className={CRUMB_CLASS}>
         {crumb.icon}
@@ -44,15 +44,22 @@ const CrumbLink = ({ crumb, LinkComponent }) => {
 
 CrumbLink.propTypes = {
   crumb: crumbShape.isRequired,
+  last: PropTypes.bool.isRequired,
   LinkComponent: PropTypes.elementType.isRequired,
 };
 
-const Crumbs = ({ crumbs, LinkComponent = 'a' }) =>
-  crumbs.map(crumb => (
+/**
+ * The crumbs of the header row: every crumb but the last a link to its
+ * route, the last the page itself as plain text, a muted separator
+ * before each one and, with `leading` off, none before the first, the
+ * case of a host with a column whose row opens with the root crumb.
+ */
+const Crumbs = ({ crumbs, LinkComponent = 'a', leading = true }) =>
+  crumbs.map((crumb, index) => (
     <Fragment key={crumb.key}>
-      <Separator />
+      {leading || index > 0 ? <Separator /> : null}
       <li className="nav-item">
-        <CrumbLink crumb={crumb} LinkComponent={LinkComponent} />
+        <CrumbLink crumb={crumb} last={index === crumbs.length - 1} LinkComponent={LinkComponent} />
       </li>
     </Fragment>
   ));
@@ -60,6 +67,7 @@ const Crumbs = ({ crumbs, LinkComponent = 'a' }) =>
 Crumbs.propTypes = {
   crumbs: PropTypes.arrayOf(crumbShape).isRequired,
   LinkComponent: PropTypes.elementType,
+  leading: PropTypes.bool,
 };
 
 export default Crumbs;

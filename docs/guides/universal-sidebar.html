@@ -346,12 +346,30 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
     font-size: 15px;
-    cursor: pointer;
     text-align: left;
     width: 100%;
     box-sizing: border-box;
   }
-  .sb-top:hover {
+  .sb-top .sb-home,
+  .sb-top .chev {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+  }
+  .sb-top .sb-home {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+  .sb-top .sb-home:hover,
+  .sb-top .chev:hover {
     background: var(--surface-2);
   }
   .sb-top .brand-mark {
@@ -367,10 +385,20 @@
   .sb-top .chev {
     color: var(--muted);
     font-size: 12px;
+    padding: 0 8px;
   }
   .sb.rail .sb-top {
     padding: 0;
     justify-content: center;
+  }
+  .sb.rail .sb-top .sb-home {
+    flex: 0 0 auto;
+  }
+  .crumbs a {
+    color: var(--text);
+  }
+  .crumbs a:hover {
+    color: var(--primary);
   }
   .sb.rail .sb-top .pn,
   .sb.rail .sb-top .chev,
@@ -806,15 +834,16 @@
     <p>
       One sidebar for every UI backend that needs one, and none for the ones that do not. The manner
       is borrowed from hyperweaver: the column runs the full height of the viewport on the left, its
-      top is the brand mark and the product name, a click there collapses it to a 38px rail and
-      expands it again, and the navbar, the page and the footer sit to its right and move with it.
-      The window never scrolls: the column's entries and the page each scroll inside themselves, and
-      the footer stays the one fixed row. A feature fills the column by exporting entries, gated by
-      the same tokens and roles that gate its routes; a UI backend with no entries keeps the
-      sidebar-less chrome BoxVault and the catalog have today, with the brand in the header. Two
-      entry kinds share one column: sections of links, the shape the authorization server's admin
-      needs, and a live tree, the shape the fleet monitor's pools would take. The first frame is
-      live: pick a UI backend, click the brand to collapse, scroll inside the column and the page.
+      top is the brand mark and the product name, one link to the root of the backend, beside a
+      chevron that alone collapses it to a 38px rail, the mark in the rail expanding it again, and
+      the navbar, the page and the footer sit to its right and move with it. The window never
+      scrolls: the column's entries and the page each scroll inside themselves, and the footer stays
+      the one fixed row. A feature fills the column by exporting entries, gated by the same tokens
+      and roles that gate its routes; a UI backend with no entries keeps the sidebar-less chrome
+      BoxVault and the catalog have today, with the brand in the header. Two entry kinds share one
+      column: sections of links, the shape the authorization server's admin needs, and a live tree,
+      the shape the fleet monitor's pools would take. The first frame is live: pick a UI backend,
+      click the chevron to collapse, the brand to go home, scroll inside the column and the page.
     </p>
     <span class="legend"
       ><span class="sw"></span>a yellow note marks what this design changes against the chrome as it
@@ -851,8 +880,11 @@
       </div>
       <div class="callout changed">
         <strong>Changed: the brand moves.</strong> With a sidebar the brand mark and product name
-        are the sidebar's top and its collapse control; the header row then opens with the crumbs.
-        Without a sidebar the header keeps the brand as today.
+        are the sidebar's top, one link to `/`, so the brand means home on every host; the chevron
+        beside them alone collapses the column, and in the rail the mark expands it. The header row
+        then opens with the root crumb, the product name linking to `/`, then the crumbs, so there
+        is always a way back to the home page. Without a sidebar the header keeps the brand as
+        today.
       </div>
       <div class="callout changed">
         <strong>Changed: the foot is bare unless a feature exports `actionMenu`.</strong> Without
@@ -883,7 +915,8 @@
           <div class="shell">
             <div class="sb">
               <span class="sb-top"
-                ><span class="brand-mark">S</span><span class="pn">STARTcloud</span
+                ><span class="sb-home"
+                  ><span class="brand-mark">S</span><span class="pn">STARTcloud</span></span
                 ><span class="chev">⟨</span></span
               >
               <div class="sb-nav">
@@ -896,7 +929,10 @@
             </div>
             <div class="main">
               <div class="navbar">
-                <div class="crumbs">Admin<span class="sep">›</span>Users</div>
+                <div class="crumbs">
+                  <a href="#">STARTcloud</a><span class="sep">›</span>Admin<span class="sep">›</span
+                  >Users
+                </div>
                 <div class="cluster"><span class="avatar"></span></div>
               </div>
               <div class="content"><div class="ghost">page</div></div>
@@ -920,7 +956,8 @@
             <div class="main">
               <div class="navbar">
                 <div class="crumbs">
-                  Fleet<span class="sep">›</span>Engineering<span class="sep">›</span>vdi-eng-014
+                  <a href="#">VDI Health</a><span class="sep">›</span>Fleet<span class="sep">›</span
+                  ><a href="#">Engineering</a><span class="sep">›</span>vdi-eng-014
                 </div>
                 <div class="cluster"><span class="avatar"></span></div>
               </div>
@@ -953,8 +990,9 @@
       <div class="callout">
         <strong>Brand.</strong> The navbar contract fixes a 62px header with the brand first and the
         cluster last; with a sidebar the brand is the column's top instead, at the same 62px so the
-        two seams align, and the header row opens with the crumbs. The mark, the product name and
-        the collapse are one control; in the rail only the mark remains and the click expands.
+        two seams align, and the header row opens with the root crumb, the product name linking to
+        `/`, then the crumbs. The mark and the product name are one link to `/`, the chevron alone
+        the collapse; in the rail only the mark remains and a click on it expands.
       </div>
       <div class="callout">
         <strong>Profile.</strong> Every UI backend keeps the header row and its cluster; the
@@ -1202,9 +1240,9 @@
             >
             <span class="c k">top</span
             ><span class="c"
-              >one button, 62px: the brand mark, the product name and a chevron; click or Enter
-              toggles the rail; in the rail the mark alone, titled "Expand"; the header row then
-              carries no brand</span
+              >two controls, 62px: the brand mark and the product name one link to `/`, the chevron
+              alone toggling the rail; in the rail the mark alone, titled "Expand", expands; the
+              header row then carries no brand and opens with the root crumb</span
             >
             <span class="c k">row</span
             ><span class="c"
@@ -1387,6 +1425,7 @@
         features: ['admin', 'tfa', 'onboarding', 'inbox'],
         title: 'Admin',
         active: 'users',
+        home: 'profile',
         sections: [
           {
             label: 'Account',
@@ -1462,6 +1501,7 @@
         features: ['admin', 'org-console', 'uploads', 'watches'],
         title: 'Admin',
         active: 'orgusers',
+        homeTitle: 'Home',
         sections: [
           {
             label: 'Admin',
@@ -1484,6 +1524,7 @@
         features: ['fleet', 'events', 'admin'],
         title: 'Fleet',
         active: 'fleet',
+        home: 'fleet',
         sections: [{ label: '', items: [{ key: 'fleet', icon: '▦', label: 'Fleet', to: '/' }] }],
         views: [
           {
@@ -1567,6 +1608,7 @@
         features: ['machines', 'zfs', 'tasks', 'host-power'],
         title: 'Datacenter',
         active: 'zone-1',
+        home: 'dc',
         actionMenu: {
           'zone-1': 'Machine controls',
           'zone-2': 'Machine controls',
@@ -1679,11 +1721,20 @@
           esc(b.brand) +
           '</span>'
         : '';
+      var trail = b.none ? crumbs : [b.brand].concat(crumbs);
       c +=
         '<div class="crumbs">' +
-        crumbs
-          .map(function (x) {
-            return '<span class="sep">›</span><span>' + esc(x) + '</span>';
+        trail
+          .map(function (x, i) {
+            var sep = b.none || i > 0 ? '<span class="sep">›</span>' : '';
+            var last = i === trail.length - 1;
+            var link = !b.none && i === 0;
+            return (
+              sep +
+              (last
+                ? '<span>' + esc(x) + '</span>'
+                : '<a href="#" data-act="' + (link ? 'home' : 'crumb') + '">' + esc(x) + '</a>')
+            );
           })
           .join('') +
         '</div>';
@@ -1755,16 +1806,21 @@
         .join('');
     };
     var sidebarHtml = function (b) {
+      var top = state.rail
+        ? '<button class="sb-home" data-act="rail" title="Expand"><span class="brand-mark">' +
+          esc(b.mark) +
+          '</span></button>'
+        : '<button class="sb-home" data-act="home" title="Home"><span class="brand-mark">' +
+          esc(b.mark) +
+          '</span><span class="pn">' +
+          esc(b.brand) +
+          '</span></button><button class="chev" data-act="rail" title="Collapse">⟨</button>';
       var h =
         '<div class="sb' +
         (state.rail ? ' rail' : '') +
-        '"><button class="sb-top" data-act="rail" title="' +
-        (state.rail ? 'Expand' : 'Collapse') +
-        '"><span class="brand-mark">' +
-        esc(b.mark) +
-        '</span><span class="pn">' +
-        esc(b.brand) +
-        '</span><span class="chev">⟨</span></button><div class="sb-nav">';
+        '"><div class="sb-top">' +
+        top +
+        '</div><div class="sb-nav">';
       (b.sections || []).forEach(function (s) {
         h += '<div>' + (s.label ? '<div class="sb-sec">' + esc(s.label) + '</div>' : '');
         s.items.forEach(function (it) {
@@ -1839,6 +1895,8 @@
         if (item) {
           var path = tr ? pathTo(tr, item.key, []) : null;
           crumbs = b.crumbs(item, path || [item.label]);
+        } else if (state.active === 'home') {
+          crumbs = b.homeTitle ? [b.homeTitle] : [];
         }
       } else {
         crumbs = b.crumbs();
@@ -1866,15 +1924,18 @@
             .join('') +
           '</div>';
       }
+      var home = !b.none && state.active === 'home';
       h +=
         '<div class="content"><h2>' +
-        esc(item ? item.label : b.none ? b.page : b.title) +
+        esc(item ? item.label : b.none ? b.page : home ? b.homeTitle || b.brand : b.title) +
         '</h2><span class="kv">GET ' +
-        esc(item ? item.to : b.path) +
+        esc(item ? item.to : b.none ? b.path : '/') +
         '</span><div class="ghost">' +
         (b.none
           ? "No feature of this UI backend exported sidebar entries; the chrome is exactly today's, the brand in the header."
-          : 'the page this entry routes to; the column never draws page content') +
+          : home
+            ? 'the root of this UI backend, reached from the brand at the top of the column; no row matches, so the crumbs are the root crumb and the page title'
+            : 'the page this entry routes to; the column never draws page content') +
         '</div><div class="ghost">page content, scrolling in this region alone</div><div class="ghost"></div><div class="ghost"></div><div class="ghost">the footer below never moves</div></div>';
       h +=
         '<div class="site-footer"><span>' +
@@ -1901,12 +1962,15 @@
         ' · features=[' +
         esc(b.features.join(', ')) +
         ']</span></span></div>' +
-        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the brand at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
+        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the chevron at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it, and a click on the mark expands it · click the brand at the top of the column or the root crumb, the page goes to the root of the backend · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route after the root crumb, every crumb but the last a link, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
     };
     var onClick = function (e) {
       var el = e.target.closest('[data-backend], [data-act], [data-toggle], [data-pick]');
       if (!el) {
         return;
+      }
+      if (el.tagName === 'A') {
+        e.preventDefault();
       }
       if (el.hasAttribute('data-backend')) {
         state.backend = el.getAttribute('data-backend');
@@ -1915,6 +1979,10 @@
         state.view = null;
       } else if (el.getAttribute('data-act') === 'rail') {
         state.rail = !state.rail;
+      } else if (el.getAttribute('data-act') === 'home') {
+        state.active = backends[state.backend].home || 'home';
+      } else if (el.getAttribute('data-act') === 'crumb') {
+        return;
       } else if (el.hasAttribute('data-toggle')) {
         e.stopPropagation();
         var n = findNode(treeOf(backends[state.backend]), el.getAttribute('data-toggle'));

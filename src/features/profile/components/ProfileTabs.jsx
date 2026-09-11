@@ -4,10 +4,14 @@ import { useTranslation } from 'react-i18next';
 /**
  * The tab strip of the profile page: one button per tab, the active one
  * marked, and a plain link for any entry carrying an `href`, such as the
- * link out to the identity provider's own profile page.
+ * link out to the identity provider's own profile page; no strip at all
+ * while the tabs number one.
  */
 const ProfileTabs = ({ tabs, activeTab, onChange }) => {
   const { t } = useTranslation();
+  if (tabs.length < 2) {
+    return null;
+  }
   return (
     <ul className="nav nav-tabs">
       {tabs.map(tab => (

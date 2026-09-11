@@ -294,12 +294,14 @@ side.
   sidebar's entries scroll under its top, the page scrolls between the
   header and the footer, and the footer stays the one fixed row of the
   metrics above.
-- **Top.** One 62px button: the brand mark, the product name and a
-  chevron; a click or Enter collapses the sidebar to a 38px rail and
-  expands it again, and in the rail the mark alone remains, titled
-  Expand. While a sidebar is drawn the header row opens with the crumbs
-  and carries no brand; without one the header keeps the brand. Never
-  two brands at once.
+- **Top.** Two controls in one 62px row: the brand mark and the product
+  name are one link to `/`, so the brand means home on every host, and
+  the chevron alone collapses the column to a 38px rail; in the rail the
+  mark alone is drawn, titled Expand, and a click on it expands the
+  column. While a sidebar is drawn the header row opens with the root
+  crumb, the product name linking to `/`, then the crumbs, and carries no
+  brand; without one the header keeps the brand. Never two brands at
+  once.
 - **Metrics.** The tertiary band with a right border, 260px by default,
   180 to 400px by the drag handle on its right edge, 38px as the rail,
   the same 20px gutter inside.
@@ -522,8 +524,8 @@ Native theme files, one of each in the repository:
 - `src/components/layout/` — the whole chrome as one folder: `Header.jsx`
   (brand slot, empty while a sidebar is drawn, crumbs slot, the cluster
   with search, theme, language and account, the search panel),
-  `Sidebar.jsx` (the Sidebar section: the top button, the sections and
-  tree entries, the rail, the foot), `Breadcrumbs.jsx` (plain crumbs from the
+  `Sidebar.jsx` (the Sidebar section: the top link and its chevron, the
+  sections and tree entries, the rail, the foot), `Breadcrumbs.jsx` (plain crumbs from the
   route alone), `UserMenu.jsx` with
   `IdentityCard.jsx`, `LogoutItem.jsx`, `FavoriteApps.jsx` and
   `NotificationsItem.jsx`, the three modals `LanguageModal.jsx`,

@@ -14,7 +14,7 @@ import { reportRenderError } from '../../lib/logger';
 import { returnTo } from '../../lib/runtime';
 import { authMethod, hasFeature } from '../../utils/capabilities';
 import { userDisplayName, userSecondaryLine } from '../../utils/identity';
-import { buildRouteCrumbs, parseRoute } from '../../utils/routes';
+import { buildRouteCrumbs, parseRoute, rootCrumb, titleCrumb } from '../../utils/routes';
 import Avatar from '../common/Avatar';
 import BrandLogo from '../common/BrandLogo';
 import ErrorBoundary from '../common/ErrorBoundary';
@@ -219,6 +219,28 @@ const useRouteOrgLogo = (routeOrg, signedIn, logoFor) => {
   return resolved.name === routeOrg ? resolved.logo : '';
 };
 
+const shellCrumbs = ({
+  showSidebar,
+  sidebarMatch,
+  routeCrumbs,
+  reservedRoute,
+  name,
+  titleKey,
+  t,
+}) => {
+  if (!showSidebar) {
+    return routeCrumbs;
+  }
+  const root = rootCrumb(name);
+  if (sidebarMatch.length > 0) {
+    return [root, ...sidebarMatch];
+  }
+  if (routeCrumbs.length > 0) {
+    return [root, ...routeCrumbs];
+  }
+  return reservedRoute ? [root, ...titleCrumb(titleKey, t)] : [root];
+};
+
 const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) => {
   const route = parseRoute(pathname, { reserved, collections });
   const routeOrg = route?.org || '';
@@ -233,7 +255,7 @@ const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) 
       fallback={orgs.crumbMark || null}
     />
   );
-  return signedIn ? buildRouteCrumbs({ route, t, orgIcon }) : [];
+  return { crumbs: signedIn ? buildRouteCrumbs({ route, t, orgIcon }) : [], reserved: !route };
 };
 
 const useSessionEndedBanner = (ended, signInTo) => {
@@ -364,10 +386,13 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * The whole chrome around the routes, described by the host's status: the
  * sidebar first when the mounted features exported entries for it, then
  * the header with the brand from `status.brand` (in the sidebar's top
- * while one draws), the utility links from `status.links`, the route
- * crumbs (`<group> › <row>` on a route a sidebar row matches, and
- * `<group> › <node> › …` down the loaded tree on a route a tree node
- * matches, the way the sidebar mock's `pathTo` walks it), the user
+ * while one draws, one link to `/`), the utility links from
+ * `status.links`, the route crumbs (opened with the root crumb, the
+ * product name linking to `/`, while the sidebar draws; `<group> › <row>`
+ * on a route a sidebar row matches, `<group> › <node> › …` down the
+ * loaded tree on a route a tree node matches, the way the sidebar mock's
+ * `pathTo` walks it, and the page's title from `routeTitleKey` on a
+ * reserved route no row matches, so the row is never empty), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
  * the chrome; and the footer while the host lists the `footer` token. The
@@ -401,6 +426,7 @@ const AppShell = ({
   appRows = null,
   fetchHealth = null,
   sidebar = [],
+  routeTitleKey = null,
   children,
 }) => {
   const { t, i18n } = useTranslation();
@@ -434,13 +460,20 @@ const AppShell = ({
     setTrees(previous => ({ ...previous, [key]: tree }));
   }, []);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
-  const routeCrumbs = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
+  const route = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
   const nodeCrumbs = showSidebar
     ? treeCrumbs({ groups: sidebar, trees, current: `${pathname}${search}`, t })
     : [];
   const rowCrumbs = showSidebar ? sidebarCrumbs({ groups: sidebar, pathname, t }) : [];
-  const sidebarMatch = nodeCrumbs.length > 0 ? nodeCrumbs : rowCrumbs;
-  const crumbs = sidebarMatch.length > 0 ? sidebarMatch : routeCrumbs;
+  const crumbs = shellCrumbs({
+    showSidebar,
+    sidebarMatch: nodeCrumbs.length > 0 ? nodeCrumbs : rowCrumbs,
+    routeCrumbs: route.crumbs,
+    reservedRoute: route.reserved,
+    name: status.brand.name,
+    titleKey: routeTitleKey ? routeTitleKey(pathname) : '',
+    t,
+  });
   useSessionEndedBanner(
     Boolean(account.sessionEnded) && !signedIn && !anonymous,
     bannerSignInFor({ account, hidden: signInHidden })
@@ -536,7 +569,7 @@ const AppShell = ({
     <div className="App app-with-sidebar d-flex vh-100">
       <Sidebar
         entries={sidebar}
-        brand={{ name: brand.name, logo: brand.logo }}
+        brand={brand}
         badges={badges}
         open={overlay.open}
         onClose={overlay.close}
@@ -567,6 +600,7 @@ AppShell.propTypes = {
   appRows: PropTypes.node,
   fetchHealth: PropTypes.func,
   sidebar: PropTypes.arrayOf(sidebarGroupShape),
+  routeTitleKey: PropTypes.func,
   children: PropTypes.node.isRequired,
 };
 

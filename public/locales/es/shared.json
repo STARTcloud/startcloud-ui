@@ -35,6 +35,7 @@
     "catalog": "Provisioner Catalog",
     "versionShort": "v{{version}}",
     "sidebar": {
+      "home": "Inicio de {{name}}",
       "expand": "Expandir la barra lateral",
       "collapse": "Contraer la barra lateral",
       "resize": "Cambiar el ancho de la barra lateral",

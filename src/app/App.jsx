@@ -40,7 +40,7 @@ import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
 import { isManager } from '../utils/membership';
 
-import AppRoutes, { sidebarEntries } from './router';
+import AppRoutes, { routeTitleKey, sidebarEntries } from './router';
 
 const isGlobalAdmin = user =>
   Boolean(user?.roles?.includes('ROLE_ADMIN') || user?.authorities?.includes('ROLE_ADMIN'));
@@ -169,6 +169,7 @@ const App = ({ getSupportedLanguages }) => {
           notifications={inbox}
           push={pushAdapter}
           sidebar={sidebar}
+          routeTitleKey={routeTitleKey}
           {...flags}
         >
           <AppRoutes

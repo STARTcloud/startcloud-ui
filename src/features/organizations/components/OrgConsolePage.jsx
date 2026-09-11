@@ -96,43 +96,34 @@ const OrgConsoleTabs = ({
   const { t } = useTranslation();
   const showJoinRequests = !isExternalOrg || orgAccessMode === 'request_to_join';
   const showInvitations = !isExternalOrg && invitationsEnabled;
+  const tabs = [
+    { key: 'organization', labelKey: 'orgConsole.tabs.organization', count: 0 },
+    ...(showJoinRequests
+      ? [{ key: 'joinRequests', labelKey: 'orgConsole.tabs.joinRequests', count: joinRequestCount }]
+      : []),
+    ...(showInvitations
+      ? [{ key: 'invitations', labelKey: 'orgConsole.tabs.invitations', count: 0 }]
+      : []),
+  ];
+
+  if (tabs.length < 2) {
+    return null;
+  }
 
   return (
     <ul className="nav nav-tabs">
-      <li className="nav-item">
-        <button
-          type="button"
-          className={`nav-link ${activeTab === 'organization' ? 'active' : ''}`}
-          onClick={() => setActiveTab('organization')}
-        >
-          {t('orgConsole.tabs.organization')}
-        </button>
-      </li>
-      {showJoinRequests && (
-        <li className="nav-item">
+      {tabs.map(tab => (
+        <li key={tab.key} className="nav-item">
           <button
             type="button"
-            className={`nav-link ${activeTab === 'joinRequests' ? 'active' : ''}`}
-            onClick={() => setActiveTab('joinRequests')}
+            className={`nav-link ${activeTab === tab.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}
           >
-            {t('orgConsole.tabs.joinRequests')}
-            {joinRequestCount > 0 && (
-              <span className="badge bg-warning ms-2">{joinRequestCount}</span>
-            )}
+            {t(tab.labelKey)}
+            {tab.count > 0 && <span className="badge bg-warning ms-2">{tab.count}</span>}
           </button>
         </li>
-      )}
-      {showInvitations && (
-        <li className="nav-item">
-          <button
-            type="button"
-            className={`nav-link ${activeTab === 'invitations' ? 'active' : ''}`}
-            onClick={() => setActiveTab('invitations')}
-          >
-            {t('orgConsole.tabs.invitations')}
-          </button>
-        </li>
-      )}
+      ))}
     </ul>
   );
 };
@@ -505,7 +496,8 @@ InvitationsTable.propTypes = {
  * organization, the read-only profile and the provider link of an
  * IdP-managed one, the members with role and removal controls), Join
  * requests (approve as member or admin, deny) and Invitations (send, list,
- * delete, when the host advertises `invitations`), each tab's list
+ * delete, when the host advertises `invitations`), no tab strip while the
+ * tabs number one, each tab's list
  * searched from the navbar, every call through the app's `organizations`
  * adapter; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under

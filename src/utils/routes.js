@@ -48,6 +48,18 @@ export const parseRoute = (pathname, { reserved, collections }) => {
   };
 };
 
+/**
+ * The root crumb a host with a column opens its crumbs with: the product
+ * name, linking to `/`.
+ */
+export const rootCrumb = name => ({ key: 'root', label: name, to: '/' });
+
+/**
+ * The page's title as the second crumb of a reserved route no sidebar
+ * row matches, from the route's registered title key; none without one.
+ */
+export const titleCrumb = (titleKey, t) => (titleKey ? [{ key: 'title', label: t(titleKey) }] : []);
+
 export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
   if (!route) {
     return [];

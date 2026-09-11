@@ -532,7 +532,8 @@ Settled before code, in the order they were raised:
 5. `GET /api/config/<name>` answers the raw file and nothing else.
 6. `PUT /api/config/<name>` is a JSON Merge Patch (RFC 7396): `null`
    removes, a blank is written blank, an omitted key is untouched, an array
-   replaces whole; the unfilled merge is what is written.
+   replaces whole; the unfilled merge is what is written; the authorization
+   server's placeholders are the one exception, decision 87.
 7. The write is a temp file in the same directory renamed over the target,
    mode `0600`, with one `<name>.config.yaml.bak` beside it; timestamped
    backups go.
@@ -788,6 +789,20 @@ Settled before code, in the order they were raised:
     alone, because a mail host or a database peer that is down at boot
     must never keep a service from starting, and the person saving is the
     one who can act on the answer.
+87. The authorization server alone may write `${NAME:default}` placeholders
+    in `application.config.yaml`; every other backend stays on decision 6
+    with no placeholders. The engine resolves a placeholder from the
+    process environment at `load`; the default applies when the name is
+    unset; a placeholder with neither a value nor a default is a validation
+    failure with rule `placeholder`, `params: { "name": "<NAME>" }`, at the
+    leaf's pointer. `GET` answers the raw file with every placeholder leaf as
+    `{ "value": "${NAME:default}", "resolved": true }`, the placeholder text
+    intact, so the editor can show the live value on reveal. On `PUT` a leaf that held a
+    placeholder keeps it when the merge patch omits it; a patch that sets
+    the leaf writes the literal and detaches it from the environment. The
+    packaged unit keeps `EnvironmentFile=/etc/auth-server/env`, readable by
+    the service user only. At cutover only values with no placeholder in
+    the file move by hand.
 
 ---
 

@@ -26,7 +26,8 @@ const nameOf = pointer => pointer.slice(1);
 
 /**
  * The Configuration page of the admin feature: one tab per name in the
- * host's `status.config`, labelled by the file's schema root `title`;
+ * host's `status.config`, labelled by the file's schema root `title`, no
+ * tab strip while the names number one, Update alone in its place;
  * `config: []`, a missing member and an adapter without `config` draw the
  * empty state `configManager.noFiles` and no tab, no Update and no
  * Restart; the selected file and its schema fetched together, the sections
@@ -160,26 +161,34 @@ const AdminConfig = ({ config: configApi = null }) => {
 
   return (
     <div className="mt-5">
-      <ul className="nav nav-tabs d-flex">
-        {configNames.map(configName => (
-          <li className="nav-item" key={configName}>
-            <button
-              type="button"
-              className={`nav-link ${selectedConfig === configName ? 'active' : ''} ${
-                selectedConfig === configName && hasErrors ? 'text-danger' : ''
-              }`}
-              onClick={() => setSelectedConfig(configName)}
-            >
-              {schemas[configName]?.title || configName}
+      {configNames.length > 1 ? (
+        <ul className="nav nav-tabs d-flex">
+          {configNames.map(configName => (
+            <li className="nav-item" key={configName}>
+              <button
+                type="button"
+                className={`nav-link ${selectedConfig === configName ? 'active' : ''} ${
+                  selectedConfig === configName && hasErrors ? 'text-danger' : ''
+                }`}
+                onClick={() => setSelectedConfig(configName)}
+              >
+                {schemas[configName]?.title || configName}
+              </button>
+            </li>
+          ))}
+          <li className="nav-item ms-auto">
+            <button type="button" className="nav-link cursor-pointer" onClick={updateConfig}>
+              {t('configManager.buttons.update')}
             </button>
           </li>
-        ))}
-        <li className="nav-item ms-auto">
-          <button type="button" className="nav-link cursor-pointer" onClick={updateConfig}>
+        </ul>
+      ) : (
+        <div className="d-flex justify-content-end">
+          <button type="button" className="btn btn-link" onClick={updateConfig}>
             {t('configManager.buttons.update')}
           </button>
-        </li>
-      </ul>
+        </div>
+      )}
       <div className="config-container mt-3">
         <RestartCard
           restartStatus={configApi.restartStatus}

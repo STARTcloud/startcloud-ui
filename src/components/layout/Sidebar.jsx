@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCaretDown, FaCaretRight, FaChevronLeft } from 'react-icons/fa6';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 const WIDTH_KEY = 'sidebar_width';
 const MINIMIZED_KEY = 'sidebar_minimized';
@@ -437,9 +437,10 @@ const useResize = (asideRef, setWidth) => {
 };
 
 /**
- * The sidebar of the navbar contract's Sidebar section: the 62px top
- * button with the brand mark, the product name and a chevron that
- * collapses the column to a 38px rail and expands it again; the tertiary
+ * The sidebar of the navbar contract's Sidebar section: the 62px top row
+ * with the brand mark and the product name as one link to `brand.to`, the
+ * root, beside a chevron that alone collapses the column to a 38px rail,
+ * the mark alone in the rail expanding it again; the tertiary
  * band, 260px by default and 180 to 400px by the drag handle on its right
  * edge; the section entries (an uppercase label, rows of an icon, a label
  * and an optional badge, active by route, an `external` row followed as
@@ -486,7 +487,8 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
   const className = ['sidebar', minimized ? 'sidebar-rail' : '', open ? 'sidebar-open' : '']
     .filter(Boolean)
     .join(' ');
-  const topTitle = minimized ? t('navbar.sidebar.expand') : t('navbar.sidebar.collapse');
+  const expandTitle = t('navbar.sidebar.expand');
+  const collapseTitle = t('navbar.sidebar.collapse');
 
   return (
     <>
@@ -496,18 +498,41 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
         className={className}
         style={minimized ? undefined : { width: `${width}px` }}
       >
-        <button
-          type="button"
-          className="sidebar-top"
-          title={topTitle}
-          aria-label={topTitle}
-          aria-expanded={!minimized}
-          onClick={toggleMinimized}
-        >
-          {brand.logo}
-          <span className="sidebar-top-name">{brand.name}</span>
-          <FaChevronLeft className="sidebar-top-chevron" />
-        </button>
+        <div className="sidebar-top">
+          {minimized ? (
+            <button
+              type="button"
+              className="sidebar-top-mark"
+              title={expandTitle}
+              aria-label={expandTitle}
+              aria-expanded={false}
+              onClick={toggleMinimized}
+            >
+              {brand.logo}
+            </button>
+          ) : (
+            <>
+              <Link
+                to={brand.to}
+                className="sidebar-top-brand"
+                aria-label={t('navbar.sidebar.home', { name: brand.name })}
+              >
+                {brand.logo}
+                <span className="sidebar-top-name">{brand.name}</span>
+              </Link>
+              <button
+                type="button"
+                className="sidebar-top-chevron"
+                title={collapseTitle}
+                aria-label={collapseTitle}
+                aria-expanded
+                onClick={toggleMinimized}
+              >
+                <FaChevronLeft />
+              </button>
+            </>
+          )}
+        </div>
         <nav className="sidebar-nav" aria-label={t('navbar.sidebar.navigation')}>
           <div ref={navRef} role="presentation" onKeyDown={onKeyDown}>
             {entries.map(group => (
@@ -546,6 +571,7 @@ Sidebar.propTypes = {
   brand: PropTypes.shape({
     name: PropTypes.string.isRequired,
     logo: PropTypes.node.isRequired,
+    to: PropTypes.string.isRequired,
   }).isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   open: PropTypes.bool.isRequired,

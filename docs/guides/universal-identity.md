@@ -1450,7 +1450,9 @@ replays inside its window and a guessing run meets `429` with
 - **ProfilePage** keeps its avatar card, its tab strip and its `account`
   adapter; the issuer's adapter carries more members and the page draws a
   tab only when the adapter has its calls, the way the admin page draws
-  System only when the adapter carries `storage`:
+  System only when the adapter carries `storage`; a page whose tabs
+  number one, the console, the profile and the admin page alike, draws
+  no tab strip, that tab's content standing under the page heading:
   - **Profile**: given names, family name, middle name, salutation (the six
     choices plus custom), gender (male, female, custom, unspecified),
     website, birthdate as a `type="date"` input, the email read-only with a
@@ -1704,8 +1706,10 @@ exports none of them on the issuer, whose adapter carries none; the
 shared feature never branches on the UI backend's role, because a UI
 backend that needs a different column adds a feature and opts into it,
 never a role branch inside a shared one. The column shows the brand at
-its top and the header row opens with the crumbs (`Account › Profile`,
-`Admin › Users`), the group a plain word and the row a link; the user
+its top, one link to `/`, and the header row opens with the root crumb,
+the product name linking to `/`, then the crumbs
+(`STARTcloud › Account › Profile`, `STARTcloud › Admin › Users`), the
+group a plain word and the row the last crumb, plain text; the user
 menu keeps its universal rows, its app section headed by `brand.name`
 holding the `links.docs` and `links.contact` rows alone, no Admin row
 and no Preferences row, since Dashboard and Profile are rows of the
@@ -2257,6 +2261,8 @@ Settled before code, in the order they were raised:
      with the `$defs` name; the inbox list query is `unread_only`.
 104. The push worker is `/notification-sw.js` at the origin root, scope
      `/push/`, the two headers sent on that one path.
+105. A page whose tabs number one draws no tab strip; that tab's content
+     stands under the page heading.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

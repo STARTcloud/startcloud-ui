@@ -251,12 +251,13 @@ rule the way it has one per keyword. A UI backend that needs another name adds i
 here first; a `rule` the UI does not know paints from `validation.unknown`
 with the field's label, and the `detail` is never shown.
 
-| Rule        | Meaning                                                      | `params`         |
-| ----------- | ------------------------------------------------------------ | ---------------- |
-| `checksum`  | the checksum is not the length its type requires             | `type`, `length` |
-| `blocklist` | the password is on the route's blocklist                     | none             |
-| `writable`  | a configured directory cannot be written by the service user | `user`           |
-| `reachable` | a configured host and port did not answer                    | `host`, `port`   |
+| Rule          | Meaning                                                                                              | `params`         |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ---------------- |
+| `checksum`    | the checksum is not the length its type requires                                                     | `type`, `length` |
+| `blocklist`   | the password is on the route's blocklist                                                             | none             |
+| `writable`    | a configured directory cannot be written by the service user                                         | `user`           |
+| `reachable`   | a configured host and port did not answer                                                            | `host`, `port`   |
+| `placeholder` | a `${NAME}` placeholder in a configuration file has neither a value in the environment nor a default | `name`           |
 
 The client-only `equals` and `custom` keywords of a page schema answer in the
 UI with `validation.equals` and the `rule` the `custom` function names.

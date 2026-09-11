@@ -641,6 +641,36 @@ const tabsFor = invitationsEnabled => {
   return tabs;
 };
 
+const ConsoleTabs = ({ tabs, currentTab, onPick }) => {
+  const { t } = useTranslation();
+  if (tabs.length < 2) {
+    return null;
+  }
+  return (
+    <ul className="nav nav-tabs">
+      {tabs.map(entry => (
+        <li key={entry.key} className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${currentTab === entry.key ? 'active' : ''}`}
+            onClick={() => onPick(entry.key)}
+          >
+            {t(entry.labelKey)}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+ConsoleTabs.propTypes = {
+  tabs: PropTypes.arrayOf(
+    PropTypes.shape({ key: PropTypes.string.isRequired, labelKey: PropTypes.string.isRequired })
+  ).isRequired,
+  currentTab: PropTypes.string.isRequired,
+  onPick: PropTypes.func.isRequired,
+};
+
 const useMemberships = organizations => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -680,7 +710,8 @@ const useMemberships = organizations => {
  * and Delete, the members with the owner's role select (disabled on the
  * last owner's own row) and Remove while `can_manage`, a managed row's
  * source in place of its controls, and the invitations while the host
- * advertises `invitations`; every action re-fetches the record.
+ * advertises `invitations`; no tab strip while the tabs number one;
+ * every action re-fetches the record.
  */
 const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, places = null }) => {
   const { t } = useTranslation();
@@ -792,19 +823,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
         onDelete={remove}
       />
 
-      <ul className="nav nav-tabs">
-        {tabs.map(entry => (
-          <li key={entry.key} className="nav-item">
-            <button
-              type="button"
-              className={`nav-link ${currentTab === entry.key ? 'active' : ''}`}
-              onClick={() => setTab(entry.key)}
-            >
-              {t(entry.labelKey)}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <ConsoleTabs tabs={tabs} currentTab={currentTab} onPick={setTab} />
 
       <div className="tab-content mt-3">
         {currentTab === 'organization' ? (

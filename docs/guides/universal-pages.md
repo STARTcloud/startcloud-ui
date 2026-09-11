@@ -99,7 +99,7 @@ against the apps as they were before it.
 
 | Level                | Route shape                  | Page                                                                                                     | Breadcrumb after the brand            |
 | -------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| home                 | `/`                          | HomePage: every collection, organization group rows, private and public rows side by side                | nothing                               |
+| home                 | `/`                          | HomePage: every collection, organization group rows, private and public rows side by side                | nothing; the root crumb with a column |
 | collection, all orgs | `/{collection}`              | CollectionPage across organizations                                                                      | `› ISOs`                              |
 | organization         | `/{org}`                     | OrgPage: org header, one heading row and table per collection; private items when the viewer is a member | `› STARTcloud`                        |
 | collection, one org  | `/{org}/{collection}`        | CollectionPage for that organization                                                                     | `› STARTcloud › ISOs`                 |
@@ -169,11 +169,14 @@ creation the way it refuses `api`.
 - Parse the path with the mounted collections: `org`, `name`, `version`,
   `provider`, each optional in that order, the collection read from its
   segment or implied for the collection whose `segment` is empty; a
-  reserved first segment yields no crumbs of its own, and a route a
-  sidebar row matches draws `<group> › <row>` instead, the group a plain
-  word and the row a link to itself.
+  reserved first segment yields no crumbs of its own. On a host with a
+  column the crumbs open with a root crumb, the product name linking to
+  `/`, then the group and the row a sidebar row matches, the group a
+  plain word; a reserved route no row matches draws the root crumb and
+  the page's title as the second crumb, so the row is never empty.
 - One crumb per present level, each a plain link (`to`) to that level's
-  route; the last crumb is the page itself and still links to itself.
+  route; every crumb but the last is a link, and the last crumb, the page
+  itself, is plain text.
 - The org crumb carries the org's logo → Gravatar → the app's mark; the
   collection crumb carries the collection's icon; item, version and
   provider crumbs are text.
@@ -628,9 +631,9 @@ count route the feature names, never a number the export computes; the
 router hands the concatenation of every mounted feature's answer to
 `AppShell`. A feature with no sidebar of its own exports nothing. The
 reserved first segments are unchanged: a sidebar entry never adds a
-route, it points at one. A route a sidebar row matches draws
-`<group> › <row>` as its crumbs, since its first segment is reserved and
-would yield none. How the routes, the column, the crumbs and the search
+route, it points at one. A route a sidebar row matches draws the root
+crumb, then `<group> › <row>`, as its crumbs, since its first segment is
+reserved and would yield none. How the routes, the column, the crumbs and the search
 binding of one UI backend assemble from its status payload is drawn in
 the "How it fits" section of
 [universal-sidebar.html](../universal-sidebar.html).

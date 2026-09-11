@@ -207,6 +207,81 @@ const adminAdapterFor = status => {
 
 const firstAdminPage = admin => (admin.organizationsWithUsers ? 'organizations' : 'config');
 
+const PAGE_TITLES = {
+  '/about': 'navbar.about',
+  '/search': 'search.page.title',
+  '/organizations/discover': 'discovery.title',
+  '/login': 'auth:login.pageTitle',
+  '/login/magic': 'auth:login.magic.title',
+  '/auth/callback': 'auth:login.pageTitle',
+  '/register': 'auth:register.pageTitle',
+  '/registration': 'auth:register.pageTitle',
+  '/registration/verify': 'auth:register.pageTitle',
+  '/invite/:token': 'inviteAccept.title',
+  '/profile': 'profile.pageTitle',
+  '/user/profile': 'profile.pageTitle',
+  '/user/organizations': 'organizations.title',
+  '/user/integrations': 'integrations.title',
+  '/org-console': 'orgConsole.pageTitle',
+  '/notifications': 'inbox.title',
+  '/admin': 'admin.pageTitle',
+  '/admin/terms': 'admin.terms.title',
+  '/setup': 'setup.title',
+  '/vm/:instance': 'vdi.vm.title',
+  '/authenticator': 'auth:tfa.title',
+  '/authenticator-method': 'auth:tfa.choose.title',
+  '/passwordRecovery': 'auth:recovery.title',
+  '/passwordReset': 'auth:reset.title',
+  '/complete-onboarding': 'auth:onboarding.password',
+  '/complete-onboarding/name': 'auth:onboarding.name.title',
+  '/complete-onboarding/phone-setup': 'auth:onboarding.phone.title',
+  '/complete-onboarding/email-verification': 'auth:onboarding.email.title',
+  '/complete-onboarding/choose-2fa-method': 'auth:onboarding.tfa.title',
+  '/complete-onboarding/backup-codes': 'auth:onboarding.codes.title',
+  '/complete-onboarding/account-type': 'auth:onboarding.account.title',
+  '/complete-onboarding/team-name': 'auth:onboarding.team.title',
+  '/qrcode': 'auth:onboarding.qr.title',
+  '/public/policies/:name': 'auth:policy.pageTitle',
+  '/oauth2/consent': 'auth:consent.title',
+  '/oauth2/accept-terms': 'auth:terms.pageTitle',
+  '/provider-registration/tos': 'auth:terms.pageTitle',
+  '/activate': 'auth:device.title',
+  '/activated': 'auth:device.connected',
+  '/ciba/approve': 'auth:ciba.title',
+  '/connect/logout/confirm': 'auth:logout.title',
+  '/connect/logout/frontchannel': 'auth:logout.signingOut',
+  '/oauth2/code': 'auth:code.title',
+  '/continue': 'auth:desktop.title',
+  '/link-account-consent': 'auth:link.title',
+  '/error': 'errors.title.other',
+};
+
+const titleOf = path => PAGE_TITLES[path];
+
+const prefixOf = path => path.split('/:')[0];
+
+const TITLE_PREFIXES = [...new Set(Object.keys(PAGE_TITLES).map(prefixOf))].sort(
+  (a, b) => b.length - a.length
+);
+
+/**
+ * The registered title key of a reserved route: `PAGE_TITLES` is the one
+ * table every route registration below reads its title from, so a
+ * route's title lives in one place; the lookup takes the longest
+ * registered path, its parameter segments dropped, that the pathname
+ * equals or descends from, and the shell draws it as the second crumb
+ * after the root crumb when no sidebar row matches the route.
+ *
+ * @param {string} pathname - The current path
+ * @returns {string} The title key, empty when no route is registered
+ */
+export const routeTitleKey = pathname => {
+  const hit = TITLE_PREFIXES.find(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+  return hit ? titleOf(Object.keys(PAGE_TITLES).find(path => prefixOf(path) === hit)) : '';
+};
+
 /**
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
  * in the order the column draws them: the profile feature's Account
@@ -244,7 +319,7 @@ const AdminRoute = ({ globalAdmin, user = null, page = '' }) => {
   const status = useStatus();
   const admin = adminAdapterFor(status);
   if (!hasFeature(status, 'admin')) {
-    return <Stub titleKey="admin.pageTitle" token="admin" />;
+    return <Stub titleKey={titleOf('/admin')} token="admin" />;
   }
   return (
     <GuardProvider stepUp={stepUp} hasPassword={Boolean(user?.has_local_auth)}>
@@ -270,10 +345,10 @@ AdminRoute.propTypes = {
 const IdentityAdminRoute = ({ globalAdmin, user, page }) => {
   const status = useStatus();
   if (!hasFeature(status, 'admin')) {
-    return <Stub titleKey="admin.pageTitle" token="admin" />;
+    return <Stub titleKey={titleOf('/admin')} token="admin" />;
   }
   if (page === 'terms' && !hasFeature(status, 'policies')) {
-    return <Stub titleKey="admin.terms.title" token="policies" />;
+    return <Stub titleKey={titleOf('/admin/terms')} token="policies" />;
   }
   return (
     <IdentityAdminPage
@@ -453,8 +528,8 @@ const gated = (open, element, titleKey, token) =>
   open ? element : <Stub titleKey={titleKey} token={token} />;
 
 const gatedRoutes = rows =>
-  rows.map(({ path, open, element, titleKey, token }) => (
-    <Route key={path} path={path} element={gated(open, element, titleKey, token)} />
+  rows.map(({ path, open, element, token }) => (
+    <Route key={path} path={path} element={gated(open, element, titleOf(path), token)} />
   ));
 
 const signInRoutes = ({ status, cookie }) => {
@@ -466,49 +541,42 @@ const signInRoutes = ({ status, cookie }) => {
       path: '/login/magic',
       open: cookie,
       element: <MagicLinkPage returnTo={returnTo} />,
-      titleKey: 'auth:login.magic.title',
       token: 'cookie',
     },
     {
       path: '/authenticator',
       open: tfa,
       element: <TfaCodePage returnTo={returnTo} />,
-      titleKey: 'auth:tfa.title',
       token: 'tfa',
     },
     {
       path: '/authenticator-method',
       open: tfa,
       element: <TfaMethodPage returnTo={returnTo} />,
-      titleKey: 'auth:tfa.choose.title',
       token: 'tfa',
     },
     {
       path: '/passwordRecovery',
       open: local,
       element: <PasswordRecoveryPage {...pages} />,
-      titleKey: 'auth:recovery.title',
       token: 'local-accounts',
     },
     {
       path: '/passwordReset',
       open: local,
       element: <PasswordResetPage {...pages} />,
-      titleKey: 'auth:reset.title',
       token: 'local-accounts',
     },
     {
       path: '/registration',
       open: local,
       element: <RegisterPage {...pages} auth={authAdapter} />,
-      titleKey: 'auth:register.pageTitle',
       token: 'local-accounts',
     },
     {
       path: '/registration/verify',
       open: local,
       element: <VerifyLinkPage returnTo={returnTo} />,
-      titleKey: 'auth:register.pageTitle',
       token: 'local-accounts',
     },
   ]);
@@ -518,78 +586,33 @@ const onboardingRoutes = ({ status, cookie }) => {
   const onboarding = cookie && hasFeature(status, 'onboarding');
   const tfa = cookie && hasFeature(status, 'tfa');
   const policies = cookie && hasFeature(status, 'policies');
-  const step = (path, open, Element, titleKey, token) => ({
+  const step = (path, open, Element, token) => ({
     path,
     open,
     element: <Element returnTo={returnTo} />,
-    titleKey,
     token,
   });
   return gatedRoutes([
-    step(
-      '/complete-onboarding',
-      onboarding,
-      OnboardingHub,
-      'auth:onboarding.password',
-      'onboarding'
-    ),
-    step(
-      '/complete-onboarding/name',
-      onboarding,
-      NameStep,
-      'auth:onboarding.name.title',
-      'onboarding'
-    ),
-    step(
-      '/complete-onboarding/phone-setup',
-      onboarding,
-      PhoneStep,
-      'auth:onboarding.phone.title',
-      'onboarding'
-    ),
-    step(
-      '/complete-onboarding/email-verification',
-      onboarding,
-      EmailCodeStep,
-      'auth:onboarding.email.title',
-      'onboarding'
-    ),
-    step(
-      '/complete-onboarding/choose-2fa-method',
-      onboarding && tfa,
-      TfaEnrollChoiceStep,
-      'auth:onboarding.tfa.title',
-      'tfa'
-    ),
-    step('/qrcode', tfa, TotpEnrollPage, 'auth:onboarding.qr.title', 'tfa'),
-    step(
-      '/complete-onboarding/backup-codes',
-      onboarding,
-      BackupCodesPage,
-      'auth:onboarding.codes.title',
-      'onboarding'
-    ),
+    step('/complete-onboarding', onboarding, OnboardingHub, 'onboarding'),
+    step('/complete-onboarding/name', onboarding, NameStep, 'onboarding'),
+    step('/complete-onboarding/phone-setup', onboarding, PhoneStep, 'onboarding'),
+    step('/complete-onboarding/email-verification', onboarding, EmailCodeStep, 'onboarding'),
+    step('/complete-onboarding/choose-2fa-method', onboarding && tfa, TfaEnrollChoiceStep, 'tfa'),
+    step('/qrcode', tfa, TotpEnrollPage, 'tfa'),
+    step('/complete-onboarding/backup-codes', onboarding, BackupCodesPage, 'onboarding'),
     step(
       '/complete-onboarding/account-type',
       onboarding && hasFeature(status, 'org-console'),
       AccountTypeStep,
-      'auth:onboarding.account.title',
       'org-console'
     ),
-    step(
-      '/complete-onboarding/team-name',
-      onboarding,
-      TeamNameStep,
-      'auth:onboarding.team.title',
-      'onboarding'
-    ),
-    step('/oauth2/accept-terms', policies, TermsPage, 'auth:terms.pageTitle', 'policies'),
-    step('/provider-registration/tos', policies, TermsPage, 'auth:terms.pageTitle', 'policies'),
+    step('/complete-onboarding/team-name', onboarding, TeamNameStep, 'onboarding'),
+    step('/oauth2/accept-terms', policies, TermsPage, 'policies'),
+    step('/provider-registration/tos', policies, TermsPage, 'policies'),
     {
       path: '/public/policies/:name',
       open: hasFeature(status, 'policies'),
       element: <PolicyPage />,
-      titleKey: 'auth:policy.pageTitle',
       token: 'policies',
     },
   ]);
@@ -598,38 +621,17 @@ const onboardingRoutes = ({ status, cookie }) => {
 const interstitialRoutes = ({ status, cookie }) => {
   const open = hasFeature(status, 'interstitials');
   const signedIn = cookie && open;
-  const row = (path, gate, element, titleKey) => ({
-    path,
-    open: gate,
-    element,
-    titleKey,
-    token: 'interstitials',
-  });
+  const row = (path, gate, element) => ({ path, open: gate, element, token: 'interstitials' });
   return gatedRoutes([
-    row('/oauth2/consent', signedIn, <ConsentPage returnTo={returnTo} />, 'auth:consent.title'),
-    row('/activate', open, <DeviceActivatePage />, 'auth:device.title'),
-    row('/activated', open, <DeviceActivatedPage />, 'auth:device.connected'),
-    row('/ciba/approve', signedIn, <CibaApprovePage />, 'auth:ciba.title'),
-    row(
-      '/connect/logout/confirm',
-      signedIn,
-      <LogoutConfirmPage returnTo={returnTo} />,
-      'auth:logout.title'
-    ),
-    row(
-      '/connect/logout/frontchannel',
-      open,
-      <FrontChannelLogoutPage returnTo={returnTo} />,
-      'auth:logout.signingOut'
-    ),
-    row('/oauth2/code', open, <CodeDisplayPage />, 'auth:code.title'),
-    row('/continue', open, <DesktopContinuePage />, 'auth:desktop.title'),
-    row(
-      '/link-account-consent',
-      signedIn,
-      <LinkAccountPage returnTo={returnTo} />,
-      'auth:link.title'
-    ),
+    row('/oauth2/consent', signedIn, <ConsentPage returnTo={returnTo} />),
+    row('/activate', open, <DeviceActivatePage />),
+    row('/activated', open, <DeviceActivatedPage />),
+    row('/ciba/approve', signedIn, <CibaApprovePage />),
+    row('/connect/logout/confirm', signedIn, <LogoutConfirmPage returnTo={returnTo} />),
+    row('/connect/logout/frontchannel', open, <FrontChannelLogoutPage returnTo={returnTo} />),
+    row('/oauth2/code', open, <CodeDisplayPage />),
+    row('/continue', open, <DesktopContinuePage />),
+    row('/link-account-consent', signedIn, <LinkAccountPage returnTo={returnTo} />),
   ]);
 };
 
@@ -649,13 +651,7 @@ const issuerProfile = ({ account, status, globalAdmin }) => (
 const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications }) => {
   const profile = issuerProfile({ account, status, globalAdmin });
   return gatedRoutes([
-    {
-      path: '/user/profile',
-      open: cookie,
-      element: profile,
-      titleKey: 'profile.pageTitle',
-      token: 'cookie',
-    },
+    { path: '/user/profile', open: cookie, element: profile, token: 'cookie' },
     {
       path: '/user/organizations',
       open: cookie && hasFeature(status, 'org-console'),
@@ -667,7 +663,6 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications })
           activeOrgKey={ACTIVE_ORG_KEY}
         />
       ),
-      titleKey: 'organizations.title',
       token: 'org-console',
     },
     {
@@ -692,7 +687,6 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications })
           admin={globalAdmin}
         />
       ),
-      titleKey: 'orgConsole.pageTitle',
       token: 'org-console',
     },
     {
@@ -701,14 +695,12 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications })
       element: (
         <IntegrationsPage integrations={issuerIntegrations} stepUp={stepUp} user={account.user} />
       ),
-      titleKey: 'integrations.title',
       token: 'integrations',
     },
     {
       path: '/notifications',
       open: cookie && hasFeature(status, 'inbox') && Boolean(notifications),
       element: notifications ? <InboxPage notifications={notifications} /> : null,
-      titleKey: 'inbox.title',
       token: 'inbox',
     },
   ]);
@@ -722,7 +714,7 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
       element={gated(
         cookie,
         <IdentityAdminRoute globalAdmin={globalAdmin} user={user} page={page} />,
-        'admin.pageTitle',
+        titleOf('/admin'),
         'cookie'
       )}
     />
@@ -834,7 +826,7 @@ const AppRoutes = ({
           fleet ? (
             <VmRoute theme={theme} user={account.user} />
           ) : (
-            <Stub titleKey="vdi.vm.title" token="fleet" />
+            <Stub titleKey={titleOf('/vm/:instance')} token="fleet" />
           )
         }
       />
@@ -852,7 +844,7 @@ const AppRoutes = ({
               joinIntentKey={JOIN_INTENT_KEY}
             />
           ) : (
-            <Stub titleKey="discovery.title" token="discover" />
+            <Stub titleKey={titleOf('/organizations/discover')} token="discover" />
           )
         }
       />
@@ -867,7 +859,7 @@ const AppRoutes = ({
               appName={status.brand.name}
             />
           ) : (
-            <Stub titleKey="auth:login.pageTitle" token="backend" />
+            <Stub titleKey={titleOf('/login')} token="backend" />
           )
         }
       />
@@ -877,7 +869,7 @@ const AppRoutes = ({
           backend ? (
             <CallbackPage complete={session.complete} onDone={afterSignIn} />
           ) : (
-            <Stub titleKey="auth:login.pageTitle" token="backend" />
+            <Stub titleKey={titleOf('/auth/callback')} token="backend" />
           )
         }
       />
@@ -887,7 +879,7 @@ const AppRoutes = ({
           backend && hasFeature(status, 'local-accounts') ? (
             <RegisterPage session={session} returnTo={returnTo} auth={authAdapter} />
           ) : (
-            <Stub titleKey="auth:register.pageTitle" token="local-accounts" />
+            <Stub titleKey={titleOf('/register')} token="local-accounts" />
           )
         }
       />
@@ -902,7 +894,7 @@ const AppRoutes = ({
               activeOrgKey={ACTIVE_ORG_KEY}
             />
           ) : (
-            <Stub titleKey="inviteAccept.title" token="backend" />
+            <Stub titleKey={titleOf('/invite/:token')} token="backend" />
           )
         }
       />
@@ -927,7 +919,7 @@ const AppRoutes = ({
             gated(
               cookie,
               issuerProfile({ account, status, globalAdmin }),
-              'profile.pageTitle',
+              titleOf('/profile'),
               'backend'
             )
           )

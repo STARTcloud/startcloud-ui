@@ -285,25 +285,56 @@ button::-moz-focus-inner {
 
 .sidebar-top {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
   width: 100%;
   height: 62px;
-  padding: 0 20px;
-  border: 0;
   border-bottom: 1px solid var(--bs-border-color);
-  background: transparent;
   color: var(--bs-emphasis-color);
   font-family: 'Montserrat', 'Open Sans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  text-align: left;
+}
+
+.sidebar-top-brand,
+.sidebar-top-chevron,
+.sidebar-top-mark {
+  display: flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.sidebar-top:hover,
-.sidebar-top:focus-visible {
+.sidebar-top-brand {
+  flex: 1;
+  min-width: 0;
+  gap: 10px;
+  padding: 0 20px;
+}
+
+.sidebar-top-chevron {
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--bs-secondary-color);
+}
+
+.sidebar-top-mark {
+  flex: 1;
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar-top-brand:hover,
+.sidebar-top-brand:focus-visible,
+.sidebar-top-chevron:hover,
+.sidebar-top-chevron:focus-visible,
+.sidebar-top-mark:hover,
+.sidebar-top-mark:focus-visible {
   background: var(--bs-secondary-bg);
+  color: var(--bs-emphasis-color);
 }
 
 .sidebar-top-name {
@@ -312,17 +343,6 @@ button::-moz-focus-inner {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.sidebar-top-chevron {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--bs-secondary-color);
-}
-
-.sidebar-rail .sidebar-top {
-  padding: 0;
-  justify-content: center;
 }
 
 .sidebar-rail .sidebar-top .icon-with-margin-sm {
@@ -470,12 +490,12 @@ button::-moz-focus-inner {
   background: rgba(var(--bs-primary-rgb), 0.25);
 }
 
-.navbar .sidebar-toggle {
+.navbar .cluster-btn.sidebar-toggle {
   display: none;
 }
 
 @media (max-width: 899.98px) {
-  .navbar .sidebar-toggle {
+  .navbar .cluster-btn.sidebar-toggle {
     display: inline-flex;
   }
 
