@@ -16,7 +16,8 @@ export const ADMIN_PAGES = ['organizations', 'config', 'system'];
 
 /**
  * One admin page per sidebar entry of an app with configuration of its
- * own: the update notice when the app's `updateStatus` reports one, then
+ * own: the update notice while the adapter carries `updateStatus` and it
+ * reports one, then
  * the page the route names, Organizations and users while the adapter
  * carries `organizationsWithUsers`, Configuration on every host, its empty
  * state when the adapter carries no `config` and reached by URL alone,
@@ -41,6 +42,9 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
     }
     if (!allowed) {
       navigate('/');
+      return;
+    }
+    if (!admin.updateStatus) {
       return;
     }
     admin

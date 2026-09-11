@@ -2,7 +2,7 @@ import { CanceledError, create, isCancel } from 'axios';
 
 const CONTENT_TYPES = { json: 'application/json', 'octet-stream': 'application/octet-stream' };
 const MESSAGE_KEYS = {
-  401: 'errors.accessDenied',
+  401: 'errors.sessionEnded',
   403: 'errors.accessDenied',
   404: 'errors.notFound',
   409: 'errors.conflict',
@@ -89,8 +89,10 @@ export class ApiError extends Error {
  * The one HTTP client every estate app calls its APIs through: an axios
  * instance of its own, the session's headers resolved per request against
  * the absolute URL sent (so a DPoP proof binds to the right target), one
- * replay after a 401 when the session can recover, the session ended when
- * it cannot, and every failure thrown as `ApiError`. `auth` is `true` for
+ * replay after a 401 when the session can recover, the session ended on the
+ * bus when it cannot (the session-ended banner is the one notice for it, the
+ * failure carrying `errors.sessionEnded` and never `errors.accessDenied`,
+ * which is the 403's), and every failure thrown as `ApiError`. `auth` is `true` for
  * that, `false` to send no session headers, and `'optional'` to send them
  * while neither replaying nor ending the session on a 401, for the one
  * call that asks whether anyone is signed in at all.

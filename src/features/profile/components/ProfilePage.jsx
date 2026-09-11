@@ -121,8 +121,6 @@ const DEFAULT_MIN_LENGTH = 15;
 const passwordMinLength = () =>
   Number(rules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
 
-const userOf = current => current?.user || null;
-
 const nameOf = user => user?.name || '';
 
 const groupByOrganization = (accounts, unknownLabel) => {
@@ -168,7 +166,10 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
  * Service accounts lists searched from the navbar, every call through the
  * app's `account` adapter and the session's own `reload` and
  * `signOutEverywhere`; `admin` is the app's global-admin flag, the one
- * that offers the superadmin role on a new service account.
+ * that offers the superadmin role on a new service account; `user`,
+ * `loaded` and `oidc` are the session state's, the page drawing nothing
+ * until `loaded` and sending a visitor to sign in only once `loaded` says
+ * there is no session, because the cached account is a paint hint.
  */
 const BackendProfilePage = ({
   session,
@@ -179,6 +180,9 @@ const BackendProfilePage = ({
   localAccounts,
   issuerUrl,
   admin,
+  user,
+  loaded,
+  oidc,
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -186,15 +190,19 @@ const BackendProfilePage = ({
     document.title = t('profile.pageTitle');
   }, [t]);
 
-  const [current, setCurrent] = useState(() => session.restore());
-  const currentUser = userOf(current);
-  const oidc = Boolean(current?.oidc);
+  const currentUser = loaded ? user : null;
+  const currentName = nameOf(currentUser);
   const showSecurity = localAccounts && !oidc;
   const tabs = tabsFor({ showSecurity, oidc, issuerUrl });
   const [gravatarProfile, setGravatarProfile] = useState({});
   const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD);
   const [emailForm, setEmailForm] = useState(EMPTY_EMAIL);
-  const [nameForm, setNameForm] = useState(() => ({ name: nameOf(currentUser) }));
+  const [nameForm, setNameForm] = useState(() => ({ name: currentName }));
+  const [seededName, setSeededName] = useState(currentName);
+  if (seededName !== currentName) {
+    setSeededName(currentName);
+    setNameForm({ name: currentName });
+  }
   const [activeTab, setActiveTab] = useState('profile');
   const [searchTerm, setSearchTerm] = useState('');
   const [serviceAccounts, setServiceAccounts] = useState([]);
@@ -323,7 +331,6 @@ const BackendProfilePage = ({
     () =>
       session.reload().then(next => {
         if (next) {
-          setCurrent(next);
           events.emit('login');
         }
       }),
@@ -398,7 +405,7 @@ const BackendProfilePage = ({
         if (emailHash && mounted) {
           await loadGravatarProfile(emailHash, controller.signal);
         }
-      } else {
+      } else if (loaded) {
         navigate(returnTo.signInTo('/profile'));
       }
     };
@@ -409,7 +416,7 @@ const BackendProfilePage = ({
       mounted = false;
       controller.abort();
     };
-  }, [currentUser, navigate, loadGravatarProfile, returnTo]);
+  }, [currentUser, loaded, navigate, loadGravatarProfile, returnTo]);
 
   useEffect(() => {
     let mounted = true;
@@ -1218,13 +1225,18 @@ BackendProfilePage.propTypes = {
   localAccounts: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
+  loaded: PropTypes.bool.isRequired,
+  oidc: PropTypes.bool.isRequired,
 };
 
 /**
  * The shared profile page: the identity provider's form with its five
  * tabs while the `account` adapter carries `profile` and `stepUp` (the
  * issuer's adapter), else the page every app with accounts of its own
- * draws, unchanged.
+ * draws, unchanged; `user` and `loaded` are the session state's adopted
+ * user and whether `load()` has answered, and neither page draws before
+ * `loaded`.
  */
 const ProfilePage = ({
   session,
@@ -1235,10 +1247,20 @@ const ProfilePage = ({
   localAccounts,
   issuerUrl,
   admin,
+  user = null,
+  loaded,
+  oidc,
 }) => {
   if (account.profile && account.stepUp) {
     return (
-      <IssuerProfilePage session={session} events={events} returnTo={returnTo} account={account} />
+      <IssuerProfilePage
+        session={session}
+        events={events}
+        returnTo={returnTo}
+        account={account}
+        user={user}
+        loaded={loaded}
+      />
     );
   }
   return (
@@ -1251,6 +1273,9 @@ const ProfilePage = ({
       localAccounts={localAccounts}
       issuerUrl={issuerUrl}
       admin={admin}
+      user={user}
+      loaded={loaded}
+      oidc={oidc}
     />
   );
 };
@@ -1264,6 +1289,9 @@ ProfilePage.propTypes = {
   localAccounts: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
+  loaded: PropTypes.bool.isRequired,
+  oidc: PropTypes.bool.isRequired,
 };
 
 export default ProfilePage;

@@ -91,6 +91,7 @@ in-router.
 | `activeOrgUuid`          | the active organization, resolved stored → primary → first and persisted under `activeOrgKey`                                              |
 | `pickOrg(uuid)`          | sets the active organization when it is a membership; never navigates                                                                      |
 | `sessionEnded`           | `{ returnTo }` while the session died outside the app, else `null`                                                                         |
+| `loaded`                 | whether `provider.load()` has answered since mount; `false` while the first render comes from storage                                      |
 | `signIn()`               | remembers the return path (the ended session's page, else the current page unless it is an auth page) and calls `provider.begin({})`       |
 | `signOut()`              | clears the local session through the provider                                                                                              |
 | `signOutEverywhere()`    | the provider's estate-wide sign-out                                                                                                        |
@@ -111,6 +112,13 @@ Behavior fixed by the hook:
 - While signed in and browser push is enabled, the hook re-posts the push
   subscription and listens for `pushsubscriptionchange`, as the navbar
   contract requires.
+- `loaded` turns `true` once `provider.load()` has answered; until then the
+  restored session is a paint hint for the chrome and never a session: a
+  page drawn for a signed-in person alone (the profile) waits for `loaded`
+  and sends a visitor to sign in only once `loaded` says there is none, and
+  a sign-in page sends a signed-in person away only on an adopted session,
+  because a stale cache would otherwise draw a profile for nobody and bounce
+  a visitor off the register page.
 
 ---
 
@@ -376,10 +384,14 @@ onUploadProgress, responseType, skipAuthRefresh, messageKeys })` and the
   key, the catalog's public files); `contentType` is `json`,
   `octet-stream`, `form` (the browser sets the multipart boundary) or
   `none`.
-- A `401` on an authenticated request is replayed once after
-  `session.retryAuth()` answered true; when it cannot recover, or the
+- A `401` on an authenticated request means no session: it is replayed once
+  after `session.retryAuth()` answered true; when it cannot recover, or the
   replay fails again, `session.endSession()` ends the session on the bus
-  and the session-ended banner shows. `skipAuthRefresh` turns the replay
+  and the session-ended banner shows, quietly: the client raises no notice
+  of its own, the banner of the navbar contract's Notices section being the
+  one notice for a session that ended, and the failure is thrown with
+  `errors.sessionEnded` as its key, never `errors.accessDenied`, because a
+  person whose session ended lacked no permission. `skipAuthRefresh` turns the replay
   off for a call that must not. `auth: 'optional'` sends the session's
   headers but neither replays nor ends the session on a `401`, for the
   one call that asks whether anyone is signed in at all, the cookie
@@ -390,8 +402,8 @@ onUploadProgress, responseType, skipAuthRefresh, messageKeys })` and the
 - Every failure is thrown as `ApiError`: `status` (0 when no response
   came), `code`, `serverMessage`, `data`, `response`
   (`{ status, data, headers }`), `request` (`{ method, url }`), `cause` and
-  `messageKey`, a key in `shared.json`: `errors.accessDenied` for 401 and
-  403, `errors.notFound` for 404, `errors.network` when the server could
+  `messageKey`, a key in `shared.json`: `errors.sessionEnded` for 401,
+  `errors.accessDenied` for 403, `errors.notFound` for 404, `errors.network` when the server could
   not be reached, `errors.request` otherwise; a call overrides a status
   through `messageKeys`. An aborted request rethrows the
   abort as is. `onError` sees every `ApiError` once before it is thrown;
@@ -462,13 +474,16 @@ routed while the UI backend's first `auth` token is `backend` or `cookie`
 loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
   and the two localStorage keys the pages remember the chosen sign-in
   method and the one silent SSO attempt under.
-- `LoginPage({ session, returnTo, auth, appName })` reads
+- `LoginPage({ session, account, returnTo, auth, appName })` reads
   `auth.methods()`, draws the local form only where the provider carries
   `login`, one button per identity provider through `session.begin({
 method })`, the remembered choice between the two, the silent
   `prompt=none` attempt of the navbar contract, and remembers the return
-  path for the callback.
-- `RegisterPage({ session, returnTo, auth })` draws the local form where
+  path for the callback; `account` is the session state of `useSession`,
+  whose adopted session alone (`loaded` and a user) sends a signed-in
+  person off a sign-in page to the consumed return path or home, never the
+  cached account.
+- `RegisterPage({ session, account, returnTo, auth })` draws the local form where
   self-registration is on or the URL carries an invitation token, the
   provider buttons, and the check-your-inbox state after a local sign-up.
 - `InvitePage({ session, returnTo, auth, activeOrgKey })` validates the

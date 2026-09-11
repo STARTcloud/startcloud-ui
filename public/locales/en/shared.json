@@ -67,7 +67,12 @@
   "notice": {
     "dismiss": "Dismiss"
   },
+  "status": {
+    "unreachable": "The server behind this page could not be reached. Check that it is running and retry.",
+    "retry": "Retry"
+  },
   "errors": {
+    "sessionEnded": "Your session ended.",
     "accessDenied": "Access denied.",
     "notFound": "Not found.",
     "network": "The server could not be reached.",
@@ -392,8 +397,8 @@
       "delete": "Delete"
     },
     "details": {
-      "givenName": "Given name(s)",
-      "familyName": "Family name",
+      "givenName": "First name",
+      "familyName": "Last name",
       "middleName": "Middle name",
       "salutation": {
         "label": "Salutation",

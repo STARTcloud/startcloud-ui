@@ -9,6 +9,7 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { problemShape, useProblemReporter } from '../../../hooks/useProblemReporter';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { passwordRecovery } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { useMethods } from '../useMethods';
@@ -58,15 +59,16 @@ SentState.propTypes = {
  * `/passwordRecovery`: the email field and Continue, then the sent state at
  * `?success` with the address in router state, the reset link's lifetime
  * from the methods answer, Resend under the server's countdown and "Back
- * to sign in".
+ * to sign in"; a person whose adopted session (`account`) is live is sent
+ * away.
  */
-const PasswordRecoveryPage = ({ session, returnTo }) => {
+const PasswordRecoveryPage = ({ account, returnTo }) => {
   const { t } = useTranslation(['auth']);
   const navigate = useNavigate();
   const location = useLocation();
   const report = useProblemReporter();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const signedIn = useSignedInRedirect(session, returnTo);
+  const signedIn = useSignedInRedirect(account, returnTo);
   const { methods: answer } = useMethods();
   const [values, setValues] = useState({ email: '' });
   const [busy, setBusy] = useState(false);
@@ -163,7 +165,7 @@ const PasswordRecoveryPage = ({ session, returnTo }) => {
 };
 
 PasswordRecoveryPage.propTypes = {
-  session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
 };
 

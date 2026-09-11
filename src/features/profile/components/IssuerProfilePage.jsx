@@ -101,24 +101,26 @@ const usePlacesKey = places => {
  * `#preferences`, Favorites and Sessions, the tab read from the URL's
  * hash, the full record read once from `GET /api/user` and re-read after
  * every change the session must reflect, every stepped-up call passing
- * through the one step-up dialog.
+ * through the one step-up dialog; `user` and `loaded` are the session
+ * state's, the page drawing nothing until `loaded` and sending a visitor
+ * to sign in only once `loaded` says there is no session, because the
+ * cached account is a paint hint.
  */
-const IssuerProfilePage = ({ session, events, returnTo, account }) => {
+const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
   const location = useLocation();
   const tabs = useMemo(() => tabsFor(account), [account]);
-  const [current] = useState(() => session.restore());
-  const [loaded, setLoaded] = useState({ profile: null, version: 0 });
+  const [record, setRecord] = useState({ profile: null, version: 0 });
   const [focusEmail, setFocusEmail] = useState(false);
   const placesKey = usePlacesKey(account.places || null);
   const { guard, dialog } = useStepUp({
     stepUp: account.stepUp,
-    hasPassword: Boolean(loaded.profile?.has_local_auth),
+    hasPassword: Boolean(record.profile?.has_local_auth),
   });
-  const user = current?.user || null;
-  const { profile, version } = loaded;
+  const signedIn = loaded && Boolean(user);
+  const { profile, version } = record;
   const activeTab = tabFromHash(location.hash, tabs);
 
   useEffect(() => {
@@ -126,16 +128,16 @@ const IssuerProfilePage = ({ session, events, returnTo, account }) => {
   }, [t]);
 
   useEffect(() => {
-    if (!user) {
+    if (loaded && !user) {
       navigate(returnTo.signInTo('/user/profile'));
     }
-  }, [navigate, returnTo, user]);
+  }, [loaded, navigate, returnTo, user]);
 
   const loadProfile = useCallback(
     () =>
       account
         .profile()
-        .then(next => setLoaded(previous => ({ profile: next, version: previous.version + 1 })))
+        .then(next => setRecord(previous => ({ profile: next, version: previous.version + 1 })))
         .catch(error => {
           log.api.error('Error loading profile', { error: error.message });
           notify('danger', t(error.messageKey || 'errors.request'));
@@ -144,10 +146,10 @@ const IssuerProfilePage = ({ session, events, returnTo, account }) => {
   );
 
   useEffect(() => {
-    if (user) {
+    if (signedIn) {
       loadProfile();
     }
-  }, [loadProfile, user]);
+  }, [loadProfile, signedIn]);
 
   const refresh = useCallback(async () => {
     await loadProfile();
@@ -172,7 +174,7 @@ const IssuerProfilePage = ({ session, events, returnTo, account }) => {
     navigate(next, { replace: true });
   };
 
-  if (!user) {
+  if (!signedIn) {
     return null;
   }
 
@@ -232,7 +234,6 @@ const IssuerProfilePage = ({ session, events, returnTo, account }) => {
 
 IssuerProfilePage.propTypes = {
   session: PropTypes.shape({
-    restore: PropTypes.func.isRequired,
     reload: PropTypes.func.isRequired,
     endSession: PropTypes.func.isRequired,
     savePreferences: PropTypes.func.isRequired,
@@ -240,6 +241,8 @@ IssuerProfilePage.propTypes = {
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   returnTo: returnToShape.isRequired,
   account: issuerAccountShape.isRequired,
+  user: PropTypes.object,
+  loaded: PropTypes.bool.isRequired,
 };
 
 export default IssuerProfilePage;

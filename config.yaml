@@ -1,4 +1,4 @@
 server:
   port: 8080
-  api_target: http://localhost:3443
-  auth_target: http://localhost:3443
+  api_target: http://localhost:9595
+  auth_target: http://localhost:9595

@@ -9,6 +9,7 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { problemShape, useProblemReporter } from '../../../hooks/useProblemReporter';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { returnToShape } from '../../../utils/auth';
 import { registration, resendRegistration } from '../api/registration';
 import { useMethods } from '../useMethods';
@@ -109,15 +110,16 @@ EmailForm.propTypes = {
  * its label, the providers under the divider, "Already have an account?
  * Sign in", and after the `202` the sent state at `/registration?success`
  * with the address in router state, Resend under the server's countdown
- * and "Back to sign in".
+ * and "Back to sign in"; a person whose adopted session (`account`) is
+ * live is sent away.
  */
-const CookieRegister = ({ session, returnTo }) => {
+const CookieRegister = ({ session, account, returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
   const report = useProblemReporter();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const signedIn = useSignedInRedirect(session, returnTo);
+  const signedIn = useSignedInRedirect(account, returnTo);
   const { methods: answer, loading } = useMethods();
   const [values, setValues] = useState({ email: '' });
   const [busy, setBusy] = useState(false);
@@ -208,6 +210,7 @@ const CookieRegister = ({ session, returnTo }) => {
 
 CookieRegister.propTypes = {
   session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
 };
 

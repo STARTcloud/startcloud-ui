@@ -67,7 +67,12 @@
   "notice": {
     "dismiss": "Descartar"
   },
+  "status": {
+    "unreachable": "No se pudo contactar con el servidor detrás de esta página. Comprueba que está en marcha y reintenta.",
+    "retry": "Reintentar"
+  },
   "errors": {
+    "sessionEnded": "Tu sesión terminó.",
     "accessDenied": "Acceso denegado.",
     "notFound": "No encontrado.",
     "network": "No se pudo contactar con el servidor.",
@@ -392,8 +397,8 @@
       "delete": "Eliminar"
     },
     "details": {
-      "givenName": "Nombre(s)",
-      "familyName": "Apellidos",
+      "givenName": "Nombre",
+      "familyName": "Apellido",
       "middleName": "Segundo nombre",
       "salutation": {
         "label": "Tratamiento",

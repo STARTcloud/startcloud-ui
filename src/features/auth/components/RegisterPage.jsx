@@ -8,6 +8,7 @@ import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from '../../../component
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { log } from '../../../lib/logger';
 import { rules as hostRules } from '../../../lib/runtime';
 import {
@@ -495,17 +496,19 @@ BackendRegisterPage.propTypes = {
  * or the URL carries an invitation token, one button per identity provider
  * through `session.begin`, and the check-your-inbox state after a local
  * sign-up; on the identity provider (`session.id` is `cookie`) the page is
- * the email-only form and sent state of `CookieRegister`.
+ * the email-only form and sent state of `CookieRegister`, which sends a
+ * person whose adopted session (`account`) is live away.
  */
-const RegisterPage = ({ session, returnTo, auth }) => {
+const RegisterPage = ({ session, account, returnTo, auth }) => {
   if (session.id === 'cookie') {
-    return <CookieRegister session={session} returnTo={returnTo} />;
+    return <CookieRegister session={session} account={account} returnTo={returnTo} />;
   }
   return <BackendRegisterPage session={session} returnTo={returnTo} auth={auth} />;
 };
 
 RegisterPage.propTypes = {
   session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
   auth: authShape.isRequired,
 };

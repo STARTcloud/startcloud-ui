@@ -10,6 +10,7 @@ import PasswordField from '../../../components/common/PasswordField';
 import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { problemOf, problemShape, useProblemReporter } from '../../../hooks/useProblemReporter';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { followNext } from '../../../lib/next';
 import {
   authenticate,
@@ -466,14 +467,15 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
  * the address in router state; the query alerts; the foot with "Create an
  * account", the policy links and Cancel while a request is parked. The
  * heading and the field draw at once and the button block waits on the
- * methods answer.
+ * methods answer; a person whose adopted session (`account`) is live is
+ * sent away.
  */
-const CookieLogin = ({ session, returnTo, auth, appName }) => {
+const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const signedIn = useSignedInRedirect(session, returnTo);
+  const signedIn = useSignedInRedirect(account, returnTo);
   const { methods: answer, loading } = useMethods();
   const [values, setValues] = useState({ username: '', password: '', remember: false });
   const [chosenMode, setChosenMode] = useState('');
@@ -606,6 +608,7 @@ const CookieLogin = ({ session, returnTo, auth, appName }) => {
 
 CookieLogin.propTypes = {
   session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
   auth: authShape.isRequired,
   appName: PropTypes.string.isRequired,

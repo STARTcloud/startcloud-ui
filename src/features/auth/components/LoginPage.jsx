@@ -8,6 +8,7 @@ import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/Au
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { log } from '../../../lib/logger';
 import {
   authShape,
@@ -543,17 +544,27 @@ BackendLoginPage.propTypes = {
  * `session.begin`, the remembered choice between the two, the one silent SSO
  * attempt per browser session, and the return path kept for the callback;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
- * issuer's modes and states through `CookieLogin`.
+ * issuer's modes and states through `CookieLogin`, which sends a person
+ * whose adopted session (`account`) is live away.
  */
-const LoginPage = ({ session, returnTo, auth, appName }) => {
+const LoginPage = ({ session, account, returnTo, auth, appName }) => {
   if (session.id === 'cookie') {
-    return <CookieLogin session={session} returnTo={returnTo} auth={auth} appName={appName} />;
+    return (
+      <CookieLogin
+        session={session}
+        account={account}
+        returnTo={returnTo}
+        auth={auth}
+        appName={appName}
+      />
+    );
   }
   return <BackendLoginPage session={session} returnTo={returnTo} auth={auth} appName={appName} />;
 };
 
 LoginPage.propTypes = {
   session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
   auth: authShape.isRequired,
   appName: PropTypes.string.isRequired,

@@ -195,13 +195,10 @@ const hasConfigFiles = status => Array.isArray(status?.config) && status.config.
 
 const adminAdapterFor = status => {
   const method = authMethod(status);
-  if (method === 'cookie') {
-    return {};
-  }
   return {
     ...(method === 'backend' ? backendAdminMembers : {}),
     ...(hasConfigFiles(status) ? { config: adminConfig } : {}),
-    updateStatus,
+    ...(method === 'cookie' ? {} : { updateStatus }),
   };
 };
 
@@ -286,9 +283,11 @@ export const routeTitleKey = pathname => {
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
  * in the order the column draws them: the profile feature's Account
  * group, the identity feature's operator group while the host's first
- * `auth` token is `cookie`, the vdi feature's Fleet group while the host
- * advertises `fleet`, and the shared admin feature's entries over the
- * admin adapter the host gets; empty means no column.
+ * `auth` token is `cookie` (its Configuration row reaching the shared
+ * configuration page in place of the shared admin feature's entries), the
+ * vdi feature's Fleet group while the host advertises `fleet`, and on
+ * every other host the shared admin feature's entries over the admin
+ * adapter the host gets; empty means no column.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -296,12 +295,12 @@ export const routeTitleKey = pathname => {
  * @returns {Array} The sidebar groups `AppShell` takes as `sidebar`
  */
 export const sidebarEntries = ({ status, account }) => {
-  const method = authMethod(status);
+  const cookie = authMethod(status) === 'cookie';
   return [
     ...profileSidebar(status, account),
-    ...(method === 'cookie' ? identitySidebar(status, account) : []),
+    ...(cookie ? identitySidebar(status, account) : []),
     ...vdiSidebar(status, account),
-    ...adminSidebar(status, account, adminAdapterFor(status)),
+    ...(cookie ? [] : adminSidebar(status, account, adminAdapterFor(status))),
   ];
 };
 
@@ -532,10 +531,10 @@ const gatedRoutes = rows =>
     <Route key={path} path={path} element={gated(open, element, titleOf(path), token)} />
   ));
 
-const signInRoutes = ({ status, cookie }) => {
+const signInRoutes = ({ status, cookie, account }) => {
   const tfa = cookie && hasFeature(status, 'tfa');
   const local = cookie && hasFeature(status, 'local-accounts');
-  const pages = { session, returnTo };
+  const pages = { account, returnTo };
   return gatedRoutes([
     {
       path: '/login/magic',
@@ -570,7 +569,7 @@ const signInRoutes = ({ status, cookie }) => {
     {
       path: '/registration',
       open: local,
-      element: <RegisterPage {...pages} auth={authAdapter} />,
+      element: <RegisterPage session={session} {...pages} auth={authAdapter} />,
       token: 'local-accounts',
     },
     {
@@ -645,6 +644,9 @@ const issuerProfile = ({ account, status, globalAdmin }) => (
     localAccounts={hasFeature(status, 'local-accounts')}
     issuerUrl={account.issuerUrl}
     admin={globalAdmin}
+    user={account.user}
+    loaded={account.loaded}
+    oidc={account.oidc}
   />
 );
 
@@ -720,16 +722,14 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
     />
   ));
 
-const sharedAdminRoutes = ({ cookie, globalAdmin, user }) =>
-  cookie
-    ? null
-    : ['config', 'system'].map(page => (
-        <Route
-          key={`/admin/${page}`}
-          path={`/admin/${page}`}
-          element={<AdminRoute globalAdmin={globalAdmin} user={user} page={page} />}
-        />
-      ));
+const sharedAdminRoutes = ({ globalAdmin, user }) =>
+  ['config', 'system'].map(page => (
+    <Route
+      key={`/admin/${page}`}
+      path={`/admin/${page}`}
+      element={<AdminRoute globalAdmin={globalAdmin} user={user} page={page} />}
+    />
+  ));
 
 const homeElementFor = ({
   status,
@@ -770,9 +770,12 @@ const homeElementFor = ({
  * its feature token or by the host's first `auth` token, and the identity
  * contract's five groups behind the `cookie` token and their feature
  * tokens, a route the host lacks rendering `NotAvailableStub` instead; the
- * shared admin pages at `/admin/config` and `/admin/system` are not
- * mounted on a `cookie` host, whose sidebar reaches the issuer's own
- * configuration page as a top-level navigation; on a `cookie` host
+ * shared admin pages at `/admin/config` and `/admin/system` on every host,
+ * the Configuration page on a `cookie` host reading its names from
+ * `status.config` behind the identity feature's Configuration row; the
+ * sign-in, register and profile pages take the session state, whose
+ * adopted session alone sends a signed-in person off a sign-in page or
+ * draws the profile; on a `cookie` host
  * `/error` and every unknown route draw the identity contract's ErrorPage,
  * every other host sending an unknown route home.
  */
@@ -854,6 +857,7 @@ const AppRoutes = ({
           backend || cookie ? (
             <LoginPage
               session={session}
+              account={account}
               returnTo={returnTo}
               auth={authAdapter}
               appName={status.brand.name}
@@ -877,7 +881,12 @@ const AppRoutes = ({
         path="/register"
         element={
           backend && hasFeature(status, 'local-accounts') ? (
-            <RegisterPage session={session} returnTo={returnTo} auth={authAdapter} />
+            <RegisterPage
+              session={session}
+              account={account}
+              returnTo={returnTo}
+              auth={authAdapter}
+            />
           ) : (
             <Stub titleKey={titleOf('/register')} token="local-accounts" />
           )
@@ -898,7 +907,7 @@ const AppRoutes = ({
           )
         }
       />
-      {signInRoutes({ status, cookie })}
+      {signInRoutes({ status, cookie, account })}
       {onboardingRoutes({ status, cookie })}
       {interstitialRoutes({ status, cookie })}
       <Route
@@ -914,6 +923,9 @@ const AppRoutes = ({
               localAccounts={hasFeature(status, 'local-accounts')}
               issuerUrl={issuerUrl}
               admin={globalAdmin}
+              user={account.user}
+              loaded={account.loaded}
+              oidc={oidc}
             />
           ) : (
             gated(
@@ -937,7 +949,7 @@ const AppRoutes = ({
         }
       />
       {identityAdminRoutes({ cookie, globalAdmin, user: account.user })}
-      {sharedAdminRoutes({ cookie, globalAdmin, user: account.user })}
+      {sharedAdminRoutes({ globalAdmin, user: account.user })}
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
       )}

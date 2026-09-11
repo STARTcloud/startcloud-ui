@@ -23,6 +23,7 @@ export const sessionStateShape = PropTypes.shape({
   oidc: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
+  loaded: PropTypes.bool.isRequired,
   pickOrg: PropTypes.func.isRequired,
   sessionEnded: PropTypes.shape({ returnTo: PropTypes.string.isRequired }),
   signIn: PropTypes.func.isRequired,

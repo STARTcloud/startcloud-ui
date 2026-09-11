@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
 
 /**
- * The app's side of the shared admin pages: the update check on every
- * host; the configuration files with their schemas, the merge-patch write,
+ * The app's side of the shared admin pages: the update check on a host
+ * that answers one (`updateStatus` present, absent on a `cookie` host); the
+ * configuration files with their schemas, the merge-patch write,
  * the restart status, the restart and the one `action(route, method, body)`
  * on a host whose `status.config` names a file (`config` present, absent
  * on a backend with no files); the organizations with their members and
@@ -32,5 +33,5 @@ export const adminShape = PropTypes.shape({
     action: PropTypes.func.isRequired,
   }),
   storage: PropTypes.func,
-  updateStatus: PropTypes.func.isRequired,
+  updateStatus: PropTypes.func,
 });

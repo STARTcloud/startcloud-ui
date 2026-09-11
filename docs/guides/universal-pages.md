@@ -454,7 +454,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   them only when it has accounts of its own, and the catalog carries them
   unrouted.
 - **ProfilePage**: the account's own page for an app with accounts of its
-  own, `ProfilePage({ session, events, returnTo, account, activeOrgUuid })`:
+  own, `ProfilePage({ session, events, returnTo, account, activeOrgUuid, user, loaded })`:
+  `user` and `loaded` are the session state's adopted user and whether
+  `load()` has answered; the page draws nothing until `loaded`, then the
+  profile for `user`, and sends a visitor to sign in only once `loaded`
+  says there is none, because the cached account is a paint hint and
+  never a session; then
   the avatar card through the chrome's `Avatar` with the verification
   notice, then Profile (display name, the Gravatar facts), Organizations
   (memberships with make-primary for local sessions and leave, pending join
@@ -499,8 +504,8 @@ joinIntentKey })` lists the organizations open to discovery with their
 - **AdminPage**: the admin page of an app with accounts and configuration
   of its own, `AdminPage({ session, returnTo, allowed, admin,
 activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
-  app's own `updateCommand` with a copy button) when the app's
-  `updateStatus` reports one, then Organizations and users
+  app's own `updateCommand` with a copy button) while the adapter carries
+  `updateStatus` and it reports one, then Organizations and users
   (`AdminOrganizations`: every organization with its `UserCard` members,
   searched from the navbar, edit in a react-bootstrap `Modal`, rename,
   suspend, resume, delete), Configuration (`AdminConfig`: one tab per name
@@ -518,7 +523,10 @@ storage, updateStatus }`, `allowed` the app's global-admin flag; a
   visitor is sent to sign in and a non-admin home. With the sidebar of
   the navbar contract those three are the admin feature's sidebar entries
   at `/admin`, `/admin/config` and `/admin/system`, one page each, on
-  every UI backend that advertises `admin`, and the tab strip goes. Its keys are `admin.*`,
+  every UI backend that advertises `admin`, the Configuration page on a
+  `cookie` UI backend too, behind the identity feature's Configuration row,
+  over an adapter carrying `config` alone while `status.config` names a
+  file, and the tab strip goes. Its keys are `admin.*`,
   `orgUserManager.*`, `configManager.*`, `configField.*` and `oidc.*` in
   `shared.json`; every glyph is `react-icons/fa6`; the catalog carries it
   unrouted.
@@ -581,6 +589,17 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   section header in the Versions style ("Quality", the tier chip, the
   count of unmet rules) collapsed by default, expanding to the unmet
   rules or "All quality rules pass."; the cards keep their accordion.
+
+---
+
+## Page states
+
+The states the shell draws before any page can, each a rule with its
+reason:
+
+| State                                                                                                  | Draws                                                                                                                                                                                                                                                                                                                                                                                          | Why                                                                                                                                                                                                                                                                       | Spec |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| backend unreachable: `GET /api/status` answered no payload (a proxy `502`, a network error, a timeout) | the shared empty-state card of `NotAvailableStub`, `StatusUnreachable` in `src/components/common`, with the sentence `status.unreachable` and a Retry button (`status.retry`) that probes `/api/status` again and boots the app when it answers; no chrome, because the header, the sidebar and the footer are drawn from the status payload and there is none, and no plain line in its place | a blank page tells the person nothing and a plain line offers nothing to press; the status probe is the one call made before any session exists, so its failure is the one state no page and no shell can draw, and a person in front of a restarting backend needs Retry | none |
 
 ---
 

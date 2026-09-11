@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +8,7 @@ import PasswordField from '../../../components/common/PasswordField';
 import ProblemAlert from '../../../components/common/ProblemAlert';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
+import { sessionStateShape } from '../../../hooks/useSession';
 import { followNext } from '../../../lib/next';
 import { passwordReset } from '../../../lib/signin';
 import { passwordMinimum, returnToShape } from '../../../utils/auth';
@@ -28,13 +28,14 @@ const readOnce = () => {
  * the location before drawing, then "Choose a new password" with the reveal
  * and the passphrase generator, the hint from the `password` form of
  * `/api/rules`, the `422` painted inline, and `reset_invalid` replacing the
- * form with the danger alert and "Request a new link".
+ * form with the danger alert and "Request a new link"; a person whose
+ * adopted session (`account`) is live is sent away.
  */
-const PasswordResetPage = ({ session, returnTo }) => {
+const PasswordResetPage = ({ account, returnTo }) => {
   const { t } = useTranslation(['auth']);
   const navigate = useNavigate();
   const report = useProblemReporter();
-  const signedIn = useSignedInRedirect(session, returnTo);
+  const signedIn = useSignedInRedirect(account, returnTo);
   const [credentials] = useState(readOnce);
   const [values, setValues] = useState({ password: '' });
   const [revealed, setRevealed] = useState(false);
@@ -123,7 +124,7 @@ const PasswordResetPage = ({ session, returnTo }) => {
 };
 
 PasswordResetPage.propTypes = {
-  session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
 };
 

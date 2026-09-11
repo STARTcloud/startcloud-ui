@@ -24,11 +24,11 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * group 5: nothing unless the host advertises `admin` and the account's
  * roles hold `ROLE_ADMIN`, else one Admin group with the seven sections
  * Overview, Accounts, Activity, Health, Security, Content (while the host
- * also advertises `policies`) and System, the Dashboard row exact-match
- * and the Blocked IPs row carrying the `blockedCount` badge the shell
- * resolves from the `admin` topic; the Configuration row carries
- * `external: true` until the shared editor lands, a top-level navigation
- * into the issuer's own configuration page.
+ * also advertises `policies`) and System (while `status.config` names a
+ * file), the Dashboard row exact-match, the Blocked IPs row carrying the
+ * `blockedCount` badge the shell resolves from the `admin` topic and the
+ * Configuration row an in-router link to the shared configuration page at
+ * `/admin/config`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -38,6 +38,7 @@ export const sidebar = (status, account) => {
   if (!hasFeature(status, 'admin') || !isAdmin(account)) {
     return [];
   }
+  const hasConfigFiles = Array.isArray(status.config) && status.config.length > 0;
   const sections = [
     section('overview', [
       {
@@ -114,16 +115,12 @@ export const sidebar = (status, account) => {
       ])
     );
   }
-  sections.push(
-    section('system', [
-      {
-        key: 'config',
-        icon: FaGear,
-        labelKey: 'admin.config.title',
-        to: '/admin/config',
-        external: true,
-      },
-    ])
-  );
+  if (hasConfigFiles) {
+    sections.push(
+      section('system', [
+        { key: 'config', icon: FaGear, labelKey: 'admin.config.title', to: '/admin/config' },
+      ])
+    );
+  }
   return [{ key: 'admin', labelKey: 'admin.sidebar.title', sections }];
 };

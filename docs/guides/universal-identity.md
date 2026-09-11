@@ -323,10 +323,9 @@ convergence is a later round across all of them.
   the template still answers a browser GET, so no path on the server has
   two owners and no flag chooses between them. The cutover is the one
   change where the SPA fallback takes every page GET and the templates
-  retire, with one exclusion: `GET /admin/config` keeps its Thymeleaf
-  page, its `layout/layout`, fragments and scripts, until the shared
-  configuration editor lands (decision 16), because the exception and the
-  retirement cannot both be whole. A developer's `ui/` is the same
+  retire, `admin/config.html` among them, because the shared configuration
+  editor of the config contract answers `/admin/config` over the
+  `/api/config/*` routes the server serves (decision 16). A developer's `ui/` is the same
   tarball CI fetches, unpacked by hand with the documented
   `curl -fsSL … | tar -xz -C ui` line, and `ui/` is ignored by git, so
   no build of the UI ever enters this repository.
@@ -885,7 +884,7 @@ from every step; it becomes the one `401` code.
   labeled "Step n of m" with a hidden step name so a screen reader hears
   the progress, moves focus to its heading when it appears, and a
   `session_expired` answer sends the visitor to sign in.
-- **NameStep**: given names and family name, the family-name hint,
+- **NameStep**: First name and Last name, the last-name hint,
   Unicode letters, periods, hyphens, apostrophes and spaces
   (`$defs.personName`, the `name` form of `/api/rules`, `given_name`
   required and `family_name` optional), the autofill tokens
@@ -1453,7 +1452,7 @@ replays inside its window and a guessing run meets `429` with
   System only when the adapter carries `storage`; a page whose tabs
   number one, the console, the profile and the admin page alike, draws
   no tab strip, that tab's content standing under the page heading:
-  - **Profile**: given names, family name, middle name, salutation (the six
+  - **Profile**: First name, Last name, middle name, salutation (the six
     choices plus custom), gender (male, female, custom, unspecified),
     website, birthdate as a `type="date"` input, the email read-only with a
     "Change" link to the Security tab's email section, the masked mobile
@@ -1695,15 +1694,18 @@ Organizations row, the Terms section present only while the UI backend
 also advertises `policies`, the Blocked IPs row carrying `badge:
 'blockedCount'`, which the shell resolves from the `admin` topic's
 `blocked-count` event after one read of `GET /api/admin/brute-force/count`
-on connect and never from a timer, and the Configuration row carrying
-`external: true` until the shared editor lands (decision 16), so the
-shell follows it as a top-level navigation into the Thymeleaf page and
-drops the member with the exception. The shared admin feature keeps its
+on connect and never from a timer, and the System section with its
+Configuration row present exactly while `status.config` names a file
+(config contract decision 72), an in-router link to `/admin/config`, the
+shared configuration page (decision 16). The shared admin feature keeps its
 three entries, Organizations and users, Configuration and System at
 `/admin`, `/admin/config` and `/admin/system`, each drawn only while the
-adapter carries `organizationsWithUsers`, `config` or `storage`, and
-exports none of them on the issuer, whose adapter carries none; the
-shared feature never branches on the UI backend's role, because a UI
+adapter carries `organizationsWithUsers`, `config` or `storage`; on the
+issuer the router mounts the identity feature's column in place of the
+shared feature's entries, and the shared feature's Configuration page
+answers `/admin/config` behind the column's Configuration row over an
+adapter carrying `config` alone, its tabs the names of `status.config`;
+the shared feature never branches on the UI backend's role, because a UI
 backend that needs a different column adds a feature and opts into it,
 never a role branch inside a shared one. The column shows the brand at
 its top, one link to `/`, and the header row opens with the root crumb,
@@ -1742,7 +1744,7 @@ Every read is session or Bearer with `ROLE_ADMIN`; a paged list answers
 | `GET /api/admin/rate-limit/{user_id}`                                                                 | `{ sign_in: { armed, wait_seconds }, tfa: { "SMS": "locked" \| "armed" \| "clear", "APP": …, "BACKUP_CODE": … }, banned }`, the three gates the Rate limits dialog draws; `GET /api/admin/rate-limit/banned` the banned ids                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/rate-limit/status` answers the SMS limiter alone, `/banned`                                             |
 | `GET /api/admin/terms`, `GET /api/admin/terms/placeholders`                                           | the templates `[{ name, friendly_name, icon, version, type, is_public, display_order, content, created_by, updated_at }]`; the placeholder list `[{ name, scope, description }]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `/admin/terms/templates`, `/placeholders`                                                                       |
 | `GET /api/admin/dcr/clients`                                                                          | unchanged shape                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `/admin/dcr/clients`                                                                                            |
-| `GET /api/admin/config/schema`, `/values`, `/base-defaults`; `GET /api/config/restart-status`         | the issuer's own documents, unchanged in shape (decision 16); `restart-status` is `{ restart_required, last_modified_by, last_modified_time }`, read once when the stream connects, every change after riding the `admin` topic's `restart-required` event                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `/admin/config/*`; `restart-status` polled by the footer every thirty seconds                                   |
+| `GET /api/config/<name>`, `GET /api/config/<name>/schema`, `GET /api/config/restart-status`           | the config contract's section 3 answers, `<name>` a member of `status.config` (decision 16); `restart-status` is `{ restart_required, requires_restart, last_modified_by, last_modified_time }`, read once when the stream connects, every change after riding the `admin` topic's `restart-required` event                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/config/*`; `restart-status` polled by the footer every thirty seconds                                   |
 
 ### What the admin pages send and what comes back
 
@@ -1766,7 +1768,7 @@ problem body with `code`.
 | reorder terms            | `PUT /api/admin/terms/order` `{ names: [] }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `displayOrder` per template in the same batch                                                                                     |
 | revoke a dynamic client  | `DELETE /api/admin/dcr/clients/{id}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `/admin/dcr/clients/{id}`                                                                                                         |
 | export                   | `GET /api/admin/export/logins`, `/registrations`, `/users` with the tab's filters, a top-level navigation answering `application/json` as an attachment, the same rows the table draws, because a CSV opened in a spreadsheet executes a cell that an attacker typed as a username or a user agent                                                                                                                                                                                                                                                                                                                                                                                                                    | `/admin/export/*`                                                                                                                 |
-| configuration            | `PUT /api/admin/config/values` (`422` with a pointer per failing path in place of the `400` text list), `POST /api/config/restart` and `POST /api/admin/config/rotate-signing-key` → `{ kid }`, each stepped up and behind a `ConfirmModal` because one click must not restart the issuer or retire its signing key, `POST /api/admin/config/test-smtp` `{ smtp_id, recipient, config }`                                                                                                                                                                                                                                                                                                                              | `/admin/config/*`                                                                                                                 |
+| configuration            | `PUT /api/config/<name>`, the config contract's merge patch (`422` with a pointer per failing path in place of the `400` text list), `POST /api/config/restart` and `POST /api/admin/config/rotate-signing-key` → `{ kid }`, each stepped up and behind a `ConfirmModal` because one click must not restart the issuer or retire its signing key, the SMTP test the mail section's `test` action of the config contract                                                                                                                                                                                                                                                                                               | `/admin/config/*`                                                                                                                 |
 
 ### What the admin pages draw
 
@@ -1852,11 +1854,8 @@ problem body with `code`.
     placeholders call), Delete behind a confirm; every change saved as
     it is made.
   - **Configuration**: the shared `AdminConfig` of the config contract
-    over the issuer's schema when it lands, the Thymeleaf `/admin/config`
-    page until then (decision 16), reached from the sidebar row, which
-    carries `external: true` until the editor lands, as a top-level
-    navigation into the old chrome and back by its own links, the one
-    named jump between two chromes.
+    over the issuer's schema, one tab per name in `status.config`, reached
+    from the sidebar row as an in-router link (decision 16).
   - **Dashboard's restart card**: while the `admin` topic's
     `restart-required` says a restart is pending the Dashboard draws a
     warning card naming who changed what and when, with Restart behind
@@ -2025,9 +2024,9 @@ Settled before code, in the order they were raised:
 14. The XHR routes move under `/api/user/*` in one release, no aliases.
 15. Google Places stays behind the issuer's key in `AddressFields`.
 16. The configuration editor is the shared editor of the config contract
-    over JSON Schema, the last piece of the conversion and its own
-    session; until it lands the Thymeleaf `/admin/config` page is the one
-    named exception, and no stopgap is built.
+    over JSON Schema, mounted at `/admin/config` on the issuer as on every
+    UI backend whose `status.config` names a file, its tabs those names;
+    no stopgap was built.
 17. Admin pages are routes under `/admin/*`, every sidebar entry and tab a
     deep link.
 18. The error page keeps the stack trace for admins: the trace is stored
@@ -2131,9 +2130,8 @@ Settled before code, in the order they were raised:
 52. The status payload's camelCase members are the one named exception
     to the estate's `snake_case`, converged in a later round across
     every UI backend.
-53. The Thymeleaf `/admin/config` page stays the named exception until
-    the shared editor lands; a pending restart is a Dashboard card and a
-    Configuration card, both from the stream.
+53. A pending restart is a Dashboard card and a Configuration card, both
+    from the stream.
 54. Restart-required, the blocked count and the health state travel on
     the `admin` events topic; no page of the issuer runs a timer.
 55. The language control is a globe with the current language's code,
@@ -2181,8 +2179,8 @@ Settled before code, in the order they were raised:
     shape of the navbar contract's Export bullet; a `views` entry's
     `useTree` answers the same shape.
 69. A sidebar row may carry `external: true`, followed as a top-level
-    navigation; on the issuer the Configuration row alone carries it,
-    until the shared editor lands.
+    navigation; no row of the issuer carries it, the Configuration row
+    being an in-router link to the shared editor.
 70. The accent is the site's; the generator computes `--brand-on-primary`
     as `#ffffff` or `#000000`, whichever contrasts more, when the YAML
     omits it, refusing only when the better is under 4.5:1:
