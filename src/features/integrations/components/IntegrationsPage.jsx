@@ -271,8 +271,7 @@ const ScopeChips = ({ app, onRemoveScope }) => {
           {scope === 'openid' ? null : (
             <button
               type="button"
-              className="btn btn-link btn-sm p-0 ms-1 text-white d-inline-flex align-items-center justify-content-center"
-              style={{ minWidth: 24, minHeight: 24 }}
+              className="btn btn-link btn-sm p-0 ms-1 text-white d-inline-flex align-items-center justify-content-center scope-chip-remove"
               aria-label={t('integrations.apps.removeScope', { scope })}
               title={t('integrations.apps.removeScope', { scope })}
               onClick={() => onRemoveScope(app, scope)}

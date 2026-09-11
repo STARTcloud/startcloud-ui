@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 const ICON_URL = /^(?:https:\/\/|\/(?![/\\]))/;
 
 const hideBrokenIcon = event => {
-  event.target.style.display = 'none';
+  event.target.classList.add('d-none');
 };
 
 const ProviderButtons = ({

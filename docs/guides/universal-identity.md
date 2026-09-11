@@ -1251,7 +1251,7 @@ base-uri 'none';
 frame-ancestors 'none';
 object-src 'none';
 script-src 'self' 'sha256-<pre-paint script>' <analytics origin> https://maps.googleapis.com;
-style-src 'self' <pack origin>;
+style-src 'self' 'unsafe-inline' <pack origin>;
 font-src 'self' <pack origin>;
 img-src 'self' data: <tile origin> <analytics origin>;
 connect-src 'self' https://maps.googleapis.com <analytics origin>;
@@ -1267,9 +1267,12 @@ the map and Places entries stay because those features are kept, and
 Gravatar needs none because the issuer proxies the avatar. The build publishes the pre-paint script's hash beside the
 tarball so the issuer never guesses it. `form-action` is omitted on the
 interstitial routes because the consent post ends in a redirect to the
-relying party, which some browsers check against it. If react-bootstrap
-proves to need `style-src 'unsafe-inline'`, that is recorded here as a
-named gap, not added silently.
+relying party, which some browsers check against it. Inline styles are
+banned in the shared UI: every element is styled by class alone, so a
+user can theme the app. The issuer's policy carries `'unsafe-inline'`
+for styles until the build is clean of them, at which point it leaves.
+The served `index.html` carries exactly one inline script, the pre-paint
+script whose hash the policy names, and no other.
 
 ### What this design changed for the interstitials
 
@@ -2261,6 +2264,12 @@ Settled before code, in the order they were raised:
      `/push/`, the two headers sent on that one path.
 105. A page whose tabs number one draws no tab strip; that tab's content
      stands under the page heading.
+106. Inline styles are banned in the shared UI; every element is styled
+     by class alone so a user can theme the app; the issuer's policy
+     carries `'unsafe-inline'` for styles until the build is clean of
+     them, at which point it leaves; the served `index.html` carries
+     exactly one inline script, the pre-paint script whose hash the
+     policy names, and no other.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

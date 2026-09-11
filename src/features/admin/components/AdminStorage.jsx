@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaHardDrive, FaCompactDisc } from 'react-icons/fa6';
 
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useCssVar } from '../../../hooks/useCssVar';
 import { log } from '../../../lib/logger';
 import { formatFileSize } from '../../../utils/formatFileSize';
 
@@ -19,6 +20,9 @@ const progressClass = percent => {
 
 const StorageBar = ({ usage, label, icon }) => {
   const { t } = useTranslation();
+  const bar = useRef(null);
+  const usedPercent = usage && usage.total > 0 ? (usage.used / usage.total) * 100 : 0;
+  useCssVar(bar, '--progress-width', `${usedPercent}%`);
   if (!usage) {
     return (
       <div className="alert alert-warning" role="alert">
@@ -26,8 +30,6 @@ const StorageBar = ({ usage, label, icon }) => {
       </div>
     );
   }
-
-  const usedPercent = usage.total > 0 ? (usage.used / usage.total) * 100 : 0;
 
   return (
     <div className="mb-4">
@@ -38,9 +40,9 @@ const StorageBar = ({ usage, label, icon }) => {
       <small className="text-muted d-block mb-2">{usage.path}</small>
       <div className="progress progress-lg">
         <div
-          className={`progress-bar ${progressClass(usedPercent)}`}
+          ref={bar}
+          className={`progress-bar progress-fill ${progressClass(usedPercent)}`}
           role="progressbar"
-          style={{ width: `${usedPercent}%` }}
           aria-valuenow={usedPercent}
           aria-valuemin="0"
           aria-valuemax="100"

@@ -62,7 +62,7 @@ export const labelColumn = {
           className="rounded icon-with-margin-sm v-align-middle prov-icon-sm"
           loading="lazy"
           onError={event => {
-            event.currentTarget.style.display = 'none';
+            event.currentTarget.classList.add('d-none');
           }}
         />
       ) : null}

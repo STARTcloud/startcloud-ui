@@ -19,7 +19,7 @@ const CardMedia = ({ item, ctx }) => {
         className="prov-icon"
         loading="lazy"
         onError={event => {
-          event.currentTarget.style.display = 'none';
+          event.currentTarget.classList.add('d-none');
         }}
       />
     );

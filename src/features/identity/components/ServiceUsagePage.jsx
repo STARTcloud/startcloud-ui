@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDesktop, FaKey } from 'react-icons/fa6';
 
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
+import { useCssVar } from '../../../hooks/useCssVar';
 import { serviceUsage } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SERVICE_USAGE } from '../utils/examples';
@@ -17,6 +19,16 @@ const NO_HIDDEN = new Set();
 const noSort = () => undefined;
 
 const percentOf = (part, whole) => (whole > 0 ? (part / whole) * 100 : 0);
+
+const UsageBar = ({ percent }) => {
+  const bar = useRef(null);
+  useCssVar(bar, '--progress-width', `${percent}%`);
+  return <span ref={bar} className="progress-bar progress-fill" />;
+};
+
+UsageBar.propTypes = {
+  percent: PropTypes.number.isRequired,
+};
 
 const columns = [
   {
@@ -56,7 +68,7 @@ const columns = [
       return (
         <span className="d-block">
           <span className="progress usage-bar" aria-hidden="true">
-            <span className="progress-bar" style={{ width: `${percent}%` }} />
+            <UsageBar percent={percent} />
           </span>
           <span className="small text-muted">{percent.toFixed(1)}%</span>
         </span>

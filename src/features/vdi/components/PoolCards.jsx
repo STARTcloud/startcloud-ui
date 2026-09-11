@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CollapseButton } from '../../../components/common/GroupHeading';
+import { useCssVar } from '../../../hooks/useCssVar';
 import { CACHE_KEYS, cacheBadgeClass } from '../utils/cacheLevel';
 import { ratioColor } from '../utils/vmStatus';
 
@@ -18,6 +20,8 @@ const PoolCard = ({ name, pool, state, onClick }) => {
   const { t } = useTranslation();
   const staticIp = pool.service_type === 'IPMachinesService';
   const health = pool.agent_health ?? pool.total;
+  const ratio = useRef(null);
+  useCssVar(ratio, '--ratio-color', pool.total ? ratioColor(health / pool.total) : null);
   const publication =
     !staticIp && pool.current_pub_revision
       ? t('vdi.pools.publication', { revision: pool.current_pub_revision })
@@ -40,10 +44,7 @@ const PoolCard = ({ name, pool, state, onClick }) => {
               </span>
             ))}
           </div>
-          <div
-            className="small mt-2"
-            style={{ color: pool.total ? ratioColor(health / pool.total) : undefined }}
-          >
+          <div ref={ratio} className="small mt-2 fleet-card-ratio">
             {t('vdi.pools.agentsHealthy', { healthy: scoreText(health), total: pool.total })}
             {publication ? ` · ${publication}` : ''}
           </div>

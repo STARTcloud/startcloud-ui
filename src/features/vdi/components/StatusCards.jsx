@@ -1,28 +1,34 @@
 import PropTypes from 'prop-types';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useCssVar } from '../../../hooks/useCssVar';
 import { fleetSummary, ratioColor } from '../utils/vmStatus';
 
 const scoreText = value => (value % 1 === 0 ? String(value) : value.toFixed(1));
 
-const StatusCard = ({ label, description, count, denominator, ratio, state, onClick }) => (
-  <div className="col">
-    <button
-      type="button"
-      className={`card fleet-card h-100 w-100 text-center ${state}`}
-      onClick={onClick}
-      aria-pressed={state === 'include'}
-    >
-      <div className="card-body">
-        <div className="display-6 fw-bold" style={{ color: ratioColor(ratio) }}>
-          {count}/{denominator}
+const StatusCard = ({ label, description, count, denominator, ratio, state, onClick }) => {
+  const number = useRef(null);
+  useCssVar(number, '--ratio-color', ratioColor(ratio));
+  return (
+    <div className="col">
+      <button
+        type="button"
+        className={`card fleet-card h-100 w-100 text-center ${state}`}
+        onClick={onClick}
+        aria-pressed={state === 'include'}
+      >
+        <div className="card-body">
+          <div ref={number} className="display-6 fw-bold fleet-card-ratio">
+            {count}/{denominator}
+          </div>
+          <div className="small text-body-secondary fleet-card-label">{label}</div>
+          <div className="small text-body-tertiary mt-1">{description}</div>
         </div>
-        <div className="small text-body-secondary fleet-card-label">{label}</div>
-        <div className="small text-body-tertiary mt-1">{description}</div>
-      </div>
-    </button>
-  </div>
-);
+      </button>
+    </div>
+  );
+};
 
 StatusCard.propTypes = {
   label: PropTypes.string.isRequired,

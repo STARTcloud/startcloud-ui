@@ -175,16 +175,17 @@ const MarkdownArticle = ({
     }
   }, [fragment, fills]);
 
-  const style = fontScale === 1 ? undefined : { fontSize: `${fontScale}em` };
+  const scale = fontScale === 1 ? '' : ` prose-scale-${Math.round(fontScale * 100)}`;
+  const classes = `prose${scale} ${className}`.trim();
 
   if (!html) {
     return (
-      <div className={`prose ${className}`.trim()} style={style}>
+      <div className={classes}>
         <ReactMarkdown>{markdown}</ReactMarkdown>
       </div>
     );
   }
-  return <div ref={container} className={`prose ${className}`.trim()} style={style} />;
+  return <div ref={container} className={classes} />;
 };
 
 MarkdownArticle.propTypes = {

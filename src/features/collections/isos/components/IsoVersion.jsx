@@ -8,6 +8,7 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
+import { useCssVar } from '../../../../hooks/useCssVar';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
@@ -399,6 +400,8 @@ const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
   const [over, setOver] = useState(false);
   const dwell = useRef(null);
   const inputRef = useRef(null);
+  const bar = useRef(null);
+  useCssVar(bar, '--progress-width', `${progress}%`);
 
   useEffect(() => () => clearTimeout(dwell.current), []);
 
@@ -505,9 +508,9 @@ const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
       {uploading ? (
         <div className="progress upload-zone-progress">
           <div
-            className="progress-bar progress-bar-striped progress-bar-animated"
+            ref={bar}
+            className="progress-bar progress-fill progress-bar-striped progress-bar-animated"
             role="progressbar"
-            style={{ width: `${progress}%` }}
             aria-valuenow={progress}
             aria-valuemin="0"
             aria-valuemax="100"

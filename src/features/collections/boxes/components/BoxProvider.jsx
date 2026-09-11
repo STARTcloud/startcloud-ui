@@ -7,6 +7,7 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
+import { useCssVar } from '../../../../hooks/useCssVar';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
@@ -227,16 +228,18 @@ BoxProviderActions.propTypes = slotShape;
 
 const UploadProgress = ({ file, progress }) => {
   const { t } = useTranslation();
+  const bar = useRef(null);
+  useCssVar(bar, '--progress-width', `${progress}%`);
   return (
     <div>
       <div className="progress progress-lg mb-2">
         <div
-          className="progress-bar bg-success progress-bar-striped progress-bar-animated"
+          ref={bar}
+          className="progress-bar progress-fill bg-success progress-bar-striped progress-bar-animated"
           role="progressbar"
           aria-valuenow={progress}
           aria-valuemin="0"
           aria-valuemax="100"
-          style={{ width: `${progress}%` }}
         >
           <span>{progress}%</span>
         </div>

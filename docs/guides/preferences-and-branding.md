@@ -571,7 +571,9 @@ write-through.
 
 For a consuming app:
 
-- **`style-src`** — the theme host, for the pack stylesheet.
+- **`style-src`** — the theme host, for the pack stylesheet, plus
+  `'unsafe-inline'` on the identity provider until the shared build is free
+  of inline styles, identity contract decision 106.
 - **`img-src`** — the theme host; CSS-loaded mask images are fetched under
   this directive.
 - **`script-src`** — a per-response **nonce** (natural, since hosts already

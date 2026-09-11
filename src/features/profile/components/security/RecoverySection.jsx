@@ -72,7 +72,7 @@ const RecoverySection = ({ account, guard }) => {
       {codes.length > 0 ? (
         <div className="mb-3">
           <p className="small text-body-secondary">{t('profile.security.recovery.once')}</p>
-          <div className="row row-cols-2 g-2 font-monospace mb-2" style={{ maxWidth: 320 }}>
+          <div className="row row-cols-2 g-2 font-monospace mb-2 recovery-codes">
             {codes.map(code => (
               <div key={code} className="col">
                 {code}

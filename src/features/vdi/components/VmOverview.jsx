@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
+import { useCssVar } from '../../../hooks/useCssVar';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 import { vmStaleInfo } from '../utils/vmStatus';
 
@@ -28,6 +30,16 @@ const timingClass = value => {
     return 'bg-success';
   }
   return value < 1000 ? 'bg-warning' : 'bg-danger';
+};
+
+const TimingBar = ({ value }) => {
+  const bar = useRef(null);
+  useCssVar(bar, '--timing-width', `${Math.min(Math.max(value / 50, 2), 200)}px`);
+  return <span ref={bar} className={`timing-bar ${timingClass(value)}`} />;
+};
+
+TimingBar.propTypes = {
+  value: PropTypes.number.isRequired,
 };
 
 const Facts = ({ title, rows }) => (
@@ -175,10 +187,7 @@ const timingRows = (timings, t) => {
       label: key,
       content: (
         <>
-          <span
-            className={`timing-bar ${timingClass(value)}`}
-            style={{ width: `${Math.min(Math.max(value / 50, 2), 200)}px` }}
-          />
+          <TimingBar value={value} />
           {value}ms
         </>
       ),

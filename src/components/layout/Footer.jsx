@@ -146,7 +146,7 @@ const Footer = ({
               height="20"
               className="me-2"
               onError={event => {
-                event.currentTarget.style.display = 'none';
+                event.currentTarget.classList.add('d-none');
               }}
             />
             <span className="text-muted">{t('auth:login.poweredByCompany')}</span>

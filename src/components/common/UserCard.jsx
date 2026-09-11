@@ -187,14 +187,10 @@ const UserCard = ({
               <img
                 src={avatarUrl}
                 alt={displayName}
-                className="rounded-circle flex-shrink-0 me-3"
-                style={{ width: 50, height: 50, objectFit: 'cover' }}
+                className="rounded-circle flex-shrink-0 me-3 member-avatar"
               />
             ) : (
-              <div
-                className="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0 me-3"
-                style={{ width: 50, height: 50 }}
-              >
+              <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center flex-shrink-0 me-3 member-avatar">
                 <FaUser className="text-white fs-4" />
               </div>
             )}

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { FaCaretDown, FaCaretRight, FaChevronLeft } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { useCssVar } from '../../hooks/useCssVar';
+
 const WIDTH_KEY = 'sidebar_width';
 const MINIMIZED_KEY = 'sidebar_minimized';
 const MIN_WIDTH = 180;
@@ -166,6 +168,8 @@ const TreeNode = ({ node, depth, tree, current }) => {
   const branch = Boolean(node.children);
   const active = current === node.to;
   const { load } = tree;
+  const row = useRef(null);
+  useCssVar(row, '--sidebar-depth', String(depth));
 
   useEffect(() => {
     if (branch && open && !kids) {
@@ -195,9 +199,9 @@ const TreeNode = ({ node, depth, tree, current }) => {
   return (
     <>
       <button
+        ref={row}
         type="button"
         className={active ? 'sidebar-row active' : 'sidebar-row'}
-        style={{ paddingLeft: `${20 + depth * 18}px` }}
         title={node.label}
         aria-expanded={branch ? open : undefined}
         data-sidebar-row
@@ -259,8 +263,11 @@ TreeNode.propTypes = {
 
 const ContextMenu = ({ menu, onClose }) => {
   const { t } = useTranslation();
+  const list = useRef(null);
+  useCssVar(list, '--sidebar-menu-x', `${menu.x}px`);
+  useCssVar(list, '--sidebar-menu-y', `${menu.y}px`);
   return (
-    <ul className="dropdown-menu show sidebar-menu" style={{ left: menu.x, top: menu.y }}>
+    <ul ref={list} className="dropdown-menu show sidebar-menu">
       {menu.items.map(item => (
         <li key={item.key}>
           <button
@@ -466,6 +473,7 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
   const [width, setWidth] = useState(storedWidth);
   const startResize = useResize(asideRef, setWidth);
   const current = `${pathname}${search}`;
+  useCssVar(asideRef, '--sidebar-width', minimized ? null : `${width}px`);
 
   const toggleMinimized = () => {
     setMinimized(previous => {
@@ -493,11 +501,7 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
   return (
     <>
       {open ? <div className="sidebar-backdrop" role="presentation" onClick={onClose} /> : null}
-      <aside
-        ref={asideRef}
-        className={className}
-        style={minimized ? undefined : { width: `${width}px` }}
-      >
+      <aside ref={asideRef} className={className}>
         <div className="sidebar-top">
           {minimized ? (
             <button

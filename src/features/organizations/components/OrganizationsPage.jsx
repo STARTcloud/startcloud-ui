@@ -179,10 +179,7 @@ const MembershipCard = ({ org, onMakePrimary, onRegenerate, onOpen }) => {
     <Card className="h-100 shadow-sm">
       <Card.Body className="d-flex flex-column gap-2">
         <div className="d-flex align-items-start gap-2">
-          <span
-            className="d-inline-flex justify-content-center flex-shrink-0"
-            style={{ width: 28 }}
-          >
+          <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
             {image ? (
               <img src={image} alt="" width={24} height={24} referrerPolicy="no-referrer" />
             ) : (

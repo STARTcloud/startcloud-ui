@@ -198,7 +198,7 @@ const OrgProfileRow = ({ row }) => {
   return (
     <div className="row mb-1">
       <dt className="col-sm-3">{t(`orgConsole.organization.${row.key}`)}</dt>
-      <dd className="col-sm-9 mb-1" style={row.multiline ? { whiteSpace: 'pre-line' } : undefined}>
+      <dd className={`col-sm-9 mb-1${row.multiline ? ' org-profile-multiline' : ''}`}>
         {row.link ? (
           <a href={row.value} target="_blank" rel="noopener noreferrer">
             {row.value}
@@ -261,17 +261,9 @@ const OrgProfileDisplay = ({
     <div>
       <div className="d-flex align-items-center mb-3">
         {orgLogo ? (
-          <img
-            src={orgLogo}
-            alt=""
-            className="rounded-circle me-3"
-            style={{ width: 64, height: 64, objectFit: 'cover' }}
-          />
+          <img src={orgLogo} alt="" className="rounded-circle me-3 org-profile-logo" />
         ) : (
-          <div
-            className="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3"
-            style={{ width: 64, height: 64 }}
-          >
+          <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3 org-profile-logo">
             <FaBuilding className="text-white fs-3" />
           </div>
         )}

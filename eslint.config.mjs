@@ -257,6 +257,8 @@ export default [
       'react/no-unknown-property': 'error',
       'react/prefer-es6-class': 'error',
       'react/require-render-return': 'error',
+      'react/forbid-dom-props': ['error', { forbid: ['style'] }],
+      'react/forbid-component-props': ['error', { forbid: ['style'] }],
 
       // === PHASE 2: MODERN REACT RULES ===
       'react/function-component-definition': [

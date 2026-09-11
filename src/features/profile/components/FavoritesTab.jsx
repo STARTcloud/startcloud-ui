@@ -47,7 +47,7 @@ const FavoriteRow = ({ app, handle, onRemove }) => {
   return (
     <>
       {handle}
-      <span className="d-inline-flex justify-content-center flex-shrink-0" style={{ width: 28 }}>
+      <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
         <AppIcon app={app} />
       </span>
       <span className="flex-grow-1 fw-semibold text-truncate">{labelOf(app)}</span>

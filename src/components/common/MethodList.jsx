@@ -50,7 +50,7 @@ export const MethodRow = ({
   const image = httpsUrl(iconUrl);
   return (
     <li className={`list-group-item d-flex align-items-center gap-3 ${className}`}>
-      <span className="d-inline-flex justify-content-center flex-shrink-0" style={{ width: 28 }}>
+      <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
         {image ? (
           <img src={image} alt="" width={24} height={24} referrerPolicy="no-referrer" />
         ) : (
