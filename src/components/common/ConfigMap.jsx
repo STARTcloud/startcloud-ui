@@ -46,7 +46,7 @@ const cardFields = (node, base) =>
   Object.entries(node.properties || {})
     .flatMap(([key, property], index) => {
       const pointer = `${base}/${key}`;
-      if (property.type === 'object' && property.properties) {
+      if (property.properties) {
         return cardFields(property, pointer);
       }
       if (property.type === 'object' || !onCard(property)) {
@@ -357,7 +357,7 @@ const ObjectMap = ({
           )}
         </div>
       </div>
-      <Modal show={editing !== null} onHide={close} size="lg">
+      <Modal show={editing !== null} onHide={close} size="xl" scrollable>
         <form onSubmit={save} noValidate>
           <Modal.Header closeButton>
             <Modal.Title as="h5">
@@ -538,11 +538,12 @@ ScalarMap.propTypes = mapShape;
  * The generic map component over one `additionalProperties` field: an item
  * with `properties` draws as cards, one per key, each showing the key and
  * every item property carrying `order` 1 or 2 as its field drawn inline
- * and edited in place, the leaves of a nested object property included,
- * the other errors of the entry listed under them, with Add opening a dialog of
- * the item's fields (an object property with `properties` as a titled group
- * of its fields, recursively, and a nested `additionalProperties` item as
- * this component nested) and a key field validated against `propertyNames`
+ * and edited in place, a leaf at any depth inside the item reached through
+ * its nested `properties` included, the other errors of the entry listed
+ * under them, with Add opening a wide dialog that scrolls inside itself
+ * over the item's fields (an object property with `properties` as a titled
+ * group of its fields, recursively, and a nested `additionalProperties`
+ * item as this component nested) and a key field validated against `propertyNames`
  * and the existing keys with `unique`, `params.scope` the map's `title`, and a
  * Delete on each card; a scalar item draws as key and value rows with Add
  * and Remove; an item that is itself a map draws this component nested per

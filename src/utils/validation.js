@@ -8,6 +8,8 @@ const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 const NON_BLANK_PATTERN = '\\S';
 const PATTERN_NAMES = { [NON_BLANK_PATTERN]: 'nonBlank' };
 const PLACEHOLDER_RE = /^\$\{[A-Z0-9_]+(?::[^}]*)?\}$/;
+const DURATION_RE = /^P(?!$)(?:\d+D)?(?:T(?=\d)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/;
+const TTL_RE = /^\d+(?:ms|s|m|h|d)$/;
 
 const PATTERN_KEYS = [
   'nonBlank',
@@ -56,6 +58,8 @@ const FORMATS = {
   uri: isUri,
   hostname: value => HOSTNAME_RE.test(value),
   ipv4: value => IPV4_RE.test(value),
+  duration: value => DURATION_RE.test(value),
+  ttl: value => TTL_RE.test(value),
 };
 
 const TYPE_CHECKS = {
@@ -291,8 +295,11 @@ const firstFailure = (rule, value, patternName, document) => {
  * `required: true`; a blank string is evaluated against `minLength` and
  * `pattern` alone and skips `type`, `format`, `enum`, `minimum` and
  * `maximum`), `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`
- * (whichever bound was crossed, never a `range`), `enum`, `format`,
- * `minItems`, `maxItems` and `items` evaluated per member, with `$ref`
+ * (whichever bound was crossed, never a `range`), `enum`, `format` (`uri`,
+ * `hostname`, `ipv4`, and the config contract's `duration` and `ttl` as the
+ * patterns its ConfigField row fixes, reported with rule `format` and the
+ * format name in `params`), `minItems`, `maxItems` and `items` evaluated
+ * per member, with `$ref`
  * resolved within `document`; a `writeOnly` value is evaluated like any
  * string; a `${NAME:default}` placeholder (`isPlaceholder`) satisfies
  * `required` and skips every value rule, the server resolving it.

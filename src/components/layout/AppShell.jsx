@@ -14,7 +14,13 @@ import { reportRenderError } from '../../lib/logger';
 import { returnTo } from '../../lib/runtime';
 import { authMethod, hasFeature } from '../../utils/capabilities';
 import { userDisplayName, userSecondaryLine } from '../../utils/identity';
-import { buildRouteCrumbs, parseRoute, rootCrumb, titleCrumb } from '../../utils/routes';
+import {
+  buildRouteCrumbs,
+  parseRoute,
+  rootCrumb,
+  sidebarCrumbs,
+  titleCrumb,
+} from '../../utils/routes';
 import Avatar from '../common/Avatar';
 import BrandLogo from '../common/BrandLogo';
 import ErrorBoundary from '../common/ErrorBoundary';
@@ -112,29 +118,6 @@ const sidebarRows = groups =>
   groups.flatMap(group =>
     (group.sections || []).flatMap(section => section.items.map(row => ({ group, row })))
   );
-
-const rowMatches = (row, pathname) => {
-  if (row.external) {
-    return false;
-  }
-  if (row.end) {
-    return pathname === row.to;
-  }
-  return pathname === row.to || pathname.startsWith(`${row.to}/`);
-};
-
-const sidebarCrumbs = ({ groups, pathname, t }) => {
-  const [match] = sidebarRows(groups)
-    .filter(entry => rowMatches(entry.row, pathname))
-    .sort((a, b) => b.row.to.length - a.row.to.length);
-  if (!match) {
-    return [];
-  }
-  return [
-    { key: 'group', label: t(match.group.labelKey) },
-    { key: 'row', label: t(match.row.labelKey), to: match.row.to },
-  ];
-};
 
 const pathTo = (nodes, kids, current, acc) => {
   for (const node of nodes) {
@@ -308,6 +291,11 @@ const signInFor = ({ account, anonymous, hidden, onAuthPage, pathname, search })
 const bannerSignInFor = ({ account, hidden }) =>
   hidden ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
 
+const columnGates = ({ cookie, showAbout, showOrgConsole }) => ({
+  showAbout: showAbout && !cookie,
+  showOrgConsole: showOrgConsole && !cookie,
+});
+
 const identityFor = ({ user, claims, t }) => {
   const displayName = claims?.name || userDisplayName(user) || t('user.unknownUser');
   return { displayName, email: userSecondaryLine({ ...user, name: displayName }) };
@@ -389,7 +377,8 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * while one draws, one link to `/`), the utility links from
  * `status.links`, the route crumbs (opened with the root crumb, the
  * product name linking to `/`, while the sidebar draws; `<group> › <row>`
- * on a route a sidebar row matches, `<group> › <node> › …` down the
+ * on a route a sidebar row matches, `<group> › <row> › <child>` on a
+ * route a child row matches, `<group> › <node> › …` down the
  * loaded tree on a route a tree node matches, the way the sidebar mock's
  * `pathTo` walks it, and the page's title from `routeTitleKey` on a
  * reserved route no row matches, so the row is never empty), the user
@@ -401,7 +390,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * in button is hidden there too, the session-ended banner carrying its
  * own Sign in in its place; on a `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
- * destination. The app supplies the session state, the
+ * destination, and no About row, its app section holding the docs and
+ * contact rows alone and drawn only while one exists. The app supplies
+ * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
  * features unlock.
@@ -505,7 +496,8 @@ const AppShell = ({
     search,
   });
 
-  const links = utilityLinks(status, t, showAbout);
+  const gates = columnGates({ cookie, showAbout, showOrgConsole });
+  const links = utilityLinks(status, t, gates.showAbout);
 
   const userMenu = buildUserMenu({
     account,
@@ -519,9 +511,8 @@ const AppShell = ({
       onAuthPage,
       sidebar,
       rows: appRowsFor({
-        showAbout,
+        ...gates,
         showAdminBoard,
-        showOrgConsole: showOrgConsole && !cookie,
         extraRows: appRows,
         links: status.links,
         t,

@@ -151,7 +151,9 @@
     "format": {
       "uri": "Introduce {{label}} como una URL completa, como https://ejemplo.com.",
       "hostname": "Introduce {{label}} como un nombre de host.",
-      "ipv4": "Introduce {{label}} como una dirección IPv4, como 192.168.1.10."
+      "ipv4": "Introduce {{label}} como una dirección IPv4, como 192.168.1.10.",
+      "duration": "Introduce {{label}} como una duración ISO 8601, como PT1H o P7D.",
+      "ttl": "Introduce {{label}} como un número y una unidad, como 30m, 4h o 2d."
     },
     "minItems": "Introduce al menos {{minItems}} entradas para {{label}}.",
     "maxItems": "Introduce como máximo {{maxItems}} entradas para {{label}}.",
@@ -987,7 +989,15 @@
     }
   },
   "configField": {
-    "commaSeparated": "Valores separados por comas"
+    "commaSeparated": "Valores separados por comas",
+    "duration": {
+      "unit": "Unidad de {{label}}",
+      "ms": "Milisegundos",
+      "s": "Segundos",
+      "m": "Minutos",
+      "h": "Horas",
+      "d": "Días"
+    }
   },
   "setup": {
     "title": "Configuración inicial",

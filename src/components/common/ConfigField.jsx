@@ -34,6 +34,11 @@ export const configFieldShape = PropTypes.shape({
 
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 const NUMERIC_TYPES = ['integer', 'number'];
+const TTL_UNITS = ['ms', 's', 'm', 'h', 'd'];
+const DURATION_UNITS = ['s', 'm', 'h', 'd'];
+const TTL_PART_RE = /^(?<amount>\d+)(?<unit>ms|s|m|h|d)$/;
+const DURATION_PART_RE = /^P(?:(?<days>\d+)D|T(?<amount>\d+(?:\.\d+)?)(?<unit>[HMS]))$/;
+const DURATION_FORMATS = { ttl: TTL_UNITS, duration: DURATION_UNITS };
 
 const isUnset = value => value === null || value === undefined;
 
@@ -61,6 +66,37 @@ const defaultText = value => {
 };
 
 const placeholderOf = field => (isUnset(field.default) ? undefined : defaultText(field.default));
+
+const partsOfTtl = text => {
+  const match = TTL_PART_RE.exec(text);
+  return match ? { amount: match.groups.amount, unit: match.groups.unit } : null;
+};
+
+const partsOfDuration = text => {
+  const match = DURATION_PART_RE.exec(text);
+  if (!match) {
+    return null;
+  }
+  return match.groups.days !== undefined
+    ? { amount: match.groups.days, unit: 'd' }
+    : { amount: match.groups.amount, unit: match.groups.unit.toLowerCase() };
+};
+
+const partsOf = (format, value) => {
+  const text = textOf(value);
+  const parts = format === 'ttl' ? partsOfTtl(text) : partsOfDuration(text);
+  return parts || { amount: '', unit: '' };
+};
+
+const joinParts = (format, amount, unit) => {
+  if (amount === '') {
+    return '';
+  }
+  if (format === 'ttl') {
+    return `${amount}${unit}`;
+  }
+  return unit === 'd' ? `P${amount}D` : `PT${amount}${unit.toUpperCase()}`;
+};
 
 const controlProps = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -183,6 +219,45 @@ const ArrayControl = ({ field, value, aria, onChange, onBlur }) => {
 
 ArrayControl.propTypes = controlShape;
 
+const DurationControl = ({ field, value, aria, onChange, onBlur }) => {
+  const { t } = useTranslation();
+  const units = DURATION_FORMATS[field.format];
+  const fallback = partsOf(field.format, field.default);
+  const current = partsOf(field.format, value);
+  const unit = current.unit || fallback.unit || units[0];
+  return (
+    <div className="input-group">
+      <input
+        {...aria}
+        type="text"
+        inputMode="numeric"
+        className="form-control"
+        value={current.amount}
+        placeholder={fallback.amount || placeholderOf(field)}
+        disabled={field.readOnly}
+        onChange={event => onChange(joinParts(field.format, event.target.value, unit))}
+        onBlur={onBlur}
+      />
+      <select
+        className="form-select flex-grow-0 w-auto"
+        aria-label={t('configField.duration.unit', { label: field.title })}
+        value={unit}
+        disabled={field.readOnly}
+        onChange={event => onChange(joinParts(field.format, current.amount, event.target.value))}
+        onBlur={onBlur}
+      >
+        {units.map(option => (
+          <option key={option} value={option}>
+            {t(`configField.duration.${option}`)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+DurationControl.propTypes = controlShape;
+
 const TextControl = ({ field, value, aria, onChange, onBlur }) => (
   <input
     {...aria}
@@ -212,6 +287,9 @@ const controlFor = field => {
   if (field.type === 'array') {
     return Array.isArray(field.items?.enum) ? MultiSelectControl : ArrayControl;
   }
+  if (DURATION_FORMATS[field.format]) {
+    return DurationControl;
+  }
   return TextControl;
 };
 
@@ -223,8 +301,11 @@ const showsDefaultHint = field =>
  * a switch for a boolean, a select over `enum`, a password with a reveal
  * for `writeOnly`, a comma list evaluated per member for an array whose
  * `items` is a scalar type, a multi-select for an array whose `items`
- * carries `enum`, a text input with `inputmode="numeric"` for a number and
- * a text input otherwise; the label is the property's `title` with a
+ * carries `enum`, a text input with `inputmode="numeric"` for a number, a
+ * duration control (a number and a unit picker) for a string whose `format`
+ * is `duration` (ISO 8601, written back as `P7D` or `PT1H`) or `ttl` (the
+ * Spring style, written back as `30m`), and a text input otherwise; the
+ * label is the property's `title` with a
  * restart badge when it `requiresRestart` and a deprecation note when it is
  * `deprecated`, the hint its `description`; `default` is the placeholder
  * of a text or numeric control and the `configManager.defaultHint` line

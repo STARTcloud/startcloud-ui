@@ -9,6 +9,19 @@ html {
 
 [data-bs-theme='dark'] {
   --brand-focus-ring: rgba(13, 110, 253, 0.9);
+  --bs-body-bg: #1a1d20;
+  --bs-body-bg-rgb: 26, 29, 32;
+  --bs-border-color: #4d565e;
+  --bs-border-color-translucent: rgba(255, 255, 255, 0.22);
+  --bs-heading-color: var(--bs-emphasis-color);
+}
+
+[data-bs-theme='dark'] .card {
+  --bs-card-bg: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme='dark'] .card .card {
+  --bs-card-bg: var(--bs-secondary-bg);
 }
 
 .btn:focus-visible,

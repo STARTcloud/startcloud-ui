@@ -172,8 +172,11 @@ creation the way it refuses `api`.
   reserved first segment yields no crumbs of its own. On a host with a
   column the crumbs open with a root crumb, the product name linking to
   `/`, then the group and the row a sidebar row matches, the group a
-  plain word; a reserved route no row matches draws the root crumb and
-  the page's title as the second crumb, so the row is never empty.
+  plain word; a route a child row matches draws the group, the parent
+  row, then the child's label, so `/user/profile/favorites` reads
+  Account, Profile, Favorites; a reserved route no row matches draws the
+  root crumb and the page's title as the second crumb, so the row is
+  never empty.
 - One crumb per present level, each a plain link (`to`) to that level's
   route; every crumb but the last is a link, and the last crumb, the page
   itself, is plain text.
@@ -653,7 +656,8 @@ router hands the concatenation of every mounted feature's answer to
 `AppShell`. A feature with no sidebar of its own exports nothing. The
 reserved first segments are unchanged: a sidebar entry never adds a
 route, it points at one. A route a sidebar row matches draws the root
-crumb, then `<group> › <row>`, as its crumbs, since its first segment is
+crumb, then `<group> › <row>`, as its crumbs, and a route a child row
+matches `<group> › <row> › <child>`, since its first segment is
 reserved and would yield none. How the routes, the column, the crumbs and the search
 binding of one UI backend assemble from its status payload is drawn in
 the "How it fits" section of

@@ -60,6 +60,59 @@ export const rootCrumb = name => ({ key: 'root', label: name, to: '/' });
  */
 export const titleCrumb = (titleKey, t) => (titleKey ? [{ key: 'title', label: t(titleKey) }] : []);
 
+const rowMatches = (row, pathname) => {
+  if (row.external) {
+    return false;
+  }
+  if (row.end) {
+    return pathname === row.to;
+  }
+  return pathname === row.to || pathname.startsWith(`${row.to}/`);
+};
+
+const sidebarEntries = groups =>
+  groups.flatMap(group =>
+    (group.sections || []).flatMap(section =>
+      section.items.flatMap(row => [
+        { group, row, parent: null },
+        ...(row.children || []).map(child => ({ group, row: child, parent: row })),
+      ])
+    )
+  );
+
+/**
+ * The crumbs of a route a sidebar row matches: the group as a plain word,
+ * then the row; on a route a child row matches the group, the parent row
+ * linking to its own page, then the child's label, so
+ * `/user/profile/favorites` reads Account, Profile, Favorites. The
+ * longest matching `to` wins, an `end` row matches its exact path alone
+ * and an `external` row never matches; none when no row matches.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Array} options.groups - The sidebar groups the features exported
+ * @param {string} options.pathname - The current path
+ * @param {Function} options.t - The translator
+ * @returns {Array} The crumbs after the root crumb
+ */
+export const sidebarCrumbs = ({ groups, pathname, t }) => {
+  const [match] = sidebarEntries(groups)
+    .filter(entry => rowMatches(entry.row, pathname))
+    .sort((a, b) => b.row.to.length - a.row.to.length);
+  if (!match) {
+    return [];
+  }
+  const crumbs = [{ key: 'group', label: t(match.group.labelKey) }];
+  if (match.parent) {
+    crumbs.push({ key: 'row', label: t(match.parent.labelKey), to: match.parent.to });
+  }
+  crumbs.push({
+    key: match.parent ? 'child' : 'row',
+    label: t(match.row.labelKey),
+    to: match.row.to,
+  });
+  return crumbs;
+};
+
 export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
   if (!route) {
     return [];

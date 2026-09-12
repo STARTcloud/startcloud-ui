@@ -13,13 +13,6 @@ import { authMethod, hasFeature } from '../../utils/capabilities';
 
 const PROFILE_CHILDREN = [
   {
-    key: 'profile',
-    icon: FaUser,
-    labelKey: 'profile.tabs.profile',
-    to: '/user/profile',
-    end: true,
-  },
-  {
     key: 'security',
     icon: FaShieldHalved,
     labelKey: 'profile.tabs.security',
@@ -50,10 +43,11 @@ const PROFILE_CHILDREN = [
  * signed-in person on a `cookie` host one Account group with Profile,
  * Organizations while the host advertises `org-console`, Integrations
  * while `integrations` and Inbox while `inbox`, the Inbox row carrying the
- * `unread` badge the shell resolves; the Profile row carries `children`,
- * the five rows Profile (exact match), Security, Preferences, Favorites
- * and Sessions under `/user/profile`, each a deep link into the one page
- * (decision 109); nothing on any other host.
+ * `unread` badge the shell resolves; the Profile row is the profile page
+ * itself (`/user/profile`, active on its exact path alone) and carries
+ * `children`, exactly Security, Preferences, Favorites and Sessions under
+ * `/user/profile`, each a deep link into the one page (decision 109);
+ * nothing on any other host.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -69,6 +63,7 @@ export const sidebar = (status, account) => {
       icon: FaUser,
       labelKey: 'account.sidebar.profile',
       to: '/user/profile',
+      end: true,
       children: PROFILE_CHILDREN,
     },
   ];

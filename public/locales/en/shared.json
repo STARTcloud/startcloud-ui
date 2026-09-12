@@ -151,7 +151,9 @@
     "format": {
       "uri": "Enter {{label}} as a full URL, such as https://example.com.",
       "hostname": "Enter {{label}} as a hostname.",
-      "ipv4": "Enter {{label}} as an IPv4 address, such as 192.168.1.10."
+      "ipv4": "Enter {{label}} as an IPv4 address, such as 192.168.1.10.",
+      "duration": "Enter {{label}} as an ISO 8601 duration, such as PT1H or P7D.",
+      "ttl": "Enter {{label}} as a number and a unit, such as 30m, 4h or 2d."
     },
     "minItems": "Enter at least {{minItems}} entries for {{label}}.",
     "maxItems": "Enter at most {{maxItems}} entries for {{label}}.",
@@ -987,7 +989,15 @@
     }
   },
   "configField": {
-    "commaSeparated": "Comma-separated values"
+    "commaSeparated": "Comma-separated values",
+    "duration": {
+      "unit": "Unit of {{label}}",
+      "ms": "Milliseconds",
+      "s": "Seconds",
+      "m": "Minutes",
+      "h": "Hours",
+      "d": "Days"
+    }
   },
   "setup": {
     "title": "Setup",

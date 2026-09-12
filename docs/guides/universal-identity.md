@@ -1313,15 +1313,15 @@ answer JSON or a problem body, the browser paths (`/user/profile`,
 
 ### Signed-in routes
 
-| Route                            | Page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Gate                                                           | Today                                                                                                                                                                                        |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                              | the issuer's home: ProfilePage for a signed-in person, since the issuer lists no collections and a person's pages are the whole site; an anonymous visitor is sent by the SPA to `/login` with `/` under `intended_url`                                                                                                                                                                                                                                                                                | `cookie`                                                       | `UserController.profile`, mapped to `''`, `/`, `index` and `/user/profile`; an anonymous request is sent to `/login` by `SecurityConfig` today, by the page after the cutover                |
-| `/user/profile` (and `/profile`) | ProfilePage in its issuer form, reached through the five child rows of the sidebar's Profile row, Profile (`/user/profile`), Security (`/user/profile/security`), Preferences (`/user/profile/preferences`), Favorites (`/user/profile/favorites`) and Sessions (`/user/profile/sessions`), each a deep link into the one page, no tab strip on the issuer (decision 109); the shared Organizations section is not drawn on the issuer because the sidebar's Organizations row is the same destination | `cookie`                                                       | `user/profile.html`, `UserController`; `/.well-known/change-password` redirects to `/user/profile/security`, the page the W3C well-known URL must lead to, in place of the template's anchor |
-| `/user/organizations`            | OrganizationsPage: the memberships under the one view toggle, list or cards, create a team, join by code; a row or card opens the console for that organization                                                                                                                                                                                                                                                                                                                                        | `cookie`, `org-console`                                        | `user/organizations.html`, `OrganizationController`                                                                                                                                          |
-| `/org-console`                   | the shared OrgConsolePage over the active organization, grown by the issuer's fields                                                                                                                                                                                                                                                                                                                                                                                                                   | `cookie`, `org-console`; `invitations` for its Invitations tab | the per-org sections of `user/organizations.html`                                                                                                                                            |
-| `/org/invite/:token`             | InvitePage: reads the mail's token from the path once, replaces the location with `/org/invite`, posts `POST /org/invite`, JSON `{ "token" }`, and follows `next`, `/user/organizations` with the membership made, or `/login` with the page kept under `intended_url` for an anonymous visitor; a `403` `forbidden` with `code` `invite_invalid` draws the invalid state, whose link to ask for a new invitation leads to `/user/organizations`                                                       | `cookie`, `invitations`                                        | `OrganizationController.consumeInvite`, the GET that consumed and redirected; it becomes `POST /org/invite`                                                                                  |
-| `/user/integrations`             | IntegrationsPage: linked accounts, accepted terms, connected applications                                                                                                                                                                                                                                                                                                                                                                                                                              | `cookie`, `integrations`                                       | `integrations.html`, `IntegrationController`                                                                                                                                                 |
-| `/notifications`                 | InboxPage: the full paged inbox with the modal's row controls, mark all, delete all                                                                                                                                                                                                                                                                                                                                                                                                                    | `cookie`, `inbox`                                              | `notifications.html`, `NotificationPageController`                                                                                                                                           |
+| Route                            | Page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Gate                                                           | Today                                                                                                                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                              | the issuer's home: ProfilePage for a signed-in person, since the issuer lists no collections and a person's pages are the whole site; an anonymous visitor is sent by the SPA to `/login` with `/` under `intended_url`                                                                                                                                                                                                                                                                         | `cookie`                                                       | `UserController.profile`, mapped to `''`, `/`, `index` and `/user/profile`; an anonymous request is sent to `/login` by `SecurityConfig` today, by the page after the cutover                |
+| `/user/profile` (and `/profile`) | ProfilePage in its issuer form: the sidebar's Profile row is this page (`/user/profile`) and its four child rows, Security (`/user/profile/security`), Preferences (`/user/profile/preferences`), Favorites (`/user/profile/favorites`) and Sessions (`/user/profile/sessions`), are each a deep link into the one page, no tab strip on the issuer (decision 109); the shared Organizations section is not drawn on the issuer because the sidebar's Organizations row is the same destination | `cookie`                                                       | `user/profile.html`, `UserController`; `/.well-known/change-password` redirects to `/user/profile/security`, the page the W3C well-known URL must lead to, in place of the template's anchor |
+| `/user/organizations`            | OrganizationsPage: the memberships under the one view toggle, list or cards, create a team, join by code; a row or card opens the console for that organization                                                                                                                                                                                                                                                                                                                                 | `cookie`, `org-console`                                        | `user/organizations.html`, `OrganizationController`                                                                                                                                          |
+| `/org-console`                   | the shared OrgConsolePage over the active organization, grown by the issuer's fields                                                                                                                                                                                                                                                                                                                                                                                                            | `cookie`, `org-console`; `invitations` for its Invitations tab | the per-org sections of `user/organizations.html`                                                                                                                                            |
+| `/org/invite/:token`             | InvitePage: reads the mail's token from the path once, replaces the location with `/org/invite`, posts `POST /org/invite`, JSON `{ "token" }`, and follows `next`, `/user/organizations` with the membership made, or `/login` with the page kept under `intended_url` for an anonymous visitor; a `403` `forbidden` with `code` `invite_invalid` draws the invalid state, whose link to ask for a new invitation leads to `/user/organizations`                                                | `cookie`, `invitations`                                        | `OrganizationController.consumeInvite`, the GET that consumed and redirected; it becomes `POST /org/invite`                                                                                  |
+| `/user/integrations`             | IntegrationsPage: linked accounts, accepted terms, connected applications                                                                                                                                                                                                                                                                                                                                                                                                                       | `cookie`, `integrations`                                       | `integrations.html`, `IntegrationController`                                                                                                                                                 |
+| `/notifications`                 | InboxPage: the full paged inbox with the modal's row controls, mark all, delete all                                                                                                                                                                                                                                                                                                                                                                                                             | `cookie`, `inbox`                                              | `notifications.html`, `NotificationPageController`                                                                                                                                           |
 
 `user`, `org`, `org-console` and `notifications` join the reserved first
 segments (`org-console`, `profile` and `organizations` already are).
@@ -1461,8 +1461,8 @@ replays inside its window and a guessing run meets `429` with
 ### What the signed-in pages draw
 
 - **ProfilePage** keeps its avatar card and its `account` adapter; on the
-  issuer it draws no tab strip, the five child rows of the sidebar's
-  Profile row (`/user/profile`, `/user/profile/security`,
+  issuer it draws no tab strip, the sidebar's Profile row
+  (`/user/profile`) and its four child rows (`/user/profile/security`,
   `/user/profile/preferences`, `/user/profile/favorites`,
   `/user/profile/sessions`) being the one navigation, each route drawing
   its section under the page heading (decision 109); the issuer's
@@ -1695,13 +1695,15 @@ count as its `badge`, resolved by the shell from the `notifications`
 topic's `unread-count`); the row is named Inbox rather than
 Notifications because the user menu's Notifications row opens the
 modal, and two rows with one word and two destinations confuse. The
-Profile row carries `children`, the word decision 68's node shape uses,
-here a list of rows in the row shape rather than a function because a
-row is named by a key: Profile (`/user/profile`, `end: true`), Security
-(`/user/profile/security`), Preferences (`/user/profile/preferences`),
-Favorites (`/user/profile/favorites`) and Sessions
-(`/user/profile/sessions`), each a deep link into the same page, the
-child row active by route, and the tab strip gone on the issuer, since
+Profile row is itself the profile page (`/user/profile`, `end: true`)
+and carries `children`, the word decision 68's node shape uses, here a
+list of rows in the row shape rather than a function because a row is
+named by a key: exactly Security (`/user/profile/security`), Preferences
+(`/user/profile/preferences`), Favorites (`/user/profile/favorites`) and
+Sessions (`/user/profile/sessions`), never a second Profile, each a deep
+link into the same page, the parent active on its exact path alone and a
+child row active by route, so the word Profile is drawn once in the
+column, and the tab strip gone on the issuer, since
 the column is the one navigation; a `backend` UI backend's profile keeps
 its own shape unless its export lists `children` the same way. On the
 issuer a person's pages are the whole site and today's sidebar already
@@ -1737,7 +1739,10 @@ never a role branch inside a shared one. The column shows the brand at
 its top, one link to `/`, and the header row opens with the root crumb,
 the product name linking to `/`, then the crumbs
 (`STARTcloud › Account › Profile`, `STARTcloud › Admin › Users`), the
-group a plain word and the row the last crumb, plain text; the user
+group a plain word and the row the last crumb, plain text; on a child
+route the breadcrumb reads the group, the parent row, then the child's
+label (`STARTcloud › Account › Profile › Favorites`), the parent a link
+to its own page and the child the last crumb; the user
 menu keeps its universal rows, its app section headed by `brand.name`
 holding the `links.docs` and `links.contact` rows alone, no Admin row
 and no Preferences row, since Dashboard and Profile are rows of the
@@ -2307,13 +2312,16 @@ Settled before code, in the order they were raised:
      `{ email, token, return }`, each page reading its link once and
      replacing the location; no GET consumes either.
 109. A sidebar row may carry `children`, a list of rows in the row shape;
-     the Account section's Profile row carries Profile, Security,
-     Preferences, Favorites and Sessions at `/user/profile`,
-     `/user/profile/security`, `/user/profile/preferences`,
-     `/user/profile/favorites` and `/user/profile/sessions`, each a deep
-     link into the same page, and the issuer's profile draws no tab
-     strip; a `backend` UI backend's profile keeps its own shape unless
-     its export lists `children` the same way.
+     the Account section's Profile row is itself the profile page at
+     `/user/profile` and its children are exactly Security, Preferences,
+     Favorites and Sessions at `/user/profile/security`,
+     `/user/profile/preferences`, `/user/profile/favorites` and
+     `/user/profile/sessions`, each a deep link into the same page, so
+     the word Profile is drawn once in the column; the breadcrumb on a
+     child route reads Account, Profile, then the child's label; the
+     issuer's profile draws no tab strip; a `backend` UI backend's
+     profile keeps its own shape unless its export lists `children` the
+     same way.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5
