@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 
+import { isPlaceholder } from '../../utils/validation';
+
 import Field from './Field';
 
 export const configFieldShape = PropTypes.shape({
@@ -139,11 +141,11 @@ const PasswordControl = ({ field, value, aria, onChange, onBlur }) => {
     <div className="input-group">
       <input
         {...aria}
-        type={shown ? 'text' : 'password'}
+        type={shown || isPlaceholder(value) ? 'text' : 'password'}
         className="form-control"
         value={textOf(value)}
         placeholder={placeholderOf(field)}
-        readOnly={field.readOnly}
+        disabled={field.readOnly}
         onChange={event => onChange(event.target.value)}
         onBlur={onBlur}
       />
@@ -168,7 +170,7 @@ const ArrayControl = ({ field, value, aria, onChange, onBlur }) => {
       type="text"
       className="form-control"
       value={Array.isArray(value) ? value.join(',') : textOf(value)}
-      readOnly={field.readOnly}
+      disabled={field.readOnly}
       placeholder={placeholderOf(field) ?? t('configField.commaSeparated')}
       onChange={event => {
         const raw = event.target.value;
@@ -189,7 +191,7 @@ const TextControl = ({ field, value, aria, onChange, onBlur }) => (
     className={`form-control${field.readOnly ? ' readonly-input' : ''}`}
     value={textOf(value)}
     placeholder={placeholderOf(field)}
-    readOnly={field.readOnly}
+    disabled={field.readOnly}
     onChange={event => onChange(typedValue(field, event.target.value))}
     onBlur={onBlur}
   />
@@ -227,10 +229,12 @@ const showsDefaultHint = field =>
  * `deprecated`, the hint its `description`; `default` is the placeholder
  * of a text or numeric control and the `configManager.defaultHint` line
  * after the description on a boolean or an `enum`, whose control stays
- * unset until set; a `readOnly` control is disabled; a JSON `null` draws
- * as an empty control, a cleared text control answers `""` and a cleared
- * numeric control `null`; `action` is the property-level action element
- * drawn beside the control.
+ * unset until set; a `readOnly` control is drawn disabled, never editable;
+ * a `${NAME:default}` placeholder value draws as its plain text, the
+ * password control showing it unmasked with no live value on reveal; a
+ * JSON `null` draws as an empty control, a cleared text control answers
+ * `""` and a cleared numeric control `null`; `action` is the
+ * property-level action element drawn beside the control.
  */
 const ConfigField = ({ field, id, value, error = '', onChange, onBlur, action = null }) => {
   const { t } = useTranslation();

@@ -1,6 +1,20 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  FaCloud,
+  FaEnvelopeCircleCheck,
+  FaHourglassHalf,
+  FaKey,
+  FaLink,
+  FaMobileScreen,
+  FaShieldHalved,
+  FaUserCheck,
+  FaUserClock,
+  FaUserShield,
+  FaUserSlash,
+  FaUsers,
+} from 'react-icons/fa6';
 
 import StatCard from '../../../components/common/StatCard';
 import { insights } from '../api/health';
@@ -24,6 +38,23 @@ const POSTURE_KEYS = [
   'with_linked_provider',
 ];
 const CHURN_KEYS = ['quiet_30', 'quiet_60', 'quiet_90', 'enabled_total'];
+const CARDS = {
+  enabled_total: { Icon: FaUsers, tone: 'primary' },
+  disabled_users: { Icon: FaUserSlash, tone: 'danger' },
+  using_2fa: { Icon: FaShieldHalved, tone: 'success' },
+  email_verified: { Icon: FaEnvelopeCircleCheck, tone: 'success' },
+  phone_verified: { Icon: FaMobileScreen, tone: 'success' },
+  admins: { Icon: FaUserShield, tone: 'warning' },
+  never_logged_in: { Icon: FaUserClock, tone: 'secondary' },
+  with_local_auth: { Icon: FaKey, tone: 'primary' },
+  with_external_auth: { Icon: FaCloud, tone: 'info' },
+  with_linked_provider: { Icon: FaLink, tone: 'info' },
+  quiet_30: { Icon: FaHourglassHalf, tone: 'warning' },
+  quiet_60: { Icon: FaHourglassHalf, tone: 'warning' },
+  quiet_90: { Icon: FaHourglassHalf, tone: 'danger' },
+};
+const ACTIVE_CARD = { Icon: FaUserCheck, tone: 'primary' };
+const CHURN_TOTAL_CARD = { Icon: FaUsers, tone: 'success' };
 const LEAD_LISTS = ['app_activity', 'penetration', 'app_pairs', 'growth'];
 const DEFINED = ['active_users', 'posture', ...LEAD_LISTS, 'churn', 'quiet_users', 'org_rollup'];
 
@@ -144,6 +175,19 @@ SmallTable.propTypes = {
 const listOf = key => LISTS.find(list => list.key === key);
 const rowsOf = (data, key) => (Array.isArray(data[key]) ? data[key] : []);
 
+const InsightCard = ({ card, count, label }) => (
+  <StatCard icon={<card.Icon />} tone={card.tone} count={count} label={label} />
+);
+
+InsightCard.propTypes = {
+  card: PropTypes.shape({
+    Icon: PropTypes.elementType.isRequired,
+    tone: PropTypes.string.isRequired,
+  }).isRequired,
+  count: PropTypes.node.isRequired,
+  label: PropTypes.string.isRequired,
+};
+
 const ListSection = ({ listKey, data }) => {
   const { t } = useTranslation();
   return (
@@ -187,8 +231,9 @@ const InsightsPage = () => {
       <Section title={t('admin.health.insights.activeUsers')}>
         <div className="stat-grid stat-grid-4">
           {ACTIVE_KEYS.map(key => (
-            <StatCard
+            <InsightCard
               key={key}
+              card={ACTIVE_CARD}
               count={active[key] ?? 0}
               label={t(`admin.health.insights.active.${key}`)}
             />
@@ -197,13 +242,15 @@ const InsightsPage = () => {
       </Section>
       <Section title={t('admin.health.insights.posture')}>
         <div className="stat-grid stat-grid-3">
-          <StatCard
+          <InsightCard
+            card={CARDS.enabled_total}
             count={`${posture.enabled_users ?? 0} / ${posture.total_users ?? 0}`}
             label={t('admin.health.insights.postureOf.enabled_total')}
           />
           {POSTURE_KEYS.map(key => (
-            <StatCard
+            <InsightCard
               key={key}
+              card={CARDS[key]}
               count={posture[key] ?? 0}
               label={t(`admin.health.insights.postureOf.${key}`)}
             />
@@ -216,8 +263,9 @@ const InsightsPage = () => {
       <Section title={t('admin.health.insights.churn')}>
         <div className="stat-grid stat-grid-4 mb-3">
           {CHURN_KEYS.map(key => (
-            <StatCard
+            <InsightCard
               key={key}
+              card={CARDS[key] || CHURN_TOTAL_CARD}
               count={churn[key] ?? 0}
               label={t(`admin.health.insights.churnOf.${key}`)}
             />

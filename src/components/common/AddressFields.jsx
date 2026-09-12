@@ -7,6 +7,7 @@ import { loadCountries, regionsFor } from '../../lib/countries';
 import Field from './Field';
 
 const PLACES_SCRIPT = 'https://maps.googleapis.com/maps/api/js';
+const PLACES_CALLBACK = 'startcloudPlacesReady';
 const KEY_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 export const EMPTY_ADDRESS = {
@@ -46,13 +47,21 @@ const loadPlaces = key => {
       resolve(window.google.maps.places);
       return;
     }
-    const script = document.createElement('script');
-    script.src = `${PLACES_SCRIPT}?key=${encodeURIComponent(key)}&libraries=places&loading=async`;
-    script.async = true;
-    script.onload = () => {
-      window.google.maps.importLibrary('places').then(resolve, reject);
+    window[PLACES_CALLBACK] = () => {
+      delete window[PLACES_CALLBACK];
+      if (window.google?.maps?.places) {
+        resolve(window.google.maps.places);
+      } else {
+        reject(new Error('places library missing'));
+      }
     };
-    script.onerror = () => reject(new Error('places script failed'));
+    const script = document.createElement('script');
+    script.src = `${PLACES_SCRIPT}?key=${encodeURIComponent(key)}&libraries=places&loading=async&callback=${PLACES_CALLBACK}`;
+    script.async = true;
+    script.onerror = () => {
+      delete window[PLACES_CALLBACK];
+      reject(new Error('places script failed'));
+    };
     document.head.appendChild(script);
   });
   return placesPromise;

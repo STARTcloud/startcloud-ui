@@ -532,7 +532,7 @@ const freshNotifications = () => [
     severity: 'WARNING',
     title: 'New sign-in from Chrome on Windows',
     body: 'Austin, US · just now',
-    navigate: '/user/profile#sessions',
+    navigate: '/user/profile/sessions',
     readAt: null,
     createdAt: NOW(),
   },

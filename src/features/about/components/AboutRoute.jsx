@@ -49,6 +49,19 @@ const VDI_COMPONENTS = [
   { key: 'ui', details: ['shared', 'fleet'] },
 ];
 
+const AUTH_SERVER_FEATURES = [
+  'signIn',
+  'tfa',
+  'passkeys',
+  'organizations',
+  'integrations',
+  'admin',
+];
+const AUTH_SERVER_COMPONENTS = [
+  { key: 'server', details: ['spring', 'protocols', 'sessions'] },
+  { key: 'ui', details: ['shared', 'pages'] },
+];
+
 const componentsOf = (t, prefix, components) =>
   components.map(component => ({
     title: t(`${prefix}.${component.key}.title`),
@@ -120,6 +133,30 @@ const PROFILES = {
       components: componentsOf(t, 'about.vdi.components', VDI_COMPONENTS),
     }),
   },
+  'auth-server': {
+    docs: status =>
+      status.links.docs ? [{ key: 'guide', href: status.links.docs, Icon: FaBook }] : [],
+    docsLabel: key => `about.auth-server.docs.${key}`,
+    docsIntro: 'about.auth-server.docs.intro',
+    support: status =>
+      [
+        status.brand.changelog
+          ? { key: 'changelog', href: status.brand.changelog, Icon: FaGithub }
+          : null,
+        status.links.contact
+          ? { key: 'contact', href: status.links.contact, Icon: FaEnvelope }
+          : null,
+      ].filter(Boolean),
+    supportLabel: key => `about.auth-server.support.${key}`,
+    supportIntro: 'about.auth-server.support.intro',
+    content: (t, status) => ({
+      title: status.brand.name,
+      description: t('about.auth-server.description'),
+      goal: t('about.auth-server.goal'),
+      features: AUTH_SERVER_FEATURES.map(key => t(`about.auth-server.features.${key}`)),
+      components: componentsOf(t, 'about.auth-server.components', AUTH_SERVER_COMPONENTS),
+    }),
+  },
 };
 
 /**
@@ -132,8 +169,9 @@ const PROFILES = {
 export const hasAbout = status => Boolean(PROFILES[status.role]);
 
 /**
- * The About route: the shared `AboutPage` fed by the host's status and the
- * locale strings of the host's role, plus the favorite toggle over `GET`
+ * The About route: the shared `AboutPage` fed by the host's status, the
+ * UI build's own version from `__APP_VERSION__` and the locale strings of
+ * the host's role, plus the favorite toggle over `GET`
  * and `PUT /api/user/favorites` through the hub client, the whole ordered
  * list written back in `snake_case`, when the host advertises `favorites`
  * and the viewer signed in through the provider; a role with no
@@ -202,6 +240,7 @@ const AboutRoute = ({ theme, oidc }) => {
       title={content.title}
       description={content.description}
       version={status.version}
+      uiVersion={__APP_VERSION__}
       goal={content.goal}
       features={content.features}
       components={content.components}

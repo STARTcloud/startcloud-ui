@@ -1,7 +1,8 @@
+import 'intl-tel-input/dist/css/intlTelInput.css';
+
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Modal } from 'react-bootstrap';
-import CountryFlag from 'react-country-flag';
 import { useTranslation } from 'react-i18next';
 import { FaCircleCheck, FaGlobe } from 'react-icons/fa6';
 
@@ -36,7 +37,7 @@ export const getLanguageFlag = languageCode => {
     const locale = new Intl.Locale(code);
     const region = locale.region || locale.maximize().region;
     if (region) {
-      return <CountryFlag countryCode={region} svg title={region} />;
+      return <span className={`iti__flag iti__${region.toLowerCase()}`} title={region} />;
     }
   } catch {
     return '🌐';

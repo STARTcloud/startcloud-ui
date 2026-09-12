@@ -95,6 +95,30 @@ export const countFields = sections =>
     0
   );
 
+const isSchema = value => value !== null && typeof value === 'object';
+
+const entriesOf = value =>
+  value && typeof value === 'object' && !Array.isArray(value) ? Object.values(value) : [];
+
+const leavesOf = (node, value) => {
+  if (isSchema(node.additionalProperties)) {
+    return entriesOf(value).reduce(
+      (sum, entry) => sum + leavesOf(node.additionalProperties, entry),
+      0
+    );
+  }
+  if (node.properties) {
+    return Object.entries(node.properties).reduce(
+      (sum, [key, property]) => sum + leavesOf(property, value?.[key]),
+      0
+    );
+  }
+  return node.type === 'object' ? 0 : 1;
+};
+
+const settingCount = (fields, config) =>
+  fields.reduce((sum, field) => sum + leavesOf(field, valueAt(config, field.pointer)), 0);
+
 const wideField = field => field.type === 'array' || field.type === 'object';
 
 const parentOf = pointer => pointer.split('/').slice(0, -1).join('/');
@@ -217,7 +241,7 @@ const Subsection = ({ sectionKey, subsection, ...drawing }) => {
           <SectionIcon sectionKey={sectionKey} />
           {subsection.title}
           <span className="badge bg-light text-dark ms-2">
-            {t('configManager.settingsCount', { count: scalarCount(shown) })}
+            {t('configManager.settingsCount', { count: settingCount(shown, drawing.config) })}
           </span>
         </h6>
       </button>
@@ -261,7 +285,7 @@ const Section = ({ section, ...drawing }) => {
               <SectionIcon sectionKey={section.key} />
               {section.title}
               <span className="badge bg-light text-dark ms-2">
-                {t('configManager.settingsCount', { count: scalarCount(shown) })}
+                {t('configManager.settingsCount', { count: settingCount(shown, drawing.config) })}
               </span>
             </h5>
             {action}
@@ -292,7 +316,9 @@ Section.propTypes = { ...drawingShape, section: sectionShape.isRequired };
  * field drawn through `ConfigField` with the value the pointer names in
  * `config`, the error `rules` holds under `nameFor(pointer)`, and a field
  * hidden by `dependsOn`/`showWhen` folded away; every map field
- * (`additionalProperties`) through the generic `ConfigMap`; a
+ * (`additionalProperties`) through the generic `ConfigMap`, the section
+ * and subsection heads counting every leaf as a setting, a map's leaves
+ * per entry; a
  * property-level `action` beside its control and a section-level `action`
  * at the section head, each calling `callAction(route, method, body)`
  * through `guard` and painting a 422's pointers on the form.

@@ -26,6 +26,8 @@ const probeShape = PropTypes.shape({
   client_name: PropTypes.string.isRequired,
   description: PropTypes.string,
   base_url: PropTypes.string,
+  check: PropTypes.oneOf(['actuator_health', 'http_reachability']),
+  endpoint: PropTypes.string,
   healthy: PropTypes.bool,
   status: PropTypes.string,
   response_time_ms: PropTypes.number,
@@ -92,11 +94,29 @@ const HealthCard = ({ probe, kind }) => {
         {probe.description ? <span>{probe.description}</span> : null}
         <BaseUrl url={probe.base_url} />
         {state !== 'unknown' ? <Probe probe={probe} /> : null}
-        {probe.error_message ? (
-          <details>
-            <summary>{t('admin.health.clients.errorDetails')}</summary>
-            <pre className="mb-0 mt-1 small">{probe.error_message}</pre>
-          </details>
+        {probe.check || state === 'unhealthy' ? (
+          <dl className="row mb-0 mt-1 g-0">
+            {probe.check ? (
+              <>
+                <dt className="col-4">{t('admin.health.clients.check')}</dt>
+                <dd className="col-8 mb-1">{t(`admin.health.clients.checkOf.${probe.check}`)}</dd>
+              </>
+            ) : null}
+            {probe.endpoint ? (
+              <>
+                <dt className="col-4">{t('admin.health.clients.endpoint')}</dt>
+                <dd className="col-8 mb-1 text-break">{probe.endpoint}</dd>
+              </>
+            ) : null}
+            {state === 'unhealthy' ? (
+              <>
+                <dt className="col-4">{t('admin.health.clients.reason')}</dt>
+                <dd className="col-8 mb-0 text-danger text-break">
+                  {probe.error_message || probe.status}
+                </dd>
+              </>
+            ) : null}
+          </dl>
         ) : null}
       </div>
     </div>
@@ -132,8 +152,11 @@ const anyUnhealthy = probes => probes.some(probe => probe.healthy === false);
 /**
  * Health › Client health: the summary line at the top, drawn as a
  * warning while any client or provider is unhealthy, one card per client
- * and provider in three states with one status each and the error behind
- * a collapse; Refresh re-fetches, nothing reloads.
+ * and provider in three states with one status each, a probed card naming
+ * the check the server performed (`actuator_health` or
+ * `http_reachability`) and the exact endpoint it requested from the row,
+ * an unhealthy card adding the failure reason, an unprobed row carrying
+ * neither; Refresh re-fetches, nothing reloads.
  */
 const ClientHealthPage = () => {
   const { t } = useTranslation();

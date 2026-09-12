@@ -810,7 +810,13 @@
         "responseTime": "{{ms}} ms",
         "noResponse": "sin respuesta",
         "checked": "comprobado",
-        "errorDetails": "Ver detalles del error"
+        "check": "Comprobación",
+        "checkOf": {
+          "actuator_health": "Punto de salud",
+          "http_reachability": "Alcance HTTP"
+        },
+        "endpoint": "Punto de acceso",
+        "reason": "Motivo"
       },
       "definitions": "Qué significan estas cifras",
       "refresh": "Actualizar",
@@ -1654,6 +1660,44 @@
     }
   },
   "about": {
+    "version": {
+      "app": "Aplicación v{{version}}",
+      "ui": "UI v{{version}}"
+    },
+    "auth-server": {
+      "description": "El servidor de autorización de STARTcloud: el único inicio de sesión para todas las aplicaciones del entorno, con segundos factores, llaves de acceso, organizaciones y las aplicaciones que has conectado.",
+      "goal": "Una cuenta, un inicio de sesión y un solo lugar para ver y controlar todo lo que puede acceder a ella.",
+      "features": {
+        "signIn": "Inicia sesión con contraseña, enlace por correo, llave de acceso o un proveedor vinculado",
+        "tfa": "Verificación en dos pasos con aplicación de autenticación o SMS, con códigos de respaldo",
+        "passkeys": "Llaves de acceso como primer factor en cada dispositivo que registres",
+        "organizations": "Organizaciones personales y de equipo con invitaciones y roles",
+        "integrations": "Cuentas vinculadas, términos aceptados y las aplicaciones conectadas contigo",
+        "admin": "Una consola de operador para cuentas, actividad, salud y configuración"
+      },
+      "components": {
+        "server": {
+          "title": "Servidor de autorización",
+          "spring": "Un Spring Authorization Server que responde cada página como JSON",
+          "protocols": "OAuth 2.0, OpenID Connect, FAPI 2.0, flujo de dispositivo, CIBA y SCIM",
+          "sessions": "Una sesión SSO compartida por todas las aplicaciones del entorno"
+        },
+        "ui": {
+          "title": "Interfaz web",
+          "shared": "La UI compartida de STARTcloud, la misma barra que cada aplicación del entorno",
+          "pages": "Páginas de inicio de sesión, alta, consentimiento, perfil y administración dibujadas desde las respuestas del servidor"
+        }
+      },
+      "docs": {
+        "intro": "Lee cómo funcionan el inicio de sesión, los segundos factores y las organizaciones.",
+        "guide": "Ayuda"
+      },
+      "support": {
+        "intro": "Lee qué cambió en cada versión o escribe a soporte.",
+        "changelog": "Registro de cambios",
+        "contact": "Escribir a soporte"
+      }
+    },
     "boxvault": {
       "documentation": {
         "description": "Aprende cómo usar BoxVault e integrarlo con tu flujo de trabajo.",

@@ -7,6 +7,7 @@ const INTEGER_RE = /^-?\d+$/;
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
 const NON_BLANK_PATTERN = '\\S';
 const PATTERN_NAMES = { [NON_BLANK_PATTERN]: 'nonBlank' };
+const PLACEHOLDER_RE = /^\$\{[A-Z0-9_]+(?::[^}]*)?\}$/;
 
 const PATTERN_KEYS = [
   'nonBlank',
@@ -105,6 +106,17 @@ export const NON_BLANK = { type: 'string', minLength: 1, pattern: NON_BLANK_PATT
 const FALLBACK_DOCUMENT = { $defs: DEFS };
 
 const isBlank = value => value === undefined || value === null;
+
+/**
+ * Whether a value is a `${NAME}` or `${NAME:default}` placeholder of the
+ * config contract's decision 87, the leaf text the authorization server's
+ * file holds in place of a value the engine resolves from the environment
+ * at `load`; the browser evaluates no value rule against it.
+ *
+ * @param {*} value - The value
+ * @returns {boolean}
+ */
+export const isPlaceholder = value => typeof value === 'string' && PLACEHOLDER_RE.test(value);
 
 const jsonEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -257,6 +269,9 @@ const notCheck = ({ rule, value, patternName, document, evaluate }) => {
 };
 
 const firstFailure = (rule, value, patternName, document) => {
+  if (isPlaceholder(value)) {
+    return null;
+  }
   const checks = value === '' ? BLANK_CHECKS : CHECKS;
   for (const check of checks) {
     const failure = check(rule, value, patternName);
@@ -279,7 +294,8 @@ const firstFailure = (rule, value, patternName, document) => {
  * (whichever bound was crossed, never a `range`), `enum`, `format`,
  * `minItems`, `maxItems` and `items` evaluated per member, with `$ref`
  * resolved within `document`; a `writeOnly` value is evaluated like any
- * string.
+ * string; a `${NAME:default}` placeholder (`isPlaceholder`) satisfies
+ * `required` and skips every value rule, the server resolving it.
  *
  * @param {Object} schema - The value's schema
  * @param {*} value - The value

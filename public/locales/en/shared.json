@@ -810,7 +810,13 @@
         "responseTime": "{{ms}} ms",
         "noResponse": "no answer",
         "checked": "checked",
-        "errorDetails": "View error details"
+        "check": "Check",
+        "checkOf": {
+          "actuator_health": "Health endpoint",
+          "http_reachability": "HTTP reachability"
+        },
+        "endpoint": "Endpoint",
+        "reason": "Reason"
       },
       "definitions": "What these numbers mean",
       "refresh": "Refresh",
@@ -1654,6 +1660,44 @@
     }
   },
   "about": {
+    "version": {
+      "app": "App v{{version}}",
+      "ui": "UI v{{version}}"
+    },
+    "auth-server": {
+      "description": "The STARTcloud authorization server: the one sign-in for every application of the estate, with second factors, passkeys, organizations and the applications you have connected.",
+      "goal": "One account, one sign-in and one place to see and control everything that can reach it.",
+      "features": {
+        "signIn": "Sign in with a password, an email link, a passkey or a linked provider",
+        "tfa": "Two-factor authentication by authenticator app or SMS, with backup codes",
+        "passkeys": "Passkeys as a first factor on every device you register",
+        "organizations": "Personal and team organizations with invitations and roles",
+        "integrations": "Linked accounts, accepted terms and the applications connected to you",
+        "admin": "An operator console for accounts, activity, health and configuration"
+      },
+      "components": {
+        "server": {
+          "title": "Authorization server",
+          "spring": "A Spring Authorization Server that answers every page as JSON",
+          "protocols": "OAuth 2.0, OpenID Connect, FAPI 2.0, device flow, CIBA and SCIM",
+          "sessions": "One SSO session shared by every application of the estate"
+        },
+        "ui": {
+          "title": "Web UI",
+          "shared": "The shared STARTcloud UI, the same chrome as every estate app",
+          "pages": "Sign-in, onboarding, consent, profile and admin pages drawn from the server's answers"
+        }
+      },
+      "docs": {
+        "intro": "Read how sign-in, second factors and organizations work.",
+        "guide": "Help"
+      },
+      "support": {
+        "intro": "Read what changed in each release or write to support.",
+        "changelog": "Changelog",
+        "contact": "Email support"
+      }
+    },
     "boxvault": {
       "documentation": {
         "description": "Learn how to use BoxVault and integrate it with your workflow.",

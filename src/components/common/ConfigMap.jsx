@@ -38,12 +38,24 @@ const keyRule = ({ propertyNames, taken, scope }) => ({
   custom: value => (taken.includes(value) ? { rule: 'unique', params: { scope, value } } : null),
 });
 
-const cardProperties = item =>
-  Object.entries(item.properties || {})
-    .filter(([, property]) => property.order === 1 || property.order === 2)
-    .sort((a, b) => a[1].order - b[1].order);
-
 const byOrder = (a, b) => orderOf(a.order) - orderOf(b.order) || a.index - b.index;
+
+const onCard = property => property.order === 1 || property.order === 2;
+
+const cardFields = (node, base) =>
+  Object.entries(node.properties || {})
+    .flatMap(([key, property], index) => {
+      const pointer = `${base}/${key}`;
+      if (property.type === 'object' && property.properties) {
+        return cardFields(property, pointer);
+      }
+      if (property.type === 'object' || !onCard(property)) {
+        return [];
+      }
+      const required = (node.required || []).includes(key);
+      return [fieldOf({ pointer, key, property, required, index })];
+    })
+    .sort(byOrder);
 
 const dialogFields = (node, base) =>
   Object.entries(node.properties || {})
@@ -60,17 +72,10 @@ const dialogFields = (node, base) =>
 
 const nameOf = pointer => pointer.slice(1);
 
-const errorsUnder = (errors, name) =>
+const errorsUnder = (errors, name, inline) =>
   Object.entries(errors)
-    .filter(([entry]) => entry.startsWith(`${name}/`))
+    .filter(([entry]) => entry.startsWith(`${name}/`) && !inline.includes(entry))
     .map(([, message]) => message);
-
-const textOf = value => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return Array.isArray(value) ? value.join(',') : String(value);
-};
 
 const mapShape = {
   pointer: PropTypes.string.isRequired,
@@ -139,8 +144,11 @@ KeyField.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const EntryCard = ({ entryKey, entry, item, errors, onEdit, onDelete }) => {
+const EntryCard = ({ entryKey, entryName, entry, item, rules, onChange, onEdit, onDelete }) => {
   const { t } = useTranslation();
+  const fields = cardFields(item, '');
+  const inline = fields.map(field => `${entryName}${field.pointer}`);
+  const errors = errorsUnder(rules.errors, entryName, inline);
   return (
     <div className="col-md-6 mb-3">
       <div className="card border-secondary h-100">
@@ -148,13 +156,20 @@ const EntryCard = ({ entryKey, entry, item, errors, onEdit, onDelete }) => {
           <h6 className="mb-0">{entryKey}</h6>
         </div>
         <div className="card-body">
-          <small className="text-muted">
-            {cardProperties(item).map(([key, property]) => (
-              <span key={key} className="d-block">
-                <strong>{property.title || key}:</strong> {textOf(entry[key])}
-              </span>
-            ))}
-          </small>
+          {fields.map(field => {
+            const name = `${entryName}${field.pointer}`;
+            return (
+              <ConfigField
+                key={field.pointer}
+                field={field}
+                id={rules.idFor(name)}
+                value={valueAt(entry, field.pointer)}
+                error={rules.errors[name] || ''}
+                onChange={next => onChange(setValueAt(entry, field.pointer, next))}
+                onBlur={() => rules.onBlur(name)}
+              />
+            );
+          })}
           {errors.map(message => (
             <div key={message} className="small text-danger">
               {message}
@@ -177,9 +192,11 @@ const EntryCard = ({ entryKey, entry, item, errors, onEdit, onDelete }) => {
 
 EntryCard.propTypes = {
   entryKey: PropTypes.string.isRequired,
+  entryName: PropTypes.string.isRequired,
   entry: PropTypes.object.isRequired,
   item: PropTypes.object.isRequired,
-  errors: PropTypes.arrayOf(PropTypes.string).isRequired,
+  rules: formRulesShape.isRequired,
+  onChange: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
@@ -327,9 +344,11 @@ const ObjectMap = ({
                 <EntryCard
                   key={key}
                   entryKey={key}
+                  entryName={`${name}/${key}`}
                   entry={entriesOf(entry)}
                   item={item}
-                  errors={errorsUnder(rules.errors, `${name}/${key}`)}
+                  rules={rules}
+                  onChange={next => onChange({ ...entries, [key]: next })}
                   onEdit={() => openEdit(key)}
                   onDelete={() => onChange(without(entries, key))}
                 />
@@ -518,7 +537,9 @@ ScalarMap.propTypes = mapShape;
 /**
  * The generic map component over one `additionalProperties` field: an item
  * with `properties` draws as cards, one per key, each showing the key and
- * every item property carrying `order` 1 or 2, with Add opening a dialog of
+ * every item property carrying `order` 1 or 2 as its field drawn inline
+ * and edited in place, the leaves of a nested object property included,
+ * the other errors of the entry listed under them, with Add opening a dialog of
  * the item's fields (an object property with `properties` as a titled group
  * of its fields, recursively, and a nested `additionalProperties` item as
  * this component nested) and a key field validated against `propertyNames`

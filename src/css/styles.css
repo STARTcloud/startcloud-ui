@@ -2076,7 +2076,7 @@ button::-moz-focus-inner {
   margin: 0;
   font-size: 13px;
   font-weight: 500;
-  color: var(--auth-ink-2);
+  color: var(--auth-ink-2, var(--bs-emphasis-color));
 }
 
 .code-input {
@@ -2091,20 +2091,20 @@ button::-moz-focus-inner {
   text-align: center;
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 22px;
-  color: var(--auth-ink);
-  background: var(--auth-field-bg);
-  border: 1px solid var(--auth-line);
+  color: var(--auth-ink, var(--bs-body-color));
+  background: var(--auth-field-bg, var(--bs-body-bg));
+  border: 1px solid var(--auth-line, var(--bs-border-color));
   border-radius: 12px;
   outline: 0;
 }
 
 .code-input input:focus {
-  border-color: var(--auth-accent);
-  box-shadow: var(--auth-focus);
+  border-color: var(--auth-accent, var(--bs-primary));
+  box-shadow: var(--auth-focus, 0 0 0 0.25rem var(--brand-focus-ring));
 }
 
 .field-invalid .code-input input {
-  border-color: var(--auth-danger);
+  border-color: var(--auth-danger, var(--bs-danger));
 }
 
 .option-list {

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
 import { useStepUp } from '../../../components/common/StepUpDialog';
@@ -12,16 +12,15 @@ import { returnToShape } from '../../../utils/auth';
 import FavoritesTab from './FavoritesTab';
 import IssuerDetailsTab from './IssuerDetailsTab';
 import PreferencesTab from './PreferencesTab';
-import ProfileTabs from './ProfileTabs';
 import SecurityTab from './security/SecurityTab';
 import SessionsTab from './SessionsTab';
 
-const HASH_TABS = { security: 'security', preferences: 'preferences', sessions: 'sessions' };
+const PROFILE_PATH = '/user/profile';
 
 /**
  * The identity provider's `account` adapter: the profile read, the
  * step-up call, and one member per group of calls the profile page draws
- * a tab for.
+ * a section for.
  */
 export const issuerAccountShape = PropTypes.shape({
   profile: PropTypes.func.isRequired,
@@ -51,26 +50,82 @@ const hasSecurity = account =>
     account.deletion
   );
 
-const tabsFor = account => {
-  const tabs = [{ key: 'profile', labelKey: 'profile.tabs.profile' }];
+const sectionsFor = account => {
+  const sections = ['profile'];
   if (hasSecurity(account)) {
-    tabs.push({ key: 'security', labelKey: 'profile.tabs.security' });
+    sections.push('security');
   }
   if (account.preferences) {
-    tabs.push({ key: 'preferences', labelKey: 'profile.tabs.preferences' });
+    sections.push('preferences');
   }
   if (account.favorites) {
-    tabs.push({ key: 'favorites', labelKey: 'profile.tabs.favorites' });
+    sections.push('favorites');
   }
   if (account.sessions) {
-    tabs.push({ key: 'sessions', labelKey: 'profile.tabs.sessions' });
+    sections.push('sessions');
   }
-  return tabs;
+  return sections;
 };
 
-const tabFromHash = (hash, tabs) => {
-  const wanted = HASH_TABS[hash.replace(/^#/, '')] || hash.replace(/^#/, '');
-  return tabs.some(tab => tab.key === wanted) ? wanted : 'profile';
+const pathOf = section => (section === 'profile' ? PROFILE_PATH : `${PROFILE_PATH}/${section}`);
+
+const ActiveSection = ({ active, account, profile, version, session, guard, placesKey, page }) => {
+  if (active === 'security') {
+    return (
+      <SecurityTab
+        account={account}
+        profile={profile}
+        guard={guard}
+        focusEmail={page.focusEmail}
+        onSaved={page.refresh}
+        onDeleted={page.signedOut}
+      />
+    );
+  }
+  if (active === 'preferences') {
+    return (
+      <PreferencesTab
+        key={version}
+        account={account}
+        profile={profile}
+        session={session}
+        onSaved={page.refresh}
+      />
+    );
+  }
+  if (active === 'favorites') {
+    return <FavoritesTab account={account} />;
+  }
+  if (active === 'sessions') {
+    return <SessionsTab account={account} guard={guard} onSignedOut={page.signedOut} />;
+  }
+  return (
+    <IssuerDetailsTab
+      key={version}
+      account={account}
+      profile={profile}
+      guard={guard}
+      placesKey={placesKey}
+      onSaved={page.refresh}
+      onChangeEmail={page.openEmailChange}
+    />
+  );
+};
+
+ActiveSection.propTypes = {
+  active: PropTypes.string.isRequired,
+  account: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired,
+  version: PropTypes.number.isRequired,
+  session: PropTypes.object.isRequired,
+  guard: PropTypes.func.isRequired,
+  placesKey: PropTypes.string.isRequired,
+  page: PropTypes.shape({
+    focusEmail: PropTypes.bool.isRequired,
+    refresh: PropTypes.func.isRequired,
+    signedOut: PropTypes.func.isRequired,
+    openEmailChange: PropTypes.func.isRequired,
+  }).isRequired,
 };
 
 const usePlacesKey = places => {
@@ -96,24 +151,29 @@ const usePlacesKey = places => {
 
 /**
  * The profile page in its identity-provider form: the avatar card from the
- * cached display fields, then the tabs the `account` adapter carries the
- * calls for, Profile, Security at `#security`, Preferences at
- * `#preferences`, Favorites and Sessions, the tab read from the URL's
- * hash, the full record read once from `GET /api/user` and re-read after
- * every change the session must reflect, every stepped-up call passing
- * through the one step-up dialog; `user` and `loaded` are the session
- * state's, the page drawing nothing until `loaded` and sending a visitor
- * to sign in only once `loaded` says there is no session, because the
- * cached account is a paint hint.
+ * cached display fields, then the one section the route names under it,
+ * Profile at `/user/profile`, Security at `/user/profile/security`,
+ * Preferences at `/user/profile/preferences`, Favorites at
+ * `/user/profile/favorites` and Sessions at `/user/profile/sessions`, the
+ * sidebar's child rows being the one navigation and no tab strip drawn
+ * (decision 109), a section drawn only while the `account` adapter
+ * carries its calls and an unknown section drawing Profile; a `#section`
+ * hash the estate still links is replaced by the section's route; the
+ * full record is read once from `GET /api/user` and re-read after every
+ * change the session must reflect, every stepped-up call passing through
+ * the one step-up dialog; `user` and `loaded` are the session state's,
+ * the page drawing nothing until `loaded` and sending a visitor to sign
+ * in only once `loaded` says there is no session, because the cached
+ * account is a paint hint.
  */
 const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
   const location = useLocation();
-  const tabs = useMemo(() => tabsFor(account), [account]);
+  const { section = '' } = useParams();
+  const sections = useMemo(() => sectionsFor(account), [account]);
   const [record, setRecord] = useState({ profile: null, version: 0 });
-  const [focusEmail, setFocusEmail] = useState(false);
   const placesKey = usePlacesKey(account.places || null);
   const { guard, dialog } = useStepUp({
     stepUp: account.stepUp,
@@ -121,7 +181,9 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
   });
   const signedIn = loaded && Boolean(user);
   const { profile, version } = record;
-  const activeTab = tabFromHash(location.hash, tabs);
+  const active = sections.includes(section) ? section : 'profile';
+  const focusEmail = Boolean(location.state?.focusEmail);
+  const hashSection = location.hash.replace(/^#/, '');
 
   useEffect(() => {
     document.title = t('profile.pageTitle');
@@ -129,9 +191,15 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
 
   useEffect(() => {
     if (loaded && !user) {
-      navigate(returnTo.signInTo('/user/profile'));
+      navigate(returnTo.signInTo(PROFILE_PATH));
     }
   }, [loaded, navigate, returnTo, user]);
+
+  useEffect(() => {
+    if (hashSection && sections.includes(hashSection)) {
+      navigate(pathOf(hashSection), { replace: true });
+    }
+  }, [hashSection, navigate, sections]);
 
   const loadProfile = useCallback(
     () =>
@@ -159,14 +227,8 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
     }
   }, [events, loadProfile, session]);
 
-  const changeTab = tab => {
-    setFocusEmail(false);
-    navigate({ hash: tab === 'profile' ? '' : `#${tab}` }, { replace: true });
-  };
-
   const openEmailChange = () => {
-    changeTab('security');
-    setFocusEmail(true);
+    navigate(pathOf('security'), { state: { focusEmail: true } });
   };
 
   const signedOut = next => {
@@ -187,43 +249,21 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
           <p className="text-muted">{user.email}</p>
         </div>
         <div className="card-body">
-          <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={changeTab} />
-          <div className="tab-content mt-3">
-            {profile === null ? <p>{t('loading')}</p> : null}
-            {profile && activeTab === 'profile' ? (
-              <IssuerDetailsTab
-                key={version}
+          <div className="tab-content">
+            {profile === null ? (
+              <p>{t('loading')}</p>
+            ) : (
+              <ActiveSection
+                active={active}
                 account={account}
                 profile={profile}
+                version={version}
+                session={session}
                 guard={guard}
                 placesKey={placesKey}
-                onSaved={refresh}
-                onChangeEmail={openEmailChange}
+                page={{ focusEmail, refresh, signedOut, openEmailChange }}
               />
-            ) : null}
-            {profile && activeTab === 'security' ? (
-              <SecurityTab
-                account={account}
-                profile={profile}
-                guard={guard}
-                focusEmail={focusEmail}
-                onSaved={refresh}
-                onDeleted={signedOut}
-              />
-            ) : null}
-            {profile && activeTab === 'preferences' ? (
-              <PreferencesTab
-                key={version}
-                account={account}
-                profile={profile}
-                session={session}
-                onSaved={refresh}
-              />
-            ) : null}
-            {profile && activeTab === 'favorites' ? <FavoritesTab account={account} /> : null}
-            {profile && activeTab === 'sessions' ? (
-              <SessionsTab account={account} guard={guard} onSignedOut={signedOut} />
-            ) : null}
+            )}
           </div>
         </div>
       </div>

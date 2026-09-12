@@ -220,7 +220,7 @@ const PAGE_TITLES = {
   '/invite/:token': 'inviteAccept.title',
   '/org/invite/:token?': 'auth:invite.title',
   '/profile': 'profile.pageTitle',
-  '/user/profile': 'profile.pageTitle',
+  '/user/profile/:section?': 'profile.pageTitle',
   '/user/organizations': 'organizations.title',
   '/user/integrations': 'integrations.title',
   '/org-console': 'orgConsole.pageTitle',
@@ -663,7 +663,7 @@ const issuerProfile = ({ account, status, globalAdmin }) => (
 const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications }) => {
   const profile = issuerProfile({ account, status, globalAdmin });
   return gatedRoutes([
-    { path: '/user/profile', open: cookie, element: profile, token: 'cookie' },
+    { path: '/user/profile/:section?', open: cookie, element: profile, token: 'cookie' },
     {
       path: '/user/organizations',
       open: cookie && hasFeature(status, 'org-console'),

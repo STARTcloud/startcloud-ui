@@ -38,18 +38,23 @@ FavoriteToggle.propTypes = {
   onToggle: PropTypes.func.isRequired,
 };
 
-const AboutHeader = ({ brand, title, description, version, goal, favorite }) => {
+const AboutHeader = ({ brand, title, description, version, uiVersion, goal, favorite }) => {
   const { t } = useTranslation();
-  const versionChip = (
-    <span className="badge text-bg-primary" title={t('pages.about.runningVersion', { version })}>
-      v{version}
-    </span>
+  const versionChips = (
+    <>
+      <span className="badge text-bg-primary" title={t('pages.about.runningVersion', { version })}>
+        {t('about.version.app', { version })}
+      </span>
+      <span className="badge text-bg-secondary">
+        {t('about.version.ui', { version: uiVersion })}
+      </span>
+    </>
   );
   return (
     <PageHeader
       media={brand}
       title={title}
-      chips={versionChip}
+      chips={versionChips}
       actions={
         favorite ? <FavoriteToggle active={favorite.active} onToggle={favorite.onToggle} /> : null
       }
@@ -67,6 +72,7 @@ AboutHeader.propTypes = {
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
   version: PropTypes.string.isRequired,
+  uiVersion: PropTypes.string.isRequired,
   goal: PropTypes.string.isRequired,
   favorite: favoriteShape,
 };
@@ -200,7 +206,8 @@ SupportStrip.propTypes = {
 
 /**
  * The About page every estate app draws the same way, from props alone: a
- * PageHeader carrying the brand, the title, the version chip, the
+ * PageHeader carrying the brand, the title, the two version chips (the
+ * app's from `status.version`, the UI's from the build), the
  * description, the goal as a quote and the favorite toggle as its action;
  * Start here (the documentation links as a list) beside What you can do
  * here (features as a check grid); How it fits together (components as
@@ -212,6 +219,7 @@ SupportStrip.propTypes = {
  * @param {string} props.title - The app's name; also becomes the document title
  * @param {string} props.description - One sentence saying what the app is
  * @param {string} props.version - The running version, drawn as a chip under the title
+ * @param {string} props.uiVersion - The shared UI build's version, drawn as the second chip
  * @param {string} props.goal - The app's goal, drawn as a quote under the description
  * @param {string[]} props.features - What a visitor can do here, one line each
  * @param {Array<{title: string, details: string[]}>} props.components - The parts the app is made of, one headed card each
@@ -227,6 +235,7 @@ const AboutPage = ({
   title,
   description,
   version,
+  uiVersion,
   goal,
   features,
   components,
@@ -247,6 +256,7 @@ const AboutPage = ({
         title={title}
         description={description}
         version={version}
+        uiVersion={uiVersion}
         goal={goal}
         favorite={favorite}
       />
@@ -269,6 +279,7 @@ AboutPage.propTypes = {
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
   version: PropTypes.string.isRequired,
+  uiVersion: PropTypes.string.isRequired,
   goal: PropTypes.string.isRequired,
   features: PropTypes.arrayOf(PropTypes.string).isRequired,
   components: PropTypes.arrayOf(

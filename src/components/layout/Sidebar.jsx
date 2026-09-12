@@ -53,6 +53,16 @@ const focusSibling = (container, step) => {
   }
 };
 
+const childRowShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  icon: PropTypes.elementType.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  to: PropTypes.string.isRequired,
+  end: PropTypes.bool,
+  badge: PropTypes.string,
+  external: PropTypes.bool,
+});
+
 export const sidebarRowShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   icon: PropTypes.elementType.isRequired,
@@ -61,6 +71,7 @@ export const sidebarRowShape = PropTypes.shape({
   end: PropTypes.bool,
   badge: PropTypes.string,
   external: PropTypes.bool,
+  children: PropTypes.arrayOf(childRowShape),
 });
 
 export const sidebarSectionShape = PropTypes.shape({
@@ -90,10 +101,12 @@ RowBadge.propTypes = {
   count: PropTypes.number.isRequired,
 };
 
-const SectionRow = ({ row, badges }) => {
+const SectionRow = ({ row, badges, depth = 0 }) => {
   const { t } = useTranslation();
+  const link = useRef(null);
   const Icon = row.icon;
   const label = t(row.labelKey);
+  useCssVar(link, '--sidebar-depth', depth ? String(depth) : null);
   const body = (
     <>
       <Icon className="sidebar-row-icon" />
@@ -103,19 +116,45 @@ const SectionRow = ({ row, badges }) => {
   );
   if (row.external) {
     return (
-      <a href={row.to} className="sidebar-row" title={label} data-sidebar-row>
+      <a ref={link} href={row.to} className="sidebar-row" title={label} data-sidebar-row>
         {body}
       </a>
     );
   }
   return (
-    <NavLink to={row.to} end={Boolean(row.end)} className={rowClass} title={label} data-sidebar-row>
+    <NavLink
+      ref={link}
+      to={row.to}
+      end={Boolean(row.end)}
+      className={rowClass}
+      title={label}
+      data-sidebar-row
+    >
       {body}
     </NavLink>
   );
 };
 
 SectionRow.propTypes = {
+  row: sidebarRowShape.isRequired,
+  badges: PropTypes.objectOf(PropTypes.number).isRequired,
+  depth: PropTypes.number,
+};
+
+const SectionEntry = ({ row, badges }) => (
+  <>
+    <SectionRow row={row} badges={badges} />
+    {row.children && row.children.length > 0 ? (
+      <div className="sidebar-children">
+        {row.children.map(child => (
+          <SectionRow key={child.key} row={child} badges={badges} depth={1} />
+        ))}
+      </div>
+    ) : null}
+  </>
+);
+
+SectionEntry.propTypes = {
   row: sidebarRowShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
 };
@@ -129,7 +168,7 @@ const SectionRows = ({ section, badges }) => {
     <div className="sidebar-section">
       {section.labelKey ? <div className="sidebar-section-label">{t(section.labelKey)}</div> : null}
       {section.items.map(row => (
-        <SectionRow key={row.key} row={row} badges={badges} />
+        <SectionEntry key={row.key} row={row} badges={badges} />
       ))}
     </div>
   );

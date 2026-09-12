@@ -347,7 +347,7 @@ const AppActions = ({ app, onRevoke }) => {
   const { t } = useTranslation();
   return (
     <>
-      <Link to="/user/profile#sessions" className="btn btn-sm btn-outline-secondary">
+      <Link to="/user/profile/sessions" className="btn btn-sm btn-outline-secondary">
         {t('integrations.apps.sessions')}
       </Link>
       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onRevoke(app)}>
@@ -445,7 +445,7 @@ const confirmationsFor = (t, integrations) => {
  * route and following its `next`, the set-a-password and two-factor
  * notices, the accepted terms and policies with View, and the connected
  * applications with their permission chips, a Sessions link to the
- * profile's Sessions tab and Revoke access behind a confirm; every
+ * profile's Sessions route and Revoke access behind a confirm; every
  * stepped-up call goes through the step-up dialog.
  */
 const IntegrationsPage = ({ integrations, stepUp, user = null }) => {
