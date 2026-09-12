@@ -61,6 +61,20 @@ const columns = [
   },
 ];
 
+const verifiedGroup = (key, labelKey) => ({
+  key,
+  labelKey,
+  values: row => (row[key] ? ['verified'] : []),
+  activeClass: 'bg-success',
+  labelFor: (value, t) => t(`admin.activity.registrations.${value}`),
+});
+
+const CLIENT_GROUPS = [
+  verifiedGroup('email_verified', 'admin.activity.registrations.emailVerified'),
+  verifiedGroup('phone_verified', 'admin.activity.registrations.phoneVerified'),
+];
+const CLIENT_KEYS = CLIENT_GROUPS.map(group => group.key);
+
 const groupsOf = ({ state, t }) => [
   {
     kind: 'date-range',
@@ -77,8 +91,12 @@ const groupsOf = ({ state, t }) => [
  * Activity › Registrations: the same narrowing as Logins without Show
  * only, the username query as `username` and the `date-range` group as
  * `start_date` and `end_date` in the navbar module, the query and every
- * filter in the URL through `useUrlNarrowing`, Export the panel's action
- * over the same parameters, the Columns
+ * filter in the URL through `useUrlNarrowing`, the Email verified and
+ * Phone verified `toggle` groups, one pill each, narrowing the loaded
+ * rows client-side since the list names no parameter for them, their
+ * values in the URL as `email_verified` and `phone_verified` and never
+ * sent to the list, Export
+ * the panel's action over the list's parameters, the Columns
  * group under `table_prefs_admin_registrations`, the columns headed
  * Email verified and Phone verified over their Yes and No, and the pager.
  */
@@ -88,6 +106,7 @@ const RegistrationsPage = () => {
     read: registrations,
     example: REGISTRATIONS,
     exportName: 'registrations',
+    clientKeys: CLIENT_KEYS,
   });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
   const search = useListSearch({
@@ -95,6 +114,8 @@ const RegistrationsPage = () => {
     onQueryChange: state.setQuery,
     placeholderKey: 'admin.activity.registrations.search',
     groups: groupsOf({ state, t }),
+    clientGroups: CLIENT_GROUPS,
+    url: { applied: state.applied, setFilter: state.setFilter, clearFilters: state.clear },
     onClearFilters: state.clear,
     action: {
       key: 'export',

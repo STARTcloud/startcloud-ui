@@ -11,8 +11,10 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SortableList from '../../../components/common/SortableList';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import {
   createTerm,
   deleteTerm,
@@ -37,6 +39,24 @@ const keyOf = term => term.name;
 
 const matches = (term, needle) =>
   [term.name, term.friendly_name || ''].some(text => text.toLowerCase().includes(needle));
+
+const FILTER_GROUPS = [
+  {
+    key: 'type',
+    labelKey: 'admin.terms.field.type',
+    values: term => [String(term.type).toLowerCase()],
+    activeClass: 'bg-info text-dark',
+    labelFor: (value, t) => t(`admin.terms.type.${value}`, { defaultValue: value }),
+  },
+  {
+    key: 'public',
+    labelKey: 'admin.terms.field.public',
+    values: term => (term.is_public ? ['public'] : []),
+    activeClass: 'bg-success',
+    labelFor: (value, t) => t(`admin.terms.${value}`),
+  },
+];
+const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 
 const reorderWithin = (all, shown) => {
   const names = new Set(shown.map(keyOf));
@@ -243,7 +263,10 @@ const useOrdered = data => {
  * to the public policy page, Copy through a small dialog asking the new
  * name, Edit and Create in one dialog, Delete behind the confirm; every
  * change saved as it is made and the list re-fetched; the navbar search
- * bound with a query over the cards by name and display name.
+ * bound with a query over the cards by name and display name and the
+ * Type and Public `toggle` groups narrowing the cards client-side, the
+ * query and the groups' values in the URL as `search`, `type` and
+ * `public` through `useUrlNarrowing`.
  */
 const TermsPage = () => {
   const { t } = useTranslation();
@@ -251,18 +274,21 @@ const TermsPage = () => {
   const placeholders = usePlaceholders();
   const { data, loading, reload } = useAdminRead({ read: terms, example: TERMS });
   const { ordered, setOrdered } = useOrdered(data);
-  const [query, setQuery] = useState('');
-  const needle = query.trim().toLowerCase();
-  const shown = needle ? ordered.filter(term => matches(term, needle)) : ordered;
+  const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
+  const needle = url.query.trim().toLowerCase();
+  const searched = needle ? ordered.filter(term => matches(term, needle)) : ordered;
+  const filters = useClientFilters({ specs: FILTER_GROUPS, rows: searched, bound: url });
+  const shown = filters.rows;
+  const narrowing = needle !== '' || filters.active;
 
   useNavbarSearchBinding({
-    query,
-    onQueryChange: setQuery,
+    query: url.query,
+    onQueryChange: url.setQuery,
     placeholder: t('admin.terms.search'),
     matched: shown.length,
     total: ordered.length,
-    groups: [],
-    onClearFilters: () => setQuery(''),
+    groups: filters.groups,
+    onClearFilters: filters.clear,
   });
   const [dialog, setDialog] = useState({ open: false, term: null });
   const [copying, setCopying] = useState(null);
@@ -315,7 +341,7 @@ const TermsPage = () => {
         </button>
       </div>
       {shown.length === 0 ? (
-        <div className="text-muted">{needle ? t('pages.noMatches') : t('pages.empty')}</div>
+        <div className="text-muted">{narrowing ? t('pages.noMatches') : t('pages.empty')}</div>
       ) : null}
       <SortableList
         items={shown}

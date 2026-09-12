@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { readDetailPrefs, toggleIn, writeDetailPrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -21,7 +22,9 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * Registers the navbar binding of an admin page whose rows are a paged
  * list the issuer answers: the query and its setter the page holds, the
  * page's filter groups (`toggle`, `select` or `date-range`, each sent as
- * the list's parameters by the page) followed by the Columns group, the
+ * the list's parameters by the page), then one group per enumerable
+ * column the list names no parameter for (`clientGroups`), narrowing the
+ * rows the list answered client-side, followed by the Columns group, the
  * page's one action drawn at the panel's foot, and the answer's `total`
  * published as `matched` with no `total`, since the server alone narrows
  * and a count over the page held would lie. Answers the page's rows in
@@ -33,6 +36,8 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {Function} options.onQueryChange - Its setter
  * @param {string} options.placeholderKey - Translation key of the search placeholder
  * @param {Array} options.groups - The page's filter groups
+ * @param {Array} [options.clientGroups] - The client-side group specs of `useClientFilters`
+ * @param {Object|null} [options.url] - The URL narrowing holding the client-side groups' values
  * @param {Function} options.onClearFilters - Empties every group, keeping the query
  * @param {{ key: string, labelKey: string, icon?: Function, onRun: Function }} options.action - The panel's action
  * @param {number} options.matched - The paged answer's `total`
@@ -46,6 +51,8 @@ export const useListSearch = ({
   onQueryChange,
   placeholderKey,
   groups,
+  clientGroups,
+  url = null,
   onClearFilters,
   action,
   matched,
@@ -55,6 +62,7 @@ export const useListSearch = ({
 }) => {
   const { t } = useTranslation();
   const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns));
+  const filters = useClientFilters({ specs: clientGroups, rows, bound: url });
 
   useEffect(() => {
     writeDetailPrefs(prefsKey, prefs);
@@ -67,8 +75,15 @@ export const useListSearch = ({
     onQueryChange,
     placeholder: t(placeholderKey),
     matched,
-    groups: [...groups, columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t })],
-    onClearFilters,
+    groups: [
+      ...groups,
+      ...filters.groups,
+      columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t }),
+    ],
+    onClearFilters: () => {
+      onClearFilters();
+      filters.clear();
+    },
     action,
   });
 
@@ -76,7 +91,7 @@ export const useListSearch = ({
     setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) }));
 
   return {
-    rows: sortItems(rows, prefs.sort, shown),
+    rows: sortItems(filters.rows, prefs.sort, shown),
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,

@@ -36,6 +36,19 @@ const matches = (row, needle) =>
     text.toLowerCase().includes(needle)
   );
 
+const FILTER_GROUPS = [
+  {
+    kind: 'select',
+    key: 'type',
+    labelKey: 'admin.organizations.table.type',
+    values: row => [row.personal ? 'personal' : 'team'],
+    order: ['personal', 'team'],
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`admin.organizations.${value}`),
+  },
+];
+const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
+
 const columns = [
   {
     key: 'name',
@@ -117,7 +130,9 @@ RowActions.propTypes = {
 /**
  * Accounts › All organizations: the navbar search bound for a query over
  * the rows, mirrored in the URL as `search` through `useUrlNarrowing`,
- * and the Columns group under `table_prefs_admin_organizations`,
+ * the Type `select` group (Personal or Team) narrowing the rows
+ * client-side, its value in the URL as `type`, and the Columns group
+ * under `table_prefs_admin_organizations`,
  * the table (name with the uuid in its tooltip, Personal or Team, invite
  * code, customer id behind Edit, members, created), the customer id
  * dialog with an empty value clearing it, and Delete behind the confirm
@@ -131,13 +146,15 @@ const OrganizationsPage = () => {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const url = useUrlNarrowing({ queryKey: 'search' });
+  const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.organizations.search',
     columns,
     prefsKey: PREFS_KEY,
+    filterGroups: FILTER_GROUPS,
+    url,
     bound: {
       query: url.query,
       onQueryChange: url.setQuery,

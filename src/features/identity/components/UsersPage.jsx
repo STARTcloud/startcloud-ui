@@ -31,9 +31,13 @@ import {
 
 const PREFS_KEY = 'table_prefs_admin_users';
 const PAGE_SIZE = 25;
-const FILTER_KEYS = ['enabled', 'using_2fa', 'has_customer_id', 'active_after'];
+const CLIENT_KEYS = ['roles'];
+const FILTER_KEYS = ['enabled', 'using_2fa', 'has_customer_id', 'active_after', ...CLIENT_KEYS];
 
 const roleLabel = role => role.replace(/^ROLE_/, '');
+
+const listParams = values =>
+  Object.fromEntries(Object.entries(values).filter(([key]) => !CLIENT_KEYS.includes(key)));
 
 const flagSet = on => new Set(on ? ['true'] : []);
 
@@ -77,6 +81,17 @@ const groupsOf = ({ filters, setFilter, t }) => [
     onChange: range => setFilter('active_after', range.start),
     startLabel: t('admin.activity.startDate'),
     endLabel: t('admin.activity.endDate'),
+  },
+];
+
+const rolesGroupOf = catalog => [
+  {
+    key: 'roles',
+    labelKey: 'admin.users.table.roles',
+    values: row => row.roles,
+    order: catalog,
+    activeClass: 'bg-secondary',
+    labelFor: roleLabel,
   },
 ];
 
@@ -278,7 +293,10 @@ const serverSortOf = sort => {
  * 2FA and Customer ID `toggle` groups as `using_2fa` and
  * `has_customer_id`, the Active after `date-range` group as
  * `active_after`, each change re-reading page 1 with the server alone
- * answering, Export the panel's action over the same parameters, and the
+ * answering, the Roles `toggle` group over the role catalog narrowing the
+ * loaded page client-side since the list names no parameter for it, its
+ * values in the URL as `roles`, comma-joined, and never sent to the list,
+ * Export the panel's action over the list's parameters, and the
  * Columns group with the sort and the hidden columns under
  * `table_prefs_admin_users`, the sort sent to the read as `sort` and
  * `direction`; the table with the roles, organizations and 2FA badges,
@@ -293,12 +311,13 @@ const UsersPage = () => {
   const guard = useGuard();
   const catalog = useRoleCatalog();
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
+  const narrowed = useMemo(() => listParams(url.narrowed), [url.narrowed]);
   const [page, setPage] = useState(0);
-  const [pagedFor, setPagedFor] = useState(url.narrowed);
+  const [pagedFor, setPagedFor] = useState(narrowed);
   const [open, setOpen] = useState({ kind: '', user: null });
 
-  if (pagedFor !== url.narrowed) {
-    setPagedFor(url.narrowed);
+  if (pagedFor !== narrowed) {
+    setPagedFor(narrowed);
     setPage(0);
   }
   const [answer, setAnswer] = useState({ params: null, data: null });
@@ -309,12 +328,14 @@ const UsersPage = () => {
     () => columnsFor({ selected: selection.selected, onSelect: selection.toggle }),
     [selection.selected, selection.toggle]
   );
-  const { narrowed } = url;
+  const clientGroups = useMemo(() => rolesGroupOf(catalog), [catalog]);
   const search = useListSearch({
     query: url.query,
     onQueryChange: url.setQuery,
     placeholderKey: 'admin.users.search',
     groups: groupsOf({ filters: url.applied, setFilter: url.setFilter, t }),
+    clientGroups,
+    url,
     onClearFilters: url.clearFilters,
     action: {
       key: 'export',

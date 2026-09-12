@@ -14,6 +14,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
+import { readDetailPrefs, writeDetailPrefs } from '../../../utils/prefs';
 import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
@@ -22,15 +23,13 @@ const CREATE_LABELS = { name: 'organizations.name' };
 const JOIN_SCHEMA = { required: ['invite_code'], properties: { invite_code: NON_BLANK } };
 const JOIN_LABELS = { invite_code: 'organizations.inviteCode' };
 const EMPTY = { organizations: [], organizations_enabled: false, personal_to_team_enabled: false };
-const VIEW_KEY = 'table_prefs_organizations';
+const PREFS_KEY = 'table_prefs_organizations';
 const VIEWS = ['table', 'cards'];
+const NO_COLUMNS = [];
 
 const hashUuid = hash => decodeURIComponent(hash.replace(/^#/, ''));
 
-const storedView = () => {
-  const saved = localStorage.getItem(VIEW_KEY);
-  return VIEWS.includes(saved) ? saved : 'table';
-};
+const storedView = () => readDetailPrefs(PREFS_KEY, NO_COLUMNS, { views: VIEWS }).view;
 
 const membershipShape = PropTypes.shape({
   uuid: PropTypes.string.isRequired,
@@ -249,8 +248,8 @@ MembershipCards.propTypes = {
  * person can manage it, and View or Manage, which makes that organization
  * the active one under `activeOrgKey` and opens the shared console; a
  * `#<uuid>` in the URL does the same on load, and the chosen view persists
- * under `table_prefs_organizations`; the navbar search is bound with a
- * query over the memberships by name.
+ * as `view` inside the one prefs object under `table_prefs_organizations`;
+ * the navbar search is bound with a query over the memberships by name.
  */
 const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => {
   const { t } = useTranslation();
@@ -321,7 +320,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   }, [data.organizations, loaded, location.hash, open]);
 
   const changeView = next => {
-    localStorage.setItem(VIEW_KEY, next);
+    writeDetailPrefs(PREFS_KEY, { view: next });
     setView(next);
   };
 

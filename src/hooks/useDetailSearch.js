@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { readDetailPrefs, toggleIn, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
 
+import { useClientFilters } from './useClientFilters';
 import { useNavbarSearchBinding } from './useSearchBinding';
 
 const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
@@ -20,14 +21,20 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
 
 /**
  * Registers one navbar search binding for a detail page's table, with one
- * Columns group that shows or hides the table's columns, and returns the
- * rows the query leaves in the active sort order, the query itself, whether
- * a query is active, the sort with its setter and the hidden column keys.
- * A sort on a hidden column is dropped until the column returns; the sort
- * is a stack, a Shift-click on a header adding to it. The sort
- * and the hidden columns persist under `prefsKey`. A page that keeps the
- * query elsewhere (the URL) hands it in as `bound`, with its own
- * placeholder, and the hook publishes that instead of its own state.
+ * filter group per enumerable column the page names in `filterGroups`,
+ * narrowing the rows client-side, and one Columns group last that shows
+ * or hides the table's columns, and returns the rows the query and the
+ * groups leave in the active sort order, the query itself, whether a
+ * query or a group is active, the sort with its setter and the hidden
+ * column keys. A sort on a hidden column is dropped until the column
+ * returns; the sort is a stack, a Shift-click on a header adding to it.
+ * The sort, the hidden columns and, on a page with the view toggle, the
+ * view named in `views` persist together under `prefsKey`, one object per
+ * key; Clear filters empties the groups and keeps the query. A page that
+ * keeps the query elsewhere (the URL) hands it in as `bound`, with its own
+ * placeholder, and the hook publishes that instead of its own state; a
+ * page that keeps its groups' values in the URL hands its
+ * `useUrlNarrowing` result in as `url`.
  *
  * @param {Object} options
  * @param {Array} options.rows - Every row of the table
@@ -35,8 +42,11 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {string} options.placeholderKey - Translation key of the search placeholder
  * @param {Array} options.columns - The table's columns, each with `key`, `labelKey` and optionally `sortValue` and `defaultHidden`
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
+ * @param {Array} [options.filterGroups] - The client-side group specs of `useClientFilters`
  * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - An externally held query
- * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set }} The filtered, sorted rows and the search state
+ * @param {Object|null} [options.url] - The URL narrowing holding the groups' values
+ * @param {string[]|null} [options.views] - The views the page toggles between, the first the default
+ * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, view: string, setView: Function }} The filtered, sorted rows and the search state
  */
 export const useDetailSearch = ({
   rows,
@@ -44,31 +54,38 @@ export const useDetailSearch = ({
   placeholderKey,
   columns,
   prefsKey,
+  filterGroups,
   bound = null,
+  url = null,
+  views = null,
 }) => {
   const { t } = useTranslation();
   const [ownQuery, setOwnQuery] = useState('');
   const query = bound ? bound.query : ownQuery;
   const setQuery = bound ? bound.onQueryChange : setOwnQuery;
-  const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns));
+  const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns, { views }));
 
   useEffect(() => {
     writeDetailPrefs(prefsKey, prefs);
   }, [prefsKey, prefs]);
 
   const needle = query.trim().toLowerCase();
-  const filtered = needle ? rows.filter(row => matches(row, needle)) : rows;
+  const searched = needle ? rows.filter(row => matches(row, needle)) : rows;
+  const filters = useClientFilters({ specs: filterGroups, rows: searched, bound: url });
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const sorted = sortItems(filtered, prefs.sort, shown);
+  const sorted = sortItems(filters.rows, prefs.sort, shown);
 
   useNavbarSearchBinding({
     query,
     onQueryChange: setQuery,
     placeholder: bound ? bound.placeholder : t(placeholderKey),
-    matched: filtered.length,
+    matched: filters.rows.length,
     total: rows.length,
-    groups: [columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t })],
-    onClearFilters: () => setQuery(''),
+    groups: [
+      ...filters.groups,
+      columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t }),
+    ],
+    onClearFilters: filters.clear,
   });
 
   const setSort = (column, options) =>
@@ -77,9 +94,11 @@ export const useDetailSearch = ({
   return {
     rows: sorted,
     query,
-    filtering: needle !== '',
+    filtering: needle !== '' || filters.active,
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
+    view: prefs.view || '',
+    setView: view => setPrefs(current => ({ ...current, view })),
   };
 };

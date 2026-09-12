@@ -22,6 +22,17 @@ const PAGE_SIZE = 25;
 const matches = (row, needle) =>
   [row.full_name || '', row.client_name || ''].some(text => text.toLowerCase().includes(needle));
 
+const FILTER_GROUPS = [
+  {
+    key: 'client',
+    labelKey: 'admin.activity.sessions.client',
+    values: row => (row.client_name ? [row.client_name] : []),
+    activeClass: 'bg-primary',
+    labelFor: value => value,
+  },
+];
+const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
+
 const columns = [
   {
     key: 'user',
@@ -87,9 +98,12 @@ RowActions.propTypes = {
 
 /**
  * Activity › Sessions: its search bound to the navbar box over user and
- * application, the query its one narrowing since the page has no other
- * filter, mirrored in the URL as `search` through `useUrlNarrowing`, with
- * the Columns group under `table_prefs_admin_sessions`; the
+ * application, the query mirrored in the URL as `search` through
+ * `useUrlNarrowing`, the Client `toggle` group over the loaded rows'
+ * application names narrowing them client-side, since the list names no
+ * parameter for it, its values in the URL as `client`, comma-joined,
+ * with the Columns group under
+ * `table_prefs_admin_sessions`; the
  * table with Authorized and Last active as two columns, Revoke behind the
  * confirm, and the pager.
  */
@@ -105,13 +119,15 @@ const SessionsPage = () => {
   });
   const [revoking, setRevoking] = useState(null);
   const rows = useMemo(() => data?.items || [], [data]);
-  const url = useUrlNarrowing({ queryKey: 'search' });
+  const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.activity.sessions.search',
     columns,
     prefsKey: PREFS_KEY,
+    filterGroups: FILTER_GROUPS,
+    url,
     bound: {
       query: url.query,
       onQueryChange: url.setQuery,

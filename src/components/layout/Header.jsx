@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaBars, FaCircleHalfStroke, FaLifeRing, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaBars, FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
 
 import Crumbs, { crumbShape } from './Breadcrumbs';
 import { LanguageButton } from './LanguageModal';
@@ -53,57 +53,61 @@ Brand.propTypes = {
   LinkComponent: PropTypes.elementType.isRequired,
 };
 
-const UtilityLinks = ({ links, LinkComponent }) =>
+const SupportLinks = ({ links }) =>
   links.map(link => (
     <li key={link.key} className="nav-item">
-      {link.to ? (
-        <LinkComponent to={link.to} className="nav-link">
-          {link.label}
-        </LinkComponent>
-      ) : (
-        <a href={link.href} className="nav-link">
-          {link.label}
-        </a>
-      )}
+      <a
+        href={link.href}
+        className="nav-link"
+        target={link.external ? '_blank' : undefined}
+        rel={link.external ? 'noopener noreferrer' : undefined}
+      >
+        {link.label}
+      </a>
     </li>
   ));
 
 export const linkShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
-  href: PropTypes.string,
-  to: PropTypes.string,
+  href: PropTypes.string.isRequired,
+  external: PropTypes.bool,
 });
 
-UtilityLinks.propTypes = {
+SupportLinks.propTypes = {
   links: PropTypes.arrayOf(linkShape).isRequired,
-  LinkComponent: PropTypes.elementType.isRequired,
 };
 
-const ReportLink = ({ reportUrl }) => {
+const ThemeButton = ({ theme }) => {
   const { t } = useTranslation();
-  if (!reportUrl) {
-    return null;
-  }
-  const label = t('navbar.reportProblem');
+  const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
+  const themeLabel = t(`theme.${theme.preference}`, {
+    variant: t(`theme.name.${theme.resolved}`),
+  });
   return (
     <li className="nav-item">
-      <a
-        href={reportUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        key={theme.preference}
+        type="button"
         className="btn btn-link nav-link cluster-btn"
-        title={label}
-        aria-label={label}
+        onClick={theme.onToggle}
+        title={themeLabel}
+        aria-label={themeLabel}
       >
-        <FaLifeRing />
-      </a>
+        <ThemeIcon />
+      </button>
     </li>
   );
 };
 
-ReportLink.propTypes = {
-  reportUrl: PropTypes.string.isRequired,
+const themeShape = PropTypes.shape({
+  preference: PropTypes.string.isRequired,
+  resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
+  onToggle: PropTypes.func.isRequired,
+});
+
+ThemeButton.propTypes = {
+  theme: themeShape.isRequired,
 };
 
 const Header = ({
@@ -116,15 +120,10 @@ const Header = ({
   signedIn,
   onSignIn = null,
   signInTo = '',
-  reportUrl = '',
   userMenu = null,
   onSidebarToggle = null,
 }) => {
   const { t } = useTranslation();
-  const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
-  const themeLabel = t(`theme.${theme.preference}`, {
-    variant: t(`theme.name.${theme.resolved}`),
-  });
 
   return (
     <nav className="navbar navbar-expand-lg shadow-sm bg-body-tertiary border-bottom">
@@ -144,32 +143,26 @@ const Header = ({
         <ul className="nav nav-pills me-auto align-items-center">
           {signedIn ? (
             <Crumbs crumbs={crumbs} LinkComponent={LinkComponent} leading={Boolean(brand)} />
-          ) : (
-            <UtilityLinks links={links} LinkComponent={LinkComponent} />
-          )}
-        </ul>
-
-        <ul className="nav nav-pills ms-auto align-items-center">
-          <NavbarSearchControl />
-          <li className="nav-item">
-            <button
-              key={theme.preference}
-              type="button"
-              className="btn btn-link nav-link cluster-btn"
-              onClick={theme.onToggle}
-              title={themeLabel}
-              aria-label={themeLabel}
-            >
-              <ThemeIcon />
-            </button>
-          </li>
-          <LanguageButton languages={language.languages} onPick={language.onPick} />
-          {signedIn ? null : <ReportLink reportUrl={reportUrl} />}
-          {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
-          {!signedIn && (onSignIn || signInTo) ? (
-            <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
           ) : null}
         </ul>
+
+        {signedIn ? (
+          <ul className="nav nav-pills ms-auto align-items-center">
+            <NavbarSearchControl />
+            <ThemeButton theme={theme} />
+            <LanguageButton languages={language.languages} onPick={language.onPick} />
+            {userMenu ? <UserMenu {...userMenu} /> : null}
+          </ul>
+        ) : (
+          <ul className="nav nav-pills ms-auto align-items-center">
+            <SupportLinks links={links} />
+            <LanguageButton languages={language.languages} onPick={language.onPick} />
+            <ThemeButton theme={theme} />
+            {onSignIn || signInTo ? (
+              <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
+            ) : null}
+          </ul>
+        )}
       </div>
       <NoticeBanners LinkComponent={LinkComponent} />
       <NavbarSearchPanel />
@@ -182,11 +175,7 @@ Header.propTypes = {
   links: PropTypes.arrayOf(linkShape),
   crumbs: PropTypes.arrayOf(crumbShape),
   LinkComponent: PropTypes.elementType,
-  theme: PropTypes.shape({
-    preference: PropTypes.string.isRequired,
-    resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
-    onToggle: PropTypes.func.isRequired,
-  }).isRequired,
+  theme: themeShape.isRequired,
   language: PropTypes.shape({
     languages: PropTypes.arrayOf(PropTypes.string).isRequired,
     onPick: PropTypes.func.isRequired,
@@ -194,7 +183,6 @@ Header.propTypes = {
   signedIn: PropTypes.bool.isRequired,
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
-  reportUrl: PropTypes.string,
   userMenu: PropTypes.object,
   onSidebarToggle: PropTypes.func,
 };

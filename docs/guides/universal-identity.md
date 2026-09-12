@@ -549,13 +549,21 @@ session contract's sign-in page) by the states the issuer has:
   Sign in is hidden, the chrome's session-ended banner carries a Sign in
   action of its own, because the banner says "Sign in again" and the
   person must have something to press.
-- **Chrome.** The issuer's auth top bar today is the site logo, "Need
-  help?" (`sites.<id>.assets.help_url`), "Email support"
-  (`sites.<id>.mail.support_email`) and the flag; on the shared chrome the
-  same four are the brand mark, `links.docs` carrying `help_url`,
-  `links.contact` carrying `mailto:<support_email>`, and the flag, with the
-  theme button beside it, which the auth pages never had (the site's pack
-  is not a user choice; the variant is).
+- **Chrome.** The issuer's auth top bar today is the site logo on the
+  left and, top right, "Need help?" (`sites.<id>.assets.help_url`),
+  "Email support" (`sites.<id>.mail.support_email`) and the flag; on the
+  shared chrome the auth pages draw exactly that, the navbar contract's
+  signed-out cluster: the brand mark alone on the left, and on the right,
+  in order, "Need help?" (the improvement-request ticket link in a new
+  tab while `ticket` is non-null, built from `ticket.baseUrl`,
+  `ticket.reqType` and `ticket.fallbackCustomerId` alone; `links.docs`
+  carrying `help_url` while `ticket` is null; absent when neither),
+  "Email support" (`links.contact` carrying `mailto:<support_email>`,
+  absent when empty), the language control, and the theme button beside
+  it, which the auth pages never had (the site's pack is not a user
+  choice; the variant is). No search icon, because app-wide search needs
+  a session and no auth page binds the navbar search; no Sign in button,
+  because the page itself is the sign-in.
 - **After `next`.** The page navigates in-router when `next` is a path
   whose first segment is a page of this contract or of the pages contract,
   and sets `window.location` otherwise (a saved `/oauth2/authorize`, an
@@ -1421,7 +1429,7 @@ The rest of the group's reads, all session, all under `/api/user`:
 | `GET /api/user/tfa/enroll`                         | `{ qr, secret, issuer }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `GET /accountconfig/edittfaapp` (a Thymeleaf fragment) |
 | `GET /api/user/backup-codes/count`                 | `{ remaining }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `GET /accountconfig/backupcodes/count`                 |
 | `GET /api/user/passkeys`                           | `[{ id, label, rp_id, created_at, last_used_at }]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `GET /accountconfig/passkeys`                          |
-| `GET /api/user/sessions`                           | `[{ id, client_id, client_name, user_agent, ip_address, location, authorized_at, last_accessed_at }]`; `id` is an opaque surrogate, never the session cookie's value, because a value that unlocks the session must not be readable from a page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `GET /accountconfig/sessions`                          |
+| `GET /api/user/sessions`                           | `[{ id, current, client_id, client_name, user_agent, ip_address, location, authorized_at, last_accessed_at }]`; `id` is an opaque surrogate, never the session cookie's value, because a value that unlocks the session must not be readable from a page; the caller's own session carried with `current: true`, because a person who cannot see the session they are on cannot tell it from a stranger's                                                                                                                                                                                                                                                                                                                                                                      | `GET /accountconfig/sessions`                          |
 | `GET /api/user/favorites`                          | `[{ client_id, client_name, icon_url, home_url, custom_label, order }]`, the same list the profile's `favorite_apps` carries in the same `snake_case`, the one source the page and the menu on every UI backend read, Bearer or session; a `backend` UI backend proxies the path on its own origin to the issuer with the user's token, the way it proxies the hub; the claims are not a third copy                                                                                                                                                                                                                                                                                                                                                                            | `GET /user/favorites` plus `GET /api/userinfo/claims`  |
 | `GET /api/user/organizations`                      | `{ organizations: [ … ], organizations_enabled, personal_to_team_enabled }`, one entry per membership with the console's fields: `uuid, name, personal, primary, my_role, can_manage, can_rename, is_owner, invite_code, email, website_url, logo_url, description, locale, timezone, telephone, access_mode, default_role, address{…}, members[{ user_id, email, name, role, managed_by }], pending_invites[{ id, email, role }]`; `invite_code` is present only while `can_manage`, because a plain member holding the code could grow the organization at its default role; every `logo_url` and `icon_url` the pages draw, here and in the integrations answer, is rendered only when it parses with the `https:` scheme, with `referrerpolicy="no-referrer"` on the image | the model of `user/organizations.html`                 |
 | `GET /api/user/integrations`                       | `{ linked: [{ provider_id, provider_name, provider_username, provider_email, linked_at, last_used_at, icon_url, sites, compat }], available: [{ provider_id, provider_name, icon_url }], accepted_terms: [{ name, label, icon, version, accepted_at, type }], apps: [{ client_id, client_name, icon_url, registered, first_used_at, last_used_at, active_sessions, consent_required, consent_scopes }] }`                                                                                                                                                                                                                                                                                                                                                                      | the four `GET /user/integrations/api/*` routes         |
@@ -1546,13 +1554,16 @@ replays inside its window and a guessing run meets `429` with
     the available applications by label and client id.
   - **Sessions** at `/user/profile/sessions`: "Active sessions" (client, device from the user agent,
     location and address, authorized time, each row's absolute time in
-    its tooltip) with Sign out per row and "Revoke all sessions, this
-    browser included" behind a confirm that says the person will be
-    signed out here too.
+    its tooltip) with Sign out per row, the current row labeled "This
+    session", its Sign out the plain sign-out that answers
+    `{ next: "/login" }`, and "Revoke all sessions, this browser
+    included" behind a confirm that says the person will be signed out
+    here too.
 - **OrganizationsPage** at `/user/organizations`: Create an organization
   (name, labeled, while `organizations_enabled`), Join an organization
   (the invite code, labeled), then the memberships under the pages
-  contract's one view toggle, list or cards, one row or one card per
+  contract's one view toggle, list or cards, the choice kept as `view`
+  inside `table_prefs_organizations`, one row or one card per
   membership (name, Personal, Primary, your role, Make primary, and only
   while `can_manage` the invite code with Regenerate) whose View button,
   Manage for a manager, sets the active organization and opens
@@ -1769,10 +1780,19 @@ label (`STARTcloud › Account › Profile › Favorites`), the parent a link
 to its own page and the child the last crumb; the user
 menu keeps its universal rows, its Preferences row an in-router link to
 `/user/profile/preferences`, its app section headed by `brand.name`
-holding the `links.docs` and `links.contact` rows alone, and no Admin
-row, since Dashboard is a row of the column and a destination lives in
-the column or the menu, never both, Preferences being the one named
-exception because the avatar is the one control on every page.
+holding the About row, an in-router link to `/about` that always exists
+on the role, and the Docs and Contact rows exactly as every other UI
+backend draws them, Docs from `links.docs` and Contact from
+`links.contact`, each absent while empty, the section drawn while any
+row exists and so always on the role, because the column carries no
+About row and the About page is where a person reads the role's
+version chips and reports a fault, so it must be reachable from the one
+control on every page; the menu's Help row stays the ticket, and the
+signed-out navbar's "Need help?" and "Email support" are that navbar's
+labels alone, never the menu's; and no Admin row, since Dashboard is a
+row of the column and a destination lives in the column or the menu,
+never both, Preferences being the one named exception because the
+avatar is the one control on every page.
 The column and the app section are hidden on every route of the
 sign-in, onboarding and interstitial groups and on `/error`, where the
 page is the whole screen. On a `backend` UI backend the profile feature
@@ -1852,9 +1872,12 @@ problem body with `code`.
     as `enabled`; the 2FA and Customer ID groups are `kind: toggle` sent
     as `using_2fa` and `has_customer_id`; the Active after group is
     `kind: date-range` with its presets and All time sent as
-    `active_after`; the server alone answers and nothing is narrowed
-    client-side, because every search goes through the navbar and a count
-    over a page of a paged list would lie; Export is the panel's
+    `active_after`; the server alone answers those, because every search
+    goes through the navbar and a count over a page of a paged list would
+    lie; the Roles group is `kind: toggle` over the role catalog and
+    narrows the loaded page client-side, since the list names no
+    parameter for it and the navbar contract's one-group-per-enumerable-
+    column rule still wants it; Export is the panel's
     registered action, `/api/admin/export/users` from the same query and
     groups, the page keeping the bulk bar and the table alone; the
     `SubTable` with sortable Email, Name, Customer ID and Status headers,
@@ -1871,8 +1894,9 @@ problem body with `code`.
     naming processed, skipped and errors.
   - **Organizations**: the table (name, Personal or Team, uuid, invite
     code, customer id behind an Edit action in the row, members,
-    created), Delete behind `ConfirmModal` for a team or an empty
-    personal organization.
+    created), the Type group, `kind: select` over Personal and Team
+    narrowing the rows client-side, Delete behind `ConfirmModal` for a
+    team or an empty personal organization.
   - **Activity**: three pages, one per sidebar row, no tab strip:
     Logins (the username query and the date range in the navbar module,
     the query as the list's `username` parameter and the range as
@@ -1883,10 +1907,14 @@ problem body with `code`.
     keeps the table alone, the table
     with a Reason column for a failed row rather than a tooltip on the
     badge, since a reason an operator came to read must not hide under a
-    hover), Registrations (the same groups without Show only, the
-    columns headed "Email verified" and "Phone verified" over their Yes
-    and No), Sessions (the table with Authorized and Last active as two
-    columns and Revoke behind a confirm); `Pager` under each; every table
+    hover), Registrations (the same groups without Show only, plus Email
+    verified and Phone verified as two `kind: toggle` groups of one pill
+    each narrowing the loaded page client-side, since the list names no
+    parameter for them, the columns headed "Email verified" and "Phone
+    verified" over their Yes and No), Sessions (the table with Authorized
+    and Last active as two columns, the Client group, `kind: toggle` over
+    the application names of the loaded page narrowing it client-side,
+    and Revoke behind a confirm); `Pager` under each; every table
     draws one date format, the absolute time in the cell and the relative
     time in its tooltip, because two formats on one screen read as two
     clocks. Every admin table page, Users, Organizations, Logins,
@@ -1897,12 +1925,17 @@ problem body with `code`.
     own, and every one of them keeps its query and its filter values in
     the page's URL (`search` or `username`, `enabled`, `using_2fa`,
     `has_customer_id`, `active_after`, `success`, `start_date`,
-    `end_date`) and reads them on load, so a search hit and a shared
-    link land narrowed and the back button restores the narrowing; the
-    URL carries the narrowing alone, never a token or a session value,
-    and a narrowing only reveals what the page would list anyway;
-    Organizations and Sessions, having no other filter, have the
-    query as their one narrowing; the chosen columns and the sort persist under that page's
+    `end_date`, and the client-side groups under one key each, `roles`,
+    `email_verified`, `phone_verified`, `client` and `type`, a
+    multi-select's values comma-joined and never sent to the list) and
+    reads them on load, so a search hit and a shared link land narrowed
+    and the back button restores the narrowing; the URL carries the
+    narrowing alone, never a token or a session value, and a narrowing
+    only reveals what the page would list anyway; Organizations and
+    Sessions carry no list parameter but the query, their groups
+    narrowing the rows in hand; Client health and Terms keep their query
+    and groups in the URL the same way (`search`, `status`, `kind`;
+    `search`, `type`, `public`); the chosen columns and the sort persist under that page's
     `table_prefs_admin_*` key; every table sits in a wrapper with
     `overflow-x: auto` and hides columns through that group, so the page
     body never scrolls sideways.
@@ -1910,7 +1943,9 @@ problem body with `code`.
     usage `StatCard`s and the usage table with the percentage bar; the
     insights sections (active users, security posture, app activity,
     apps per user, top combinations, registrations per week, churn,
-    organizations) as cards and small tables, their definitions in an
+    organizations) as cards and small tables, the organizations rollup
+    carrying a Personal group, `kind: toggle` over Personal and Team,
+    narrowing its rows client-side, their definitions in an
     info fold on the page and not in header tooltips a touch screen
     never opens; the client and provider cards in three states (healthy,
     unhealthy, not probeable) with the error collapse, one status per
@@ -1919,8 +1954,14 @@ problem body with `code`.
     card lies, drawn under the pages contract's one view toggle, list
     or cards, the list a `SubTable` with the columns Name, Kind (client
     or provider), Check, Endpoint, Status, Response time, Last checked
-    and Reason, header sort and the Columns group, the cards as today,
-    the choice kept under `table_prefs_admin_client_health`; both draw
+    and Reason, header sort, the Status group (`kind: toggle` over
+    healthy, unhealthy and not probeable) and the Kind group
+    (`kind: toggle` over client and provider), both narrowing the rows
+    client-side since the read is not paged, and the Columns group, the
+    cards as today,
+    the choice kept as `view` inside `table_prefs_admin_client_health`
+    with the sort and the hidden columns, the session contract's one
+    object per key; both draw
     from the same rows the navbar query narrows; Refresh re-fetches,
     nothing reloads; the page binds the navbar search with a query over
     the client and provider cards by name and base URL.
@@ -1936,7 +1977,9 @@ problem body with `code`.
     textarea with a preview beside it and the placeholder help from the
     placeholders call), Delete behind a confirm; every change saved as
     it is made; the page binds the navbar search with a query over the
-    template cards by name and display name.
+    template cards by name and display name, the Type group
+    (`kind: toggle` over the template types) and the Public group, one
+    pill, both narrowing the cards client-side.
   - **Configuration**: the shared `AdminConfig` of the config contract
     over the issuer's schema, one tab per name in `status.config`, reached
     from the sidebar row as an in-router link (decision 16).
@@ -2233,9 +2276,10 @@ Settled before code, in the order they were raised:
 46. The sidebar rows read "Inbox" and "All organizations"; the user menu
     on the issuer carries no Admin row and keeps its Preferences row as
     an in-router link to `/user/profile/preferences`; the app section is
-    headed by `brand.name`; the profile draws no Organizations tab; a row
-    lives in the column or the menu, never both, Preferences the one
-    named exception.
+    headed by `brand.name` and holds About beside the Docs and Contact
+    rows every UI backend draws (decision 120); the profile draws no
+    Organizations tab; a row lives in the column or the menu, never
+    both, Preferences the one named exception.
 47. A site that requires a mobile number says so on the phone step with
     its support contact; a site that does not never shows the step,
     because the requirement is the site's own flag and the least data
@@ -2471,6 +2515,42 @@ Settled before code, in the order they were raised:
      view toggle, list or cards, the list a sortable table with a Columns
      group, so the rows are searchable and filterable like every other
      listing.
+116. The signed-out header carries the brand alone on the left and, on
+     the right in order, "Need help?" (the ticket link while `ticket` is
+     non-null, else `links.docs`, else nothing), "Email support" (the
+     `mailto:` of `links.contact`, else nothing), the language control
+     and the theme button, no search icon and no life-ring glyph, on the
+     auth pages and on every other signed-out page of every UI backend,
+     because the old issuer's auth pages drew exactly this and a person
+     who is not signed in needs help, support and a language before
+     anything else.
+117. A page's table preferences are one JSON object per `table_prefs_*`
+     key, `{ view, sort, hiddenColumns, filters, folds }`, `view` present
+     only where the page has the toggle; Organizations and Client health
+     keep theirs that way.
+118. `GET /api/user/sessions` carries the caller's own session with
+     `current: true`; the page labels it "This session" and its Sign out
+     is the plain sign-out.
+119. Every identity page that draws a table or a card list publishes one
+     filter group per enumerable column of its rows, the navbar contract's
+     rule: Client health Status and Kind, Users Status, 2FA, Customer ID
+     and Roles, Logins Show only, Registrations Email verified and Phone
+     verified, Sessions Client, All organizations Type, Terms Type and
+     Public, and the insights organizations rollup Personal; a group the
+     list names a parameter for is sent as that parameter, and every
+     other group narrows the rows in hand client-side, because a column a
+     person can read but not narrow by sends them back to scrolling.
+120. On the `auth-server` role the user menu's app section, headed by
+     `brand.name`, holds About, an in-router link to `/about` that always
+     exists on the role, and the Docs and Contact rows exactly as every
+     other UI backend draws them, Docs from `links.docs` and Contact from
+     `links.contact`, each absent while empty; the section draws while
+     any row exists, so it always draws on the role; the menu's Help row
+     stays the ticket, and "Need help?" and "Email support" are the
+     signed-out navbar's labels alone, never the menu's; because the
+     column carries no About row and the About page, where the role's
+     version chips are read and a fault is reported, must be reachable
+     from the one control on every page.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

@@ -225,7 +225,9 @@ adapter, registers the search binding, and renders:
   the org header row when the page has one, else at the right of the first
   collection's heading row beside the page's actions (home: Discover
   organizations), so no page carries an empty row above its first heading;
-  stored per page; the collection's `defaultView` seeds it (catalog cards,
+  stored per page; as `view` inside the page's one `table_prefs_*` object
+  beside its sort, hidden columns, filters and folds, never under a key of
+  its own; the collection's `defaultView` seeds it (catalog cards,
   BoxVault list).
 - **One table per collection**, organization rows as group rows inside it,
   so every column lines up across organizations. Tables and cards render

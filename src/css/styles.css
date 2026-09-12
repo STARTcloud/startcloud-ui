@@ -558,6 +558,7 @@ button::-moz-focus-inner {
 }
 
 .navbar {
+  flex-shrink: 0;
   min-height: calc(var(--chrome-row) + 1px);
   padding-top: 14px;
   padding-bottom: 14px;
@@ -722,6 +723,8 @@ button::-moz-focus-inner {
 }
 
 .flag-icon-lg {
+  display: inline-flex;
+  align-items: center;
   font-size: 1.2em;
 }
 

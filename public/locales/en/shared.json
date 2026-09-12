@@ -24,7 +24,6 @@
     "favorites": "Favorites",
     "notifications": "Notifications",
     "help": "Help",
-    "reportProblem": "Report a problem",
     "profileModeTitle": "Switch between identity provider and local profile",
     "about": "About",
     "docs": "Docs",
@@ -515,6 +514,7 @@
       "revokeAllBody": "Every session is signed out, this browser included, and you will need to sign in again. Type \"{{keyword}}\" to confirm.",
       "revokeAllReason": "Revoking every session ends how you are signed in.",
       "revokedAll": "Every session was signed out.",
+      "current": "This session",
       "authorized": "Authorized",
       "lastActive": "Last active"
     }
@@ -702,6 +702,7 @@
       "sessions": {
         "title": "Sessions",
         "user": "User · Application",
+        "client": "Application",
         "authorized": "Authorized",
         "lastActive": "Last active",
         "revoke": "Revoke",

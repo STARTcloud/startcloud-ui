@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { filterGroupOf, narrowRows } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { readPrefs, toggleIn, writePrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -30,13 +31,47 @@ const columnsGroup = ({ table, hidden, setPrefs, t }) => ({
     })),
 });
 
+const tableGroups = ({ table, rows, filters, setPrefs, t }) =>
+  table.filterGroups.map(spec =>
+    filterGroupOf({
+      spec,
+      rows,
+      active: filters[spec.key],
+      onToggle: next =>
+        setPrefs(current => ({
+          ...current,
+          filters: {
+            ...current.filters,
+            [table.key]: { ...current.filters[table.key], [spec.key]: next },
+          },
+        })),
+      t,
+      label: `${t(table.labelKey)} · ${t(spec.labelKey)}`,
+    })
+  );
+
+const anyActive = (tables, filters) =>
+  tables.some(table => table.filterGroups.some(spec => filters[table.key][spec.key].size > 0));
+
+const clearedFilters = (tables, filters) =>
+  Object.fromEntries(
+    tables.map(table => [
+      table.key,
+      Object.fromEntries(Object.keys(filters[table.key]).map(key => [key, new Set()])),
+    ])
+  );
+
 /**
  * Registers the Insights page's navbar search binding, a query over every
- * row of its tables and one Columns group per table, prefixed by the
- * table's title, and answers each table's rows left by the query in its
- * sort order, the sort with its setter and the hidden column keys; a table
- * with no saved sort draws its `defaultSort`. The sorts and the hidden
- * columns persist under `prefsKey`.
+ * row of its tables, one group per enumerable column each table names in
+ * `filterGroups`, narrowing that table's rows client-side, and one
+ * Columns group per table, every group prefixed by the table's title,
+ * and answers each table's rows left by the query and its groups in its
+ * sort order, whether a query or a group is active, the sort with its
+ * setter and the hidden column keys; a table with no saved sort draws
+ * its `defaultSort`. The picked filters, the sorts and the hidden columns
+ * persist under `prefsKey`; Clear filters empties the groups and keeps
+ * the query.
  *
  * @param {Object} options
  * @param {Array} options.tables - `{ key, labelKey, columns, defaultSort, filterGroups, defaultView }` per table
@@ -62,7 +97,9 @@ export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKe
   tables.forEach(table => {
     const all = rowsByTable[table.key] || [];
     const hidden = prefs.hiddenColumns[table.key];
-    const passing = needle ? all.filter(row => matches(row, needle)) : all;
+    const filters = prefs.filters[table.key];
+    const searched = needle ? all.filter(row => matches(row, needle)) : all;
+    const passing = narrowRows(searched, table.filterGroups, filters);
     const stack = prefs.sort[table.key].length > 0 ? prefs.sort[table.key] : table.defaultSort;
     rows[table.key] = sortItems(
       passing,
@@ -71,6 +108,7 @@ export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKe
     );
     matched += passing.length;
     total += all.length;
+    groups.push(...tableGroups({ table, rows: searched, filters, setPrefs, t }));
     groups.push(columnsGroup({ table, hidden, setPrefs, t }));
   });
 
@@ -81,7 +119,8 @@ export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKe
     matched,
     total,
     groups,
-    onClearFilters: () => setQuery(''),
+    onClearFilters: () =>
+      setPrefs(current => ({ ...current, filters: clearedFilters(tables, current.filters) })),
   });
 
   const setSort = (tableKey, column, options) =>
@@ -92,7 +131,7 @@ export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKe
 
   return {
     rows,
-    filtering: needle !== '',
+    filtering: needle !== '' || anyActive(tables, prefs.filters),
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,

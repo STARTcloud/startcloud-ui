@@ -24,7 +24,6 @@
     "favorites": "Favoritos",
     "notifications": "Notificaciones",
     "help": "Ayuda",
-    "reportProblem": "Informar de un problema",
     "profileModeTitle": "Cambiar entre el perfil del proveedor de identidad y el perfil local",
     "about": "Acerca de",
     "docs": "Documentación",
@@ -515,6 +514,7 @@
       "revokeAllBody": "Se cierran todas las sesiones, este navegador incluido, y tendrás que iniciar sesión de nuevo. Escribe \"{{keyword}}\" para confirmar.",
       "revokeAllReason": "Revocar todas las sesiones termina cómo tienes la sesión iniciada.",
       "revokedAll": "Se cerraron todas las sesiones.",
+      "current": "Esta sesión",
       "authorized": "Autorizada",
       "lastActive": "Última actividad"
     }
@@ -702,6 +702,7 @@
       "sessions": {
         "title": "Sesiones",
         "user": "Usuario · Aplicación",
+        "client": "Aplicación",
         "authorized": "Autorizada",
         "lastActive": "Última actividad",
         "revoke": "Revocar",

@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaRotate } from 'react-icons/fa6';
 
 import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { clientHealth } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { CLIENT_HEALTH } from '../utils/examples';
@@ -17,23 +18,6 @@ import TableWrap from './TableWrap';
 const PREFS_KEY = 'table_prefs_admin_client_health';
 const VIEWS = ['table', 'cards'];
 const HTTPS = /^https?:/;
-
-const parsePrefs = () => {
-  try {
-    return JSON.parse(localStorage.getItem(PREFS_KEY) || 'null') || {};
-  } catch {
-    return {};
-  }
-};
-
-const storedView = () => {
-  const saved = parsePrefs().view;
-  return VIEWS.includes(saved) ? saved : 'table';
-};
-
-const writeView = view => {
-  localStorage.setItem(PREFS_KEY, JSON.stringify({ ...parsePrefs(), view }));
-};
 
 const stateOf = probe => {
   if (probe.healthy === null || probe.healthy === undefined) {
@@ -248,6 +232,26 @@ const columns = [
   },
 ];
 
+const FILTER_GROUPS = [
+  {
+    key: 'status',
+    labelKey: 'admin.health.clients.table.status',
+    values: row => [stateOf(row)],
+    order: ['healthy', 'unhealthy', 'unknown'],
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`admin.health.status.${value}`),
+  },
+  {
+    key: 'kind',
+    labelKey: 'admin.health.clients.table.kind',
+    values: row => [row.kind],
+    order: ['client', 'provider'],
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`admin.health.clients.kind.${value}`),
+  },
+];
+const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
+
 const anyUnhealthy = probes => probes.some(probe => probe.healthy === false);
 
 const matches = (probe, needle) =>
@@ -266,31 +270,39 @@ const rowsOf = data => [
  * re-fetches and reloads nothing, and the pages contract's one view
  * toggle, list or cards; the list a `SubTable` over every client and
  * provider with the columns Name, Kind, Check, Endpoint, Status, Response
- * time, Last checked and Reason, header sort and the Columns group; the
+ * time, Last checked and Reason, header sort, the Status and Kind
+ * `toggle` groups narrowing the rows client-side, the query and their
+ * values in the URL as `search`, `status` and `kind` through
+ * `useUrlNarrowing`, and the Columns group; the
  * cards one per client and provider in three states with one status
  * each, a probed card naming the check the server performed
  * (`actuator_health` or `http_reachability`) and the exact endpoint it
  * requested, an unhealthy card adding the failure reason, an unprobed
  * row carrying neither; both views drawn from the same rows the navbar
  * query narrows by name and base URL, the view, the sort and the hidden
- * columns kept under `table_prefs_admin_client_health`.
+ * columns kept as one object under `table_prefs_admin_client_health`
+ * through `useDetailSearch`.
  */
 const ClientHealthPage = () => {
   const { t, i18n } = useTranslation();
   const { data, loading, reload } = useAdminRead({ read: clientHealth, example: CLIENT_HEALTH });
-  const [view, setView] = useState(storedView);
   const rows = useMemo(() => rowsOf(data), [data]);
+  const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.health.clients.search',
     columns,
     prefsKey: PREFS_KEY,
+    filterGroups: FILTER_GROUPS,
+    url,
+    bound: {
+      query: url.query,
+      onQueryChange: url.setQuery,
+      placeholder: t('admin.health.clients.search'),
+    },
+    views: VIEWS,
   });
-
-  useEffect(() => {
-    writeView(view);
-  }, [view, search.sort, search.hiddenColumns]);
 
   useEffect(() => {
     document.title = t('admin.health.clients.title');
@@ -338,9 +350,9 @@ const ClientHealthPage = () => {
           <FaRotate className="me-1" aria-hidden="true" />
           {t('admin.health.refresh')}
         </button>
-        <ViewToggle view={view} onChange={setView} />
+        <ViewToggle view={search.view} onChange={search.setView} />
       </div>
-      {view === 'cards' ? (
+      {search.view === 'cards' ? (
         <>
           <h5>{t('admin.health.clients.heading')}</h5>
           <CardGrid

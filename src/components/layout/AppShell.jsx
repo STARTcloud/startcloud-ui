@@ -82,10 +82,12 @@ const UNIVERSAL_ROUTES = [
 
 const SESSION_ENDED_KEY = 'session-ended';
 
-const utilityLinks = (status, t, showAbout) => {
-  const links = showAbout ? [{ key: 'about', label: t('navbar.about'), to: '/about' }] : [];
-  if (status.links.docs) {
-    links.push({ key: 'docs', label: t('navbar.needHelp'), href: status.links.docs });
+const supportLinks = ({ status, ticketUrl, t }) => {
+  const links = [];
+  if (ticketUrl) {
+    links.push({ key: 'help', label: t('navbar.needHelp'), href: ticketUrl, external: true });
+  } else if (status.links.docs) {
+    links.push({ key: 'help', label: t('navbar.needHelp'), href: status.links.docs });
   }
   if (status.links.contact) {
     links.push({ key: 'contact', label: t('navbar.emailSupport'), href: status.links.contact });
@@ -287,7 +289,7 @@ const bannerSignInFor = ({ account, hidden }) =>
   hidden ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
 
 const columnGates = ({ cookie, showAbout, showOrgConsole }) => ({
-  showAbout: showAbout && !cookie,
+  showAbout,
   showOrgConsole: showOrgConsole && !cookie,
 });
 
@@ -369,8 +371,7 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * The whole chrome around the routes, described by the host's status: the
  * sidebar first when the mounted features exported entries for it, then
  * the header with the brand from `status.brand` (in the sidebar's top
- * while one draws, one link to `/`), the utility links from
- * `status.links`, the route crumbs (opened with the root crumb, the
+ * while one draws, one link to `/`), the route crumbs (opened with the root crumb, the
  * product name linking to `/`, while the sidebar draws; `<group> › <row>`
  * on a route a sidebar row matches, `<group> › <row> › <child>` on a
  * route a child row matches, `<group> › <node> › …` down the
@@ -385,12 +386,15 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * in button is hidden there too, the session-ended banner carrying its
  * own Sign in in its place; on a `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
- * destination, and no About row, its app section holding the docs and
- * contact rows alone and drawn only while one exists, and its Preferences
- * row an in-router link to `/user/profile/preferences`, the one
- * destination drawn in both the column and the menu; while signed out the
- * cluster carries the ticket glyph with the ticket link the app supplies,
- * built from the fallback customer id alone. The app supplies
+ * destination, its app section holding the About row, an in-router link
+ * to `/about`, with the docs and contact rows as on every other host, and
+ * its Preferences row an in-router link to `/user/profile/preferences`,
+ * the one destination drawn in both the column and the menu; while signed out the
+ * left of the bar holds the brand alone and the cluster is Need help?
+ * (the ticket link the app supplies, built from the fallback customer id
+ * alone, in a new tab, else `links.docs`), Email support (`links.contact`),
+ * language, theme and Sign in, with no search icon because app-wide search
+ * needs a session. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
@@ -496,7 +500,7 @@ const AppShell = ({
   });
 
   const gates = columnGates({ cookie, showAbout, showOrgConsole });
-  const links = utilityLinks(status, t, gates.showAbout);
+  const links = signedIn ? [] : supportLinks({ status, ticketUrl, t });
 
   const userMenu = buildUserMenu({
     account,
@@ -537,7 +541,6 @@ const AppShell = ({
         signedIn={signedIn}
         onSignIn={signIn.onSignIn}
         signInTo={signIn.signInTo}
-        reportUrl={signedIn ? '' : ticketUrl}
         userMenu={userMenu}
         onSidebarToggle={showSidebar ? overlay.toggle : null}
       />

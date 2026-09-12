@@ -51,12 +51,25 @@ const SessionSubline = ({ row }) => {
 
 SessionSubline.propTypes = {
   row: PropTypes.shape({
+    current: PropTypes.bool,
     user_agent: PropTypes.string,
     location: PropTypes.string,
     ip_address: PropTypes.string,
     authorized_at: PropTypes.string,
     last_accessed_at: PropTypes.string,
   }).isRequired,
+};
+
+const CurrentBadge = ({ row }) => {
+  const { t } = useTranslation();
+  if (!row.current) {
+    return null;
+  }
+  return <span className="badge bg-primary">{t('profile.sessions.current')}</span>;
+};
+
+CurrentBadge.propTypes = {
+  row: PropTypes.shape({ current: PropTypes.bool }).isRequired,
 };
 
 const SignOutButton = ({ row, onClick }) => {
@@ -76,10 +89,12 @@ SignOutButton.propTypes = {
 /**
  * The Sessions tab of the identity contract: the active sessions with
  * their client, device, location and address, the authorized time with
- * its absolute time in the tooltip, Sign out per row and Revoke all
- * sessions behind a confirm that says this browser is signed out too;
- * both revocations are stepped up, and the revoke-all answer's `next`
- * is followed when it ended this session.
+ * its absolute time in the tooltip, the caller's own row badged "This
+ * session", Sign out per row and Revoke all sessions behind a confirm
+ * that says this browser is signed out too; the other rows' Sign out and
+ * the revoke-all are stepped up, the current row's Sign out is the plain
+ * sign-out, and an answer's `next` is followed when the call ended this
+ * session.
  */
 const SessionsTab = ({ account, guard, onSignedOut }) => {
   const { t } = useTranslation();
@@ -114,6 +129,14 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
     }
   };
 
+  const follow = answer => {
+    if (typeof answer?.next === 'string' && SAFE_PATH.test(answer.next)) {
+      onSignedOut(answer.next);
+      return true;
+    }
+    return false;
+  };
+
   const revoke = row =>
     run(
       () => account.sessions.revoke(row.id),
@@ -124,19 +147,26 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
       }
     );
 
+  const signOutCurrent = row =>
+    account.sessions
+      .revoke(row.id)
+      .then(follow)
+      .catch(error => notify('danger', t(errorKeys(error))));
+
   const revokeAll = () =>
     run(
       () => account.sessions.revokeAll(),
       t('profile.sessions.revokeAllReason'),
       async answer => {
-        if (typeof answer?.next === 'string' && SAFE_PATH.test(answer.next)) {
-          onSignedOut(answer.next);
+        if (follow(answer)) {
           return;
         }
         notify('success', t('profile.sessions.revokedAll'));
         await load();
       }
     );
+
+  const onSignOut = row => (row.current ? signOutCurrent(row) : setPending({ kind: 'one', row }));
 
   const confirmPending = () => {
     if (pending?.kind === 'all') {
@@ -171,10 +201,9 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
             key={row.id}
             icon={<FaDesktop aria-hidden />}
             label={row.client_name || row.client_id || t('profile.sessions.unknownClient')}
+            badges={<CurrentBadge row={row} />}
             subline={<SessionSubline row={row} />}
-            actions={
-              <SignOutButton row={row} onClick={entry => setPending({ kind: 'one', row: entry })} />
-            }
+            actions={<SignOutButton row={row} onClick={onSignOut} />}
           />
         ))}
       </MethodList>

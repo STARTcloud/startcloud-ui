@@ -475,7 +475,19 @@ const freshIntegrations = () => ({
 
 const freshUserSessions = () => [
   {
+    id: 's0',
+    current: true,
+    client_id: 'auth-server',
+    client_name: 'STARTcloud',
+    user_agent: 'Chrome on Windows',
+    ip_address: '203.0.113.7',
+    location: 'Austin, US',
+    authorized_at: '2026-09-06T12:00:00Z',
+    last_accessed_at: NOW(),
+  },
+  {
     id: 's1',
+    current: false,
     client_id: 'conductor',
     client_name: 'Conductor',
     user_agent: 'Chrome on Windows',
@@ -486,6 +498,7 @@ const freshUserSessions = () => [
   },
   {
     id: 's2',
+    current: false,
     client_id: 'boxvault',
     client_name: 'BoxVault',
     user_agent: 'Firefox on Linux',
@@ -1506,7 +1519,13 @@ sessionRoute('GET', '/api/user/backup-codes/count', () => ok({ remaining: 8 }));
 steppedRoute('POST', '/api/user/backup-codes', () => ok({ codes: BACKUP_CODES }));
 sessionRoute('GET', '/api/user/sessions', () => ok(state.sessions));
 sessionRoute('DELETE', '/api/user/sessions/:id', ctx => {
-  state.sessions = state.sessions.filter(row => row.id !== ctx.params.id);
+  const row = state.sessions.find(entry => entry.id === ctx.params.id);
+  state.sessions = state.sessions.filter(entry => entry.id !== ctx.params.id);
+  if (row?.current) {
+    resetSession();
+    endStreams();
+    return ok({ next: '/login' });
+  }
   return noContent();
 });
 steppedRoute('DELETE', '/api/user/sessions', () => {

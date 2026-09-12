@@ -98,12 +98,21 @@ const yesNo = key => ({
   render: (row, ctx) => (row[key] ? ctx.t('yes') : ctx.t('no')),
 });
 
-const table = (key, columns, defaultSort) => ({
+const PERSONAL_GROUP = {
+  key: 'personal',
+  labelKey: labelOf('personal'),
+  values: row => [row.personal ? 'personal' : 'team'],
+  order: ['personal', 'team'],
+  activeClass: 'bg-primary',
+  labelFor: (value, t) => t(`admin.organizations.${value}`),
+};
+
+const table = (key, columns, defaultSort, filterGroups = []) => ({
   key,
   labelKey: `admin.health.insights.${key}`,
   columns,
   defaultSort,
-  filterGroups: [],
+  filterGroups,
   defaultView: 'table',
 });
 
@@ -131,7 +140,8 @@ const TABLES = [
   table(
     'org_rollup',
     [text('name'), text('customer_id'), yesNo('personal'), number('members'), number('active_30d')],
-    [{ column: 'members', direction: 'desc' }]
+    [{ column: 'members', direction: 'desc' }],
+    [PERSONAL_GROUP]
   ),
 ];
 
@@ -257,8 +267,10 @@ Definition.propTypes = {
  * Health › Insights over the members of the insights read: the active-user
  * and security-posture figures as `StatCard`s; app activity, apps per user,
  * top combinations and the organizations rollup as sorted `SubTable`s with
- * header sort, the navbar search bound for a query over their rows and one
- * Columns group per table under `table_prefs_admin_insights`; registrations
+ * header sort, the navbar search bound for a query over their rows, the
+ * organizations rollup's Personal `toggle` group (Personal or Team)
+ * narrowing its rows client-side, and one Columns group per table under
+ * `table_prefs_admin_insights`; registrations
  * per week as a bar chart drawn from `growth[]`; the churn cards and the
  * quietest accounts beside their definitions; every instant in the one
  * admin date format; the remaining definitions in an info fold.
