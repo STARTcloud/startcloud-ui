@@ -25,10 +25,12 @@ import {
   updateStatus,
 } from '../features/admin';
 import {
+  BootstrapLoginPage,
   CallbackPage,
   InvitePage,
   LoginPage,
   MagicLinkPage,
+  OrgInvitePage,
   PasswordRecoveryPage,
   PasswordResetPage,
   RegisterPage,
@@ -210,11 +212,13 @@ const PAGE_TITLES = {
   '/organizations/discover': 'discovery.title',
   '/login': 'auth:login.pageTitle',
   '/login/magic': 'auth:login.magic.title',
+  '/login/bootstrap': 'auth:login.bootstrap.title',
   '/auth/callback': 'auth:login.pageTitle',
   '/register': 'auth:register.pageTitle',
   '/registration': 'auth:register.pageTitle',
   '/registration/verify': 'auth:register.pageTitle',
   '/invite/:token': 'inviteAccept.title',
+  '/org/invite/:token?': 'auth:invite.title',
   '/profile': 'profile.pageTitle',
   '/user/profile': 'profile.pageTitle',
   '/user/organizations': 'organizations.title',
@@ -543,6 +547,12 @@ const signInRoutes = ({ status, cookie, account }) => {
       token: 'cookie',
     },
     {
+      path: '/login/bootstrap',
+      open: cookie,
+      element: <BootstrapLoginPage returnTo={returnTo} />,
+      token: 'cookie',
+    },
+    {
       path: '/authenticator',
       open: tfa,
       element: <TfaCodePage returnTo={returnTo} />,
@@ -690,6 +700,12 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications })
         />
       ),
       token: 'org-console',
+    },
+    {
+      path: '/org/invite/:token?',
+      open: cookie && hasFeature(status, 'invitations'),
+      element: <OrgInvitePage returnTo={returnTo} />,
+      token: 'invitations',
     },
     {
       path: '/user/integrations',

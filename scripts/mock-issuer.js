@@ -41,6 +41,7 @@ const STEP_UP_MS = 5 * 60 * 1000;
 const HEARTBEAT_MS = 25 * 1000;
 const EVENTS_DELAY_MS = 3000;
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
+const SAFE_PATH = /^\/(?![/\\])/;
 const UUID = '8f2c4b1e-7a6d-4c2f-9e3b-1d5a6c7e8f90';
 const MASKED_PHONE = '+1 *** *** 4242';
 const NOW = () => new Date().toISOString();
@@ -620,6 +621,7 @@ const freshOnboarding = () => ({
   done: [],
   account: { email: 'mark@m4kr.net', first_name: '', mobile_number: '' },
   purpose: 'verify',
+  emailSent: false,
   tfaChoice: '',
   appVerified: false,
   smsEnrolled: false,
@@ -963,6 +965,20 @@ publicRoute('POST', '/login/magic', ctx => {
   }
   return ok({ next: signIn(ctx) });
 });
+publicRoute('POST', '/login/bootstrap', ctx => {
+  if (ctx.body.token === 'invalid' || ctx.body.token === 'expired') {
+    return problem(403, 'bootstrap_invalid');
+  }
+  if (ctx.body.token === 'disabled') {
+    return problem(403, 'bootstrap_account_disabled');
+  }
+  if (String(ctx.body.email || '').startsWith('throttle')) {
+    return throttled();
+  }
+  const next = signIn(ctx);
+  const back = String(ctx.body.return || '');
+  return ok({ next: next === '/' && SAFE_PATH.test(back) ? back : next });
+});
 publicRoute('POST', '/webauthn/authenticate/options', () =>
   ok({
     challenge: randomBytes(32).toString('base64url'),
@@ -1069,12 +1085,16 @@ onboardingRoute('POST', '/complete-onboarding/password', ctx => {
   return refused || advance('password');
 });
 onboardingRoute('POST', '/complete-onboarding/email-verification', ctx => {
+  if (!state.onboarding.emailSent) {
+    return problem(401, 'session_expired');
+  }
   const refused = codeProblem(String(ctx.body.code || ''));
   return refused || advance('email');
 });
-onboardingRoute('POST', '/complete-onboarding/email-verification/resend', () =>
-  ok({ resend_after_seconds: 30 })
-);
+onboardingRoute('POST', '/complete-onboarding/email-verification/resend', () => {
+  state.onboarding.emailSent = true;
+  return ok({ resend_after_seconds: 30 });
+});
 onboardingRoute('POST', '/complete-onboarding/choose-2fa-method', ctx => {
   state.onboarding.tfaChoice = ctx.body.method === 'SMS' ? 'SMS' : 'APP';
   state.onboarding.purpose = 'tfa';
@@ -1189,7 +1209,26 @@ publicRoute('POST', '/user/logout', () => {
   endStreams();
   return ok({ next: '/login?logout' });
 });
-publicRoute('GET', '/org/invite/:token', () => redirect('/user/organizations'));
+publicRoute('POST', '/org/invite', ctx => {
+  const token = String(ctx.body.token || '');
+  if (!token || token === 'invalid' || token === 'expired') {
+    return problem(403, 'invite_invalid');
+  }
+  if (!state.signedIn) {
+    return ok({ next: '/login' });
+  }
+  if (!state.organizations.some(org => org.uuid === 'p1')) {
+    const record = organizationRecord('p1', 'Prominic', false);
+    record.primary = false;
+    record.my_role = 'MEMBER';
+    record.can_manage = false;
+    record.can_rename = false;
+    record.is_owner = false;
+    delete record.invite_code;
+    state.organizations.push(record);
+  }
+  return ok({ next: '/user/organizations' });
+});
 
 publicRoute('GET', '/api/user', () => {
   if (state.signedIn) {
@@ -1923,7 +1962,9 @@ const handle = async (req, res) => {
  * chain after sign-in and `/login?mock=tfa` to enter `/authenticator`.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
- * of `invalid` or `expired` refuses a magic, verification or reset link;
+ * of `invalid` or `expired` refuses a magic, bootstrap, verification,
+ * reset or invitation link, and `disabled` answers the disabled-account
+ * code on the magic and bootstrap links;
  * an address starting with `throttle` is throttled, one starting with
  * `taken` is already taken on the email change; a current password of
  * `wrong` fails the step-up and the password change. The first sensitive

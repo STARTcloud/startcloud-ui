@@ -11,24 +11,33 @@ import { returnToShape } from '../../../utils/auth';
 
 const readOnce = () => {
   const params = new URLSearchParams(window.location.search);
-  return { email: params.get('email') || '', token: params.get('token') || '' };
+  const body = { email: params.get('email') || '', token: params.get('token') || '' };
+  return { body, complete: Boolean(body.email && body.token) };
 };
 
 const invalidProblem = code => ({ code, status: 0, wait: 0, since: 0 });
 
 /**
- * The page an emailed single-use link lands on: reads `email` and `token`
- * from the URL once, replaces the location with `path` so the token never
- * sits in history, posts them through `consume` and follows `next`; a
- * refused token draws the danger alert from its `code` (or `invalidCode`
- * when the parameters are missing) with one link to request another.
+ * The page an emailed single-use link lands on: reads the link once through
+ * `read` (`email` and `token` from the URL by default), replaces the
+ * location with `path` so the token never sits in history, posts the body
+ * through `consume` and follows `next`; a refused token draws the danger
+ * alert from its `code` (or `invalidCode` when the parameters are missing)
+ * with one link to request another.
  */
-const LinkConsumePage = ({ path, consume, returnTo, title, invalidCode, another }) => {
+const LinkConsumePage = ({
+  path,
+  consume,
+  returnTo,
+  title,
+  invalidCode,
+  another,
+  read = readOnce,
+}) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const report = useProblemReporter();
-  const [credentials] = useState(readOnce);
-  const complete = Boolean(credentials.email && credentials.token);
+  const [{ body, complete }] = useState(read);
   const [problem, setProblem] = useState(() => (complete ? null : invalidProblem(invalidCode)));
 
   useEffect(() => {
@@ -40,10 +49,10 @@ const LinkConsumePage = ({ path, consume, returnTo, title, invalidCode, another 
     if (!complete) {
       return;
     }
-    consume(credentials)
+    consume(body)
       .then(answer => followNext({ next: answer?.next, navigate, returnTo }))
       .catch(error => setProblem(report(error) || invalidProblem(invalidCode)));
-  }, [complete, consume, credentials, invalidCode, navigate, path, report, returnTo]);
+  }, [body, complete, consume, invalidCode, navigate, path, report, returnTo]);
 
   return (
     <AuthShell title={title}>
@@ -71,6 +80,7 @@ LinkConsumePage.propTypes = {
     to: PropTypes.string.isRequired,
     label: PropTypes.string.isRequired,
   }).isRequired,
+  read: PropTypes.func,
 };
 
 export default LinkConsumePage;

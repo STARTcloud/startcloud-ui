@@ -2,6 +2,9 @@ import { encodePath } from '../../../lib/apiClient';
 import { client } from '../../../lib/runtime';
 
 const PUBLIC = { auth: false };
+const OPTIONS = { auth: 'optional', headers: { Accept: 'application/json' } };
+
+export const consumeInvite = body => client.post('/org/invite', body, OPTIONS);
 
 export const validateInvitation = token =>
   client.get(encodePath('api', 'auth', 'validate-invitation', token), PUBLIC);

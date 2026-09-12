@@ -35,24 +35,40 @@ ResendCode.propTypes = {
 };
 
 /**
- * `/complete-onboarding/email-verification`: "A verification code has
- * been sent to {{email}}", the `CodeInput`, Verify, and Resend under a
- * countdown from the resend route's answer, the gate's countdown in the
- * danger alert.
+ * `/complete-onboarding/email-verification`: the send route called once
+ * on mount, then "A verification code has been sent to {{email}}", the
+ * `CodeInput`, Verify, and Resend under a countdown from the send route's
+ * answer, the gate's countdown in the danger alert.
  */
 const EmailCodeStep = ({ returnTo }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const { run, busy, problem } = useStepAction(returnTo);
   const [code, setCode] = useState('');
-  const [resend, setResend] = useState({ after: 0, at: 0, sent: false });
+  const [sent, setSent] = useState({ after: 0, at: 0, count: 0 });
 
   useEffect(() => {
     document.title = t('onboarding.email.title');
   }, [t]);
 
+  useEffect(() => {
+    let active = true;
+    run(resendEmailCode(), null, answer => {
+      if (active) {
+        setSent(previous => ({
+          after: Number(answer?.resend_after_seconds) || 0,
+          at: Date.now(),
+          count: previous.count + 1,
+        }));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [run]);
+
   const verify = value => {
-    if (value) {
+    if (sent.at && value) {
       run(verifyEmailCode({ code: value }));
     }
   };
@@ -64,7 +80,11 @@ const EmailCodeStep = ({ returnTo }) => {
 
   const resendCode = () =>
     run(resendEmailCode(), null, answer =>
-      setResend({ after: Number(answer?.resend_after_seconds) || 0, at: Date.now(), sent: true })
+      setSent(previous => ({
+        after: Number(answer?.resend_after_seconds) || 0,
+        at: Date.now(),
+        count: previous.count + 1,
+      }))
     );
 
   return (
@@ -72,30 +92,34 @@ const EmailCodeStep = ({ returnTo }) => {
       state={state}
       current="email"
       title={t('onboarding.email.title')}
-      subtitle={t('onboarding.email.sent', { email: state?.account?.email || '' })}
+      subtitle={sent.at ? t('onboarding.email.sent', { email: state?.account?.email || '' }) : ''}
       problem={problem}
     >
-      {resend.sent && !problem ? (
+      {sent.count > 1 && !problem ? (
         <AuthAlert tone="success">{t('onboarding.email.resent')}</AuthAlert>
       ) : null}
       <form className="auth-form" onSubmit={submit} noValidate>
-        <CodeInput
-          id="email-code"
-          label={t('onboarding.email.code')}
-          value={code}
-          onChange={setCode}
-          onComplete={verify}
-          disabled={busy}
-        />
-        <button
-          type="submit"
-          className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
-          disabled={busy}
-        >
-          {t('onboarding.email.verify')}
-        </button>
-        <p className="auth-note">{t('onboarding.email.notReceived')}</p>
-        <ResendCode after={resend.after} since={resend.at} onResend={resendCode} />
+        {sent.at ? (
+          <>
+            <CodeInput
+              id="email-code"
+              label={t('onboarding.email.code')}
+              value={code}
+              onChange={setCode}
+              onComplete={verify}
+              disabled={busy}
+            />
+            <button
+              type="submit"
+              className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
+              disabled={busy}
+            >
+              {t('onboarding.email.verify')}
+            </button>
+            <p className="auth-note">{t('onboarding.email.notReceived')}</p>
+          </>
+        ) : null}
+        <ResendCode after={sent.after} since={sent.at} onResend={resendCode} />
       </form>
     </OnboardingFrame>
   );
