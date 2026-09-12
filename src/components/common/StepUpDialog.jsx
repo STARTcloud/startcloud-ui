@@ -70,7 +70,7 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
   };
 
   return (
-    <Modal show={show} onHide={cancel} centered>
+    <Modal show={show} onHide={cancel} centered dialogClassName="form-modal" scrollable>
       <Form onSubmit={submit} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('profile.stepUp.title')}</Modal.Title>
@@ -93,7 +93,7 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
             />
           </Form.Group>
           {hasPassword ? (
-            <button type="button" className="btn btn-link btn-sm px-0 mt-2" onClick={flip}>
+            <button type="button" className="btn btn-link btn-sm px-0" onClick={flip}>
               {usePassword ? t('profile.stepUp.useCode') : t('profile.stepUp.usePassword')}
             </button>
           ) : null}

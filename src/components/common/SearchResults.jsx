@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaCube, FaFile, FaMicrochip, FaServer, FaTag, FaUser } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import { appSearchShape } from '../../contexts/SearchContext';
 import {
   SEARCH_KINDS,
   collectionOfRow,
@@ -100,8 +101,9 @@ const moveFocus = ({ listRef, direction, onEscape }) => {
  * move focus between rows, Enter follows the focused row, Escape and
  * ArrowUp on the first row hand control back through `onEscape`.
  */
-const SearchResults = ({ rows, collections, listRef, onPick, onEscape }) => {
+const SearchResults = ({ rows, appSearch, listRef, onPick, onEscape }) => {
   const { t } = useTranslation();
+  const { collections } = appSearch;
   const onKeyDown = event => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
@@ -122,7 +124,7 @@ const SearchResults = ({ rows, collections, listRef, onPick, onEscape }) => {
           {group.rows.map(row => (
             <Link
               key={rowKey(row)}
-              to={searchRowPath(row, collections)}
+              to={searchRowPath(row, appSearch)}
               className="navbar-search-result"
               onClick={onPick}
               onKeyDown={onKeyDown}
@@ -145,7 +147,7 @@ const SearchResults = ({ rows, collections, listRef, onPick, onEscape }) => {
 
 SearchResults.propTypes = {
   rows: PropTypes.arrayOf(searchRowShape).isRequired,
-  collections: PropTypes.array.isRequired,
+  appSearch: appSearchShape.isRequired,
   listRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
   onPick: PropTypes.func.isRequired,
   onEscape: PropTypes.func.isRequired,

@@ -116,8 +116,7 @@ const RestartCard = ({ restartStatus, restart, refresh = 0, guard = unguarded })
         show={confirming}
         handleClose={() => setConfirming(false)}
         handleConfirm={doRestart}
-        title={t('configManager.restart.confirmTitle')}
-        message={t('configManager.restart.confirmBody', { keyword: t('pages.confirm.keyword') })}
+        variant="restart"
       />
     </div>
   );

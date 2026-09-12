@@ -7,6 +7,7 @@ import {
   APP_SEARCH_LIMIT,
   NavbarSearchContext,
   activeFilterCount,
+  hasPanel,
   navbarSearchBindingShape,
   useNavbarSearch,
 } from '../../contexts/SearchContext';
@@ -40,6 +41,30 @@ SearchIconButton.propTypes = {
   onOpen: PropTypes.func.isRequired,
   onMouseEnter: PropTypes.func.isRequired,
   onMouseLeave: PropTypes.func.isRequired,
+};
+
+const SearchCount = ({ binding = null }) => {
+  const { t } = useTranslation();
+  if (!binding) {
+    return null;
+  }
+  if (typeof binding.total !== 'number') {
+    return (
+      <span className="navbar-search-count">{t('search.results', { count: binding.matched })}</span>
+    );
+  }
+  if (binding.total === 0) {
+    return null;
+  }
+  return (
+    <span className="navbar-search-count">
+      {binding.matched} / {binding.total}
+    </span>
+  );
+};
+
+SearchCount.propTypes = {
+  binding: navbarSearchBindingShape,
 };
 
 const SearchBox = ({
@@ -84,12 +109,9 @@ const SearchBox = ({
           onChange={event => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
         />
-        {binding && binding.total > 0 ? (
-          <span className="navbar-search-count">
-            {binding.matched} / {binding.total}
-          </span>
-        ) : null}
-        {binding && binding.groups.length > 0 ? (
+        <SearchCount binding={binding} />
+
+        {hasPanel(binding) ? (
           <button
             type="button"
             className={`navbar-search-tool${panelOpen || filters > 0 ? ' on' : ''}`}

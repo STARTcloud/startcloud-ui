@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaCloud,
@@ -17,13 +17,18 @@ import {
 } from 'react-icons/fa6';
 
 import StatCard from '../../../components/common/StatCard';
+import SubTable from '../../../components/common/SubTable';
+import { useCssVar } from '../../../hooks/useCssVar';
 import { insights } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
+import { useInsightsSearch } from '../hooks/useInsightsSearch';
 import { INSIGHTS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 import TableWrap from './TableWrap';
+
+const PREFS_KEY = 'table_prefs_admin_insights';
 
 const ACTIVE_KEYS = ['daily', 'weekly', 'monthly', 'quarterly'];
 const POSTURE_KEYS = [
@@ -55,72 +60,90 @@ const CARDS = {
 };
 const ACTIVE_CARD = { Icon: FaUserCheck, tone: 'primary' };
 const CHURN_TOTAL_CARD = { Icon: FaUsers, tone: 'success' };
-const LEAD_LISTS = ['app_activity', 'penetration', 'app_pairs', 'growth'];
-const DEFINED = ['active_users', 'posture', ...LEAD_LISTS, 'churn', 'quiet_users', 'org_rollup'];
-
-const text = key => ({ key, render: row => row[key] ?? '' });
-const number = key => ({ key, className: 'text-end', render: row => row[key] ?? 0 });
-const date = key => ({ key, render: row => <DateCell value={row[key]} /> });
-const yesNo = key => ({
-  key,
-  render: (row, t) => (row[key] ? t('yes') : t('no')),
-});
-
-const LISTS = [
-  {
-    key: 'app_activity',
-    rowKey: row => row.client_id,
-    columns: [
-      text('client_name'),
-      number('active_30d'),
-      number('adopted_30d'),
-      number('total_users'),
-    ],
-  },
-  {
-    key: 'penetration',
-    rowKey: row => String(row.app_count),
-    columns: [number('app_count'), number('users')],
-  },
-  {
-    key: 'app_pairs',
-    rowKey: row => `${row.app_a}:${row.app_b}`,
-    columns: [text('app_a'), text('app_b'), number('users')],
-  },
-  {
-    key: 'growth',
-    rowKey: row => row.week,
-    columns: [text('week'), number('count')],
-  },
-  {
-    key: 'quiet_users',
-    rowKey: row => row.username,
-    columns: [text('username'), date('last_login_at')],
-  },
-  {
-    key: 'org_rollup',
-    rowKey: row => row.name,
-    columns: [
-      text('name'),
-      text('customer_id'),
-      yesNo('personal'),
-      number('members'),
-      number('active_30d'),
-    ],
-  },
+const FOLDED = [
+  'active_users',
+  'posture',
+  'app_activity',
+  'penetration',
+  'app_pairs',
+  'growth',
+  'org_rollup',
 ];
 
-const listShape = PropTypes.shape({
-  key: PropTypes.string.isRequired,
-  rowKey: PropTypes.func.isRequired,
-  columns: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string.isRequired,
-      className: PropTypes.string,
-      render: PropTypes.func.isRequired,
-    })
-  ).isRequired,
+const labelOf = key => `admin.health.insights.columns.${key}`;
+
+const text = key => ({
+  key,
+  labelKey: labelOf(key),
+  sortValue: row => String(row[key] ?? '').toLowerCase(),
+  render: row => row[key] ?? '',
 });
+const number = key => ({
+  key,
+  labelKey: labelOf(key),
+  className: 'text-end',
+  sortValue: row => row[key] ?? 0,
+  render: row => row[key] ?? 0,
+});
+const date = key => ({
+  key,
+  labelKey: labelOf(key),
+  sortValue: row => new Date(row[key] || 0).getTime(),
+  render: row => <DateCell value={row[key]} />,
+});
+const yesNo = key => ({
+  key,
+  labelKey: labelOf(key),
+  sortValue: row => (row[key] ? 0 : 1),
+  render: (row, ctx) => (row[key] ? ctx.t('yes') : ctx.t('no')),
+});
+
+const table = (key, columns, defaultSort) => ({
+  key,
+  labelKey: `admin.health.insights.${key}`,
+  columns,
+  defaultSort,
+  filterGroups: [],
+  defaultView: 'table',
+});
+
+const TABLES = [
+  table(
+    'app_activity',
+    [text('client_name'), number('active_30d'), number('adopted_30d'), number('total_users')],
+    [{ column: 'active_30d', direction: 'desc' }]
+  ),
+  table(
+    'penetration',
+    [number('app_count'), number('users')],
+    [{ column: 'app_count', direction: 'asc' }]
+  ),
+  table(
+    'app_pairs',
+    [text('app_a'), text('app_b'), number('users')],
+    [{ column: 'users', direction: 'desc' }]
+  ),
+  table(
+    'quiet_users',
+    [text('username'), date('last_login_at')],
+    [{ column: 'last_login_at', direction: 'asc' }]
+  ),
+  table(
+    'org_rollup',
+    [text('name'), text('customer_id'), yesNo('personal'), number('members'), number('active_30d')],
+    [{ column: 'members', direction: 'desc' }]
+  ),
+];
+
+const ROW_KEYS = {
+  app_activity: row => row.client_id,
+  penetration: row => String(row.app_count),
+  app_pairs: row => `${row.app_a}:${row.app_b}`,
+  quiet_users: row => row.username,
+  org_rollup: row => row.name,
+};
+
+const rowsOf = (data, key) => (Array.isArray(data[key]) ? data[key] : []);
 
 const Section = ({ title, children }) => (
   <div className="mb-4">
@@ -133,47 +156,6 @@ Section.propTypes = {
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
 };
-
-const SmallTable = ({ list, rows }) => {
-  const { t } = useTranslation();
-  if (rows.length === 0) {
-    return <div className="text-muted small">{t('pages.empty')}</div>;
-  }
-  return (
-    <TableWrap>
-      <table className="table table-sm table-striped">
-        <thead>
-          <tr>
-            {list.columns.map(column => (
-              <th key={column.key} className={column.className || ''}>
-                {t(`admin.health.insights.columns.${column.key}`)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(row => (
-            <tr key={list.rowKey(row)}>
-              {list.columns.map(column => (
-                <td key={column.key} className={column.className || ''}>
-                  {column.render(row, t)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableWrap>
-  );
-};
-
-SmallTable.propTypes = {
-  list: listShape.isRequired,
-  rows: PropTypes.arrayOf(PropTypes.object).isRequired,
-};
-
-const listOf = key => LISTS.find(list => list.key === key);
-const rowsOf = (data, key) => (Array.isArray(data[key]) ? data[key] : []);
 
 const InsightCard = ({ card, count, label }) => (
   <StatCard icon={<card.Icon />} tone={card.tone} count={count} label={label} />
@@ -188,31 +170,112 @@ InsightCard.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
-const ListSection = ({ listKey, data }) => {
-  const { t } = useTranslation();
+const InsightTable = ({ tableKey, search }) => {
+  const { t, i18n } = useTranslation();
+  const spec = TABLES.find(entry => entry.key === tableKey);
   return (
-    <Section title={t(`admin.health.insights.${listKey}`)}>
-      <SmallTable list={listOf(listKey)} rows={rowsOf(data, listKey)} />
-    </Section>
+    <TableWrap>
+      <SubTable
+        columns={spec.columns}
+        rows={search.rows[tableKey]}
+        rowKey={ROW_KEYS[tableKey]}
+        sort={search.sort[tableKey]}
+        onSort={(column, options) => search.setSort(tableKey, column, options)}
+        hiddenColumns={search.hiddenColumns[tableKey]}
+        ctx={{ t, language: i18n.language }}
+        emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+      />
+    </TableWrap>
   );
 };
 
-ListSection.propTypes = {
-  listKey: PropTypes.string.isRequired,
-  data: PropTypes.object.isRequired,
+InsightTable.propTypes = {
+  tableKey: PropTypes.string.isRequired,
+  search: PropTypes.shape({
+    rows: PropTypes.object.isRequired,
+    filtering: PropTypes.bool.isRequired,
+    sort: PropTypes.object.isRequired,
+    setSort: PropTypes.func.isRequired,
+    hiddenColumns: PropTypes.object.isRequired,
+  }).isRequired,
+};
+
+const GrowthBar = ({ percent }) => {
+  const bar = useRef(null);
+  useCssVar(bar, '--growth-height', `${percent}%`);
+  return <span ref={bar} className="growth-bar" />;
+};
+
+GrowthBar.propTypes = {
+  percent: PropTypes.number.isRequired,
+};
+
+const GrowthChart = ({ rows }) => {
+  const { t } = useTranslation();
+  if (rows.length === 0) {
+    return <div className="text-muted small">{t('pages.empty')}</div>;
+  }
+  const peak = Math.max(...rows.map(row => row.count || 0), 1);
+  return (
+    <div className="growth-chart" role="img" aria-label={t('admin.health.insights.growth')}>
+      {rows.map(row => (
+        <div
+          key={row.week}
+          className="growth-col"
+          title={`${row.week}: ${t('admin.health.insights.growthCount', { count: row.count || 0 })}`}
+        >
+          <span className="growth-count">{row.count ?? 0}</span>
+          <span className="growth-track">
+            <GrowthBar percent={((row.count || 0) / peak) * 100} />
+          </span>
+          <span className="growth-week">{row.week}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+GrowthChart.propTypes = {
+  rows: PropTypes.arrayOf(
+    PropTypes.shape({ week: PropTypes.string.isRequired, count: PropTypes.number })
+  ).isRequired,
+};
+
+const Definition = ({ term, body }) => (
+  <>
+    <dt className="col-sm-3">{term}</dt>
+    <dd className="col-sm-9">{body}</dd>
+  </>
+);
+
+Definition.propTypes = {
+  term: PropTypes.string.isRequired,
+  body: PropTypes.string.isRequired,
 };
 
 /**
- * Health › Insights over the members of the insights read, in the
- * contract's order: the active-user and security-posture cards, then app
- * activity, apps per user, top combinations and registrations per week as
- * small tables, the churn cards with the quietest accounts inside them,
- * and the organizations rollup, their definitions in an info fold on the
- * page rather than in header tooltips.
+ * Health › Insights over the members of the insights read: the active-user
+ * and security-posture figures as `StatCard`s; app activity, apps per user,
+ * top combinations and the organizations rollup as sorted `SubTable`s with
+ * header sort, the navbar search bound for a query over their rows and one
+ * Columns group per table under `table_prefs_admin_insights`; registrations
+ * per week as a bar chart drawn from `growth[]`; the churn cards and the
+ * quietest accounts beside their definitions; every instant in the one
+ * admin date format; the remaining definitions in an info fold.
  */
 const InsightsPage = () => {
   const { t } = useTranslation();
   const { data, loading } = useAdminRead({ read: insights, example: INSIGHTS });
+  const rowsByTable = useMemo(
+    () => Object.fromEntries(TABLES.map(entry => [entry.key, rowsOf(data || {}, entry.key)])),
+    [data]
+  );
+  const search = useInsightsSearch({
+    tables: TABLES,
+    rowsByTable,
+    placeholderKey: 'admin.health.insights.search',
+    prefsKey: PREFS_KEY,
+  });
 
   useEffect(() => {
     document.title = t('admin.health.insights.title');
@@ -257,31 +320,66 @@ const InsightsPage = () => {
           ))}
         </div>
       </Section>
-      {LEAD_LISTS.map(key => (
-        <ListSection key={key} listKey={key} data={data} />
-      ))}
-      <Section title={t('admin.health.insights.churn')}>
-        <div className="stat-grid stat-grid-4 mb-3">
-          {CHURN_KEYS.map(key => (
-            <InsightCard
-              key={key}
-              card={CARDS[key] || CHURN_TOTAL_CARD}
-              count={churn[key] ?? 0}
-              label={t(`admin.health.insights.churnOf.${key}`)}
-            />
-          ))}
-        </div>
-        <SmallTable list={listOf('quiet_users')} rows={rowsOf(data, 'quiet_users')} />
+      <Section title={t('admin.health.insights.app_activity')}>
+        <InsightTable tableKey="app_activity" search={search} />
       </Section>
-      <ListSection listKey="org_rollup" data={data} />
+      <div className="row">
+        <div className="col-lg-6">
+          <Section title={t('admin.health.insights.penetration')}>
+            <InsightTable tableKey="penetration" search={search} />
+          </Section>
+        </div>
+        <div className="col-lg-6">
+          <Section title={t('admin.health.insights.app_pairs')}>
+            <InsightTable tableKey="app_pairs" search={search} />
+          </Section>
+        </div>
+      </div>
+      <Section title={t('admin.health.insights.growth')}>
+        <GrowthChart rows={rowsOf(data, 'growth')} />
+      </Section>
+      <Section title={t('admin.health.insights.churn')}>
+        <div className="row">
+          <div className="col-lg-8">
+            <div className="stat-grid stat-grid-4 mb-3">
+              {CHURN_KEYS.map(key => (
+                <InsightCard
+                  key={key}
+                  card={CARDS[key] || CHURN_TOTAL_CARD}
+                  count={churn[key] ?? 0}
+                  label={t(`admin.health.insights.churnOf.${key}`)}
+                />
+              ))}
+            </div>
+            <h6 className="small text-muted mb-2">{t('admin.health.insights.quiet_users')}</h6>
+            <InsightTable tableKey="quiet_users" search={search} />
+          </div>
+          <div className="col-lg-4">
+            <dl className="row small mb-0">
+              <Definition
+                term={t('admin.health.insights.churn')}
+                body={t('admin.health.insights.define.churn')}
+              />
+              <Definition
+                term={t('admin.health.insights.quiet_users')}
+                body={t('admin.health.insights.define.quiet_users')}
+              />
+            </dl>
+          </div>
+        </div>
+      </Section>
+      <Section title={t('admin.health.insights.org_rollup')}>
+        <InsightTable tableKey="org_rollup" search={search} />
+      </Section>
       <details>
         <summary>{t('admin.health.definitions')}</summary>
         <dl className="row mt-2 mb-0 small">
-          {DEFINED.map(key => (
-            <div key={key} className="row">
-              <dt className="col-sm-3">{t(`admin.health.insights.${key}`)}</dt>
-              <dd className="col-sm-9">{t(`admin.health.insights.define.${key}`)}</dd>
-            </div>
+          {FOLDED.map(key => (
+            <Definition
+              key={key}
+              term={t(`admin.health.insights.${key}`)}
+              body={t(`admin.health.insights.define.${key}`)}
+            />
           ))}
         </dl>
       </details>

@@ -6,28 +6,30 @@ import { FaStar } from 'react-icons/fa6';
 
 import { httpsUrl } from '../common/MethodList';
 
-const iconOf = app => {
+const iconChainOf = app => {
   const icon = httpsUrl(app.icon_url);
-  if (icon) {
-    return icon;
-  }
   const home = httpsUrl(app.home_url);
-  return home ? `${new URL(home).origin}/favicon.ico` : '';
+  const favicon = home ? `${new URL(home).origin}/favicon.ico` : '';
+  return [...new Set([icon, favicon].filter(Boolean))];
 };
 
 const AppIcon = ({ app }) => {
-  const [failed, setFailed] = useState(false);
-  const iconUrl = iconOf(app);
-  if (!iconUrl || failed) {
+  const [step, setStep] = useState(0);
+  const iconUrl = iconChainOf(app)[step];
+  if (!iconUrl) {
     return <FaStar className="text-warning logo-md icon-with-margin" />;
   }
   return (
     <img
+      key={iconUrl}
       src={iconUrl}
       className="logo-md icon-with-margin"
       alt=""
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={event => {
+        event.currentTarget.classList.add('d-none');
+        setStep(current => current + 1);
+      }}
     />
   );
 };

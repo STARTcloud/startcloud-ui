@@ -20,12 +20,12 @@ const rowKey = row =>
 
 const matchesAny = () => true;
 
-const columnsFor = collections => [
+const columnsFor = appSearch => [
   {
     key: 'title',
     labelKey: 'search.columns.title',
     sortValue: row => row.title.toLowerCase(),
-    render: row => <Link to={searchRowPath(row, collections)}>{row.title}</Link>,
+    render: row => <Link to={searchRowPath(row, appSearch)}>{row.title}</Link>,
   },
   {
     key: 'where',
@@ -162,7 +162,7 @@ const SearchPage = ({ context }) => {
   const [params, setParams] = useSearchParams();
   const query = (params.get('q') || '').trim();
   const data = usePageResults({ appSearch, query });
-  const columns = useMemo(() => columnsFor(appSearch.collections), [appSearch.collections]);
+  const columns = useMemo(() => columnsFor(appSearch), [appSearch]);
   const search = useDetailSearch({
     rows: data.results,
     matches: matchesAny,

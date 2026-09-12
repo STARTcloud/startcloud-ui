@@ -185,7 +185,7 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} size="xl">
+    <Modal show onHide={onClose} size="xl" dialogClassName="form-modal" scrollable>
       <form onSubmit={save} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">

@@ -110,7 +110,7 @@ const RateLimitsDialog = ({ user, onClose }) => {
   };
 
   return (
-    <Modal show onHide={onClose}>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           {t('admin.users.rateLimits.title', { user: user.username })}

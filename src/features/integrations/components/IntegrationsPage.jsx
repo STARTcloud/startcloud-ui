@@ -9,6 +9,7 @@ import MethodList, { MethodRow, httpsUrl } from '../../../components/common/Meth
 import { errorKeys, useStepUp } from '../../../components/common/StepUpDialog';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 import { integrationsShape } from '../api/integrations';
@@ -23,6 +24,26 @@ const absoluteTime = (value, language) => {
 };
 
 const nameOf = app => app.client_name || app.client_id;
+
+const includes = (text, needle) =>
+  String(text || '')
+    .toLowerCase()
+    .includes(needle);
+
+const narrow = (data, needle) => {
+  if (!needle) {
+    return data;
+  }
+  return {
+    linked: data.linked.filter(entry => includes(entry.provider_name, needle)),
+    available: data.available.filter(entry => includes(entry.provider_name, needle)),
+    accepted_terms: data.accepted_terms.filter(entry => includes(entry.label, needle)),
+    apps: data.apps.filter(app => includes(nameOf(app), needle)),
+  };
+};
+
+const countOf = data =>
+  data.linked.length + data.available.length + data.accepted_terms.length + data.apps.length;
 
 const RelativeTime = ({ value }) => {
   const { i18n } = useTranslation();
@@ -446,12 +467,15 @@ const confirmationsFor = (t, integrations) => {
  * notices, the accepted terms and policies with View, and the connected
  * applications with their permission chips, a Sessions link to the
  * profile's Sessions route and Revoke access behind a confirm; every
- * stepped-up call goes through the step-up dialog.
+ * stepped-up call goes through the step-up dialog; the navbar search is
+ * bound with a query over the linked accounts, the accepted terms and the
+ * connected applications by name.
  */
 const IntegrationsPage = ({ integrations, stepUp, user = null }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [data, setData] = useState(EMPTY);
+  const [query, setQuery] = useState('');
   const [pending, setPending] = useState(null);
   const { guard, dialog } = useStepUp({
     stepUp,
@@ -459,6 +483,18 @@ const IntegrationsPage = ({ integrations, stepUp, user = null }) => {
   });
   const statuses = useProviderStatuses(data.linked, integrations);
   const confirmations = confirmationsFor(t, integrations);
+  const needle = query.trim().toLowerCase();
+  const shown = narrow(data, needle);
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('integrations.search'),
+    matched: countOf(shown),
+    total: countOf(data),
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
 
   useEffect(() => {
     document.title = t('integrations.title');
@@ -516,14 +552,14 @@ const IntegrationsPage = ({ integrations, stepUp, user = null }) => {
         </div>
       ))}
       <LinkedAccounts
-        data={data}
+        data={shown}
         statuses={statuses}
         onLink={link}
         onUnlink={entry => setPending(confirmations.unlink(entry))}
       />
-      <AcceptedTerms terms={data.accepted_terms} />
+      <AcceptedTerms terms={shown.accepted_terms} />
       <ConnectedApps
-        apps={data.apps}
+        apps={shown.apps}
         onRevoke={app => setPending(confirmations.revoke(app))}
         onRemoveScope={(app, scope) => setPending(confirmations.scope(app, scope))}
       />

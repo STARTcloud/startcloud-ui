@@ -118,7 +118,7 @@ const App = ({ getSupportedLanguages }) => {
   });
   const avatarUrl = useAccountAvatar({ backend, cookie, user, claims });
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
-  const appSearch = useAppSearch(collections);
+  const appSearch = useAppSearch(collections, isGlobalAdmin(user));
 
   useFavicon(theme, {
     light: brandLogoUrl(status.brand, 'light'),

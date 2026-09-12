@@ -210,7 +210,8 @@ shape:
     "name": "STARTcloud",
     "logoUrl": "/brand/startcloud/icon.png",
     "changelog": "https://github.com/STARTcloud/authorization-server-private/releases",
-    "theme": "light"
+    "theme": "light",
+    "pack": { "name": "startcloud", "css": "/themes/startcloud/startcloud.css?v=<hash>" }
   },
   "auth": ["cookie"],
   "collections": [],
@@ -223,6 +224,7 @@ shape:
     "org-console",
     "invitations",
     "integrations",
+    "search",
     "inbox",
     "admin",
     "notifications",
@@ -242,7 +244,7 @@ shape:
 
 The example is the `startcloud` site of `application.yml` as it stands:
 `sites.sites.startcloud.name`, `assets.logo_icon`, `assets.changelog_url`,
-`theme_id: light`, `customer_id: A55DF1`,
+`theme_id: startcloud`, `customer_id: A55DF1`,
 `integrations.improvement_request.base_url` and `req`; no `help_url`, no
 `support_email` and no analytics script are configured, so those members
 are empty or absent. The payload's own members keep the navbar contract's
@@ -257,11 +259,11 @@ convergence is a later round across all of them.
 | `version`                       | the Spring Boot build-info version (`BuildProperties`), the number release-please writes into `build.gradle`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | one number, read at runtime from the artifact that is running, the way every other UI backend answers its own released version; never a value in the UI build, never a second file to bump                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `brand.name`, `brand.logoUrl`   | `sites.sites.<id>.name` and the site's mark under `/brand/<site>/` in the served `ui/` tree, the pack directory's artwork for a site with a pack                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | the mark, the org mark and the favicon of the chrome are the site's, so a person on `moonshinedev` never sees another site's mark; the jar serves no `/assets` once the templates go, so the issuer's images, site marks and provider icons alike, live in the build's `public/brand/` and the pack directories, and `/assets` is Vite's alone                                                                                                                                                                                                                                                   |
 | `brand.theme`                   | `sites.<id>.ui.default_theme`, `light` or `dark`, beside the site's other `ui` switches                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | a pack name in `theme_id` says nothing about a variant once `auth.css` is gone, so the site's default variant is its own word in config; the pre-paint script and the mount apply it only while neither the account nor local storage holds a choice, per the branding contract                                                                                                                                                                                                                                                                                                                  |
-| `brand.pack`                    | `{ name, css }` while the site's `theme_id` names a pack, `name` the pack and `css` the stylesheet URL on the serving origin with the pack's `.hash` as `?v=`, the same values the site's `index.html` is stamped with; absent on a `theme_id: light` site                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | the shell reads one member for a pack on every UI backend and calls no branding route; the issuer stamps the same two values into `index.html` so the pack paints with the first frame and the shell appends nothing                                                                                                                                                                                                                                                                                                                                                                             |
+| `brand.pack`                    | `{ name, css }` while the site's `theme_id` names a pack, `name` the pack and `css` the stylesheet URL on the serving origin with the pack's `.hash` as `?v=`, the same values the site's `index.html` is stamped with; present on every site, because every site names a pack                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | the shell reads one member for a pack on every UI backend and calls no branding route; the issuer stamps the same two values into `index.html` so the pack paints with the first frame and the shell appends nothing                                                                                                                                                                                                                                                                                                                                                                             |
 | `brand.repo`, `brand.changelog` | `repo` omitted; `changelog` from `sites.<id>.assets.changelog_url` when set                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | the source is private, so the footer's left slot links to the changelog, the navbar contract's second tier, and is plain text when neither exists                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `auth`                          | `["cookie"]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | the issuer is its own session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `collections`                   | `[]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | the issuer lists nothing; the navbar contract's search page says so on the page, and the `search` token is not advertised because the estate-wide channel is planned on the issuer and is not this conversion                                                                                                                                                                                                                                                                                                                                                                                    |
-| `features`                      | exactly the tokens a contract gates a surface on, no more, no fewer: `local-accounts` (per site, while `self_registration_enabled`), `tfa`, `onboarding`, `interstitials`, `policies`, `org-console`, `invitations`, `integrations`, `inbox`, `admin`, `notifications`, `health`, `events`, and `footer` per site                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | a token gates a surface a contract names; a token no contract names would gate nothing and mislead the reader of the payload, and a surface the contracts name but the payload omits would never draw. A new token lands in the navbar contract's token table before any payload answers it                                                                                                                                                                                                                                                                                                      |
+| `collections`                   | `[]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | the issuer lists nothing; the navbar contract's search page draws the issuer's own rows, since the issuer advertises `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `features`                      | exactly the tokens a contract gates a surface on, no more, no fewer: `local-accounts` (per site, while `self_registration_enabled`), `tfa`, `onboarding`, `interstitials`, `policies`, `org-console`, `invitations`, `integrations`, `search`, `inbox`, `admin`, `notifications`, `health`, `events`, and `footer` per site                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | a token gates a surface a contract names; a token no contract names would gate nothing and mislead the reader of the payload, and a surface the contracts name but the payload omits would never draw. A new token lands in the navbar contract's token table before any payload answers it                                                                                                                                                                                                                                                                                                      |
 | `footer`                        | present only while `sites.<id>.ui.footer` is true                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | a white-label site may carry no footer and no "Powered by" line; the switch is per site so one issuer serves branded and white-label sites from the same build, and the chrome draws no footer for a payload that omits the token                                                                                                                                                                                                                                                                                                                                                                |
 | `health`                        | present while the issuer answers `GET /api/health` in the navbar contract's shape, `{ status, timestamp, services: { database, mail, sms, signing_keys } }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | the footer's heart draws only while both `footer` and `health` are listed: no `footer`, no footer at all; `footer` without `health`, a footer without the heart; both, the heart from `/api/health`, refreshed from the events stream rather than a timer                                                                                                                                                                                                                                                                                                                                        |
 | `links`                         | `docs` from `sites.<id>.assets.help_url`, `contact` as `mailto:` of `sites.<id>.mail.support_email`; an unset value answers `""`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | the chrome hides an empty link; the issuer never invents a destination                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -496,7 +498,9 @@ session contract's sign-in page) by the states the issuer has:
   signs in by mail expects to stay signed in as much as one who types a
   password; the primary button reads "Continue with email" or "Sign in"
   by mode; the toggle line under the buttons flips modes, stores the
-  choice and moves focus to the first empty field. The page draws its
+  choice and moves focus to the first empty field. The mode toggle line
+  draws in the site's accent, as the issuer's old page drew it, because a
+  link that changes the form must read as a link. The page draws its
   heading and a skeleton of the field at once and holds only the button
   block on the `AuthShell` spinner until `GET /api/auth/methods` has
   answered, fetched once per mount, so the divider and the provider
@@ -539,7 +543,8 @@ session contract's sign-in page) by the states the issuer has:
   `local_registration_enabled`; the policy links; "Cancel" only while the
   methods answer says `cancel: true`, posting `/auth-cancel` and following
   its `next`, because on a plain visit there is nothing to cancel and the
-  link would loop back to the form.
+  link would loop back to the form. The policy links draw in the site's
+  accent too; helper text stays muted.
 - **The session-ended banner.** On the sign-in pages, where the cluster's
   Sign in is hidden, the chrome's session-ended banner carries a Sign in
   action of its own, because the banner says "Sign in again" and the
@@ -1264,7 +1269,7 @@ object-src 'none';
 script-src 'self' 'sha256-<pre-paint script>' <analytics origin> https://maps.googleapis.com;
 style-src 'self' 'unsafe-inline' <pack origin>;
 font-src 'self' <pack origin>;
-img-src 'self' data: <tile origin> <analytics origin>;
+img-src 'self' data: <tile origin> <analytics origin> <the configured origins>;
 connect-src 'self' https://maps.googleapis.com <analytics origin>;
 worker-src 'self';
 frame-src <the parked frame origins on the front-channel route, none elsewhere>
@@ -1284,6 +1289,17 @@ user can theme the app. The issuer's policy carries `'unsafe-inline'`
 for styles until the build is clean of them, at which point it leaves.
 The served `index.html` carries exactly one inline script, the pre-paint
 script whose hash the policy names, and no other.
+
+`<the configured origins>` is the issuer's global list of allowed origins:
+every URL a configuration field holds, a client's `home_url` and
+`icon_url`, a provider's `icon_url`, a site's logo and asset URLs, joins
+that list by its origin at boot and on every configuration save, so a
+favorite's icon, a provider button's mark or a site's logo is never
+blocked by the issuer's own policy, and the star is never the answer for
+a configured icon; a URL a configuration field holds is by definition an
+allowed one, and a URL held nowhere in configuration is refused.
+`connect-src` gains the same list only for the origins a page fetches
+from.
 
 ### What this design changed for the interstitials
 
@@ -1523,7 +1539,9 @@ replays inside its window and a guessing run meets `429` with
     for those three.
   - **Favorites** at `/user/profile/favorites`: the ordered list with drag handles and Remove, then
     "Available applications" from the connected apps not yet favorited with
-    Add; icon chain `icon_url` → favicon of `home_url` → the app glyph.
+    Add; icon chain `icon_url` → favicon of `home_url` → the app glyph;
+    the page binds the navbar search with a query over the favorites and
+    the available applications by label and client id.
   - **Sessions** at `/user/profile/sessions`: "Active sessions" (client, device from the user agent,
     location and address, authorized time, each row's absolute time in
     its tooltip) with Sign out per row and "Revoke all sessions, this
@@ -1544,7 +1562,8 @@ replays inside its window and a guessing run meets `429` with
   subline on the issuer reads "Console context; the primary organization
   is set on the Organizations page", because a person who expects the
   switcher to change their primary organization would otherwise look for
-  the change and not find it.
+  the change and not find it; the page binds the navbar search with a
+  query over the memberships by name and its Columns group in list view.
 - **OrgConsolePage** on the issuer draws, beyond the shared record
   (name, email, description, access mode, default role), the profile the
   issuer stores (website, logo URL, locale, time zone, telephone, the
@@ -1571,7 +1590,9 @@ replays inside its window and a guessing run meets `429` with
   permission chips each with a 24px remove control labeled "Remove
   {{scope}} permission", none on `openid`, a "Sessions" button to the
   profile's Sessions tab, Revoke access behind a confirm that lists the
-  sessions it ends).
+  sessions it ends); the page binds the navbar search with a query over
+  the linked accounts, the accepted terms and the connected applications
+  by name.
 - **InboxPage**: the same `NotificationRow` as the modal in a full-width
   list, twenty-five per page with the pager, Mark all as read and Delete
   all (behind a confirm) at the top, the per-row controls labeled "Mark
@@ -1580,7 +1601,8 @@ replays inside its window and a guessing run meets `429` with
   on the chrome updated through the notifications feature's one context,
   which the modal, the page and the badge share, the `unread-count`
   event correcting it where the UI backend streams; no router prop
-  carries a callback to a page.
+  carries a callback to a page; the page binds the navbar search with a
+  query over the loaded rows by title and body and its Columns group.
 
 ### Shared components the signed-in pages add
 
@@ -1664,17 +1686,17 @@ principal (decided with the cookie provider).
 
 ### Admin routes
 
-| Route                                                             | Entry                                                                                                                                                           | Gate                 | Today                                                                                                                                                                                                                                      |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/admin`, `/admin/dashboard`                                      | Overview › Dashboard: the five stat cards linking to their entries, the login map, recent logins and registrations, the restart card while a restart is pending | `cookie`, `admin`    | `admin/dashboard.html`, `AdminController.dashboard`, `/admin/api/login-heatmap`                                                                                                                                                            |
-| `/admin/users`                                                    | Accounts › Users: the filter row on the page, the sortable table, the bulk bar, roles, customer id, primary organization, suspend, delete, rate limits          | the same             | `admin/users.html`                                                                                                                                                                                                                         |
-| `/admin/organizations`                                            | Accounts › All organizations: the table, customer id, delete                                                                                                    | the same             | `admin/organizations.html`                                                                                                                                                                                                                 |
-| `/admin/logins`, `/admin/registrations`, `/admin/sessions`        | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                        | the same             | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
-| `/admin/service-usage`, `/admin/insights`, `/admin/client-health` | Health › Service usage, Insights, Client health: one page per row; the usage report, the fleet insights, the client and provider probes                         | the same             | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
-| `/admin/brute-force`                                              | Security › Blocked IPs: the status line, the table, Unblock                                                                                                     | the same             | `admin/blockedIps.html`                                                                                                                                                                                                                    |
-| `/admin/terms`                                                    | Content › Terms: the templates as ordered cards, create, edit, copy, preview, delete                                                                            | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
-| `/admin/config`                                                   | System › Configuration: the shared config editor (decision 16)                                                                                                  | the same             | `admin/config.html`, `ConfigController`                                                                                                                                                                                                    |
-| `/error`                                                          | ErrorPage: status, reference, path from the URL                                                                                                                 | none                 | `CustomErrorController`, `error/error.html`, `404.html`, `fatal.html`                                                                                                                                                                      |
+| Route                                                             | Entry                                                                                                                                                                  | Gate                 | Today                                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/admin`, `/admin/dashboard`                                      | Overview › Dashboard: the five stat cards linking to their entries, the login map, recent logins and registrations, the restart card while a restart is pending        | `cookie`, `admin`    | `admin/dashboard.html`, `AdminController.dashboard`, `/admin/api/login-heatmap`                                                                                                                                                            |
+| `/admin/users`                                                    | Accounts › Users: the query and filters in the navbar module, the sortable table, the bulk bar, roles, customer id, primary organization, suspend, delete, rate limits | the same             | `admin/users.html`                                                                                                                                                                                                                         |
+| `/admin/organizations`                                            | Accounts › All organizations: the table, customer id, delete                                                                                                           | the same             | `admin/organizations.html`                                                                                                                                                                                                                 |
+| `/admin/logins`, `/admin/registrations`, `/admin/sessions`        | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                               | the same             | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
+| `/admin/service-usage`, `/admin/insights`, `/admin/client-health` | Health › Service usage, Insights, Client health: one page per row; the usage report, the fleet insights, the client and provider probes                                | the same             | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
+| `/admin/brute-force`                                              | Security › Blocked IPs: the status line, the table, Unblock                                                                                                            | the same             | `admin/blockedIps.html`                                                                                                                                                                                                                    |
+| `/admin/terms`                                                    | Content › Terms: the templates as ordered cards, create, edit, copy, preview, delete                                                                                   | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
+| `/admin/config`                                                   | System › Configuration: the shared config editor (decision 16)                                                                                                         | the same             | `admin/config.html`, `ConfigController`                                                                                                                                                                                                    |
+| `/error`                                                          | ErrorPage: status, reference, path from the URL                                                                                                                        | none                 | `CustomErrorController`, `error/error.html`, `404.html`, `fatal.html`                                                                                                                                                                      |
 
 `error` joins the reserved first segments (`admin` already is, and the
 client-health page now lives under it). `AdminController.userActivity` at `/admin/user/{id}/activity`
@@ -1743,10 +1765,12 @@ group a plain word and the row the last crumb, plain text; on a child
 route the breadcrumb reads the group, the parent row, then the child's
 label (`STARTcloud › Account › Profile › Favorites`), the parent a link
 to its own page and the child the last crumb; the user
-menu keeps its universal rows, its app section headed by `brand.name`
-holding the `links.docs` and `links.contact` rows alone, no Admin row
-and no Preferences row, since Dashboard and Profile are rows of the
-column and a destination lives in the column or the menu, never both.
+menu keeps its universal rows, its Preferences row an in-router link to
+`/user/profile/preferences`, its app section headed by `brand.name`
+holding the `links.docs` and `links.contact` rows alone, and no Admin
+row, since Dashboard is a row of the column and a destination lives in
+the column or the menu, never both, Preferences being the one named
+exception because the avatar is the one control on every page.
 The column and the app section are hidden on every route of the
 sign-in, onboarding and interstitial groups and on `/error`, where the
 page is the whole screen. On a `backend` UI backend the profile feature
@@ -1798,7 +1822,7 @@ problem body with `code`.
 | terms                    | `POST /api/admin/terms` `{ name, friendly_name, icon, version, type, is_public, display_order, content }` (`409` `unique` on `/name`), `PATCH /api/admin/terms/{name}` any of those, `DELETE /api/admin/terms/{name}`; each saved at once. The issuer's `/api/rules` carries a `terms` form, its members bounded as the validation contract's Forms table lists them: `name` is `$defs.slug` and `unique` globally, because it becomes the `/public/policies/<name>` and `/api/admin/terms/{name}` segment; `icon` is `$defs.iconName` and is drawn only as a class attribute; the placeholders are a fixed list replaced by string substitution and never evaluated, so the editor can never reach a template engine | `/admin/terms/template/create`, `/update/{name}`, `/template/delete/{name}` form-encoded, batched behind the config editor's Save |
 | reorder terms            | `PUT /api/admin/terms/order` `{ names: [] }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `displayOrder` per template in the same batch                                                                                     |
 | revoke a dynamic client  | `DELETE /api/admin/dcr/clients/{id}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `/admin/dcr/clients/{id}`                                                                                                         |
-| export                   | `GET /api/admin/export/logins`, `/registrations`, `/users` with the tab's filters, a top-level navigation answering `application/json` as an attachment, the same rows the table draws, because a CSV opened in a spreadsheet executes a cell that an attacker typed as a username or a user agent                                                                                                                                                                                                                                                                                                                                                                                                                    | `/admin/export/*`                                                                                                                 |
+| export                   | `GET /api/admin/export/logins`, `/registrations`, `/users` with the navbar panel's query and filters as its parameters, the panel's one registered action on Users, Logins and Registrations and never a button on the page, a top-level navigation answering `application/json` as an attachment, the same rows the table draws, because a CSV opened in a spreadsheet executes a cell that an attacker typed as a username or a user agent                                                                                                                                                                                                                                                                          | `/admin/export/*`                                                                                                                 |
 | configuration            | `PUT /api/config/<name>`, the config contract's merge patch (`422` with a pointer per failing path in place of the `400` text list), `POST /api/config/restart` and `POST /api/admin/config/rotate-signing-key` → `{ kid }`, each stepped up and behind a `ConfirmModal` because one click must not restart the issuer or retire its signing key, the SMTP test the mail section's `test` action of the config contract                                                                                                                                                                                                                                                                                               | `/admin/config/*`                                                                                                                 |
 
 ### What the admin pages draw
@@ -1818,12 +1842,18 @@ problem body with `code`.
     and `referrer_policy` defaulting to `no-referrer`, because Leaflet
     injects both as HTML and the tile fetch carries the admin's address);
     Recent login activity and Recent registrations with View all.
-  - **Users**: the search field, the Status select (one value of Active
-    or Disabled, since a status is exclusive and independent pills would
-    say otherwise), the 2FA and Customer ID pills and the Active after
-    `DateRange` with its presets and All time, all drawn on the page
-    above the table, because an operator scanning a table looks for its
-    controls beside it and not behind a gear in the header; the
+  - **Users**: the query and every filter in the navbar module and its
+    panel and none on the page: the query drives the list's `search`
+    parameter, debounced, page 1 re-read; the Status group is
+    `kind: select` (Active or Disabled, since a status is exclusive) sent
+    as `enabled`; the 2FA and Customer ID groups are `kind: toggle` sent
+    as `using_2fa` and `has_customer_id`; the Active after group is
+    `kind: date-range` with its presets and All time sent as
+    `active_after`; the server alone answers and nothing is narrowed
+    client-side, because every search goes through the navbar and a count
+    over a page of a paged list would lie; Export is the panel's
+    registered action, `/api/admin/export/users` from the same query and
+    groups, the page keeping the bulk bar and the table alone; the
     `SubTable` with sortable Email, Name, Customer ID and Status headers,
     the Roles badges, the Organizations badges (gold for the primary),
     the 2FA badge; the row actions as labeled buttons or one row menu,
@@ -1841,23 +1871,28 @@ problem body with `code`.
     created), Delete behind `ConfirmModal` for a team or an empty
     personal organization.
   - **Activity**: three pages, one per sidebar row, no tab strip:
-    Logins (the presets, the `DateRange`, the username field, Show only,
-    Filter, Clear and Export, every control drawn on the page, the table
+    Logins (the username query and the date range in the navbar module,
+    the query as the list's `username` parameter and the range as
+    `kind: date-range` sent as `start_date` and `end_date`, Show only as
+    a `kind: select` group sent as `success`, no Filter or Clear button
+    because the module's × and Clear filters are those, Export the
+    panel's registered action from the same query and groups so the page
+    keeps the table alone, the table
     with a Reason column for a failed row rather than a tooltip on the
     badge, since a reason an operator came to read must not hide under a
-    hover), Registrations (the same controls without Show only, the
+    hover), Registrations (the same groups without Show only, the
     columns headed "Email verified" and "Phone verified" over their Yes
     and No), Sessions (the table with Authorized and Last active as two
     columns and Revoke behind a confirm); `Pager` under each; every table
     draws one date format, the absolute time in the cell and the relative
     time in its tooltip, because two formats on one screen read as two
     clocks. Every admin table page, Users, Organizations, Logins,
-    Registrations and Sessions, binds the navbar search with a query over
-    the rows it holds, no filter groups, and the Columns group of the
-    navbar contract for its table, so the column toggle lives where it
-    does on every other UI backend while the page's own filters stay on
-    the page; Sessions, having no other filter, has the query as its one
-    narrowing; the chosen columns and the sort persist under that page's
+    Registrations and Sessions, binds the navbar search with its query
+    and its filter groups and the Columns group of the navbar contract
+    for its table, so every narrowing lives where it does on every other
+    UI backend and no page draws a search field or a filter row of its
+    own; Organizations and Sessions, having no other filter, have the
+    query as their one narrowing; the chosen columns and the sort persist under that page's
     `table_prefs_admin_*` key; every table sits in a wrapper with
     `overflow-x: auto` and hides columns through that group, so the page
     body never scrolls sideways.
@@ -1871,7 +1906,9 @@ problem body with `code`.
     unhealthy, not probeable) with the error collapse, one status per
     card, and the summary line at the top drawn as a warning while any
     client or provider is unhealthy, because a green line over a red
-    card lies; Refresh re-fetches, nothing reloads.
+    card lies; Refresh re-fetches, nothing reloads; the page binds the
+    navbar search with a query over the client and provider cards by
+    name and base URL.
   - **Blocked IPs**: the enabled line with the count, the table, Unblock
     behind a confirm.
   - **Terms**: the templates as cards in a `SortableList` (drag writes
@@ -1883,7 +1920,8 @@ problem body with `code`.
     as its name, version, type, public, order, the markdown content in a
     textarea with a preview beside it and the placeholder help from the
     placeholders call), Delete behind a confirm; every change saved as
-    it is made.
+    it is made; the page binds the navbar search with a query over the
+    template cards by name and display name.
   - **Configuration**: the shared `AdminConfig` of the config contract
     over the issuer's schema, one tab per name in `status.config`, reached
     from the sidebar row as an in-router link (decision 16).
@@ -1972,6 +2010,39 @@ problem body with `code`.
   to be indexed and a round trip to learn what the router already knows
   buys nothing.
 
+### What the UI backend answers for search
+
+`GET /api/search?q=&limit=`, the navbar contract's per-app route, session
+or Bearer, answers `{ query, results, truncated }` in the navbar contract's
+row shape: `kind` one of the kinds below, `collection` `null`, `org` the
+organization's name, `name` the row's own name, and `title`, `subtitle`
+and `matched` filled. The issuer searches everything it holds that a page
+lists, because a search that skips a kind sends the person back to the
+page to find it; one row per kind, the fields matched, who sees it, and
+the page a hit links to on the `auth-server` role:
+
+| kind                | matched on                             | who sees it                                                                                                                        | the hit links to                                                                      |
+| ------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `organization`      | name, description                      | a member sees their own; `ROLE_ADMIN` every one                                                                                    | `/user/organizations` for a member; `/admin/organizations?search=<name>` for an admin |
+| `user`              | username, email, given and family name | `ROLE_ADMIN` everywhere; an organization's owners and admins their members                                                         | `/admin/users?search=<username>`                                                      |
+| `application`       | client id, client name, description    | every signed-in person the applications they have connected (the integrations page's `apps`); `ROLE_ADMIN` every registered client | `/user/integrations` for a member; `/admin/service-usage` for an admin                |
+| `identity-provider` | provider name                          | every signed-in person the providers the site offers                                                                               | `/user/integrations`                                                                  |
+| `terms`             | name, display name, content            | every signed-in person the public templates; `ROLE_ADMIN` every template                                                           | `/public/policies/<name>`; `/admin/terms` for an admin                                |
+| `notification`      | title, body                            | the caller's own inbox                                                                                                             | `/notifications`                                                                      |
+| `session`           | client name, user agent, location      | the caller's own sessions; `ROLE_ADMIN` every session                                                                              | `/user/profile/sessions`; `/admin/sessions` for an admin                              |
+| `login`             | username, city, country, user agent    | `ROLE_ADMIN`                                                                                                                       | `/admin/logins?username=<username>`                                                   |
+| `registration`      | username, city, country                | `ROLE_ADMIN`                                                                                                                       | `/admin/registrations?username=<username>`                                            |
+| `blocked-address`   | the address                            | `ROLE_ADMIN`                                                                                                                       | `/admin/brute-force`                                                                  |
+
+The visibility clause is the list routes' own, so a caller is never shown
+a row it could not already list; `limit` bounds each kind and `truncated`
+counts the rest. The issuer lists no collections, so the universal route
+shape has no level to build a deep link from; the shared UI's search list
+and page, on the `auth-server` role, link each kind to the page the table
+names, because those are the pages that hold the row. The route is also
+the issuer's own registration on the estate-wide channel the navbar
+contract plans, so the first client of that channel is the issuer itself.
+
 ### Shared components admin adds
 
 | Component                                           | Where                                           | Why shared                                                                                                            |
@@ -2019,7 +2090,7 @@ mirrored in `es` and `cimode`.
 | terms              | batched behind the config editor's Save with `pendingToSChanges`, the order in the same batch                                                | a page of their own, every change saved at once, the order one call                                                                                                                                                                                                                                                 |
 | the map tiles      | four `@environment` reads in the template                                                                                                    | carried by the heatmap answer                                                                                                                                                                                                                                                                                       |
 | the footer         | the client-health icon and a thirty-second restart poll on every page                                                                        | the Client health page's summary line, the Dashboard and Configuration restart cards from the `admin` topic, the heart from the core `health` topic while `footer` and `health` are both listed                                                                                                                     |
-| the admin tables   | filters in the page, the same three names as tabs under the header of the Activity and Health pages                                          | filters in the page, the sidebar rows as the one navigation, no tab strip                                                                                                                                                                                                                                           |
+| the admin tables   | filters in the page, the same three names as tabs under the header of the Activity and Health pages                                          | every narrowing in the navbar module and its panel, the sidebar rows as the one navigation, no tab strip                                                                                                                                                                                                            |
 | errors             | three templates styled by `auth.css` tokens, the stack trace inline for admins, `fatal.html` as the loop guard, an eight-character reference | the SPA's ErrorPage from the attributes the server stamps, the fault's own status kept, a sixteen-character reference; the trace behind a closed fold for admins from `GET /api/admin/errors/{reference}`, a bounded store of `5xx` alone; render crashes the ErrorBoundary's card, shipped to `/api/client-errors` |
 | after every action | `location.reload()`                                                                                                                          | the page re-fetches its list                                                                                                                                                                                                                                                                                        |
 
@@ -2138,10 +2209,11 @@ Settled before code, in the order they were raised:
     `health` is listed too, and the heart's state rides the core `health`
     topic's event on every streaming UI backend.
 46. The sidebar rows read "Inbox" and "All organizations"; the user menu
-    on the issuer carries no Admin and no Preferences row; the app
-    section is headed by `brand.name`; the profile draws no
-    Organizations tab; a row lives in the column or the menu, never
-    both.
+    on the issuer carries no Admin row and keeps its Preferences row as
+    an in-router link to `/user/profile/preferences`; the app section is
+    headed by `brand.name`; the profile draws no Organizations tab; a row
+    lives in the column or the menu, never both, Preferences the one
+    named exception.
 47. A site that requires a mobile number says so on the phone step with
     its support contact; a site that does not never shows the step,
     because the requirement is the site's own flag and the least data
@@ -2151,10 +2223,17 @@ Settled before code, in the order they were raised:
     (`/login?reset=complete`) and never signs them in, the OWASP Forgot
     Password guidance, because an automatic sign-in after a reset adds a
     session-handling path that breeds faults.
-50. The admin tables carry their filters on the page; every admin table
-    page binds the navbar search with a query over its rows and its
-    Columns group, no filter groups, and Sessions has the query as its
-    one narrowing.
+50. Every admin table page, and every signed-in page that lists rows
+    (Favorites, Organizations, Integrations, Inbox, Terms, Client health),
+    binds the navbar search with its query, its
+    filter groups and its Columns group, and draws no search field and no
+    filter row of its own; on a paged list the query and every group are
+    sent as the list's parameters (`search` or `username`, `enabled`,
+    `using_2fa`, `has_customer_id`, `active_after`, `success`,
+    `start_date`, `end_date`), page 1 re-read, the server alone
+    answering; the groups carry a `kind`, `toggle`, `select` or
+    `date-range`, of the navbar contract; Organizations and Sessions have
+    the query as their one narrowing.
 51. The sidebar rows are the one navigation of the Activity and Health
     sections; no page draws a tab strip of the same names; a failed
     login's reason is a column.
@@ -2216,7 +2295,9 @@ Settled before code, in the order they were raised:
     as `#ffffff` or `#000000`, whichever contrasts more, when the YAML
     omits it, refusing only when the better is under 4.5:1:
     `moonshinedev` and `switchboard` `#000000`, `nomadservices`
-    `#ffffff`.
+    `#ffffff`, and `startcloud` its own pack's accent, the lighter
+    STARTcloud blue of the retired `auth.css`, because every site names a
+    pack.
 71. A pack reaches the shell as `brand.pack: { name, css }` in
     `/api/status`; the shell calls no branding route on any UI backend.
 72. The generator writes `public/themes/<pack>/<pack>.hash`, the SHA-256
@@ -2224,8 +2305,9 @@ Settled before code, in the order they were raised:
 73. The site marks, provider icons, pack marks and the switchboard
     Poppins files are supplied, never drawn; the branding contract lists
     their paths and sizes and the shell ships fallbacks until they land.
-74. Every admin table page binds the navbar search for its query and its
-    Columns group, never for filter groups, which stay on the page.
+74. Every admin table page binds the navbar search for its query, its
+    filter groups and its Columns group; nothing that narrows a table
+    lives on the page, because every search goes through the navbar.
 75. `POST /api/admin/rate-limit/{user_id}/tfa-unlock` carries
     `{ method }`, one of `SMS`, `APP`, `BACKUP_CODE`.
 76. The insights members are the `buildInsights` map's, in `snake_case`,
@@ -2322,6 +2404,43 @@ Settled before code, in the order they were raised:
      issuer's profile draws no tab strip; a `backend` UI backend's
      profile keeps its own shape unless its export lists `children` the
      same way.
+110. Every site of the identity provider names a pack; `theme_id: light`
+     is retired as a site value; the `startcloud` site gets the fourth
+     pack, `startcloud`, carrying the accent the retired `auth.css`
+     painted, so no site paints stock Bootstrap where its own accent
+     belongs.
+111. The user menu on the issuer keeps its Preferences row, an in-router
+     link to `/user/profile/preferences`, the one destination drawn in
+     both the column and the menu, because a person changes language,
+     theme and time zone from wherever they stand and the avatar is the
+     one control on every page.
+112. The issuer keeps one global list of allowed origins built from every
+     URL a configuration field holds (client `home_url` and `icon_url`,
+     provider `icon_url`, site logo and asset URLs), rebuilt at boot and
+     on every configuration save, and names it in `img-src` (and in
+     `connect-src` for the origins a page fetches from), so a configured
+     icon is never blocked and the star is never accepted for a favorite
+     whose icon is configured; the mode toggle and the policy links of
+     the sign-in page draw in the site's accent as the old page drew
+     them.
+113. The export of Users, Logins and Registrations is the navbar panel's
+     one registered action, `{ key, labelKey, icon?, onRun }` of the
+     navbar contract, built by the page from the panel's query and groups
+     and followed as a top-level navigation; no page draws an Export
+     button, because an action over the narrowed list belongs where the
+     narrowing is.
+114. The issuer advertises the `search` token and answers `GET /api/search`
+     over every kind it holds that a page lists, `organization`, `user`,
+     `application`, `identity-provider`, `terms`, `notification`,
+     `session`, `login`, `registration` and `blocked-address`, under the
+     list routes' visibility, the row's `org` part carrying the
+     organization's name and its `name` part the row's own name, and the
+     shared UI links each kind to the issuer's own page by role as the
+     search table names it; the issuer searches everything it holds that
+     a page lists, because a search that skips a kind sends the person
+     back to the page to find it; the everywhere channel remains the
+     navbar contract's planned tier, the issuer's route being its first
+     registrant.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

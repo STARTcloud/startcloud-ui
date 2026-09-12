@@ -8,11 +8,15 @@ import {
   APP_SEARCH_LIMIT,
   NavbarSearchContext,
   activeFilterCount,
+  appSearchShape,
+  hasPanel,
+  navbarSearchActionShape,
   navbarSearchBindingShape,
   navbarSearchGroupShape,
   useNavbarSearch,
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
+import DateRange from '../common/DateRange';
 import SearchResults from '../common/SearchResults';
 
 const MIN_QUERY = 2;
@@ -82,19 +86,67 @@ FilterGroup.propTypes = {
   group: navbarSearchGroupShape.isRequired,
 };
 
-const FilterGroups = ({ binding, onClearFilters }) => {
+const DateRangeGroup = ({ group }) => (
+  <div className="navbar-search-group">
+    <span className="navbar-search-group-label">{group.label}</span>
+    <DateRange
+      value={group.value}
+      onChange={group.onChange}
+      idPrefix={`navbar-${group.key}`}
+      startLabel={group.startLabel}
+      endLabel={group.endLabel}
+    />
+  </div>
+);
+
+DateRangeGroup.propTypes = {
+  group: navbarSearchGroupShape.isRequired,
+};
+
+const drawn = group => group.kind === 'date-range' || Object.keys(group.entries).length > 0;
+
+const PanelAction = ({ action, live }) => {
+  const { t } = useTranslation();
+  const Icon = action.icon || null;
+  return (
+    <button
+      type="button"
+      className="btn btn-outline-secondary btn-sm"
+      onClick={() => live().action.onRun()}
+    >
+      {Icon ? <Icon className="me-1" aria-hidden /> : null}
+      {t(action.labelKey)}
+    </button>
+  );
+};
+
+PanelAction.propTypes = {
+  action: navbarSearchActionShape.isRequired,
+  live: PropTypes.func.isRequired,
+};
+
+const FilterGroups = ({ binding, live }) => {
   const { t } = useTranslation();
   return (
     <>
       {binding.groups
-        .filter(group => Object.keys(group.entries).length > 0)
-        .map(group => (
-          <FilterGroup key={group.key} group={group} />
-        ))}
+        .filter(drawn)
+        .map(group =>
+          group.kind === 'date-range' ? (
+            <DateRangeGroup key={group.key} group={group} />
+          ) : (
+            <FilterGroup key={group.key} group={group} />
+          )
+        )}
       <div className="navbar-search-foot">
         <span>{t('search.activeFilters', { count: activeFilterCount(binding) })}</span>
         <span className="flex-grow-1" />
-        <button type="button" className="btn btn-link btn-sm p-0" onClick={onClearFilters}>
+        {binding.action ? <PanelAction action={binding.action} live={live} /> : null}
+        <button
+          type="button"
+          className="btn btn-link btn-sm p-0"
+          onClick={() => live().onClearFilters()}
+        >
           {t('search.clearFilters')}
         </button>
       </div>
@@ -104,12 +156,12 @@ const FilterGroups = ({ binding, onClearFilters }) => {
 
 FilterGroups.propTypes = {
   binding: navbarSearchBindingShape.isRequired,
-  onClearFilters: PropTypes.func.isRequired,
+  live: PropTypes.func.isRequired,
 };
 
 const sumOf = counts => Object.values(counts).reduce((sum, count) => sum + count, 0);
 
-const AppBody = ({ query, appResults, collections, resultsRef, onPick, onEscape }) => {
+const AppBody = ({ query, appResults, appSearch, resultsRef, onPick, onEscape }) => {
   const { t } = useTranslation();
   if (query.length < MIN_QUERY) {
     return null;
@@ -131,7 +183,7 @@ const AppBody = ({ query, appResults, collections, resultsRef, onPick, onEscape 
     <>
       <SearchResults
         rows={appResults.results}
-        collections={collections}
+        appSearch={appSearch}
         listRef={resultsRef}
         onPick={onPick}
         onEscape={onEscape}
@@ -157,7 +209,7 @@ AppBody.propTypes = {
     truncated: PropTypes.objectOf(PropTypes.number).isRequired,
     loading: PropTypes.bool.isRequired,
   }).isRequired,
-  collections: PropTypes.array.isRequired,
+  appSearch: appSearchShape.isRequired,
   resultsRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
   onPick: PropTypes.func.isRequired,
   onEscape: PropTypes.func.isRequired,
@@ -181,7 +233,7 @@ const AppSection = ({ context, bound, query }) => {
       <AppBody
         query={query}
         appResults={appResults}
-        collections={appSearch.collections}
+        appSearch={appSearch}
         resultsRef={resultsRef}
         onPick={onPick}
         onEscape={() => inputRef.current?.focus()}
@@ -198,8 +250,11 @@ AppSection.propTypes = {
 
 /**
  * The band under the navbar: the page's filter groups while the gear is on,
- * and the app-wide results for the query in the box, headed "Elsewhere in
- * the app" beside a page binding and "In the app" without one.
+ * a `toggle` or `select` group as one row of pills and a `date-range` group
+ * as the shared `DateRange` with its presets, the page's registered action
+ * at the foot beside Clear filters, and the app-wide results for the query
+ * in the box, headed "Elsewhere in the app" beside a page binding and "In
+ * the app" without one.
  */
 export const NavbarSearchPanel = () => {
   const context = useContext(NavbarSearchContext);
@@ -209,7 +264,7 @@ export const NavbarSearchPanel = () => {
     return null;
   }
 
-  const filters = Boolean(binding && context.panelOpen && binding.groups.length > 0);
+  const filters = context.panelOpen && hasPanel(binding);
   const query = (binding ? binding.query : context.appQuery).trim();
   const app = context.expanded && context.appSearch.available && query.length > 0;
 
@@ -220,10 +275,7 @@ export const NavbarSearchPanel = () => {
   return (
     <div className="navbar-search-panel w-100">
       {filters ? (
-        <FilterGroups
-          binding={binding}
-          onClearFilters={() => (context.store.get() || binding).onClearFilters()}
-        />
+        <FilterGroups binding={binding} live={() => context.store.get() || binding} />
       ) : null}
       {app ? <AppSection context={context} bound={Boolean(binding)} query={query} /> : null}
     </div>

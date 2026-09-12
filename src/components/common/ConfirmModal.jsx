@@ -3,11 +3,24 @@ import { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
-const ConfirmModal = ({ show, handleClose, handleConfirm, title = '', message = '' }) => {
+const VARIANTS = {
+  delete: { keys: 'pages.confirm', button: 'danger' },
+  restart: { keys: 'pages.confirm.restart', button: 'warning' },
+};
+
+const ConfirmModal = ({
+  show,
+  handleClose,
+  handleConfirm,
+  title = '',
+  message = '',
+  variant = 'delete',
+}) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
-  const keyword = t('pages.confirm.keyword');
+  const { keys, button } = VARIANTS[variant];
+  const keyword = t(`${keys}.keyword`);
 
   const handleInputChange = event => {
     setInputValue(event.target.value);
@@ -32,12 +45,12 @@ const ConfirmModal = ({ show, handleClose, handleConfirm, title = '', message = 
   };
 
   return (
-    <Modal show={show} onHide={handleModalClose}>
+    <Modal show={show} onHide={handleModalClose} dialogClassName="form-modal" scrollable>
       <Modal.Header closeButton>
-        <Modal.Title>{title || t('pages.confirm.title')}</Modal.Title>
+        <Modal.Title>{title || t(`${keys}.title`)}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>{message || t('pages.confirm.message', { keyword })}</p>
+        <p>{message || t(`${keys}.message`, { keyword })}</p>
         <Form.Control
           type="text"
           value={inputValue}
@@ -45,7 +58,7 @@ const ConfirmModal = ({ show, handleClose, handleConfirm, title = '', message = 
           placeholder={t('pages.confirm.placeholder', { keyword })}
         />
         {error ? (
-          <div className="alert alert-danger mt-2" role="alert">
+          <div className="alert alert-danger" role="alert">
             {error}
           </div>
         ) : null}
@@ -54,8 +67,8 @@ const ConfirmModal = ({ show, handleClose, handleConfirm, title = '', message = 
         <Button variant="secondary" onClick={handleModalClose}>
           {t('pages.confirm.cancel')}
         </Button>
-        <Button variant="danger" onClick={handleConfirmClick}>
-          {t('pages.confirm.confirm')}
+        <Button variant={button} onClick={handleConfirmClick}>
+          {t(`${keys}.confirm`)}
         </Button>
       </Modal.Footer>
     </Modal>
@@ -68,6 +81,7 @@ ConfirmModal.propTypes = {
   handleConfirm: PropTypes.func.isRequired,
   title: PropTypes.string,
   message: PropTypes.string,
+  variant: PropTypes.oneOf(Object.keys(VARIANTS)),
 };
 
 export default ConfirmModal;

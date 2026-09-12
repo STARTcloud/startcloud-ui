@@ -1,23 +1,39 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaPuzzlePiece, FaStar } from 'react-icons/fa6';
+import { FaStar } from 'react-icons/fa6';
 
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import SortableList from '../../../components/common/SortableList';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 
 const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
 
-const iconOf = app => {
+const matches = (app, needle) =>
+  [app.custom_label || '', app.client_name || '', app.client_id].some(text =>
+    text.toLowerCase().includes(needle)
+  );
+
+const reorderWithin = (all, shown) => {
+  const ids = new Set(shown.map(app => app.client_id));
+  let index = 0;
+  return all.map(app => {
+    if (!ids.has(app.client_id)) {
+      return app;
+    }
+    index += 1;
+    return shown[index - 1];
+  });
+};
+
+const iconChainOf = app => {
   const icon = httpsUrl(app.icon_url);
-  if (icon) {
-    return icon;
-  }
   const home = httpsUrl(app.home_url);
-  return home ? `${new URL(home).origin}/favicon.ico` : '';
+  const favicon = home ? `${new URL(home).origin}/favicon.ico` : '';
+  return [...new Set([icon, favicon].filter(Boolean))];
 };
 
 const labelOf = app => app.custom_label || app.client_name || app.client_id;
@@ -30,11 +46,24 @@ const toBody = list =>
   }));
 
 const AppIcon = ({ app }) => {
-  const url = iconOf(app);
-  return url ? (
-    <img src={url} alt="" width={24} height={24} referrerPolicy="no-referrer" />
-  ) : (
-    <FaPuzzlePiece aria-hidden />
+  const [step, setStep] = useState(0);
+  const iconUrl = iconChainOf(app)[step];
+  if (!iconUrl) {
+    return <FaStar className="text-warning" aria-hidden />;
+  }
+  return (
+    <img
+      key={iconUrl}
+      src={iconUrl}
+      alt=""
+      width={24}
+      height={24}
+      referrerPolicy="no-referrer"
+      onError={event => {
+        event.currentTarget.classList.add('d-none');
+        setStep(current => current + 1);
+      }}
+    />
   );
 };
 
@@ -87,14 +116,16 @@ AddButton.propTypes = {
  * The Favorites tab of the identity contract: the ordered favorites with
  * drag handles and Remove over `PUT /api/user/favorites`, then the
  * connected applications not yet favorited with Add; the icon chain is
- * `icon_url`, the favicon of `home_url`, the app glyph, every URL drawn
- * only with the `https:` scheme.
+ * `icon_url`, the favicon of `home_url`, the star, every URL drawn only
+ * with the `https:` scheme; the navbar search bound with a query over the
+ * favorites and the available applications by label and client id.
  */
 const FavoritesTab = ({ account }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [favorites, setFavorites] = useState([]);
   const [apps, setApps] = useState([]);
+  const [query, setQuery] = useState('');
 
   const load = useCallback(
     () =>
@@ -141,28 +172,42 @@ const FavoritesTab = ({ account }) => {
 
   const favoriteIds = new Set(favorites.map(app => app.client_id));
   const available = apps.filter(app => !favoriteIds.has(app.client_id));
+  const needle = query.trim().toLowerCase();
+  const shownFavorites = needle ? favorites.filter(app => matches(app, needle)) : favorites;
+  const shownAvailable = needle ? available.filter(app => matches(app, needle)) : available;
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('profile.favorites.search'),
+    matched: shownFavorites.length + shownAvailable.length,
+    total: favorites.length + available.length,
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
 
   return (
     <div className="tab-pane fade show active">
       <h5>{t('profile.favorites.title')}</h5>
-      {favorites.length === 0 ? (
-        <p className="text-body-secondary small">{t('profile.favorites.none')}</p>
+      {shownFavorites.length === 0 ? (
+        <p className="text-body-secondary small">
+          {needle ? t('pages.noMatches') : t('profile.favorites.none')}
+        </p>
       ) : (
         <SortableList
-          items={favorites}
+          items={shownFavorites}
           keyOf={app => app.client_id}
-          onReorder={save}
+          onReorder={next => save(reorderWithin(favorites, next))}
           className="mb-4"
           renderItem={(app, handle) => <FavoriteRow app={app} handle={handle} onRemove={remove} />}
         />
       )}
       <h5>{t('profile.favorites.available')}</h5>
-      <MethodList empty={t('profile.favorites.noneAvailable')}>
-        {available.map(app => (
+      <MethodList empty={needle ? t('pages.noMatches') : t('profile.favorites.noneAvailable')}>
+        {shownAvailable.map(app => (
           <MethodRow
             key={app.client_id}
-            icon={<FaPuzzlePiece aria-hidden />}
-            iconUrl={app.icon_url || ''}
+            icon={<AppIcon app={app} />}
             label={app.client_name || app.client_id}
             actions={<AddButton app={app} onAdd={add} />}
           />

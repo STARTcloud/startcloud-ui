@@ -8,8 +8,16 @@ import Pager from '../../../components/common/Pager';
 import { notificationsAdapterShape } from '../../../components/layout/NotificationsModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useUnread } from '../../../contexts/UnreadContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 
 const PAGE_SIZE = 25;
+
+const matches = (entry, needle) =>
+  [entry.title, entry.body].some(text =>
+    String(text || '')
+      .toLowerCase()
+      .includes(needle)
+  );
 
 const totalPagesOf = data => Math.max(0, Number(data?.total_pages) || 0);
 
@@ -24,7 +32,8 @@ const readNow = () => new Date().toISOString();
  * confirm at the top, the per-row Mark as read and Delete, and View
  * details following a row's `navigate` when it is an `https:` URL or a
  * same-origin path; every change to the unread count goes through the
- * notifications feature's one context.
+ * notifications feature's one context; the navbar search is bound with a
+ * query over the loaded rows by title and body.
  */
 const InboxPage = ({ notifications }) => {
   const { t } = useTranslation();
@@ -33,6 +42,7 @@ const InboxPage = ({ notifications }) => {
   const { adjust: adjustUnread } = useUnread();
   const [page, setPage] = useState(0);
   const [entries, setEntries] = useState([]);
+  const [query, setQuery] = useState('');
   const [paging, setPaging] = useState({ totalPages: 0, total: 0 });
   const [loadFailed, setLoadFailed] = useState(false);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
@@ -126,6 +136,19 @@ const InboxPage = ({ notifications }) => {
     }
   };
 
+  const needle = query.trim().toLowerCase();
+  const shown = needle ? entries.filter(entry => matches(entry, needle)) : entries;
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('inbox.search'),
+    matched: shown.length,
+    total: entries.length,
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
+
   return (
     <div className="list">
       <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -151,11 +174,13 @@ const InboxPage = ({ notifications }) => {
       </div>
       <div className="card">
         {loadFailed ? <p className="small text-danger m-3">{t('inbox.loadError')}</p> : null}
-        {!loadFailed && entries.length === 0 ? (
-          <p className="small text-body-secondary m-3">{t('inbox.empty')}</p>
+        {!loadFailed && shown.length === 0 ? (
+          <p className="small text-body-secondary m-3">
+            {needle ? t('pages.noMatches') : t('inbox.empty')}
+          </p>
         ) : null}
         <InboxList
-          entries={entries}
+          entries={shown}
           onSelect={select}
           onMarkRead={markRead}
           onDismiss={dismiss}

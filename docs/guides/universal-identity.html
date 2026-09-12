@@ -557,7 +557,7 @@
     padding-top: 12px;
     font-size: 12px;
     text-align: center;
-    color: var(--muted);
+    color: var(--label);
   }
   .a-alert {
     display: flex;
@@ -6244,8 +6244,8 @@ TypeError: Cannot read properties of undefined (reading 'items')
       h +=
         '<div class="a-links">' +
         (pw
-          ? '<button class="a-link muted" type="button" data-act="mode-magic">Use a sign-in link instead</button>'
-          : '<button class="a-link muted" type="button" data-act="mode-password">Sign in with password instead</button>') +
+          ? '<button class="a-link" type="button" data-act="mode-magic">Use a sign-in link instead</button>'
+          : '<button class="a-link" type="button" data-act="mode-password">Sign in with password instead</button>') +
         (state.cancel ? '<span class="a-link muted">Cancel</span>' : '') +
         '</div>';
       h += '</form>';

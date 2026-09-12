@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 
 const SAFE_PATH = /^\/(?![/\\])/;
 
@@ -34,9 +35,9 @@ export const followableUrl = value => {
 };
 
 /**
- * One row of a method list: an icon or an `https:` image, a label with
- * its badges, a subline and the trailing actions; the icon image never
- * sends a referrer.
+ * One row of a method list: an icon or an `https:` image that falls back
+ * to the icon when it fails to load, a label with its badges, a subline
+ * and the trailing actions; the icon image never sends a referrer.
  */
 export const MethodRow = ({
   icon = null,
@@ -47,12 +48,25 @@ export const MethodRow = ({
   actions = null,
   className = '',
 }) => {
+  const [failed, setFailed] = useState('');
   const image = httpsUrl(iconUrl);
+  const showImage = image && failed !== image;
   return (
     <li className={`list-group-item d-flex align-items-center gap-3 ${className}`}>
       <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
-        {image ? (
-          <img src={image} alt="" width={24} height={24} referrerPolicy="no-referrer" />
+        {showImage ? (
+          <img
+            key={image}
+            src={image}
+            alt=""
+            width={24}
+            height={24}
+            referrerPolicy="no-referrer"
+            onError={event => {
+              event.currentTarget.classList.add('d-none');
+              setFailed(image);
+            }}
+          />
         ) : (
           icon
         )}

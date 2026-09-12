@@ -260,8 +260,9 @@ changes in the same release.
   `height` always present so consumers can reserve space; `monochrome: true`
   marks a slot safe to mask. A `mark` (stencil) is distinct from `small` (a
   wordmark).
-- **`theme_pack: null`** means stock Bootstrap; sites configured
-  `theme_id: light` publish `null`.
+- **`theme_pack: null`** means stock Bootstrap and is answered only for a
+  client on no site; every site of the identity provider names a pack, so
+  a site never publishes `null`.
 - **Absolute URLs are built from the site's configured hostname, never
   from the request's `Host` or `X-Forwarded-Host`**, and a request whose
   host matches no site answers the default site; a publicly cacheable
@@ -470,6 +471,12 @@ directory per name; the authorization server's site configuration names one
 of them per site. Standalone hosts carry vendored snapshots that may lag it —
 that is expected behavior, not a fault.
 
+Every site of the identity provider names a pack; a site with no pack is
+not a valid site, because the auth column and the chrome then paint stock
+Bootstrap where the site's own accent belongs, and `theme_id: light` is
+retired as a site value (the variant is the person's, decision 70's list
+is amended).
+
 ---
 
 ## Artwork
@@ -521,6 +528,7 @@ shell ships the fallbacks until each lands:
 | `public/brand/providers/<id>.svg`, one per federated provider | square, monochrome    | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands              |
 | `public/themes/<pack>/mark.svg`, optional                     | 512×512, monochrome   | `--brand-logo` when the pack's YAML names it                                                                        |
 | `public/themes/switchboard/poppins-<weight>.woff2`            | weights 500, 600, 700 | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land |
+| `public/themes/startcloud/startcloud.css` and its YAML source | the fourth pack       | the accent the retired `auth.css` painted for the `startcloud` site                                                 |
 
 The sites are `startcloud`, `moonshinedev`, `switchboard` and
 `nomadservices`.
@@ -557,9 +565,11 @@ arithmetic, and the two extremes are the only pair no accent can defeat
 that white can pass. A pack that names `on_primary` is checked as named.
 The identity provider's four sites resolve to: `moonshinedev` (`#1f9d57`)
 `#000000` at 6.02:1, `switchboard` (`#24ade3`) `#000000` at 7.5:1,
-`nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud` has no
-pack; `--brand-on-primary` is also the auth column's button text, so
-those buttons read black on the two light accents.
+`nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud` (its
+accent from the retired `auth.css`, the lighter STARTcloud blue) `#ffffff`
+or `#000000` by the generator's rule; `--brand-on-primary` is also the
+auth column's button text, so those buttons read black on the two light
+accents.
 
 `lang` on `<html>` must carry the user's language: screen readers take
 pronunciation from it, and the value is already stored, published and

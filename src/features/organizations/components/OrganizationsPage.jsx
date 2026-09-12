@@ -12,6 +12,7 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
@@ -248,7 +249,8 @@ MembershipCards.propTypes = {
  * person can manage it, and View or Manage, which makes that organization
  * the active one under `activeOrgKey` and opens the shared console; a
  * `#<uuid>` in the URL does the same on load, and the chosen view persists
- * under `table_prefs_organizations`.
+ * under `table_prefs_organizations`; the navbar search is bound with a
+ * query over the memberships by name.
  */
 const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => {
   const { t } = useTranslation();
@@ -258,6 +260,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const [data, setData] = useState(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState(storedView);
+  const [query, setQuery] = useState('');
   const [createForm, setCreateForm] = useState({ name: '' });
   const [joinForm, setJoinForm] = useState({ invite_code: '' });
   const createRules = useFormRules({
@@ -378,7 +381,23 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const regenerate = org =>
     act(() => organizations.regenerateInviteCode(org.uuid), 'organizations.regenerated');
 
-  const empty = loaded ? t('organizations.none') : t('loading');
+  const needle = query.trim().toLowerCase();
+  const shown = needle
+    ? data.organizations.filter(org => org.name.toLowerCase().includes(needle))
+    : data.organizations;
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('organizations.search'),
+    matched: shown.length,
+    total: data.organizations.length,
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
+
+  const loadedEmpty = needle ? t('pages.noMatches') : t('organizations.none');
+  const empty = loaded ? loadedEmpty : t('loading');
 
   return (
     <div className="list">
@@ -410,7 +429,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
       />
       {view === 'cards' ? (
         <MembershipCards
-          organizations={data.organizations}
+          organizations={shown}
           empty={empty}
           onMakePrimary={makePrimary}
           onRegenerate={regenerate}
@@ -418,7 +437,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
         />
       ) : (
         <MethodList empty={empty}>
-          {data.organizations.map(org => (
+          {shown.map(org => (
             <MembershipRow
               key={org.uuid}
               org={org}

@@ -27,8 +27,16 @@ const ticketOf = ({ status, ticketConfig }) => {
 };
 
 const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
-  if (!ticket || !user) {
+  if (!ticket) {
     return '';
+  }
+  if (!user) {
+    return ticketUrl({
+      baseUrl: ticket.baseUrl,
+      reqType: ticket.reqType,
+      customerId: ticket.fallbackCustomerId,
+      context: ticket.context,
+    });
   }
   return ticketUrl({
     baseUrl: ticket.baseUrl,
@@ -41,11 +49,12 @@ const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
 };
 
 /**
- * The support-ticket link of the account menu: the plain `ticket_system`
- * section from `/api/config/ticket` on a host whose status answers
- * `ticket: null`, else the host's `status.ticket`, resolved with the active
- * organization's customer code and the signed-in identity; empty when there
- * is no ticket system or no user.
+ * The support-ticket link: the plain `ticket_system` section from
+ * `/api/config/ticket` on a host whose status answers `ticket: null`, else
+ * the host's `status.ticket`; signed in it is the account menu's Help URL
+ * resolved with the active organization's customer code and the identity,
+ * signed out the cluster's ticket URL with the fallback customer id alone
+ * and no user or email; empty when there is no ticket system.
  *
  * @param {Object} options - The ticket inputs
  * @param {Object} options.status - The payload from `probeStatus`

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaBars, FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaBars, FaCircleHalfStroke, FaLifeRing, FaMoon, FaSun } from 'react-icons/fa6';
 
 import Crumbs, { crumbShape } from './Breadcrumbs';
 import { LanguageButton } from './LanguageModal';
@@ -80,6 +80,32 @@ UtilityLinks.propTypes = {
   LinkComponent: PropTypes.elementType.isRequired,
 };
 
+const ReportLink = ({ reportUrl }) => {
+  const { t } = useTranslation();
+  if (!reportUrl) {
+    return null;
+  }
+  const label = t('navbar.reportProblem');
+  return (
+    <li className="nav-item">
+      <a
+        href={reportUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn-link nav-link cluster-btn"
+        title={label}
+        aria-label={label}
+      >
+        <FaLifeRing />
+      </a>
+    </li>
+  );
+};
+
+ReportLink.propTypes = {
+  reportUrl: PropTypes.string.isRequired,
+};
+
 const Header = ({
   brand = null,
   links = [],
@@ -90,6 +116,7 @@ const Header = ({
   signedIn,
   onSignIn = null,
   signInTo = '',
+  reportUrl = '',
   userMenu = null,
   onSidebarToggle = null,
 }) => {
@@ -137,6 +164,7 @@ const Header = ({
             </button>
           </li>
           <LanguageButton languages={language.languages} onPick={language.onPick} />
+          {signedIn ? null : <ReportLink reportUrl={reportUrl} />}
           {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
           {!signedIn && (onSignIn || signInTo) ? (
             <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
@@ -166,6 +194,7 @@ Header.propTypes = {
   signedIn: PropTypes.bool.isRequired,
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
+  reportUrl: PropTypes.string,
   userMenu: PropTypes.object,
   onSidebarToggle: PropTypes.func,
 };

@@ -150,11 +150,11 @@ const PolicyLinks = ({ policies }) => (
       <span key={policy.name}>
         {index > 0 ? ' · ' : ''}
         {SAFE_PATH.test(policy.url) ? (
-          <Link to={policy.url} className="auth-link auth-link-muted">
+          <Link to={policy.url} className="auth-link">
             {policy.label}
           </Link>
         ) : (
-          <a href={policy.url} className="auth-link auth-link-muted">
+          <a href={policy.url} className="auth-link">
             {policy.label}
           </a>
         )}
@@ -300,11 +300,7 @@ const LoginExtras = ({ answer, providers, mode, busy, onSwitch, onCancel, sessio
       {canSwitch || cancel ? (
         <div className="auth-links">
           {canSwitch ? (
-            <button
-              type="button"
-              className="auth-link auth-link-muted"
-              onClick={() => onSwitch(otherMode)}
-            >
+            <button type="button" className="auth-link" onClick={() => onSwitch(otherMode)}>
               {otherMode === 'password' ? t('login.usePassword') : t('login.useEmailLink')}
             </button>
           ) : null}

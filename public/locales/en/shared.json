@@ -24,10 +24,13 @@
     "favorites": "Favorites",
     "notifications": "Notifications",
     "help": "Help",
+    "reportProblem": "Report a problem",
     "profileModeTitle": "Switch between identity provider and local profile",
     "about": "About",
     "docs": "Docs",
     "contact": "Contact",
+    "needHelp": "Need help?",
+    "emailSupport": "Email support",
     "admin": "Admin",
     "orgConsole": "Organization console",
     "rebuild": "Rebuild catalog data",
@@ -498,7 +501,8 @@
       "available": "Available applications",
       "noneAvailable": "Every connected application is already a favorite.",
       "add": "Add",
-      "remove": "Remove"
+      "remove": "Remove",
+      "search": "Search favorites and applications"
     },
     "sessions": {
       "title": "Active sessions",
@@ -565,11 +569,9 @@
     },
     "users": {
       "title": "Users",
-      "search": "Search the users on this page",
+      "search": "Search users",
       "filter": {
-        "search": "Search users",
         "status": "Status",
-        "anyStatus": "Any status",
         "tfa": "2FA on",
         "customerId": "Has customer ID",
         "activeAfter": "Active after"
@@ -685,14 +687,13 @@
         "success": "Success",
         "failed": "Failed",
         "showOnly": "Show only",
-        "all": "All",
         "failedOnly": "Failed only",
         "successOnly": "Successful only",
-        "search": "Search the logins on this page"
+        "search": "Search logins by username"
       },
       "registrations": {
         "title": "Registrations",
-        "search": "Search the registrations on this page",
+        "search": "Search registrations by username",
         "emailVerified": "Email verified",
         "phoneVerified": "Phone verified",
         "verified": "Verified",
@@ -714,10 +715,9 @@
       "address": "Address",
       "location": "Location",
       "device": "Device",
+      "dateRange": "Date range",
       "startDate": "Start date",
       "endDate": "End date",
-      "filter": "Filter",
-      "clear": "Clear",
       "export": "Export"
     },
     "health": {
@@ -741,6 +741,8 @@
       },
       "insights": {
         "title": "Insights",
+        "search": "Search insights",
+        "growthCount": "{{count}} registrations",
         "activeUsers": "Active users",
         "posture": "Security posture",
         "churn": "Churn risk",
@@ -818,7 +820,8 @@
           "http_reachability": "HTTP reachability"
         },
         "endpoint": "Endpoint",
-        "reason": "Reason"
+        "reason": "Reason",
+        "search": "Search clients and providers"
       },
       "definitions": "What these numbers mean",
       "refresh": "Refresh",
@@ -848,6 +851,7 @@
     },
     "terms": {
       "title": "Terms",
+      "search": "Search templates",
       "create": "Create",
       "edit": "Edit",
       "copy": "Copy",
@@ -971,9 +975,7 @@
       "heading": "Restart required.",
       "by": "Last changed by {{by}} at {{time}}.",
       "entry": "{{title}}: {{reason}}",
-      "button": "Restart",
-      "confirmTitle": "Restart the server",
-      "confirmBody": "Requests fail while the server restarts. Type \"{{keyword}}\" to confirm."
+      "button": "Restart"
     },
     "map": {
       "key": "Key",
@@ -1186,7 +1188,8 @@
     "deleteAll": "Delete all",
     "deleteAllBody": "Every notification of yours is deleted. Type \"{{keyword}}\" to confirm.",
     "delete": "Delete",
-    "viewDetails": "View details"
+    "viewDetails": "View details",
+    "search": "Search notifications"
   },
   "notifications": {
     "pushSwitch": "Toasts (OS notifications) on this device",
@@ -1214,6 +1217,8 @@
     "noHits": "Nothing found.",
     "loading": "Searching…",
     "unavailable": "Search is not available on this host.",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
     "page": {
       "title": "Search",
       "count_one": "{{count}} result for “{{query}}”",
@@ -1558,7 +1563,13 @@
       "typeToConfirm": "Please type '{{keyword}}' to confirm.",
       "keyword": "delete",
       "cancel": "Cancel",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "restart": {
+        "title": "Restart the server",
+        "message": "Requests fail while the server restarts. Type \"{{keyword}}\" to confirm the restart.",
+        "keyword": "restart",
+        "confirm": "Restart"
+      }
     },
     "links": {
       "repo": "Source repository",
@@ -2178,10 +2189,12 @@
     "personal": "Personal",
     "primary": "Primary",
     "yourRole": "Your role {{role}}",
-    "none": "You are not a member of any organization yet."
+    "none": "You are not a member of any organization yet.",
+    "search": "Search organizations"
   },
   "integrations": {
     "title": "Integrations & connected accounts",
+    "search": "Search accounts, terms and applications",
     "notices": {
       "setPassword": "Set a password so you can still sign in if a linked account is unlinked.",
       "enableTfa": "Enable two-factor authentication to protect your account."

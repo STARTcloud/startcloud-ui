@@ -1,0 +1,30 @@
+[data-brand='startcloud'] {
+  --brand-primary: #2196c2;
+  --brand-primary-rgb: 33, 150, 194;
+  --brand-on-primary: #000000;
+  --brand-focus-ring: rgba(33, 150, 194, 0.97);
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 33, 150, 194;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #f4f6f9;
+  --bs-tertiary-bg: #e7ecf2;
+  --bs-secondary-bg: #fbfcfe;
+  --bs-border-color: #dde0e4;
+  --bs-body-color: #2d3b4a;
+  --bs-emphasis-color: #0e1a26;
+  --bs-secondary-color: #5c6a78;
+}
+
+[data-brand='startcloud'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(33, 150, 194, 0.65);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --bs-body-bg: #0a1018;
+  --bs-tertiary-bg: #11192a;
+  --bs-secondary-bg: #131c2e;
+  --bs-border-color: #20262e;
+  --bs-body-color: #c5d0dc;
+  --bs-emphasis-color: #e8edf3;
+  --bs-secondary-color: #8b97a6;
+}

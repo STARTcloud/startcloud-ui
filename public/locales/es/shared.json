@@ -24,10 +24,13 @@
     "favorites": "Favoritos",
     "notifications": "Notificaciones",
     "help": "Ayuda",
+    "reportProblem": "Informar de un problema",
     "profileModeTitle": "Cambiar entre el perfil del proveedor de identidad y el perfil local",
     "about": "Acerca de",
     "docs": "Documentación",
     "contact": "Contacto",
+    "needHelp": "¿Necesitas ayuda?",
+    "emailSupport": "Escribir a soporte",
     "admin": "Admin",
     "orgConsole": "Consola de la organización",
     "rebuild": "Regenerar datos del catálogo",
@@ -498,7 +501,8 @@
       "available": "Aplicaciones disponibles",
       "noneAvailable": "Todas las aplicaciones conectadas ya son favoritas.",
       "add": "Añadir",
-      "remove": "Quitar"
+      "remove": "Quitar",
+      "search": "Buscar favoritos y aplicaciones"
     },
     "sessions": {
       "title": "Sesiones activas",
@@ -565,11 +569,9 @@
     },
     "users": {
       "title": "Usuarios",
-      "search": "Buscar en los usuarios de esta página",
+      "search": "Buscar usuarios",
       "filter": {
-        "search": "Buscar usuarios",
         "status": "Estado",
-        "anyStatus": "Cualquier estado",
         "tfa": "2FA activado",
         "customerId": "Con ID de cliente",
         "activeAfter": "Activo después de"
@@ -685,14 +687,13 @@
         "success": "Correcto",
         "failed": "Fallido",
         "showOnly": "Mostrar solo",
-        "all": "Todos",
         "failedOnly": "Solo fallidos",
         "successOnly": "Solo correctos",
-        "search": "Buscar en los inicios de sesión de esta página"
+        "search": "Buscar inicios de sesión por usuario"
       },
       "registrations": {
         "title": "Registros",
-        "search": "Buscar en los registros de esta página",
+        "search": "Buscar registros por usuario",
         "emailVerified": "Correo verificado",
         "phoneVerified": "Teléfono verificado",
         "verified": "Verificado",
@@ -714,10 +715,9 @@
       "address": "Dirección",
       "location": "Ubicación",
       "device": "Dispositivo",
+      "dateRange": "Rango de fechas",
       "startDate": "Fecha de inicio",
       "endDate": "Fecha de fin",
-      "filter": "Filtrar",
-      "clear": "Limpiar",
       "export": "Exportar"
     },
     "health": {
@@ -741,6 +741,8 @@
       },
       "insights": {
         "title": "Estadísticas",
+        "search": "Buscar en las estadísticas",
+        "growthCount": "{{count}} registros",
         "activeUsers": "Usuarios activos",
         "posture": "Postura de seguridad",
         "churn": "Riesgo de abandono",
@@ -818,7 +820,8 @@
           "http_reachability": "Alcance HTTP"
         },
         "endpoint": "Punto de acceso",
-        "reason": "Motivo"
+        "reason": "Motivo",
+        "search": "Buscar clientes y proveedores"
       },
       "definitions": "Qué significan estas cifras",
       "refresh": "Actualizar",
@@ -848,6 +851,7 @@
     },
     "terms": {
       "title": "Términos",
+      "search": "Buscar plantillas",
       "create": "Crear",
       "edit": "Editar",
       "copy": "Copiar",
@@ -971,9 +975,7 @@
       "heading": "Reinicio necesario.",
       "by": "Último cambio por {{by}} el {{time}}.",
       "entry": "{{title}}: {{reason}}",
-      "button": "Reiniciar",
-      "confirmTitle": "Reiniciar el servidor",
-      "confirmBody": "Las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar."
+      "button": "Reiniciar"
     },
     "map": {
       "key": "Clave",
@@ -1186,7 +1188,8 @@
     "deleteAll": "Eliminar todo",
     "deleteAllBody": "Se eliminan todas tus notificaciones. Escribe \"{{keyword}}\" para confirmar.",
     "delete": "Eliminar",
-    "viewDetails": "Ver detalles"
+    "viewDetails": "Ver detalles",
+    "search": "Buscar notificaciones"
   },
   "notifications": {
     "pushSwitch": "Toasts (notificaciones del sistema) en este dispositivo",
@@ -1214,6 +1217,8 @@
     "noHits": "No se encontró nada.",
     "loading": "Buscando…",
     "unavailable": "La búsqueda no está disponible en este host.",
+    "results_one": "{{count}} resultado",
+    "results_other": "{{count}} resultados",
     "page": {
       "title": "Búsqueda",
       "count_one": "{{count}} resultado para «{{query}}»",
@@ -1558,7 +1563,13 @@
       "typeToConfirm": "Por favor escribe '{{keyword}}' para confirmar.",
       "keyword": "eliminar",
       "cancel": "Cancelar",
-      "confirm": "Confirmar"
+      "confirm": "Confirmar",
+      "restart": {
+        "title": "Reiniciar el servidor",
+        "message": "Las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar el reinicio.",
+        "keyword": "reiniciar",
+        "confirm": "Reiniciar"
+      }
     },
     "links": {
       "repo": "Repositorio",
@@ -2178,10 +2189,12 @@
     "personal": "Personal",
     "primary": "Principal",
     "yourRole": "Tu rol {{role}}",
-    "none": "Todavía no eres miembro de ninguna organización."
+    "none": "Todavía no eres miembro de ninguna organización.",
+    "search": "Buscar organizaciones"
   },
   "integrations": {
     "title": "Integraciones y cuentas conectadas",
+    "search": "Buscar cuentas, términos y aplicaciones",
     "notices": {
       "setPassword": "Establece una contraseña para poder iniciar sesión si se desvincula una cuenta vinculada.",
       "enableTfa": "Activa la verificación en dos pasos para proteger tu cuenta."

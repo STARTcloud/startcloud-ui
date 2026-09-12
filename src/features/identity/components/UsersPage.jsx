@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaDownload } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
@@ -9,10 +10,10 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { deleteUser, updateUser, users } from '../api/accounts';
 import { exportUrl } from '../api/activity';
 import { useAdminRead } from '../hooks/useAdminRead';
+import { useListSearch, useSettled } from '../hooks/useListSearch';
 import { USERS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
@@ -26,17 +27,84 @@ import {
   adminUserShape,
   useRoleCatalog,
 } from './UsersDialogs';
-import UsersFilters, { EMPTY_USER_FILTERS, usersParamsOf } from './UsersFilters';
 
 const PREFS_KEY = 'table_prefs_admin_users';
 const PAGE_SIZE = 25;
+const SETTLE_MS = 250;
+
+const EMPTY_FILTERS = {
+  enabled: '',
+  using_2fa: false,
+  has_customer_id: false,
+  active_after: { start: '', end: '' },
+};
 
 const roleLabel = role => role.replace(/^ROLE_/, '');
 
-const matches = (row, needle) =>
-  [row.username, row.full_name || '', row.customer_id || ''].some(text =>
-    text.toLowerCase().includes(needle)
-  );
+const paramsOf = (search, filters) => {
+  const params = {};
+  if (search) {
+    params.search = search;
+  }
+  if (filters.enabled) {
+    params.enabled = filters.enabled;
+  }
+  if (filters.using_2fa) {
+    params.using_2fa = 'true';
+  }
+  if (filters.has_customer_id) {
+    params.has_customer_id = 'true';
+  }
+  if (filters.active_after.start) {
+    params.active_after = filters.active_after.start;
+  }
+  return params;
+};
+
+const flagSet = on => new Set(on ? ['true'] : []);
+
+const groupsOf = ({ filters, setFilter, t }) => [
+  {
+    kind: 'select',
+    key: 'enabled',
+    label: t('admin.users.filter.status'),
+    entries: { true: null, false: null },
+    activeSet: new Set(filters.enabled ? [filters.enabled] : []),
+    activeClass: 'bg-primary',
+    labelFor: value =>
+      value === 'true' ? t('admin.users.table.active') : t('admin.users.table.disabled'),
+    onToggle: value => setFilter('enabled', filters.enabled === value ? '' : value),
+  },
+  {
+    kind: 'toggle',
+    key: 'using_2fa',
+    label: t('admin.users.table.tfa'),
+    entries: { true: null },
+    activeSet: flagSet(filters.using_2fa),
+    activeClass: 'bg-success',
+    labelFor: () => t('admin.users.filter.tfa'),
+    onToggle: () => setFilter('using_2fa', !filters.using_2fa),
+  },
+  {
+    kind: 'toggle',
+    key: 'has_customer_id',
+    label: t('admin.users.table.customerId'),
+    entries: { true: null },
+    activeSet: flagSet(filters.has_customer_id),
+    activeClass: 'bg-primary',
+    labelFor: () => t('admin.users.filter.customerId'),
+    onToggle: () => setFilter('has_customer_id', !filters.has_customer_id),
+  },
+  {
+    kind: 'date-range',
+    key: 'active_after',
+    label: t('admin.users.filter.activeAfter'),
+    value: filters.active_after,
+    onChange: range => setFilter('active_after', range),
+    startLabel: t('admin.activity.startDate'),
+    endLabel: t('admin.activity.endDate'),
+  },
+];
 
 const RowActions = ({ user, onAction }) => {
   const { t } = useTranslation();
@@ -230,25 +298,36 @@ const serverSortOf = sort => {
 };
 
 /**
- * Accounts › Users: the filter row on the page, the navbar search bound
- * for a query over the rows the page holds and the Columns group with the
- * sort and the hidden columns under `table_prefs_admin_users`, the sort
- * sent to the read as `sort` and `direction`; the table with the roles,
- * organizations and 2FA badges, the row actions as labeled buttons and
- * one row menu (Suspend or Enable, Roles, Set primary organization, Edit
- * customer ID, Rate limits, Delete behind the confirm and the step-up),
- * the select-all box and the bulk bar, and the pager; every action
- * re-fetches the list.
+ * Accounts › Users: every narrowing in the navbar module, the query as
+ * the list's `search` parameter once it settles, the Status `select`
+ * group as `enabled`, the 2FA and Customer ID `toggle` groups as
+ * `using_2fa` and `has_customer_id`, the Active after `date-range` group
+ * as `active_after`, each change re-reading page 1 with the server alone
+ * answering, Export the panel's action over the same parameters, and the
+ * Columns group with the sort and the hidden columns under
+ * `table_prefs_admin_users`, the sort sent to the read as `sort` and
+ * `direction`; the table with the roles, organizations and 2FA badges,
+ * the row actions as labeled buttons and one row menu (Suspend or Enable,
+ * Roles, Set primary organization, Edit customer ID, Rate limits, Delete
+ * behind the confirm and the step-up), the select-all box and the bulk
+ * bar, and the pager; every action re-fetches the list.
  */
 const UsersPage = () => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
   const catalog = useRoleCatalog();
-  const [draft, setDraft] = useState(EMPTY_USER_FILTERS);
-  const [applied, setApplied] = useState(EMPTY_USER_FILTERS);
+  const [query, setQuery] = useState('');
+  const settled = useSettled(query, SETTLE_MS);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(0);
+  const [pagedFor, setPagedFor] = useState(settled);
   const [open, setOpen] = useState({ kind: '', user: null });
+
+  if (pagedFor !== settled) {
+    setPagedFor(settled);
+    setPage(0);
+  }
   const [answer, setAnswer] = useState({ params: null, data: null });
 
   const rows = useMemo(() => answer.data?.items || [], [answer]);
@@ -257,17 +336,35 @@ const UsersPage = () => {
     () => columnsFor({ selected: selection.selected, onSelect: selection.toggle }),
     [selection.selected, selection.toggle]
   );
-  const search = useDetailSearch({
-    rows,
-    matches,
+  const setFilter = (name, value) => {
+    setFilters(current => ({ ...current, [name]: value }));
+    setPage(0);
+  };
+  const narrowed = useMemo(() => paramsOf(settled, filters), [settled, filters]);
+  const search = useListSearch({
+    query,
+    onQueryChange: setQuery,
     placeholderKey: 'admin.users.search',
+    groups: groupsOf({ filters, setFilter, t }),
+    onClearFilters: () => {
+      setFilters(EMPTY_FILTERS);
+      setPage(0);
+    },
+    action: {
+      key: 'export',
+      labelKey: 'admin.activity.export',
+      icon: FaDownload,
+      onRun: () => window.location.assign(exportUrl('users', narrowed)),
+    },
+    matched: answer.data?.total || 0,
+    rows,
     columns,
     prefsKey: PREFS_KEY,
   });
 
   const params = useMemo(
-    () => ({ ...usersParamsOf(applied), ...serverSortOf(search.sort), page, size: PAGE_SIZE }),
-    [applied, page, search.sort]
+    () => ({ ...narrowed, ...serverSortOf(search.sort), page, size: PAGE_SIZE }),
+    [narrowed, page, search.sort]
   );
   const key = JSON.stringify(params);
 
@@ -316,25 +413,10 @@ const UsersPage = () => {
       });
   };
 
-  const applyFilters = () => {
-    setApplied(draft);
-    setPage(0);
-  };
-
-  const doExport = () => {
-    window.location.assign(exportUrl('users', usersParamsOf(applied)));
-  };
-
   const ctx = { t, language: i18n.language };
 
   return (
     <div>
-      <UsersFilters
-        filters={draft}
-        onChange={setDraft}
-        onSubmit={applyFilters}
-        onExport={doExport}
-      />
       <div className="form-check mb-2">
         <input
           type="checkbox"
@@ -371,7 +453,7 @@ const UsersPage = () => {
             onSort={search.setSort}
             hiddenColumns={search.hiddenColumns}
             ctx={ctx}
-            emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+            emptyText={Object.keys(narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')}
           />
         </TableWrap>
       )}

@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaRotate } from 'react-icons/fa6';
 
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { clientHealth } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { CLIENT_HEALTH } from '../utils/examples';
@@ -149,6 +150,12 @@ CardGrid.propTypes = {
 
 const anyUnhealthy = probes => probes.some(probe => probe.healthy === false);
 
+const matches = (probe, needle) =>
+  [probe.client_name, probe.base_url || ''].some(text => text.toLowerCase().includes(needle));
+
+const narrow = (probes, needle) =>
+  needle ? probes.filter(probe => matches(probe, needle)) : probes;
+
 /**
  * Health › Client health: the summary line at the top, drawn as a
  * warning while any client or provider is unhealthy, one card per client
@@ -156,11 +163,28 @@ const anyUnhealthy = probes => probes.some(probe => probe.healthy === false);
  * the check the server performed (`actuator_health` or
  * `http_reachability`) and the exact endpoint it requested from the row,
  * an unhealthy card adding the failure reason, an unprobed row carrying
- * neither; Refresh re-fetches, nothing reloads.
+ * neither; Refresh re-fetches, nothing reloads; the navbar search bound
+ * with a query over the cards by name and base URL.
  */
 const ClientHealthPage = () => {
   const { t } = useTranslation();
   const { data, loading, reload } = useAdminRead({ read: clientHealth, example: CLIENT_HEALTH });
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const allClients = data?.clients || [];
+  const allProviders = data?.providers || [];
+  const clients = narrow(allClients, needle);
+  const providers = narrow(allProviders, needle);
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('admin.health.clients.search'),
+    matched: clients.length + providers.length,
+    total: allClients.length + allProviders.length,
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
 
   useEffect(() => {
     document.title = t('admin.health.clients.title');
@@ -173,11 +197,9 @@ const ClientHealthPage = () => {
     return null;
   }
 
-  const clients = data.clients || [];
-  const providers = data.providers || [];
   const summary = data.summary || {};
-  const warn = anyUnhealthy(clients) || anyUnhealthy(providers);
-  const healthyProviders = providers.filter(probe => probe.healthy === true).length;
+  const warn = anyUnhealthy(allClients) || anyUnhealthy(allProviders);
+  const healthyProviders = allProviders.filter(probe => probe.healthy === true).length;
 
   return (
     <div>
@@ -189,13 +211,13 @@ const ClientHealthPage = () => {
           <strong>
             {t('admin.health.clients.summary', {
               healthy: summary.healthy ?? 0,
-              total: summary.total ?? clients.length,
+              total: summary.total ?? allClients.length,
             })}
           </strong>
           {' · '}
           {t('admin.health.providers.summary', {
             healthy: healthyProviders,
-            total: providers.length,
+            total: allProviders.length,
           })}
         </span>
         <button

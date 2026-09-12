@@ -117,7 +117,7 @@ export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
   const names = [...new Set([...catalog, ...user.roles])];
 
   return (
-    <Modal show onHide={onClose}>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={save} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('admin.users.roles.title', { user: user.username })}</Modal.Title>
@@ -178,7 +178,7 @@ export const PrimaryOrgDialog = ({ user, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose}>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={save} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('admin.users.primaryOrg.title')}</Modal.Title>
@@ -256,7 +256,7 @@ export const CustomerIdDialog = ({ title, hint, initial, save, onClose, onSaved 
   };
 
   return (
-    <Modal show onHide={onClose}>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={submit} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{title}</Modal.Title>

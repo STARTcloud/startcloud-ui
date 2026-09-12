@@ -357,7 +357,7 @@ const ObjectMap = ({
           )}
         </div>
       </div>
-      <Modal show={editing !== null} onHide={close} size="xl" scrollable>
+      <Modal show={editing !== null} onHide={close} dialogClassName="form-modal" scrollable>
         <form onSubmit={save} noValidate>
           <Modal.Header closeButton>
             <Modal.Title as="h5">

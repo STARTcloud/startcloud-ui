@@ -37,6 +37,37 @@ SignInButton.propTypes = {
   LinkComponent: PropTypes.elementType,
 };
 
+const PreferencesItem = ({ issuerUrl, preferencesTo, LinkComponent }) => {
+  const { t } = useTranslation();
+  if (preferencesTo) {
+    return (
+      <Dropdown.Item as={LinkComponent} to={preferencesTo}>
+        <FaSliders className="me-2" />
+        {t('navbar.preferences')}
+      </Dropdown.Item>
+    );
+  }
+  if (!issuerUrl) {
+    return null;
+  }
+  return (
+    <Dropdown.Item
+      href={`${issuerUrl}/user/profile#preferences`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <FaSliders className="me-2" />
+      {t('navbar.preferences')}
+    </Dropdown.Item>
+  );
+};
+
+PreferencesItem.propTypes = {
+  issuerUrl: PropTypes.string.isRequired,
+  preferencesTo: PropTypes.string.isRequired,
+  LinkComponent: PropTypes.elementType.isRequired,
+};
+
 const UserMenu = ({
   displayName,
   email,
@@ -54,6 +85,7 @@ const UserMenu = ({
   appVersion = '',
   appRows,
   showPreferences = true,
+  preferencesTo = '',
   notifications,
   push,
   viewAllUrl,
@@ -127,15 +159,12 @@ const UserMenu = ({
             </Dropdown.Item>
           ) : null}
 
-          {showPreferences && issuerUrl ? (
-            <Dropdown.Item
-              href={`${issuerUrl}/user/profile#preferences`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaSliders className="me-2" />
-              {t('navbar.preferences')}
-            </Dropdown.Item>
+          {showPreferences ? (
+            <PreferencesItem
+              issuerUrl={issuerUrl}
+              preferencesTo={preferencesTo}
+              LinkComponent={LinkComponent}
+            />
           ) : null}
 
           <FavoriteApps apps={favorites} />
@@ -211,6 +240,7 @@ UserMenu.propTypes = {
   appVersion: PropTypes.string,
   appRows: PropTypes.node,
   showPreferences: PropTypes.bool,
+  preferencesTo: PropTypes.string,
   notifications: notificationsAdapterShape,
   push: pushAdapterShape.isRequired,
   viewAllUrl: PropTypes.string.isRequired,

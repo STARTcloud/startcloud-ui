@@ -12,6 +12,7 @@ import SortableList from '../../../components/common/SortableList';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import {
   createTerm,
   deleteTerm,
@@ -33,6 +34,21 @@ const ORDER_KEY = 'terms-order';
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
 
 const keyOf = term => term.name;
+
+const matches = (term, needle) =>
+  [term.name, term.friendly_name || ''].some(text => text.toLowerCase().includes(needle));
+
+const reorderWithin = (all, shown) => {
+  const names = new Set(shown.map(keyOf));
+  let index = 0;
+  return all.map(term => {
+    if (!names.has(term.name)) {
+      return term;
+    }
+    index += 1;
+    return shown[index - 1];
+  });
+};
 
 const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
   const { t } = useTranslation();
@@ -147,7 +163,7 @@ const CopyDialog = ({ source, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose}>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={save} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('admin.terms.copyTitle', { name: source.name })}</Modal.Title>
@@ -226,7 +242,8 @@ const useOrdered = data => {
  * which writes the previous order back; Public and type badges, Preview
  * to the public policy page, Copy through a small dialog asking the new
  * name, Edit and Create in one dialog, Delete behind the confirm; every
- * change saved as it is made and the list re-fetched.
+ * change saved as it is made and the list re-fetched; the navbar search
+ * bound with a query over the cards by name and display name.
  */
 const TermsPage = () => {
   const { t } = useTranslation();
@@ -234,6 +251,19 @@ const TermsPage = () => {
   const placeholders = usePlaceholders();
   const { data, loading, reload } = useAdminRead({ read: terms, example: TERMS });
   const { ordered, setOrdered } = useOrdered(data);
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const shown = needle ? ordered.filter(term => matches(term, needle)) : ordered;
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('admin.terms.search'),
+    matched: shown.length,
+    total: ordered.length,
+    groups: [],
+    onClearFilters: () => setQuery(''),
+  });
   const [dialog, setDialog] = useState({ open: false, term: null });
   const [copying, setCopying] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -284,11 +314,13 @@ const TermsPage = () => {
           {t('admin.terms.create')}
         </button>
       </div>
-      {ordered.length === 0 ? <div className="text-muted">{t('pages.empty')}</div> : null}
+      {shown.length === 0 ? (
+        <div className="text-muted">{needle ? t('pages.noMatches') : t('pages.empty')}</div>
+      ) : null}
       <SortableList
-        items={ordered}
+        items={shown}
         keyOf={keyOf}
-        onReorder={next => writeOrder(next, ordered)}
+        onReorder={next => writeOrder(reorderWithin(ordered, next), ordered)}
         renderItem={(term, handle) => (
           <TermCard
             term={term}

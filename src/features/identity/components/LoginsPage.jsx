@@ -1,14 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaDownload } from 'react-icons/fa6';
 
 import Pager from '../../../components/common/Pager';
 import SubTable from '../../../components/common/SubTable';
-import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { logins } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
+import { useListSearch } from '../hooks/useListSearch';
 import { LOGINS } from '../utils/examples';
 
-import ActivityFilters from './ActivityFilters';
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 import TableWrap from './TableWrap';
@@ -16,18 +16,6 @@ import TableWrap from './TableWrap';
 const PREFS_KEY = 'table_prefs_admin_logins';
 
 const rowKey = row => `${row.timestamp}:${row.username}:${row.ip_address}`;
-
-const matches = (row, needle) =>
-  [
-    row.username,
-    row.ip_address || '',
-    row.city || '',
-    row.failure_reason || '',
-    row.user_agent || '',
-  ]
-    .join(' ')
-    .toLowerCase()
-    .includes(needle);
 
 const columns = [
   {
@@ -78,22 +66,61 @@ const columns = [
   },
 ];
 
+const groupsOf = ({ state, t }) => [
+  {
+    kind: 'date-range',
+    key: 'range',
+    label: t('admin.activity.dateRange'),
+    value: { start: state.applied.start_date, end: state.applied.end_date },
+    onChange: state.setRange,
+    startLabel: t('admin.activity.startDate'),
+    endLabel: t('admin.activity.endDate'),
+  },
+  {
+    kind: 'select',
+    key: 'success',
+    label: t('admin.activity.logins.showOnly'),
+    entries: { false: null, true: null },
+    activeSet: new Set(state.applied.success ? [state.applied.success] : []),
+    activeClass: 'bg-primary',
+    labelFor: value =>
+      value === 'true'
+        ? t('admin.activity.logins.successOnly')
+        : t('admin.activity.logins.failedOnly'),
+    onToggle: value => state.setFilter('success', state.applied.success === value ? '' : value),
+  },
+];
+
+const narrowed = applied => Object.values(applied).some(value => value !== '');
+
 /**
- * Activity › Logins: the presets, the `DateRange`, the username field,
- * Show only, Filter, Clear and Export on the page, every filter in the
- * URL so the Dashboard's cards land on a preset; the navbar search bound
- * for a query over the rows the page holds and the Columns group under
- * `table_prefs_admin_logins`; the table with its Reason column for a
- * failed row, and the pager.
+ * Activity › Logins: every narrowing in the navbar module and its panel,
+ * the username query as the list's `username` parameter once it settles,
+ * the `date-range` group as `start_date` and `end_date`, Show only as a
+ * `select` group sent as `success`, every filter in the URL so the
+ * Dashboard's cards land on a preset and each change re-reading page 1,
+ * Export the panel's action over the same parameters, and the Columns
+ * group under `table_prefs_admin_logins`; the table with its Reason
+ * column for a failed row, and the pager.
  */
 const LoginsPage = () => {
   const { t, i18n } = useTranslation();
   const state = useActivityPage({ read: logins, example: LOGINS, exportName: 'logins' });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
-  const search = useDetailSearch({
-    rows,
-    matches,
+  const search = useListSearch({
+    query: state.query,
+    onQueryChange: state.setQuery,
     placeholderKey: 'admin.activity.logins.search',
+    groups: groupsOf({ state, t }),
+    onClearFilters: state.clear,
+    action: {
+      key: 'export',
+      labelKey: 'admin.activity.export',
+      icon: FaDownload,
+      onRun: state.doExport,
+    },
+    matched: state.data?.total || 0,
+    rows,
     columns,
     prefsKey: PREFS_KEY,
   });
@@ -104,15 +131,6 @@ const LoginsPage = () => {
 
   return (
     <div>
-      <ActivityFilters
-        filters={state.draft}
-        onChange={state.setDraft}
-        onSubmit={state.apply}
-        onClear={state.clear}
-        onExport={state.doExport}
-        showOnly
-        idPrefix="logins"
-      />
       {state.loading && !state.data ? (
         <AdminLoading />
       ) : (
@@ -125,7 +143,7 @@ const LoginsPage = () => {
             onSort={search.setSort}
             hiddenColumns={search.hiddenColumns}
             ctx={{ t, language: i18n.language }}
-            emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+            emptyText={narrowed(state.applied) ? t('pages.noMatches') : t('pages.empty')}
           />
         </TableWrap>
       )}

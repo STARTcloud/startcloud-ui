@@ -70,7 +70,7 @@ const DeleteAccountSection = ({ account, email, guard, onDeleted }) => {
       <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
         {t('profile.security.delete.button')}
       </button>
-      <Modal show={show} onHide={close} centered>
+      <Modal show={show} onHide={close} centered dialogClassName="form-modal" scrollable>
         <form onSubmit={submit} noValidate>
           <Modal.Header closeButton className="bg-danger-subtle">
             <Modal.Title as="h5">{t('profile.security.delete.title')}</Modal.Title>

@@ -81,15 +81,14 @@ const UNIVERSAL_ROUTES = [
 ];
 
 const SESSION_ENDED_KEY = 'session-ended';
-const PROFILE_ROUTES = ['/profile', '/user/profile'];
 
 const utilityLinks = (status, t, showAbout) => {
   const links = showAbout ? [{ key: 'about', label: t('navbar.about'), to: '/about' }] : [];
   if (status.links.docs) {
-    links.push({ key: 'docs', label: t('navbar.docs'), href: status.links.docs });
+    links.push({ key: 'docs', label: t('navbar.needHelp'), href: status.links.docs });
   }
   if (status.links.contact) {
-    links.push({ key: 'contact', label: t('navbar.contact'), href: status.links.contact });
+    links.push({ key: 'contact', label: t('navbar.emailSupport'), href: status.links.contact });
   }
   return links;
 };
@@ -109,15 +108,16 @@ const menuLinksFor = ({ status, cookie, issuerUrl }) => {
       issuerUrl: '',
       viewAllUrl: '',
       viewAllTo: hasFeature(status, 'inbox') ? '/notifications' : '',
+      preferencesTo: '/user/profile/preferences',
     };
   }
-  return { issuerUrl, viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '', viewAllTo: '' };
+  return {
+    issuerUrl,
+    viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
+    viewAllTo: '',
+    preferencesTo: '',
+  };
 };
-
-const sidebarRows = groups =>
-  groups.flatMap(group =>
-    (group.sections || []).flatMap(section => section.items.map(row => ({ group, row })))
-  );
 
 const pathTo = (nodes, kids, current, acc) => {
   for (const node of nodes) {
@@ -269,16 +269,11 @@ const useSidebarOverlay = pathname => {
   };
 };
 
-const menuFor = ({ cookie, issuerUrl, onAuthPage, sidebar, rows, adapters }) => {
-  const profileInSidebar = sidebarRows(sidebar).some(entry =>
-    PROFILE_ROUTES.includes(entry.row.to)
-  );
-  return {
-    appRows: cookie && onAuthPage ? null : rows,
-    showPreferences: (cookie || Boolean(issuerUrl)) && !profileInSidebar,
-    ...adapters,
-  };
-};
+const menuFor = ({ cookie, issuerUrl, onAuthPage, rows, adapters }) => ({
+  appRows: cookie && onAuthPage ? null : rows,
+  showPreferences: cookie || Boolean(issuerUrl),
+  ...adapters,
+});
 
 const signInFor = ({ account, anonymous, hidden, onAuthPage, pathname, search }) => {
   if (anonymous || hidden) {
@@ -391,7 +386,11 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * own Sign in in its place; on a `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
  * destination, and no About row, its app section holding the docs and
- * contact rows alone and drawn only while one exists. The app supplies
+ * contact rows alone and drawn only while one exists, and its Preferences
+ * row an in-router link to `/user/profile/preferences`, the one
+ * destination drawn in both the column and the menu; while signed out the
+ * cluster carries the ticket glyph with the ticket link the app supplies,
+ * built from the fallback customer id alone. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
@@ -509,7 +508,6 @@ const AppShell = ({
       cookie,
       issuerUrl: account.issuerUrl,
       onAuthPage,
-      sidebar,
       rows: appRowsFor({
         ...gates,
         showAdminBoard,
@@ -539,6 +537,7 @@ const AppShell = ({
         signedIn={signedIn}
         onSignIn={signIn.onSignIn}
         signInTo={signIn.signInTo}
+        reportUrl={signedIn ? '' : ticketUrl}
         userMenu={userMenu}
         onSidebarToggle={showSidebar ? overlay.toggle : null}
       />

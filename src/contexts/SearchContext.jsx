@@ -11,9 +11,12 @@ export const appSearchShape = PropTypes.shape({
   search: PropTypes.func.isRequired,
   available: PropTypes.bool.isRequired,
   collections: PropTypes.array.isRequired,
+  role: PropTypes.string.isRequired,
+  admin: PropTypes.bool.isRequired,
 });
 
-export const navbarSearchGroupShape = PropTypes.shape({
+const pillGroupShape = PropTypes.shape({
+  kind: PropTypes.oneOf(['toggle', 'select']),
   key: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
   entries: PropTypes.objectOf(PropTypes.number).isRequired,
@@ -27,15 +30,48 @@ export const navbarSearchGroupShape = PropTypes.shape({
   columns: PropTypes.bool,
 });
 
+const dateRangeGroupShape = PropTypes.shape({
+  kind: PropTypes.oneOf(['date-range']).isRequired,
+  key: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  value: PropTypes.shape({
+    start: PropTypes.string.isRequired,
+    end: PropTypes.string.isRequired,
+  }).isRequired,
+  onChange: PropTypes.func.isRequired,
+  startLabel: PropTypes.string.isRequired,
+  endLabel: PropTypes.string.isRequired,
+});
+
+export const navbarSearchGroupShape = PropTypes.oneOfType([dateRangeGroupShape, pillGroupShape]);
+
+export const navbarSearchActionShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  icon: PropTypes.elementType,
+  onRun: PropTypes.func.isRequired,
+});
+
 export const navbarSearchBindingShape = PropTypes.shape({
   query: PropTypes.string.isRequired,
   onQueryChange: PropTypes.func.isRequired,
   placeholder: PropTypes.string.isRequired,
   matched: PropTypes.number.isRequired,
-  total: PropTypes.number.isRequired,
+  total: PropTypes.number,
   groups: PropTypes.arrayOf(navbarSearchGroupShape).isRequired,
   onClearFilters: PropTypes.func.isRequired,
+  action: navbarSearchActionShape,
 });
+
+/**
+ * Whether a binding gives the panel something to draw: a filter group or
+ * the page's registered action.
+ *
+ * @param {Object|null} binding - The page's binding
+ * @returns {boolean} Whether the panel has content
+ */
+export const hasPanel = binding =>
+  Boolean(binding && (binding.groups.length > 0 || binding.action));
 
 const createBindingStore = () => {
   let binding = null;
@@ -113,16 +149,23 @@ export const useNavbarSearch = store => {
   return store ? store.get() : null;
 };
 
+const groupCount = group => {
+  if (group.columns) {
+    return 0;
+  }
+  if (group.kind === 'date-range') {
+    return group.value.start || group.value.end ? 1 : 0;
+  }
+  return group.activeSet.size + (group.excludeSet?.size || 0);
+};
+
 /**
  * How many filter values are active across the binding's groups, included
- * and excluded alike, the column groups left out.
+ * and excluded alike, a bounded date range counting once, the column
+ * groups left out.
  *
  * @param {Object} binding - The page's binding
  * @returns {number} The count
  */
 export const activeFilterCount = binding =>
-  binding.groups.reduce(
-    (sum, group) =>
-      sum + (group.columns ? 0 : group.activeSet.size + (group.excludeSet?.size || 0)),
-    0
-  );
+  binding.groups.reduce((sum, group) => sum + groupCount(group), 0);

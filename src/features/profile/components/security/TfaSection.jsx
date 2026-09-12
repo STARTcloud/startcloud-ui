@@ -221,7 +221,7 @@ AddApp.propTypes = {
 const DisableDialog = ({ show, onHide, onConfirm }) => {
   const { t } = useTranslation();
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} centered dialogClassName="form-modal" scrollable>
       <Modal.Header closeButton className="bg-danger-subtle">
         <Modal.Title as="h5">{t('profile.security.tfa.disableTitle')}</Modal.Title>
       </Modal.Header>

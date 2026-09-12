@@ -68,6 +68,7 @@ const STATUS = {
     'org-console',
     'invitations',
     'integrations',
+    'search',
     'inbox',
     'admin',
     'notifications',
@@ -830,6 +831,103 @@ const paged = (items, query) => {
   };
 };
 
+const dayOf = instant => String(instant || '').slice(0, 10);
+
+const withinRange = (instant, query) => {
+  const day = dayOf(instant);
+  const start = query.get('start_date') || '';
+  const end = query.get('end_date') || '';
+  return (start === '' || day >= start) && (end === '' || day <= end);
+};
+
+const nameMatches = (username, needle) =>
+  !needle || username.toLowerCase().includes(String(needle).toLowerCase());
+
+const LAST_ACTIVE = { 42: '2026-09-06', 43: '2026-05-01' };
+
+const userMatches = (row, query) => {
+  const search = String(query.get('search') || '').toLowerCase();
+  const enabled = query.get('enabled') || '';
+  const activeAfter = query.get('active_after') || '';
+  return (
+    (search === '' ||
+      [row.username, row.full_name || '', row.customer_id || ''].some(text =>
+        text.toLowerCase().includes(search)
+      )) &&
+    (enabled === '' || String(row.enabled) === enabled) &&
+    (query.get('using_2fa') !== 'true' || row.using_2fa) &&
+    (query.get('has_customer_id') !== 'true' || Boolean(row.customer_id)) &&
+    (activeAfter === '' || (LAST_ACTIVE[row.id] || '') >= activeAfter)
+  );
+};
+
+const searchRow = ({ kind, org, name, title, subtitle, matched }) => ({
+  kind,
+  collection: null,
+  org,
+  name,
+  version: '',
+  provider: '',
+  architecture: '',
+  title,
+  subtitle,
+  matched,
+});
+
+const searchOrganizations = needle => {
+  const admin = state.profile.roles.includes('ROLE_ADMIN');
+  const rows = admin ? ORGANIZATIONS : state.organizations;
+  return rows
+    .filter(org => org.name.toLowerCase().includes(needle))
+    .map(org =>
+      searchRow({
+        kind: 'organization',
+        org: org.name,
+        name: org.name,
+        title: org.name,
+        subtitle: org.personal ? 'personal' : 'team',
+        matched: 'name',
+      })
+    );
+};
+
+const searchUsers = needle => {
+  if (!state.profile.roles.includes('ROLE_ADMIN')) {
+    return [];
+  }
+  return USERS.items
+    .filter(row => row.username.toLowerCase().includes(needle))
+    .map(row =>
+      searchRow({
+        kind: 'user',
+        org: '',
+        name: row.username,
+        title: row.full_name || row.username,
+        subtitle: row.username,
+        matched: 'username',
+      })
+    );
+};
+
+const search = query => {
+  const needle = String(query.get('q') || '')
+    .trim()
+    .toLowerCase();
+  const limit = Math.max(1, Number(query.get('limit')) || 5);
+  if (!needle) {
+    return { query: '', results: [], truncated: {} };
+  }
+  const results = [];
+  const truncated = {};
+  [searchOrganizations(needle), searchUsers(needle)].forEach(rows => {
+    results.push(...rows.slice(0, limit));
+    if (rows.length > limit) {
+      truncated[rows[0].kind] = rows.length - limit;
+    }
+  });
+  return { query: needle, results, truncated };
+};
+
 const nextId = () => {
   state.seq += 1;
   return `${Date.now()}-${state.seq}`;
@@ -1244,6 +1342,7 @@ publicRoute('GET', '/api/user/avatar/:hash', () => ({
   headers: { Location: '/brand/startcloud/icon.png' },
 }));
 sessionRoute('GET', '/api/userinfo/claims', () => ok(CLAIMS));
+sessionRoute('GET', '/api/search', ctx => ok(search(ctx.url.searchParams)));
 sessionRoute('GET', '/api/config/places', () => ok({ key: '' }));
 sessionRoute('POST', '/api/user/step-up', ctx => {
   if (ctx.body.password === 'wrong' || codeProblem(String(ctx.body.code || ''))) {
@@ -1666,11 +1765,31 @@ sessionRoute('DELETE', '/api/notifications', () => {
 
 adminRoute('GET', '/api/admin/stats', () => ok(STATS));
 adminRoute('GET', '/api/admin/login-heatmap', () => ok(HEATMAP));
-adminRoute('GET', '/api/admin/logins', () => ok(LOGINS));
-adminRoute('GET', '/api/admin/registrations', () => ok(REGISTRATIONS));
+adminRoute('GET', '/api/admin/logins', ctx => {
+  const query = ctx.url.searchParams;
+  const success = query.get('success') || '';
+  const rows = LOGINS.items.filter(
+    row =>
+      withinRange(row.timestamp, query) &&
+      nameMatches(row.username, query.get('username')) &&
+      (success === '' || String(row.success) === success)
+  );
+  return ok(paged(rows, query));
+});
+adminRoute('GET', '/api/admin/registrations', ctx => {
+  const query = ctx.url.searchParams;
+  const rows = REGISTRATIONS.items.filter(
+    row => withinRange(row.timestamp, query) && nameMatches(row.username, query.get('username'))
+  );
+  return ok(paged(rows, query));
+});
 adminRoute('GET', '/api/admin/sessions', () => ok(SESSIONS));
 adminRoute('DELETE', '/api/admin/sessions/:id', () => noContent());
-adminRoute('GET', '/api/admin/users', () => ok(USERS));
+adminRoute('GET', '/api/admin/users', ctx => {
+  const query = ctx.url.searchParams;
+  const rows = USERS.items.filter(row => userMatches(row, query));
+  return ok(paged(rows, query));
+});
 adminRoute('GET', '/api/admin/roles', () => ok(ROLES));
 adminRoute('PATCH', '/api/admin/users/:id', ctx => {
   const user = USERS.items.find(row => String(row.id) === ctx.params.id);
@@ -1960,6 +2079,12 @@ const handle = async (req, res) => {
  * answers `401 bad_credentials`, `throttle` answers `429` with
  * `wait_seconds`. Open `/login?mock=onboarding` to enter the onboarding
  * chain after sign-in and `/login?mock=tfa` to enter `/authenticator`.
+ * The users, logins and registrations lists honor the navbar panel's
+ * parameters (`search`, `enabled`, `using_2fa`, `has_customer_id`,
+ * `active_after`; `username`, `success`, `start_date`, `end_date`) and
+ * `page` and `size`. `GET /api/search?q=&limit=` answers organization
+ * rows over the person's memberships (every organization for an admin)
+ * and user rows for an admin, in the navbar contract's row shape.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,
