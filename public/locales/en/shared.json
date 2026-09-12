@@ -821,7 +821,18 @@
         },
         "endpoint": "Endpoint",
         "reason": "Reason",
-        "search": "Search clients and providers"
+        "search": "Search clients and providers",
+        "table": {
+          "name": "Name",
+          "kind": "Kind",
+          "status": "Status",
+          "responseTime": "Response time",
+          "lastChecked": "Last checked"
+        },
+        "kind": {
+          "client": "Client",
+          "provider": "Provider"
+        }
       },
       "definitions": "What these numbers mean",
       "refresh": "Refresh",

@@ -73,13 +73,12 @@ const groupsOf = ({ state, t }) => [
   },
 ];
 
-const narrowed = applied => Object.values(applied).some(value => value !== '');
-
 /**
  * Activity › Registrations: the same narrowing as Logins without Show
  * only, the username query as `username` and the `date-range` group as
- * `start_date` and `end_date` in the navbar module, every filter in the
- * URL, Export the panel's action over the same parameters, the Columns
+ * `start_date` and `end_date` in the navbar module, the query and every
+ * filter in the URL through `useUrlNarrowing`, Export the panel's action
+ * over the same parameters, the Columns
  * group under `table_prefs_admin_registrations`, the columns headed
  * Email verified and Phone verified over their Yes and No, and the pager.
  */
@@ -127,7 +126,9 @@ const RegistrationsPage = () => {
             onSort={search.setSort}
             hiddenColumns={search.hiddenColumns}
             ctx={{ t, language: i18n.language }}
-            emptyText={narrowed(state.applied) ? t('pages.noMatches') : t('pages.empty')}
+            emptyText={
+              Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
+            }
           />
         </TableWrap>
       )}

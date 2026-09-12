@@ -1,72 +1,38 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { exportUrl } from '../api/activity';
 
 import { useAdminRead } from './useAdminRead';
-import { useSettled } from './useListSearch';
 
 const PAGE_SIZE = 25;
-const SETTLE_MS = 250;
-
-const pageOf = params => Math.max(0, Number(params.get('page')) || 0);
-
-const filtersOf = params => ({
-  username: params.get('username') || '',
-  success: params.get('success') || '',
-  start_date: params.get('start_date') || '',
-  end_date: params.get('end_date') || '',
-});
-
-const paramsOf = filters =>
-  Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
+const FILTER_KEYS = ['success', 'start_date', 'end_date'];
 
 /**
- * The state of one Activity page whose narrowing lives in its URL, so the
- * Dashboard's cards land on a preset: the applied filters and the
- * zero-based page read from the query, the username query the navbar box
- * edits and writes to the URL once it settles, the setters for one filter
- * and the date range, each re-reading page 1, the paged read over them
- * with the contract's example on a 404, and the handlers to clear, page
- * and export.
+ * The state of one Activity page: the `username` query and the
+ * `success`, `start_date` and `end_date` filters in the URL through
+ * `useUrlNarrowing`, the zero-based page held here and reset to 1 on
+ * every change of the narrowing, the paged read over them with the
+ * contract's example on a 404, and the handlers to set a filter, the date
+ * range, clear, page and export.
  *
  * @param {Object} options - The page
  * @param {Function} options.read - Answers the paged list for the parameters
  * @param {Object} options.example - The contract's example payload
  * @param {string} options.exportName - The export attachment's name
- * @returns {Object} `applied`, `query`, `setQuery`, `setFilter`, `setRange`, `clear`, `data`, `loading`, `reload`, `setPage`, `doExport`
+ * @returns {Object} `applied`, `narrowed`, `query`, `setQuery`, `setFilter`, `setRange`, `clear`, `data`, `loading`, `reload`, `setPage`, `doExport`
  */
 export const useActivityPage = ({ read, example, exportName }) => {
-  const [params, setParams] = useSearchParams();
-  const applied = useMemo(() => filtersOf(params), [params]);
-  const page = pageOf(params);
-  const [edit, setEdit] = useState(null);
-  const editing = edit !== null && edit.base === applied.username;
-  const query = editing ? edit.value : applied.username;
-  const settled = useSettled(query, SETTLE_MS);
-  const setQuery = useCallback(
-    value => setEdit({ base: applied.username, value }),
-    [applied.username]
-  );
+  const url = useUrlNarrowing({ queryKey: 'username', filterKeys: FILTER_KEYS });
+  const [page, setPage] = useState(0);
+  const [pagedFor, setPagedFor] = useState(url.narrowed);
 
-  const write = useCallback(
-    (filters, nextPage) => {
-      const next = paramsOf(filters);
-      if (nextPage > 0) {
-        next.page = String(nextPage);
-      }
-      setParams(next);
-    },
-    [setParams]
-  );
+  if (pagedFor !== url.narrowed) {
+    setPagedFor(url.narrowed);
+    setPage(0);
+  }
 
-  useEffect(() => {
-    if (editing && settled === query && settled !== applied.username) {
-      write({ ...applied, username: settled }, 0);
-    }
-  }, [editing, query, settled, applied, write]);
-
-  const request = useMemo(() => ({ ...paramsOf(applied), page, size: PAGE_SIZE }), [applied, page]);
+  const request = useMemo(() => ({ ...url.narrowed, page, size: PAGE_SIZE }), [url.narrowed, page]);
 
   const { data, loading, reload } = useAdminRead({
     read: () => read(request),
@@ -75,16 +41,17 @@ export const useActivityPage = ({ read, example, exportName }) => {
   });
 
   return {
-    applied,
-    query,
-    setQuery,
-    setFilter: (key, value) => write({ ...applied, [key]: value }, 0),
-    setRange: range => write({ ...applied, start_date: range.start, end_date: range.end }, 0),
-    clear: () => write({ ...filtersOf(new URLSearchParams()), username: applied.username }, 0),
+    applied: url.applied,
+    narrowed: url.narrowed,
+    query: url.query,
+    setQuery: url.setQuery,
+    setFilter: url.setFilter,
+    setRange: range => url.setFilters({ start_date: range.start, end_date: range.end }),
+    clear: url.clearFilters,
     data,
     loading,
     reload,
-    setPage: nextPage => write(applied, nextPage),
-    doExport: () => window.location.assign(exportUrl(exportName, paramsOf(applied))),
+    setPage,
+    doExport: () => window.location.assign(exportUrl(exportName, url.narrowed)),
   };
 };

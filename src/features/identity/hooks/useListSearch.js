@@ -82,22 +82,3 @@ export const useListSearch = ({
     hiddenColumns: prefs.hiddenColumns,
   };
 };
-
-/**
- * The value a page's query settles on after the given pause, so a list is
- * re-read once a person stops typing and not on every keystroke.
- *
- * @param {string} value - The live query
- * @param {number} delay - The pause in milliseconds
- * @returns {string} The settled query
- */
-export const useSettled = (value, delay) => {
-  const [settled, setSettled] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSettled(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return settled;
-};

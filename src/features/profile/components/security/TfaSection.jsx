@@ -122,7 +122,7 @@ AddPhone.propTypes = {
   onFail: PropTypes.func.isRequired,
 };
 
-const AddApp = ({ account, guard, onDone, onFail }) => {
+const AddApp = ({ account, guard, onDone, onFail, onClose }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [enrollment, setEnrollment] = useState(null);
@@ -131,18 +131,22 @@ const AddApp = ({ account, guard, onDone, onFail }) => {
 
   useEffect(() => {
     let mounted = true;
-    account.tfa
-      .enroll()
+    guard(() => account.tfa.enroll(), t('profile.security.tfa.enrollReason'))
       .then(data => {
         if (mounted) {
           setEnrollment(data);
         }
       })
-      .catch(onFail);
+      .catch(error => {
+        onFail(error);
+        if (mounted) {
+          onClose();
+        }
+      });
     return () => {
       mounted = false;
     };
-  }, [account, onFail]);
+  }, [account, guard, onClose, onFail, t]);
 
   const verify = async () => {
     try {
@@ -216,6 +220,7 @@ AddApp.propTypes = {
   guard: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
   onFail: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 const DisableDialog = ({ show, onHide, onConfirm }) => {
@@ -359,6 +364,8 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
     }
   };
 
+  const closeAdding = useCallback(() => setAdding(''), []);
+
   const finishAdding = async () => {
     setAdding('');
     await load();
@@ -471,7 +478,13 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
         <AddPhone account={account} guard={guard} onDone={finishAdding} onFail={fail} />
       ) : null}
       {adding === 'app' ? (
-        <AddApp account={account} guard={guard} onDone={finishAdding} onFail={fail} />
+        <AddApp
+          account={account}
+          guard={guard}
+          onDone={finishAdding}
+          onFail={fail}
+          onClose={closeAdding}
+        />
       ) : null}
       <DisableDialog
         show={showDisable}

@@ -15,10 +15,17 @@
   --brand-focus-ring: rgba(31, 157, 87, 0.75);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-body-bg: #23272b;
+  --bs-body-bg-rgb: 35, 39, 43;
   --bs-tertiary-bg: #2b3034;
+  --bs-tertiary-bg-rgb: 43, 48, 52;
   --bs-secondary-bg: #32383d;
+  --bs-secondary-bg-rgb: 50, 56, 61;
   --bs-border-color: #41484e;
+  --bs-border-color-rgb: 65, 72, 78;
   --bs-body-color: #d8dde1;
+  --bs-body-color-rgb: 216, 221, 225;
   --bs-emphasis-color: #ffffff;
+  --bs-emphasis-color-rgb: 255, 255, 255;
   --bs-secondary-color: #9aa1a8;
+  --bs-secondary-color-rgb: 154, 161, 168;
 }

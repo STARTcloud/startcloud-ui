@@ -7,6 +7,7 @@ import Pager from '../../../components/common/Pager';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { revokeSession, sessions } from '../api/activity';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SESSIONS } from '../utils/examples';
@@ -87,7 +88,8 @@ RowActions.propTypes = {
 /**
  * Activity › Sessions: its search bound to the navbar box over user and
  * application, the query its one narrowing since the page has no other
- * filter, with the Columns group under `table_prefs_admin_sessions`; the
+ * filter, mirrored in the URL as `search` through `useUrlNarrowing`, with
+ * the Columns group under `table_prefs_admin_sessions`; the
  * table with Authorized and Last active as two columns, Revoke behind the
  * confirm, and the pager.
  */
@@ -103,12 +105,18 @@ const SessionsPage = () => {
   });
   const [revoking, setRevoking] = useState(null);
   const rows = useMemo(() => data?.items || [], [data]);
+  const url = useUrlNarrowing({ queryKey: 'search' });
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.activity.sessions.search',
     columns,
     prefsKey: PREFS_KEY,
+    bound: {
+      query: url.query,
+      onQueryChange: url.setQuery,
+      placeholder: t('admin.activity.sessions.search'),
+    },
   });
 
   useEffect(() => {

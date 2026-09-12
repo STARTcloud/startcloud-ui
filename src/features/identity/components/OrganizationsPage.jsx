@@ -6,6 +6,7 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { deleteOrganization, organizations, updateOrganization } from '../api/accounts';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { ORGANIZATIONS } from '../utils/examples';
@@ -115,7 +116,8 @@ RowActions.propTypes = {
 
 /**
  * Accounts › All organizations: the navbar search bound for a query over
- * the rows and the Columns group under `table_prefs_admin_organizations`,
+ * the rows, mirrored in the URL as `search` through `useUrlNarrowing`,
+ * and the Columns group under `table_prefs_admin_organizations`,
  * the table (name with the uuid in its tooltip, Personal or Team, invite
  * code, customer id behind Edit, members, created), the customer id
  * dialog with an empty value clearing it, and Delete behind the confirm
@@ -129,12 +131,18 @@ const OrganizationsPage = () => {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+  const url = useUrlNarrowing({ queryKey: 'search' });
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.organizations.search',
     columns,
     prefsKey: PREFS_KEY,
+    bound: {
+      query: url.query,
+      onQueryChange: url.setQuery,
+      placeholder: t('admin.organizations.search'),
+    },
   });
 
   useEffect(() => {

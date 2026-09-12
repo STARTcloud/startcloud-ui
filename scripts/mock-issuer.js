@@ -1016,7 +1016,17 @@ publicRoute('GET', '/api/policies/:name', ctx => {
   const policy = POLICIES[ctx.params.name];
   return policy ? ok(policy) : problem(404, 'not_found');
 });
-publicRoute('POST', '/api/client-errors', () => ({ status: 202 }));
+publicRoute('POST', '/api/client-errors', ctx => {
+  if (!Array.isArray(ctx.body.entries)) {
+    return invalid('/entries', 'type', { type: 'array' });
+  }
+  ctx.body.entries.forEach(entry => {
+    console.log(
+      `client error ${entry.time} ${entry.level} [${entry.category}] ${entry.url}: ${entry.message}`
+    );
+  });
+  return { status: 202 };
+});
 publicRoute('GET', '/api/events', ctx => {
   if (!state.signedIn && state.pending !== 'onboarding') {
     return problem(401, 'unauthenticated');
@@ -1397,7 +1407,7 @@ steppedRoute('PUT', '/api/user/password', ctx => {
   return passwordProblem(ctx.body.password) || noContent();
 });
 sessionRoute('GET', '/api/user/tfa/methods', () => ok(state.tfaMethods));
-sessionRoute('GET', '/api/user/tfa/enroll', () => ok(ENROLL));
+steppedRoute('GET', '/api/user/tfa/enroll', () => ok(ENROLL));
 sessionRoute('POST', '/api/user/tfa/sms/send', ctx =>
   String(ctx.body.mobile_number || '').endsWith('0000') ? throttled() : ok({ sent: true }, 202)
 );

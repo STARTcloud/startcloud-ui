@@ -9,22 +9,36 @@
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
   --bs-body-bg: #f4f6f9;
+  --bs-body-bg-rgb: 244, 246, 249;
   --bs-tertiary-bg: #e7ecf2;
+  --bs-tertiary-bg-rgb: 231, 236, 242;
   --bs-secondary-bg: #fbfcfe;
+  --bs-secondary-bg-rgb: 251, 252, 254;
   --bs-border-color: #dde0e4;
+  --bs-border-color-rgb: 221, 224, 228;
   --bs-body-color: #2d3b4a;
+  --bs-body-color-rgb: 45, 59, 74;
   --bs-emphasis-color: #0e1a26;
+  --bs-emphasis-color-rgb: 14, 26, 38;
   --bs-secondary-color: #5c6a78;
+  --bs-secondary-color-rgb: 92, 106, 120;
 }
 
 [data-brand='startcloud'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(33, 150, 194, 0.65);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-body-bg: #0a1018;
+  --bs-body-bg-rgb: 10, 16, 24;
   --bs-tertiary-bg: #11192a;
+  --bs-tertiary-bg-rgb: 17, 25, 42;
   --bs-secondary-bg: #131c2e;
+  --bs-secondary-bg-rgb: 19, 28, 46;
   --bs-border-color: #20262e;
+  --bs-border-color-rgb: 32, 38, 46;
   --bs-body-color: #c5d0dc;
+  --bs-body-color-rgb: 197, 208, 220;
   --bs-emphasis-color: #e8edf3;
+  --bs-emphasis-color-rgb: 232, 237, 243;
   --bs-secondary-color: #8b97a6;
+  --bs-secondary-color-rgb: 139, 151, 166;
 }

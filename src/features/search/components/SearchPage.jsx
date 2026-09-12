@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
 import { KindGlyph } from '../../../components/common/SearchResults';
@@ -9,6 +9,7 @@ import SubTable from '../../../components/common/SubTable';
 import { EMPTY_APP_RESULTS, NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { pageContextShape } from '../../../utils/itemShape';
 import { SEARCH_KINDS, searchRowPath } from '../../../utils/searchRow';
 
@@ -150,8 +151,9 @@ PageBody.propTypes = {
 };
 
 /**
- * The app-wide search page at `/search?q=`: the query lives in the URL and
- * the navbar box is bound to it, so typing there refines the page; the
+ * The app-wide search page at `/search?q=`: the query lives in the URL
+ * through `useUrlNarrowing` and the navbar box is bound to it, so typing
+ * there refines the page; the
  * results come from the host's own search or the local walk, one table per
  * kind with the header sort and the Columns pills the detail pages use.
  */
@@ -159,8 +161,8 @@ const SearchPage = ({ context }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const { appSearch } = useContext(NavbarSearchContext);
-  const [params, setParams] = useSearchParams();
-  const query = (params.get('q') || '').trim();
+  const url = useUrlNarrowing({ queryKey: 'q' });
+  const query = url.query.trim();
   const data = usePageResults({ appSearch, query });
   const columns = useMemo(() => columnsFor(appSearch), [appSearch]);
   const search = useDetailSearch({
@@ -170,8 +172,8 @@ const SearchPage = ({ context }) => {
     columns,
     prefsKey: `${context.prefsPrefix}_search`,
     bound: {
-      query,
-      onQueryChange: next => setParams(next ? { q: next } : {}, { replace: true }),
+      query: url.query,
+      onQueryChange: url.setQuery,
       placeholder: t('search.appPlaceholder', { app: status.brand.name }),
     },
   });

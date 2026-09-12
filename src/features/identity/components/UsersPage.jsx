@@ -10,10 +10,11 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { deleteUser, updateUser, users } from '../api/accounts';
 import { exportUrl } from '../api/activity';
 import { useAdminRead } from '../hooks/useAdminRead';
-import { useListSearch, useSettled } from '../hooks/useListSearch';
+import { useListSearch } from '../hooks/useListSearch';
 import { USERS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
@@ -30,36 +31,9 @@ import {
 
 const PREFS_KEY = 'table_prefs_admin_users';
 const PAGE_SIZE = 25;
-const SETTLE_MS = 250;
-
-const EMPTY_FILTERS = {
-  enabled: '',
-  using_2fa: false,
-  has_customer_id: false,
-  active_after: { start: '', end: '' },
-};
+const FILTER_KEYS = ['enabled', 'using_2fa', 'has_customer_id', 'active_after'];
 
 const roleLabel = role => role.replace(/^ROLE_/, '');
-
-const paramsOf = (search, filters) => {
-  const params = {};
-  if (search) {
-    params.search = search;
-  }
-  if (filters.enabled) {
-    params.enabled = filters.enabled;
-  }
-  if (filters.using_2fa) {
-    params.using_2fa = 'true';
-  }
-  if (filters.has_customer_id) {
-    params.has_customer_id = 'true';
-  }
-  if (filters.active_after.start) {
-    params.active_after = filters.active_after.start;
-  }
-  return params;
-};
 
 const flagSet = on => new Set(on ? ['true'] : []);
 
@@ -83,7 +57,7 @@ const groupsOf = ({ filters, setFilter, t }) => [
     activeSet: flagSet(filters.using_2fa),
     activeClass: 'bg-success',
     labelFor: () => t('admin.users.filter.tfa'),
-    onToggle: () => setFilter('using_2fa', !filters.using_2fa),
+    onToggle: () => setFilter('using_2fa', filters.using_2fa ? '' : 'true'),
   },
   {
     kind: 'toggle',
@@ -93,14 +67,14 @@ const groupsOf = ({ filters, setFilter, t }) => [
     activeSet: flagSet(filters.has_customer_id),
     activeClass: 'bg-primary',
     labelFor: () => t('admin.users.filter.customerId'),
-    onToggle: () => setFilter('has_customer_id', !filters.has_customer_id),
+    onToggle: () => setFilter('has_customer_id', filters.has_customer_id ? '' : 'true'),
   },
   {
     kind: 'date-range',
     key: 'active_after',
     label: t('admin.users.filter.activeAfter'),
-    value: filters.active_after,
-    onChange: range => setFilter('active_after', range),
+    value: { start: filters.active_after, end: '' },
+    onChange: range => setFilter('active_after', range.start),
     startLabel: t('admin.activity.startDate'),
     endLabel: t('admin.activity.endDate'),
   },
@@ -298,11 +272,12 @@ const serverSortOf = sort => {
 };
 
 /**
- * Accounts › Users: every narrowing in the navbar module, the query as
- * the list's `search` parameter once it settles, the Status `select`
- * group as `enabled`, the 2FA and Customer ID `toggle` groups as
- * `using_2fa` and `has_customer_id`, the Active after `date-range` group
- * as `active_after`, each change re-reading page 1 with the server alone
+ * Accounts › Users: every narrowing in the navbar module and mirrored in
+ * the URL through `useUrlNarrowing`, the query as the list's `search`
+ * parameter once it settles, the Status `select` group as `enabled`, the
+ * 2FA and Customer ID `toggle` groups as `using_2fa` and
+ * `has_customer_id`, the Active after `date-range` group as
+ * `active_after`, each change re-reading page 1 with the server alone
  * answering, Export the panel's action over the same parameters, and the
  * Columns group with the sort and the hidden columns under
  * `table_prefs_admin_users`, the sort sent to the read as `sort` and
@@ -317,15 +292,13 @@ const UsersPage = () => {
   const notify = useNotify();
   const guard = useGuard();
   const catalog = useRoleCatalog();
-  const [query, setQuery] = useState('');
-  const settled = useSettled(query, SETTLE_MS);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const [page, setPage] = useState(0);
-  const [pagedFor, setPagedFor] = useState(settled);
+  const [pagedFor, setPagedFor] = useState(url.narrowed);
   const [open, setOpen] = useState({ kind: '', user: null });
 
-  if (pagedFor !== settled) {
-    setPagedFor(settled);
+  if (pagedFor !== url.narrowed) {
+    setPagedFor(url.narrowed);
     setPage(0);
   }
   const [answer, setAnswer] = useState({ params: null, data: null });
@@ -336,20 +309,13 @@ const UsersPage = () => {
     () => columnsFor({ selected: selection.selected, onSelect: selection.toggle }),
     [selection.selected, selection.toggle]
   );
-  const setFilter = (name, value) => {
-    setFilters(current => ({ ...current, [name]: value }));
-    setPage(0);
-  };
-  const narrowed = useMemo(() => paramsOf(settled, filters), [settled, filters]);
+  const { narrowed } = url;
   const search = useListSearch({
-    query,
-    onQueryChange: setQuery,
+    query: url.query,
+    onQueryChange: url.setQuery,
     placeholderKey: 'admin.users.search',
-    groups: groupsOf({ filters, setFilter, t }),
-    onClearFilters: () => {
-      setFilters(EMPTY_FILTERS);
-      setPage(0);
-    },
+    groups: groupsOf({ filters: url.applied, setFilter: url.setFilter, t }),
+    onClearFilters: url.clearFilters,
     action: {
       key: 'export',
       labelKey: 'admin.activity.export',

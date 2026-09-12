@@ -236,9 +236,10 @@ const bridgeLines = source => {
 };
 
 const surfaceLines = (source, variant) =>
-  Object.entries(source.surfaces?.[variant] || {}).map(
-    ([key, value]) => `  --bs-${key}: ${String(value).toLowerCase()};`
-  );
+  Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => [
+    `  --bs-${key}: ${String(value).toLowerCase()};`,
+    `  --bs-${key}-rgb: ${rgbList(value)};`,
+  ]);
 
 const darkLogoLines = source =>
   source.logo && source.logo_color?.dark

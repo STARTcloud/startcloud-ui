@@ -21,7 +21,6 @@ const SENSITIVE_KEYS = new Set([
   'jwt',
   'cookie',
 ]);
-const RING_BUFFER_SIZE = 100;
 const MAX_ERROR_QUEUE_SIZE = 50;
 const ERROR_FLUSH_DEBOUNCE_MS = 1000;
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
@@ -48,7 +47,6 @@ const configured = new Promise(resolve => {
 });
 let initPromise = null;
 
-const ringBuffer = [];
 const errorQueue = [];
 let flushTimer = null;
 
@@ -73,20 +71,13 @@ export const redact = value => {
   );
 };
 
-const pushToBuffer = entry => {
-  ringBuffer.push(entry);
-  if (ringBuffer.length > RING_BUFFER_SIZE) {
-    ringBuffer.shift();
-  }
-};
-
 const flushErrors = () => {
   flushTimer = null;
   fetch(settings.reportUrl, {
     method: 'POST',
     credentials: 'same-origin',
     headers: reportHeaders(),
-    body: JSON.stringify({ errors: errorQueue.splice(0), recent: ringBuffer.slice() }),
+    body: JSON.stringify({ entries: errorQueue.splice(0) }),
   }).catch(() => null);
 };
 
@@ -136,14 +127,23 @@ const initializeLoggers = () => {
   return initPromise;
 };
 
-const enrichErrorMetadata = metadata => ({
-  ...metadata,
-  page: window.location.pathname,
-  userAgent: navigator.userAgent,
-});
+const reportEntry = (category, level, message, metadata) => {
+  const { stack = null, component_stack: componentStack = null, ...rest } = metadata || {};
+  const detail = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : '';
+  return {
+    level,
+    category,
+    message: `${message}${detail}`,
+    stack,
+    component_stack: componentStack,
+    url: window.location.pathname,
+    user_agent: navigator.userAgent,
+    time: new Date().toISOString(),
+  };
+};
 
 const emit = (categoryLogger, category, level, message, metadata) => {
-  const redacted = redact(level === 'error' ? enrichErrorMetadata(metadata) : metadata);
+  const redacted = redact(metadata);
   const hasMetadata = Boolean(redacted) && Object.keys(redacted).length > 0;
   const tagged = `[${category.toUpperCase()}] ${message}`;
   if (hasMetadata) {
@@ -151,16 +151,8 @@ const emit = (categoryLogger, category, level, message, metadata) => {
   } else {
     categoryLogger[level](tagged);
   }
-  const entry = {
-    ts: new Date().toISOString(),
-    level,
-    category,
-    message,
-    metadata: hasMetadata ? redacted : null,
-  };
-  pushToBuffer(entry);
   if (level === 'error' && settings.reportUrl) {
-    queueErrorForShipping(entry);
+    queueErrorForShipping(reportEntry(category, level, message, hasMetadata ? redacted : null));
   }
 };
 
@@ -184,7 +176,7 @@ const createLazyLogger = category => {
  * @param {Object} options - The app's side of the logger
  * @param {() => Promise<Object>} [options.fetchHealth] - Resolves the health payload carrying `frontend_logging` or `frontendLogging`; omit to run on `defaults`
  * @param {{ enabled: boolean, level: string, categories?: Object }} [options.defaults] - The logging block applied without `fetchHealth`, or when it fails or carries no block
- * @param {string} [options.reportUrl] - Where error-level entries are POSTed in batches with the recent entries for context; empty ships nothing
+ * @param {string} [options.reportUrl] - Where error-level entries are POSTed as `{ entries: [ { level, category, message, stack, component_stack, url, user_agent, time } ] }`, `url` the page path without its query string; empty ships nothing
  */
 export const configureLogger = ({
   fetchHealth = null,
@@ -217,5 +209,5 @@ export const reportRenderError = (error, info) =>
     name: error?.name,
     message: error?.message,
     stack: error?.stack,
-    componentStack: info?.componentStack,
+    component_stack: info?.componentStack,
   });

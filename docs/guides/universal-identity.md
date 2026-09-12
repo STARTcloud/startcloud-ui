@@ -1436,7 +1436,9 @@ member: `POST /api/user/step-up` with `{ "password": "…" }` or
 `{ "code": "…" }` arms the session for five minutes and answers `204`
 or `403 code: step_up_failed`; a sensitive call made outside the window
 answers `403 code: step_up_required` and the `StepUpDialog` arms it and
-retries the same call unchanged. Never `401`, because the API client
+retries the same call unchanged, a GET as much as a POST, because the read
+that mints a secret is a change to how the account is entered. Never
+`401`, because the API client
 ends the session on a `401` and a typo must not sign the person out;
 never a body on a DELETE, because RFC 9110 §9.3.5 says a client should
 not send one and some intermediaries drop it. Step-up is required on
@@ -1460,7 +1462,7 @@ replays inside its window and a guessing run meets `429` with
 | change the email           | `POST /api/user/email/request` `{ new_email }`, stepped up (`409` `unique` when taken), then `POST /api/user/email/verify` `{ code }` (`403` `invalid_code`, `expired`, the miss counted under the second-factor gate)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `/user/change-email/request`, `/user/change-email/verify`                                                        |
 | change or set the password | `PUT /api/user/password` `{ current_password?, password }`, stepped up (`422` on `/password`, `403` `bad_password`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `POST /user/change-password` with `confirmPassword`                                                              |
 | enroll SMS                 | `POST /api/user/tfa/sms/send` `{ mobile_number }` (`429` `throttled` with `wait_seconds`), `POST /api/user/tfa/sms/verify` `{ mobile_number, code, label }`, stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `/accountconfig/sendmobilecode`, `/accountconfig/verifymobilecode`                                               |
-| enroll an app              | `GET /api/user/tfa/enroll`, then `POST /api/user/tfa/app/verify` `{ code, label }`, stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `/accountconfig/edittfaapp`, `/accountconfig/verifytfaapp`                                                       |
+| enroll an app              | `GET /api/user/tfa/enroll`, stepped up because it mints the secret the app will hold, then `POST /api/user/tfa/app/verify` `{ code, label }`, stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `/accountconfig/edittfaapp`, `/accountconfig/verifytfaapp`                                                       |
 | prefer a method            | `PUT /api/user/tfa/preferred` `{ authenticator_id }` or `{ method }`, stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/accountconfig/preferredtfamethod`                                                                              |
 | remove a method            | `DELETE /api/user/tfa/methods/{id}`, stepped up (`409` `last_method`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `/accountconfig/removeauthenticator`                                                                             |
 | enable or disable 2FA      | `PUT /api/user/tfa` `{ enabled, preferred_method? }`, stepped up (`409` `no_methods`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `/accountconfig/enabletfa`, `/accountconfig/disabletfa`                                                          |
@@ -1844,7 +1846,8 @@ problem body with `code`.
     Recent login activity and Recent registrations with View all.
   - **Users**: the query and every filter in the navbar module and its
     panel and none on the page: the query drives the list's `search`
-    parameter, debounced, page 1 re-read; the Status group is
+    parameter, debounced, page 1 re-read, the query and every filter
+    value mirrored in the URL and read on load; the Status group is
     `kind: select` (Active or Disabled, since a status is exclusive) sent
     as `enabled`; the 2FA and Customer ID groups are `kind: toggle` sent
     as `using_2fa` and `has_customer_id`; the Active after group is
@@ -1891,7 +1894,14 @@ problem body with `code`.
     and its filter groups and the Columns group of the navbar contract
     for its table, so every narrowing lives where it does on every other
     UI backend and no page draws a search field or a filter row of its
-    own; Organizations and Sessions, having no other filter, have the
+    own, and every one of them keeps its query and its filter values in
+    the page's URL (`search` or `username`, `enabled`, `using_2fa`,
+    `has_customer_id`, `active_after`, `success`, `start_date`,
+    `end_date`) and reads them on load, so a search hit and a shared
+    link land narrowed and the back button restores the narrowing; the
+    URL carries the narrowing alone, never a token or a session value,
+    and a narrowing only reveals what the page would list anyway;
+    Organizations and Sessions, having no other filter, have the
     query as their one narrowing; the chosen columns and the sort persist under that page's
     `table_prefs_admin_*` key; every table sits in a wrapper with
     `overflow-x: auto` and hides columns through that group, so the page
@@ -1906,9 +1916,14 @@ problem body with `code`.
     unhealthy, not probeable) with the error collapse, one status per
     card, and the summary line at the top drawn as a warning while any
     client or provider is unhealthy, because a green line over a red
-    card lies; Refresh re-fetches, nothing reloads; the page binds the
-    navbar search with a query over the client and provider cards by
-    name and base URL.
+    card lies, drawn under the pages contract's one view toggle, list
+    or cards, the list a `SubTable` with the columns Name, Kind (client
+    or provider), Check, Endpoint, Status, Response time, Last checked
+    and Reason, header sort and the Columns group, the cards as today,
+    the choice kept under `table_prefs_admin_client_health`; both draw
+    from the same rows the navbar query narrows; Refresh re-fetches,
+    nothing reloads; the page binds the navbar search with a query over
+    the client and provider cards by name and base URL.
   - **Blocked IPs**: the enabled line with the count, the table, Unblock
     behind a confirm.
   - **Terms**: the templates as cards in a `SortableList` (drag writes
@@ -1983,7 +1998,11 @@ problem body with `code`.
   `POST /api/client-errors`. That route admits anonymous reports,
   because public visitors and broken sessions must still be able to
   report, and is gated by a per-address limit and an 8 KB body cap
-  instead; it strips control characters, stores each report as
+  instead; the body is
+  `{ "entries": [ { "level", "category", "message", "stack", "component_stack", "url", "user_agent", "time" } ] }`,
+  `snake_case`, `time` an RFC 3339 instant, one request carrying the
+  batch the logger held, so a render crash and a batch of error-level
+  log entries ride one shape; it strips control characters, stores each report as
   structured JSON never interpolated into a log line, and never feeds
   the `/api/admin/errors` store.
 - **The server's `/error` dispatch** answers, for a GET that accepts
@@ -2033,6 +2052,9 @@ the page a hit links to on the `auth-server` role:
 | `login`             | username, city, country, user agent    | `ROLE_ADMIN`                                                                                                                       | `/admin/logins?username=<username>`                                                   |
 | `registration`      | username, city, country                | `ROLE_ADMIN`                                                                                                                       | `/admin/registrations?username=<username>`                                            |
 | `blocked-address`   | the address                            | `ROLE_ADMIN`                                                                                                                       | `/admin/brute-force`                                                                  |
+
+The `search` and `username` parameters those links carry are the ones
+the pages read on load, the rule of the Activity bullet.
 
 The visibility clause is the list routes' own, so a caller is never shown
 a row it could not already list; `limit` bounds each kind and `truncated`
@@ -2233,7 +2255,10 @@ Settled before code, in the order they were raised:
     `start_date`, `end_date`), page 1 re-read, the server alone
     answering; the groups carry a `kind`, `toggle`, `select` or
     `date-range`, of the navbar contract; Organizations and Sessions have
-    the query as their one narrowing.
+    the query as their one narrowing. Every admin table page mirrors its
+    query and filter values in the page's URL and reads them on load, so
+    a search hit and a shared link land narrowed; the URL carries the
+    narrowing alone.
 51. The sidebar rows are the one navigation of the Activity and Health
     sections; no page draws a tab strip of the same names; a failed
     login's reason is a column.
@@ -2264,7 +2289,8 @@ Settled before code, in the order they were raised:
 60. The avatar is proxied through `GET /api/user/avatar/{hash}` and
     cached for a day, so gravatar.com never learns who is signed in.
 61. `POST /api/client-errors` admits anonymous reports under a
-    per-address limit and an 8 KB cap.
+    per-address limit and an 8 KB cap; the body is
+    `{ entries: [ { level, category, message, stack, component_stack, url, user_agent, time } ] }`.
 62. Every URL member a page draws (`home_url`, `icon_url`,
     `logo_url`, `base_url`, `locations[]`) is rendered only with the
     `https:` scheme or as a same-origin path matching `^/(?![/\\])`,
@@ -2441,6 +2467,10 @@ Settled before code, in the order they were raised:
      back to the page to find it; the everywhere channel remains the
      navbar contract's planned tier, the issuer's route being its first
      registrant.
+115. The Client health page draws its clients and providers under the one
+     view toggle, list or cards, the list a sortable table with a Columns
+     group, so the rows are searchable and filterable like every other
+     listing.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

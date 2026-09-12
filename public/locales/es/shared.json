@@ -821,7 +821,18 @@
         },
         "endpoint": "Punto de acceso",
         "reason": "Motivo",
-        "search": "Buscar clientes y proveedores"
+        "search": "Buscar clientes y proveedores",
+        "table": {
+          "name": "Nombre",
+          "kind": "Tipo",
+          "status": "Estado",
+          "responseTime": "Tiempo de respuesta",
+          "lastChecked": "Última comprobación"
+        },
+        "kind": {
+          "client": "Cliente",
+          "provider": "Proveedor"
+        }
       },
       "definitions": "Qué significan estas cifras",
       "refresh": "Actualizar",

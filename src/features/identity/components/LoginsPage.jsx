@@ -91,14 +91,13 @@ const groupsOf = ({ state, t }) => [
   },
 ];
 
-const narrowed = applied => Object.values(applied).some(value => value !== '');
-
 /**
  * Activity › Logins: every narrowing in the navbar module and its panel,
  * the username query as the list's `username` parameter once it settles,
  * the `date-range` group as `start_date` and `end_date`, Show only as a
- * `select` group sent as `success`, every filter in the URL so the
- * Dashboard's cards land on a preset and each change re-reading page 1,
+ * `select` group sent as `success`, the query and every filter in the URL
+ * through `useUrlNarrowing` so the Dashboard's cards and a search hit
+ * land on a preset and each change re-reading page 1,
  * Export the panel's action over the same parameters, and the Columns
  * group under `table_prefs_admin_logins`; the table with its Reason
  * column for a failed row, and the pager.
@@ -143,7 +142,9 @@ const LoginsPage = () => {
             onSort={search.setSort}
             hiddenColumns={search.hiddenColumns}
             ctx={{ t, language: i18n.language }}
-            emptyText={narrowed(state.applied) ? t('pages.noMatches') : t('pages.empty')}
+            emptyText={
+              Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
+            }
           />
         </TableWrap>
       )}
