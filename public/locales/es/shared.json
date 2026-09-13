@@ -149,7 +149,7 @@
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
-    "enum": "Elige uno de {{enum}} para {{label}}.",
+    "enum": "Elige {{label}}.",
     "format": {
       "uri": "Introduce {{label}} como una URL completa, como https://ejemplo.com.",
       "hostname": "Introduce {{label}} como un nombre de host.",
@@ -500,6 +500,14 @@
       "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
       "timezone": "Zona horaria",
       "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
+      "region": "Región",
+      "regionHint": "La región legal a la que se resuelven los términos y políticas.",
+      "regionNotSet": "Detectada automáticamente",
+      "regionSet": {
+        "eu": "Unión Europea",
+        "eea": "Espacio Económico Europeo",
+        "uk": "Reino Unido"
+      },
       "channel": {
         "label": "Canal de aprobación de inicio de sesión",
         "PUSH": "Notificación en la aplicación",
@@ -570,7 +578,7 @@
       "activity": "Actividad",
       "health": "Salud",
       "security": "Seguridad",
-      "content": "Contenido",
+      "legal": "Legal",
       "system": "Sistema"
     },
     "dashboard": {
@@ -667,7 +675,6 @@
         "stepUpReason": "Eliminar una cuenta acaba con la forma en que esa persona inicia sesión."
       },
       "bulk": {
-        "selectAll": "Seleccionar todo en esta página",
         "selected": "{{count}} seleccionados",
         "enable": "Activar",
         "suspend": "Suspender",
@@ -684,6 +691,8 @@
     },
     "organizations": {
       "all": "Todas las organizaciones",
+      "count_one": "{{count}} organización",
+      "count_other": "{{count}} organizaciones",
       "table": {
         "name": "Nombre",
         "type": "Tipo",
@@ -721,6 +730,17 @@
       "delete": {
         "title": "Eliminar la organización",
         "body": "{{org}} se elimina con sus membresías e invitaciones. Escribe \"{{keyword}}\" para confirmar."
+      },
+      "bulk": {
+        "selected": "{{count}} seleccionadas",
+        "suspend": "Suspender",
+        "resume": "Reanudar",
+        "delete": "Eliminar",
+        "clearSelection": "Limpiar selección",
+        "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+        "confirmTitle": "Confirmar la acción en bloque",
+        "confirmBody": "{{action}} para {{count}} organizaciones seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Eliminar organizaciones no se puede deshacer."
       }
     },
     "activity": {
@@ -893,11 +913,14 @@
         "attempts": "Intentos"
       },
       "unblock": "Desbloquear",
+      "unblockAll": "Desbloquear todo",
       "enabled": "La protección contra fuerza bruta está activada. {{count}} direcciones bloqueadas ahora.",
       "disabled": "La protección contra fuerza bruta está desactivada.",
       "unblocked": "{{ip}} está desbloqueada.",
       "unblockTitle": "Desbloquear la dirección",
-      "unblockBody": "{{ip}} podrá iniciar sesión de nuevo de inmediato."
+      "unblockBody": "{{ip}} podrá iniciar sesión de nuevo de inmediato.",
+      "unblockAllTitle": "Desbloquear todas las direcciones",
+      "unblockAllBody": "{{count}} direcciones podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar."
     },
     "terms": {
       "title": "Términos",
@@ -1250,7 +1273,14 @@
     "deleteAllBody": "Se eliminan todas tus notificaciones. Escribe \"{{keyword}}\" para confirmar.",
     "delete": "Eliminar",
     "viewDetails": "Ver detalles",
-    "search": "Buscar notificaciones"
+    "search": "Buscar notificaciones",
+    "bulk": {
+      "selected": "{{count}} seleccionadas",
+      "markRead": "Marcar como leída",
+      "delete": "Eliminar",
+      "deleteBody": "Se eliminan las notificaciones seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+      "clearSelection": "Limpiar selección"
+    }
   },
   "notifications": {
     "pushSwitch": "Toasts (notificaciones del sistema) en este dispositivo",
@@ -1607,6 +1637,8 @@
     "empty": "Aún no hay nada aquí.",
     "noMatches": "Nada coincide.",
     "searchAll": "Buscar…",
+    "selectAll": "Seleccionar todo en esta página",
+    "selectColumn": "Seleccionar todo en esta página",
     "search": {
       "versions": "Buscar versiones",
       "providers": "Buscar proveedores",

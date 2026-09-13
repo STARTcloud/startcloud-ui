@@ -1,15 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaBookOpen,
-  FaChevronRight,
-  FaCircleCheck,
-  FaListCheck,
-  FaRegStar,
-  FaSitemap,
-  FaStar,
-} from 'react-icons/fa6';
+import { FaChevronRight, FaCircleCheck, FaRegStar, FaStar } from 'react-icons/fa6';
 
 import PageHeader from '../../../components/common/PageHeader';
 import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
@@ -93,7 +85,6 @@ const StartHere = ({ docs, intro, folds }) => {
   const { t } = useTranslation();
   return (
     <SectionCard
-      icon={<FaBookOpen aria-hidden />}
       title={t('pages.about.startHere')}
       className="h-100"
       folded={folds.folded('startHere')}
@@ -129,7 +120,6 @@ const Features = ({ features, folds }) => {
   const { t } = useTranslation();
   return (
     <SectionCard
-      icon={<FaListCheck aria-hidden />}
       title={t('pages.about.whatYouCanDo')}
       className="h-100"
       folded={folds.folded('features')}
@@ -156,7 +146,6 @@ const Components = ({ components, folds }) => {
   const { t } = useTranslation();
   return (
     <SectionCard
-      icon={<FaSitemap aria-hidden />}
       title={t('pages.about.howItFits')}
       className="mb-4"
       folded={folds.folded('components')}

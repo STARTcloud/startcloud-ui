@@ -1185,6 +1185,60 @@
     overflow-x: auto;
     color: var(--text);
   }
+  .shell {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .side {
+    width: 164px;
+    flex-shrink: 0;
+    background: var(--header);
+    border-right: 1px solid var(--border);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .item.on {
+    background: var(--surface-2);
+    color: var(--heading);
+    font-weight: 600;
+  }
+  .hcount {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 13px;
+  }
+  .hcount.success {
+    color: var(--success);
+  }
+  .hcount.warning {
+    color: var(--warning);
+  }
+  .check-all {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--primary);
+    vertical-align: middle;
+  }
+  .check-all.indeterminate {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--primary);
+    border-radius: 3px;
+    background: var(--primary);
+    position: relative;
+    display: inline-block;
+  }
+  .check-all.indeterminate::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    top: 6px;
+    height: 2px;
+    background: #fff;
+  }
   @media (max-width: 760px) {
     .spec {
       grid-template-columns: 1fr;
@@ -2701,6 +2755,326 @@
         collection's extras slot, facts and README from the shape, versions newest first with
         Released, Details, Providers and Artifacts columns shown only when a version carries them;
         the versions table keeps its Actions column because a version has row-level actions.
+      </div>
+    </div>
+  </div>
+
+  <div class="state" id="page-anatomy">
+    <div class="state-label">
+      Page anatomy — the region between navbar, sidebar and footer: an admin page (Users, at rest
+      and picked) and an account page (Profile › Security), each its own full-width frame
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >STARTcloud</span
+        >
+        <div class="nav">
+          <span class="sep">›</span><span class="crumb">Admin</span><span class="sep">›</span
+          ><span class="crumb">Users</span>
+        </div>
+        <div class="cluster">
+          <span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="shell">
+        <div class="side">
+          <div class="menu-header">Account</div>
+          <span class="item">Profile</span>
+          <div class="divider"></div>
+          <div class="menu-header">Admin</div>
+          <span class="item on">Users</span><span class="item">All organizations</span
+          ><span class="item">Logins</span><span class="item">Client health</span
+          ><span class="item">Blocked IPs</span><span class="item">Configuration</span>
+        </div>
+        <div class="demo" style="flex: 1">
+          <div class="rowh">
+            <h2>Users<span class="hcount"> · 1,284</span></h2>
+            <span class="right"
+              ><span class="btn sm success">Create</span><span class="btn sm">Refresh</span
+              ><span class="toggle"
+                ><span class="btn on"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M4 6h16"></path>
+                    <path d="M4 12h16"></path>
+                    <path d="M4 18h16"></path></svg></span
+                ><span class="btn"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
+            ></span>
+          </div>
+          <div class="grid" style="grid-template-columns: 26px minmax(120px, 2fr) 100px 80px">
+            <span class="th"
+              ><input type="checkbox" class="check-all" title="Select all on this page"
+            /></span>
+            <span class="th">Email</span><span class="th">Status</span><span class="th">2FA</span>
+            <span class="td odd">☐</span><span class="td first odd">ada@startcloud.com</span
+            ><span class="td odd"><span class="status success">Active</span></span
+            ><span class="td odd">Yes</span> <span class="td">☐</span
+            ><span class="td first">bo@startcloud.com</span
+            ><span class="td"><span class="status success">Active</span></span
+            ><span class="td">No</span> <span class="td odd">☐</span
+            ><span class="td first odd">cy@startcloud.com</span
+            ><span class="td odd"><span class="status secondary">Disabled</span></span
+            ><span class="td odd">Yes</span> <span class="td">☐</span
+            ><span class="td first">deb@startcloud.com</span
+            ><span class="td"><span class="status success">Active</span></span
+            ><span class="td">Yes</span> <span class="td odd">☐</span
+            ><span class="td first odd">eli@startcloud.com</span
+            ><span class="td odd"><span class="status success">Active</span></span
+            ><span class="td odd">No</span> <span class="td">☐</span
+            ><span class="td first">fay@startcloud.com</span
+            ><span class="td"><span class="status secondary">Disabled</span></span
+            ><span class="td">No</span>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">STARTcloud © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >STARTcloud</span
+        >
+        <div class="nav">
+          <span class="sep">›</span><span class="crumb">Admin</span><span class="sep">›</span
+          ><span class="crumb">Users</span>
+        </div>
+        <div class="cluster">
+          <span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="shell">
+        <div class="side">
+          <div class="menu-header">Account</div>
+          <span class="item">Profile</span>
+          <div class="divider"></div>
+          <div class="menu-header">Admin</div>
+          <span class="item on">Users</span><span class="item">All organizations</span
+          ><span class="item">Logins</span><span class="item">Client health</span
+          ><span class="item">Blocked IPs</span><span class="item">Configuration</span>
+        </div>
+        <div class="demo" style="flex: 1">
+          <div class="rowh">
+            <h2>Users<span class="hcount"> · 3 selected</span></h2>
+            <span class="right"
+              ><span class="lnk">Clear selection</span><span class="btn sm">Enable</span
+              ><span class="btn sm">Suspend</span><span class="btn sm">Add role</span
+              ><span class="btn sm">Remove role</span><span class="btn sm danger">Delete</span
+              ><span class="btn sm success">Create</span><span class="btn sm">Refresh</span
+              ><span class="toggle"
+                ><span class="btn on"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M4 6h16"></path>
+                    <path d="M4 12h16"></path>
+                    <path d="M4 18h16"></path></svg></span
+                ><span class="btn"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
+            ></span>
+          </div>
+          <div class="grid" style="grid-template-columns: 26px minmax(120px, 2fr) 100px 80px">
+            <span class="th"
+              ><input
+                type="checkbox"
+                class="check-all indeterminate"
+                title="Select all on this page"
+            /></span>
+            <span class="th">Email</span><span class="th">Status</span><span class="th">2FA</span>
+            <span class="td odd">☑</span><span class="td first odd">ada@startcloud.com</span
+            ><span class="td odd"><span class="status success">Active</span></span
+            ><span class="td odd">Yes</span> <span class="td">☑</span
+            ><span class="td first">bo@startcloud.com</span
+            ><span class="td"><span class="status success">Active</span></span
+            ><span class="td">No</span> <span class="td odd">☑</span
+            ><span class="td first odd">cy@startcloud.com</span
+            ><span class="td odd"><span class="status secondary">Disabled</span></span
+            ><span class="td odd">Yes</span> <span class="td">☐</span
+            ><span class="td first">deb@startcloud.com</span
+            ><span class="td"><span class="status success">Active</span></span
+            ><span class="td">Yes</span> <span class="td odd">☐</span
+            ><span class="td first odd">eli@startcloud.com</span
+            ><span class="td odd"><span class="status success">Active</span></span
+            ><span class="td odd">No</span> <span class="td">☐</span
+            ><span class="td first">fay@startcloud.com</span
+            ><span class="td"><span class="status secondary">Disabled</span></span
+            ><span class="td">No</span>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">STARTcloud © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >STARTcloud</span
+        >
+        <div class="nav">
+          <span class="sep">›</span><span class="crumb">Account</span><span class="sep">›</span
+          ><span class="crumb">Profile</span><span class="sep">›</span
+          ><span class="crumb">Security</span>
+        </div>
+        <div class="cluster">
+          <span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="shell">
+        <div class="side">
+          <div class="menu-header">Account</div>
+          <span class="item">Profile</span><span class="item on">Security</span
+          ><span class="item">Preferences</span><span class="item">Favorites</span
+          ><span class="item">Sessions</span><span class="item">Organizations</span
+          ><span class="item">Applications</span><span class="item">Inbox</span>
+        </div>
+        <div class="demo" style="flex: 1">
+          <div class="page-head">
+            <div class="hero-text">
+              <div class="title">
+                Security <span class="subtitle">Password, two-factor, passkeys and recovery</span>
+              </div>
+            </div>
+          </div>
+          <div class="card mb-3">
+            <div class="card-h">
+              <div class="rowh">
+                <h3>Password</h3>
+                <span class="fold">▾</span>
+              </div>
+            </div>
+            <div class="card-b">
+              <dl class="facts" style="grid-template-columns: 140px 1fr">
+                <dt>Current password</dt>
+                <dd>••••••••</dd>
+                <dt>New password</dt>
+                <dd>••••••••</dd>
+              </dl>
+              <span class="btn sm primary" style="align-self: flex-start">Save</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">STARTcloud © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed">
+        <strong>One heading row, not two.</strong> A page with one section draws no separate
+        page-title row above it: the section heading IS the page's heading row — no icon before the
+        title, then a subhead, the count or the picked state as muted text right after it ("Users ·
+        1,284" at rest, "Users · 3 selected" picked), never a badge pill. The right side of that
+        same row is the one action section, always: bulk actions when rows are picked, the page's
+        own actions (Create, Refresh; Export moved to the navbar panel), and the view toggle
+        together, flush right — one row, never a second bar underneath.
+      </div>
+      <div class="callout changed">
+        <strong>The select column header is a real checkbox.</strong> Its own control is the
+        select-all for the page, checked or in the indeterminate look when some but not all visible
+        rows are picked; there is no separate "Select all on this page" button in the action
+        section, and no bulk bar below the heading.
+      </div>
+      <div class="callout changed">
+        <strong>On a page with more than one section</strong> (a card list, a multi-section settings
+        page) each section keeps its own heading row this same way: Security's page heading carries
+        only the page's identity, its subhead the muted text right after the title rather than a
+        line beneath it, since it has no page-wide action, and each card's header line is a section
+        heading in miniature — no icon, a subhead where the card has one sitting beside its title
+        the same way, its own action section at the right (here, just the fold chevron).
+      </div>
+      <div class="callout changed">
+        <strong>Gone.</strong> No summary bar drawn above a table when its heading already carries
+        the count or the state; no control at a list's left or above its heading, every one of them
+        an action in that one right-hand section instead; no card wrapped around a whole page; no
+        identity card repeating the avatar and name the chrome already shows on a child section —
+        that card stays on <code>/user/profile</code> alone.
       </div>
     </div>
   </div>

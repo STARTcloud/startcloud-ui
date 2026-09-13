@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDesktop, FaKey } from 'react-icons/fa6';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
 import { useCssVar } from '../../../hooks/useCssVar';
@@ -106,6 +107,7 @@ const ServiceUsagePage = () => {
 
   return (
     <div>
+      <SectionHeading title={t('admin.health.usage.title')} />
       <div className="stat-grid stat-grid-2 mb-3">
         <StatCard
           icon={<FaDesktop />}

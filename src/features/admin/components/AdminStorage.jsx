@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaHardDrive, FaCompactDisc, FaDatabase } from 'react-icons/fa6';
+import { FaHardDrive, FaCompactDisc } from 'react-icons/fa6';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -104,7 +104,7 @@ const AdminStorage = ({ storage }) => {
 
   return (
     <div>
-      <SectionHeading icon={<FaDatabase aria-hidden />} title={t('admin.storage.title')} />
+      <SectionHeading title={t('admin.storage.title')} />
       {storageInfo?.boxes && (
         <StorageBar
           usage={storageInfo.boxes}

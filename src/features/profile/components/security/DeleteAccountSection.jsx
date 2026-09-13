@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaUserXmark } from 'react-icons/fa6';
 
 import Field from '../../../../components/common/Field';
 import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
@@ -67,7 +66,6 @@ const DeleteAccountSection = ({ account, email, guard, onDeleted, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaUserXmark aria-hidden />}
       title={t('profile.security.delete.title')}
       tone="danger"
       folded={folds.folded('delete')}

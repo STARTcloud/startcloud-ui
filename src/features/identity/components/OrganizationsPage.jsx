@@ -3,11 +3,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SectionHeading from '../../../components/common/SectionHeading';
+import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
+import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
-import { deleteOrganization, organizations } from '../api/accounts';
+import { deleteOrganization, organizations, organizationsBulk } from '../api/accounts';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { ORGANIZATIONS } from '../utils/examples';
 
@@ -38,7 +41,7 @@ const FILTER_GROUPS = [
 ];
 const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 
-const columns = [
+const columnsFor = () => [
   {
     key: 'name',
     labelKey: 'admin.organizations.table.name',
@@ -116,18 +119,135 @@ RowActions.propTypes = {
   onDelete: PropTypes.func.isRequired,
 };
 
+const useSelection = rows => {
+  const [selected, setSelected] = useState(() => new Set());
+  const toggle = id =>
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
+  const someSelected = selected.size > 0;
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
+  const clear = () => setSelected(new Set());
+  return {
+    selected,
+    toggle,
+    toggleAll,
+    allSelected,
+    someSelected,
+    clear,
+    subtable: {
+      allSelected,
+      someSelected,
+      onToggleAll: toggleAll,
+      isSelected: row => selected.has(row.id),
+      onToggleRow: row => toggle(row.id),
+      labelOf: row => row.name,
+    },
+  };
+};
+
+/**
+ * The Organizations page's bulk actions, drawn in the section heading's
+ * action pane while rows are selected: Suspend, Resume and Delete, the
+ * delete action stepped up, and the result line naming processed, skipped
+ * and errors while it has something to say (identity contract decision
+ * 139).
+ */
+const BulkActions = ({ selected, onDone }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const guard = useGuard();
+  const [pending, setPending] = useState('');
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const send = () => {
+    const body = { action: pending, organization_ids: selected };
+    setBusy(true);
+    guard(() => organizationsBulk(body), t('admin.organizations.bulk.stepUpReason'))
+      .then(answer => {
+        setResult(answer);
+        onDone();
+      })
+      .catch(error => {
+        if (error?.code !== 'step_up_required') {
+          notify('danger', t(errorKeys(error)));
+        }
+      })
+      .finally(() => {
+        setBusy(false);
+        setPending('');
+      });
+  };
+
+  const button = (action, variant) => (
+    <button
+      type="button"
+      className={`btn btn-sm ${variant}`}
+      disabled={busy || selected.length === 0}
+      onClick={() => setPending(action)}
+    >
+      {t(`admin.organizations.bulk.${action}`)}
+    </button>
+  );
+
+  return (
+    <>
+      {button('suspend', 'btn-outline-warning')}
+      {button('resume', 'btn-outline-success')}
+      {button('delete', 'btn-outline-danger')}
+      {result ? (
+        <span className="small text-muted" role="status">
+          {t('admin.organizations.bulk.result', {
+            processed: result.processed || 0,
+            skipped: result.skipped || 0,
+            errors: (result.errors || []).length,
+          })}
+        </span>
+      ) : null}
+      <ConfirmModal
+        show={pending !== ''}
+        handleClose={() => setPending('')}
+        handleConfirm={send}
+        title={t('admin.organizations.bulk.confirmTitle')}
+        message={t('admin.organizations.bulk.confirmBody', {
+          action: pending ? t(`admin.organizations.bulk.${pending}`) : '',
+          count: selected.length,
+          keyword: t('pages.confirm.keyword'),
+        })}
+      />
+    </>
+  );
+};
+
+BulkActions.propTypes = {
+  selected: PropTypes.array.isRequired,
+  onDone: PropTypes.func.isRequired,
+};
+
 /**
  * Accounts › All organizations: the navbar search bound for a query over
  * the rows, mirrored in the URL as `search` through `useUrlNarrowing`,
  * the Type `select` group (Personal or Team) narrowing the rows
  * client-side, its value in the URL as `type`, and the Columns group
- * under `table_prefs_admin_organizations`,
- * the table (name with the uuid in its tooltip, Personal or Team, invite
- * code, customer id, members, created), Edit opening the
+ * under `table_prefs_admin_organizations`, a `SectionHeading` carrying the
+ * count as muted text after the title, the table's select column a real
+ * checkbox header, the select-all for the page, checked, unchecked or
+ * indeterminate, the table (name with the uuid in its tooltip, Personal or
+ * Team, invite code, customer id, members, created), Edit opening the
  * `OrganizationDialog` over the whole record prefilled from the row and
- * re-reading the list once saved, and Delete behind the confirm for a
- * team or an empty personal organization, the service's refusal drawn as
- * a card.
+ * re-reading the list once saved, Delete behind the confirm for a team or
+ * an empty personal organization, the service's refusal drawn as a card,
+ * and the heading's action pane gaining, while rows are picked, "N
+ * selected", Clear selection and the bulk actions (Suspend, Resume,
+ * Delete), the delete stepped up (identity contract decision 139).
  */
 const OrganizationsPage = () => {
   const { t, i18n } = useTranslation();
@@ -136,6 +256,8 @@ const OrganizationsPage = () => {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+  const selection = useSelection(rows);
+  const columns = useMemo(() => columnsFor(), []);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
     rows,
@@ -169,8 +291,29 @@ const OrganizationsPage = () => {
     return <AdminLoading />;
   }
 
+  const headingActions = selection.someSelected ? (
+    <>
+      <strong>{t('admin.organizations.bulk.selected', { count: selection.selected.size })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('admin.organizations.bulk.clearSelection')}
+      </button>
+      <BulkActions
+        selected={[...selection.selected]}
+        onDone={() => {
+          selection.clear();
+          reload();
+        }}
+      />
+    </>
+  ) : null;
+
   return (
     <div>
+      <SectionHeading
+        title={t('admin.organizations.all')}
+        count={t('admin.organizations.count', { count: rows.length })}
+        actions={headingActions}
+      />
       <TableWrap>
         <SubTable
           columns={columns}
@@ -184,6 +327,7 @@ const OrganizationsPage = () => {
           hiddenColumns={search.hiddenColumns}
           ctx={{ t, language: i18n.language }}
           emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+          selection={selection.subtable}
         />
       </TableWrap>
       {editing ? (

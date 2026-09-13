@@ -37,7 +37,10 @@ export const submitAccountType = body =>
 
 export const submitTeamName = body => client.post('/complete-onboarding/team-name', body, OPTIONS);
 
-export const terms = () => client.get('/api/auth/terms', OPTIONS);
+export const terms = region =>
+  client.get(`/api/auth/terms${region ? `?region=${encodeURIComponent(region)}` : ''}`, OPTIONS);
+
+export const savePreferences = body => client.patch('/api/user/preferences', body, OPTIONS);
 
 export const acceptTerms = body => client.post('/oauth2/accept-terms', body, OPTIONS);
 

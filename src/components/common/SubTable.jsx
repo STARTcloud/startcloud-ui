@@ -1,11 +1,20 @@
 import PropTypes from 'prop-types';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import { sortShape } from '../../utils/itemShape';
 
 import SortHeader from './SortHeader';
+
+export const selectionShape = PropTypes.shape({
+  allSelected: PropTypes.bool.isRequired,
+  someSelected: PropTypes.bool.isRequired,
+  onToggleAll: PropTypes.func.isRequired,
+  isSelected: PropTypes.func.isRequired,
+  onToggleRow: PropTypes.func.isRequired,
+  labelOf: PropTypes.func,
+});
 
 /**
  * Builds a column `when` that is true when any row satisfies `pick`.
@@ -24,8 +33,10 @@ export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
  * `actionsProps` plus the row under `rowProp`), the class `rowClass`
  * answers on each row, one full-width detail row under every row whose key
  * is in `expandedKeys` (rendering `Detail` with `detailProps` plus the row
- * under `rowProp`), and one full-width `emptyText` row when there are no
- * rows.
+ * under `rowProp`), a leading select column when `selection` is given (a
+ * real checkbox header, checked, unchecked or indeterminate, the select-all
+ * for the page, and one row checkbox per cell), and one full-width
+ * `emptyText` row when there are no rows.
  */
 const SubTable = ({
   columns,
@@ -43,28 +54,53 @@ const SubTable = ({
   hiddenColumns,
   ctx,
   emptyText,
+  selection = null,
 }) => {
   const { t } = useTranslation();
+  const selectAllRef = useRef(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = Boolean(
+        selection && selection.someSelected && !selection.allSelected
+      );
+    }
+  }, [selection]);
   const drawn = columns.filter(
     column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
   );
-  const columnCount = drawn.length + (RowActions ? 1 : 0);
+  const columnCount = drawn.length + (RowActions ? 1 : 0) + (selection ? 1 : 0);
   const cellClass = column =>
     column.className ? `col-${column.key} ${column.className}` : `col-${column.key}`;
   const expanded = row => Boolean(Detail && expandedKeys && expandedKeys.has(rowKey(row)));
+  const headerOf = column => {
+    if (column.sortValue) {
+      return (
+        <SortHeader column={column.key} sort={sort} onSort={onSort}>
+          {t(column.labelKey)}
+        </SortHeader>
+      );
+    }
+    return t(column.labelKey);
+  };
   return (
     <Table striped className="table items-table">
       <thead>
         <tr>
+          {selection ? (
+            <th className="col-select">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                className="form-check-input"
+                checked={selection.allSelected}
+                onChange={selection.onToggleAll}
+                aria-label={t('pages.selectColumn')}
+              />
+            </th>
+          ) : null}
           {drawn.map(column => (
             <th key={column.key} className={`col-${column.key}`}>
-              {column.sortValue ? (
-                <SortHeader column={column.key} sort={sort} onSort={onSort}>
-                  {t(column.labelKey)}
-                </SortHeader>
-              ) : (
-                t(column.labelKey)
-              )}
+              {headerOf(column)}
             </th>
           ))}
           {RowActions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
@@ -81,6 +117,17 @@ const SubTable = ({
           rows.map(row => (
             <Fragment key={rowKey(row)}>
               <tr className={rowClass ? rowClass(row) : undefined}>
+                {selection ? (
+                  <td className="col-select">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={selection.isSelected(row)}
+                      onChange={() => selection.onToggleRow(row)}
+                      aria-label={selection.labelOf ? selection.labelOf(row) : undefined}
+                    />
+                  </td>
+                ) : null}
                 {drawn.map(column => (
                   <td key={column.key} className={cellClass(column)}>
                     {column.render(row, ctx)}
@@ -133,6 +180,7 @@ SubTable.propTypes = {
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,
   ctx: PropTypes.object.isRequired,
   emptyText: PropTypes.node.isRequired,
+  selection: selectionShape,
 };
 
 export default SubTable;

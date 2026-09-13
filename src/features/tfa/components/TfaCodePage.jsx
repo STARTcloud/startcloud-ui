@@ -113,7 +113,7 @@ ResendButton.propTypes = {
  * throttled by `resend_after_seconds`, the danger alert from `code` with
  * the gate's countdown, and the foot links to the picker and Cancel.
  */
-const TfaCodePage = ({ returnTo }) => {
+const TfaCodePage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
@@ -154,7 +154,10 @@ const TfaCodePage = ({ returnTo }) => {
     setProblem(null);
     setBusy(true);
     verifyTfa({ code: value, tfaMethod: state.method })
-      .then(answer => follow(answer?.next))
+      .then(answer => {
+        events.emit('login');
+        follow(answer?.next);
+      })
       .catch(fail);
   };
 
@@ -268,6 +271,7 @@ const TfaCodePage = ({ returnTo }) => {
 
 TfaCodePage.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default TfaCodePage;

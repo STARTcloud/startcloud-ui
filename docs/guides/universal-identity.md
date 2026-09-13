@@ -819,6 +819,7 @@ cache before the person has saved it.
   "label": "Master Services Agreement",
   "version": "2.1",
   "region": "EU",
+  "regions_offered": ["EU", "UK", null],
   "step": 1,
   "total": 2,
   "client_name": "Conductor",
@@ -852,9 +853,24 @@ cache before the person has saved it.
 
 `region` is the resolved region of the variant shown, `null` for the
 default; a template may exist in several regional variants under one
-name and the issuer picks by the account's address country, else the
-request's GeoIP country, else the default, because a person who signs up
-in the EU is owed the EU text and never the US one.
+name and the issuer resolves in one order: the account's stored region
+first, a preference the person set through the selector; else the
+request's GeoIP country, decided before any typed data so the first
+terms page a person meets is already their region's; else the stored
+address country once the account holds one; else the default variant,
+because a person who signs up in the EU is owed the EU text and never
+the US one. `regions_offered` is the selector's choices, the distinct
+`regions` of the name's variants plus `null` for the default. The terms
+page draws a region selector, "Not in <region>? Choose your region",
+over the codes and sets the template offers (the distinct `regions` of
+the name's variants plus the default), whose choice re-reads
+`GET /api/auth/terms?region=<code>` and is written to the account as
+`PATCH /api/user/preferences { region }`, so every later terms page and
+the public policy view resolve to it; `GET /api/auth/terms` accepts
+`?region=` the way the policies read does and answers `422` `enum` at
+`/region` for a region the name does not offer; a stored region is the
+person's word and beats every guess, because a person who travels or
+whose address is elsewhere must not be shown the wrong law.
 `collecting` is true while the document references a profile field the
 account lacks; `fields` lists those, in render order, each carrying
 `value`, the stored value the page prefills or absent for an empty
@@ -1437,6 +1453,7 @@ segments (`org-console`, `profile` and `organizations` already are).
     "language": "en",
     "theme": "dark",
     "timezone": "America/Chicago",
+    "region": null,
     "ciba_channel": "PUSH",
     "ciba_user_code_set": false
   },
@@ -1522,18 +1539,21 @@ replays inside its window and a guessing run meets `429` with
 | backup codes               | `POST /api/user/backup-codes`, stepped up, answers `{ codes }`, once                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `/accountconfig/backupcodes/generate`                                                                            |
 | sessions                   | `DELETE /api/user/sessions/{id}`, `DELETE /api/user/sessions`, stepped up; the second answers `{ "next": "/login" }` when it ended the caller's own session too, and the page says so before asking                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/accountconfig/sessions/revoke`, `/revoke-all`                                                                  |
 | favorites                  | `PUT /api/user/favorites` with the whole ordered list as `[{ client_id, custom_label, order }]`; the server answers the enriched entries from the client's own registration, so a `home_url` or `icon_url` the page sends is ignored and the favorites keep working as they do today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `POST /user/favorites/save`                                                                                      |
-| preferences                | `PATCH /api/user/preferences` with `language`, `theme`, `timezone`, `ciba_channel` and `ciba_user_code`, the last a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | unchanged                                                                                                        |
+| preferences                | `PATCH /api/user/preferences` with `language`, `theme`, `timezone`, `region`, `ciba_channel` and `ciba_user_code`; `region` the person's legal region, a two-letter ISO 3166-1 code or one of `EU`, `EEA`, `UK`, `null` clearing it, the value the terms page's selector writes and the terms and policy variants resolve to first (`422` `enum` on `/region` otherwise); `ciba_user_code` a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                              | unchanged                                                                                                        |
 | delete the account         | `POST /api/user/deletion` `{ email_confirmation }`, stepped up (`422` on `/email_confirmation`, `409` `sole_owner` with `teams: [{ uuid, name }]`, the teams only this account owns); the server invalidates every session of the account before answering `{ next: "/login" }`, and the page drops its cache and navigates there                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `POST /user/delete-account`                                                                                      |
-| organizations              | `POST /api/user/organizations` `{ name }` (`422` `required` on `/name`); per organization `PATCH …/{uuid}` (name, the profile fields, `access_mode` as `invite`, `request` or `private`, `default_role` as `MEMBER` or `ADMIN`, `422` `enum` on either), `POST …/{uuid}/convert` `{ name }`, `POST …/{uuid}/invite-code` (regenerate), `POST …/{uuid}/invites` `{ email, role }`, `DELETE …/{uuid}/invites/{id}`, `PUT …/{uuid}/members/{user_id}/role` `{ role }` (`409` `last_owner` when it would leave the team without one), `DELETE …/{uuid}/members/{user_id}`, `POST …/{uuid}/leave`, `DELETE …/{uuid}`, `PUT /api/user/primary-organization` `{ uuid }`; a refusal from the service (`Not a member`, `Insufficient organization role`, `Only the owner can invite admins`, managed rows) is `403` with `code`; no join-by-code route, because a code a person types is a secret that leaks and a door the organization never chose | the fourteen form posts of `OrganizationController`, each a redirect with a flash; `/join` retires with its form |
+| organizations              | `POST /api/user/organizations` `{ name }` (`422` `required` on `/name`); per organization `PATCH …/{uuid}` (name, the profile fields, `access_mode` as `invite`, `request` or `private`, `default_role` as `MEMBER` or `ADMIN`, `422` `enum` on either), `POST …/{uuid}/convert` `{ name }`, `POST …/{uuid}/invite-code` (regenerate), `POST …/{uuid}/invites` `{ email, role }`, `DELETE …/{uuid}/invites/{id}`, `POST …/{uuid}/invites/{id}/resend` (no body, `can_manage` alone, answering `204` after the invitation mail is sent again, `429` `throttled` with `wait_seconds` on a repeat inside the mail's own sixty-second resend window, `404` `not_found` for an invitation that is accepted or not the organization's), `PUT …/{uuid}/members/{user_id}/role` `{ role }` (`409` `last_owner` when it would leave the team without one), `DELETE …/{uuid}/members/{user_id}`, `POST …/{uuid}/leave`, `DELETE …/{uuid}`, `PUT /api/user/primary-organization` `{ uuid }`; a refusal from the service (`Not a member`, `Insufficient organization role`, `Only the owner can invite admins`, managed rows) is `403` with `code`; no join-by-code route, because a code a person types is a secret that leaks and a door the organization never chose | the fourteen form posts of `OrganizationController`, each a redirect with a flash; `/join` retires with its form |
 | join requests              | `POST /api/organization/{org}/requests` `{ message }` on a `request` organization, answering `201` with the request and notifying the organization's admins through the inbox (`409` `already_member`, `409` `already_requested`, `403` `not_open` on an `invite` or `private` one); `POST …/requests/{id}/approve` `{ assigned_role }` and `POST …/requests/{id}/deny`, `can_manage` alone, each answering `204`, the approve making the membership at the assigned role and the deny recording nothing but the answer; BoxVault's routes on the same paths, sent through the adapter's `join`, `approveRequest` and `denyRequest`, so the shared DiscoveryPage and the console's Join requests tab need no issuer branch; an `invite` organization is joined from the invitation mail's link alone, `/org/invite/:token` above                                                                                                            | new; BoxVault's `organization.routes.js`                                                                         |
 | linked accounts            | `POST /api/user/integrations/providers/{id}/link` with the CSRF header, stepped up, answering `{ next }` to the provider's authorization URL with a `state` bound to the session, which the callback refuses when the session did not issue it, because a link that starts on a GET can be started for a victim by any page; `DELETE /api/user/integrations/providers/{id}`, stepped up (`409` `last_login_method`); the calls unchanged, sent from the profile's Security page                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `/user/integrations/link-provider`, `/unlink-provider`                                                           |
 | applications               | `DELETE /api/user/integrations/apps/{client_id}`, stepped up (revoke); `DELETE /api/user/integrations/apps/{client_id}/scopes/{scope}`, refused for `openid` because the application breaks without it; the calls unchanged, sent from the Applications page                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `/revoke-consent`, `/revoke-scope`                                                                               |
 | integrations               | none; a service is connected and disconnected where it lives, through its `settings_url`, because the issuer holds no write over a third party's service                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | new                                                                                                              |
-| inbox                      | the hub's `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` and `DELETE /api/notifications/{id}` unchanged; `DELETE /api/notifications` deletes every notification of the caller and answers `204`, behind the page's Delete all confirm                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `DELETE /api/notifications/{id}` and `DELETE /api/notifications` both answered by `NotificationController`; done |
+| inbox                      | the hub's `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` and `DELETE /api/notifications/{id}` unchanged; `POST /api/notifications/{id}/unread` puts one row back to unread, clearing `readAt`, answering `204` and pushing the hub's `unread-count` event the way `/read` does, `404` for a row that is not the caller's (decision 151); `DELETE /api/notifications` deletes every notification of the caller and answers `204`, behind the page's Delete all confirm                                                                                                                                                                                                                                                                                                                                                                                                                                              | `DELETE /api/notifications/{id}` and `DELETE /api/notifications` both answered by `NotificationController`; done |
 
 ### What the signed-in pages draw
 
-- **ProfilePage** keeps its avatar card and its `account` adapter; on the
+- **ProfilePage** draws its avatar card on `/user/profile` alone on the
+  issuer, going on the section's other routes since the header's avatar
+  and name already carry that identity there (decision 143); it keeps its
+  `account` adapter; on the
   issuer it draws no tab strip, the sidebar's Profile row
   (`/user/profile`) and its four child rows (`/user/profile/security`,
   `/user/profile/preferences`, `/user/profile/favorites`,
@@ -1604,7 +1624,12 @@ replays inside its window and a guessing run meets `429` with
     EMAIL, SMS while a verified number exists), the approval PIN with a
     status line, "A PIN is set · Clear" or "No PIN · Set", and one Save
     for those three.
-  - **Favorites** at `/user/profile/favorites`: the ordered list with drag handles and Remove, then
+  - **Favorites** at `/user/profile/favorites`: the ordered list with drag handles and Remove, a
+    select column whose header cell is a real checkbox, the select-all for
+    the list, and while rows are picked the section's action pane reads
+    "N selected", Clear selection and Remove, which writes the whole list
+    without the picked rows through the same `PUT /api/user/favorites`
+    (decision 152); then
     "Available applications" from the connected apps not yet favorited with
     Add; icon chain `icon_url` → favicon of `home_url` → the app glyph;
     the page binds the navbar search with a query over the favorites and
@@ -1646,8 +1671,16 @@ replays inside its window and a guessing run meets `429` with
   for an owner, disabled on the last owner's own row so a team is never
   left without one, and Remove while `can_manage`, a managed row's source
   in place of the controls, Invite (email, role, ADMIN for an owner only)
-  and the pending invitations with Revoke, one tab's content on screen at
-  a time; the Join requests tab draws while `access_mode` is `request`
+  and the pending invitations with Revoke and Resend, one tab's content on
+  screen at a time; the Members and Invitations tabs each carry a select
+  column whose header cell is a real checkbox, the select-all for the
+  list, and while rows are picked the tab's action pane reads "N
+  selected", Clear selection, then on Members Change role (a role select)
+  and Remove and on Invitations Revoke and Resend, each sent as the
+  existing per-row route once per picked row, the last-owner and
+  managed-row guards refusing per row as they do today, the result line
+  naming processed, skipped and errors (decision 152); the Join requests
+  tab draws while `access_mode` is `request`
   and the person holds `can_manage`, its rows from
   `GET /api/organization/{org}/requests` with Approve (the role select,
   the default role preselected) and Deny, because the issuer's adapter
@@ -1692,16 +1725,24 @@ replays inside its window and a guessing run meets `429` with
   a service the estate does not control and the other three are the
   person's own account, records and grants; the page binds the navbar
   search with a query over the services by name.
-- **InboxPage**: the same `NotificationRow` as the modal in a full-width
-  list, twenty-five per page with the pager, Mark all as read and Delete
-  all (behind a confirm) at the top, the per-row controls labeled "Mark
-  as read" and "Delete", every relative time carrying the absolute time
-  in its tooltip, "View details" following `navigate`, the unread badge
-  on the chrome updated through the notifications feature's one context,
-  which the modal, the page and the badge share, the `unread-count`
-  event correcting it where the UI backend streams; no router prop
-  carries a callback to a page; the page binds the navbar search with a
-  query over the loaded rows by title and body and its Columns group.
+- **InboxPage**: a `SectionHeading`, its title Inbox, the count as muted
+  text after the title, and the section's one action pane at its right:
+  picked rows read "N selected", Clear selection, Mark as read, Mark as
+  unread (one `POST /api/notifications/{id}/unread` per picked row,
+  decision 151) and
+  Delete, then Mark all as read and Delete all (behind a confirm), over
+  the same `NotificationRow` as the modal in a full-width list, a select
+  column whose header cell is a real checkbox, the select-all for the
+  page, never a button or link of its own, the row checkboxes its cells,
+  twenty-five per page with the pager, the per-row controls labeled
+  "Mark as read" and "Delete", every relative time carrying the absolute
+  time in its tooltip, "View details" following `navigate`, the unread
+  badge on the chrome updated through the notifications feature's one
+  context, which the modal, the page and the badge share, the
+  `unread-count` event correcting it where the UI backend streams; no
+  router prop carries a callback to a page; the page binds the navbar
+  search with a query over the loaded rows by title and body and its
+  Columns group (decision 142).
 
 ### Shared components the signed-in pages add
 
@@ -1747,7 +1788,9 @@ fields (`website`, `logoUrl`, `locale`, `timezone`, `telephone`,
 `activeSessions`, `none`); `userTerms.*` (`title`, `version`,
 `accepted`, `view`, `none`); `integrations.*` (`title`, `connected`,
 `manage`, `status.*`); `inbox.*` gains `title`, `markAll`,
-`deleteAll`, `deleteAllBody`, `markRead`, `delete`, `viewDetails`;
+`deleteAll`, `deleteAllBody`, `markRead`, `delete`, `viewDetails`,
+`bulk.*` for its picked-state Mark as read and Delete actions, the same
+`pages.selectColumn` of decision 137 naming its select column's checkbox;
 `errors.*` gains `step_up_required`, `step_up_failed`, `last_method`,
 `no_methods`, `sole_owner`, `already_member`, `already_requested`,
 `not_open`, `last_login_method`, `last_owner`. Every key mirrored in
@@ -1779,7 +1822,7 @@ Bearer-only chain. In this group the identity feature's operator export
 fills the sidebar of the [Universal Navbar Contract](universal-navbar/#sidebar):
 Overview (Dashboard), Accounts (Users, All organizations), Activity
 (Logins, Registrations, Sessions), Health (Service usage, Insights,
-Client health, Provider health), Security (Blocked IPs), Content (Terms) and System
+Client health, Provider health), Security (Blocked IPs), Legal (Terms) and System
 (Configuration), one page per entry, every entry a deep link (decision
 17), and no page draws a tab strip of the same names beside the rows,
 because one navigation on screen twice is one too many; the chrome's
@@ -1791,17 +1834,17 @@ principal (decided with the cookie provider).
 
 ### Admin routes
 
-| Route                                                                                       | Entry                                                                                                                                                                  | Gate                 | Today                                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/admin`, `/admin/dashboard`                                                                | Overview › Dashboard: the five stat cards linking to their entries, the login map, recent logins and registrations, the restart card while a restart is pending        | `cookie`, `admin`    | `admin/dashboard.html`, `AdminController.dashboard`, `/admin/api/login-heatmap`                                                                                                                                                            |
-| `/admin/users`                                                                              | Accounts › Users: the query and filters in the navbar module, the sortable table, the bulk bar, roles, customer id, primary organization, suspend, delete, rate limits | the same             | `admin/users.html`                                                                                                                                                                                                                         |
-| `/admin/organizations`                                                                      | Accounts › All organizations: the table, Edit over the whole record, delete                                                                                            | the same             | `admin/organizations.html`; the customer-id form alone                                                                                                                                                                                     |
-| `/admin/logins`, `/admin/registrations`, `/admin/sessions`                                  | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                               | the same             | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
-| `/admin/service-usage`, `/admin/insights`, `/admin/client-health`, `/admin/provider-health` | Health › Service usage, Insights, Client health, Provider health: one page per row; the usage report, the fleet insights, the client probes, the provider probes       | the same             | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
-| `/admin/brute-force`                                                                        | Security › Blocked IPs: the status line, the table, Unblock                                                                                                            | the same             | `admin/blockedIps.html`                                                                                                                                                                                                                    |
-| `/admin/terms`                                                                              | Content › Terms: the templates as ordered cards, create, edit, copy, preview, delete                                                                                   | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
-| `/admin/config`                                                                             | System › Configuration: the shared config editor (decision 16)                                                                                                         | the same             | `admin/config.html`, `ConfigController`                                                                                                                                                                                                    |
-| `/error`                                                                                    | ErrorPage: status, reference, path from the URL                                                                                                                        | none                 | `CustomErrorController`, `error/error.html`, `404.html`, `fatal.html`                                                                                                                                                                      |
+| Route                                                                                       | Entry                                                                                                                                                                                    | Gate                 | Today                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/admin`, `/admin/dashboard`                                                                | Overview › Dashboard: the five stat cards linking to their entries, the login map, recent logins and registrations, the restart card while a restart is pending                          | `cookie`, `admin`    | `admin/dashboard.html`, `AdminController.dashboard`, `/admin/api/login-heatmap`                                                                                                                                                            |
+| `/admin/users`                                                                              | Accounts › Users: the query and filters in the navbar module, the sortable table, the action pane's bulk actions, roles, customer id, primary organization, suspend, delete, rate limits | the same             | `admin/users.html`                                                                                                                                                                                                                         |
+| `/admin/organizations`                                                                      | Accounts › All organizations: the table, a select column, Edit over the whole record, delete, the action pane's bulk actions (Suspend, Resume, Delete)                                   | the same             | `admin/organizations.html`; the customer-id form alone                                                                                                                                                                                     |
+| `/admin/logins`, `/admin/registrations`, `/admin/sessions`                                  | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                                                 | the same             | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
+| `/admin/service-usage`, `/admin/insights`, `/admin/client-health`, `/admin/provider-health` | Health › Service usage, Insights, Client health, Provider health: one page per row; the usage report, the fleet insights, the client probes, the provider probes                         | the same             | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
+| `/admin/brute-force`                                                                        | Security › Blocked IPs: the status line, the table, Unblock, Unblock all                                                                                                                 | the same             | `admin/blockedIps.html`                                                                                                                                                                                                                    |
+| `/admin/terms`                                                                              | Legal › Terms: the templates as ordered cards, create, edit, copy, preview, delete                                                                                                       | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
+| `/admin/config`                                                                             | System › Configuration: the shared config editor (decision 16)                                                                                                                           | the same             | `admin/config.html`, `ConfigController`                                                                                                                                                                                                    |
+| `/error`                                                                                    | ErrorPage: status, reference, path from the URL                                                                                                                                          | none                 | `CustomErrorController`, `error/error.html`, `404.html`, `fatal.html`                                                                                                                                                                      |
 
 `error` joins the reserved first segments (`admin` already is, and the
 client-health page now lives under it). `AdminController.userActivity` at `/admin/user/{id}/activity`
@@ -1866,7 +1909,7 @@ the identity feature imports no other feature, and the System heading's
 key, answered beside the nodes as the tree's `labelKey` so the heading
 is drawn above it in the section's place, since a tree draws after
 every section and without the heading the Configuration node reads as a
-row of Content, answering one
+row of Legal, answering one
 Configuration node with no route of its own, folding on click and never
 navigating, whose children are one node per
 name in list order, labelled by the schema's root `title` once
@@ -1954,14 +1997,19 @@ problem body with `code`.
 | primary organization     | `PATCH /api/admin/users/{id}` `{ primary_organization }` (uuid; `422` `not_a_member`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `POST …/primary-org`                                                                                                              |
 | roles                    | `PUT /api/admin/users/{id}/roles` `{ roles: [] }`, one call (`403` `own_privileged_role`, `422` `unknown_role`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `POST …/roles/toggle` once per changed role, the page reloading after the last                                                    |
 | delete a user            | `DELETE /api/admin/users/{id}`, stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `POST …/delete`                                                                                                                   |
-| bulk                     | `POST /api/admin/users/bulk` `{ action, user_ids: [], role }`, `action` one of `enable`, `suspend`, `add_role`, `remove_role`, `delete`, `role` present for the two role actions, answering `{ processed, skipped, errors: [] }`, the delete action stepped up                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | form-encoded with a comma list and the kebab values `add-role`, `remove-role`                                                     |
+| bulk                     | `POST /api/admin/users/bulk` `{ action, user_ids: [], role, customer_id, primary_organization }`, `action` one of `enable`, `suspend`, `add_role`, `remove_role`, `delete`, `set_customer_id`, `set_primary_organization`, `revoke_sessions`, `unlock`; `role` present for the two role actions, `customer_id` for `set_customer_id` (six hex characters, or empty to clear, `422` `pattern` at `/customer_id`), `primary_organization` for `set_primary_organization` (a uuid, `404` when no organization carries it); answering `{ processed, skipped, errors: [{ id, code }] }`, every skipped row named in `errors` with its code (`self`, `not_found`, `not_a_member`), `422` `enum` at `/action`, `422` `required` at `/user_ids`; the delete and revoke_sessions actions stepped up (decision 146)                                                                                                                                                                                                                                                                                                                                                                                  | form-encoded with a comma list and the kebab values `add-role`, `remove-role`                                                     |
 | revoke a session         | `DELETE /api/admin/sessions/{id}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `POST /admin/sessions/revoke`                                                                                                     |
+| sessions bulk            | `POST /api/admin/sessions/bulk` `{ action: "revoke", session_ids: [] }`, `id` the opaque surrogate the sessions list carries, answering `{ processed, skipped, errors: [{ id, code }] }`, an unknown id skipped with `not_found`, `422` `enum` at `/action`, `422` `required` at `/session_ids`, stepped up (decision 148)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | new                                                                                                                               |
 | delete an organization   | `DELETE /api/admin/organizations/{id}` (`409` with `code` for the service's refusal)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `POST …/delete`, a `400` with the message                                                                                         |
 | edit an organization     | `PATCH /api/admin/organizations/{id}`, any of `name`, `email`, `website_url`, `logo_url`, `description`, `locale`, `timezone`, `telephone`, `address`, `access_mode`, `default_role`, `customer_id` (an empty `customer_id` clears it), answering `200` with the record, `422` with a pointer per failing field (`pattern` on `/customer_id`, six hex characters; `enum` on `/access_mode` and `/default_role`), `409` `unique` on `/name`; the same fields the organization's own owner edits through `PATCH /api/user/organizations/{uuid}`, so the admin's form and the console's form describe one record and the `organization` form of `/api/rules` bounds both                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `POST …/customer-id`, the one field an admin could set                                                                            |
+| organizations bulk       | `POST /api/admin/organizations/bulk` `{ action, organization_ids: [], customer_id, access_mode, default_role }`, `action` one of `suspend`, `resume`, `delete`, `set_customer_id`, `set_access_mode`, `set_default_role`, `regenerate_invite_code`; `customer_id` for `set_customer_id` (six hex characters or empty to clear, `422` `pattern` at `/customer_id`), `access_mode` for `set_access_mode` (`invite`, `request` or `private`, `422` `enum` at `/access_mode`), `default_role` for `set_default_role` (`MEMBER` or `ADMIN`, `422` `enum` at `/default_role`); answering `{ processed, skipped, errors: [{ id, code }] }`, a personal organization skipped with `personal` for the access mode, default role and invite code actions, an unknown id with `not_found`, `422` `enum` at `/action`, `422` `required` at `/organization_ids`; the delete action stepped up (decision 147)                                                                                                                                                                                                                                                                                              | new                                                                                                                               |
 | unblock an address       | `DELETE /api/admin/brute-force/{ip}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `POST /admin/brute-force/reset`                                                                                                   |
+| unblock every address    | `DELETE /api/admin/brute-force`, answering `204`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | new                                                                                                                               |
+| unblock a selection      | `POST /api/admin/brute-force/bulk` `{ action: "unblock", addresses: [] }`, answering `{ processed, skipped, errors: [{ id, code }] }`, `id` the address, an address not on the blocked table skipped with `not_blocked`, one `blocked-count` event after the whole selection, `422` `enum` at `/action`, `422` `required` at `/addresses` (decision 149)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | new                                                                                                                               |
 | rate limit               | `POST /api/admin/rate-limit/{user_id}/unlock`, `/tfa-unlock` with `{ "method": "SMS" \| "APP" \| "BACKUP_CODE" }` (`422` `enum` on `/method`), `/ban`, `/unban`, the last three with no body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/rate-limit/*` with `userId`; no page calls them                                                                           |
 | terms                    | `POST /api/admin/terms` `{ name, regions, friendly_name, icon, version, type, is_public, display_order, content }` (`409` `unique` on `/name` when a default variant of the name exists, on `/regions` with `params.scope` the name when another variant claims a country of the set), `PATCH /api/admin/terms/{name}` any of those, `DELETE /api/admin/terms/{name}`, the two addressing the default variant unless `?region=` names one the variant's `regions` carries; each saved at once. `regions` is a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`, `UK`; empty is the default variant; two variants of one name never overlap, refused `409 unique` at `/regions`. The issuer's `/api/rules` carries a `terms` form, its members bounded as the validation contract's Forms table lists them: `name` is `$defs.slug` and `unique` among the default variants, because it becomes the `/public/policies/<name>` and `/api/admin/terms/{name}` segment; `icon` is `$defs.iconName` and is drawn only as a class attribute; the placeholders are a fixed list replaced by string substitution and never evaluated, so the editor can never reach a template engine | `/admin/terms/template/create`, `/update/{name}`, `/template/delete/{name}` form-encoded, batched behind the config editor's Save |
 | reorder terms            | `PUT /api/admin/terms/order` `{ ids: [] }`, the template ids in the wanted order, one position per variant, because two variants of one name have no other handle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `displayOrder` per template in the same batch                                                                                     |
+| terms bulk               | `POST /api/admin/terms/bulk` `{ action, ids: [] }`, `action` one of `delete`, `set_public`, `set_private`, `ids` the template ids since two variants share a name, answering `{ processed, skipped, errors: [{ id, code }] }`, an unknown id skipped with `not_found`, `422` `enum` at `/action`, `422` `required` at `/ids`; the delete action stepped up (decision 150)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | new                                                                                                                               |
 | revoke a dynamic client  | `DELETE /api/admin/dcr/clients/{id}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `/admin/dcr/clients/{id}`                                                                                                         |
 | export                   | `GET /api/admin/export/logins`, `/registrations`, `/users` with the navbar panel's query and filters as its parameters, the panel's one registered action on Users, Logins and Registrations and never a button on the page, a top-level navigation answering `application/json` as an attachment, the same rows the table draws, because a CSV opened in a spreadsheet executes a cell that an attacker typed as a username or a user agent                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/export/*`                                                                                                                 |
 | configuration            | `PUT /api/config/<name>`, the config contract's merge patch (`422` with a pointer per failing path in place of the `400` text list), `POST /api/config/restart` and `POST /api/admin/config/rotate-signing-key` → `{ kid }`, each stepped up and behind a `ConfirmModal` because one click must not restart the issuer or retire its signing key, the SMTP test the mail section's `test` action of the config contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `/admin/config/*`                                                                                                                 |
@@ -1998,7 +2046,7 @@ problem body with `code`.
     parameter for it and the navbar contract's one-group-per-enumerable-
     column rule still wants it; Export is the panel's
     registered action, `/api/admin/export/users` from the same query and
-    groups, the page keeping the bulk bar and the table alone; the
+    groups, the page keeping its `SectionHeading` and the table alone; the
     `SubTable` with sortable Email, Name, Customer ID and Status headers,
     the Roles badges, the Organizations badges (gold for the primary),
     the 2FA badge; the row actions as labeled buttons or one row menu,
@@ -2007,24 +2055,47 @@ problem body with `code`.
     menu behind a confirm, never a click on a badge, because a label that
     secretly acts is a trap), Rate limits (the dialog of decision 20 over
     the rate-limit read, with Unlock sign-in, Unlock a method, Ban and
-    Unban) and Delete (`ConfirmModal` with the organization warning); the
-    select-all box and the bulk bar (Enable, Suspend, Add role, Remove
-    role, Delete, Clear selection) with its confirm, the result line
-    naming processed, skipped and errors.
-  - **Organizations**: the table (name, Personal or Team, uuid, invite
-    code, customer id, members, created), the Type group, `kind: select`
-    over Personal and Team narrowing the rows client-side, the row
-    actions Edit and Delete as labeled controls: Edit opens the form
-    dialog of decision 121 over the record's fields (name, email,
-    website, logo URL, description, locale, time zone, telephone, the
-    `AddressFields`, access mode, default role, customer id), prefilled
-    from the row, validated through `useFormRules` against the
-    `organization` form of `/api/rules`, the `422` painted inline and
-    the `409 unique` on the name field, saved by one
-    `PATCH /api/admin/organizations/{id}` and the list re-read, because
-    an operator who can delete an organization but not correct its name
-    or its door is sent to the owner for every typo; Delete behind
-    `ConfirmModal` for a team or an empty personal organization.
+    Unban) and Delete (`ConfirmModal` with the organization warning); a
+    `SectionHeading` over the table, its title Users, the count as muted
+    text after the title, and the select column's header cell a real
+    checkbox, the select-all for the page, never an icon glyph and never
+    a button or link of its own (decisions 137, 139); the section's
+    action pane, while rows are picked, reads "N selected", Clear
+    selection, Enable, Suspend, Add role, Remove role, Set customer id (a
+    small form dialog for the hex, empty to clear), Set primary
+    organization (a select over the organizations, a row whose user is
+    not a member skipped with `not_a_member`), Revoke sessions and
+    Unlock, then Delete, then
+    Create and Refresh, then the view toggle, with a confirm on Delete
+    and on Revoke sessions and the step-up dialog on both,
+    the result line naming processed, skipped and errors (decision 146).
+  - **Organizations**: a `SectionHeading` over the table, its title All
+    organizations, the count as muted text after the title; the table (a
+    select column whose header cell is a real checkbox, the select-all
+    for the page, never an icon glyph and never a button or link of its
+    own, name, Personal or Team, uuid, invite code, customer id,
+    members, created),
+    the Type group, `kind: select` over Personal and Team narrowing the
+    rows client-side, the row actions Edit and Delete as labeled
+    controls: Edit opens the form dialog of decision 121 over the
+    record's fields (name, email, website, logo URL, description,
+    locale, time zone, telephone, the `AddressFields`, access mode,
+    default role, customer id), prefilled from the row, validated
+    through `useFormRules` against the `organization` form of
+    `/api/rules`, the `422` painted inline and the `409 unique` on the
+    name field, saved by one `PATCH /api/admin/organizations/{id}` and
+    the list re-read, because an operator who can delete an organization
+    but not correct its name or its door is sent to the owner for every
+    typo; Delete behind `ConfirmModal` for a team or an empty personal
+    organization; the section's action pane also carries, while rows are
+    picked, "N selected", Clear selection, Suspend, Resume, Set customer
+    id (the hex, empty to clear), Set access mode (a select over invite,
+    request and private), Set default role (a select over MEMBER and
+    ADMIN), Regenerate invite code and Delete
+    over `POST /api/admin/organizations/bulk`, the delete action stepped
+    up behind a confirm, a personal organization skipped with `personal`
+    for the door, the role and the code, the result line naming
+    processed, skipped and errors (decisions 139, 147).
   - **Activity**: three pages, one per sidebar row, no tab strip:
     Logins (the username query and the date range in the navbar module,
     the query as the list's `username` parameter and the range as
@@ -2039,10 +2110,16 @@ problem body with `code`.
     verified and Phone verified as two `kind: toggle` groups of one pill
     each narrowing the loaded page client-side, since the list names no
     parameter for them, the columns headed "Email verified" and "Phone
-    verified" over their Yes and No), Sessions (the table with Authorized
+    verified" over their Yes and No), Sessions (the table with a select
+    column whose header cell is a real checkbox, the select-all for the
+    page, Authorized
     and Last active as two columns, the Client group, `kind: toggle` over
     the application names of the loaded page narrowing it client-side,
-    and Revoke behind a confirm); `Pager` under each; every table
+    Revoke per row behind a confirm, and while rows are picked the
+    heading's action pane reading "N selected", Clear selection and
+    Revoke over `POST /api/admin/sessions/bulk`, behind a confirm and the
+    step-up dialog, the result line naming processed, skipped and errors,
+    decision 148); `Pager` under each; every table
     draws one date format, the absolute time in the cell and the relative
     time in its tooltip, because two formats on one screen read as two
     clocks. Every admin table page, Users, Organizations, Logins,
@@ -2079,10 +2156,14 @@ problem body with `code`.
     `GET /api/admin/client-health` and Provider health its `providers`,
     one kind per page, each page's rows as cards in three states
     (healthy, unhealthy, not probeable) with the error collapse, one
-    status per card, and its own summary line at the top, the healthy
-    count over its rows, drawn as a warning while any row is unhealthy,
-    because a green line over a red card lies, drawn under the pages
-    contract's one view toggle, list or cards, the list a `SubTable` with
+    status per card, no separate summary bar: the page's `SectionHeading`
+    carries the page's own name as its title, the healthy-over-total
+    count as the heading's muted text after the title, success while
+    every row is healthy and warning while any row is unhealthy, because
+    a green line over a red card lies, and its action pane holds Refresh
+    then the pages contract's one view toggle, list or cards (decision
+    141); the list a
+    `SubTable` with
     the columns Name, Check, Endpoint, Status, Response time, Last checked
     and Reason, header sort, the Status group (`kind: toggle` over
     healthy, unhealthy and not probeable) narrowing the rows client-side
@@ -2099,9 +2180,21 @@ problem body with `code`.
     probe names is the entry to fix; Refresh re-fetches, nothing reloads;
     each page binds the navbar search with a query over its rows by name
     and base URL.
-  - **Blocked IPs**: the enabled line with the count, the table, Unblock
-    behind a confirm.
-  - **Terms**: the templates as cards in a `SortableList` (drag writes
+  - **Blocked IPs**: a `SectionHeading` carrying the enabled line and the
+    blocked count as its muted text after the title, Unblock all
+    (`DELETE /api/admin/brute-force`, answering `204`) in the heading's
+    action pane; the table with a select column whose header cell is a
+    real checkbox, the select-all for the page, the per-row Unblock
+    behind a confirm beside it, and while rows are picked the action pane
+    reading "N selected", Clear selection and Unblock over
+    `POST /api/admin/brute-force/bulk`, beside Unblock all, the result
+    line naming processed, skipped and errors (decision 149). Banning an
+    address stays the rate-limit route on the Users
+    page's Rate limits dialog, a decision about one account; Blocked IPs
+    never gains a Ban control (decision 140).
+  - **Terms**: a `SectionHeading` over the cards, its title Terms, Create
+    in the heading's action pane, opening the create dialog below
+    (decision 138); the templates as cards in a `SortableList` (drag writes
     the order at once and raises a success card carrying Undo, which
     writes the previous order back), Public and type badges, Preview
     opening a list dialog of decision 121 that draws the template as the
@@ -2119,7 +2212,13 @@ problem body with `code`.
     textarea with a preview beside it and the placeholder help from the
     placeholders call), a region badge on each card and a `regions`
     multi-select in the dialog over the country codes and the three sets,
-    Delete behind a confirm; every change saved as
+    Delete behind a confirm; each card carries a checkbox, the cards'
+    select column, and the heading's select-all checkbox picks every card
+    on the page, the action pane while cards are picked reading "N
+    selected", Clear selection, Make public, Make private and Delete over
+    `POST /api/admin/terms/bulk` with the template ids, Delete behind a
+    confirm and the step-up dialog, the result line naming processed,
+    skipped and errors (decision 150); every change saved as
     it is made; the page binds the navbar search with a query over the
     template cards by name and display name, the Type group
     (`kind: toggle` over the template types) and the Public group, one
@@ -2268,7 +2367,7 @@ contract plans, so the first client of that channel is the issuer itself.
 
 `shared.json`: `account.sidebar.*` (`title`, `profile`, `organizations`,
 `applications`, `terms`, `integrations`, `inbox`); `admin.*` gains `sidebar.*` (`title`,
-`overview`, `accounts`, `activity`, `health`, `security`, `content`,
+`overview`, `accounts`, `activity`, `health`, `security`, `legal`,
 `system`), `dashboard.*` (`title`, `stats.totalUsers`,
 `stats.loginsToday`, `stats.registrationsWeek`, `stats.failedLogins`,
 `stats.activeSessions`, `map.title`, `map.days`, `recentLogins`,
@@ -2276,13 +2375,18 @@ contract plans, so the first client of that channel is the issuer itself.
 `filter.*`, `table.*`, `roles.*`, `customerId.*`, `primaryOrg.*`,
 `suspend`, `enable`, `rateLimits.*`, `delete.*`, `bulk.*`),
 `organizations.*` (`all` for the sidebar row and the page title, `edit`,
-`edit.title`, `field.*` for the dialog's fields, `saved`),
+`edit.title`, `field.*` for the dialog's fields, `saved`, `bulk.*` for
+its Suspend, Resume, Delete and Clear selection),
 `activity.*` (`logins.*` with `reason`, `registrations.*` with
 `emailVerified` and `phoneVerified`, `sessions.*` with `authorized` and
 `lastActive`, `export`), `health.*` (`usage.*`, `insights.*` with
-`definitions`, `clients.*`, `providers.*`, `status.*`), `blocked.*`,
+`definitions`, `clients.*`, `providers.*`, `status.*`), `blocked.*`
+(`unblockAll`),
 `terms.*` (`title`, `create`, `edit`, `copy`, `copyName`, `preview`,
-`delete`, `undo`, `field.*`, `placeholders`, `type.*`); `navbar.*` gains
+`delete`, `undo`, `field.*`, `placeholders`, `type.*`); `pages.*` gains
+`selectColumn` as the select-all checkbox's `aria-label` ("Select all on
+this page"), the one shared key every select column of the estate draws
+(decision 137); `navbar.*` gains
 `versionShort` for the app-section header of a site without a footer;
 `errors.*` gains `title.403`, `title.404`, `title.500`, `title.other`,
 `body.403`, `body.404`, `body.500`, `report`, `copy`, `copied`,
@@ -2811,7 +2915,7 @@ settings_url }] }`, its page and its Integrations entry drawn only
      `/admin/client-health` draws the `clients` of
      `GET /api/admin/client-health` and Provider health at
      `/admin/provider-health` its `providers`, each under the one view
-     toggle with its own summary line and its own preferences key,
+     toggle with its own `SectionHeading` and its own preferences key,
      `table_prefs_admin_client_health` and
      `table_prefs_admin_provider_health` (decision 88), the Kind group and
      the Kind column gone because each page holds one kind; the row's and
@@ -2882,10 +2986,13 @@ admin)` taking the adapter the router builds as the shared admin
 133. A terms template may exist in regional variants under one name,
      `regions` a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`
      and `UK`, the default variant carrying none; the issuer resolves by
-     the account's address country, then the request's GeoIP country,
-     then the default, records the variant accepted, and never lets one
-     variant's acceptance satisfy another's, because the legal text a
-     person is owed depends on where they are; the admin read carries
+     the account's stored region, then the request's GeoIP country, then
+     the account's address country, then the default, answers
+     `regions_offered` beside `region` and takes `?region=` on
+     `GET /api/auth/terms` for a region the name offers, records the
+     variant accepted, and never lets one variant's acceptance satisfy
+     another's, because the legal text a person is owed depends on where
+     they are and a stored region is the person's word; the admin read carries
      each variant's `id` and the order is written by `id`,
      `PUT /api/admin/terms/order` `{ ids: [] }`, because two variants
      share a name and only the id names one.
@@ -2916,7 +3023,7 @@ labelKey? }`, drawn as a section heading above the tree in the same
      Configuration as it did while the System section held the plain
      row; because a tree draws after every section, a section left
      without rows is not drawn, and a tree without a heading of its own
-     reads as the last section's rows, Configuration under Content.
+     reads as the last section's rows, Configuration under Legal.
 136. The terms page's address group is the shared `AddressFields` block
      with the Google Places autocomplete, the same block the profile
      draws in the same order, line 1 with the lookup, line 2, country,
@@ -2929,6 +3036,190 @@ labelKey? }`, drawn as a section heading above the tree in the same
      public by nature, the script origin is already in `script-src` and
      `connect-src`, and six address parts beside a document need a desk's
      width.
+137. Every page between the navbar, the sidebar and the footer is one or
+     more sections, a section one heading row and one body: left the
+     title, then the count, the picked state or a subhead as muted text
+     right after it on the same row, no icon before the title and no
+     line beneath it, because a glyph or a second line says nothing a
+     reader needs and pushes the body down on every page for a word the
+     title already carries; right the one action pane, where every
+     action of the section lives — bulk actions, the section's own
+     actions (Create, Refresh, Mark all as read, Delete all, Unblock
+     all) and the view toggle together, the picked-state group first
+     ("N selected", Clear selection, then the bulk actions), then the
+     section's own actions, then the view toggle; never a control at the
+     list's left or drawn above the heading, and never a second row
+     under it. A table's select column header is a real checkbox, the
+     select-all for the page, checked, unchecked or indeterminate, never
+     an icon glyph and never a button or link labelled "Select all on
+     this page" anywhere; the row checkboxes are that column's cells;
+     the pages contract's SectionHeading bullet carries the rule and
+     `pages.selectColumn` is its one shared key, the checkbox's
+     `aria-label`; because an action beside the rows it acts on reads as
+     one control, a second row under the heading is a second control for
+     what the heading already offers, and a checkbox that is itself the
+     select-all needs no button beside it to say so again.
+138. The admin sidebar's fifth section renames Content to Legal
+     (`admin.sidebar.legal`, `content` dropped) and the Terms page draws a
+     `SectionHeading` over its cards with Create in the heading's action
+     pane; because Content named nothing the row inside it was not
+     already named by, and Legal names what an operator looks for when
+     they come to manage terms and policies.
+139. All organizations gains a select column whose header cell is a real
+     checkbox, the select-all for the page, and its action pane gains,
+     while rows are picked, "N selected", Clear selection, Suspend,
+     Resume and Delete over
+     `POST /api/admin/organizations/bulk { action, organization_ids: [] }`,
+     `action` one of `suspend`, `resume`, `delete`, answering
+     `{ processed, skipped, errors: [] }`, the delete action stepped up;
+     because an operator managing many organizations at once is owed the
+     bulk shape the Users page already has.
+140. Blocked IPs draws a `SectionHeading` carrying the enabled line and
+     the blocked count as its muted text after the title, with Unblock
+     all (`DELETE /api/admin/brute-force`, a new route answering `204`)
+     in the heading's action pane beside the per-row Unblock; banning an
+     address stays the rate-limit route on the Users page's Rate limits
+     dialog and Blocked IPs never gains a Ban control, because a ban is
+     a judgment about one account and belongs beside that account's
+     other gates, never a blanket action over addresses that carry no
+     identity yet.
+141. Client health and Provider health draw their summary line as the
+     page's `SectionHeading`, the title the page's own name, the
+     healthy-over-total count as the heading's muted text after the
+     title, exactly the count-or-state text every heading carries,
+     success while every row is healthy and warning while any row is
+     not, and an action pane holding Refresh then the view toggle, with
+     no separate summary bar; because a status line and a heading that
+     both sit over the same table say the same thing twice.
+142. The inbox gains a select column whose header cell is a real
+     checkbox, the select-all for the page, and its action pane gains,
+     while rows are picked, "N selected", Clear selection, Mark as read
+     and Delete, over the existing per-row routes; because a person
+     clearing many notifications at once should not click through them
+     one at a time.
+143. The ProfilePage draws its avatar card on `/user/profile` alone, on
+     the issuer or on a `backend` UI backend, one shape either way; the
+     card goes on every other section the page draws under that route
+     (`/user/profile/security`, `/user/profile/preferences`,
+     `/user/profile/favorites`, `/user/profile/sessions`) since the
+     header's own avatar and name already carry that identity in the
+     chrome there; because a second name-and-picture block under a header
+     that already shows one repeats what the person sees, but the
+     Profile section is the one place the page still opens with it.
+144. The issuer first detects the person's region without them entering
+     any information; then, as they onboard, the terms show up based on
+     their region; if their region differs, or they use a service of ours
+     that does not collect the address, the issuer uses the best guess or
+     provides them a selector to override, and that override sets their
+     region on the account, `preferences.region`, which every later terms
+     page and the public policy view resolve to first.
+145. The pages contract's visual reference draws the shape decisions 134
+     and 137 describe as the page-anatomy frame
+     (`universal-pages.html#page-anatomy`): one heading row, left the
+     title with its count, picked state or subhead as muted text right
+     after it and no icon before it, right the one action pane, drawn
+     the same way on an admin table page and on an account page; the
+     frame's earlier color-coded zones were a drafting aid naming which
+     region was which, carried no rule of their own, and are gone now
+     that the shape is agreed.
+146. The Users bulk route grows: `POST /api/admin/users/bulk` gains the
+     actions `set_customer_id` (the member `customer_id`, six hex
+     characters or empty to clear, `422` `pattern` at `/customer_id`),
+     `set_primary_organization` (the member `primary_organization`, a
+     uuid, `404` when no organization carries it; a user who is not a
+     member of it is counted in `skipped` with the code `not_a_member`),
+     `revoke_sessions` (every active session of each user, the per-row
+     admin revoke's path with its back-channel logout, stepped up like
+     `delete`) and `unlock` (the sign-in and verification gates, every
+     second-factor gate and the ban of each user cleared in one call, the
+     rate-limit routes' work); the body stays `snake_case`, the answer is
+     `{ processed, skipped, errors: [{ id, code }] }` with every skipped
+     row named in `errors` by its code (`self`, `not_found`,
+     `not_a_member`), `422` `enum` at `/action`, `422` `required` at
+     `/user_ids`, `403` `step_up_required` outside the window for
+     `delete` and `revoke_sessions`; the Users page's action pane gains
+     Set customer id, Set primary organization, Revoke sessions and
+     Unlock beside the actions it has, the two destructive ones behind a
+     confirm and the step-up dialog; because an operator answering an
+     incident or onboarding a customer's staff acts on many accounts at
+     once, and the per-row dialogs are the Users-page problem the bulk
+     bar already solved for enable and roles.
+147. The All organizations bulk route grows:
+     `POST /api/admin/organizations/bulk` gains `set_customer_id` (the
+     member `customer_id`, the same rule as the users route),
+     `set_access_mode` (the member `access_mode`, one of `invite`,
+     `request`, `private`, `422` `enum` at `/access_mode`),
+     `set_default_role` (the member `default_role`, `MEMBER` or `ADMIN`,
+     `422` `enum` at `/default_role`) and `regenerate_invite_code`; a
+     personal organization is counted in `skipped` with the code
+     `personal` for the access mode, the default role and the invite
+     code, an unknown id with `not_found`, the answer
+     `{ processed, skipped, errors: [{ id, code }] }` as decision 139
+     fixed it, `422` `enum` at `/action`, `422` `required` at
+     `/organization_ids`, `403` `step_up_required` outside the window for
+     `delete`; the page's action pane gains Set customer id, Set access
+     mode, Set default role and Regenerate invite code beside Suspend,
+     Resume and Delete; because a customer's teams share one customer id
+     and one door and an operator sets them together.
+148. Admin Sessions gains a select column whose header cell is a real
+     checkbox, the select-all for the page, and a bulk bar in the
+     heading's action pane, the pane sitting in the heading row over the
+     table as decision 137 places every action, with Revoke over
+     `POST /api/admin/sessions/bulk { action: "revoke", session_ids: [] }`,
+     stepped up and behind a confirm, `id` the opaque surrogate the
+     sessions list carries, the answer
+     `{ processed, skipped, errors: [{ id, code }] }` with an unknown id
+     skipped as `not_found`, `422` `enum` at `/action`, `422` `required`
+     at `/session_ids`, `403` `step_up_required` outside the window;
+     because an operator ending an incident revokes many sessions at
+     once, one account's or one client's, and per-row Revoke on a paged
+     list is the Users-page problem again.
+149. Blocked IPs gains a select column whose header cell is a real
+     checkbox, the select-all for the page, and a bulk bar with Unblock
+     over `POST /api/admin/brute-force/bulk { action: "unblock", addresses: [] }`
+     beside the heading's Unblock all, the answer
+     `{ processed, skipped, errors: [{ id, code }] }` with `id` the
+     address and an address not on the blocked table skipped as
+     `not_blocked`, the server resetting every picked address and pushing
+     one `blocked-count` event for the whole selection, `422` `enum` at
+     `/action`, `422` `required` at `/addresses`; because unblocking a
+     handful of a customer's addresses must not mean unblocking every
+     attacker too.
+150. Terms gains a select column on its cards, one checkbox per card and
+     the heading's select-all checkbox over the page, and a bulk bar with
+     Delete (stepped up, behind a confirm), Make public and Make private
+     over `POST /api/admin/terms/bulk { action, ids: [] }`, `action` one
+     of `delete`, `set_public`, `set_private`, `ids` the template ids
+     since two variants share a name, the answer
+     `{ processed, skipped, errors: [{ id, code }] }` with an unknown id
+     skipped as `not_found`, `422` `enum` at `/action`, `422` `required`
+     at `/ids`, `403` `step_up_required` outside the window for
+     `delete`; because a set of regional variants is retired or
+     published together.
+151. The Inbox bulk bar gains Mark as unread beside Mark as read and
+     Delete, over a new per-row `POST /api/notifications/{id}/unread`
+     answering `204`, clearing `readAt` and pushing the hub's
+     `unread-count` event the way `/read` does, `404` for a row that is
+     not the caller's; because a person who read a batch by mistake must
+     be able to put it back, and the per-row route is the inbox's one
+     shape.
+152. The organization console's Members and Invitations tabs gain a
+     select column whose header cell is a real checkbox and a bulk bar in
+     the tab's action pane, Members with Change role (a role select) and
+     Remove, Invitations with Revoke and Resend, each sent as the existing
+     per-row route once per picked row, no bulk route, the last-owner and
+     managed-row guards refusing per row as today, the result line naming
+     processed, skipped and errors; Favorites gains a select column with
+     Remove over the existing whole-list `PUT /api/user/favorites`; and
+     the resend is a new per-row route,
+     `POST /api/user/organizations/{uuid}/invites/{id}/resend`, no body,
+     `can_manage` alone, answering `204` after the invitation mail is
+     sent again with a fresh expiry, `429` `throttled` with
+     `wait_seconds` on a repeat inside the mail's own sixty-second resend
+     window, `404` `not_found` for an invitation that is accepted or not
+     the organization's, `503` `send_failed` when the mail could not go;
+     because those lists are short and unpaged and a bulk bar over
+     per-row routes is the inbox's pattern.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

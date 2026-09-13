@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaLifeRing } from 'react-icons/fa6';
 
 import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
@@ -61,7 +60,6 @@ const RecoverySection = ({ account, guard, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaLifeRing aria-hidden />}
       title={t('profile.security.recovery.title')}
       folded={folds.folded('recovery')}
       onFold={() => folds.toggle('recovery')}

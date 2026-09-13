@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaLock } from 'react-icons/fa6';
 
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import PasswordField from '../../../../components/common/PasswordField';
@@ -82,7 +81,6 @@ const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved, fold
 
   return (
     <SectionCard
-      icon={<FaLock aria-hidden />}
       title={t('profile.security.password.title')}
       folded={folds.folded('password')}
       onFold={() => folds.toggle('password')}

@@ -9,6 +9,7 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SortableList from '../../../components/common/SortableList';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -325,7 +326,9 @@ const useOrdered = data => {
 };
 
 /**
- * Content › Terms: the templates as cards in a `SortableList`, a drag
+ * Legal › Terms: a `SectionHeading` over the cards, the template count as
+ * muted text after the title, Create as the heading's action; the
+ * templates as cards in a `SortableList`, a drag
  * writing the order at once and raising a success card carrying Undo,
  * which writes the previous order back; Public, type and region badges,
  * one card per variant keyed by id, Preview
@@ -400,18 +403,24 @@ const TermsPage = () => {
     return <AdminLoading />;
   }
 
+  const createAction = (
+    <button
+      type="button"
+      className="btn btn-sm btn-primary"
+      onClick={() => setDialog({ open: true, term: null })}
+    >
+      <FaPlus className="me-1" aria-hidden="true" />
+      {t('admin.terms.create')}
+    </button>
+  );
+
   return (
     <div>
-      <div className="d-flex justify-content-end mb-3">
-        <button
-          type="button"
-          className="btn btn-sm btn-primary"
-          onClick={() => setDialog({ open: true, term: null })}
-        >
-          <FaPlus className="me-1" aria-hidden="true" />
-          {t('admin.terms.create')}
-        </button>
-      </div>
+      <SectionHeading
+        title={t('admin.terms.title')}
+        count={ordered.length}
+        actions={createAction}
+      />
       {shown.length === 0 ? (
         <div className="text-muted">{narrowing ? t('pages.noMatches') : t('pages.empty')}</div>
       ) : null}

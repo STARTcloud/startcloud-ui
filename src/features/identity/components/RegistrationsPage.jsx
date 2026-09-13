@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaDownload } from 'react-icons/fa6';
 
 import Pager from '../../../components/common/Pager';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { registrations } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
@@ -135,6 +136,10 @@ const RegistrationsPage = () => {
 
   return (
     <div>
+      <SectionHeading
+        title={t('admin.activity.registrations.title')}
+        count={state.data ? state.data.total || 0 : null}
+      />
       {state.loading && !state.data ? (
         <AdminLoading />
       ) : (

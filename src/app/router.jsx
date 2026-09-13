@@ -583,19 +583,19 @@ const signInRoutes = ({ status, cookie, account }) => {
     {
       path: '/login/magic',
       open: cookie,
-      element: <MagicLinkPage returnTo={returnTo} />,
+      element: <MagicLinkPage returnTo={returnTo} events={events} />,
       token: 'cookie',
     },
     {
       path: '/login/bootstrap',
       open: cookie,
-      element: <BootstrapLoginPage returnTo={returnTo} />,
+      element: <BootstrapLoginPage returnTo={returnTo} events={events} />,
       token: 'cookie',
     },
     {
       path: '/authenticator',
       open: tfa,
-      element: <TfaCodePage returnTo={returnTo} />,
+      element: <TfaCodePage returnTo={returnTo} events={events} />,
       token: 'tfa',
     },
     {
@@ -680,7 +680,7 @@ const interstitialRoutes = ({ status, cookie }) => {
     row('/connect/logout/frontchannel', open, <FrontChannelLogoutPage returnTo={returnTo} />),
     row('/oauth2/code', open, <CodeDisplayPage />),
     row('/continue', open, <DesktopContinuePage />),
-    row('/link-account-consent', signedIn, <LinkAccountPage returnTo={returnTo} />),
+    row('/link-account-consent', signedIn, <LinkAccountPage returnTo={returnTo} events={events} />),
   ]);
 };
 

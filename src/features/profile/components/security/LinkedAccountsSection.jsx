@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaLink, FaPlug } from 'react-icons/fa6';
+import { FaPlug } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import MethodList, { MethodRow, httpsUrl } from '../../../../components/common/MethodList';
@@ -188,7 +188,6 @@ const LinkedAccountsSection = ({ account, profile, guard, onSaved, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaLink aria-hidden />}
       title={t('profile.security.linked.title')}
       folded={folds.folded('linked')}
       onFold={() => folds.toggle('linked')}

@@ -217,11 +217,14 @@ const BACKUP_CODES = [
   'F6G7H8J9',
 ];
 
+const TERMS_REGIONS = ['EU', 'UK', null];
+
 const TERMS_STATE = {
   name: 'hcl-mla',
   label: 'HCL Master License Agreement',
   version: '2025.3',
   region: null,
+  regions_offered: TERMS_REGIONS,
   step: 2,
   total: 2,
   client_name: 'SwitchBoard Desktop',
@@ -508,6 +511,7 @@ const freshProfile = () => ({
     language: 'en',
     theme: 'dark',
     timezone: 'America/Chicago',
+    region: null,
     ciba_channel: 'PUSH',
     ciba_user_code_set: false,
   },
@@ -1974,7 +1978,14 @@ const acceptTerms = ctx => {
   return ok({ next: '/' });
 };
 
-onboardingRoute('GET', '/api/auth/terms', () => ok(TERMS_STATE));
+onboardingRoute('GET', '/api/auth/terms', ctx => {
+  const requested = ctx.url.searchParams.get('region');
+  if (requested && !TERMS_REGIONS.includes(requested)) {
+    return invalid('/region', 'enum', { enum: TERMS_REGIONS });
+  }
+  const region = requested || state.profile.preferences.region || null;
+  return ok({ ...TERMS_STATE, region });
+});
 onboardingRoute('POST', '/oauth2/accept-terms', acceptTerms);
 onboardingRoute('POST', '/provider-registration/tos/accept', acceptTerms);
 publicRoute('GET', '/provider-registration/continue', () => redirect('/'));
@@ -2676,6 +2687,13 @@ adminRoute('DELETE', '/api/admin/organizations/:id', ctx => {
   }
   return noContent();
 });
+adminRoute('POST', '/api/admin/organizations/bulk', ctx => {
+  if (ctx.body.action === 'delete' && Date.now() > state.stepUpUntil) {
+    return problem(403, 'step_up_required');
+  }
+  const ids = Array.isArray(ctx.body.organization_ids) ? ctx.body.organization_ids : [];
+  return ok({ processed: ids.length, skipped: 0, errors: [] });
+});
 adminRoute('GET', '/api/admin/service-usage', () => ok(SERVICE_USAGE));
 adminRoute('GET', '/api/admin/insights', () => ok(INSIGHTS));
 adminRoute('GET', '/api/admin/client-health', () => ok(CLIENT_HEALTH));
@@ -3007,7 +3025,10 @@ const handle = async (req, res) => {
  * routes answer one row per variant, `POST` refuses `409 unique` at
  * `/name` for a second default and at `/regions` when the sets overlap,
  * and `PATCH` and `DELETE` address the default unless `?region=` names one
- * the variant carries.
+ * the variant carries. `GET /api/auth/terms` answers `regions_offered`
+ * beside `region`, honors `?region=` (`422 enum` at `/region` otherwise)
+ * and falls back to the stored `preferences.region`, which the preferences
+ * PATCH accepts and stores like every other member.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,
@@ -3017,7 +3038,9 @@ const handle = async (req, res) => {
  * `taken` is already taken on the email change; a current password of
  * `wrong` fails the step-up and the password change. The first sensitive
  * call answers `403 step_up_required` until `POST /api/user/step-up`
- * arms the five-minute window. `GET /api/events` streams `ready`, one
+ * arms the five-minute window. `POST /api/admin/organizations/bulk`
+ * answers the users bulk shape, its delete action stepped up the same way.
+ * `GET /api/events` streams `ready`, one
  * `unread-count`, `blocked-count`, `restart-required` and `health` event
  * three seconds after connecting, and `:hb` every 25 seconds. The six
  * configuration files `status.config` names are answered in the config

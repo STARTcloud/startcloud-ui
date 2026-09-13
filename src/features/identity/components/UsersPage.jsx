@@ -6,6 +6,7 @@ import { FaDownload } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useGuard } from '../../../contexts/GuardContext';
@@ -138,20 +139,7 @@ RowActions.propTypes = {
   onAction: PropTypes.func.isRequired,
 };
 
-const columnsFor = ({ selected, onSelect }) => [
-  {
-    key: 'select',
-    labelKey: 'admin.users.table.select',
-    render: row => (
-      <input
-        type="checkbox"
-        className="form-check-input"
-        aria-label={row.username}
-        checked={selected.has(row.id)}
-        onChange={() => onSelect(row.id)}
-      />
-    ),
-  },
+const columnsFor = () => [
   {
     key: 'username',
     labelKey: 'admin.users.table.email',
@@ -239,9 +227,25 @@ const useSelection = rows => {
       return next;
     });
   const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
+  const someSelected = selected.size > 0;
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
   const clear = () => setSelected(new Set());
-  return { selected, toggle, toggleAll, allSelected, clear };
+  return {
+    selected,
+    toggle,
+    toggleAll,
+    allSelected,
+    someSelected,
+    clear,
+    subtable: {
+      allSelected,
+      someSelected,
+      onToggleAll: toggleAll,
+      isSelected: row => selected.has(row.id),
+      onToggleRow: row => toggle(row.id),
+      labelOf: row => row.username,
+    },
+  };
 };
 
 const UserDialogs = ({ open, catalog, onClose, onSaved }) => {
@@ -299,11 +303,17 @@ const serverSortOf = sort => {
  * Export the panel's action over the list's parameters, and the
  * Columns group with the sort and the hidden columns under
  * `table_prefs_admin_users`, the sort sent to the read as `sort` and
- * `direction`; the table with the roles, organizations and 2FA badges,
- * the row actions as labeled buttons and one row menu (Suspend or Enable,
- * Roles, Set primary organization, Edit customer ID, Rate limits, Delete
- * behind the confirm and the step-up), the select-all box and the bulk
- * bar, and the pager; every action re-fetches the list.
+ * `direction`; a `SectionHeading` carrying the total as muted text after
+ * the title, the table's select column a real checkbox header, the
+ * select-all for the page, checked, unchecked or indeterminate; the table
+ * with the roles, organizations and 2FA badges, the row actions as
+ * labeled buttons and one row menu (Suspend or Enable, Roles, Set primary
+ * organization, Edit customer ID, Rate limits, Delete behind the confirm
+ * and the step-up), the heading's action pane gaining, while rows are
+ * picked, "N selected", Clear selection and the bulk actions (Enable,
+ * Suspend, Add role, Remove role, Delete), the result line naming
+ * processed, skipped and errors while it has something to say, and the
+ * pager; every action re-fetches the list.
  */
 const UsersPage = () => {
   const { t, i18n } = useTranslation();
@@ -324,10 +334,7 @@ const UsersPage = () => {
 
   const rows = useMemo(() => answer.data?.items || [], [answer]);
   const selection = useSelection(rows);
-  const columns = useMemo(
-    () => columnsFor({ selected: selection.selected, onSelect: selection.toggle }),
-    [selection.selected, selection.toggle]
-  );
+  const columns = useMemo(() => columnsFor(), []);
   const clientGroups = useMemo(() => rolesGroupOf(catalog), [catalog]);
   const search = useListSearch({
     query: url.query,
@@ -401,29 +408,29 @@ const UsersPage = () => {
   };
 
   const ctx = { t, language: i18n.language };
-
-  return (
-    <div>
-      <div className="form-check mb-2">
-        <input
-          type="checkbox"
-          className="form-check-input"
-          id="users-select-all"
-          checked={selection.allSelected}
-          onChange={selection.toggleAll}
-        />
-        <label className="form-check-label" htmlFor="users-select-all">
-          {t('admin.users.bulk.selectAll')}
-        </label>
-      </div>
+  const headingActions = selection.someSelected ? (
+    <>
+      <strong>{t('admin.users.bulk.selected', { count: selection.selected.size })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('admin.users.bulk.clearSelection')}
+      </button>
       <BulkBar
         selected={[...selection.selected]}
         catalog={catalog}
-        onClear={selection.clear}
         onDone={() => {
           selection.clear();
           reload();
         }}
+      />
+    </>
+  ) : null;
+
+  return (
+    <div>
+      <SectionHeading
+        title={t('admin.users.title')}
+        count={data ? data.total || 0 : null}
+        actions={headingActions}
       />
       {loading && !data ? (
         <AdminLoading />
@@ -441,6 +448,7 @@ const UsersPage = () => {
             hiddenColumns={search.hiddenColumns}
             ctx={ctx}
             emptyText={Object.keys(narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')}
+            selection={selection.subtable}
           />
         </TableWrap>
       )}

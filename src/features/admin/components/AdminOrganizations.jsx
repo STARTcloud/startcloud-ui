@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -555,7 +554,6 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
           return (
             <div className="col-md-6 mb-4" key={org.id}>
               <SectionHeading
-                icon={<FaBuilding aria-hidden />}
                 title={<OrgTitle org={org} />}
                 badge={<SsoBadge org={org} />}
                 actions={orgActions}

@@ -1,15 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaBuilding,
-  FaEnvelope,
-  FaKey,
-  FaLock,
-  FaUser,
-  FaUserPlus,
-  FaUserXmark,
-} from 'react-icons/fa6';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
@@ -169,7 +160,8 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
 
 /**
  * The profile page every estate app with accounts of its own draws the same
- * way: the avatar card as the page heading, the verification notice, the
+ * way: the avatar card as the page heading on the Profile tab alone, the
+ * verification notice, the
  * tab strip, then the active tab on the page's ground under the pages
  * contract's frame rule, every fold kept under `table_prefs_profile`:
  * Profile (the display name form and the Gravatar facts in one
@@ -678,7 +670,6 @@ const BackendProfilePage = ({
   const renderProfileTab = () => (
     <div className="tab-pane fade show active">
       <SectionCard
-        icon={<FaUser aria-hidden />}
         title={t('profile.tabs.profile')}
         className="mb-0"
         folded={folds.folded('profile')}
@@ -761,7 +752,6 @@ const BackendProfilePage = ({
   const renderSecurityTab = () => (
     <div className="tab-pane fade show active">
       <SectionCard
-        icon={<FaLock aria-hidden />}
         title={t('profile.security.changePassword.title')}
         folded={folds.folded('password')}
         onFold={() => folds.toggle('password')}
@@ -813,7 +803,6 @@ const BackendProfilePage = ({
         </form>
       </SectionCard>
       <SectionCard
-        icon={<FaEnvelope aria-hidden />}
         title={t('profile.security.changeEmail.title')}
         folded={folds.folded('email')}
         onFold={() => folds.toggle('email')}
@@ -845,7 +834,6 @@ const BackendProfilePage = ({
         </form>
       </SectionCard>
       <SectionCard
-        icon={<FaUserXmark aria-hidden />}
         title={t('profile.security.deleteAccount.title')}
         tone="danger"
         className="mb-0"
@@ -899,9 +887,8 @@ const BackendProfilePage = ({
       ) : (
         <>
           <SectionHeading
-            icon={<FaBuilding aria-hidden />}
             title={t('profile.organizations.belongToTitle')}
-            badge={<span className="badge bg-secondary">{userOrganizations.length}</span>}
+            count={userOrganizations.length}
           />
           {filteredOrganizations.length === 0 ? (
             <div className="alert alert-info">{emptyOrganizationsText}</div>
@@ -968,9 +955,8 @@ const BackendProfilePage = ({
           {joinRequests.length > 0 && (
             <>
               <SectionHeading
-                icon={<FaUserPlus aria-hidden />}
                 title={t('profile.organizations.pendingRequestsTitle')}
-                badge={<span className="badge bg-secondary">{joinRequests.length}</span>}
+                count={joinRequests.length}
               />
               {filteredJoinRequests.length === 0 ? (
                 <div className="alert alert-info mb-0">{t('pages.noMatches')}</div>
@@ -1041,7 +1027,6 @@ const BackendProfilePage = ({
   const renderServiceAccountsTab = () => (
     <div className="tab-pane fade show active">
       <SectionCard
-        icon={<FaKey aria-hidden />}
         title={t('profile.serviceAccounts.createTitle')}
         folded={folds.folded('serviceAccount')}
         onFold={() => folds.toggle('serviceAccount')}
@@ -1158,9 +1143,8 @@ const BackendProfilePage = ({
         </div>
       )}
       <SectionHeading
-        icon={<FaKey aria-hidden />}
         title={t('profile.serviceAccounts.title')}
-        badge={<span className="badge bg-secondary">{serviceAccounts.length}</span>}
+        count={serviceAccounts.length}
         actions={serviceAccountListActions}
       />
       {serviceAccounts.length > 0 && filteredServiceAccounts.length === 0 && (
@@ -1213,18 +1197,20 @@ const BackendProfilePage = ({
     <div className="list row">
       {currentUser && (
         <>
-          <div className="card mt-2 mb-3">
-            <div className="card-body text-center">
-              <Avatar
-                picture={currentUser.avatarUrl || gravatarProfile.avatar_url || ''}
-                size={100}
-              />
-              <h3 className="mt-3">{gravatarProfile.display_name || currentUser.username}</h3>
-              <p className="text-muted mb-0">
-                {gravatarProfile.job_title || t('profile.noJobTitle')}
-              </p>
+          {activeTab === 'profile' ? (
+            <div className="card mt-2 mb-3">
+              <div className="card-body text-center">
+                <Avatar
+                  picture={currentUser.avatarUrl || gravatarProfile.avatar_url || ''}
+                  size={100}
+                />
+                <h3 className="mt-3">{gravatarProfile.display_name || currentUser.username}</h3>
+                <p className="text-muted mb-0">
+                  {gravatarProfile.job_title || t('profile.noJobTitle')}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : null}
           {!currentUser.verified && (
             <div className="alert alert-warning" role="alert">
               {t('profile.messages.emailNotVerified')}

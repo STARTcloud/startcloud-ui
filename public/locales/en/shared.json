@@ -149,7 +149,7 @@
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",
-    "enum": "Choose one of {{enum}} for {{label}}.",
+    "enum": "Choose a {{label}}.",
     "format": {
       "uri": "Enter {{label}} as a full URL, such as https://example.com.",
       "hostname": "Enter {{label}} as a hostname.",
@@ -500,6 +500,14 @@
       "themeHint": "Saved as you change it, the same value the theme button writes.",
       "timezone": "Time zone",
       "timezoneHint": "The detected zone is preselected while none is set.",
+      "region": "Region",
+      "regionHint": "The legal region the terms and policies resolve to.",
+      "regionNotSet": "Detected automatically",
+      "regionSet": {
+        "eu": "European Union",
+        "eea": "European Economic Area",
+        "uk": "United Kingdom"
+      },
       "channel": {
         "label": "Sign-in approval channel",
         "PUSH": "In-app notification",
@@ -570,7 +578,7 @@
       "activity": "Activity",
       "health": "Health",
       "security": "Security",
-      "content": "Content",
+      "legal": "Legal",
       "system": "System"
     },
     "dashboard": {
@@ -667,7 +675,6 @@
         "stepUpReason": "Deleting an account ends how that person signs in."
       },
       "bulk": {
-        "selectAll": "Select all on this page",
         "selected": "{{count}} selected",
         "enable": "Enable",
         "suspend": "Suspend",
@@ -684,6 +691,8 @@
     },
     "organizations": {
       "all": "All organizations",
+      "count_one": "{{count}} organization",
+      "count_other": "{{count}} organizations",
       "table": {
         "name": "Name",
         "type": "Type",
@@ -721,6 +730,17 @@
       "delete": {
         "title": "Delete the organization",
         "body": "{{org}} is removed with its memberships and invitations. Type \"{{keyword}}\" to confirm."
+      },
+      "bulk": {
+        "selected": "{{count}} selected",
+        "suspend": "Suspend",
+        "resume": "Resume",
+        "delete": "Delete",
+        "clearSelection": "Clear selection",
+        "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+        "confirmTitle": "Confirm the bulk action",
+        "confirmBody": "{{action}} for {{count}} selected organizations. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Deleting organizations cannot be undone."
       }
     },
     "activity": {
@@ -893,11 +913,14 @@
         "attempts": "Attempts"
       },
       "unblock": "Unblock",
+      "unblockAll": "Unblock all",
       "enabled": "Brute force protection is enabled. {{count}} addresses currently blocked.",
       "disabled": "Brute force protection is disabled.",
       "unblocked": "{{ip}} is unblocked.",
       "unblockTitle": "Unblock the address",
-      "unblockBody": "{{ip}} may sign in again at once."
+      "unblockBody": "{{ip}} may sign in again at once.",
+      "unblockAllTitle": "Unblock every address",
+      "unblockAllBody": "{{count}} addresses may sign in again at once. Type \"{{keyword}}\" to confirm."
     },
     "terms": {
       "title": "Terms",
@@ -1250,7 +1273,14 @@
     "deleteAllBody": "Every notification of yours is deleted. Type \"{{keyword}}\" to confirm.",
     "delete": "Delete",
     "viewDetails": "View details",
-    "search": "Search notifications"
+    "search": "Search notifications",
+    "bulk": {
+      "selected": "{{count}} selected",
+      "markRead": "Mark as read",
+      "delete": "Delete",
+      "deleteBody": "The picked notifications are deleted. Type \"{{keyword}}\" to confirm.",
+      "clearSelection": "Clear selection"
+    }
   },
   "notifications": {
     "pushSwitch": "Toasts (OS notifications) on this device",
@@ -1607,6 +1637,8 @@
     "empty": "Nothing here yet.",
     "noMatches": "Nothing matches.",
     "searchAll": "Search…",
+    "selectAll": "Select all on this page",
+    "selectColumn": "Select all on this page",
     "search": {
       "versions": "Search versions",
       "providers": "Search providers",

@@ -1,13 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaArrowUpRightFromSquare,
-  FaBuilding,
-  FaEnvelopeOpenText,
-  FaUserPlus,
-  FaUsers,
-} from 'react-icons/fa6';
+import { FaArrowUpRightFromSquare, FaBuilding } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
@@ -361,11 +355,7 @@ const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny }) => {
 
   return (
     <>
-      <SectionHeading
-        icon={<FaUserPlus aria-hidden />}
-        title={t('orgConsole.joinRequest.title')}
-        badge={<span className="badge bg-secondary">{joinRequests.length}</span>}
-      />
+      <SectionHeading title={t('orgConsole.joinRequest.title')} count={joinRequests.length} />
       {joinRequests.length === 0 ? (
         <div className="alert alert-info">{emptyText}</div>
       ) : (
@@ -851,10 +841,6 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
 
   return (
     <div className="list row">
-      <header>
-        <h3 className="text-center">{t('orgConsole.title')}</h3>
-      </header>
-
       <OrgConsoleTabs
         activeTab={currentTab}
         setActiveTab={selectTab}
@@ -878,7 +864,6 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
             <div className="row">
               <div className="col-md-12">
                 <SectionCard
-                  icon={<FaBuilding aria-hidden />}
                   title={t('orgConsole.organization.title')}
                   badge={
                     isExternalOrg ? (
@@ -1043,11 +1028,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
               </div>
               <div className="col-md-12 mb-4">
                 <SectionHeading
-                  icon={<FaUsers aria-hidden />}
                   title={t('orgConsole.users.title', {
                     organization: org,
                   })}
-                  badge={<span className="badge bg-secondary">{users.length}</span>}
+                  count={users.length}
                 />
                 <TabSearch
                   query={searchTerm}
@@ -1107,7 +1091,6 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                 total={activeInvitations.length}
               />
               <SectionCard
-                icon={<FaEnvelopeOpenText aria-hidden />}
                 title={t('orgConsole.invitation.sendTitle')}
                 className="mb-4"
                 folded={folds.folded('invite')}
@@ -1168,9 +1151,8 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                 </form>
               </SectionCard>
               <SectionHeading
-                icon={<FaEnvelopeOpenText aria-hidden />}
                 title={t('orgConsole.invitation.activeTitle')}
-                badge={<span className="badge bg-secondary">{activeInvitations.length}</span>}
+                count={activeInvitations.length}
               />
               <InvitationsTable
                 invitations={filteredInvitations}

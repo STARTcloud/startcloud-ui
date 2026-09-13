@@ -513,6 +513,9 @@ export const messageFor = (error, label, t) => {
       ? t(`validation.type.${params.type}`, { label })
       : unknownMessage(label, t);
   }
+  if (error.rule === 'enum') {
+    return t('validation.enum', { label });
+  }
   if (RULE_KEYS.includes(error.rule)) {
     return t(`validation.${error.rule}`, { label, ...params });
   }

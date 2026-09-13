@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaDownload } from 'react-icons/fa6';
 
 import Pager from '../../../components/common/Pager';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { logins } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
@@ -99,8 +100,9 @@ const groupsOf = ({ state, t }) => [
  * through `useUrlNarrowing` so the Dashboard's cards and a search hit
  * land on a preset and each change re-reading page 1,
  * Export the panel's action over the same parameters, and the Columns
- * group under `table_prefs_admin_logins`; the table with its Reason
- * column for a failed row, and the pager.
+ * group under `table_prefs_admin_logins`; a `SectionHeading` carrying the
+ * total as muted text after the title, the table with its Reason column
+ * for a failed row, and the pager.
  */
 const LoginsPage = () => {
   const { t, i18n } = useTranslation();
@@ -130,6 +132,10 @@ const LoginsPage = () => {
 
   return (
     <div>
+      <SectionHeading
+        title={t('admin.activity.logins.title')}
+        count={state.data ? state.data.total || 0 : null}
+      />
       {state.loading && !state.data ? (
         <AdminLoading />
       ) : (

@@ -13,16 +13,14 @@ const stop = event => event.stopPropagation();
 
 /**
  * One section card of the pages contract, the house card shape every
- * page's sections share: the header row with the icon, the title, the
- * trailing badge and actions, and the chevron last, flush right; the
- * whole header folds the card except its action controls, the body
- * collapsing under it, open by default, `folded` and `onFold` the page's
- * own state kept in its prefs object under `folds` (identity contract
- * decision 117); `tone="danger"` draws the border and the header in the
- * danger colours.
+ * page's sections share: the header row with the title, the trailing
+ * badge and actions, and the chevron last, flush right; the whole header
+ * folds the card except its action controls, the body collapsing under
+ * it, open by default, `folded` and `onFold` the page's own state kept in
+ * its prefs object under `folds` (identity contract decision 117);
+ * `tone="danger"` draws the border and the header in the danger colours.
  */
 const SectionCard = ({
-  icon = null,
   title,
   badge = null,
   actions = null,
@@ -45,7 +43,6 @@ const SectionCard = ({
         }`}
         onClick={onFold}
       >
-        {icon ? <span className="d-inline-flex">{icon}</span> : null}
         <h5 className="mb-0 section-card-title">{title}</h5>
         {badge}
         {actions ? (
@@ -76,7 +73,6 @@ const SectionCard = ({
 };
 
 SectionCard.propTypes = {
-  icon: PropTypes.node,
   title: PropTypes.node.isRequired,
   badge: PropTypes.node,
   actions: PropTypes.node,

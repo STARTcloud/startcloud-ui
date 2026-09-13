@@ -37,3 +37,5 @@ export const updateOrganization = (organizationId, patch) =>
   client.patch(organization(organizationId), patch);
 
 export const deleteOrganization = organizationId => client.delete(organization(organizationId));
+
+export const organizationsBulk = body => client.post('/api/admin/organizations/bulk', body);

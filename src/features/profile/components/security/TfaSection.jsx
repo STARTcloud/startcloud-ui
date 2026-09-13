@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaCommentSms, FaMobileScreen, FaShieldHalved } from 'react-icons/fa6';
+import { FaCommentSms, FaMobileScreen } from 'react-icons/fa6';
 
 import CodeInput from '../../../../components/common/CodeInput';
 import CopyButton from '../../../../components/common/CopyButton';
@@ -400,7 +400,6 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaShieldHalved aria-hidden />}
       title={t('profile.security.tfa.title')}
       badge={stateBadge}
       folded={folds.folded('tfa')}

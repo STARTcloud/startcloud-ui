@@ -321,14 +321,21 @@ Content-Type: application/json
   through the same call: `ciba_channel`, one of `PUSH`, `EMAIL` or `SMS`
   (`SMS` only while a verified mobile number exists), and `ciba_user_code`,
   the approval PIN, `null` clearing it; the PIN is never read back.
+- `region` is writable beside `language`, `theme` and `timezone`: the
+  person's chosen legal region, a two-letter ISO 3166-1 country code or
+  one of `EU`, `EEA`, `UK`, `null` clears it, used by the identity
+  provider to pick the terms and policy variant; never inferred from
+  `language`, because a language names no country and the law a person
+  is owed depends on where they are.
 - Validation: well-formed BCP 47 with no length cap, since RFC 5646 §2.1
   sets none and `ca-ES-valencia` is a registered fourteen-character tag;
-  `light|dark|auto`; a known IANA zone id; `PUSH|EMAIL|SMS`. A violation
+  `light|dark|auto`; a known IANA zone id; a country code or named set
+  for `region`; `PUSH|EMAIL|SMS`. A violation
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
-- `GET` on the same path returns the five members the identity provider
-  stores: `language`, `theme`, `timezone`, `ciba_channel` and
+- `GET` on the same path returns the six members the identity provider
+  stores: `language`, `theme`, `timezone`, `region`, `ciba_channel` and
   `ciba_user_code_set`, the last two the sign-in approval channel and
   whether an approval PIN is set.
 - The shared Preferences tab sends `timezone` only when the person chose

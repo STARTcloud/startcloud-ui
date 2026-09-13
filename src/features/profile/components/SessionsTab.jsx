@@ -198,8 +198,8 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
   return (
     <div className="tab-pane fade show active">
       <SectionHeading
-        icon={<FaDesktop aria-hidden />}
         title={t('profile.sessions.title')}
+        count={rows.length}
         actions={revokeAllButton}
       />
       <MethodList empty={t('profile.sessions.none')}>

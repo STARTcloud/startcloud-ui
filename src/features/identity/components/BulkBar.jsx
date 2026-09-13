@@ -11,12 +11,13 @@ import { bulk } from '../api/accounts';
 const ROLE_ACTIONS = ['add_role', 'remove_role'];
 
 /**
- * The bulk bar of the Users page, drawn while rows are selected: Enable,
- * Suspend, Add role, Remove role, Delete and Clear selection, each
- * behind the shared confirm, the delete action stepped up, the result
- * line naming processed, skipped and errors, and the list re-fetched.
+ * The Users page's bulk actions, drawn in the section heading's action pane
+ * while rows are selected: Enable, Suspend, Add role, Remove role and
+ * Delete, each behind the shared confirm, the delete action stepped up,
+ * and the result line naming processed, skipped and errors while it has
+ * something to say.
  */
-const BulkBar = ({ selected, catalog, onClear, onDone }) => {
+const BulkBar = ({ selected, catalog, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
@@ -24,10 +25,6 @@ const BulkBar = ({ selected, catalog, onClear, onDone }) => {
   const [pending, setPending] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
-
-  if (selected.length === 0 && !result) {
-    return null;
-  }
 
   const send = () => {
     const body = { action: pending, user_ids: selected };
@@ -63,8 +60,7 @@ const BulkBar = ({ selected, catalog, onClear, onDone }) => {
   );
 
   return (
-    <div className="bulk-bar d-flex flex-wrap align-items-center gap-2 mb-3">
-      <strong>{t('admin.users.bulk.selected', { count: selected.length })}</strong>
+    <>
       {button('enable', 'btn-outline-success')}
       {button('suspend', 'btn-outline-warning')}
       <label className="visually-hidden" htmlFor="bulk-role">
@@ -85,18 +81,8 @@ const BulkBar = ({ selected, catalog, onClear, onDone }) => {
       {button('add_role', 'btn-outline-primary')}
       {button('remove_role', 'btn-outline-primary')}
       {button('delete', 'btn-outline-danger')}
-      <button
-        type="button"
-        className="btn btn-sm btn-link"
-        onClick={() => {
-          setResult(null);
-          onClear();
-        }}
-      >
-        {t('admin.users.bulk.clearSelection')}
-      </button>
       {result ? (
-        <span className="small text-muted ms-auto" role="status">
+        <span className="small text-muted" role="status">
           {t('admin.users.bulk.result', {
             processed: result.processed || 0,
             skipped: result.skipped || 0,
@@ -115,14 +101,13 @@ const BulkBar = ({ selected, catalog, onClear, onDone }) => {
           keyword: t('pages.confirm.keyword'),
         })}
       />
-    </div>
+    </>
   );
 };
 
 BulkBar.propTypes = {
   selected: PropTypes.array.isRequired,
   catalog: PropTypes.arrayOf(PropTypes.string).isRequired,
-  onClear: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
 };
 

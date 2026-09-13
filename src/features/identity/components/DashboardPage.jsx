@@ -3,7 +3,6 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaDesktop,
-  FaMapLocationDot,
   FaRightToBracket,
   FaTriangleExclamation,
   FaUserPlus,
@@ -54,7 +53,6 @@ const MapCard = ({ folds }) => {
   );
   return (
     <SectionCard
-      icon={<FaMapLocationDot aria-hidden />}
       title={t('admin.dashboard.map.title')}
       actions={dayButtons}
       folded={folds.folded('map')}
@@ -75,7 +73,7 @@ MapCard.propTypes = {
   folds: foldsShape.isRequired,
 };
 
-const RecentList = ({ icon, title, to, rows, renderRow }) => {
+const RecentList = ({ title, to, rows, renderRow }) => {
   const { t } = useTranslation();
   const viewAll = (
     <Link to={to} className="btn btn-sm btn-outline-primary">
@@ -84,7 +82,7 @@ const RecentList = ({ icon, title, to, rows, renderRow }) => {
   );
   return (
     <div className="mb-3">
-      <SectionHeading icon={icon} title={title} actions={viewAll} />
+      <SectionHeading title={title} actions={viewAll} />
       <ul className="list-group">
         {rows.length === 0 ? (
           <li className="list-group-item text-muted">{t('pages.empty')}</li>
@@ -104,7 +102,6 @@ const RecentList = ({ icon, title, to, rows, renderRow }) => {
 };
 
 RecentList.propTypes = {
-  icon: PropTypes.node.isRequired,
   title: PropTypes.string.isRequired,
   to: PropTypes.string.isRequired,
   rows: PropTypes.array.isRequired,
@@ -199,7 +196,6 @@ const DashboardPage = () => {
       <div className="row">
         <div className="col-lg-6">
           <RecentList
-            icon={<FaRightToBracket aria-hidden />}
             title={t('admin.dashboard.recentLogins')}
             to="/admin/logins"
             rows={data.recent_logins || []}
@@ -208,7 +204,6 @@ const DashboardPage = () => {
         </div>
         <div className="col-lg-6">
           <RecentList
-            icon={<FaUserPlus aria-hidden />}
             title={t('admin.dashboard.recentRegistrations')}
             to="/admin/registrations"
             rows={data.recent_registrations || []}

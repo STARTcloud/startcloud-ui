@@ -2,12 +2,12 @@ import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation, Trans } from 'react-i18next';
-import { FaBuilding, FaUsers, FaBox } from 'react-icons/fa6';
+import { FaUsers, FaBox } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import PageHeader from '../../../components/common/PageHeader';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -167,7 +167,7 @@ OrgCard.propTypes = {
  * a visitor is sent to sign in first, the intended organization kept
  * under `joinIntentKey` for the return. The adapter is the app's own
  * `organizations` or the issuer's, which answers the same row shape; the
- * page is glass in the pages contract's frame, a `PageHeader` and the
+ * page is glass in the pages contract's frame, a `SectionHeading` and the
  * organization cards straight on the page's ground.
  */
 const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKey }) => {
@@ -304,16 +304,18 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
   });
 
   const requestingName = requestingOrg ? requestingOrg.display_name || requestingOrg.name : '';
+  const heading = (
+    <>
+      {t('discovery.title')}
+      <span className="text-body-secondary small ms-2">{t('discovery.description')}</span>
+    </>
+  );
 
   return (
     <div className="list">
       <div className="row">
         <div className="col-12">
-          <PageHeader
-            media={<FaBuilding className="fs-3 text-body-secondary" aria-hidden />}
-            title={t('discovery.title')}
-            subtitle={t('discovery.description')}
-          />
+          <SectionHeading title={heading} count={filteredOrganizations.length} />
 
           {loading && (
             <div className="text-center">

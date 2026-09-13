@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaDatabase, FaEnvelope, FaGear, FaGears, FaShieldHalved } from 'react-icons/fa6';
 
 import { useFolds } from '../../hooks/useFolds';
 import { formRulesShape } from '../../hooks/useFormRules';
@@ -11,13 +10,6 @@ import ConfigAction from './ConfigAction';
 import ConfigField, { configFieldShape } from './ConfigField';
 import ConfigMap from './ConfigMap';
 import SectionCard, { foldsShape } from './SectionCard';
-
-const SECTION_ICONS = {
-  authentication: FaShieldHalved,
-  database: FaDatabase,
-  mail: FaEnvelope,
-  application: FaGears,
-};
 
 const subsectionShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
@@ -133,15 +125,6 @@ const sectionValues = (section, config) => {
   return Object.fromEntries([...keys].map(key => [key, valueAt(config, `/${key}`)]));
 };
 
-const SectionIcon = ({ sectionKey }) => {
-  const Icon = SECTION_ICONS[sectionKey] || FaGear;
-  return <Icon aria-hidden />;
-};
-
-SectionIcon.propTypes = {
-  sectionKey: PropTypes.string.isRequired,
-};
-
 const FieldCell = ({ field, config, rules, nameFor, onChange, callAction = null, guard }) => {
   const name = nameFor(field.pointer);
   const parent = parentOf(field.pointer);
@@ -241,9 +224,8 @@ SettingsBadge.propTypes = {
   config: PropTypes.object.isRequired,
 };
 
-const Subsection = ({ sectionKey, subsection, folds, foldId, ...drawing }) => (
+const Subsection = ({ subsection, folds, foldId, ...drawing }) => (
   <SectionCard
-    icon={<SectionIcon sectionKey={sectionKey} />}
     title={subsection.title}
     badge={<SettingsBadge fields={subsection.fields} config={drawing.config} />}
     className="mb-4"
@@ -256,7 +238,6 @@ const Subsection = ({ sectionKey, subsection, folds, foldId, ...drawing }) => (
 
 Subsection.propTypes = {
   ...drawingShape,
-  sectionKey: PropTypes.string.isRequired,
   subsection: subsectionShape.isRequired,
   folds: foldsShape.isRequired,
   foldId: PropTypes.string.isRequired,
@@ -279,7 +260,6 @@ const Section = ({ section, folds, foldKey, ...drawing }) => {
     <div>
       {section.fields.length > 0 || action ? (
         <SectionCard
-          icon={<SectionIcon sectionKey={section.key} />}
           title={section.title}
           badge={<SettingsBadge fields={section.fields} config={drawing.config} />}
           actions={action}
@@ -293,7 +273,6 @@ const Section = ({ section, folds, foldKey, ...drawing }) => {
       {section.subsections.map(subsection => (
         <Subsection
           key={subsection.key}
-          sectionKey={section.key}
           subsection={subsection}
           folds={folds}
           foldId={`${foldId}/${subsection.key}`}

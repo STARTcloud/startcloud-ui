@@ -25,7 +25,7 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * The identity feature's operator export of the identity contract's
  * group 5: nothing unless the host advertises `admin` and the account's
  * roles hold `ROLE_ADMIN`, else one Admin group with the seven sections
- * Overview, Accounts, Activity, Health, Security, Content (while the host
+ * Overview, Accounts, Activity, Health, Security, Legal (while the host
  * also advertises `policies`) and System (while `status.config` names
  * exactly one file), the Dashboard row exact-match, the Blocked IPs row
  * carrying the `blockedCount` badge the shell resolves from the `admin`
@@ -123,7 +123,7 @@ export const sidebar = (status, account, admin) => {
   ];
   if (hasFeature(status, 'policies')) {
     sections.push(
-      section('content', [
+      section('legal', [
         { key: 'terms', icon: FaFileContract, labelKey: 'admin.terms.title', to: '/admin/terms' },
       ])
     );

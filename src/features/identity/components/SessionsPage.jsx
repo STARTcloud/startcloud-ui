@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
@@ -103,9 +104,9 @@ RowActions.propTypes = {
  * application names narrowing them client-side, since the list names no
  * parameter for it, its values in the URL as `client`, comma-joined,
  * with the Columns group under
- * `table_prefs_admin_sessions`; the
- * table with Authorized and Last active as two columns, Revoke behind the
- * confirm, and the pager.
+ * `table_prefs_admin_sessions`; a `SectionHeading` carrying the total as
+ * muted text after the title, the table with Authorized and Last active
+ * as two columns, Revoke behind the confirm, and the pager.
  */
 const SessionsPage = () => {
   const { t, i18n } = useTranslation();
@@ -150,6 +151,10 @@ const SessionsPage = () => {
 
   return (
     <div>
+      <SectionHeading
+        title={t('admin.activity.sessions.title')}
+        count={data ? data.total || 0 : null}
+      />
       {loading && !data ? (
         <AdminLoading />
       ) : (

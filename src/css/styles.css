@@ -122,6 +122,17 @@ button::-moz-focus-inner {
   position: relative;
 }
 
+.notification-row-selectable .notification-item-select {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.65rem;
+  z-index: 1;
+}
+
+.notification-row-selectable .dropdown-item.notification-item {
+  padding-left: 2.25rem;
+}
+
 .dropdown-item.notification-item {
   display: grid;
   grid-template-columns: 1.25rem 1fr 1.25rem;

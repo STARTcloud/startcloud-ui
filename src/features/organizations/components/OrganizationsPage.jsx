@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding, FaPlus } from 'react-icons/fa6';
+import { FaBuilding } from 'react-icons/fa6';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
@@ -388,26 +388,21 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
 
   const loadedEmpty = needle ? t('pages.noMatches') : t('organizations.none');
   const empty = loaded ? loadedEmpty : t('loading');
+  const actions = (
+    <>
+      {hasFeature(status, 'discover') ? (
+        <Link to="/organizations/discover" className="btn btn-sm btn-outline-primary text-nowrap">
+          {t('organizations.find')}
+        </Link>
+      ) : null}
+      <ViewToggle view={view} onChange={changeView} />
+    </>
+  );
 
   return (
     <div className="list">
-      <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
-        <h3 className="mb-0">{t('organizations.title')}</h3>
-        <div className="d-flex align-items-center gap-2">
-          {hasFeature(status, 'discover') ? (
-            <Link
-              to="/organizations/discover"
-              className="btn btn-sm btn-outline-primary text-nowrap"
-            >
-              {t('organizations.find')}
-            </Link>
-          ) : null}
-          <ViewToggle view={view} onChange={changeView} />
-        </div>
-      </div>
       {data.organizations_enabled ? (
         <SectionCard
-          icon={<FaPlus aria-hidden />}
           title={t('organizations.create')}
           folded={folds.folded('create')}
           onFold={() => folds.toggle('create')}
@@ -421,9 +416,9 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
         </SectionCard>
       ) : null}
       <SectionHeading
-        icon={<FaBuilding aria-hidden />}
         title={t('organizations.memberships')}
-        badge={<span className="badge bg-secondary">{data.organizations.length}</span>}
+        count={data.organizations.length}
+        actions={actions}
       />
       {view === 'cards' ? (
         <MembershipCards

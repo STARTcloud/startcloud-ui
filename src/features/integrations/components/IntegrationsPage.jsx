@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaPlug } from 'react-icons/fa6';
 
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
@@ -155,7 +156,7 @@ const IntegrationsPage = ({ integrations, fallback }) => {
 
   return (
     <div className="list">
-      <h3 className="mb-3">{t('integrations.title')}</h3>
+      <SectionHeading title={t('integrations.title')} />
       <MethodList empty={needle ? t('pages.noMatches') : t('integrations.none')}>
         {shown.map(service => (
           <MethodRow

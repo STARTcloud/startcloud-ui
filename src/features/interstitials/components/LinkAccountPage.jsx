@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,7 +21,7 @@ const FIELD_CODES = ['bad_password', 'invalid_code'];
  * proof and following `next`, Cancel declining, and the fine print;
  * nothing pending draws the danger alert with a link to sign in.
  */
-const LinkAccountPage = ({ returnTo }) => {
+const LinkAccountPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const report = useProblemReporter();
@@ -53,11 +54,14 @@ const LinkAccountPage = ({ returnTo }) => {
     };
   }, [report]);
 
-  const send = body => {
+  const send = (body, onSuccess) => {
     setBusy(true);
     setProblem(null);
     linkConfirm(body)
-      .then(result => followNext({ next: result?.next, navigate, returnTo }))
+      .then(result => {
+        onSuccess?.();
+        followNext({ next: result?.next, navigate, returnTo });
+      })
       .catch(error => {
         setBusy(false);
         setProblem(report(error));
@@ -72,7 +76,8 @@ const LinkAccountPage = ({ returnTo }) => {
     send(
       answer.proof === 'code'
         ? { action: 'link', code: proof }
-        : { action: 'link', current_password: proof }
+        : { action: 'link', current_password: proof },
+      () => events.emit('login')
     );
   };
 
@@ -160,6 +165,7 @@ const LinkAccountPage = ({ returnTo }) => {
 
 LinkAccountPage.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default LinkAccountPage;

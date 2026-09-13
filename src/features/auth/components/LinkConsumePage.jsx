@@ -32,6 +32,7 @@ const LinkConsumePage = ({
   title,
   invalidCode,
   another,
+  events = null,
   read = readOnce,
 }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -50,9 +51,12 @@ const LinkConsumePage = ({
       return;
     }
     consume(body)
-      .then(answer => followNext({ next: answer?.next, navigate, returnTo }))
+      .then(answer => {
+        events?.emit('login');
+        followNext({ next: answer?.next, navigate, returnTo });
+      })
       .catch(error => setProblem(report(error) || invalidProblem(invalidCode)));
-  }, [body, complete, consume, invalidCode, navigate, path, report, returnTo]);
+  }, [body, complete, consume, events, invalidCode, navigate, path, report, returnTo]);
 
   return (
     <AuthShell title={title}>
@@ -80,6 +84,7 @@ LinkConsumePage.propTypes = {
     to: PropTypes.string.isRequired,
     label: PropTypes.string.isRequired,
   }).isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }),
   read: PropTypes.func,
 };
 

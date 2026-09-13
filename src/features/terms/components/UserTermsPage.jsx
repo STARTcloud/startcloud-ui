@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import SectionHeading from '../../../components/common/SectionHeading';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -126,7 +127,7 @@ const UserTermsPage = ({ terms }) => {
 
   return (
     <div className="list">
-      <h3 className="mb-3">{t('userTerms.title')}</h3>
+      <SectionHeading title={t('userTerms.title')} />
       <MethodList empty={needle ? t('pages.noMatches') : t('userTerms.none')}>
         {shown.map(entry => (
           <MethodRow

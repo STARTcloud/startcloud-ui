@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys, useStepUp } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -240,7 +241,7 @@ const ApplicationsPage = ({ applications, stepUp, user = null }) => {
 
   return (
     <div className="list">
-      <h3 className="mb-3">{t('applications.title')}</h3>
+      <SectionHeading title={t('applications.title')} />
       <MethodList empty={needle ? t('pages.noMatches') : t('applications.none')}>
         {shown.map(app => {
           const subline = (

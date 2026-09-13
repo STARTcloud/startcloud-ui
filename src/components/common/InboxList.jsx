@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaArrowUpRightFromSquare,
@@ -72,13 +73,31 @@ const absoluteTime = (value, language) => {
  * time in its tooltip, the unread dot, and the mark-read and delete
  * controls.
  */
-export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels }) => {
+export const NotificationRow = ({
+  entry,
+  onSelect,
+  onMarkRead,
+  onDismiss,
+  labels,
+  selectable = false,
+  checked = false,
+  onToggleSelect = null,
+}) => {
   const { i18n } = useTranslation();
   const Icon = TYPE_ICONS[entry.type] || FaBell;
   const unread = !entry.readAt;
 
   return (
-    <div className="notification-row">
+    <div className={`notification-row ${selectable ? 'notification-row-selectable' : ''}`}>
+      {selectable ? (
+        <input
+          type="checkbox"
+          className="form-check-input notification-item-select"
+          aria-label={entry.title}
+          checked={checked}
+          onChange={() => onToggleSelect(entry)}
+        />
+      ) : null}
       <button
         type="button"
         className="dropdown-item notification-item"
@@ -145,28 +164,69 @@ NotificationRow.propTypes = {
     dismiss: PropTypes.string.isRequired,
     viewDetails: PropTypes.string,
   }).isRequired,
+  selectable: PropTypes.bool,
+  checked: PropTypes.bool,
+  onToggleSelect: PropTypes.func,
 };
 
 /**
  * The row list the notifications modal and the inbox page both draw:
  * the same `NotificationRow` per entry, the caller owning the entries,
  * the selection, the mark-read and the delete, and the words the two
- * row controls carry.
+ * row controls carry; the inbox page alone passes `selectable`, whose
+ * select-all checkbox draws at the list's head, indeterminate when some
+ * but not all rows are picked (identity contract decision 142).
  */
-const InboxList = ({ entries, onSelect, onMarkRead, onDismiss, labels }) => (
-  <div className="notification-list">
-    {entries.map(entry => (
-      <NotificationRow
-        key={entry.id}
-        entry={entry}
-        onSelect={onSelect}
-        onMarkRead={onMarkRead}
-        onDismiss={onDismiss}
-        labels={labels}
-      />
-    ))}
-  </div>
-);
+const InboxList = ({
+  entries,
+  onSelect,
+  onMarkRead,
+  onDismiss,
+  labels,
+  selectable = false,
+  selected = null,
+  onToggleSelect = null,
+  allSelected = false,
+  indeterminate = false,
+  onToggleSelectAll = null,
+}) => {
+  const { t } = useTranslation();
+  const selectAllRef = useRef(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+  return (
+    <div className="notification-list">
+      {selectable ? (
+        <div className="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+          <input
+            ref={selectAllRef}
+            type="checkbox"
+            className="form-check-input"
+            aria-label={t('pages.selectColumn')}
+            checked={allSelected}
+            onChange={onToggleSelectAll}
+          />
+        </div>
+      ) : null}
+      {entries.map(entry => (
+        <NotificationRow
+          key={entry.id}
+          entry={entry}
+          onSelect={onSelect}
+          onMarkRead={onMarkRead}
+          onDismiss={onDismiss}
+          labels={labels}
+          selectable={selectable}
+          checked={Boolean(selected?.has(entry.id))}
+          onToggleSelect={onToggleSelect}
+        />
+      ))}
+    </div>
+  );
+};
 
 InboxList.propTypes = {
   entries: PropTypes.arrayOf(notificationShape).isRequired,
@@ -178,6 +238,12 @@ InboxList.propTypes = {
     dismiss: PropTypes.string.isRequired,
     viewDetails: PropTypes.string,
   }).isRequired,
+  selectable: PropTypes.bool,
+  selected: PropTypes.instanceOf(Set),
+  onToggleSelect: PropTypes.func,
+  allSelected: PropTypes.bool,
+  indeterminate: PropTypes.bool,
+  onToggleSelectAll: PropTypes.func,
 };
 
 export default InboxList;

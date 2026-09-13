@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaEnvelope } from 'react-icons/fa6';
 
 import CodeInput from '../../../../components/common/CodeInput';
 import Field from '../../../../components/common/Field';
@@ -69,7 +68,6 @@ const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaEnvelope aria-hidden />}
       title={t('profile.security.email.title')}
       id="profile-email-section"
       sectionRef={sectionRef}

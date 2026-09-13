@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding, FaEnvelopeOpenText, FaUserPlus, FaUsers } from 'react-icons/fa6';
+import { FaBuilding } from 'react-icons/fa6';
 
 import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -434,7 +434,6 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
     <>
       {org.can_manage ? (
         <SectionCard
-          icon={<FaEnvelopeOpenText aria-hidden />}
           title={t('orgConsole.invitation.sendTitle')}
           folded={folds.folded('invite')}
           onFold={() => folds.toggle('invite')}
@@ -442,11 +441,7 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
           <InviteForm org={org} organizations={organizations} onChanged={onChanged} />
         </SectionCard>
       ) : null}
-      <SectionHeading
-        icon={<FaEnvelopeOpenText aria-hidden />}
-        title={t('orgConsole.invitation.activeTitle')}
-        badge={<span className="badge bg-secondary">{invites.length}</span>}
-      />
+      <SectionHeading title={t('orgConsole.invitation.activeTitle')} count={invites.length} />
       <MethodList empty={t('orgConsole.invitation.noActive')}>
         {invites.map(invite => (
           <MethodRow
@@ -775,11 +770,7 @@ const JoinRequestsTab = ({ org, organizations, defaultRole, onApproved }) => {
 
   return (
     <>
-      <SectionHeading
-        icon={<FaUserPlus aria-hidden />}
-        title={t('orgConsole.tabs.joinRequests')}
-        badge={<span className="badge bg-secondary">{rows.length}</span>}
-      />
+      <SectionHeading title={t('orgConsole.tabs.joinRequests')} count={rows.length} />
       <MethodList empty={t('orgConsole.joinRequest.noRequests')}>
         {rows.map(request => (
           <JoinRequestRow
@@ -1008,7 +999,6 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
       <div className="tab-content mt-3">
         {currentTab === 'organization' ? (
           <SectionCard
-            icon={<FaBuilding aria-hidden />}
             title={t('orgConsole.organization.title')}
             folded={folds.folded('organization')}
             onFold={() => folds.toggle('organization')}
@@ -1024,11 +1014,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
         ) : null}
         {currentTab === 'members' ? (
           <>
-            <SectionHeading
-              icon={<FaUsers aria-hidden />}
-              title={t('orgConsole.tabs.members')}
-              badge={<span className="badge bg-secondary">{members.length}</span>}
-            />
+            <SectionHeading title={t('orgConsole.tabs.members')} count={members.length} />
             <MethodList empty={t('orgConsole.noMembers')}>
               {members.map(member => (
                 <MemberRow

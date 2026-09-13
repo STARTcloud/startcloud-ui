@@ -155,7 +155,6 @@ const PasskeysSection = ({ account, guard, onSaved, folds }) => {
 
   return (
     <SectionCard
-      icon={<FaKey aria-hidden />}
       title={t('profile.security.passkeys.title')}
       folded={folds.folded('passkeys')}
       onFold={() => folds.toggle('passkeys')}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaRotate } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
@@ -268,10 +269,12 @@ const matches = (probe, needle) =>
 /**
  * One Health page over one kind of probe of `GET /api/admin/client-health`:
  * Client health draws the answer's `clients` and Provider health its
- * `providers`, each with its own summary line at the top, the healthy
- * count over its rows, drawn as a warning while any row is unhealthy,
- * with Refresh, which re-fetches and reloads nothing, and the pages
- * contract's one view toggle, list or cards; the list a `SubTable` with
+ * `providers`, each with the page's own `SectionHeading`, the healthy
+ * count over its rows as muted text after the title, the heading line
+ * tinted success while every row is healthy and warning while any row is
+ * not, no separate summary bar, Refresh, which re-fetches and reloads
+ * nothing, and the pages contract's one view toggle, list or cards, as
+ * the heading's actions; the list a `SubTable` with
  * the columns Name, Check, Endpoint, Status, Response time, Last checked
  * and Reason, header sort, the Status `toggle` group narrowing the rows
  * client-side, the query and its value in the URL as `search` and
@@ -323,27 +326,29 @@ const HealthPage = ({ kind }) => {
   const warn = rows.some(probe => probe.healthy === false);
   const healthy = rows.filter(probe => probe.healthy === true).length;
   const emptyText = search.filtering ? t('pages.noMatches') : t('pages.empty');
+  const headingActions = (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        onClick={reload}
+        disabled={loading}
+      >
+        <FaRotate className="me-1" aria-hidden="true" />
+        {t('admin.health.refresh')}
+      </button>
+      <ViewToggle view={search.view} onChange={search.setView} />
+    </>
+  );
 
   return (
     <div>
-      <div
-        className={`alert d-flex flex-wrap align-items-center gap-2 ${warn ? 'alert-warning' : 'alert-success'}`}
-        role="status"
-      >
-        <strong className="flex-grow-1">
-          {t(page.summaryKey, { healthy, total: rows.length })}
-        </strong>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={reload}
-          disabled={loading}
-        >
-          <FaRotate className="me-1" aria-hidden="true" />
-          {t('admin.health.refresh')}
-        </button>
-        <ViewToggle view={search.view} onChange={search.setView} />
-      </div>
+      <SectionHeading
+        title={t(page.titleKey)}
+        count={t(page.summaryKey, { healthy, total: rows.length })}
+        state={warn ? 'warning' : 'success'}
+        actions={headingActions}
+      />
       {search.view === 'cards' ? (
         <CardGrid probes={search.rows} file={page.file} emptyText={emptyText} />
       ) : (

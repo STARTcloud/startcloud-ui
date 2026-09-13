@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaPuzzlePiece, FaStar } from 'react-icons/fa6';
+import { FaStar } from 'react-icons/fa6';
 
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
@@ -191,7 +191,7 @@ const FavoritesTab = ({ account }) => {
 
   return (
     <div className="tab-pane fade show active">
-      <SectionHeading icon={<FaStar aria-hidden />} title={t('profile.favorites.title')} />
+      <SectionHeading title={t('profile.favorites.title')} count={favorites.length} />
       {shownFavorites.length === 0 ? (
         <p className="text-body-secondary small">
           {needle ? t('pages.noMatches') : t('profile.favorites.none')}
@@ -206,8 +206,8 @@ const FavoritesTab = ({ account }) => {
         />
       )}
       <SectionHeading
-        icon={<FaPuzzlePiece aria-hidden />}
         title={t('profile.favorites.available')}
+        count={available.length}
         className="mb-3 mt-4"
       />
       <MethodList empty={needle ? t('pages.noMatches') : t('profile.favorites.noneAvailable')}>

@@ -22,12 +22,14 @@ import {
   acceptTerms,
   geoCountry,
   placesKey as fetchPlacesKey,
+  savePreferences,
   terms as fetchTerms,
 } from '../api/onboarding';
 
 const PROVIDER_ROUTE = '/provider-registration/tos';
 const SESSION_EXPIRED = '/login?error=session_expired';
 const SCALES = [0.85, 1, 1.15, 1.3];
+const REGION_LABEL_KEYS = { EU: 'eu', EEA: 'eea', UK: 'uk' };
 const ADDRESS_PARTS = {
   'address-line1': 'line1',
   'address-line2': 'line2',
@@ -68,10 +70,14 @@ const partOf = field => ADDRESS_PARTS[field.autocomplete] || field.param;
 const initialValues = fields =>
   Object.fromEntries(fields.map(field => [field.param, field.value || '']));
 
-const initialAddress = fields => ({
-  ...EMPTY_ADDRESS,
-  ...Object.fromEntries(fields.map(field => [partOf(field), field.value || ''])),
-});
+const initialAddress = fields =>
+  fields.reduce(
+    (address, field) => ({
+      ...address,
+      [field.control === 'country' ? 'country_code' : partOf(field)]: field.value || '',
+    }),
+    { ...EMPTY_ADDRESS }
+  );
 
 const useCountries = enabled => {
   const { i18n } = useTranslation();
@@ -299,21 +305,25 @@ const useTerms = () => {
   const [state, setState] = useState(null);
   const [problem, setProblem] = useState(null);
   const [version, setVersion] = useState(0);
+  const [requestedRegion, setRequestedRegion] = useState('');
+  const [switchingRegion, setSwitchingRegion] = useState(false);
 
   const reload = () => setVersion(count => count + 1);
 
   useEffect(() => {
     let active = true;
-    fetchTerms()
+    fetchTerms(requestedRegion)
       .then(answer => {
         if (active) {
           setState(answer);
+          setSwitchingRegion(false);
         }
       })
       .catch(error => {
         if (!active) {
           return;
         }
+        setSwitchingRegion(false);
         if (error.status === 401) {
           navigate(SESSION_EXPIRED, { replace: true });
           return;
@@ -323,18 +333,82 @@ const useTerms = () => {
     return () => {
       active = false;
     };
-  }, [navigate, report, version]);
+  }, [navigate, report, version, requestedRegion]);
 
-  return { state, problem, setProblem, reload };
+  const changeRegion = code => {
+    setSwitchingRegion(true);
+    savePreferences({ region: code || null }).catch(() => null);
+    setRequestedRegion(code);
+  };
+
+  return { state, problem, setProblem, reload, changeRegion, switchingRegion };
 };
 
-const TermsHead = ({ state, scale, onScale }) => {
+const RegionPicker = ({ regionsOffered = [], current = '', value = '', onChange, disabled }) => {
+  const { t, i18n } = useTranslation(['auth']);
+  const names = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([i18n.language], { type: 'region' });
+    } catch {
+      return null;
+    }
+  }, [i18n.language]);
+  const label = code => {
+    if (!code) {
+      return t('terms.region.default');
+    }
+    if (REGION_LABEL_KEYS[code]) {
+      return t(`terms.region.${REGION_LABEL_KEYS[code]}`);
+    }
+    return names?.of(code) || code;
+  };
+  if (regionsOffered.length < 2) {
+    return null;
+  }
+  return (
+    <span className="auth-row auth-row-tight">
+      <span className="auth-hint">
+        {current ? t('terms.region.notIn', { region: label(current) }) : t('terms.region.choose')}
+      </span>
+      <select
+        className="form-select form-select-sm auth-region-select"
+        aria-label={t('terms.region.choose')}
+        value={value || ''}
+        disabled={disabled}
+        onChange={event => onChange(event.target.value)}
+      >
+        {regionsOffered.map(code => (
+          <option key={code || 'default'} value={code || ''}>
+            {label(code)}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+};
+
+RegionPicker.propTypes = {
+  regionsOffered: PropTypes.arrayOf(PropTypes.string),
+  current: PropTypes.string,
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool.isRequired,
+};
+
+const TermsHead = ({ state, scale, onScale, onRegionChange, switchingRegion }) => {
   const { t } = useTranslation(['auth']);
   return (
     <div className="auth-row">
       <span className="auth-hint">{t('terms.version', { version: state.version })}</span>
       {state.region ? <span className="auth-badge">{state.region}</span> : null}
       <span className="auth-badge">{t('terms.step', { n: state.step, m: state.total })}</span>
+      <RegionPicker
+        regionsOffered={state.regions_offered}
+        current={state.region}
+        value={state.region}
+        onChange={onRegionChange}
+        disabled={switchingRegion}
+      />
       <FontSize scale={scale} onScale={onScale} />
     </div>
   );
@@ -344,6 +418,8 @@ TermsHead.propTypes = {
   state: PropTypes.object.isRequired,
   scale: PropTypes.number.isRequired,
   onScale: PropTypes.func.isRequired,
+  onRegionChange: PropTypes.func.isRequired,
+  switchingRegion: PropTypes.bool.isRequired,
 };
 
 const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }) => {
@@ -392,6 +468,10 @@ const useCollectedFields = (fields, countries) => {
         address.country_code ||
         countries.find(country => country.label === address.country)?.code ||
         '',
+      country:
+        address.country ||
+        countries.find(country => country.code === address.country_code)?.label ||
+        '',
     }),
     [address, countries]
   );
@@ -400,7 +480,10 @@ const useCollectedFields = (fields, countries) => {
       fields: {
         ...identity,
         ...Object.fromEntries(
-          addressFields.map(field => [field.param, record[partOf(field)] || ''])
+          addressFields.map(field => [
+            field.param,
+            record[field.control === 'country' ? 'country_code' : partOf(field)] || '',
+          ])
         ),
       },
     }),
@@ -411,7 +494,15 @@ const useCollectedFields = (fields, countries) => {
   return { identityFields, addressFields, values, record, changeIdentity, setAddress };
 };
 
-const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
+const CollectingTerms = ({
+  state,
+  scale,
+  onScale,
+  busy,
+  onAccept,
+  onRegionChange,
+  switchingRegion,
+}) => {
   const { t } = useTranslation(['auth']);
   const fields = useMemo(() => state.fields || [], [state.fields]);
   const schema = useMemo(() => schemaFor(fields), [fields]);
@@ -444,7 +535,13 @@ const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
 
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
-      <TermsHead state={state} scale={scale} onScale={onScale} />
+      <TermsHead
+        state={state}
+        scale={scale}
+        onScale={onScale}
+        onRegionChange={onRegionChange}
+        switchingRegion={switchingRegion}
+      />
       <MarkdownArticle
         html={state.content_html}
         fills={fills}
@@ -497,6 +594,8 @@ CollectingTerms.propTypes = {
   onScale: PropTypes.func.isRequired,
   busy: PropTypes.bool.isRequired,
   onAccept: PropTypes.func.isRequired,
+  onRegionChange: PropTypes.func.isRequired,
+  switchingRegion: PropTypes.bool.isRequired,
 };
 
 /**
@@ -518,7 +617,7 @@ const TermsPage = ({ returnTo }) => {
   const navigate = useNavigate();
   const report = useProblemReporter();
   const heading = useRef(null);
-  const { state, problem, setProblem, reload } = useTerms();
+  const { state, problem, setProblem, reload, changeRegion, switchingRegion } = useTerms();
   const [scale, setScale] = useState(1);
   const [busy, setBusy] = useState(false);
   const [announce, setAnnounce] = useState(false);
@@ -557,7 +656,13 @@ const TermsPage = ({ returnTo }) => {
       {!state && !problem ? <AuthSpinner label={t('shared:loading')} /> : null}
       {state && !collecting ? (
         <>
-          <TermsHead state={state} scale={scale} onScale={setScale} />
+          <TermsHead
+            state={state}
+            scale={scale}
+            onScale={setScale}
+            onRegionChange={changeRegion}
+            switchingRegion={switchingRegion}
+          />
           <div className="auth-doc">
             <MarkdownArticle html={state.content_html} fontScale={scale} />
           </div>
@@ -579,6 +684,8 @@ const TermsPage = ({ returnTo }) => {
           onScale={setScale}
           busy={busy}
           onAccept={accept}
+          onRegionChange={changeRegion}
+          switchingRegion={switchingRegion}
         />
       ) : null}
       {state ? (
