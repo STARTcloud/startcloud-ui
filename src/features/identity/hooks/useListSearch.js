@@ -18,18 +18,32 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
     setPrefs(current => ({ ...current, hiddenColumns: toggleIn(current.hiddenColumns, key) })),
 });
 
+const PAGE_SIZES = [25, 50, 100, 250];
+
+const perPageGroup = ({ size, setPrefs, t }) => ({
+  key: 'size',
+  label: t('pages.filter.perPage'),
+  entries: Object.fromEntries(PAGE_SIZES.map(value => [String(value), null])),
+  activeSet: new Set([String(size)]),
+  activeClass: 'bg-secondary',
+  columns: true,
+  labelFor: value => value,
+  onToggle: value => setPrefs(current => ({ ...current, size: Number(value) })),
+});
+
 /**
  * Registers the navbar binding of an admin page whose rows are a paged
  * list the issuer answers: the query and its setter the page holds, the
  * page's filter groups (`toggle`, `select` or `date-range`, each sent as
  * the list's parameters by the page), then one group per enumerable
  * column the list names no parameter for (`clientGroups`), narrowing the
- * rows the list answered client-side, followed by the Columns group, the
+ * rows the list answered client-side, followed by the Per page group (25,
+ * 50, 100, 250; not a filter) and the Columns group, the
  * page's one action drawn at the panel's foot, and the answer's `total`
  * published as `matched` with no `total`, since the server alone narrows
  * and a count over the page held would lie. Answers the page's rows in
- * the active sort order, the sort with its setter and the hidden column
- * keys, persisted under `prefsKey`.
+ * the active sort order, the sort with its setter, the hidden column
+ * keys and the page size with its setter, persisted under `prefsKey`.
  *
  * @param {Object} options
  * @param {string} options.query - The query the page holds
@@ -44,7 +58,7 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {Array} options.rows - The rows the list answered
  * @param {Array} options.columns - The table's columns
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
- * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set }} The search state
+ * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set, size: number, setSize: Function }} The search state
  */
 export const useListSearch = ({
   query,
@@ -78,6 +92,7 @@ export const useListSearch = ({
     groups: [
       ...groups,
       ...filters.groups,
+      perPageGroup({ size: prefs.size, setPrefs, t }),
       columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t }),
     ],
     onClearFilters: () => {
@@ -90,10 +105,14 @@ export const useListSearch = ({
   const setSort = (column, options) =>
     setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) }));
 
+  const setSize = size => setPrefs(current => ({ ...current, size }));
+
   return {
     rows: sortItems(filters.rows, prefs.sort, shown),
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
+    size: prefs.size,
+    setSize,
   };
 };

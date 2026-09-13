@@ -1742,6 +1742,7 @@
       "collection": "Collection",
       "provider": "Provider",
       "architecture": "Architecture",
+      "perPage": "Per page",
       "columns": "Columns"
     },
     "view": {
@@ -2397,6 +2398,7 @@
     "firstUsed": "First connected",
     "lastUsed": "last used",
     "permissions": "Permissions:",
+    "requiredScope": "Required to sign in",
     "removeScope": "Remove {{scope}} permission",
     "removeScopeBody": "Remove the {{scope}} permission from {{app}}. Type \"{{keyword}}\" to confirm.",
     "sessions": "Sessions",

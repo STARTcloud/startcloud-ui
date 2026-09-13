@@ -12,7 +12,19 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useUnread } from '../../../contexts/UnreadContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZES = [25, 50, 100, 250];
+const DEFAULT_SIZE = 25;
+
+const perPageGroup = ({ size, setSize, t }) => ({
+  key: 'size',
+  label: t('pages.filter.perPage'),
+  entries: Object.fromEntries(PAGE_SIZES.map(value => [String(value), null])),
+  activeSet: new Set([String(size)]),
+  activeClass: 'bg-secondary',
+  columns: true,
+  labelFor: value => value,
+  onToggle: value => setSize(Number(value)),
+});
 
 const matches = (entry, needle) =>
   [entry.title, entry.body].some(text =>
@@ -62,7 +74,9 @@ const useSelection = rows => {
 
 /**
  * The full inbox at `/notifications`: the modal's rows in a full-width
- * list, twenty-five per page with the pager over the hub's paged shape, a
+ * list, twenty-five per page by default over the hub's paged shape, the
+ * navbar panel's Per page group (25, 50, 100, 250) resetting the page to 0
+ * on a change, the pager as the section's foot, a
  * `SectionHeading` whose title carries the count as muted text and whose
  * action pane reads, while rows are picked, "N selected", Clear
  * selection, Mark as read, Mark as unread and Delete, then Mark all as
@@ -86,6 +100,7 @@ const InboxPage = ({ notifications }) => {
   const navigate = useNavigate();
   const { adjust: adjustUnread } = useUnread();
   const [page, setPage] = useState(0);
+  const [size, setSize] = useState(DEFAULT_SIZE);
   const [entries, setEntries] = useState([]);
   const [query, setQuery] = useState('');
   const [paging, setPaging] = useState({ totalPages: 0, total: 0 });
@@ -107,14 +122,14 @@ const InboxPage = ({ notifications }) => {
   const load = useCallback(
     () =>
       notifications
-        .list({ page, size: PAGE_SIZE })
+        .list({ page, size })
         .then(data => {
           setLoadFailed(false);
           setEntries(extractEntries(data));
           setPaging({ totalPages: totalPagesOf(data), total: totalOf(data) });
         })
         .catch(() => setLoadFailed(true)),
-    [notifications, page]
+    [notifications, page, size]
   );
 
   useEffect(() => {
@@ -247,7 +262,16 @@ const InboxPage = ({ notifications }) => {
     placeholder: t('inbox.search'),
     matched: shown.length,
     total: entries.length,
-    groups: [],
+    groups: [
+      perPageGroup({
+        size,
+        setSize: next => {
+          setSize(next);
+          setPage(0);
+        },
+        t,
+      }),
+    ],
     onClearFilters: () => setQuery(''),
   });
 
@@ -329,7 +353,7 @@ const InboxPage = ({ notifications }) => {
       <Pager
         page={page}
         totalPages={paging.totalPages}
-        size={PAGE_SIZE}
+        size={size}
         total={paging.total}
         onChange={setPage}
       />

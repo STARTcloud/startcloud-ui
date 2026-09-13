@@ -6,6 +6,7 @@ import { FaDownload } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
+import RowMenu from '../../../components/common/RowMenu';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
@@ -107,29 +108,24 @@ const RowActions = ({ user, onAction }) => {
       >
         {user.enabled ? t('admin.users.suspend') : t('admin.users.enable')}
       </button>
-      <Dropdown align="end">
-        <Dropdown.Toggle variant="outline-secondary" size="sm">
-          {t('admin.users.more')}
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          <Dropdown.Item onClick={() => onAction('roles', user)}>
-            {t('admin.users.roles.action')}
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => onAction('primary', user)}>
-            {t('admin.users.primaryOrg.action')}
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => onAction('customerId', user)}>
-            {t('admin.users.customerId.action')}
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => onAction('rateLimits', user)}>
-            {t('admin.users.rateLimits.action')}
-          </Dropdown.Item>
-          <Dropdown.Divider />
-          <Dropdown.Item className="text-danger" onClick={() => onAction('delete', user)}>
-            {t('admin.users.delete.action')}
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
+      <RowMenu label={t('admin.users.more')}>
+        <Dropdown.Item onClick={() => onAction('roles', user)}>
+          {t('admin.users.roles.action')}
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => onAction('primary', user)}>
+          {t('admin.users.primaryOrg.action')}
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => onAction('customerId', user)}>
+          {t('admin.users.customerId.action')}
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => onAction('rateLimits', user)}>
+          {t('admin.users.rateLimits.action')}
+        </Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.Item className="text-danger" onClick={() => onAction('delete', user)}>
+          {t('admin.users.delete.action')}
+        </Dropdown.Item>
+      </RowMenu>
     </div>
   );
 };
@@ -301,19 +297,21 @@ const serverSortOf = sort => {
  * loaded page client-side since the list names no parameter for it, its
  * values in the URL as `roles`, comma-joined, and never sent to the list,
  * Export the panel's action over the list's parameters, and the
- * Columns group with the sort and the hidden columns under
+ * Per page and Columns groups, the sort, the page size and the hidden
+ * columns under
  * `table_prefs_admin_users`, the sort sent to the read as `sort` and
- * `direction`; a `SectionHeading` carrying the total as muted text after
+ * `direction` and the page size as `size`, page reset to 0 on either
+ * change; a `SectionHeading` carrying the total as muted text after
  * the title, the table's select column a real checkbox header, the
  * select-all for the page, checked, unchecked or indeterminate; the table
  * with the roles, organizations and 2FA badges, the row actions as
- * labeled buttons and one row menu (Suspend or Enable, Roles, Set primary
+ * labeled buttons and one `RowMenu` (Suspend or Enable, Roles, Set primary
  * organization, Edit customer ID, Rate limits, Delete behind the confirm
  * and the step-up), the heading's action pane gaining, while rows are
  * picked, "N selected", Clear selection and the bulk actions (Enable,
  * Suspend, Add role, Remove role, Delete), the result line naming
  * processed, skipped and errors while it has something to say, and the
- * pager; every action re-fetches the list.
+ * pager as the section's foot; every action re-fetches the list.
  */
 const UsersPage = () => {
   const { t, i18n } = useTranslation();
@@ -356,9 +354,15 @@ const UsersPage = () => {
     prefsKey: PREFS_KEY,
   });
 
+  const [pagedForSize, setPagedForSize] = useState(search.size);
+  if (pagedForSize !== search.size) {
+    setPagedForSize(search.size);
+    setPage(0);
+  }
+
   const params = useMemo(
-    () => ({ ...narrowed, ...serverSortOf(search.sort), page, size: PAGE_SIZE }),
-    [narrowed, page, search.sort]
+    () => ({ ...narrowed, ...serverSortOf(search.sort), page, size: search.size }),
+    [narrowed, page, search.sort, search.size]
   );
   const key = JSON.stringify(params);
 

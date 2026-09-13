@@ -427,7 +427,10 @@ adds its own foldable section to an item page (the catalog's Quality).
   the heading, no control at the body's left or above the heading, no
   line under a heading because a second line pushes the body down on
   every page for a word the title already carries, and no summary bar
-  above a table since the count is the heading's own muted text. The
+  above a table since the count is the heading's own muted text, and a
+  row's More menu escapes this frame's one scroll region and any wrap's
+  `overflow`, drawn by the one shared `RowMenu` component, because a menu a
+  person cannot read is not a menu. The
   body is framed by one rule by content on every page of every UI
   backend: a form or a settings group draws in a section card
   (`SectionCard`, its header line the section's heading row, the
@@ -495,6 +498,26 @@ adds its own foldable section to an item page (the catalog's Quality).
   itself is that control and a second one beside it would say the same
   thing twice; the row checkboxes are that column's cells (identity
   contract decisions 137, 139, 142).
+- **Pager**: a paged list's pager, `Pager` in `src/components/common/Pager.jsx`,
+  draws as the section's foot, centered under its table or list: the page
+  buttons — previous, the pages around the current one, next — on one line,
+  and the "Showing a to b of n" line as muted small text centered under
+  them, never in the heading row, whose action pane already holds the
+  section's actions, and never left- or right-aligned, because a foot
+  found under the middle of a table is found where a footer is found and
+  the heading's pane already carries the section's actions. A paged
+  list's page size is a "Per page" pill group in the navbar filter panel
+  (25, 50, 100, 250; 25 the default), drawn after the page's own groups
+  and before Columns, not a filter — Clear filters leaves it alone and it
+  never counts as one, the same mechanism the Columns group already uses
+  — kept in the page's `table_prefs_*` object as `size` beside sort,
+  hidden columns and folds, and sent to the list as `size`, because the
+  panel is the one place a page is narrowed and shaped and the page
+  carries no control of its own. A row's More menu is `RowMenu` in
+  `src/components/common/RowMenu.jsx`, one shared component opening over
+  the page, escaping the table wrap and the scroll region, never clipped
+  by either's `overflow`, because a menu a person cannot read is not a
+  menu.
 - **HomePage**: `Listing` over every collection, grouped by organization,
   the Discover organizations button and the toggle on the first
   collection's heading row.

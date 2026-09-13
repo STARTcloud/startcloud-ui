@@ -33,6 +33,7 @@ const drawingShape = {
   callAction: PropTypes.func,
   guard: PropTypes.func,
   Sections: PropTypes.elementType.isRequired,
+  nested: PropTypes.bool,
 };
 
 const matchesField = (field, term) =>
@@ -169,6 +170,7 @@ const ConfigFields = ({
   callAction = null,
   guard,
   Sections,
+  nested = false,
 }) => (
   <div className="row">
     {fields
@@ -186,6 +188,7 @@ const ConfigFields = ({
               rules={rules}
               nameFor={nameFor}
               Sections={Sections}
+              nested={nested}
             />
           </div>
         ) : (
@@ -304,7 +307,11 @@ Section.propTypes = {
  * at the section head, each calling `callAction(route, method, body)`
  * through `guard` and painting a 422's pointers on the form; every map
  * receives this component as `Sections` so its item dialog draws the
- * item schema's sections and subsections the way the page draws the file's.
+ * item schema's sections and subsections the way the page draws the file's;
+ * `nested` (false at the page's own call) tells every map field below it
+ * that it is drawn inside a form dialog and to draw as a list rather than
+ * cards (config contract decision 90), and is carried unchanged into the
+ * `Sections` an item dialog draws its own fields through.
  */
 const ConfigSections = ({ sections, prefsKey = '', foldKey = '', ...drawing }) => {
   const folds = useFolds(prefsKey);
@@ -330,6 +337,7 @@ ConfigSections.propTypes = {
   sections: PropTypes.arrayOf(sectionShape).isRequired,
   prefsKey: PropTypes.string,
   foldKey: PropTypes.string,
+  nested: PropTypes.bool,
 };
 
 export default ConfigSections;

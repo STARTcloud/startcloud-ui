@@ -29,6 +29,8 @@ export const sortStackOf = saved => {
   return isSortEntry(saved) ? [{ column: saved.column, direction: saved.direction }] : [];
 };
 
+const DEFAULT_SIZE = 25;
+
 const defaultHidden = columns =>
   columns.filter(column => column.defaultHidden).map(column => column.key);
 
@@ -88,19 +90,21 @@ export const writePrefs = (
 /**
  * A page's table preferences under one `table_prefs_*` key, the session
  * contract's one object per key: the sort stack, the hidden column keys,
- * and, on a page with the view toggle, the chosen view among `views`.
+ * the page size (25 when absent), and, on a page with the view toggle, the
+ * chosen view among `views`.
  *
  * @param {string} key - The localStorage key
  * @param {Array} columns - The table's columns, `defaultHidden` ones hidden until saved
  * @param {Object} [options]
  * @param {string[]} [options.views] - The views the page toggles between, the first the default
- * @returns {{ sort: Array, hiddenColumns: Set, view?: string }} The preferences
+ * @returns {{ sort: Array, hiddenColumns: Set, size: number, view?: string }} The preferences
  */
 export const readDetailPrefs = (key, columns, { views = null } = {}) => {
   const saved = parse(key);
   return {
     sort: sortStackOf(saved.sort),
     hiddenColumns: setOf(saved.hiddenColumns ?? defaultHidden(columns)),
+    size: typeof saved.size === 'number' ? saved.size : DEFAULT_SIZE,
     ...(views ? { view: views.includes(saved.view) ? saved.view : views[0] } : {}),
   };
 };
@@ -110,15 +114,19 @@ export const readDetailPrefs = (key, columns, { views = null } = {}) => {
  * `view` only while the page holds one.
  *
  * @param {string} key - The localStorage key
- * @param {{ sort?: Array, hiddenColumns?: Set, view?: string }} prefs - The preferences
+ * @param {{ sort?: Array, hiddenColumns?: Set, size?: number, view?: string }} prefs - The preferences
  */
-export const writeDetailPrefs = (key, { sort = [], hiddenColumns = new Set(), view = '' }) => {
+export const writeDetailPrefs = (
+  key,
+  { sort = [], hiddenColumns = new Set(), size = DEFAULT_SIZE, view = '' }
+) => {
   const { folds } = parse(key);
   localStorage.setItem(
     key,
     JSON.stringify({
       sort,
       hiddenColumns: [...hiddenColumns],
+      size,
       ...(view ? { view } : {}),
       ...(folds ? { folds } : {}),
     })

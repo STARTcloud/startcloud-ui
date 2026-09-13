@@ -15,10 +15,11 @@ const pagesAround = (page, totalPages) => {
 };
 
 /**
- * The page strip of the inbox and the admin tables: previous, the pages
- * around the current one while the total is known, next, and the
- * "Showing a to b of n" line while a total is given; pages are
- * zero-based as the routes count them.
+ * A paged list's section foot: the page buttons — previous, the pages
+ * around the current one while the total is known, next — centered on
+ * one line, and the "Showing a to b of n" line as muted small text
+ * centered under them while a total is given; pages are zero-based as
+ * the routes count them.
  */
 const Pager = ({ page, totalPages = 0, hasNext = false, size = 0, total = 0, onChange }) => {
   const { t } = useTranslation();
@@ -31,47 +32,47 @@ const Pager = ({ page, totalPages = 0, hasNext = false, size = 0, total = 0, onC
   const from = total > 0 ? page * size + 1 : 0;
   const to = total > 0 ? Math.min(total, (page + 1) * size) : 0;
   return (
-    <nav className="d-flex align-items-center justify-content-center gap-2 flex-wrap mt-3">
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary"
-        disabled={!canPrevious}
-        onClick={() => onChange(page - 1)}
-        aria-label={t('pager.previous')}
-        title={t('pager.previous')}
-      >
-        <FaChevronLeft aria-hidden />
-      </button>
-      {known
-        ? pagesAround(page, totalPages).map(index => (
-            <button
-              key={index}
-              type="button"
-              className={`btn btn-sm ${index === page ? 'btn-primary' : 'btn-outline-secondary'}`}
-              aria-current={index === page ? 'page' : undefined}
-              aria-label={t('pager.page', { page: index + 1 })}
-              onClick={() => onChange(index)}
-            >
-              {index + 1}
-            </button>
-          ))
-        : null}
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary"
-        disabled={!canNext}
-        onClick={() => onChange(page + 1)}
-        aria-label={t('pager.next')}
-        title={t('pager.next')}
-      >
-        <FaChevronRight aria-hidden />
-      </button>
+    <div className="section-foot text-center">
+      <nav className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={!canPrevious}
+          onClick={() => onChange(page - 1)}
+          aria-label={t('pager.previous')}
+          title={t('pager.previous')}
+        >
+          <FaChevronLeft aria-hidden />
+        </button>
+        {known
+          ? pagesAround(page, totalPages).map(index => (
+              <button
+                key={index}
+                type="button"
+                className={`btn btn-sm ${index === page ? 'btn-primary' : 'btn-outline-secondary'}`}
+                aria-current={index === page ? 'page' : undefined}
+                aria-label={t('pager.page', { page: index + 1 })}
+                onClick={() => onChange(index)}
+              >
+                {index + 1}
+              </button>
+            ))
+          : null}
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={!canNext}
+          onClick={() => onChange(page + 1)}
+          aria-label={t('pager.next')}
+          title={t('pager.next')}
+        >
+          <FaChevronRight aria-hidden />
+        </button>
+      </nav>
       {total > 0 ? (
-        <span className="small text-body-secondary ms-2">
-          {t('pager.showing', { from, to, total })}
-        </span>
+        <span className="small text-body-secondary">{t('pager.showing', { from, to, total })}</span>
       ) : null}
-    </nav>
+    </div>
   );
 };
 

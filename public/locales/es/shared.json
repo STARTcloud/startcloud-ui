@@ -1742,6 +1742,7 @@
       "collection": "Colección",
       "provider": "Proveedor",
       "architecture": "Arquitectura",
+      "perPage": "Por página",
       "columns": "Columnas"
     },
     "view": {
@@ -2397,6 +2398,7 @@
     "firstUsed": "Primera conexión",
     "lastUsed": "último uso",
     "permissions": "Permisos:",
+    "requiredScope": "Necesario para iniciar sesión",
     "removeScope": "Quitar el permiso {{scope}}",
     "removeScopeBody": "Quita el permiso {{scope}} de {{app}}. Escribe \"{{keyword}}\" para confirmar.",
     "sessions": "Sesiones",

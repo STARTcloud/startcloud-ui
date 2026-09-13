@@ -10,6 +10,8 @@ import { fieldOf, schemaSections, setValueAt, valueAt } from '../../utils/schema
 import ConfigField from './ConfigField';
 import Field from './Field';
 import FormErrorSummary from './FormErrorSummary';
+import MethodList, { MethodRow } from './MethodList';
+import SectionHeading from './SectionHeading';
 
 const KEY_LABELS = { key: 'configManager.map.key' };
 const ROW_LABELS = { key: 'configManager.map.key', value: 'configManager.map.value' };
@@ -87,7 +89,11 @@ const mapShape = {
   nameFor: PropTypes.func.isRequired,
 };
 
-const configMapShape = { ...mapShape, Sections: PropTypes.elementType.isRequired };
+const configMapShape = {
+  ...mapShape,
+  Sections: PropTypes.elementType.isRequired,
+  nested: PropTypes.bool,
+};
 
 const MapHeader = ({ id, title, count, error, onAdd }) => {
   const { t } = useTranslation();
@@ -202,6 +208,52 @@ EntryCard.propTypes = {
   onDelete: PropTypes.func.isRequired,
 };
 
+const summaryValues = (item, entry) =>
+  cardFields(item, '')
+    .map(field => valueAt(entry, field.pointer))
+    .filter(value => value !== undefined && value !== null && value !== '');
+
+const EntryRow = ({ entryKey, entryName, entry, item, rules, onEdit, onDelete }) => {
+  const { t } = useTranslation();
+  const fields = cardFields(item, '');
+  const inline = fields.map(field => `${entryName}${field.pointer}`);
+  const errors = errorsUnder(rules.errors, entryName, inline);
+  const values = summaryValues(item, entry);
+  const subline =
+    values.length > 0 || errors.length > 0 ? (
+      <>
+        {values.length > 0 ? <span>{values.join(' · ')}</span> : null}
+        {errors.map(message => (
+          <span key={message} className="d-block text-danger">
+            {message}
+          </span>
+        ))}
+      </>
+    ) : null;
+  const actions = (
+    <>
+      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onEdit}>
+        {t('configManager.map.edit')}
+      </button>
+      <button type="button" className="btn btn-outline-danger btn-sm" onClick={onDelete}>
+        <FaTrash className="me-1" />
+        {t('configManager.map.delete')}
+      </button>
+    </>
+  );
+  return <MethodRow label={entryKey} subline={subline} actions={actions} />;
+};
+
+EntryRow.propTypes = {
+  entryKey: PropTypes.string.isRequired,
+  entryName: PropTypes.string.isRequired,
+  entry: PropTypes.object.isRequired,
+  item: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
 const ObjectMap = ({
   pointer,
   title,
@@ -212,11 +264,14 @@ const ObjectMap = ({
   rules,
   nameFor,
   Sections,
+  nested = false,
 }) => {
   const { t } = useTranslation();
   const name = nameFor(pointer);
   const id = rules.idFor(name);
   const entries = entriesOf(value);
+  const summaryFields = useMemo(() => cardFields(item, ''), [item]);
+  const listMode = nested || summaryFields.length === 0;
   const formRef = useRef(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_KEY_FORM);
@@ -286,38 +341,75 @@ const ObjectMap = ({
     close();
   };
 
+  const addButton = (
+    <button type="button" className="btn btn-primary btn-sm" onClick={openAdd}>
+      <FaPlus className="me-1" />
+      {t('configManager.map.add')}
+    </button>
+  );
+
   return (
     <>
-      <div className="card mb-4">
-        <MapHeader
-          id={id}
-          title={title}
-          count={Object.keys(entries).length}
-          error={rules.errors[name] || ''}
-          onAdd={openAdd}
-        />
-        <div className="card-body">
+      {listMode ? (
+        <div className="mb-4">
+          <SectionHeading
+            id={id}
+            title={title}
+            count={Object.keys(entries).length}
+            actions={addButton}
+          />
+          {rules.errors[name] ? <p className="small text-danger">{rules.errors[name]}</p> : null}
           {Object.keys(entries).length === 0 ? (
             <p className="text-muted mb-0">{t('configManager.map.empty')}</p>
           ) : (
-            <div className="row">
+            <MethodList>
               {Object.entries(entries).map(([key, entry]) => (
-                <EntryCard
+                <EntryRow
                   key={key}
                   entryKey={key}
                   entryName={`${name}/${key}`}
                   entry={entriesOf(entry)}
                   item={item}
                   rules={rules}
-                  onChange={next => onChange({ ...entries, [key]: next })}
                   onEdit={() => openEdit(key)}
                   onDelete={() => onChange(without(entries, key))}
                 />
               ))}
-            </div>
+            </MethodList>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="card mb-4">
+          <MapHeader
+            id={id}
+            title={title}
+            count={Object.keys(entries).length}
+            error={rules.errors[name] || ''}
+            onAdd={openAdd}
+          />
+          <div className="card-body">
+            {Object.keys(entries).length === 0 ? (
+              <p className="text-muted mb-0">{t('configManager.map.empty')}</p>
+            ) : (
+              <div className="row">
+                {Object.entries(entries).map(([key, entry]) => (
+                  <EntryCard
+                    key={key}
+                    entryKey={key}
+                    entryName={`${name}/${key}`}
+                    entry={entriesOf(entry)}
+                    item={item}
+                    rules={rules}
+                    onChange={next => onChange({ ...entries, [key]: next })}
+                    onEdit={() => openEdit(key)}
+                    onDelete={() => onChange(without(entries, key))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <Modal
         show={editing !== null}
         onHide={close}
@@ -350,6 +442,7 @@ const ObjectMap = ({
               config={form}
               rules={dialog}
               nameFor={nameOf}
+              nested
               onChange={(fieldPointer, next) =>
                 setForm(previous => setValueAt(previous, fieldPointer, next))
               }
@@ -519,10 +612,18 @@ ScalarMap.propTypes = mapShape;
  * first enabled field focused when the dialog opens, the dialog opened on
  * arrival over the entry whose key `ConfigArrivalContext` names and that
  * context's `clear` called when that dialog closes, and a Delete on each
- * card; a scalar item draws as key and value rows with Add and Remove; an
- * item that is itself a map draws this component nested per entry; Add,
- * Delete and Remove change the form alone through `onChange` with the
- * whole map, which reaches the backend in the next Update's merge patch.
+ * card, drawn only while `nested` is false and the item schema carries a
+ * leaf of `order` 1 or 2; while `nested` is true (a map inside the item
+ * dialog `Sections` draws) or the item schema carries no such leaf, the
+ * map draws instead as a `SectionHeading` line (`title`, the count, Add
+ * as its action) over one row per entry straight on the ground, the row's
+ * key, its `order` 1 or 2 values as muted text where the item schema
+ * carries them, and Edit and Delete at the row's right (config contract
+ * decision 90); a scalar item draws as key and value rows with Add and
+ * Remove; an item that is itself a map draws this component nested per
+ * entry; Add, Delete and Remove change the form alone through `onChange`
+ * with the whole map, which reaches the backend in the next Update's
+ * merge patch.
  */
 const ConfigMap = ({
   pointer,
@@ -534,6 +635,7 @@ const ConfigMap = ({
   rules,
   nameFor,
   Sections,
+  nested = false,
 }) => {
   const { t } = useTranslation();
   const kind = kindOf(item);
@@ -564,6 +666,7 @@ const ConfigMap = ({
         rules={rules}
         nameFor={nameFor}
         Sections={Sections}
+        nested={nested}
       />
     );
   }
@@ -626,6 +729,7 @@ const ConfigMap = ({
               rules={rules}
               nameFor={nameFor}
               Sections={Sections}
+              nested={nested}
             />
           </div>
         ))}

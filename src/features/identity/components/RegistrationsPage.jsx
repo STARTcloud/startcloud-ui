@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDownload } from 'react-icons/fa6';
 
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
+import { readDetailPrefs } from '../../../utils/prefs';
 import { registrations } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
 import { useListSearch } from '../hooks/useListSearch';
@@ -97,17 +98,21 @@ const groupsOf = ({ state, t }) => [
  * rows client-side since the list names no parameter for them, their
  * values in the URL as `email_verified` and `phone_verified` and never
  * sent to the list, Export
- * the panel's action over the list's parameters, the Columns
- * group under `table_prefs_admin_registrations`, the columns headed
- * Email verified and Phone verified over their Yes and No, and the pager.
+ * the panel's action over the list's parameters, the Per page and Columns
+ * groups under `table_prefs_admin_registrations`, the page reset to 0 on
+ * a size change, the columns headed
+ * Email verified and Phone verified over their Yes and No, and the pager
+ * as the section's foot.
  */
 const RegistrationsPage = () => {
   const { t, i18n } = useTranslation();
+  const [size, setSize] = useState(() => readDetailPrefs(PREFS_KEY, columns).size);
   const state = useActivityPage({
     read: registrations,
     example: REGISTRATIONS,
     exportName: 'registrations',
     clientKeys: CLIENT_KEYS,
+    size,
   });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
   const search = useListSearch({
@@ -129,6 +134,10 @@ const RegistrationsPage = () => {
     columns,
     prefsKey: PREFS_KEY,
   });
+
+  if (size !== search.size) {
+    setSize(search.size);
+  }
 
   useEffect(() => {
     document.title = t('admin.activity.registrations.title');

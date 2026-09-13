@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaPuzzlePiece, FaXmark } from 'react-icons/fa6';
+import { FaLock, FaPuzzlePiece, FaXmark } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -46,18 +46,22 @@ const ScopeChips = ({ app, onRemoveScope }) => {
     return null;
   }
   return (
-    <span className="d-flex align-items-center flex-wrap gap-1 mt-1">
-      <span>{t('applications.permissions')}</span>
+    <span className="d-flex align-items-center flex-wrap gap-2 mt-1">
+      <span className="small text-muted">{t('applications.permissions')}</span>
       {scopes.map(scope => (
-        <span
-          key={scope}
-          className="badge rounded-pill bg-secondary d-inline-flex align-items-center"
-        >
+        <span key={scope} className="scope-chip">
           {scope}
-          {scope === 'openid' ? null : (
+          {scope === 'openid' ? (
+            <span
+              className="scope-chip-lock d-inline-flex align-items-center"
+              title={t('applications.requiredScope')}
+            >
+              <FaLock aria-hidden />
+            </span>
+          ) : (
             <button
               type="button"
-              className="btn btn-link btn-sm p-0 ms-1 text-white d-inline-flex align-items-center justify-content-center scope-chip-remove"
+              className="scope-chip-remove"
               aria-label={t('applications.removeScope', { scope })}
               title={t('applications.removeScope', { scope })}
               onClick={() => onRemoveScope(app, scope)}

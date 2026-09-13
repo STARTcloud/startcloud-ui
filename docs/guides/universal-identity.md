@@ -1912,7 +1912,7 @@ replays inside its window and a guessing run meets `429` with
 | `StepUpDialog`            | `src/components/common/StepUpDialog.jsx`  | "Confirm it's you" with a password or a code; any UI backend that step-ups a sensitive change                                                                        |
 | `MethodRow`, `MethodList` | `src/components/common/MethodList.jsx`    | a list row with an icon, a label, a subline, badges and trailing actions; 2FA methods, passkeys, linked accounts, connected apps, sessions                           |
 | `SortableList`            | `src/components/common/SortableList.jsx`  | drag-to-reorder over a keyed list; favorites and the config editor's `orderable` arrays                                                                              |
-| `Pager`                   | `src/components/common/Pager.jsx`         | the page strip of the inbox and of the admin tables                                                                                                                  |
+| `Pager`                   | `src/components/common/Pager.jsx`         | the section foot of the inbox and of the admin tables                                                                                                                |
 | `InboxList`               | `src/components/common/InboxList.jsx`     | the row list the modal and the page both draw                                                                                                                        |
 
 ### Signed-in keys
@@ -3593,6 +3593,16 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      anyone, later a lawyer adds a clause and that must re-prompt, and no
      code can tell the two apart, so the person saving says which by the
      act they choose.
+162. `Pager` becomes a section's foot: centered under the table or list,
+     the page buttons one row and the "Showing a to b of n" line its own
+     centered row under them, never in the heading, whose action pane
+     keeps the section's actions. A paged list's page size joins the
+     navbar panel as a "Per page" pill group (25, 50, 100, 250) after the
+     page's own groups and before Columns, columns-like so Clear filters
+     leaves it alone, kept in `table_prefs_*` as `size` beside sort,
+     hidden columns and folds. A row's More menu is the shared `RowMenu`,
+     escaping the table wrap and the page's one scroll region rather than
+     being clipped by either.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

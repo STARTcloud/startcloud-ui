@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDownload } from 'react-icons/fa6';
 
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
+import { readDetailPrefs } from '../../../utils/prefs';
 import { logins } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
 import { useListSearch } from '../hooks/useListSearch';
@@ -99,14 +100,16 @@ const groupsOf = ({ state, t }) => [
  * `select` group sent as `success`, the query and every filter in the URL
  * through `useUrlNarrowing` so the Dashboard's cards and a search hit
  * land on a preset and each change re-reading page 1,
- * Export the panel's action over the same parameters, and the Columns
- * group under `table_prefs_admin_logins`; a `SectionHeading` carrying the
+ * Export the panel's action over the same parameters, and the Per page and
+ * Columns groups under `table_prefs_admin_logins`, the page reset to 0 on
+ * a size change; a `SectionHeading` carrying the
  * total as muted text after the title, the table with its Reason column
- * for a failed row, and the pager.
+ * for a failed row, and the pager as the section's foot.
  */
 const LoginsPage = () => {
   const { t, i18n } = useTranslation();
-  const state = useActivityPage({ read: logins, example: LOGINS, exportName: 'logins' });
+  const [size, setSize] = useState(() => readDetailPrefs(PREFS_KEY, columns).size);
+  const state = useActivityPage({ read: logins, example: LOGINS, exportName: 'logins', size });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
   const search = useListSearch({
     query: state.query,
@@ -125,6 +128,10 @@ const LoginsPage = () => {
     columns,
     prefsKey: PREFS_KEY,
   });
+
+  if (size !== search.size) {
+    setSize(search.size);
+  }
 
   useEffect(() => {
     document.title = t('admin.activity.logins.title');

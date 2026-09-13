@@ -950,9 +950,39 @@ button::-moz-focus-inner {
   white-space: pre-line;
 }
 
+.scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--bs-body-color);
+  background-color: transparent;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius-sm);
+}
+
 .scope-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 24px;
   min-height: 24px;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  color: inherit;
+  border-radius: var(--bs-border-radius-sm);
+}
+
+.scope-chip-remove:hover,
+.scope-chip-remove:focus-visible {
+  background-color: var(--bs-secondary-bg);
+}
+
+.scope-chip-lock {
+  color: var(--bs-secondary-color);
 }
 
 .recovery-codes {
@@ -2755,6 +2785,14 @@ a.stat-card:focus-visible {
 
 .table-wrap {
   overflow-x: auto;
+}
+
+.section-foot {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .login-map {
