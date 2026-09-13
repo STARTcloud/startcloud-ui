@@ -6,11 +6,14 @@ import ReactMarkdown from 'react-markdown';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import { TERM_ICON_NAMES } from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { loadCountries } from '../../../lib/countries';
-import { createTerm, updateTerm } from '../api/content';
+import { createTerm, publishTerm, termHistory, termRevision, updateTerm } from '../api/content';
+
+import DateCell from './DateCell';
 
 export const TERM_TYPES = ['CLIENT', 'SITE', 'BOTH'];
 
@@ -27,6 +30,7 @@ export const copyShape = PropTypes.shape({
   id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   regions: PropTypes.arrayOf(PropTypes.string),
   version: PropTypes.string,
+  revision: PropTypes.number,
   content: PropTypes.string,
   created_by: PropTypes.string,
   updated_at: PropTypes.string,
@@ -80,6 +84,23 @@ const COPY_SCHEMA = {
     content: { type: 'string' },
   },
 };
+
+const SAVE_SCHEMA = {
+  required: ['content'],
+  properties: {
+    regions: { type: 'array', items: { $ref: '#/$defs/region' } },
+    content: { type: 'string' },
+  },
+};
+
+const PUBLISH_SCHEMA = {
+  required: ['version'],
+  properties: {
+    version: { type: 'string' },
+  },
+};
+
+const PUBLISH_LABELS = { version: 'admin.terms.field.version' };
 
 const TextField = ({ name, form, rules, onChange, labels, readOnly = false }) => {
   const { t } = useTranslation();
@@ -351,11 +372,103 @@ RegionsField.propTypes = {
 };
 
 /**
+ * The small form dialog Publish opens on a copy being edited: the new
+ * version string, `409 unique` at `/version` painted on the field when the
+ * copy has already had it, sending
+ * `POST /api/admin/terms/{name}/publish?region=` `{ version, content }`,
+ * which writes revision 1 of that version and becomes the live text
+ * (decision 161).
+ */
+const PublishDialog = ({ document, source, content, onClose, onPublished }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [form, setForm] = useState({ version: '' });
+  const [busy, setBusy] = useState(false);
+  const rules = useFormRules({
+    formKey: 'terms',
+    schema: PUBLISH_SCHEMA,
+    values: form,
+    labels: PUBLISH_LABELS,
+    idPrefix: 'term-publish',
+  });
+
+  const publish = event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    setBusy(true);
+    publishTerm(document.name, { version: form.version, content }, regionOfCopy(source))
+      .then(() => {
+        notify('success', t('admin.terms.updated'));
+        onPublished();
+        onClose();
+      })
+      .catch(error => {
+        if (!rules.applyServerErrors(error)) {
+          notify('danger', t(error.messageKey || 'errors.request'));
+        }
+      })
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
+      <form onSubmit={publish} noValidate>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">{t('admin.terms.publishTitle')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FormErrorSummary errors={rules.summary} />
+          <Field
+            id={rules.idFor('version')}
+            label={t('admin.terms.publishVersion')}
+            error={rules.errors.version || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                value={form.version}
+                onChange={event => setForm({ version: event.target.value })}
+                onBlur={() => rules.onBlur('version')}
+              />
+            )}
+          </Field>
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
+            {t('admin.buttons.cancel')}
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {t('admin.terms.publish')}
+          </button>
+        </Modal.Footer>
+      </form>
+    </Modal>
+  );
+};
+
+PublishDialog.propTypes = {
+  document: documentShape.isRequired,
+  source: copyShape.isRequired,
+  content: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onPublished: PropTypes.func.isRequired,
+};
+
+/**
  * The copy's Add, Copy (to a new region) and Edit dialog: `regions`
  * (required to add or duplicate, the source copy's own set to edit),
- * version and the markdown content with a live preview, saved through
- * `POST /api/admin/terms` for a new copy or
- * `PATCH /api/admin/terms/{name}?region=` for the copy being edited.
+ * a new copy's version and the markdown content with a live preview,
+ * saved through `POST /api/admin/terms`; a copy being edited draws its
+ * `version` read-only instead, since it changes only by publishing
+ * (decision 161), with two footer actions: Save, the default, "Save as a
+ * revision of {{version}}", `PATCH /api/admin/terms/{name}?region=` with
+ * `content` and `regions` and never `version`, which writes the next
+ * revision under the current version and re-prompts nobody; and Publish,
+ * which opens `PublishDialog` for the new version string.
  */
 export const TermCopyDialog = ({
   document,
@@ -373,9 +486,11 @@ export const TermCopyDialog = ({
     content: source?.content || '',
   }));
   const [busy, setBusy] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const schema = editing ? SAVE_SCHEMA : COPY_SCHEMA;
   const rules = useFormRules({
     formKey: 'terms',
-    schema: COPY_SCHEMA,
+    schema,
     values: form,
     labels: COPY_LABELS,
     idPrefix: 'term-copy',
@@ -390,7 +505,11 @@ export const TermCopyDialog = ({
     }
     setBusy(true);
     const call = editing
-      ? updateTerm(document.name, form, regionOfCopy(source))
+      ? updateTerm(
+          document.name,
+          { content: form.content, regions: form.regions },
+          regionOfCopy(source)
+        )
       : createTerm({
           name: document.name,
           friendly_name: document.friendly_name,
@@ -427,22 +546,36 @@ export const TermCopyDialog = ({
           <FormErrorSummary errors={rules.summary} />
           <div className="row">
             <div className="col-md-6">
-              <Field
-                id={rules.idFor('version')}
-                label={t(COPY_LABELS.version)}
-                error={rules.errors.version || ''}
-              >
-                {aria => (
-                  <input
-                    {...aria}
-                    type="text"
-                    className="form-control"
-                    value={form.version}
-                    onChange={event => onChange('version', event.target.value)}
-                    onBlur={() => rules.onBlur('version')}
-                  />
-                )}
-              </Field>
+              {editing ? (
+                <Field id="term-copy-version-readonly" label={t(COPY_LABELS.version)}>
+                  {aria => (
+                    <input
+                      {...aria}
+                      type="text"
+                      className="form-control"
+                      value={source.version}
+                      readOnly
+                    />
+                  )}
+                </Field>
+              ) : (
+                <Field
+                  id={rules.idFor('version')}
+                  label={t(COPY_LABELS.version)}
+                  error={rules.errors.version || ''}
+                >
+                  {aria => (
+                    <input
+                      {...aria}
+                      type="text"
+                      className="form-control"
+                      value={form.version}
+                      onChange={event => onChange('version', event.target.value)}
+                      onBlur={() => rules.onBlur('version')}
+                    />
+                  )}
+                </Field>
+              )}
             </div>
             <div className="col-md-6">
               <RegionsField form={form} rules={rules} onChange={onChange} />
@@ -487,11 +620,35 @@ export const TermCopyDialog = ({
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
             {t('admin.buttons.cancel')}
           </button>
+          {editing ? (
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              disabled={busy}
+              onClick={() => setPublishing(true)}
+            >
+              {t('admin.terms.publish')}
+            </button>
+          ) : null}
           <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.buttons.save')}
+            {editing
+              ? t('admin.terms.saveAsRevision', { version: source.version })
+              : t('admin.terms.save')}
           </button>
         </Modal.Footer>
       </form>
+      {publishing ? (
+        <PublishDialog
+          document={document}
+          source={source}
+          content={form.content}
+          onClose={() => setPublishing(false)}
+          onPublished={() => {
+            onSaved();
+            onClose();
+          }}
+        />
+      ) : null}
     </Modal>
   );
 };
@@ -503,4 +660,157 @@ TermCopyDialog.propTypes = {
   placeholders: PropTypes.arrayOf(placeholderShape).isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
+};
+
+const RevisionView = ({ document, source, version, revision, onBack }) => {
+  const { t } = useTranslation();
+  const [row, setRow] = useState('loading');
+
+  useEffect(() => {
+    let active = true;
+    termRevision(document.name, version, revision, regionOfCopy(source))
+      .then(answer => {
+        if (active) {
+          setRow(answer);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRow(null);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [document.name, source, version, revision]);
+
+  if (row === 'loading') {
+    return <div className="text-muted">{t('loading')}</div>;
+  }
+  if (!row) {
+    return <div className="text-muted">{t('pages.empty')}</div>;
+  }
+  return (
+    <>
+      <button type="button" className="btn btn-sm btn-outline-secondary mb-3" onClick={onBack}>
+        {t('admin.terms.history')}
+      </button>
+      <div className="small text-muted mb-2">
+        {t('admin.terms.version', { version: row.version })}{' '}
+        {t('admin.terms.revision', { revision: row.revision })}
+        {row.published_by ? ` · ${row.published_by}` : ''}
+        {row.published_at ? (
+          <>
+            {' · '}
+            <DateCell value={row.published_at} />
+          </>
+        ) : null}
+      </div>
+      <MarkdownArticle markdown={row.content || ''} />
+    </>
+  );
+};
+
+RevisionView.propTypes = {
+  document: documentShape.isRequired,
+  source: copyShape.isRequired,
+  version: PropTypes.string.isRequired,
+  revision: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  onBack: PropTypes.func.isRequired,
+};
+
+/**
+ * The History action on a copy: a list dialog of `GET
+ * /api/admin/terms/{name}/history?region=`, versions newest first with
+ * their revisions beneath (revision, published by, published at, the
+ * live one marked Current), each revision opening read-only through the
+ * same `MarkdownArticle` the Preview uses (decision 161).
+ */
+export const TermHistoryDialog = ({ document, source, onClose }) => {
+  const { t } = useTranslation();
+  const [state, setState] = useState('loading');
+  const [viewing, setViewing] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    termHistory(document.name, regionOfCopy(source))
+      .then(answer => {
+        if (active) {
+          setState(answer);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setState(null);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [document.name, source]);
+
+  return (
+    <Modal show onHide={onClose} dialogClassName="list-modal" scrollable>
+      <Modal.Header closeButton>
+        <Modal.Title as="h5">
+          {t('admin.terms.historyTitle', { name: document.friendly_name || document.name })}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {viewing ? (
+          <RevisionView
+            document={document}
+            source={source}
+            version={viewing.version}
+            revision={viewing.revision}
+            onBack={() => setViewing(null)}
+          />
+        ) : null}
+        {!viewing && state === 'loading' ? <div className="text-muted">{t('loading')}</div> : null}
+        {!viewing && state === null ? <div className="text-muted">{t('pages.empty')}</div> : null}
+        {!viewing && state && state !== 'loading' ? (
+          <div className="d-flex flex-column gap-3">
+            {state.versions.map(entry => (
+              <div key={entry.version}>
+                <div className="fw-bold mb-1">
+                  {t('admin.terms.version', { version: entry.version })}
+                </div>
+                <ul className="list-group">
+                  {entry.revisions.map(row => (
+                    <li
+                      key={row.revision}
+                      className="list-group-item d-flex align-items-center gap-2"
+                    >
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link p-0"
+                        onClick={() =>
+                          setViewing({ version: entry.version, revision: row.revision })
+                        }
+                      >
+                        {t('admin.terms.revision', { revision: row.revision })}
+                      </button>
+                      <span className="small text-muted">{row.published_by}</span>
+                      <span className="small text-muted">
+                        <DateCell value={row.published_at} />
+                      </span>
+                      {row.current ? (
+                        <span className="badge bg-success ms-auto">{t('admin.terms.current')}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+TermHistoryDialog.propTypes = {
+  document: documentShape.isRequired,
+  source: copyShape.isRequired,
+  onClose: PropTypes.func.isRequired,
 };

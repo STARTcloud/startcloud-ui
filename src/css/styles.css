@@ -2229,6 +2229,24 @@ button::-moz-focus-inner {
   font-weight: 500;
 }
 
+.auth-step-badge {
+  flex: 1;
+  justify-content: center;
+}
+
+.auth-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.auth-region-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .auth-date {
   margin-left: 10px;
 }

@@ -400,6 +400,7 @@ export const TERMS = [
         id: 1,
         regions: [],
         version: '3.0',
+        revision: 2,
         content:
           '## 1. Information We Collect\n\nWe collect information you provide directly to us…',
         created_by: 'mark@m4kr.net',
@@ -409,6 +410,7 @@ export const TERMS = [
         id: 5,
         regions: ['EEA', 'UK'],
         version: '3.0',
+        revision: 1,
         content:
           '## 1. Information We Collect\n\nWe collect information you provide directly to us, as the GDPR and the UK GDPR allow…',
         created_by: 'mark@m4kr.net',
@@ -427,6 +429,7 @@ export const TERMS = [
         id: 2,
         regions: [],
         version: '2.0',
+        revision: 2,
         content: '## Terms\n\n…',
         created_by: 'mark@m4kr.net',
         updated_at: '2026-01-09T00:00:00Z',
@@ -444,6 +447,7 @@ export const TERMS = [
         id: 3,
         regions: [],
         version: '2.1',
+        revision: 3,
         content:
           '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} …',
         created_by: 'mark@m4kr.net',
@@ -453,6 +457,7 @@ export const TERMS = [
         id: 4,
         regions: ['EU'],
         version: '2.1',
+        revision: 1,
         content:
           '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} under the law of the European Union …',
         created_by: 'mark@m4kr.net',

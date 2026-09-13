@@ -370,13 +370,14 @@ const RegionButton = ({ state, switchingRegion, onPick }) => {
     <>
       <button
         type="button"
-        className="btn btn-sm btn-outline-secondary"
+        className="btn btn-sm btn-outline-secondary auth-region-btn"
         title={title}
         aria-label={title}
         disabled={disabled}
         onClick={() => setOpen(true)}
       >
         {regionFlag(state.person_region)}
+        <span>{regionLabel(state.person_region, t)}</span>
       </button>
       <RegionModal
         show={open}
@@ -477,14 +478,22 @@ const TermsHead = ({ state, scale, onScale, onRegionChange, switchingRegion, onO
   return (
     <div className="auth-row">
       <span className="auth-hint">{t('terms.version', { version: state.version })}</span>
-      {versions.length > 1 ? (
-        <button type="button" className="btn btn-sm btn-link p-0" onClick={onOpenVersions}>
-          {t('terms.versions.open')}
-        </button>
-      ) : null}
-      <span className="auth-badge">{t('terms.step', { n: state.step, m: state.total })}</span>
-      <RegionButton state={state} switchingRegion={switchingRegion} onPick={onRegionChange} />
-      <FontSize scale={scale} onScale={onScale} />
+      <span className="auth-badge auth-step-badge">
+        {t('terms.step', { n: state.step, m: state.total })}
+      </span>
+      <span className="auth-head-actions">
+        <FontSize scale={scale} onScale={onScale} />
+        {versions.length > 1 ? (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={onOpenVersions}
+          >
+            {t('terms.versions.open')}
+          </button>
+        ) : null}
+        <RegionButton state={state} switchingRegion={switchingRegion} onPick={onRegionChange} />
+      </span>
     </div>
   );
 };

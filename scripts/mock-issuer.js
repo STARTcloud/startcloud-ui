@@ -1267,6 +1267,7 @@ const state = {
     ...document,
     copies: document.copies.map(copy => ({ ...copy })),
   })),
+  termHistory: new Map(),
   configs: freshConfigs(),
   restart: {
     ...RESTART_STATUS,
@@ -2945,6 +2946,11 @@ adminRoute('GET', '/api/admin/terms/placeholders', () => ok(PLACEHOLDERS));
 const uniqueProblem = (pointer, scope) =>
   problem(409, 'unique', { errors: [{ pointer, rule: 'unique', params: { scope } }] });
 
+const readOnlyProblem = pointer =>
+  problem(422, 'validation', {
+    errors: [{ pointer, rule: 'readOnly', params: {}, detail: `${pointer} is read-only` }],
+  });
+
 const documentOf = name => state.terms.find(document => document.name === name);
 
 const copyOf = (document, region) =>
@@ -2961,6 +2967,80 @@ const nextCopyId = () => {
   return copySeq;
 };
 
+const previousVersionOf = version => {
+  const match = /^(?<major>\d+)\.(?<minor>\d+)$/.exec(String(version));
+  return match
+    ? `${Math.max(0, Number(match.groups.major) - 1)}.${match.groups.minor}`
+    : `${version}-prior`;
+};
+
+const seedCopyHistory = copy => {
+  const priorContent = `${copy.content}\n\n(prior version)`;
+  state.termHistory.set(copy.id, {
+    versions: [
+      {
+        version: copy.version,
+        revisions: [
+          {
+            revision: 1,
+            content: `${copy.content}\n\n(initial revision)`,
+            published_by: copy.created_by,
+            published_at: copy.updated_at,
+          },
+          {
+            revision: 2,
+            content: copy.content,
+            published_by: copy.created_by,
+            published_at: copy.updated_at,
+          },
+        ],
+      },
+      {
+        version: previousVersionOf(copy.version),
+        revisions: [
+          {
+            revision: 1,
+            content: `${priorContent}\n\n(initial revision)`,
+            published_by: copy.created_by,
+            published_at: copy.updated_at,
+          },
+          {
+            revision: 2,
+            content: priorContent,
+            published_by: copy.created_by,
+            published_at: copy.updated_at,
+          },
+        ],
+      },
+    ],
+  });
+};
+
+const seedNewCopyHistory = copy => {
+  state.termHistory.set(copy.id, {
+    versions: [
+      {
+        version: copy.version,
+        revisions: [
+          {
+            revision: 1,
+            content: copy.content,
+            published_by: copy.created_by,
+            published_at: copy.updated_at,
+          },
+        ],
+      },
+    ],
+  });
+};
+
+state.terms.forEach(document => {
+  document.copies.forEach(copy => {
+    copy.revision = 2;
+    seedCopyHistory(copy);
+  });
+});
+
 const copyConflict = (regions, siblings) => {
   if (regions.length === 0 && siblings.some(copy => regionsOf(copy).length === 0)) {
     return uniqueProblem('/regions', 'default');
@@ -2972,7 +3052,7 @@ const copyConflict = (regions, siblings) => {
 };
 
 const DOCUMENT_FIELDS = ['friendly_name', 'icon', 'type', 'is_public'];
-const COPY_FIELDS = ['version', 'content', 'regions'];
+const COPY_FIELDS = ['content', 'regions'];
 
 adminRoute('POST', '/api/admin/terms', ctx => {
   const regions = regionsOf(ctx.body);
@@ -2985,10 +3065,12 @@ adminRoute('POST', '/api/admin/terms', ctx => {
     id: nextCopyId(),
     regions,
     version: ctx.body.version,
+    revision: 1,
     content: ctx.body.content,
     created_by: 'mark@m4kr.net',
     updated_at: NOW(),
   };
+  seedNewCopyHistory(copy);
   if (existing) {
     existing.copies.push(copy);
     DOCUMENT_FIELDS.forEach(field => {
@@ -3014,6 +3096,9 @@ adminRoute('PATCH', '/api/admin/terms/:name', ctx => {
   if (!document) {
     return problem(404, 'not_found');
   }
+  if (ctx.body.version !== undefined) {
+    return readOnlyProblem('/version');
+  }
   const region = ctx.url.searchParams.get('region') || '';
   const touchesCopy = COPY_FIELDS.some(field => ctx.body[field] !== undefined);
   if (touchesCopy) {
@@ -3030,6 +3115,18 @@ adminRoute('PATCH', '/api/admin/terms/:name', ctx => {
       return refused;
     }
     Object.assign(copy, ctx.body, { regions, updated_at: NOW() });
+    if (ctx.body.content !== undefined) {
+      const history = state.termHistory.get(copy.id);
+      const versionEntry = history.versions.find(entry => entry.version === copy.version);
+      const nextRevision = Math.max(0, ...versionEntry.revisions.map(entry => entry.revision)) + 1;
+      versionEntry.revisions.push({
+        revision: nextRevision,
+        content: copy.content,
+        published_by: state.profile.email,
+        published_at: copy.updated_at,
+      });
+      copy.revision = nextRevision;
+    }
   }
   DOCUMENT_FIELDS.forEach(field => {
     if (ctx.body[field] !== undefined) {
@@ -3037,6 +3134,91 @@ adminRoute('PATCH', '/api/admin/terms/:name', ctx => {
     }
   });
   return ok(document);
+});
+adminRoute('POST', '/api/admin/terms/:name/publish', ctx => {
+  const document = documentOf(ctx.params.name);
+  if (!document) {
+    return problem(404, 'not_found');
+  }
+  const region = ctx.url.searchParams.get('region') || '';
+  const copy = copyOf(document, region);
+  if (!copy) {
+    return problem(404, 'not_found');
+  }
+  const version = String(ctx.body.version || '').trim();
+  if (!version) {
+    return invalid('/version', 'required');
+  }
+  const history = state.termHistory.get(copy.id);
+  if (history.versions.some(entry => entry.version === version)) {
+    return uniqueProblem('/version', document.name);
+  }
+  const content = ctx.body.content !== undefined ? ctx.body.content : copy.content;
+  const publishedAt = NOW();
+  history.versions.unshift({
+    version,
+    revisions: [
+      { revision: 1, content, published_by: state.profile.email, published_at: publishedAt },
+    ],
+  });
+  copy.version = version;
+  copy.content = content;
+  copy.revision = 1;
+  copy.updated_at = publishedAt;
+  return ok(document);
+});
+adminRoute('GET', '/api/admin/terms/:name/history', ctx => {
+  const document = documentOf(ctx.params.name);
+  if (!document) {
+    return problem(404, 'not_found');
+  }
+  const region = ctx.url.searchParams.get('region') || '';
+  const copy = copyOf(document, region);
+  if (!copy) {
+    return problem(404, 'not_found');
+  }
+  const history = state.termHistory.get(copy.id);
+  return ok({
+    name: document.name,
+    region: region || null,
+    versions: history.versions.map(entry => ({
+      version: entry.version,
+      revisions: [...entry.revisions]
+        .sort((left, right) => right.revision - left.revision)
+        .map(revisionRow => ({
+          revision: revisionRow.revision,
+          published_by: revisionRow.published_by,
+          published_at: revisionRow.published_at,
+          current: entry.version === copy.version && revisionRow.revision === copy.revision,
+        })),
+    })),
+  });
+});
+adminRoute('GET', '/api/admin/terms/:name/history/:version/:revision', ctx => {
+  const document = documentOf(ctx.params.name);
+  if (!document) {
+    return problem(404, 'not_found');
+  }
+  const region = ctx.url.searchParams.get('region') || '';
+  const copy = copyOf(document, region);
+  if (!copy) {
+    return problem(404, 'not_found');
+  }
+  const history = state.termHistory.get(copy.id);
+  const versionEntry = history.versions.find(entry => entry.version === ctx.params.version);
+  const revisionEntry = versionEntry?.revisions.find(
+    entry => String(entry.revision) === ctx.params.revision
+  );
+  if (!revisionEntry) {
+    return problem(404, 'not_found');
+  }
+  return ok({
+    version: versionEntry.version,
+    revision: revisionEntry.revision,
+    published_by: revisionEntry.published_by,
+    published_at: revisionEntry.published_at,
+    content: revisionEntry.content,
+  });
 });
 adminRoute('DELETE', '/api/admin/terms/:name', ctx => {
   const document = documentOf(ctx.params.name);
@@ -3345,11 +3527,19 @@ const handle = async (req, res) => {
  * copies carry `regions` (decision 133): `GET /api/policies/{name}`
  * resolves the copy by `?region=`, else the profile's address country,
  * else `US`, then the default; the admin terms routes answer one row per
- * document with its copies nested (decision 157), `POST` adds a copy to
- * an existing document or a new document with one, refusing `409 unique`
- * at `/regions` when the sets overlap, `PATCH` writes `friendly_name`,
- * `icon`, `type` and `is_public` to the document and `version`, `content`
- * and `regions` to the copy `?region=` names or the default, and `DELETE`
+ * document with its copies nested (decision 157), each copy carrying
+ * `revision` beside `version` (decision 161); `POST` adds a copy to
+ * an existing document or a new document with one, at revision 1,
+ * refusing `409 unique` at `/regions` when the sets overlap; `PATCH`
+ * writes `friendly_name`, `icon`, `type` and `is_public` to the document
+ * and `content` and `regions` to the copy `?region=` names or the
+ * default, writing the next revision under the copy's current version
+ * and refusing a `version` member `422 readOnly` at `/version`;
+ * `POST …/{name}/publish` writes revision 1 of a new, different version
+ * (`409 unique` at `/version` when the copy has had it), and
+ * `GET …/{name}/history` and `…/history/{version}/{revision}` answer the
+ * copy's versions with their revisions, two of each seeded per copy, and
+ * one revision's raw markdown; `DELETE`
  * drops that copy, the document with it once none remain; `PUT
  * /api/admin/terms/order` is gone, the order being the `sites` and
  * `clients` schemas' `tos-names`, drawn by `ConfigField` as the shared

@@ -30,6 +30,7 @@ import {
   regionsOf,
   TermCopyDialog,
   TermDocumentDialog,
+  TermHistoryDialog,
 } from './TermDialog';
 
 const keyOf = document => document.name;
@@ -97,7 +98,7 @@ PreviewDialog.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-const CopyRow = ({ copy, onPreview, onEdit, onCopy, onDelete }) => {
+const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
   const { t } = useTranslation();
   const regions = regionsOf(copy);
   return (
@@ -110,7 +111,8 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onDelete }) => {
         )}
         {regions.length > 0 ? <span className="small">{regions.join(', ')}</span> : null}
         <span className="small text-muted">
-          {t('admin.terms.version', { version: copy.version || '' })}
+          {t('admin.terms.version', { version: copy.version || '' })}{' '}
+          {t('admin.terms.revision', { revision: copy.revision })}
           {copy.updated_at ? (
             <>
               {' · '}
@@ -137,6 +139,13 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
+          onClick={() => onHistory(copy)}
+        >
+          {t('admin.terms.history')}
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
           onClick={() => onCopy(copy)}
         >
           {t('admin.terms.copies.duplicate')}
@@ -158,6 +167,7 @@ CopyRow.propTypes = {
   onPreview: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onCopy: PropTypes.func.isRequired,
+  onHistory: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
 
@@ -170,6 +180,7 @@ const DocumentCard = ({
   onPreviewCopy,
   onEditCopy,
   onCopyCopy,
+  onHistoryCopy,
   onDeleteCopy,
 }) => {
   const { t } = useTranslation();
@@ -230,6 +241,7 @@ const DocumentCard = ({
             onPreview={onPreviewCopy}
             onEdit={onEditCopy}
             onCopy={onCopyCopy}
+            onHistory={onHistoryCopy}
             onDelete={onDeleteCopy}
           />
         ))}
@@ -247,6 +259,7 @@ DocumentCard.propTypes = {
   onPreviewCopy: PropTypes.func.isRequired,
   onEditCopy: PropTypes.func.isRequired,
   onCopyCopy: PropTypes.func.isRequired,
+  onHistoryCopy: PropTypes.func.isRequired,
   onDeleteCopy: PropTypes.func.isRequired,
 };
 
@@ -380,9 +393,14 @@ TermsBulkActions.propTypes = {
  * Legal › Terms: a `SectionHeading` over the cards, the document count as
  * muted text after the title, Create as the heading's action; one card
  * per document, no drag handles and no order write, its copies listed
- * inside with their flag, regions, version, updated date and the
- * per-copy actions Preview, Edit, Copy (to a new region) and Delete; a
- * "region-only" badge on a document with no default copy; Add a copy on
+ * inside with their flag, regions, version, `r{{revision}}`, updated date
+ * and the per-copy actions Preview, Edit, History, Copy (to a new region)
+ * and Delete; a "region-only" badge on a document with no default copy;
+ * History opens a list dialog of the copy's versions and revisions,
+ * newest first, each revision readable read-only; Edit draws the version
+ * read-only with Save ("Save as a revision of {{version}}", a `PATCH`)
+ * and Publish (a small dialog asking the new version, then the publish
+ * route), decision 161; Add a copy on
  * the card opening the create dialog prefilled with the document's name;
  * the document-level fields (name, display name, icon, type, public)
  * edited once from the card's Edit and written to every copy; Public
@@ -422,6 +440,7 @@ const TermsPage = () => {
   const [documentDialog, setDocumentDialog] = useState({ open: false, document: null });
   const [copyDialog, setCopyDialog] = useState(null);
   const [previewing, setPreviewing] = useState(null);
+  const [viewingHistory, setViewingHistory] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
@@ -505,6 +524,7 @@ const TermsPage = () => {
             onPreviewCopy={copy => setPreviewing({ document, copy })}
             onEditCopy={copy => setCopyDialog({ document, source: copy, editing: true })}
             onCopyCopy={copy => setCopyDialog({ document, source: copy, editing: false })}
+            onHistoryCopy={copy => setViewingHistory({ document, copy })}
             onDeleteCopy={copy => setDeleting({ document, copy })}
           />
         ))}
@@ -531,6 +551,13 @@ const TermsPage = () => {
           document={previewing.document}
           copy={previewing.copy}
           onClose={() => setPreviewing(null)}
+        />
+      ) : null}
+      {viewingHistory ? (
+        <TermHistoryDialog
+          document={viewingHistory.document}
+          source={viewingHistory.copy}
+          onClose={() => setViewingHistory(null)}
         />
       ) : null}
       <ConfirmModal
