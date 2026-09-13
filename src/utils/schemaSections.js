@@ -59,6 +59,7 @@ export const fieldOf = ({ pointer, key, property, required, index = 0 }) => ({
     ? property.additionalProperties
     : null,
   propertyNames: isSchema(property.propertyNames) ? property.propertyNames : null,
+  orderable: Boolean(property.orderable),
 });
 
 const sectionOf = (schema, key) => {

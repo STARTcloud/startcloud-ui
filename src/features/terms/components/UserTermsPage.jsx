@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
@@ -22,20 +23,79 @@ const matches = (entry, needle) =>
     .toLowerCase()
     .includes(needle);
 
-const TermsSubline = ({ entry }) => {
+const AcceptedAt = ({ labelKey, value }) => {
   const { t, i18n } = useTranslation();
+  if (!value) {
+    return null;
+  }
   return (
     <>
-      {t('userTerms.version', { version: entry.version })}
-      {entry.accepted_at ? (
-        <>
-          {' · '}
-          {t('userTerms.accepted')}{' '}
-          <span title={absoluteTime(entry.accepted_at, i18n.language)}>
-            {formatRelativeTime(entry.accepted_at, i18n.language)}
-          </span>
-        </>
-      ) : null}
+      {' · '}
+      {t(labelKey)}{' '}
+      <span title={absoluteTime(value, i18n.language)}>
+        {formatRelativeTime(value, i18n.language)}
+      </span>
+    </>
+  );
+};
+
+AcceptedAt.propTypes = {
+  labelKey: PropTypes.string.isRequired,
+  value: PropTypes.string,
+};
+
+const VersionsFold = ({ entry }) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const versions = Array.isArray(entry.versions) ? entry.versions : [];
+  const earlier = versions.filter(version => version.version !== entry.version);
+  if (earlier.length === 0) {
+    return null;
+  }
+  return (
+    <span className="d-block">
+      <button
+        type="button"
+        className="btn btn-sm btn-link p-0"
+        onClick={() => setOpen(current => !current)}
+        aria-expanded={open}
+      >
+        {open ? <FaChevronDown aria-hidden /> : <FaChevronRight aria-hidden />}{' '}
+        {t('userTerms.versions', { count: earlier.length })}
+      </button>
+      {open
+        ? earlier.map(version => (
+            <span key={version.version} className="d-block ps-3">
+              {t('userTerms.version', { version: version.version })}
+              <AcceptedAt labelKey="userTerms.accepted" value={version.accepted_at} />
+            </span>
+          ))
+        : null}
+    </span>
+  );
+};
+
+VersionsFold.propTypes = {
+  entry: PropTypes.shape({
+    version: PropTypes.string,
+    versions: PropTypes.arrayOf(
+      PropTypes.shape({ version: PropTypes.string, accepted_at: PropTypes.string })
+    ),
+  }).isRequired,
+};
+
+const TermsSubline = ({ entry }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <span className="d-block">
+        {t('userTerms.version', { version: entry.version })}
+        <AcceptedAt labelKey="userTerms.lastAccepted" value={entry.accepted_at} />
+        {entry.first_accepted_at && entry.first_accepted_at !== entry.accepted_at ? (
+          <AcceptedAt labelKey="userTerms.firstAccepted" value={entry.first_accepted_at} />
+        ) : null}
+      </span>
+      <VersionsFold entry={entry} />
     </>
   );
 };
@@ -44,6 +104,8 @@ TermsSubline.propTypes = {
   entry: PropTypes.shape({
     version: PropTypes.string,
     accepted_at: PropTypes.string,
+    first_accepted_at: PropTypes.string,
+    versions: PropTypes.array,
   }).isRequired,
 };
 
@@ -83,8 +145,10 @@ ViewLink.propTypes = {
  * The Terms and policies page of the identity contract at `/user/terms`,
  * from `GET /api/user/terms`: one row per document the person accepted
  * across the estate's applications (icon, label, the type badge, the
- * version, the acceptance time with its absolute time in the tooltip, View
- * to `/public/policies/<name>`); the navbar search is bound with a query
+ * version last accepted with its accepted time, first accepted when it
+ * differs, a fold listing every earlier version accepted with its own
+ * time from `versions`, each absolute time in its tooltip, View to
+ * `/public/policies/<name>`); the navbar search is bound with a query
  * over the documents by label.
  */
 const UserTermsPage = ({ terms }) => {

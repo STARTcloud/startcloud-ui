@@ -148,7 +148,6 @@ const RULES = {
         version: { type: 'string', minLength: 1, maxLength: 32 },
         type: { type: 'string', enum: ['site', 'client'] },
         is_public: { type: 'boolean' },
-        display_order: { type: 'integer', minimum: 0 },
         content: { type: 'string' },
       },
     },
@@ -219,12 +218,26 @@ const BACKUP_CODES = [
 
 const TERMS_REGIONS = ['EU', 'UK', null];
 
+const TERMS_VERSIONS = [
+  { version: '2025.3', published_at: '2026-08-30T14:02:11Z' },
+  { version: '2025.2', published_at: '2025-11-04T09:15:00Z' },
+];
+
+const TERMS_PREVIOUS = { version: '2025.2', accepted_at: '2025-12-02T18:40:09Z' };
+
+const TERMS_CHANGES_HTML =
+  '<h1>HCL Master License Agreement</h1>\n<p>Version 2025.3, effective <ins>September 12, 2026</ins><del>November 4, 2025</del>.</p>\n<p>This Master License Agreement is entered into between HCL Technologies Limited and the licensee named below for the use of HCL Nomad through SwitchBoard Desktop, provided by STARTcloud.</p>\n<p><strong>Licensee:</strong> Mark Gilbert (mark@example.com)</p>\n<p><strong>Telephone:</strong> <span class="tos-blank" data-tos-field="phone_number">________</span></p>\n<p><strong>Address:</strong> <span class="tos-blank" data-tos-field="address">________</span></p>\n';
+
+const TERMS_OLD_CONTENT_HTML =
+  '<h1>HCL Master License Agreement</h1>\n<p>Version 2025.2, effective November 4, 2025.</p>\n<p>This Master License Agreement is entered into between HCL Technologies Limited and the licensee named below for the use of HCL Nomad through SwitchBoard Desktop, provided by STARTcloud.</p>\n';
+
 const TERMS_STATE = {
   name: 'hcl-mla',
   label: 'HCL Master License Agreement',
   version: '2025.3',
   region: null,
   regions_offered: TERMS_REGIONS,
+  scope: 'client',
   step: 2,
   total: 2,
   client_name: 'SwitchBoard Desktop',
@@ -640,9 +653,14 @@ const freshAcceptedTerms = () => [
     name: 'terms',
     label: 'Terms of Service',
     icon: 'file-text',
-    version: '2.0',
-    accepted_at: '2026-01-10T00:00:00Z',
     type: 'site',
+    version: '2.0',
+    first_accepted_at: '2025-01-10T00:00:00Z',
+    accepted_at: '2026-01-10T00:00:00Z',
+    versions: [
+      { version: '2.0', accepted_at: '2026-01-10T00:00:00Z' },
+      { version: '1.0', accepted_at: '2025-01-10T00:00:00Z' },
+    ],
   },
 ];
 
@@ -954,6 +972,13 @@ const CONFIG_SCHEMAS = {
               title: 'Customer id',
               order: 3,
             }),
+            'tos-names': {
+              type: 'array',
+              items: { type: 'string' },
+              orderable: true,
+              title: 'Terms',
+              order: 4,
+            },
           },
           required: ['name'],
         },
@@ -985,6 +1010,13 @@ const CONFIG_SCHEMAS = {
                   title: 'Redirect URIs',
                   order: 3,
                 }),
+                'tos-names': {
+                  type: 'array',
+                  items: { type: 'string' },
+                  orderable: true,
+                  title: 'Terms',
+                  order: 4,
+                },
               },
               required: ['client-id'],
             },
@@ -1095,8 +1127,17 @@ const CONFIG_FILES = {
   sites: {
     schemaVersion: 1,
     sites: {
-      startcloud: { name: 'STARTcloud', domains: ['auth.startcloud.com'], customer_id: 'A55DF1' },
-      moonshinedev: { name: 'Moonshine.dev', domains: ['auth.moonshine.dev'] },
+      startcloud: {
+        name: 'STARTcloud',
+        domains: ['auth.startcloud.com'],
+        customer_id: 'A55DF1',
+        'tos-names': ['terms', 'privacy'],
+      },
+      moonshinedev: {
+        name: 'Moonshine.dev',
+        domains: ['auth.moonshine.dev'],
+        'tos-names': ['terms'],
+      },
     },
   },
   clients: {
@@ -1107,6 +1148,7 @@ const CONFIG_FILES = {
           'client-id': 'conductor',
           'client-name': 'Conductor',
           'redirect-uris': ['https://conductor.startcloud.com/callback'],
+          'tos-names': ['conductor-msa'],
         },
       },
       boxvault: {
@@ -1114,6 +1156,7 @@ const CONFIG_FILES = {
           'client-id': 'boxvault',
           'client-name': 'BoxVault',
           'redirect-uris': ['https://boxvault.startcloud.com/auth/callback'],
+          'tos-names': [],
         },
       },
     },
@@ -1220,7 +1263,10 @@ const state = {
   passkeys: freshPasskeys(),
   notifications: freshNotifications(),
   blocked: BRUTE_FORCE.blocked.map(row => ({ ...row })),
-  terms: TERMS.map(row => ({ ...row })),
+  terms: TERMS.map(document => ({
+    ...document,
+    copies: document.copies.map(copy => ({ ...copy })),
+  })),
   configs: freshConfigs(),
   restart: {
     ...RESTART_STATUS,
@@ -1321,6 +1367,10 @@ const signIn = ctx => {
     state.pending = 'tfa';
     state.tfa = { method: 'SMS', sent: false };
     return '/authenticator';
+  }
+  if (flag === 'terms') {
+    state.pending = 'terms';
+    return '/oauth2/accept-terms';
   }
   finishSignIn();
   return '/';
@@ -1531,16 +1581,20 @@ const searchIdentityProviders = needle =>
 
 const searchTerms = needle =>
   state.terms
-    .filter(term => isAdmin() || term.is_public)
-    .filter(term => has(needle, term.name, term.friendly_name, term.content))
-    .map(term =>
+    .filter(document => isAdmin() || document.is_public)
+    .filter(
+      document =>
+        has(needle, document.name, document.friendly_name) ||
+        document.copies.some(copy => has(needle, copy.content))
+    )
+    .map(document =>
       searchRow({
         kind: 'terms',
         org: '',
-        name: term.name,
-        title: term.friendly_name,
-        subtitle: `v${term.version}`,
-        matched: has(needle, term.name, term.friendly_name) ? 'name' : 'description',
+        name: document.name,
+        title: document.friendly_name,
+        subtitle: `v${document.copies[0]?.version || ''}`,
+        matched: has(needle, document.name, document.friendly_name) ? 'name' : 'description',
       })
     );
 
@@ -1731,6 +1785,8 @@ const onboardingRoute = (method, pattern, handler) =>
   route(method, pattern, handler, { onboarding: true });
 
 const tfaRoute = (method, pattern, handler) => route(method, pattern, handler, { tfa: true });
+
+const termsRoute = (method, pattern, handler) => route(method, pattern, handler, { terms: true });
 
 publicRoute('GET', '/api/status', () => ok(STATUS));
 publicRoute('GET', '/api/health', () => ok(health()));
@@ -1975,18 +2031,40 @@ const acceptTerms = ctx => {
   if (missing) {
     return invalid(`/fields/${missing.param}`, 'required');
   }
+  if (state.pending === 'terms') {
+    finishSignIn();
+  }
   return ok({ next: '/' });
 };
 
-onboardingRoute('GET', '/api/auth/terms', ctx => {
+termsRoute('GET', '/api/auth/terms', ctx => {
   const requested = ctx.url.searchParams.get('region');
   if (requested && !TERMS_REGIONS.includes(requested)) {
     return invalid('/region', 'enum', { enum: TERMS_REGIONS });
   }
   const region = requested || state.profile.preferences.region || null;
-  return ok({ ...TERMS_STATE, region });
+  const previous = mockFlag(ctx) === 'previous';
+  return ok({
+    ...TERMS_STATE,
+    region,
+    person_region: region,
+    versions: TERMS_VERSIONS,
+    ...(previous ? { previous: TERMS_PREVIOUS, changes_html: TERMS_CHANGES_HTML } : {}),
+  });
 });
-onboardingRoute('POST', '/oauth2/accept-terms', acceptTerms);
+termsRoute('GET', '/api/auth/terms/versions/:version', ctx => {
+  const match = TERMS_VERSIONS.find(row => row.version === ctx.params.version);
+  if (!match) {
+    return problem(404, 'not_found');
+  }
+  return ok({
+    version: match.version,
+    published_at: match.published_at,
+    content_html:
+      match.version === TERMS_STATE.version ? TERMS_STATE.content_html : TERMS_OLD_CONTENT_HTML,
+  });
+});
+termsRoute('POST', '/oauth2/accept-terms', acceptTerms);
 onboardingRoute('POST', '/provider-registration/tos/accept', acceptTerms);
 publicRoute('GET', '/provider-registration/continue', () => redirect('/'));
 
@@ -2086,6 +2164,9 @@ publicRoute('GET', '/api/user', () => {
   }
   if (state.pending === 'onboarding') {
     return problem(403, 'onboarding_required', { next: onboardingNext(state.onboarding) });
+  }
+  if (state.pending === 'terms') {
+    return problem(403, 'terms_required', { next: '/oauth2/accept-terms' });
   }
   return problem(401, 'unauthenticated');
 });
@@ -2283,14 +2364,19 @@ sessionRoute('PUT', '/api/user/favorites', ctx => {
     .sort(byOrder);
   return ok(state.profile.favorite_apps);
 });
-sessionRoute('PATCH', '/api/user/preferences', ctx => {
-  const { ciba_user_code: pin, ...rest } = ctx.body;
-  Object.assign(state.profile.preferences, rest);
-  if (pin !== undefined) {
-    state.profile.preferences.ciba_user_code_set = pin !== null && pin !== '';
-  }
-  return ok(state.profile);
-});
+route(
+  'PATCH',
+  '/api/user/preferences',
+  ctx => {
+    const { ciba_user_code: pin, ...rest } = ctx.body;
+    Object.assign(state.profile.preferences, rest);
+    if (pin !== undefined) {
+      state.profile.preferences.ciba_user_code_set = pin !== null && pin !== '';
+    }
+    return ok(state.profile);
+  },
+  { session: true, terms: true }
+);
 sessionRoute('GET', '/api/user/preferences', () => ok(state.profile.preferences));
 steppedRoute('POST', '/api/user/deletion', ctx => {
   if (ctx.body.email_confirmation !== state.profile.email) {
@@ -2859,65 +2945,113 @@ adminRoute('GET', '/api/admin/terms/placeholders', () => ok(PLACEHOLDERS));
 const uniqueProblem = (pointer, scope) =>
   problem(409, 'unique', { errors: [{ pointer, rule: 'unique', params: { scope } }] });
 
-const variantConflict = (name, regions, self = null) => {
-  const siblings = state.terms.filter(row => row.name === name && row !== self);
-  if (regions.length === 0 && siblings.some(row => regionsOf(row).length === 0)) {
-    return uniqueProblem('/name', 'global');
+const documentOf = name => state.terms.find(document => document.name === name);
+
+const copyOf = (document, region) =>
+  region
+    ? document.copies.find(copy => regionsOf(copy).includes(region))
+    : document.copies.find(copy => regionsOf(copy).length === 0);
+
+let copySeq = state.terms.reduce(
+  (max, document) => Math.max(max, ...document.copies.map(copy => Number(copy.id) || 0)),
+  0
+);
+const nextCopyId = () => {
+  copySeq += 1;
+  return copySeq;
+};
+
+const copyConflict = (regions, siblings) => {
+  if (regions.length === 0 && siblings.some(copy => regionsOf(copy).length === 0)) {
+    return uniqueProblem('/regions', 'default');
   }
-  if (siblings.some(row => overlaps(regionsOf(row), regions))) {
-    return uniqueProblem('/regions', name);
+  if (siblings.some(copy => overlaps(regionsOf(copy), regions))) {
+    return uniqueProblem('/regions', 'region');
   }
   return null;
 };
 
-const termVariant = ctx => {
-  const region = ctx.url.searchParams.get('region') || '';
-  const variants = state.terms.filter(row => row.name === ctx.params.name);
-  return region
-    ? variants.find(row => regionsOf(row).includes(region))
-    : variants.find(row => regionsOf(row).length === 0);
-};
+const DOCUMENT_FIELDS = ['friendly_name', 'icon', 'type', 'is_public'];
+const COPY_FIELDS = ['version', 'content', 'regions'];
 
 adminRoute('POST', '/api/admin/terms', ctx => {
   const regions = regionsOf(ctx.body);
-  const refused = variantConflict(ctx.body.name, regions);
+  const existing = documentOf(ctx.body.name);
+  const refused = copyConflict(regions, existing ? existing.copies : []);
   if (refused) {
     return refused;
   }
-  const row = { created_by: 'mark@m4kr.net', updated_at: NOW(), ...ctx.body, regions };
-  state.terms.push(row);
-  return ok(row, 201);
-});
-adminRoute('PUT', '/api/admin/terms/order', ctx => {
-  const ids = Array.isArray(ctx.body.ids) ? ctx.body.ids : [];
-  state.terms.forEach(row => {
-    const index = ids.indexOf(row.id);
-    if (index >= 0) {
-      row.display_order = (index + 1) * 10;
-    }
-  });
-  state.terms.sort((first, second) => first.display_order - second.display_order);
-  return noContent();
+  const copy = {
+    id: nextCopyId(),
+    regions,
+    version: ctx.body.version,
+    content: ctx.body.content,
+    created_by: 'mark@m4kr.net',
+    updated_at: NOW(),
+  };
+  if (existing) {
+    existing.copies.push(copy);
+    DOCUMENT_FIELDS.forEach(field => {
+      if (ctx.body[field] !== undefined) {
+        existing[field] = ctx.body[field];
+      }
+    });
+    return ok(existing, 201);
+  }
+  const document = {
+    name: ctx.body.name,
+    friendly_name: ctx.body.friendly_name,
+    icon: ctx.body.icon,
+    type: ctx.body.type,
+    is_public: Boolean(ctx.body.is_public),
+    copies: [copy],
+  };
+  state.terms.push(document);
+  return ok(document, 201);
 });
 adminRoute('PATCH', '/api/admin/terms/:name', ctx => {
-  const row = termVariant(ctx);
-  if (!row) {
+  const document = documentOf(ctx.params.name);
+  if (!document) {
     return problem(404, 'not_found');
   }
-  const regions = ctx.body.regions === undefined ? regionsOf(row) : regionsOf(ctx.body);
-  const refused = variantConflict(row.name, regions, row);
-  if (refused) {
-    return refused;
+  const region = ctx.url.searchParams.get('region') || '';
+  const touchesCopy = COPY_FIELDS.some(field => ctx.body[field] !== undefined);
+  if (touchesCopy) {
+    const copy = copyOf(document, region);
+    if (!copy) {
+      return problem(404, 'not_found');
+    }
+    const regions = ctx.body.regions === undefined ? regionsOf(copy) : regionsOf(ctx.body);
+    const refused = copyConflict(
+      regions,
+      document.copies.filter(entry => entry !== copy)
+    );
+    if (refused) {
+      return refused;
+    }
+    Object.assign(copy, ctx.body, { regions, updated_at: NOW() });
   }
-  Object.assign(row, ctx.body, { regions, updated_at: NOW() });
-  return ok(row);
+  DOCUMENT_FIELDS.forEach(field => {
+    if (ctx.body[field] !== undefined) {
+      document[field] = ctx.body[field];
+    }
+  });
+  return ok(document);
 });
 adminRoute('DELETE', '/api/admin/terms/:name', ctx => {
-  const row = termVariant(ctx);
-  if (!row) {
+  const document = documentOf(ctx.params.name);
+  if (!document) {
     return problem(404, 'not_found');
   }
-  state.terms = state.terms.filter(term => term !== row);
+  const region = ctx.url.searchParams.get('region') || '';
+  const copy = copyOf(document, region);
+  if (!copy) {
+    return problem(404, 'not_found');
+  }
+  document.copies = document.copies.filter(entry => entry !== copy);
+  if (document.copies.length === 0) {
+    state.terms = state.terms.filter(entry => entry !== document);
+  }
   return noContent();
 });
 adminRoute('POST', '/api/admin/terms/bulk', ctx => {
@@ -2928,19 +3062,23 @@ adminRoute('POST', '/api/admin/terms/bulk', ctx => {
   const errors = [];
   let processed = 0;
   (Array.isArray(ids) ? ids : []).forEach(id => {
-    const term = state.terms.find(row => row.id === id);
-    if (!term) {
+    const document = state.terms.find(entry => entry.copies.some(copy => copy.id === id));
+    const copy = document && document.copies.find(entry => entry.id === id);
+    if (!copy) {
       errors.push({ id, code: 'not_found' });
       return;
     }
     if (action === 'delete') {
-      state.terms = state.terms.filter(row => row !== term);
+      document.copies = document.copies.filter(entry => entry !== copy);
+      if (document.copies.length === 0) {
+        state.terms = state.terms.filter(entry => entry !== document);
+      }
     }
     if (action === 'set_public') {
-      term.is_public = true;
+      document.is_public = true;
     }
     if (action === 'set_private') {
-      term.is_public = false;
+      document.is_public = false;
     }
     processed += 1;
   });
@@ -3088,19 +3226,34 @@ const csrfRefused = (req, body) => {
   return header !== XSRF && body._csrf !== XSRF;
 };
 
-const gateRefusal = gate => {
+const onboardingRefusal = gate => {
   if (gate.onboarding && !state.signedIn && state.pending !== 'onboarding') {
     return problem(401, 'session_expired');
   }
   if (gate.tfa && !state.signedIn && state.pending !== 'tfa') {
     return problem(401, 'session_expired');
   }
-  if ((gate.session || gate.admin) && !state.signedIn) {
+  if (gate.terms && !gate.session && !gate.admin && !state.signedIn && state.pending !== 'terms') {
+    return problem(401, 'session_expired');
+  }
+  return null;
+};
+
+const sessionRefusal = gate => {
+  if (
+    (gate.session || gate.admin) &&
+    !state.signedIn &&
+    !(gate.terms && state.pending === 'terms')
+  ) {
     if (state.pending === 'onboarding') {
       return problem(403, 'onboarding_required', { next: onboardingNext(state.onboarding) });
     }
     return problem(401, 'unauthenticated');
   }
+  return null;
+};
+
+const adminRefusal = gate => {
   if (gate.admin && !state.profile.roles.includes('ROLE_ADMIN')) {
     return problem(403, 'forbidden');
   }
@@ -3109,6 +3262,8 @@ const gateRefusal = gate => {
   }
   return null;
 };
+
+const gateRefusal = gate => onboardingRefusal(gate) || sessionRefusal(gate) || adminRefusal(gate);
 
 const send = (req, res, answer) => {
   const headers = {
@@ -3168,7 +3323,9 @@ const handle = async (req, res) => {
  * Sign in with any username and any password; the password `wrong`
  * answers `401 bad_credentials`, `throttle` answers `429` with
  * `wait_seconds`. Open `/login?mock=onboarding` to enter the onboarding
- * chain after sign-in and `/login?mock=tfa` to enter `/authenticator`.
+ * chain after sign-in, `/login?mock=tfa` to enter `/authenticator` and
+ * `/login?mock=terms` to enter `/oauth2/accept-terms` with `GET /api/user`
+ * answering `403 terms_required` until it is accepted.
  * The users, logins and registrations lists honor the navbar panel's
  * parameters (`search`, `enabled`, `using_2fa`, `has_customer_id`,
  * `active_after`; `username`, `success`, `start_date`, `end_date`) and
@@ -3183,16 +3340,32 @@ const handle = async (req, res) => {
  * `GET /api/user/applications` from the fixtures, and
  * `GET /api/user/integrations` answers `{}` with no `services`, so the
  * Integrations entry and page stay absent as on an issuer that connects
- * no third-party service. Terms templates carry `regions` (decision 133):
- * `GET /api/policies/{name}` resolves the variant by `?region=`, else the
- * profile's address country, else `US`, then the default; the admin terms
- * routes answer one row per variant, `POST` refuses `409 unique` at
- * `/name` for a second default and at `/regions` when the sets overlap,
- * and `PATCH` and `DELETE` address the default unless `?region=` names one
- * the variant carries. `GET /api/auth/terms` answers `regions_offered`
- * beside `region`, honors `?region=` (`422 enum` at `/region` otherwise)
- * and falls back to the stored `preferences.region`, which the preferences
- * PATCH accepts and stores like every other member.
+ * no third-party service. `GET /api/user/terms` answers `first_accepted_at`
+ * and `versions` beside the latest per document (decision 159). Terms
+ * copies carry `regions` (decision 133): `GET /api/policies/{name}`
+ * resolves the copy by `?region=`, else the profile's address country,
+ * else `US`, then the default; the admin terms routes answer one row per
+ * document with its copies nested (decision 157), `POST` adds a copy to
+ * an existing document or a new document with one, refusing `409 unique`
+ * at `/regions` when the sets overlap, `PATCH` writes `friendly_name`,
+ * `icon`, `type` and `is_public` to the document and `version`, `content`
+ * and `regions` to the copy `?region=` names or the default, and `DELETE`
+ * drops that copy, the document with it once none remain; `PUT
+ * /api/admin/terms/order` is gone, the order being the `sites` and
+ * `clients` schemas' `tos-names`, drawn by `ConfigField` as the shared
+ * `SortableList` for `orderable: true` (decision 89). `GET /api/auth/terms`
+ * answers `regions_offered` beside `region`, honors `?region=` (`422 enum`
+ * at `/region` otherwise) and falls back to the stored `preferences.region`,
+ * which the preferences
+ * PATCH accepts and stores like every other member; it also always answers
+ * `person_region` (the resolved region), `scope: 'client'` and `versions`
+ * newest first, and, only behind a `?mock=previous` flag on the URL or the
+ * referer, `previous` and a `changes_html` with `ins`/`del` markup, so the
+ * "What changed" toggle has something to show. `GET /api/auth/terms/versions/:version`
+ * answers a fixture's `content_html` for a known version and `404 not_found`
+ * otherwise. Both routes and `POST /oauth2/accept-terms` stay open while
+ * `state.pending` is `'terms'`, the way the onboarding routes stay open
+ * while it is `'onboarding'`.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,
@@ -3215,7 +3388,7 @@ const handle = async (req, res) => {
  * unblocks every address and `POST /api/admin/brute-force/bulk` unblocks a
  * selection, an address off the table skipped as `not_blocked`.
  * `POST /api/admin/terms/bulk` deletes, publishes or unpublishes a
- * selection of template ids, its delete stepped up, an unknown id skipped
+ * selection of copy ids, its delete stepped up, an unknown id skipped
  * as `not_found`.
  * `GET /api/events` streams `ready`, one
  * `unread-count`, `blocked-count`, `restart-required` and `health` event

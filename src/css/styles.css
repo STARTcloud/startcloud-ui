@@ -2146,6 +2146,23 @@ button::-moz-focus-inner {
   color: var(--auth-ink-2);
 }
 
+.prose ins {
+  background: var(--auth-success-bg);
+  color: var(--auth-success);
+  text-decoration: none;
+}
+
+.prose del {
+  color: var(--auth-ink-3);
+  text-decoration: line-through;
+}
+
+.auth-region-eea {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .prose .callout,
 .auth-doc-flow blockquote {
   --callout-glyph: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none'%3E%3Crect x='3.5' y='8' width='11' height='7.5' rx='2' stroke='%23000' stroke-width='1.4'/%3E%3Cpath d='M6 8V6a3 3 0 0 1 6 0v2' stroke='%23000' stroke-width='1.4'/%3E%3C/svg%3E");
@@ -2742,6 +2759,16 @@ a.stat-card:focus-visible {
 .term-preview {
   max-height: 24rem;
   overflow-y: auto;
+}
+
+.term-document-copies {
+  border-left: 2px solid var(--bs-border-color);
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.orderable-list-add {
+  max-width: 24rem;
 }
 
 .growth-chart {

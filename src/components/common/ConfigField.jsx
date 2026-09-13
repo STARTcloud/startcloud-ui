@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaEye, FaEyeSlash } from 'react-icons/fa6';
+import { FaEye, FaEyeSlash, FaXmark } from 'react-icons/fa6';
 
 import { isPlaceholder } from '../../utils/validation';
 
 import Field from './Field';
+import SortableList from './SortableList';
 
 export const configFieldShape = PropTypes.shape({
   pointer: PropTypes.string.isRequired,
@@ -30,6 +31,7 @@ export const configFieldShape = PropTypes.shape({
   items: PropTypes.object,
   additionalProperties: PropTypes.object,
   propertyNames: PropTypes.object,
+  orderable: PropTypes.bool.isRequired,
 });
 
 const NUMBER_RE = /^-?\d+(?:\.\d+)?$/;
@@ -219,6 +221,68 @@ const ArrayControl = ({ field, value, aria, onChange, onBlur }) => {
 
 ArrayControl.propTypes = controlShape;
 
+const OrderableArrayControl = ({ field, value, aria, onChange, onBlur }) => {
+  const { t } = useTranslation();
+  const items = Array.isArray(value) ? value : [];
+  const [draft, setDraft] = useState('');
+  const add = () => {
+    const next = draft.trim();
+    if (!next) {
+      return;
+    }
+    onChange([...items, next]);
+    setDraft('');
+  };
+  return (
+    <div>
+      {items.length > 0 ? (
+        <SortableList
+          items={items}
+          keyOf={item => item}
+          onReorder={onChange}
+          handleLabel={item => t('configField.orderable.handle', { label: item })}
+          renderItem={(item, handle) => (
+            <>
+              {handle}
+              <span className="flex-grow-1">{item}</span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                disabled={field.readOnly}
+                aria-label={t('configField.orderable.remove')}
+                onClick={() => onChange(items.filter(entry => entry !== item))}
+              >
+                <FaXmark aria-hidden />
+              </button>
+            </>
+          )}
+        />
+      ) : null}
+      <div className="input-group mt-2 orderable-list-add">
+        <input
+          {...aria}
+          type="text"
+          className="form-control"
+          value={draft}
+          disabled={field.readOnly}
+          onChange={event => setDraft(event.target.value)}
+          onBlur={onBlur}
+        />
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          disabled={field.readOnly}
+          onClick={add}
+        >
+          {t('configField.orderable.add')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+OrderableArrayControl.propTypes = controlShape;
+
 const DurationControl = ({ field, value, aria, onChange, onBlur }) => {
   const { t } = useTranslation();
   const units = DURATION_FORMATS[field.format];
@@ -285,6 +349,9 @@ const controlFor = field => {
     return PasswordControl;
   }
   if (field.type === 'array') {
+    if (field.orderable) {
+      return OrderableArrayControl;
+    }
     return Array.isArray(field.items?.enum) ? MultiSelectControl : ArrayControl;
   }
   if (DURATION_FORMATS[field.format]) {
@@ -299,9 +366,12 @@ const showsDefaultHint = field =>
 /**
  * One configuration schema property drawn by its `type` through `Field`:
  * a switch for a boolean, a select over `enum`, a password with a reveal
- * for `writeOnly`, a comma list evaluated per member for an array whose
- * `items` is a scalar type, a multi-select for an array whose `items`
- * carries `enum`, a text input with `inputmode="numeric"` for a number, a
+ * for `writeOnly`, the shared `SortableList` with a drag handle, an Add
+ * row and a Remove per row for an array carrying `orderable: true`, its
+ * value written back in the drawn order, a comma list evaluated per
+ * member for every other array whose `items` is a scalar type, a
+ * multi-select for an array whose `items` carries `enum`, a text input
+ * with `inputmode="numeric"` for a number, a
  * duration control (a number and a unit picker) for a string whose `format`
  * is `duration` (ISO 8601, written back as `P7D` or `PT1H`) or `ttl` (the
  * Spring style, written back as `30m`), and a text input otherwise; the

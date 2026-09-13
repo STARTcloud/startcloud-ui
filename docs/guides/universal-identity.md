@@ -421,7 +421,7 @@ members the `backend` UI backends answer, grown for the issuer:
 | `login_mode`                                       | which of `magic_link` and `password` the page opens in when the visitor has no stored choice; the order is `?login=` for one visit and never stored, then the stored `login_method`, then `login_mode`, then the first enabled method, the order the server resolves today, so a link from a mail that says `?login=password` is honored over a stored choice                                                                         | `resolveInitialLoginMode`: the query, then the cookie, then `sites.<id>.default_login_method`                     |
 | `local_registration_enabled`                       | whether the foot shows "Create an account" and whether the magic-link request creates a lead for an unknown address                                                                                                                                                                                                                                                                                                                   | `siteService.isRegistrationEnabled`                                                                               |
 | `cancel`                                           | whether a client's authorization request is parked in the session, so the page draws Cancel only when there is something to cancel; a Cancel on a plain visit would loop `/auth-cancel` → `/` → `/login`                                                                                                                                                                                                                              | `requestCache.getRequest` non-null                                                                                |
-| `policies[]`                                       | the public policy links under the form                                                                                                                                                                                                                                                                                                                                                                                                | `tosService.getActiveSiteToS` filtered to `isPublic`                                                              |
+| `policies[]`                                       | the public policy links under the form; empty while the site's `tos-names` is empty, so such a site draws none                                                                                                                                                                                                                                                                                                                        | `tosService.getActiveSiteToS` filtered to `isPublic`                                                              |
 | `reset_link_ttl_minutes`, `magic_link_ttl_minutes` | the numbers the recovery and magic-link sent states name, so neither says "shortly"                                                                                                                                                                                                                                                                                                                                                   | `security.password_reset_token_ttl`, the magic-link token TTL                                                     |
 | `passkey.conditional_ui`                           | whether the page starts the browser's conditional passkey prompt on the email field; the page gates on `PublicKeyCredential.isConditionalMediationAvailable()`, WebAuthn Level 3's own test, not on WebAuthn support alone                                                                                                                                                                                                            | `security.passkeys.conditional_ui`                                                                                |
 
@@ -486,6 +486,17 @@ A `200` carries `next`; a failure is `application/problem+json` with
 
 `code` is the vocabulary the page translates from (`auth:errors.<code>`);
 a `code` the page does not know paints `auth:errors.authenticationFailed`.
+
+`next` on every completed sign-in, the password, magic-link, bootstrap
+and passkey posts, the federated callback and the verification link
+alike, is `/oauth2/accept-terms` while the site's terms chain of group 2
+holds a document the person has not accepted in its current copy and
+version for the region resolved at that moment, before any other
+destination; the acceptance's own `next` then resumes the destination the
+sign-in would have answered, the saved `/oauth2/authorize`,
+`/authenticator`, `/complete-onboarding` or `/`, because the site's terms
+are owed at every sign-in and a person must never reach a page of the
+site past a document they have not signed.
 
 ### What the sign-in pages draw
 
@@ -738,23 +749,67 @@ prefix left the passkey and second-factor posts outside it, and a
 verification link alone must never mint an account that can act. The
 authorize filter stays as it is; the protocol path is not a page.
 
+The site's terms are a gate of their own, and never a federated first
+sign-in's alone: after every completed sign-in on the issuer, by
+password, magic link, passkey, a federated provider or the verification
+link alike, and on every sign-in after, the server resolves the person's
+region at that moment (`person_region` below) and walks the site's chain,
+`sites.sites.<id>.tos-names` in the order the file lists them, its `SITE`
+and `BOTH` documents, kept where a copy of the document covers that
+region, one step per document; a document whose covering copy the account
+has not accepted in its current version parks a site acceptance in the
+session and the sign-in answers `/oauth2/accept-terms` as its `next`
+before any other destination, the acceptance's own `next` resuming
+`GET /provider-registration/continue` while the session holds
+`PROVIDER_REG_USER_ID`, else the saved `/oauth2/authorize`, else the
+pending authorize URL, else `/`; while the session owes a site document
+it is refused on every authenticated route, browser path or JSON alike,
+with `403` `application/problem+json`, `code: terms_required` and
+`next: "/oauth2/accept-terms"`, exactly the `onboarding_required` shape,
+the shell navigating there; the routes that admit it are exactly
+`GET /api/auth/terms`, `GET /api/auth/terms/versions/{version}`,
+`POST /oauth2/accept-terms`, `POST /auth-cancel`, `POST /user/logout`,
+`PATCH /api/user/preferences` (the region write) and `GET /api/user`,
+which answers the `403` with the profile's display fields beside `code`
+and `next` as it does for `onboarding_required`, and the routes open to
+everyone stay open to it; a region change is a new moment, so a person
+who picks another region on the terms page or whose stored region changes
+is walked again against the chain that region owes.
+A site whose `tos-names` is empty gates nothing and draws no policy
+links, because the issuer serves white-label sites and a site may want no
+terms at all. The client's chain, `clients.<id>.client.tos-names`, its
+`CLIENT` and `BOTH` documents, stays the authorize filter's on every
+authenticated `/oauth2/authorize` of a client that lists any, as today.
+An acceptance is checked by copy and version, so a new version of a copy,
+a document added to a site or a client, or a region whose copy the person
+never accepted steps the person up at the next sign-in or authorize, and
+a document already accepted in its current copy and version is never
+asked again; the step-up on the first reuse of a site or a client that
+grew a document is what closes the loophole a one-time gate would leave.
+One region may owe ten documents and another five, because the chains
+are per region and not variants of one text, and a document is one
+agreement whose copies live inside it: one name, one card, one position
+in the chain, a copy being that document's text for one governing body,
+the default copy the text for everywhere no copy claims, and a document
+with no default copy region-only, owed only where a copy covers.
+
 ### Registration and onboarding routes
 
-| Route                                                | Page                                                                                                                                                                            | Gate                       | Server routes behind it                                                                                                             |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `/registration`                                      | RegisterPage in its issuer form: the email-only form, or the sent state when the URL carries `success`, the address in router state                                             | `cookie`, `local-accounts` | `POST /registration`, `POST /registration/resend`                                                                                   |
-| `/registration/verify`                               | VerifyLinkPage: reads the mail's `email` and `token` once, replaces the location, posts them and follows `next`; the invalid state with "Send a new link"                       | `cookie`, `local-accounts` | `POST /registration/verify`                                                                                                         |
-| `/complete-onboarding`                               | OnboardingHub: reads the state and draws the step it names, the password step being its own                                                                                     | `cookie`, `onboarding`     | `GET /api/auth/onboarding`, `POST /complete-onboarding/password`                                                                    |
-| `/complete-onboarding/name`                          | NameStep                                                                                                                                                                        | the same                   | `POST /complete-onboarding/name`                                                                                                    |
-| `/complete-onboarding/phone-setup`                   | PhoneStep: the number, then the code                                                                                                                                            | the same                   | `POST /complete-onboarding/send-phone-code`, `POST /complete-onboarding/phone-setup`                                                |
-| `/complete-onboarding/email-verification`            | EmailCodeStep                                                                                                                                                                   | the same                   | `POST /complete-onboarding/email-verification`, `POST /complete-onboarding/email-verification/resend`                               |
-| `/complete-onboarding/choose-2fa-method`             | TfaEnrollChoiceStep                                                                                                                                                             | the same, `tfa`            | `POST /complete-onboarding/choose-2fa-method`                                                                                       |
-| `/qrcode`                                            | TotpEnrollPage: the QR, the setup key, the code, the onboarding chain's only; the profile enrolls an app inline on its Security tab so a signed-in person never leaves the tabs | `cookie`, `tfa`            | `GET /api/auth/tfa/enroll`, `POST /qrcode/verify`                                                                                   |
-| `/complete-onboarding/backup-codes`                  | BackupCodesPage: the list, copy, download, the confirm                                                                                                                          | the same                   | `POST /api/auth/tfa/backup-codes`, `POST /complete-onboarding/backup-codes/confirm`                                                 |
-| `/complete-onboarding/account-type`                  | AccountTypeStep: the two tiles                                                                                                                                                  | the same, `org-console`    | `POST /complete-onboarding/account-type`                                                                                            |
-| `/complete-onboarding/team-name`                     | TeamNameStep                                                                                                                                                                    | the same                   | `POST /complete-onboarding/team-name`                                                                                               |
-| `/oauth2/accept-terms`, `/provider-registration/tos` | TermsPage: one document, classic or collecting                                                                                                                                  | `cookie`, `policies`       | `GET /api/auth/terms`, `POST /oauth2/accept-terms`, `POST /provider-registration/tos/accept`, `GET /provider-registration/continue` |
-| `/public/policies/:name`                             | PolicyPage: the article                                                                                                                                                         | `policies`                 | `GET /api/policies/{name}`                                                                                                          |
+| Route                                     | Page                                                                                                                                                                            | Gate                       | Server routes behind it                                                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `/registration`                           | RegisterPage in its issuer form: the email-only form, or the sent state when the URL carries `success`, the address in router state                                             | `cookie`, `local-accounts` | `POST /registration`, `POST /registration/resend`                                                                                   |
+| `/registration/verify`                    | VerifyLinkPage: reads the mail's `email` and `token` once, replaces the location, posts them and follows `next`; the invalid state with "Send a new link"                       | `cookie`, `local-accounts` | `POST /registration/verify`                                                                                                         |
+| `/complete-onboarding`                    | OnboardingHub: reads the state and draws the step it names, the password step being its own                                                                                     | `cookie`, `onboarding`     | `GET /api/auth/onboarding`, `POST /complete-onboarding/password`                                                                    |
+| `/complete-onboarding/name`               | NameStep                                                                                                                                                                        | the same                   | `POST /complete-onboarding/name`                                                                                                    |
+| `/complete-onboarding/phone-setup`        | PhoneStep: the number, then the code                                                                                                                                            | the same                   | `POST /complete-onboarding/send-phone-code`, `POST /complete-onboarding/phone-setup`                                                |
+| `/complete-onboarding/email-verification` | EmailCodeStep                                                                                                                                                                   | the same                   | `POST /complete-onboarding/email-verification`, `POST /complete-onboarding/email-verification/resend`                               |
+| `/complete-onboarding/choose-2fa-method`  | TfaEnrollChoiceStep                                                                                                                                                             | the same, `tfa`            | `POST /complete-onboarding/choose-2fa-method`                                                                                       |
+| `/qrcode`                                 | TotpEnrollPage: the QR, the setup key, the code, the onboarding chain's only; the profile enrolls an app inline on its Security tab so a signed-in person never leaves the tabs | `cookie`, `tfa`            | `GET /api/auth/tfa/enroll`, `POST /qrcode/verify`                                                                                   |
+| `/complete-onboarding/backup-codes`       | BackupCodesPage: the list, copy, download, the confirm                                                                                                                          | the same                   | `POST /api/auth/tfa/backup-codes`, `POST /complete-onboarding/backup-codes/confirm`                                                 |
+| `/complete-onboarding/account-type`       | AccountTypeStep: the two tiles                                                                                                                                                  | the same, `org-console`    | `POST /complete-onboarding/account-type`                                                                                            |
+| `/complete-onboarding/team-name`          | TeamNameStep                                                                                                                                                                    | the same                   | `POST /complete-onboarding/team-name`                                                                                               |
+| `/oauth2/accept-terms`                    | TermsPage: one document, classic or collecting, a site or a client acceptance                                                                                                   | `cookie`, `policies`       | `GET /api/auth/terms`, `GET /api/auth/terms/versions/{version}`, `POST /oauth2/accept-terms`, `GET /provider-registration/continue` |
+| `/public/policies/:name`                  | PolicyPage: the article                                                                                                                                                         | `policies`                 | `GET /api/policies/{name}`                                                                                                          |
 
 `registration`, `complete-onboarding`, `qrcode`, `provider-registration`,
 `public` and `oauth2` join the reserved first segments. `/oauth/terms` and
@@ -768,6 +823,15 @@ logged-in "set a password" form with a token path never finished) and
 `/registration/sendmobilecode` are retired with the templates: the first
 is the chain, the second is the profile page's password section, the
 third the phone step's own send route (decision 9).
+`/provider-registration/tos`, the federated first sign-in's own terms
+page, and `POST /provider-registration/tos/accept` retire with them:
+every acceptance is `POST /oauth2/accept-terms`, and `GET /api/auth/terms`
+serves a site or a client pending acceptance alike, because two routes
+for one act diverge and the site's chain is owed at every sign-in, not at
+a federated first one alone; `GET /provider-registration/continue` stays
+the federated callback's continuation, the `next` a site acceptance
+resumes while the session holds `PROVIDER_REG_USER_ID`, the saved
+authorize, the pending authorize URL or `/` otherwise.
 
 ### What the UI backend answers for onboarding
 
@@ -811,14 +875,17 @@ empty page with a disabled Continue; a POST because a one-time secret on
 a GET is consumed by a prefetch, a link preview or the back-forward
 cache before the person has saved it.
 
-`GET /api/auth/terms`, the session that holds a pending acceptance:
+`GET /api/auth/terms`, the session that holds a pending acceptance, a
+site's or a client's alike:
 
 ```json
 {
+  "scope": "client",
   "name": "conductor-msa",
   "label": "Master Services Agreement",
   "version": "2.1",
   "region": "EU",
+  "person_region": "DE",
   "regions_offered": ["EU", "UK", null],
   "step": 1,
   "total": 2,
@@ -847,46 +914,88 @@ cache before the person has saved it.
       "required": true
     }
   ],
-  "identity_group_title": "Phone verification"
+  "identity_group_title": "Phone verification",
+  "versions": [
+    { "version": "2.1", "published_at": "2026-08-30T14:02:11Z" },
+    { "version": "2.0", "published_at": "2025-11-04T09:15:00Z" }
+  ],
+  "previous": { "version": "2.0", "accepted_at": "2025-12-02T18:40:09Z" },
+  "changes_html": "<p>… <del>thirty days</del><ins>fourteen days</ins> …</p>"
 }
 ```
 
-`region` is the resolved region of the variant shown, `null` for the
-default; a template may exist in several regional variants under one
-name and the issuer resolves in one order: the account's stored region
-first, a preference the person set through the selector; else the
-request's GeoIP country, decided before any typed data so the first
-terms page a person meets is already their region's; else the stored
-address country once the account holds one; else the default variant,
-because a person who signs up in the EU is owed the EU text and never
-the US one. `regions_offered` is the selector's choices, the distinct
-`regions` of the name's variants plus `null` for the default. If there
-is only one variant of the document, that is the one displayed and no
-selector is drawn; if there are other variants, the terms page draws a
-region selector, "Not in <region>? Choose your region",
-over the codes and sets the template offers (the distinct `regions` of
-the name's variants plus the default), whose choice re-reads
+A document is one agreement, one name, one card, one position in the
+chain, and its copies live inside it: a copy is the document's text for
+one governing body, the default copy the text for everywhere no copy
+claims, and a document with no default copy is region-only, owed only
+where a copy covers. `scope` is `site` or `client`, the chain the pending
+acceptance belongs to; `client_name` is the client's name on a client
+acceptance and `null` on a site one, whose subhead names the site
+instead. `region` is the region of the copy shown, `null` on the default
+copy; `person_region` is the region the issuer resolved for the person, a
+country code or one of the sets `EU`, `EEA` and `UK`, `null` when none
+resolved, and the issuer resolves it in one order: the account's stored
+region first, a preference the person set through the region button;
+else the request's GeoIP country, decided before any typed data so the
+first terms page a person meets is already their region's; else the
+stored address country once the account holds one; else nothing, the
+default copy then being the one shown, because a person who signs up in
+the EU is owed the EU text and never the US one. `regions_offered` is the
+region button's rows, the distinct `regions` of the document's copies
+plus `null` for the default copy when the document has one. The region
+button is drawn on every terms page and never hidden: while
+`regions_offered` holds more than one entry a pick re-reads
 `GET /api/auth/terms?region=<code>` and is written to the account as
 `PATCH /api/user/preferences { region }`, so every later terms page and
-the public policy view resolve to it; `GET /api/auth/terms` accepts
+the public policy view resolve to it; while it holds one entry the
+document has no other copy, the one copy is the one shown, and the
+button is disabled with a title saying so; `GET /api/auth/terms` accepts
 `?region=` the way the policies read does and answers `422` `enum` at
-`/region` for a region the name does not offer; a stored region is the
-person's word and beats every guess, because a person who travels or
-whose address is elsewhere must not be shown the wrong law.
-`collecting` is true while the document references a profile field the
-account lacks; `fields` lists those, in render order, each carrying
-`value`, the stored value the page prefills or absent for an empty
-field; a `tos-blank` span is filled from the field of the same `param`
-as the person types, and `full_name` from `first_name` and `last_name`
-joined, since no field carries it; the three HTML
-members are the document split on its horizontal rules exactly as
+`/region` for a region no copy of the document covers; a stored region
+is the person's word and beats every guess, because a person who travels
+or whose address is elsewhere must not be shown the wrong law. `step` and
+`total` are the person's place in the chain the acceptance belongs to,
+the site's `tos-names` or the client's in the file's order, kept where a
+copy of the document covers `person_region`, one step per document, and
+both are recomputed on every read of this route and on every region
+switch, because one region owes ten documents and another five and the
+count must follow the person and never a stored number. Every version of
+a copy is kept as a revision, `{ version, content, published_by, published_at }`,
+written when the copy is created and on every change of its `version`,
+so the words a person agreed to are never lost; `versions` lists the
+copy's revisions newest first for every reader, and `previous` and
+`changes_html` are present only while the account holds an acceptance of
+an earlier version of this copy: `previous` names that version and when
+it was accepted, and `changes_html` is the current text with every
+change since the accepted version marked at word level with `ins` and
+`del`, the two elements the sanitizer admits for it beside the set
+decision 131 names, so a person asked to accept a new version reads what
+changed and a new person, who never signed the earlier text, is shown
+the current text plain and is never asked to sign an old version; an
+older version is read through `GET /api/auth/terms/versions/{version}`,
+`{ version, published_at, content_html }`, read-only for the pending
+copy, and is never a thing to accept. An acceptance the server records
+names the copy, its version and the source the person's region came
+from, `region_source`, one of `stored`, `geoip` and `address`, recorded
+on the acceptance row alone and appearing in no read, because the audit
+must say which text was signed and why that text was the one shown.
+`collecting` is true while the document references a profile
+field the account lacks; `fields` lists those, in render order, each
+carrying `value`, the stored value the page prefills or absent for an
+empty field; a `tos-blank` span is filled from the field of the same
+`param` as the person types, and `full_name` from `first_name` and
+`last_name` joined, since no field carries it; the three HTML members
+are the document split on its horizontal rules exactly as
 `ToSAcceptanceController` splits it today, with the live-fill blanks as
 `tos-blank` spans. In classic mode `fields` is empty and `content_html`
 is the whole document.
 
-`GET /api/policies/{name}`, public: `{ "name", "label", "version", "created_at", "updated_at", "content_html" }`,
-the variant resolved the same way, `?region=` forcing a variant;
-`404` `not-found` when the template is not public.
+`GET /api/policies/{name}`, public: `{ "name", "label", "version", "created_at", "updated_at", "region", "person_region", "content_html" }`,
+the copy resolved the same way, `region` the copy's and `person_region`
+the reader's, `?region=` forcing a copy; `404` `not_found` when the
+document is not public and when no copy of the document covers the
+reader's region, a region-only document being public in its own regions
+while `is_public` is on and nowhere else.
 
 ### What the onboarding pages send and what comes back
 
@@ -910,7 +1019,8 @@ to decide, or the resume URL); a failure is the problem body with `code`.
 | confirm the codes      | `POST /complete-onboarding/backup-codes/confirm`, no body                                                                                                                                                                                                                                                                                                                                                                                                           | none                                                                                                                                                                            |
 | account type           | `POST /complete-onboarding/account-type`, JSON `{ "account_type": "personal" \| "team" }`                                                                                                                                                                                                                                                                                                                                                                           | `409` `organization_required`                                                                                                                                                   |
 | team name              | `POST /complete-onboarding/team-name`, JSON `{ "team_name" }`                                                                                                                                                                                                                                                                                                                                                                                                       | `422` `required` on `/team_name`                                                                                                                                                |
-| accept terms           | `POST /oauth2/accept-terms` or `POST /provider-registration/tos/accept`, JSON `{ "tos_name", "fields": { "first_name": "…" } }`                                                                                                                                                                                                                                                                                                                                     | `422` `required` on `/fields/<param>` for a still-blank required field; `403` `tos_session_expired`                                                                             |
+| accept terms           | `POST /oauth2/accept-terms`, JSON `{ "tos_name", "fields": { "first_name": "…" } }`; the record the server writes names the copy accepted, its `version` and a `region_source`, `stored`, `geoip` or `address`, the step of group 2's order the person's region came from                                                                                                                                                                                           | `422` `required` on `/fields/<param>` for a still-blank required field; `403` `tos_session_expired`                                                                             |
+| read an older version  | `GET /api/auth/terms/versions/{version}`, read-only, the pending copy's revision named by `version`, answering `{ "version", "published_at", "content_html" }` for the version list's dialog; the page never posts it as an acceptance                                                                                                                                                                                                                              | `404` `not_found` for a version the pending copy never had                                                                                                                      |
 | any step, session gone | any of the above                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `401` `session_expired`; the page sends the visitor to `/login?error=session_expired`                                                                                           |
 
 `session_expired` today is a redirect to `/login?error=session_expired`
@@ -986,10 +1096,41 @@ from every step; it becomes the one `401` code.
   page with one choice is no choice.
 - **TeamNameStep**: the team name, "Create team", "Back" to the tiles.
 - **TermsPage**: classic mode is the title, "Review and accept these
-  terms to continue to {{client}}.", the version and the "Step n of m"
+  terms to continue to {{client}}.", the subhead naming the site's
+  `brand.name` in place of the client on a site acceptance
+  (`scope: site`, `client_name` null), the version and the "Step n of m"
   badge at the top in both modes, the A-/A+ controls as real buttons
-  with labels, the document in a pane at least 60vh tall that grows with
-  the viewport, "I accept and continue" and "Decline", which posts
+  with labels and, beside them in the same head row on every terms page
+  whatever the case, a small region button carrying the flag of
+  `person_region`: a country code draws that country's flag, `EU` the EU
+  flag, `EEA` the EU flag with the letters EEA beside it, `UK` the Union
+  Jack, and a `null` `person_region` a globe glyph with the label "Choose
+  your region", never blank, because something must show and it must be a
+  visual indicator; the button opens a list dialog of decision 121
+  the way the language switcher's does, one row per entry of
+  `regions_offered` with its flag and name, the default copy's row
+  reading "Everywhere else", the current one checked, a pick re-reading
+  `GET /api/auth/terms?region=<code>` and writing
+  `PATCH /api/user/preferences { region }`, then moving focus to the new
+  heading and announcing the step, since the chain may have changed
+  length; while `regions_offered` holds one entry the button is drawn
+  disabled with a title saying this document has one text, because a
+  person must always see which region the issuer took them for and a
+  choice over one text is no choice (decisions 144 and 153); the
+  document in a pane at least 60vh tall that grows with
+  the viewport, and for a person who accepted an earlier version of this
+  copy the pane draws `changes_html`, the passages that changed since
+  the version they accepted marked as inserted and removed, under a
+  "What changed" toggle that flips the pane between the marked text and
+  the plain current text, with a line naming the version they accepted
+  and when, while a new person sees the current text plain and is never
+  asked to sign an old version; a "Versions" control beside the version
+  badge opens a list dialog over `versions`, newest first, the current
+  one marked, each older row opening that version read-only in the same
+  dialog from `GET /api/auth/terms/versions/{version}`, never selecting
+  it and never changing what is accepted, so the person who wants to
+  compare can, on the same step, without leaving it; "I accept and
+  continue" and "Decline", which posts
   `/auth-cancel` and follows its `next`, because a person who will not
   accept must have a way out other than the browser's Back button;
   every terms page, both modes and PolicyPage, is the one wide column,
@@ -1069,13 +1210,18 @@ from every step; it becomes the one `401` code.
 `account.requiredBy`, `account.personal`, `account.personalHelp`,
 `account.team`, `account.teamHelp`, `team.title`, `team.subhead`,
 `team.name`, `team.create`, `team.back`); `terms.*` (`pageTitle`,
-`before`, `version`, `step`, `fontSize.smaller`, `fontSize.larger`,
-`accept`, `agree`, `decline`, `optional`, `yourDetails`,
+`before`, `beforeSite`, `version`, `step`, `fontSize.smaller`,
+`fontSize.larger`, `region.change`, `region.title`, `region.onlyOne`,
+`region.everywhereElse`, `versions.open`, `versions.title`,
+`versions.current`, `versions.published`, `whatChanged`,
+`changedSince`, `accept`, `agree`, `decline`, `optional`, `yourDetails`,
 `phoneVerification`, `address`, `acknowledge`); `policy.*` (`pageTitle`,
 `version`, `updated`, `created`, `return`, `back`); `errors.*` gains
 `session_expired`,
 `link_invalid`, `invalid_code`, `expired`, `quota`, `send_failed`,
-`organization_required`, `tos_session_expired`, `onboarding_required`.
+`organization_required`, `tos_session_expired`, `onboarding_required`,
+`terms_required`. The `terms.*` key names above are placeholders the UI
+may rename; the strings they carry are the contract.
 
 ### What this design changed for onboarding
 
@@ -1083,6 +1229,7 @@ from every step; it becomes the one `401` code.
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | the pages        | twelve templates in two looks: eight under `auth/layout` with `auth.css`, four (`completeRegistration`, `emailVerification`, `qrcode`, `backupCodes`) plus the two legal pages under the Bootstrap `layout/public` card | one look, every step in `AuthShell` inside the chrome                                                    |
 | the gate         | the MVC interceptor redirecting every page GET, and the authorize filter                                                                                                                                                | `403` `onboarding_required` with `next` on the API, the shell navigating; the authorize filter unchanged |
+| the terms gate   | the client chain on `/oauth2/authorize`, the site chain on a federated first sign-in alone through `/provider-registration/tos`, one variant's acceptance for life                                                      | both chains per region, by copy and version, at every sign-in and authorize; one acceptance route        |
 | the state        | seven session attributes read by each template's controller                                                                                                                                                             | one `GET /api/auth/onboarding` every step reads                                                          |
 | the answers      | a redirect with `?error=` per step, prose in `message`                                                                                                                                                                  | `{ next }` or a problem `code`                                                                           |
 | phone entry      | jQuery, `intl-tel-input` and `mobileutils.js` on one page                                                                                                                                                               | `PhoneInput` in `components/common`                                                                      |
@@ -1491,7 +1638,7 @@ The rest of the group's reads, all session, all under `/api/user`:
 | `GET /api/user/favorites`                          | `[{ client_id, client_name, icon_url, home_url, custom_label, order }]`, the same list the profile's `favorite_apps` carries in the same `snake_case`, the one source the page and the menu on every UI backend read, Bearer or session; a `backend` UI backend proxies the path on its own origin to the issuer with the user's token, the way it proxies the hub; the claims are not a third copy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `GET /user/favorites` plus `GET /api/userinfo/claims`           |
 | `GET /api/user/organizations`                      | `{ organizations: [ … ], organizations_enabled, personal_to_team_enabled }`, one entry per membership with the console's fields: `uuid, name, personal, primary, my_role, can_manage, can_rename, is_owner, invite_code, email, website_url, logo_url, description, locale, timezone, telephone, access_mode, default_role, address{…}, members[{ user_id, email, name, role, managed_by }], pending_invites[{ id, email, role }]`, `access_mode` one of `invite`, `request` and `private` and `default_role` one of `MEMBER` and `ADMIN`, the words the console's two selects offer and the words BoxVault's record carries, one vocabulary on every UI backend because the shared console draws one select for one door; `invite_code` is present only while `can_manage`, because a plain member holding the code could grow the organization at its default role; every `logo_url` and `icon_url` the pages draw, here and in the integrations answer, is rendered only when it parses with the `https:` scheme, with `referrerpolicy="no-referrer"` on the image | the model of `user/organizations.html`                          |
 | `GET /api/user/linked-accounts`                    | `{ linked: [{ provider_id, provider_name, provider_username, provider_email, linked_at, last_used_at, icon_url, sites, compat }], available: [{ provider_id, provider_name, icon_url }] }`, the federated providers the person signed in with and the ones the site still offers; read by the profile's Security page, because a way into the account is an account security matter and never an integration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | the linked and available `GET /user/integrations/api/*` routes  |
-| `GET /api/user/terms`                              | `[{ name, label, icon, version, accepted_at, type }]`, every document the person accepted across the estate's applications                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | the accepted-terms `GET /user/integrations/api/*` route         |
+| `GET /api/user/terms`                              | `[{ name, label, icon, type, version, first_accepted_at, accepted_at, versions: [{ version, accepted_at }] }]`, one row per document the person accepted across the estate's applications, `version` and `accepted_at` the latest acceptance, `first_accepted_at` the earliest, `versions` every version accepted newest first                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | the accepted-terms `GET /user/integrations/api/*` route         |
 | `GET /api/user/applications`                       | `[{ client_id, client_name, icon_url, registered, first_used_at, last_used_at, active_sessions, consent_required, consent_scopes }]`, the estate's own applications the person authorized                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | the connected-applications `GET /user/integrations/api/*` route |
 | `GET /api/user/integrations`                       | `{ services: [{ id, name, icon_url, status, connected_at, settings_url }] }`, the third-party services connected through the issuer, `status` one of `connected`, `expired`, `error`, `settings_url` an `https:` URL the row's Manage follows in a new tab; `services` is absent, never empty, while the issuer connects none, and the page and the sidebar row draw only while it is answered, because an application the estate controls is never an integration and a page that lists nothing misleads                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | new                                                             |
 | `GET /api/organizations/discover`                  | `[{ uuid, name, description, logo_url, access_mode, member_count }]`, every organization whose `access_mode` is `invite` or `request` and, for `ROLE_ADMIN`, the `private` ones too, the shape BoxVault answers on the same path, so the shared DiscoveryPage draws the issuer's directory through the adapter's `discover` as it draws BoxVault's                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | new; BoxVault's `discoverOrganizations`                         |
@@ -1541,7 +1688,7 @@ replays inside its window and a guessing run meets `429` with
 | backup codes               | `POST /api/user/backup-codes`, stepped up, answers `{ codes }`, once                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `/accountconfig/backupcodes/generate`                                                                            |
 | sessions                   | `DELETE /api/user/sessions/{id}`, `DELETE /api/user/sessions`, stepped up; the second answers `{ "next": "/login" }` when it ended the caller's own session too, and the page says so before asking                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/accountconfig/sessions/revoke`, `/revoke-all`                                                                  |
 | favorites                  | `PUT /api/user/favorites` with the whole ordered list as `[{ client_id, custom_label, order }]`; the server answers the enriched entries from the client's own registration, so a `home_url` or `icon_url` the page sends is ignored and the favorites keep working as they do today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `POST /user/favorites/save`                                                                                      |
-| preferences                | `PATCH /api/user/preferences` with `language`, `theme`, `timezone`, `region`, `ciba_channel` and `ciba_user_code`; `region` the person's legal region, a two-letter ISO 3166-1 code or one of `EU`, `EEA`, `UK`, `null` clearing it, the value the terms page's selector writes and the terms and policy variants resolve to first (`422` `enum` on `/region` otherwise); `ciba_user_code` a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | unchanged                                                                                                        |
+| preferences                | `PATCH /api/user/preferences` with `language`, `theme`, `timezone`, `region`, `ciba_channel` and `ciba_user_code`; `region` the person's legal region, a two-letter ISO 3166-1 code or one of `EU`, `EEA`, `UK`, `null` clearing it, the value the terms page's region button writes and the terms and policy copies resolve to first (`422` `enum` on `/region` otherwise); `ciba_user_code` a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | unchanged                                                                                                        |
 | delete the account         | `POST /api/user/deletion` `{ email_confirmation }`, stepped up (`422` on `/email_confirmation`, `409` `sole_owner` with `teams: [{ uuid, name }]`, the teams only this account owns); the server invalidates every session of the account before answering `{ next: "/login" }`, and the page drops its cache and navigates there                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `POST /user/delete-account`                                                                                      |
 | organizations              | `POST /api/user/organizations` `{ name }` (`422` `required` on `/name`); per organization `PATCH …/{uuid}` (name, the profile fields, `access_mode` as `invite`, `request` or `private`, `default_role` as `MEMBER` or `ADMIN`, `422` `enum` on either), `POST …/{uuid}/convert` `{ name }`, `POST …/{uuid}/invite-code` (regenerate), `POST …/{uuid}/invites` `{ email, role }`, `DELETE …/{uuid}/invites/{id}`, `POST …/{uuid}/invites/{id}/resend` (no body, `can_manage` alone, answering `204` after the invitation mail is sent again, `429` `throttled` with `wait_seconds` on a repeat inside the mail's own sixty-second resend window, `404` `not_found` for an invitation that is accepted or not the organization's), `PUT …/{uuid}/members/{user_id}/role` `{ role }` (`409` `last_owner` when it would leave the team without one), `DELETE …/{uuid}/members/{user_id}`, `POST …/{uuid}/leave`, `DELETE …/{uuid}`, `PUT /api/user/primary-organization` `{ uuid }`; a refusal from the service (`Not a member`, `Insufficient organization role`, `Only the owner can invite admins`, managed rows) is `403` with `code`; no join-by-code route, because a code a person types is a secret that leaks and a door the organization never chose | the fourteen form posts of `OrganizationController`, each a redirect with a flash; `/join` retires with its form |
 | join requests              | `POST /api/organization/{org}/requests` `{ message }` on a `request` organization, answering `201` with the request and notifying the organization's admins through the inbox (`409` `already_member`, `409` `already_requested`, `403` `not_open` on an `invite` or `private` one); `POST …/requests/{id}/approve` `{ assigned_role }` and `POST …/requests/{id}/deny`, `can_manage` alone, each answering `204`, the approve making the membership at the assigned role and the deny recording nothing but the answer; BoxVault's routes on the same paths, sent through the adapter's `join`, `approveRequest` and `denyRequest`, so the shared DiscoveryPage and the console's Join requests tab need no issuer branch; an `invite` organization is joined from the invitation mail's link alone, `/org/invite/:token` above                                                                                                                                                                                                                                                                                                                                                                                                                            | new; BoxVault's `organization.routes.js`                                                                         |
@@ -1713,8 +1860,10 @@ replays inside its window and a guessing run meets `429` with
   and never integrations; the page binds the navbar search with a query
   over the applications by name.
 - **UserTermsPage** at `/user/terms`, from `GET /api/user/terms`: one
-  row per accepted document (icon, label, type badge, version, accepted,
-  View to `/public/policies/<name>`), drawn while the issuer advertises
+  row per accepted document (icon, label, type badge, the version
+  accepted last with its accepted time, first accepted, a fold listing
+  every earlier version accepted with its time from `versions`, View to
+  `/public/policies/<name>`), drawn while the issuer advertises
   `policies`; the page binds the navbar search with a query over the
   documents by label.
 - **IntegrationsPage** at `/user/integrations`, from
@@ -1753,7 +1902,7 @@ replays inside its window and a guessing run meets `429` with
 | `AddressFields`           | `src/components/common/AddressFields.jsx` | the postal address block with country select and state suggestions, optional Places autocomplete; the profile, the organization profile, the terms collection fields |
 | `StepUpDialog`            | `src/components/common/StepUpDialog.jsx`  | "Confirm it's you" with a password or a code; any UI backend that step-ups a sensitive change                                                                        |
 | `MethodRow`, `MethodList` | `src/components/common/MethodList.jsx`    | a list row with an icon, a label, a subline, badges and trailing actions; 2FA methods, passkeys, linked accounts, connected apps, sessions                           |
-| `SortableList`            | `src/components/common/SortableList.jsx`  | drag-to-reorder over a keyed list; favorites now, any ordered preference later                                                                                       |
+| `SortableList`            | `src/components/common/SortableList.jsx`  | drag-to-reorder over a keyed list; favorites and the config editor's `orderable` arrays                                                                              |
 | `Pager`                   | `src/components/common/Pager.jsx`         | the page strip of the inbox and of the admin tables                                                                                                                  |
 | `InboxList`               | `src/components/common/InboxList.jsx`     | the row list the modal and the page both draw                                                                                                                        |
 
@@ -1844,7 +1993,7 @@ principal (decided with the cookie provider).
 | `/admin/logins`, `/admin/registrations`, `/admin/sessions`                                  | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                                                 | the same             | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
 | `/admin/service-usage`, `/admin/insights`, `/admin/client-health`, `/admin/provider-health` | Health › Service usage, Insights, Client health, Provider health: one page per row; the usage report, the fleet insights, the client probes, the provider probes                         | the same             | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
 | `/admin/brute-force`                                                                        | Security › Blocked IPs: the status line, the table, Unblock, Unblock all                                                                                                                 | the same             | `admin/blockedIps.html`                                                                                                                                                                                                                    |
-| `/admin/terms`                                                                              | Legal › Terms: the templates as ordered cards, create, edit, copy, preview, delete                                                                                                       | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
+| `/admin/terms`                                                                              | Legal › Terms: the documents as cards, each with its copies, create, edit, copy, preview, delete                                                                                         | the same, `policies` | the Terms of Service tab of `admin/config.html`, `TermsOfServiceAdminController`                                                                                                                                                           |
 | `/admin/config`                                                                             | System › Configuration: the shared config editor (decision 16)                                                                                                                           | the same             | `admin/config.html`, `ConfigController`                                                                                                                                                                                                    |
 | `/error`                                                                                    | ErrorPage: status, reference, path from the URL                                                                                                                                          | none                 | `CustomErrorController`, `error/error.html`, `404.html`, `fatal.html`                                                                                                                                                                      |
 
@@ -1983,7 +2132,7 @@ Every read is session or Bearer with `ROLE_ADMIN`; a paged list answers
 | `GET /api/admin/client-health`                                                                        | `{ summary: { status, healthy, total }, clients: [{ client_id, client_name, description, base_url, check, endpoint, healthy, status, response_time_ms, last_checked, error_message }], providers: [ the same ] }`; `healthy` is `null` for a client that cannot be probed; `check` names the probe the server performed, `actuator_health` (a GET of `<base_url>/actuator/health`, answering `online` or `unhealthy`) or `http_reachability` (a GET of `base_url` itself, tried when the health endpoint answers `404` or fails, answering `reachable`, `unreachable` or `offline`), and `endpoint` is the exact URL that probe requested; both are `null` on a row that was not probed, so the card draws what the server did and never a fixed line                               | the client-health model and `/client-health/status`                                                             |
 | `GET /api/admin/brute-force`                                                                          | `{ enabled, blocked: [{ ip, attempts }] }`; `GET /api/admin/brute-force/count` answers `{ count }` once when the stream connects, and every change after rides the `admin` topic's `blocked-count` event, so the column drawn on every page never fetches the table and never runs a timer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `/admin/brute-force/blocked`                                                                                    |
 | `GET /api/admin/rate-limit/{user_id}`                                                                 | `{ sign_in: { armed, wait_seconds }, tfa: { "SMS": "locked" \| "armed" \| "clear", "APP": …, "BACKUP_CODE": … }, banned }`, the three gates the Rate limits dialog draws; `GET /api/admin/rate-limit/banned` the banned ids                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/rate-limit/status` answers the SMS limiter alone, `/banned`                                             |
-| `GET /api/admin/terms`, `GET /api/admin/terms/placeholders`                                           | the templates `[{ id, name, regions, friendly_name, icon, version, type, is_public, display_order, content, created_by, updated_at }]`, one row per variant, `id` the template's own id, the one handle a variant has, since two variants share a name, `regions` a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`, `UK`, empty for the default variant; two variants of one name never overlap, refused `409 unique` at `/regions`; the placeholder list `[{ name, scope, description }]`                                                                                                                                                                                                                                                                                | `/admin/terms/templates`, `/placeholders`                                                                       |
+| `GET /api/admin/terms`, `GET /api/admin/terms/placeholders`                                           | one row per document `[{ name, friendly_name, icon, type, is_public, copies: [{ id, regions, version, content, created_by, updated_at }] }]`, `type` and `is_public` the document's, `copies` its copies with `id` the copy's own id, the one handle a copy has since every copy shares the name, `regions` a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`, `UK`, empty for the default copy, the one for everywhere no copy claims, a document without one being region-only; two copies of one document never overlap, refused `409 unique` at `/regions`; the placeholder list `[{ name, scope, description }]`                                                                                                                                                      | `/admin/terms/templates`, `/placeholders`                                                                       |
 | `GET /api/admin/dcr/clients`                                                                          | unchanged shape                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `/admin/dcr/clients`                                                                                            |
 | `GET /api/config/<name>`, `GET /api/config/<name>/schema`, `GET /api/config/restart-status`           | the config contract's section 3 answers, `<name>` a member of `status.config` (decision 16); `restart-status` is `{ restart_required, requires_restart, last_modified_by, last_modified_time }`, read once when the stream connects, every change after riding the `admin` topic's `restart-required` event                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/config/*`; `restart-status` polled by the footer every thirty seconds                                   |
 
@@ -2009,9 +2158,8 @@ problem body with `code`.
 | unblock every address    | `DELETE /api/admin/brute-force`, answering `204`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | new                                                                                                                               |
 | unblock a selection      | `POST /api/admin/brute-force/bulk` `{ action: "unblock", addresses: [] }`, answering `{ processed, skipped, errors: [{ id, code }] }`, `id` the address, an address not on the blocked table skipped with `not_blocked`, one `blocked-count` event after the whole selection, `422` `enum` at `/action`, `422` `required` at `/addresses` (decision 149)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | new                                                                                                                               |
 | rate limit               | `POST /api/admin/rate-limit/{user_id}/unlock`, `/tfa-unlock` with `{ "method": "SMS" \| "APP" \| "BACKUP_CODE" }` (`422` `enum` on `/method`), `/ban`, `/unban`, the last three with no body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/rate-limit/*` with `userId`; no page calls them                                                                           |
-| terms                    | `POST /api/admin/terms` `{ name, regions, friendly_name, icon, version, type, is_public, display_order, content }` (`409` `unique` on `/name` when a default variant of the name exists, on `/regions` with `params.scope` the name when another variant claims a country of the set), `PATCH /api/admin/terms/{name}` any of those, `DELETE /api/admin/terms/{name}`, the two addressing the default variant unless `?region=` names one the variant's `regions` carries; each saved at once. `regions` is a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`, `UK`; empty is the default variant; two variants of one name never overlap, refused `409 unique` at `/regions`. The issuer's `/api/rules` carries a `terms` form, its members bounded as the validation contract's Forms table lists them: `name` is `$defs.slug` and `unique` among the default variants, because it becomes the `/public/policies/<name>` and `/api/admin/terms/{name}` segment; `icon` is `$defs.iconName` and is drawn only as a class attribute; the placeholders are a fixed list replaced by string substitution and never evaluated, so the editor can never reach a template engine | `/admin/terms/template/create`, `/update/{name}`, `/template/delete/{name}` form-encoded, batched behind the config editor's Save |
-| reorder terms            | `PUT /api/admin/terms/order` `{ ids: [] }`, the template ids in the wanted order, one position per variant, because two variants of one name have no other handle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `displayOrder` per template in the same batch                                                                                     |
-| terms bulk               | `POST /api/admin/terms/bulk` `{ action, ids: [] }`, `action` one of `delete`, `set_public`, `set_private`, `ids` the template ids since two variants share a name, answering `{ processed, skipped, errors: [{ id, code }] }`, an unknown id skipped with `not_found`, `422` `enum` at `/action`, `422` `required` at `/ids`; the delete action stepped up (decision 150)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | new                                                                                                                               |
+| terms                    | `POST /api/admin/terms` `{ name, regions, friendly_name, icon, version, type, is_public, content }` (`409` `unique` on `/name` when a default copy of the name exists, on `/regions` with `params.scope` the name when another copy claims a country of the set), `PATCH /api/admin/terms/{name}` any of those, `DELETE /api/admin/terms/{name}`, the two addressing the default copy unless `?region=` names one the copy's `regions` carries; each saved at once. `regions` is a list of ISO 3166-1 alpha-2 codes or the sets `EU`, `EEA`, `UK`; empty is the default; `type` and `is_public` belong to the document, so a `POST` or a `PATCH` carrying either writes it to every copy. The issuer's `/api/rules` carries a `terms` form, its members bounded as the validation contract's Forms table lists them: `name` is `$defs.slug` and `unique` among the default copies, because it becomes the `/public/policies/<name>` and `/api/admin/terms/{name}` segment; `icon` is `$defs.iconName` and is drawn only as a class attribute; the placeholders are a fixed list replaced by string substitution and never evaluated, so the editor can never reach a template engine | `/admin/terms/template/create`, `/update/{name}`, `/template/delete/{name}` form-encoded, batched behind the config editor's Save |
+| terms bulk               | `POST /api/admin/terms/bulk` `{ action, ids: [] }`, `action` one of `delete`, `set_public`, `set_private`, `ids` the copies' ids since every copy of a document shares its name, answering `{ processed, skipped, errors: [{ id, code }] }`, an unknown id skipped with `not_found`, `422` `enum` at `/action`, `422` `required` at `/ids`; the delete action stepped up (decision 150)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | new                                                                                                                               |
 | revoke a dynamic client  | `DELETE /api/admin/dcr/clients/{id}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `/admin/dcr/clients/{id}`                                                                                                         |
 | export                   | `GET /api/admin/export/logins`, `/registrations`, `/users` with the navbar panel's query and filters as its parameters, the panel's one registered action on Users, Logins and Registrations and never a button on the page, a top-level navigation answering `application/json` as an attachment, the same rows the table draws, because a CSV opened in a spreadsheet executes a cell that an attacker typed as a username or a user agent                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `/admin/export/*`                                                                                                                 |
 | configuration            | `PUT /api/config/<name>`, the config contract's merge patch (`422` with a pointer per failing path in place of the `400` text list), `POST /api/config/restart` and `POST /api/admin/config/rotate-signing-key` → `{ kid }`, each stepped up and behind a `ConfirmModal` because one click must not restart the issuer or retire its signing key, the SMTP test the mail section's `test` action of the config contract                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `/admin/config/*`                                                                                                                 |
@@ -2196,35 +2344,44 @@ problem body with `code`.
     never gains a Ban control (decision 140).
   - **Terms**: a `SectionHeading` over the cards, its title Terms, Create
     in the heading's action pane, opening the create dialog below
-    (decision 138); the templates as cards in a `SortableList` (drag writes
-    the order at once and raises a success card carrying Undo, which
-    writes the previous order back), Public and type badges, Preview
-    opening a list dialog of decision 121 that draws the template as the
-    person would see it, from the `content` markdown the admin's own
-    `GET /api/admin/terms` already carries, through the shared
-    `MarkdownArticle` under the template's title, version and type
-    badge, for every template public or not, and on a public card a
-    second action "Open public page" linking to
-    `/public/policies/<name>` in a new tab, because the public route
-    refuses a non-public template by design and an admin must see a
-    client's terms before assigning them, Copy (a small dialog asking the new name,
-    never the browser's prompt), Edit and Create in a dialog (name,
-    display name, the icon picked from the estate's glyph set and stored
-    as its name, version, type, public, order, the markdown content in a
-    textarea with a preview beside it and the placeholder help from the
-    placeholders call), a region badge on each card and a `regions`
-    multi-select in the dialog over the country codes and the three sets,
-    Delete behind a confirm; each card carries a checkbox, the cards'
-    select column, and the heading's select-all checkbox picks every card
-    on the page, the action pane while cards are picked reading "N
-    selected", Clear selection, Make public, Make private and Delete over
-    `POST /api/admin/terms/bulk` with the template ids, Delete behind a
-    confirm and the step-up dialog, the result line naming processed,
-    skipped and errors (decision 150); every change saved as
-    it is made; the page binds the navbar search with a query over the
-    template cards by name and display name, the Type group
-    (`kind: toggle` over the template types) and the Public group, one
-    pill, both narrowing the cards client-side.
+    (decision 138); one card per document, never one per copy, and no
+    drag: the order a person meets the documents in is the site's or the
+    client's `tos-names`, edited in the configuration editor (decision
+    157), so the page draws nothing that orders; the card carries the
+    document's name, display name, Public and type badges, and inside it
+    one row per copy with its flag, its `regions` and its `version`, the
+    default copy's row reading "Everywhere else", and a "region-only"
+    badge on a document with no default copy; Preview opening a list
+    dialog of decision 121 that draws a copy as the person would see it,
+    from the `content` markdown the admin's own `GET /api/admin/terms`
+    already carries, through the shared `MarkdownArticle` under the
+    document's title, the copy's version and the type badge, for every
+    document public or not, and on a public card a second action "Open
+    public page" linking to `/public/policies/<name>` in a new tab,
+    because the public route refuses a non-public document by design and
+    an admin must see a client's terms before assigning them, Copy (a
+    small dialog asking the new name, never the browser's prompt), Edit
+    on a copy and Create in a dialog (name, display name, the icon picked
+    from the estate's glyph set and stored as its name, version, type,
+    public, the markdown content in a textarea with a preview beside it
+    and the placeholder help from the placeholders call, and a `regions`
+    multi-select over the country codes and the three sets, empty for the
+    default copy), Add a copy on a card opening the same dialog with the
+    document's name fixed and `regions` required, its
+    `POST /api/admin/terms` under the document's name adding the copy, a
+    change of a copy's `version` writing the revision the terms page's
+    version list and highlight read and notifying every prior acceptor of
+    that copy as today, Delete on a copy behind a confirm; each card
+    carries a checkbox, the cards' select column, and the heading's
+    select-all checkbox picks every card on the page, the action pane
+    while cards are picked reading "N selected", Clear selection, Make
+    public, Make private and Delete over `POST /api/admin/terms/bulk` with
+    the ids of the picked documents' copies, Delete behind a confirm and
+    the step-up dialog, the result line naming processed, skipped and
+    errors (decision 150); every change saved as it is made; the page
+    binds the navbar search with a query over the cards by name and
+    display name, the Type group (`kind: toggle` over the document types)
+    and the Public group, one pill, both narrowing the cards client-side.
   - **Configuration**: the shared `AdminConfig` of the config contract
     over the issuer's schema, one file per route, `/admin/config/<name>`,
     `/admin/config` the first name of `status.config`, the file's sections
@@ -2358,12 +2515,12 @@ contract plans, so the first client of that channel is the issuer itself.
 
 ### Shared components admin adds
 
-| Component                                           | Where                                           | Why shared                                                                                                            |
-| --------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `StatCard`                                          | `src/components/common/StatCard.jsx`            | the icon, count, label tile that links somewhere; the dashboard, the usage report, the insights                       |
-| `DateRange`                                         | `src/components/common/DateRange.jsx`           | start and end dates with preset buttons (30, 60, 90, 120 days, All time); every activity table, any report page later |
-| `LoginMap`                                          | `src/features/identity/components/LoginMap.jsx` | Leaflet and markercluster, the one map in the estate; feature-local until a second UI backend draws one               |
-| `SubTable`, `Pager`, `ConfirmModal`, `SortableList` | already shared                                  | the tables, the paging, the confirms, the terms order                                                                 |
+| Component                           | Where                                           | Why shared                                                                                                            |
+| ----------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `StatCard`                          | `src/components/common/StatCard.jsx`            | the icon, count, label tile that links somewhere; the dashboard, the usage report, the insights                       |
+| `DateRange`                         | `src/components/common/DateRange.jsx`           | start and end dates with preset buttons (30, 60, 90, 120 days, All time); every activity table, any report page later |
+| `LoginMap`                          | `src/features/identity/components/LoginMap.jsx` | Leaflet and markercluster, the one map in the estate; feature-local until a second UI backend draws one               |
+| `SubTable`, `Pager`, `ConfirmModal` | already shared                                  | the tables, the paging, the confirms                                                                                  |
 
 ### Admin keys
 
@@ -2385,7 +2542,9 @@ its Suspend, Resume, Delete and Clear selection),
 `definitions`, `clients.*`, `providers.*`, `status.*`), `blocked.*`
 (`unblockAll`),
 `terms.*` (`title`, `create`, `edit`, `copy`, `copyName`, `preview`,
-`delete`, `undo`, `field.*`, `placeholders`, `type.*`); `pages.*` gains
+`delete`, `copies`, `addCopy`, `everywhereElse`, `regionOnly`,
+`field.*`, `placeholders`, `type.*`, the `terms.*` names placeholders the
+UI may rename); `pages.*` gains
 `selectColumn` as the select-all checkbox's `aria-label` ("Select all on
 this page"), the one shared key every select column of the estate draws
 (decision 137); `navbar.*` gains
@@ -2406,7 +2565,7 @@ mirrored in `es` and `cimode`.
 | the routes         | `/admin/*` form posts and ad-hoc JSON, CSRF from the cookie, `/api/admin/**` Bearer-only                                                     | `/api/admin/*` JSON with problem bodies, session or Bearer; the browser paths kept as the entries' routes                                                                                                                                                                                                           |
 | roles              | one toggle call per changed role, then a reload                                                                                              | one `PUT` with the whole set                                                                                                                                                                                                                                                                                        |
 | the bulk catalog   | the first selected user's roles call                                                                                                         | `GET /api/admin/roles`                                                                                                                                                                                                                                                                                              |
-| terms              | batched behind the config editor's Save with `pendingToSChanges`, the order in the same batch                                                | a page of their own, every change saved at once, the order one call                                                                                                                                                                                                                                                 |
+| terms              | batched behind the config editor's Save with `pendingToSChanges`, the order in the same batch                                                | a page of their own, every change saved at once; the order is the config's `tos-names`, edited in the configuration editor                                                                                                                                                                                          |
 | the map tiles      | four `@environment` reads in the template                                                                                                    | carried by the heatmap answer                                                                                                                                                                                                                                                                                       |
 | the footer         | the client-health icon and a thirty-second restart poll on every page                                                                        | the Client health page's summary line, the Dashboard and Configuration restart cards from the `admin` topic, the heart from the core `health` topic while `footer` and `health` are both listed                                                                                                                     |
 | the admin tables   | filters in the page, the same three names as tabs under the header of the Activity and Health pages                                          | every narrowing in the navbar module and its panel, the sidebar rows as the one navigation, no tab strip                                                                                                                                                                                                            |
@@ -2997,7 +3156,9 @@ admin)` taking the adapter the router builds as the shared admin
      they are and a stored region is the person's word; the admin read carries
      each variant's `id` and the order is written by `id`,
      `PUT /api/admin/terms/order` `{ ids: [] }`, because two variants
-     share a name and only the id names one.
+     share a name and only the id names one. The order clause of this
+     decision and its "one position per variant" handle are replaced by
+     decision 157; the rest stands as written.
 134. Every page of the shared UI on every UI backend frames its body by
      one rule by content, the pages contract's Page frame: a form or a
      settings group draws in a `SectionCard`, its fold under the page's
@@ -3114,7 +3275,14 @@ labelKey? }`, drawn as a section heading above the tree in the same
      that does not collect the address, the issuer uses the best guess or
      provides them a selector to override, and that override sets their
      region on the account, `preferences.region`, which every later terms
-     page and the public policy view resolve to first.
+     page and the public policy view resolve to first; the override is a
+     small region button in the terms page's head row beside A- and A+,
+     drawn on every terms page whatever the case, carrying the flag of
+     `person_region`, opening a list dialog like the language switcher's
+     over `regions_offered`, and disabled with a title while the document
+     has no other copy to switch to, because the person must always see
+     which region the issuer took them for, and a control that hides
+     itself says nothing.
 145. The pages contract's visual reference draws the shape decisions 134
      and 137 describe as the page-anatomy frame
      (`universal-pages.html#page-anatomy`): one heading row, left the
@@ -3230,6 +3398,125 @@ labelKey? }`, drawn as a section heading above the tree in the same
      a choice over one text is no choice, and the override of decision
      144 is for the person whose region the issuer guessed wrong when a
      text for their region exists.
+154. A terms document is one agreement, one name, one card on the admin
+     page and one position in a chain, and its copies live inside it: a
+     copy is the document's text for one governing body, its `regions`
+     the countries and sets that body governs, the default copy the text
+     for everywhere no copy claims, and a document with no default copy
+     region-only, owed only where a copy covers; the word in this
+     contract is document and copy, the identifiers `regions` and
+     `regions_offered` stay, and the routes keep their names; because two
+     regions owed one agreement in two texts are one document to the
+     person and to the operator, and a variant that stood as its own row
+     drew one agreement twice.
+155. The region control on a terms page is a small button in the head row
+     beside A- and A+, drawn on every terms page whatever the case,
+     carrying the flag of `person_region`, a country code its country's
+     flag, `EU` the EU flag, `EEA` the EU flag with the letters EEA beside
+     it, `UK` the Union Jack, and a `null` `person_region` a globe glyph
+     labeled "Choose your region", never blank, opening a list
+     dialog like the language switcher's with one row per entry of
+     `regions_offered`, its flag and name, the default copy reading
+     "Everywhere else", the current one checked, a pick re-reading
+     `GET /api/auth/terms?region=` and writing
+     `PATCH /api/user/preferences { region }`; the button is disabled with
+     a title while `regions_offered` holds one entry, which reconciles
+     decision 153: the choice is absent while the document has no other
+     copy, the button never is. `GET /api/auth/terms` and
+     `GET /api/policies/{name}` gain `person_region`, the region resolved
+     for the person, a code or a set, `null` when none resolved, stored
+     first, then GeoIP, then the address country, while `region` keeps
+     its meaning, the copy's region, `null` on the default copy; because
+     a person must always see which region the issuer took them for, and
+     a control that appears only when it has something to offer leaves
+     them guessing why it is gone.
+156. The chain a person owes is the site's `sites.sites.<id>.tos-names`
+     (`SITE` and `BOTH` documents) and the client's
+     `clients.<id>.client.tos-names` (`CLIENT` and `BOTH` documents), in
+     the order the file lists them, kept where a copy of the document
+     covers the person's region, one step per document, recomputed on
+     every read of `GET /api/auth/terms` and on every region switch,
+     `step` and `total` following, so one region owes ten documents and
+     another five; because the chains are per region and per site, not
+     variants of one text, and a stored position or count would lie the
+     moment the region changed.
+157. The Terms page's drag order and `PUT /api/admin/terms/order` retire,
+     and `display_order` leaves the admin read and the `terms` form; the
+     order is the config's `tos-names`, edited in the configuration
+     editor as the config contract's `orderable: true` list of decision
+     89, which the authorization server's `sites` and `clients` schemas
+     carry on `tos-names`; the admin page draws one card per document
+     with its copies inside, a "region-only" badge on a document with no
+     default copy, and no drag; `GET /api/admin/terms` answers one row
+     per document, `{ name, friendly_name, icon, type, is_public, copies: [{ id, regions, version, content, created_by, updated_at }] }`,
+     `type` and `is_public` belonging to the document and written to
+     every copy by `POST /api/admin/terms` and
+     `PATCH /api/admin/terms/{name}`, `POST /api/admin/terms/bulk` keeping
+     `ids` of copies, and the search kind `terms` unchanged; the order
+     clause of decision 133 is superseded by this one; because the order
+     is a fact of the site or the client that lists the documents, so it
+     belongs where those lists are edited, and a drag on a page that
+     lists every document of every site could not say which site's order
+     it moved.
+158. The client chain is checked on every authenticated
+     `/oauth2/authorize` of a client with `tos-names`, as today; the site
+     chain is checked after every completed sign-in on the issuer,
+     password, magic link, passkey, federated and the verification link
+     alike, and on every sign-in after, against the region resolved at
+     that moment, a region change being a new moment; a site whose
+     `tos-names` is empty gates nothing and draws no policy links; an
+     acceptance is checked by copy and version, so a new version, a
+     document added to a site or a client, or a region whose copy the
+     person never accepted steps the person up at the next sign-in or
+     authorize; the federated-only `/provider-registration/tos` and
+     `POST /provider-registration/tos/accept` retire, every acceptance is
+     `POST /oauth2/accept-terms`, and `GET /api/auth/terms` serves a site
+     or a client pending acceptance alike, gaining `scope`, `site` or
+     `client`, with `client_name` null on a site acceptance and the step
+     subhead naming the site; a signed-in session that owes a site
+     document is refused on every authenticated route, browser path or
+     JSON alike, with `403` `application/problem+json`, `code:
+terms_required` and `next: "/oauth2/accept-terms"`, exactly the
+     `onboarding_required` shape, the routes that admit it being
+     `GET /api/auth/terms`, `GET /api/auth/terms/versions/{version}`,
+     `POST /oauth2/accept-terms`, `POST /auth-cancel`, `POST /user/logout`,
+     `PATCH /api/user/preferences` for the region write, `GET /api/user`
+     answering the `403` with the profile's display fields beside `code`
+     and `next`, and the routes open to everyone; the acceptance's `next`
+     resumes `GET /provider-registration/continue` while the session
+     holds `PROVIDER_REG_USER_ID`, else the saved authorize, the pending
+     authorize URL or `/`; because the step-up on the first reuse of a
+     site or a client that grew a document, or changed a version, is what
+     closes the loophole a one-time gate leaves, and a multi-tenant,
+     white-label issuer must let a site carry no terms at all.
+159. Every version of a copy is kept as a revision,
+     `{ version, content, published_by, published_at }`, written when the
+     copy is created and on every change of its `version`, so the words a
+     person agreed to are never lost; `GET /api/auth/terms` gains
+     `versions: [{ version, published_at }]` newest first for every reader
+     and, only when the account holds an acceptance of an earlier version
+     of this copy, `previous: { version, accepted_at }` and
+     `changes_html`, the current text with the changes since the accepted
+     version marked at word level with `ins` and `del`, the two elements
+     the sanitizer admits for it; `GET /api/auth/terms/versions/{version}`
+     answers `{ version, published_at, content_html }` read-only for the
+     pending copy; on the page a person who accepted an earlier version
+     sees the current text with the changes highlighted under a "What
+     changed" toggle, a new person sees the current text plain and is
+     never asked to sign an old version, and everyone may open an older
+     version read-only from the version list in a list dialog on the same
+     step, never selecting it; `GET /api/user/terms` answers one row per
+     document, `{ name, label, icon, type, version, first_accepted_at, accepted_at, versions: [{ version, accepted_at }] }`;
+     the admin `PATCH` that changes `version` writes the revision and
+     notifies the acceptors as today; because a person asked to accept a
+     new version is owed what changed, a new person does not care and
+     must never be shown the old text to sign, since it was updated for a
+     reason, and the audit must hold the text that was signed.
+160. The acceptance record carries `region_source`, one of `stored`,
+     `geoip` and `address`, beside the copy and the version it names, on
+     the acceptance row alone and in no read; because the audit must say
+     not only which text was signed but why that text was the one shown,
+     and nothing but the audit needs it.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

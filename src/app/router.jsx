@@ -250,7 +250,6 @@ const PAGE_TITLES = {
   '/public/policies/:name': 'auth:policy.pageTitle',
   '/oauth2/consent': 'auth:consent.title',
   '/oauth2/accept-terms': 'auth:terms.pageTitle',
-  '/provider-registration/tos': 'auth:terms.pageTitle',
   '/activate': 'auth:device.title',
   '/activated': 'auth:device.connected',
   '/ciba/approve': 'auth:ciba.title',
@@ -657,7 +656,6 @@ const onboardingRoutes = ({ status, cookie }) => {
     ),
     step('/complete-onboarding/team-name', onboarding, TeamNameStep, 'onboarding'),
     step('/oauth2/accept-terms', policies, TermsPage, 'policies'),
-    step('/provider-registration/tos', policies, TermsPage, 'policies'),
     {
       path: '/public/policies/:name',
       open: hasFeature(status, 'policies'),

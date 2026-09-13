@@ -38,4 +38,42 @@ TermIcon.propTypes = {
   className: PropTypes.string,
 };
 
+const regionalIndicator = letter => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65);
+
+const flagOf = code => [...code.toUpperCase()].map(regionalIndicator).join('');
+
+/**
+ * The flag mark of a terms copy's `regions` entry: a country code draws
+ * that country's flag, `EU` the EU flag, `EEA` the EU flag with the
+ * letters EEA beside it, `UK` the Union Jack (the `GB` flag, `UK` naming
+ * no country of its own); every mark an emoji flag sequence, so no asset
+ * or dependency carries it.
+ */
+export const RegionFlag = ({ region, className = '', ...aria }) => {
+  if (region === 'EEA') {
+    return (
+      <span className={className} {...aria}>
+        {flagOf('EU')} <span className="small">EEA</span>
+      </span>
+    );
+  }
+  if (region === 'UK') {
+    return (
+      <span className={className} {...aria}>
+        {flagOf('GB')}
+      </span>
+    );
+  }
+  return (
+    <span className={className} {...aria}>
+      {flagOf(region)}
+    </span>
+  );
+};
+
+RegionFlag.propTypes = {
+  region: PropTypes.string.isRequired,
+  className: PropTypes.string,
+};
+
 export default TermIcon;

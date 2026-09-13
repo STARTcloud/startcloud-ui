@@ -979,26 +979,28 @@
       "search": "Search templates",
       "create": "Create",
       "edit": "Edit",
-      "copy": "Copy",
-      "copyName": "Name of the copy",
-      "copyTitle": "Copy {{name}}",
       "preview": "Preview",
       "openPublic": "Open public page",
       "delete": "Delete",
-      "undo": "Undo",
       "public": "Public",
+      "everywhereElse": "Everywhere else",
+      "regionOnly": "Region-only",
       "version": "v{{version}}",
       "updatedAt": "updated",
-      "orderSaved": "Order saved.",
-      "created": "The template is created.",
-      "updated": "The template is saved.",
-      "copied": "The template is copied.",
+      "created": "The document is created.",
+      "updated": "The document is saved.",
       "deleted": "{{name}} is deleted.",
-      "deleteTitle": "Delete the template",
+      "deleteTitle": "Delete the copy",
       "deleteBody": "{{name}} and every acceptance record that names it are removed. Type \"{{keyword}}\" to confirm.",
-      "editTitle": "Edit template · {{name}}",
-      "createTitle": "Create a template",
+      "editTitle": "Edit · {{name}}",
+      "createTitle": "Create a document",
       "placeholders": "Placeholders:",
+      "copies": {
+        "add": "Add a copy",
+        "addTitle": "Add a copy · {{name}}",
+        "added": "The copy is added.",
+        "duplicate": "Copy"
+      },
       "field": {
         "name": "Name",
         "regions": "Regions",
@@ -1008,7 +1010,6 @@
         "type": "Type",
         "public": "Public",
         "publicAt": "Publicly accessible at /public/policies/{{name}}",
-        "order": "Display order",
         "content": "Content (Markdown)"
       },
       "type": {
@@ -1030,8 +1031,8 @@
         "delete": "Delete",
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
-        "confirmBody": "{{count}} selected templates are deleted with every acceptance record that names them. Type \"{{keyword}}\" to confirm.",
-        "stepUpReason": "Deleting templates removes them for good.",
+        "confirmBody": "{{count}} selected documents are deleted with every acceptance record that names them. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Deleting documents removes them for good.",
         "errors": {
           "not_found": "no longer exists"
         }
@@ -1147,6 +1148,11 @@
       "m": "Minutes",
       "h": "Hours",
       "d": "Days"
+    },
+    "orderable": {
+      "add": "Add",
+      "remove": "Remove",
+      "handle": "Move {{label}}"
     }
   },
   "setup": {
@@ -2395,6 +2401,10 @@
     "none": "No accepted terms yet.",
     "version": "Version {{version}}",
     "accepted": "accepted",
+    "firstAccepted": "first accepted",
+    "lastAccepted": "accepted",
+    "versions": "{{count}} earlier version",
+    "versions_other": "{{count}} earlier versions",
     "view": "View",
     "type": {
       "site": "Site",

@@ -19,9 +19,20 @@ export const selectableShape = PropTypes.shape({
   labelOf: PropTypes.func,
 });
 
-const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag, selectable }) => {
+const SortableRow = ({
+  item,
+  index,
+  count,
+  keyOf,
+  renderItem,
+  onMove,
+  drag,
+  selectable,
+  handleLabel,
+}) => {
   const { t } = useTranslation();
   const key = keyOf(item);
+  const label = handleLabel ? handleLabel(item) : t('sortable.handle', { label: key });
   const onKeyDown = event => {
     if (event.key === 'ArrowUp') {
       event.preventDefault();
@@ -36,8 +47,8 @@ const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag, sele
     <button
       type="button"
       className="btn btn-sm btn-link text-body-secondary px-1 draggable-item"
-      aria-label={t('sortable.handle', { label: key })}
-      title={t('sortable.handle', { label: key })}
+      aria-label={label}
+      title={label}
       onKeyDown={onKeyDown}
     >
       <FaGripVertical aria-hidden />
@@ -67,8 +78,10 @@ const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag, sele
   );
 };
 
+const itemPropType = PropTypes.oneOfType([PropTypes.object, PropTypes.string, PropTypes.number]);
+
 SortableRow.propTypes = {
-  item: PropTypes.object.isRequired,
+  item: itemPropType.isRequired,
   index: PropTypes.number.isRequired,
   count: PropTypes.number.isRequired,
   keyOf: PropTypes.func.isRequired,
@@ -81,6 +94,7 @@ SortableRow.propTypes = {
     end: PropTypes.func.isRequired,
   }).isRequired,
   selectable: selectableShape,
+  handleLabel: PropTypes.func,
 };
 
 /**
@@ -89,7 +103,10 @@ SortableRow.propTypes = {
  * in its new order after each move; `renderItem(item, handle)` draws the
  * row around the handle it is handed. `selectable`, when given, draws a
  * checkbox at the row's leading edge, left of the drag handle, for a page
- * that picks cards the way a table picks rows.
+ * that picks cards the way a table picks rows. `handleLabel(item)`, when
+ * given, replaces the handle's default `sortable.handle` label, for a
+ * caller whose items carry their own name, a config editor's `orderable`
+ * array of plain strings among them.
  */
 const SortableList = ({
   items,
@@ -98,6 +115,7 @@ const SortableList = ({
   onReorder,
   className = '',
   selectable = null,
+  handleLabel = null,
 }) => {
   const [from, setFrom] = useState(-1);
 
@@ -131,6 +149,7 @@ const SortableList = ({
           onMove={onMove}
           drag={drag}
           selectable={selectable}
+          handleLabel={handleLabel}
         />
       ))}
     </ul>
@@ -138,12 +157,13 @@ const SortableList = ({
 };
 
 SortableList.propTypes = {
-  items: PropTypes.arrayOf(PropTypes.object).isRequired,
+  items: PropTypes.arrayOf(itemPropType).isRequired,
   keyOf: PropTypes.func.isRequired,
   renderItem: PropTypes.func.isRequired,
   onReorder: PropTypes.func.isRequired,
   className: PropTypes.string,
   selectable: selectableShape,
+  handleLabel: PropTypes.func,
 };
 
 export default SortableList;

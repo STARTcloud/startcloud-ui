@@ -10,6 +10,7 @@ const DROPPED_KEYS = [
   'sidebar_minimized',
 ];
 const DROPPED_PREFIXES = ['table_prefs_', 'sidebar_open_', 'sidebar_view_'];
+const PENDING_CODES = ['onboarding_required', 'terms_required'];
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
 const THEME_VALUES = ['auto', 'light', 'dark'];
@@ -90,10 +91,11 @@ export const accountMemberships = user =>
  * user being the cached display fields and `oidc` always false. The API
  * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`.
  * `load({ navigate })` and `begin({ method, navigate })` take the router's
- * `navigate` from `useSession`: a `403 onboarding_required` caches the
- * pending profile the body carries and moves in-router to its `next`, and
- * `begin` with no method, `local` or `magic-link` moves in-router to
- * `/login`, while `oidc-<id>` stays a top-level navigation.
+ * `navigate` from `useSession`: a `403` `onboarding_required` or
+ * `terms_required` caches the pending profile the body carries and moves
+ * in-router to its `next`, and `begin` with no method, `local` or
+ * `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a
+ * top-level navigation.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
@@ -158,7 +160,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
         clear();
         return null;
       }
-      if (error.status === 403 && error.code === 'onboarding_required') {
+      if (error.status === 403 && PENDING_CODES.includes(error.code)) {
         store(error.data);
         const next = typeof error.data?.next === 'string' ? error.data.next : '';
         if (navigate && SAFE_PATH.test(next)) {

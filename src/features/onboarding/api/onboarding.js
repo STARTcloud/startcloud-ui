@@ -40,12 +40,12 @@ export const submitTeamName = body => client.post('/complete-onboarding/team-nam
 export const terms = region =>
   client.get(`/api/auth/terms${region ? `?region=${encodeURIComponent(region)}` : ''}`, OPTIONS);
 
+export const termsVersion = version =>
+  client.get(`/api/auth/terms/versions/${encodeURIComponent(version)}`, OPTIONS);
+
 export const savePreferences = body => client.patch('/api/user/preferences', body, OPTIONS);
 
 export const acceptTerms = body => client.post('/oauth2/accept-terms', body, OPTIONS);
-
-export const acceptProviderTerms = body =>
-  client.post('/provider-registration/tos/accept', body, OPTIONS);
 
 export const geoCountry = () => client.get('/api/public/geo/country', PUBLIC);
 

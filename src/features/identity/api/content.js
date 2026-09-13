@@ -16,6 +16,4 @@ export const updateTerm = (name, patch, region = '') =>
 
 export const deleteTerm = (name, region = '') => client.delete(term(name), variant(region));
 
-export const reorderTerms = ids => client.put('/api/admin/terms/order', { ids });
-
 export const termsBulk = body => client.post('/api/admin/terms/bulk', body);

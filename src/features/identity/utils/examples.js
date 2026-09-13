@@ -390,62 +390,75 @@ export const BRUTE_FORCE = {
 
 export const TERMS = [
   {
-    id: 1,
     name: 'privacy',
-    regions: [],
     friendly_name: 'Privacy Policy',
     icon: 'file-text',
-    version: '3.0',
     type: 'SITE',
     is_public: true,
-    display_order: 10,
-    content: '## 1. Information We Collect\n\nWe collect information you provide directly to us…',
-    created_by: 'mark@m4kr.net',
-    updated_at: '2026-08-14T00:00:00Z',
+    copies: [
+      {
+        id: 1,
+        regions: [],
+        version: '3.0',
+        content:
+          '## 1. Information We Collect\n\nWe collect information you provide directly to us…',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-08-14T00:00:00Z',
+      },
+      {
+        id: 5,
+        regions: ['EEA', 'UK'],
+        version: '3.0',
+        content:
+          '## 1. Information We Collect\n\nWe collect information you provide directly to us, as the GDPR and the UK GDPR allow…',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-08-14T00:00:00Z',
+      },
+    ],
   },
   {
-    id: 2,
     name: 'terms',
-    regions: [],
     friendly_name: 'Terms of Service',
     icon: 'file-text',
-    version: '2.0',
     type: 'SITE',
     is_public: true,
-    display_order: 20,
-    content: '## Terms\n\n…',
-    created_by: 'mark@m4kr.net',
-    updated_at: '2026-01-09T00:00:00Z',
+    copies: [
+      {
+        id: 2,
+        regions: [],
+        version: '2.0',
+        content: '## Terms\n\n…',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-01-09T00:00:00Z',
+      },
+    ],
   },
   {
-    id: 3,
     name: 'conductor-msa',
-    regions: [],
     friendly_name: 'Master Services Agreement',
     icon: 'shield-lock',
-    version: '2.1',
     type: 'CLIENT',
     is_public: false,
-    display_order: 100,
-    content:
-      '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} …',
-    created_by: 'mark@m4kr.net',
-    updated_at: '2026-07-02T00:00:00Z',
-  },
-  {
-    id: 4,
-    name: 'conductor-msa',
-    regions: ['EU'],
-    friendly_name: 'Master Services Agreement',
-    icon: 'shield-lock',
-    version: '2.1',
-    type: 'CLIENT',
-    is_public: false,
-    display_order: 100,
-    content:
-      '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} under the law of the European Union …',
-    created_by: 'mark@m4kr.net',
-    updated_at: '2026-07-02T00:00:00Z',
+    copies: [
+      {
+        id: 3,
+        regions: [],
+        version: '2.1',
+        content:
+          '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} …',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-07-02T00:00:00Z',
+      },
+      {
+        id: 4,
+        regions: ['EU'],
+        version: '2.1',
+        content:
+          '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} under the law of the European Union …',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-07-02T00:00:00Z',
+      },
+    ],
   },
 ];
 

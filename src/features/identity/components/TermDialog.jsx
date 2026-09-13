@@ -16,21 +16,29 @@ export const TERM_TYPES = ['CLIENT', 'SITE', 'BOTH'];
 
 export const REGION_SETS = ['EU', 'EEA', 'UK'];
 
-export const regionsOf = term => (Array.isArray(term.regions) ? term.regions : []);
+export const regionsOf = row => (Array.isArray(row?.regions) ? row.regions : []);
 
-export const termShape = PropTypes.shape({
-  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  name: PropTypes.string.isRequired,
+export const regionOfCopy = copy => regionsOf(copy)[0] || '';
+
+export const defaultCopyOf = document =>
+  (document.copies || []).find(copy => regionsOf(copy).length === 0) || null;
+
+export const copyShape = PropTypes.shape({
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   regions: PropTypes.arrayOf(PropTypes.string),
-  friendly_name: PropTypes.string,
-  icon: PropTypes.string,
   version: PropTypes.string,
-  type: PropTypes.string,
-  is_public: PropTypes.bool,
-  display_order: PropTypes.number,
   content: PropTypes.string,
   created_by: PropTypes.string,
   updated_at: PropTypes.string,
+});
+
+export const documentShape = PropTypes.shape({
+  name: PropTypes.string.isRequired,
+  friendly_name: PropTypes.string,
+  icon: PropTypes.string,
+  type: PropTypes.string,
+  is_public: PropTypes.bool,
+  copies: PropTypes.arrayOf(copyShape).isRequired,
 });
 
 export const placeholderShape = PropTypes.shape({
@@ -39,61 +47,44 @@ export const placeholderShape = PropTypes.shape({
   description: PropTypes.string,
 });
 
-const SCHEMA = {
-  required: ['name', 'version', 'type', 'content'],
+const DOC_LABELS = {
+  name: 'admin.terms.field.name',
+  friendly_name: 'admin.terms.field.displayName',
+  icon: 'admin.terms.field.icon',
+  type: 'admin.terms.field.type',
+  is_public: 'admin.terms.field.public',
+};
+
+const COPY_LABELS = {
+  regions: 'admin.terms.field.regions',
+  version: 'admin.terms.field.version',
+  content: 'admin.terms.field.content',
+};
+
+const docSchema = ({ editing }) => ({
+  required: editing ? ['friendly_name', 'type'] : ['name', 'friendly_name', 'type'],
   properties: {
     name: { $ref: '#/$defs/slug' },
-    regions: { type: 'array', items: { $ref: '#/$defs/region' } },
     friendly_name: { type: 'string' },
     icon: { $ref: '#/$defs/iconName' },
-    version: { type: 'string' },
     type: { type: 'string', enum: TERM_TYPES },
     is_public: { type: 'boolean' },
-    display_order: { type: 'integer' },
+  },
+});
+
+const COPY_SCHEMA = {
+  required: ['version', 'content'],
+  properties: {
+    regions: { type: 'array', items: { $ref: '#/$defs/region' } },
+    version: { type: 'string' },
     content: { type: 'string' },
   },
 };
 
-const LABELS = {
-  name: 'admin.terms.field.name',
-  regions: 'admin.terms.field.regions',
-  friendly_name: 'admin.terms.field.displayName',
-  icon: 'admin.terms.field.icon',
-  version: 'admin.terms.field.version',
-  type: 'admin.terms.field.type',
-  is_public: 'admin.terms.field.public',
-  display_order: 'admin.terms.field.order',
-  content: 'admin.terms.field.content',
-};
-
-const EMPTY = {
-  name: '',
-  regions: [],
-  friendly_name: '',
-  icon: 'file-text',
-  version: '1.0',
-  type: 'SITE',
-  is_public: false,
-  display_order: 0,
-  content: '',
-};
-
-const formOf = term => ({
-  name: term.name || '',
-  regions: regionsOf(term),
-  friendly_name: term.friendly_name || '',
-  icon: TERM_ICON_NAMES.includes(term.icon) ? term.icon : 'file-text',
-  version: term.version || '',
-  type: TERM_TYPES.includes(term.type) ? term.type : 'SITE',
-  is_public: Boolean(term.is_public),
-  display_order: Number(term.display_order) || 0,
-  content: term.content || '',
-});
-
-const TextField = ({ name, form, rules, onChange, readOnly = false }) => {
+const TextField = ({ name, form, rules, onChange, labels, readOnly = false }) => {
   const { t } = useTranslation();
   return (
-    <Field id={rules.idFor(name)} label={t(LABELS[name])} error={rules.errors[name] || ''}>
+    <Field id={rules.idFor(name)} label={t(labels[name])} error={rules.errors[name] || ''}>
       {aria => (
         <input
           {...aria}
@@ -114,13 +105,14 @@ TextField.propTypes = {
   form: PropTypes.object.isRequired,
   rules: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
+  labels: PropTypes.object.isRequired,
   readOnly: PropTypes.bool,
 };
 
-const SelectField = ({ name, form, rules, onChange, options, labelOf }) => {
+const SelectField = ({ name, form, rules, onChange, labels, options, labelOf }) => {
   const { t } = useTranslation();
   return (
-    <Field id={rules.idFor(name)} label={t(LABELS[name])} error={rules.errors[name] || ''}>
+    <Field id={rules.idFor(name)} label={t(labels[name])} error={rules.errors[name] || ''}>
       {aria => (
         <select
           {...aria}
@@ -145,8 +137,154 @@ SelectField.propTypes = {
   form: PropTypes.object.isRequired,
   rules: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
+  labels: PropTypes.object.isRequired,
   options: PropTypes.arrayOf(PropTypes.string).isRequired,
   labelOf: PropTypes.func.isRequired,
+};
+
+/**
+ * The document's Create and Edit dialog: name (fixed while editing),
+ * display name, the icon picked from the estate's glyph set, type and
+ * public, the fields decision 157 keeps at the document's own level and
+ * writes to every copy through `POST` or `PATCH /api/admin/terms/{name}`.
+ */
+export const TermDocumentDialog = ({ document = null, onClose, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const editing = document !== null;
+  const [form, setForm] = useState(() => ({
+    name: document?.name || '',
+    friendly_name: document?.friendly_name || '',
+    icon: TERM_ICON_NAMES.includes(document?.icon) ? document.icon : 'file-text',
+    type: TERM_TYPES.includes(document?.type) ? document.type : 'SITE',
+    is_public: Boolean(document?.is_public),
+  }));
+  const [busy, setBusy] = useState(false);
+  const rules = useFormRules({
+    formKey: 'terms',
+    schema: docSchema({ editing }),
+    values: form,
+    labels: DOC_LABELS,
+    idPrefix: 'term-doc',
+  });
+
+  const onChange = (name, value) => setForm(current => ({ ...current, [name]: value }));
+
+  const save = event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    setBusy(true);
+    const call = editing
+      ? updateTerm(document.name, {
+          friendly_name: form.friendly_name,
+          icon: form.icon,
+          type: form.type,
+          is_public: form.is_public,
+        })
+      : createTerm({ ...form, regions: [], version: '1.0', content: '' });
+    call
+      .then(() => {
+        notify('success', t(editing ? 'admin.terms.updated' : 'admin.terms.created'));
+        onSaved();
+        onClose();
+      })
+      .catch(error => {
+        if (!rules.applyServerErrors(error)) {
+          notify('danger', t(error.messageKey || 'errors.request'));
+        }
+      })
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
+      <form onSubmit={save} noValidate>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">
+            {editing
+              ? t('admin.terms.editTitle', { name: document.name })
+              : t('admin.terms.createTitle')}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FormErrorSummary errors={rules.summary} />
+          <div className="row">
+            <div className="col-md-6">
+              <TextField
+                name="name"
+                form={form}
+                rules={rules}
+                onChange={onChange}
+                labels={DOC_LABELS}
+                readOnly={editing}
+              />
+            </div>
+            <div className="col-md-6">
+              <TextField
+                name="friendly_name"
+                form={form}
+                rules={rules}
+                onChange={onChange}
+                labels={DOC_LABELS}
+              />
+            </div>
+            <div className="col-md-4">
+              <SelectField
+                name="icon"
+                form={form}
+                rules={rules}
+                onChange={onChange}
+                labels={DOC_LABELS}
+                options={TERM_ICON_NAMES}
+                labelOf={name => name}
+              />
+            </div>
+            <div className="col-md-4">
+              <SelectField
+                name="type"
+                form={form}
+                rules={rules}
+                onChange={onChange}
+                labels={DOC_LABELS}
+                options={TERM_TYPES}
+                labelOf={type => t(`admin.terms.type.${type.toLowerCase()}`)}
+              />
+            </div>
+            <div className="col-md-4 d-flex align-items-center">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id={rules.idFor('is_public')}
+                  checked={form.is_public}
+                  onChange={event => onChange('is_public', event.target.checked)}
+                />
+                <label className="form-check-label" htmlFor={rules.idFor('is_public')}>
+                  {t('admin.terms.field.publicAt', { name: form.name || '…' })}
+                </label>
+              </div>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
+            {t('admin.buttons.cancel')}
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {t('admin.buttons.save')}
+          </button>
+        </Modal.Footer>
+      </form>
+    </Modal>
+  );
+};
+
+TermDocumentDialog.propTypes = {
+  document: documentShape,
+  onClose: PropTypes.func.isRequired,
+  onSaved: PropTypes.func.isRequired,
 };
 
 const useCountries = () => {
@@ -171,7 +309,11 @@ const RegionsField = ({ form, rules, onChange }) => {
   const { t } = useTranslation();
   const countries = useCountries();
   return (
-    <Field id={rules.idFor('regions')} label={t(LABELS.regions)} error={rules.errors.regions || ''}>
+    <Field
+      id={rules.idFor('regions')}
+      label={t(COPY_LABELS.regions)}
+      error={rules.errors.regions || ''}
+    >
       {aria => (
         <select
           {...aria}
@@ -209,29 +351,34 @@ RegionsField.propTypes = {
 };
 
 /**
- * The Create and Edit dialog of the Terms page, mounted per opening: name
- * as a slug (read-only while editing), the `regions` multi-select over the
- * three sets and the shared country list, empty for the default variant,
- * display name, the icon picked
- * from the estate's glyph set and stored as its name, version, type,
- * public, order, and the markdown content in a textarea with its preview
- * beside it and the placeholder help from the placeholders call;
- * validated through `useFormRules` against the issuer's `terms` form, one
- * `POST` or `PATCH` on Save, the `PATCH` addressing the edited variant by
- * the first region it carries.
+ * The copy's Add, Copy (to a new region) and Edit dialog: `regions`
+ * (required to add or duplicate, the source copy's own set to edit),
+ * version and the markdown content with a live preview, saved through
+ * `POST /api/admin/terms` for a new copy or
+ * `PATCH /api/admin/terms/{name}?region=` for the copy being edited.
  */
-const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
+export const TermCopyDialog = ({
+  document,
+  source = null,
+  editing = false,
+  placeholders,
+  onClose,
+  onSaved,
+}) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [form, setForm] = useState(() => (term ? formOf(term) : EMPTY));
+  const [form, setForm] = useState(() => ({
+    regions: source ? regionsOf(source) : [],
+    version: source?.version || '',
+    content: source?.content || '',
+  }));
   const [busy, setBusy] = useState(false);
-  const editing = term !== null;
   const rules = useFormRules({
     formKey: 'terms',
-    schema: SCHEMA,
+    schema: COPY_SCHEMA,
     values: form,
-    labels: LABELS,
-    idPrefix: 'term',
+    labels: COPY_LABELS,
+    idPrefix: 'term-copy',
   });
 
   const onChange = (name, value) => setForm(current => ({ ...current, [name]: value }));
@@ -242,10 +389,19 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
       return;
     }
     setBusy(true);
-    const call = editing ? updateTerm(term.name, form, regionsOf(term)[0]) : createTerm(form);
+    const call = editing
+      ? updateTerm(document.name, form, regionOfCopy(source))
+      : createTerm({
+          name: document.name,
+          friendly_name: document.friendly_name,
+          icon: document.icon,
+          type: document.type,
+          is_public: document.is_public,
+          ...form,
+        });
     call
       .then(() => {
-        notify('success', t(editing ? 'admin.terms.updated' : 'admin.terms.created'));
+        notify('success', t(editing ? 'admin.terms.updated' : 'admin.terms.copies.added'));
         onSaved();
         onClose();
       })
@@ -258,87 +414,38 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} size="xl" dialogClassName="form-modal" scrollable>
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={save} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">
             {editing
-              ? t('admin.terms.editTitle', { name: term.name })
-              : t('admin.terms.createTitle')}
+              ? t('admin.terms.editTitle', { name: document.friendly_name || document.name })
+              : t('admin.terms.copies.addTitle', { name: document.friendly_name || document.name })}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <FormErrorSummary errors={rules.summary} />
           <div className="row">
             <div className="col-md-6">
-              <TextField
-                name="name"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                readOnly={editing}
-              />
-            </div>
-            <div className="col-md-6">
-              <TextField name="friendly_name" form={form} rules={rules} onChange={onChange} />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="icon"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                options={TERM_ICON_NAMES}
-                labelOf={name => name}
-              />
-            </div>
-            <div className="col-md-4">
-              <TextField name="version" form={form} rules={rules} onChange={onChange} />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="type"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                options={TERM_TYPES}
-                labelOf={type => t(`admin.terms.type.${type.toLowerCase()}`)}
-              />
-            </div>
-            <div className="col-md-4">
               <Field
-                id={rules.idFor('display_order')}
-                label={t(LABELS.display_order)}
-                error={rules.errors.display_order || ''}
+                id={rules.idFor('version')}
+                label={t(COPY_LABELS.version)}
+                error={rules.errors.version || ''}
               >
                 {aria => (
                   <input
                     {...aria}
-                    type="number"
+                    type="text"
                     className="form-control"
-                    value={form.display_order}
-                    onChange={event => onChange('display_order', Number(event.target.value) || 0)}
-                    onBlur={() => rules.onBlur('display_order')}
+                    value={form.version}
+                    onChange={event => onChange('version', event.target.value)}
+                    onBlur={() => rules.onBlur('version')}
                   />
                 )}
               </Field>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-6">
               <RegionsField form={form} rules={rules} onChange={onChange} />
-            </div>
-            <div className="col-md-4 d-flex align-items-center">
-              <div className="form-check">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id={rules.idFor('is_public')}
-                  checked={form.is_public}
-                  onChange={event => onChange('is_public', event.target.checked)}
-                />
-                <label className="form-check-label" htmlFor={rules.idFor('is_public')}>
-                  {t('admin.terms.field.publicAt', { name: form.name || '…' })}
-                </label>
-              </div>
             </div>
           </div>
           <div className="small text-muted mb-2">
@@ -353,7 +460,7 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
             <div className="col-md-6">
               <Field
                 id={rules.idFor('content')}
-                label={t(LABELS.content)}
+                label={t(COPY_LABELS.content)}
                 error={rules.errors.content || ''}
               >
                 {aria => (
@@ -389,11 +496,11 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
   );
 };
 
-TermDialog.propTypes = {
-  term: termShape,
+TermCopyDialog.propTypes = {
+  document: documentShape.isRequired,
+  source: copyShape,
+  editing: PropTypes.bool,
   placeholders: PropTypes.arrayOf(placeholderShape).isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
-
-export default TermDialog;

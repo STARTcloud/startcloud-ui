@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,8 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import PhoneInput from '../../../components/common/PhoneInput';
 import ProblemAlert from '../../../components/common/ProblemAlert';
+import RegionModal, { regionFlag, regionLabel } from '../../../components/common/RegionModal';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { loadCountries } from '../../../lib/countries';
@@ -18,18 +21,16 @@ import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { NON_BLANK } from '../../../utils/validation';
 import {
-  acceptProviderTerms,
   acceptTerms,
   geoCountry,
   placesKey as fetchPlacesKey,
   savePreferences,
   terms as fetchTerms,
+  termsVersion,
 } from '../api/onboarding';
 
-const PROVIDER_ROUTE = '/provider-registration/tos';
 const SESSION_EXPIRED = '/login?error=session_expired';
 const SCALES = [0.85, 1, 1.15, 1.3];
-const REGION_LABEL_KEYS = { EU: 'eu', EEA: 'eea', UK: 'uk' };
 const ADDRESS_PARTS = {
   'address-line1': 'line1',
   'address-line2': 'line2',
@@ -51,6 +52,14 @@ const fieldShape = PropTypes.shape({
   value: PropTypes.string,
 });
 
+const formatDate = (value, language) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(date);
+};
+
 const schemaFor = fields => ({
   properties: {
     fields: {
@@ -66,6 +75,9 @@ const schemaFor = fields => ({
 });
 
 const partOf = field => ADDRESS_PARTS[field.autocomplete] || field.param;
+
+const documentHtmlOf = (state, whatChanged) =>
+  whatChanged && state.previous ? state.changes_html : state.content_html;
 
 const initialValues = fields =>
   Object.fromEntries(fields.map(field => [field.param, field.value || '']));
@@ -344,71 +356,134 @@ const useTerms = () => {
   return { state, problem, setProblem, reload, changeRegion, switchingRegion };
 };
 
-const RegionPicker = ({ regionsOffered = [], current = '', value = '', onChange, disabled }) => {
-  const { t, i18n } = useTranslation(['auth']);
-  const names = useMemo(() => {
-    try {
-      return new Intl.DisplayNames([i18n.language], { type: 'region' });
-    } catch {
-      return null;
-    }
-  }, [i18n.language]);
-  const label = code => {
-    if (!code) {
-      return t('terms.region.default');
-    }
-    if (REGION_LABEL_KEYS[code]) {
-      return t(`terms.region.${REGION_LABEL_KEYS[code]}`);
-    }
-    return names?.of(code) || code;
-  };
-  if (regionsOffered.length < 2) {
-    return null;
-  }
+const RegionButton = ({ state, switchingRegion, onPick }) => {
+  const { t } = useTranslation(['auth']);
+  const [open, setOpen] = useState(false);
+  const regionsOffered = state.regions_offered || [];
+  const disabled = regionsOffered.length < 2 || switchingRegion;
+  const title =
+    regionsOffered.length < 2
+      ? t('terms.region.onlyOne')
+      : t('terms.region.change', { region: regionLabel(state.person_region, t) });
+
   return (
-    <span className="auth-row auth-row-tight">
-      <span className="auth-hint">
-        {current ? t('terms.region.notIn', { region: label(current) }) : t('terms.region.choose')}
-      </span>
-      <select
-        className="form-select form-select-sm auth-region-select"
-        aria-label={t('terms.region.choose')}
-        value={value || ''}
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        title={title}
+        aria-label={title}
         disabled={disabled}
-        onChange={event => onChange(event.target.value)}
+        onClick={() => setOpen(true)}
       >
-        {regionsOffered.map(code => (
-          <option key={code || 'default'} value={code || ''}>
-            {label(code)}
-          </option>
-        ))}
-      </select>
-    </span>
+        {regionFlag(state.person_region)}
+      </button>
+      <RegionModal
+        show={open}
+        regionsOffered={regionsOffered}
+        current={state.region || ''}
+        onPick={code => {
+          setOpen(false);
+          onPick(code);
+        }}
+        onClose={() => setOpen(false)}
+      />
+    </>
   );
 };
 
-RegionPicker.propTypes = {
-  regionsOffered: PropTypes.arrayOf(PropTypes.string),
-  current: PropTypes.string,
-  value: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
-  disabled: PropTypes.bool.isRequired,
+RegionButton.propTypes = {
+  state: PropTypes.object.isRequired,
+  switchingRegion: PropTypes.bool.isRequired,
+  onPick: PropTypes.func.isRequired,
 };
 
-const TermsHead = ({ state, scale, onScale, onRegionChange, switchingRegion }) => {
+const VersionsModal = ({ show, versions, current, onClose }) => {
+  const { t, i18n } = useTranslation(['auth', 'shared']);
+  const [viewing, setViewing] = useState(null);
+
+  const close = () => {
+    setViewing(null);
+    onClose();
+  };
+
+  const openVersion = targetVersion => {
+    setViewing('loading');
+    termsVersion(targetVersion)
+      .then(answer => setViewing(answer))
+      .catch(() => setViewing(null));
+  };
+
+  return (
+    <Modal show={show} onHide={close} dialogClassName="chrome-modal list-modal" scrollable>
+      <Modal.Header closeButton>
+        <Modal.Title as="h5">{t('terms.versions.title')}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {viewing === 'loading' ? <AuthSpinner label={t('shared:loading')} /> : null}
+        {viewing && viewing !== 'loading' ? (
+          <>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary mb-3"
+              onClick={() => setViewing(null)}
+            >
+              {t('policy.back')}
+            </button>
+            <MarkdownArticle html={viewing.content_html} className="auth-doc-flow" />
+          </>
+        ) : null}
+        {!viewing ? (
+          <div className="list-group">
+            {versions.map(row => (
+              <button
+                key={row.version}
+                type="button"
+                className="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+                onClick={() => openVersion(row.version)}
+              >
+                <span>{t('terms.version', { version: row.version })}</span>
+                <span className="d-flex align-items-center gap-2">
+                  <span className="auth-hint">
+                    {t('terms.versions.published', {
+                      date: formatDate(row.published_at, i18n.language),
+                    })}
+                  </span>
+                  {row.version === current ? (
+                    <span className="auth-badge">{t('terms.versions.current')}</span>
+                  ) : null}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+VersionsModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  versions: PropTypes.arrayOf(
+    PropTypes.shape({ version: PropTypes.string.isRequired, published_at: PropTypes.string })
+  ).isRequired,
+  current: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+const TermsHead = ({ state, scale, onScale, onRegionChange, switchingRegion, onOpenVersions }) => {
   const { t } = useTranslation(['auth']);
+  const versions = state.versions || [];
   return (
     <div className="auth-row">
       <span className="auth-hint">{t('terms.version', { version: state.version })}</span>
-      {state.region ? <span className="auth-badge">{state.region}</span> : null}
+      {versions.length > 1 ? (
+        <button type="button" className="btn btn-sm btn-link p-0" onClick={onOpenVersions}>
+          {t('terms.versions.open')}
+        </button>
+      ) : null}
       <span className="auth-badge">{t('terms.step', { n: state.step, m: state.total })}</span>
-      <RegionPicker
-        regionsOffered={state.regions_offered}
-        current={state.region}
-        value={state.region}
-        onChange={onRegionChange}
-        disabled={switchingRegion}
-      />
+      <RegionButton state={state} switchingRegion={switchingRegion} onPick={onRegionChange} />
       <FontSize scale={scale} onScale={onScale} />
     </div>
   );
@@ -420,18 +495,49 @@ TermsHead.propTypes = {
   onScale: PropTypes.func.isRequired,
   onRegionChange: PropTypes.func.isRequired,
   switchingRegion: PropTypes.bool.isRequired,
+  onOpenVersions: PropTypes.func.isRequired,
+};
+
+const WhatChangedRow = ({ state, active, onToggle }) => {
+  const { t, i18n } = useTranslation(['auth']);
+  if (!state.previous) {
+    return null;
+  }
+  return (
+    <div className="auth-row auth-row-start">
+      <button
+        type="button"
+        className={`btn btn-sm btn-outline-secondary${active ? ' active' : ''}`}
+        aria-pressed={active}
+        onClick={onToggle}
+      >
+        {t('terms.whatChanged')}
+      </button>
+      <span className="auth-hint">
+        {t('terms.changedSince', {
+          version: state.previous.version,
+          date: formatDate(state.previous.accepted_at, i18n.language),
+        })}
+      </span>
+    </div>
+  );
+};
+
+WhatChangedRow.propTypes = {
+  state: PropTypes.object.isRequired,
+  active: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
 };
 
 const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const report = useProblemReporter();
-  const post = location.pathname === PROVIDER_ROUTE ? acceptProviderTerms : acceptTerms;
 
   return (fields, rules = null) => {
     setProblem(null);
     setBusy(true);
-    post({ tos_name: state.name, fields })
+    acceptTerms({ tos_name: state.name, fields })
       .then(answer => {
         const next = typeof answer?.next === 'string' ? answer.next : '';
         if (next.split(/[?#]/)[0] === location.pathname) {
@@ -502,8 +608,10 @@ const CollectingTerms = ({
   onAccept,
   onRegionChange,
   switchingRegion,
+  onOpenVersions,
 }) => {
   const { t } = useTranslation(['auth']);
+  const [whatChanged, setWhatChanged] = useState(true);
   const fields = useMemo(() => state.fields || [], [state.fields]);
   const schema = useMemo(() => schemaFor(fields), [fields]);
   const hasAddress = fields.some(field => field.group === 'address');
@@ -524,6 +632,7 @@ const CollectingTerms = ({
         .join(', '),
     };
   }, [values.fields, record]);
+  const documentHtml = documentHtmlOf(state, whatChanged);
 
   const submit = event => {
     event.preventDefault();
@@ -541,9 +650,15 @@ const CollectingTerms = ({
         onScale={onScale}
         onRegionChange={onRegionChange}
         switchingRegion={switchingRegion}
+        onOpenVersions={onOpenVersions}
+      />
+      <WhatChangedRow
+        state={state}
+        active={whatChanged}
+        onToggle={() => setWhatChanged(value => !value)}
       />
       <MarkdownArticle
-        html={state.content_html}
+        html={documentHtml}
         fills={fills}
         fontScale={scale}
         className="auth-doc-flow"
@@ -596,31 +711,102 @@ CollectingTerms.propTypes = {
   onAccept: PropTypes.func.isRequired,
   onRegionChange: PropTypes.func.isRequired,
   switchingRegion: PropTypes.bool.isRequired,
+  onOpenVersions: PropTypes.func.isRequired,
+};
+
+const ClassicTerms = ({
+  state,
+  scale,
+  onScale,
+  busy,
+  onAccept,
+  onRegionChange,
+  switchingRegion,
+  onOpenVersions,
+}) => {
+  const { t } = useTranslation(['auth']);
+  const [whatChanged, setWhatChanged] = useState(true);
+  const documentHtml = documentHtmlOf(state, whatChanged);
+  return (
+    <>
+      <TermsHead
+        state={state}
+        scale={scale}
+        onScale={onScale}
+        onRegionChange={onRegionChange}
+        switchingRegion={switchingRegion}
+        onOpenVersions={onOpenVersions}
+      />
+      <WhatChangedRow
+        state={state}
+        active={whatChanged}
+        onToggle={() => setWhatChanged(value => !value)}
+      />
+      <div className="auth-doc">
+        <MarkdownArticle html={documentHtml} fontScale={scale} />
+      </div>
+      <button
+        type="button"
+        className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
+        disabled={busy}
+        onClick={() => onAccept({})}
+      >
+        {t('terms.accept')}
+      </button>
+    </>
+  );
+};
+
+ClassicTerms.propTypes = {
+  state: PropTypes.object.isRequired,
+  scale: PropTypes.number.isRequired,
+  onScale: PropTypes.func.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onAccept: PropTypes.func.isRequired,
+  onRegionChange: PropTypes.func.isRequired,
+  switchingRegion: PropTypes.bool.isRequired,
+  onOpenVersions: PropTypes.func.isRequired,
+};
+
+const subtitleOf = (state, collecting, t, status) => {
+  if (!state || collecting) {
+    return '';
+  }
+  return state.scope === 'site'
+    ? t('terms.site', { site: status.brand.name })
+    : t('terms.before', { client: state.client_name });
 };
 
 /**
- * `/oauth2/accept-terms` and `/provider-registration/tos`: one document
- * from `GET /api/auth/terms` in the one wide column, classic (the pane,
- * "I accept and continue") or collecting (the document as page copy, the identity
- * field group and the address as the shared `AddressFields` with the
- * Places lookup, every field prefilled from its `value` and editable, the
- * address parts posted under the listed fields' params, the `tel` field
- * as the shared `PhoneInput`, the blanks in every HTML member filling as
- * the person types, `full_name` joined from the names and `address` from
- * the parts present, the acknowledgment row and "I Agree & Continue");
- * Decline posts `/auth-cancel`; a `next` that is this route
- * again swaps the document, moves focus to the heading and announces the
- * step.
+ * `/oauth2/accept-terms`: one document from `GET /api/auth/terms` in the
+ * one wide column, classic (the pane, "I accept and continue") or
+ * collecting (the document as page copy, the identity field group and the
+ * address as the shared `AddressFields` with the Places lookup, every
+ * field prefilled from its `value` and editable, the address parts posted
+ * under the listed fields' params, the `tel` field as the shared
+ * `PhoneInput`, the blanks in every HTML member filling as the person
+ * types, `full_name` joined from the names and `address` from the parts
+ * present, the acknowledgment row and "I Agree & Continue"); the head row
+ * carries the region flag button (`person_region`, opening a list dialog
+ * of `regions_offered`) and, while more than one version exists, a
+ * "Versions" link into a read-only version list; a person who accepted an
+ * earlier version of the copy sees `changes_html` under a "What changed"
+ * toggle instead of the plain text; the subtitle names the site for a
+ * site-scope acceptance and the client otherwise. Decline posts
+ * `/auth-cancel`; a `next` that is this route again swaps the document,
+ * moves focus to the heading and announces the step.
  */
 const TermsPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const report = useProblemReporter();
+  const status = useStatus();
   const heading = useRef(null);
   const { state, problem, setProblem, reload, changeRegion, switchingRegion } = useTerms();
   const [scale, setScale] = useState(1);
   const [busy, setBusy] = useState(false);
   const [announce, setAnnounce] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
   const accept = useAccept({ returnTo, state, setProblem, reload, setBusy, setAnnounce });
 
   useEffect(() => {
@@ -639,11 +825,12 @@ const TermsPage = ({ returnTo }) => {
       .catch(error => setProblem(report(error)));
 
   const collecting = Boolean(state?.collecting);
+  const subtitle = subtitleOf(state, collecting, t, status);
 
   return (
     <AuthShell
       title={state?.label || t('terms.pageTitle')}
-      subtitle={state && !collecting ? t('terms.before', { client: state.client_name }) : ''}
+      subtitle={subtitle}
       wide
       headingRef={heading}
     >
@@ -655,30 +842,8 @@ const TermsPage = ({ returnTo }) => {
       {problem ? <ProblemAlert problem={problem} /> : null}
       {!state && !problem ? <AuthSpinner label={t('shared:loading')} /> : null}
       {state && !collecting ? (
-        <>
-          <TermsHead
-            state={state}
-            scale={scale}
-            onScale={setScale}
-            onRegionChange={changeRegion}
-            switchingRegion={switchingRegion}
-          />
-          <div className="auth-doc">
-            <MarkdownArticle html={state.content_html} fontScale={scale} />
-          </div>
-          <button
-            type="button"
-            className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
-            disabled={busy}
-            onClick={() => accept({})}
-          >
-            {t('terms.accept')}
-          </button>
-        </>
-      ) : null}
-      {state && collecting ? (
-        <CollectingTerms
-          key={`${state.name}-${state.step}`}
+        <ClassicTerms
+          key={`${state.name}-${state.step}-${state.version}`}
           state={state}
           scale={scale}
           onScale={setScale}
@@ -686,6 +851,20 @@ const TermsPage = ({ returnTo }) => {
           onAccept={accept}
           onRegionChange={changeRegion}
           switchingRegion={switchingRegion}
+          onOpenVersions={() => setVersionsOpen(true)}
+        />
+      ) : null}
+      {state && collecting ? (
+        <CollectingTerms
+          key={`${state.name}-${state.step}-${state.version}`}
+          state={state}
+          scale={scale}
+          onScale={setScale}
+          busy={busy}
+          onAccept={accept}
+          onRegionChange={changeRegion}
+          switchingRegion={switchingRegion}
+          onOpenVersions={() => setVersionsOpen(true)}
         />
       ) : null}
       {state ? (
@@ -697,6 +876,14 @@ const TermsPage = ({ returnTo }) => {
         >
           {t('terms.decline')}
         </button>
+      ) : null}
+      {state ? (
+        <VersionsModal
+          show={versionsOpen}
+          versions={state.versions || []}
+          current={state.version}
+          onClose={() => setVersionsOpen(false)}
+        />
       ) : null}
     </AuthShell>
   );

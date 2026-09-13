@@ -979,26 +979,28 @@
       "search": "Buscar plantillas",
       "create": "Crear",
       "edit": "Editar",
-      "copy": "Copiar",
-      "copyName": "Nombre de la copia",
-      "copyTitle": "Copiar {{name}}",
       "preview": "Vista previa",
       "openPublic": "Abrir la página pública",
       "delete": "Eliminar",
-      "undo": "Deshacer",
       "public": "Público",
+      "everywhereElse": "En cualquier otro lugar",
+      "regionOnly": "Solo por región",
       "version": "v{{version}}",
       "updatedAt": "actualizado",
-      "orderSaved": "Orden guardado.",
-      "created": "La plantilla se ha creado.",
-      "updated": "La plantilla se ha guardado.",
-      "copied": "La plantilla se ha copiado.",
+      "created": "El documento se ha creado.",
+      "updated": "El documento se ha guardado.",
       "deleted": "{{name}} se ha eliminado.",
-      "deleteTitle": "Eliminar la plantilla",
+      "deleteTitle": "Eliminar la copia",
       "deleteBody": "{{name}} y todos los registros de aceptación que la nombran se eliminan. Escribe \"{{keyword}}\" para confirmar.",
-      "editTitle": "Editar plantilla · {{name}}",
-      "createTitle": "Crear una plantilla",
+      "editTitle": "Editar · {{name}}",
+      "createTitle": "Crear un documento",
       "placeholders": "Marcadores:",
+      "copies": {
+        "add": "Añadir una copia",
+        "addTitle": "Añadir una copia · {{name}}",
+        "added": "La copia se ha añadido.",
+        "duplicate": "Copiar"
+      },
       "field": {
         "name": "Nombre",
         "regions": "Regiones",
@@ -1008,7 +1010,6 @@
         "type": "Tipo",
         "public": "Público",
         "publicAt": "Accesible públicamente en /public/policies/{{name}}",
-        "order": "Orden de visualización",
         "content": "Contenido (Markdown)"
       },
       "type": {
@@ -1030,8 +1031,8 @@
         "delete": "Eliminar",
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
-        "confirmBody": "{{count}} plantillas seleccionadas se eliminan con todos los registros de aceptación que las nombran. Escribe \"{{keyword}}\" para confirmar.",
-        "stepUpReason": "Eliminar plantillas las quita para siempre.",
+        "confirmBody": "{{count}} documentos seleccionados se eliminan con todos los registros de aceptación que los nombran. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Eliminar documentos los quita para siempre.",
         "errors": {
           "not_found": "ya no existe"
         }
@@ -1147,6 +1148,11 @@
       "m": "Minutos",
       "h": "Horas",
       "d": "Días"
+    },
+    "orderable": {
+      "add": "Añadir",
+      "remove": "Quitar",
+      "handle": "Mover {{label}}"
     }
   },
   "setup": {
@@ -2395,6 +2401,10 @@
     "none": "Todavía no hay términos aceptados.",
     "version": "Versión {{version}}",
     "accepted": "aceptado",
+    "firstAccepted": "aceptado por primera vez",
+    "lastAccepted": "aceptado",
+    "versions": "{{count}} versión anterior",
+    "versions_other": "{{count}} versiones anteriores",
     "view": "Ver",
     "type": {
       "site": "Sitio",
