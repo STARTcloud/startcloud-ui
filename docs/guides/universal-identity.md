@@ -860,8 +860,10 @@ terms page a person meets is already their region's; else the stored
 address country once the account holds one; else the default variant,
 because a person who signs up in the EU is owed the EU text and never
 the US one. `regions_offered` is the selector's choices, the distinct
-`regions` of the name's variants plus `null` for the default. The terms
-page draws a region selector, "Not in <region>? Choose your region",
+`regions` of the name's variants plus `null` for the default. If there
+is only one variant of the document, that is the one displayed and no
+selector is drawn; if there are other variants, the terms page draws a
+region selector, "Not in <region>? Choose your region",
 over the codes and sets the template offers (the distinct `regions` of
 the name's variants plus the default), whose choice re-reads
 `GET /api/auth/terms?region=<code>` and is written to the account as
@@ -3220,6 +3222,14 @@ labelKey? }`, drawn as a section heading above the tree in the same
      the organization's, `503` `send_failed` when the mail could not go;
      because those lists are short and unpaged and a bulk bar over
      per-row routes is the inbox's pattern.
+153. The region selector on a terms page is drawn only while the document
+     has other variants: if there is only one variant of the document,
+     that is the one displayed and no selector is drawn; if there are
+     other variants, the selector shows, over the regions the name
+     offers plus the default, as group 2 and decision 133 fix it; because
+     a choice over one text is no choice, and the override of decision
+     144 is for the person whose region the issuer guessed wrong when a
+     text for their region exists.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

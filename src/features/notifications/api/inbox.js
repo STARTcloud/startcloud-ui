@@ -11,12 +11,13 @@ const INBOX = '/api/notifications';
  *
  * @param {Object} transport - The app's side of the inbox
  * @param {Object} transport.client - An API client from `createApiClient` based at the hub
- * @returns {{ list: Function, unreadCount: Function, markRead: Function, markAllRead: Function, remove: Function, removeAll: Function }} The adapter `NotificationsItem`, `NotificationsModal` and `InboxPage` read
+ * @returns {{ list: Function, unreadCount: Function, markRead: Function, markUnread: Function, markAllRead: Function, remove: Function, removeAll: Function }} The adapter `NotificationsItem`, `NotificationsModal` and `InboxPage` read
  */
 export const createNotificationsClient = ({ client }) => ({
   list: params => client.get(INBOX, { params }),
   unreadCount: () => client.get(`${INBOX}/unread-count`),
   markRead: id => client.post(`${INBOX}${encodePath(id)}/read`),
+  markUnread: id => client.post(`${INBOX}${encodePath(id)}/unread`),
   markAllRead: () => client.post(`${INBOX}/read-all`),
   remove: id => client.delete(`${INBOX}${encodePath(id)}`),
   removeAll: () => client.delete(INBOX),

@@ -21,6 +21,8 @@ export const sessions = params => client.get('/api/admin/sessions', { params });
 export const revokeSession = sessionId =>
   client.delete(encodePath('api', 'admin', 'sessions', sessionId));
 
+export const sessionsBulk = body => client.post('/api/admin/sessions/bulk', body);
+
 /**
  * The URL of one JSON export attachment, `/api/admin/export/<name>` with
  * the page's filters as its query, followed as a top-level navigation.

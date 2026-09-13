@@ -2,14 +2,17 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
+import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
-import { revokeSession, sessions } from '../api/activity';
+import { revokeSession, sessions, sessionsBulk } from '../api/activity';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SESSIONS } from '../utils/examples';
 
@@ -97,6 +100,111 @@ RowActions.propTypes = {
   onRevoke: PropTypes.func.isRequired,
 };
 
+const useSelection = rows => {
+  const [selected, setSelected] = useState(() => new Set());
+  const toggle = id =>
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
+  const someSelected = selected.size > 0;
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
+  const clear = () => setSelected(new Set());
+  return {
+    selected,
+    toggleAll,
+    allSelected,
+    someSelected,
+    clear,
+    subtable: {
+      allSelected,
+      someSelected,
+      onToggleAll: toggleAll,
+      isSelected: row => selected.has(row.id),
+      onToggleRow: row => toggle(row.id),
+      labelOf: row => row.full_name,
+    },
+  };
+};
+
+/**
+ * The Sessions page's bulk actions, drawn in the heading's action pane
+ * while rows are selected: Revoke, behind the shared confirm and the
+ * step-up dialog, over `POST /api/admin/sessions/bulk`, and the result
+ * line naming processed, skipped and each error's code translated
+ * (decision 148).
+ */
+const BulkActions = ({ selected, onDone }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const guard = useGuard();
+  const [pending, setPending] = useState(false);
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const send = () => {
+    setBusy(true);
+    guard(
+      () => sessionsBulk({ action: 'revoke', session_ids: selected }),
+      t('admin.activity.sessions.bulk.stepUpReason')
+    )
+      .then(answer => {
+        setResult(answer);
+        onDone();
+      })
+      .catch(error => {
+        if (error?.code !== 'step_up_required') {
+          notify('danger', t(errorKeys(error)));
+        }
+      })
+      .finally(() => {
+        setBusy(false);
+        setPending(false);
+      });
+  };
+
+  const line = resultLineOf(t, 'admin.activity.sessions.bulk', result);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        disabled={busy || selected.length === 0}
+        onClick={() => setPending(true)}
+      >
+        {t('admin.activity.sessions.revoke')}
+      </button>
+      {line ? (
+        <span className="small text-muted" role="status">
+          {line}
+        </span>
+      ) : null}
+      <ConfirmModal
+        show={pending}
+        handleClose={() => setPending(false)}
+        handleConfirm={send}
+        title={t('admin.activity.sessions.revokeTitle')}
+        message={t('admin.activity.sessions.bulk.confirmBody', {
+          count: selected.length,
+          keyword: t('pages.confirm.keyword'),
+        })}
+      />
+    </>
+  );
+};
+
+BulkActions.propTypes = {
+  selected: PropTypes.array.isRequired,
+  onDone: PropTypes.func.isRequired,
+};
+
 /**
  * Activity › Sessions: its search bound to the navbar box over user and
  * application, the query mirrored in the URL as `search` through
@@ -105,8 +213,12 @@ RowActions.propTypes = {
  * parameter for it, its values in the URL as `client`, comma-joined,
  * with the Columns group under
  * `table_prefs_admin_sessions`; a `SectionHeading` carrying the total as
- * muted text after the title, the table with Authorized and Last active
- * as two columns, Revoke behind the confirm, and the pager.
+ * muted text after the title, the table's select column a real checkbox
+ * header, the select-all for the page, checked, unchecked or
+ * indeterminate, with Authorized and Last active as two columns, Revoke
+ * behind the confirm, the heading's action pane gaining, while rows are
+ * picked, "N selected", Clear selection and Revoke behind the step-up
+ * dialog too, and the pager.
  */
 const SessionsPage = () => {
   const { t, i18n } = useTranslation();
@@ -120,6 +232,7 @@ const SessionsPage = () => {
   });
   const [revoking, setRevoking] = useState(null);
   const rows = useMemo(() => data?.items || [], [data]);
+  const selection = useSelection(rows);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
     rows,
@@ -149,11 +262,30 @@ const SessionsPage = () => {
       .catch(error => notify('danger', t(error.messageKey || 'errors.request')));
   };
 
+  const headingActions = selection.someSelected ? (
+    <>
+      <strong>
+        {t('admin.activity.sessions.bulk.selected', { count: selection.selected.size })}
+      </strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('admin.activity.sessions.bulk.clearSelection')}
+      </button>
+      <BulkActions
+        selected={[...selection.selected]}
+        onDone={() => {
+          selection.clear();
+          reload();
+        }}
+      />
+    </>
+  ) : null;
+
   return (
     <div>
       <SectionHeading
         title={t('admin.activity.sessions.title')}
         count={data ? data.total || 0 : null}
+        actions={headingActions}
       />
       {loading && !data ? (
         <AdminLoading />
@@ -171,6 +303,7 @@ const SessionsPage = () => {
             hiddenColumns={search.hiddenColumns}
             ctx={{ t, language: i18n.language }}
             emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+            selection={selection.subtable}
           />
         </TableWrap>
       )}

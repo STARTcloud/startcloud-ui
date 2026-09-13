@@ -416,6 +416,7 @@ const UsersPage = () => {
       </button>
       <BulkBar
         selected={[...selection.selected]}
+        users={rows.filter(row => selection.selected.has(row.id))}
         catalog={catalog}
         onDone={() => {
           selection.clear();

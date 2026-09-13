@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBuilding } from 'react-icons/fa6';
 
 import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
+import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
@@ -104,6 +105,57 @@ const ownerCount = members => members.filter(member => member.role === 'OWNER').
 const pendingInvitesOf = org => (Array.isArray(org.pending_invites) ? org.pending_invites : []);
 
 const confirmMessage = t => t('pages.confirm.message', { keyword: t('pages.confirm.keyword') });
+
+const runBulk = async (rows, call) => {
+  const settled = await Promise.allSettled(rows.map(row => call(row)));
+  const errors = [];
+  let processed = 0;
+  settled.forEach(outcome => {
+    if (outcome.status === 'fulfilled') {
+      processed += 1;
+    } else {
+      errors.push({ code: outcome.reason?.code || 'error' });
+    }
+  });
+  return { processed, skipped: errors.length, errors };
+};
+
+const useRowSelection = () => {
+  const [selected, setSelected] = useState(() => new Set());
+  const toggle = id =>
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  const clear = () => setSelected(new Set());
+  const allSelected = ids => ids.length > 0 && ids.every(id => selected.has(id));
+  const someSelected = ids => ids.some(id => selected.has(id));
+  const toggleAll = ids => setSelected(allSelected(ids) ? new Set() : new Set(ids));
+  return { selected, toggle, clear, allSelected, someSelected, toggleAll };
+};
+
+const BulkResultLine = ({ result, t }) => {
+  const line = resultLineOf(t, 'orgConsole.bulk', result);
+  return line ? (
+    <p className="small text-muted" role="status">
+      {line}
+    </p>
+  ) : null;
+};
+
+BulkResultLine.propTypes = {
+  result: PropTypes.shape({
+    processed: PropTypes.number.isRequired,
+    skipped: PropTypes.number.isRequired,
+    errors: PropTypes.array.isRequired,
+  }),
+  t: PropTypes.func.isRequired,
+};
 
 const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
   const { t } = useTranslation();
@@ -273,7 +325,16 @@ RoleControl.propTypes = {
   onRole: PropTypes.func.isRequired,
 };
 
-const MemberRow = ({ member, org, currentUserId, owners, onRole, onRemove }) => {
+const MemberRow = ({
+  member,
+  org,
+  currentUserId,
+  owners,
+  onRole,
+  onRemove,
+  selected,
+  onToggleSelect,
+}) => {
   const { t } = useTranslation();
   const self = String(member.user_id) === String(currentUserId);
   const lastOwner = member.role === 'OWNER' && owners === 1;
@@ -302,6 +363,10 @@ const MemberRow = ({ member, org, currentUserId, owners, onRole, onRemove }) => 
       subline={member.name ? member.email : null}
       badges={badges}
       actions={actions}
+      selectable
+      selected={selected}
+      onToggle={() => onToggleSelect(member.user_id)}
+      selectLabel={member.name || member.email}
     />
   );
 };
@@ -319,6 +384,8 @@ MemberRow.propTypes = {
   owners: PropTypes.number.isRequired,
   onRole: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
+  selected: PropTypes.bool.isRequired,
+  onToggleSelect: PropTypes.func.isRequired,
 };
 
 const InviteForm = ({ org, organizations, onChanged }) => {
@@ -427,9 +494,102 @@ RevokeButton.propTypes = {
   onRevoke: PropTypes.func.isRequired,
 };
 
+const useResend = organizations => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [waitUntil, setWaitUntil] = useState({});
+
+  const resend = (org, invite) => {
+    organizations
+      .resendInvitation(org.uuid, invite.id)
+      .then(() => notify('success', t('orgConsole.invitation.resent')))
+      .catch(error => {
+        if (error?.code === 'throttled') {
+          const seconds = Number(error?.data?.wait_seconds) || 0;
+          setWaitUntil(current => ({ ...current, [invite.id]: Date.now() + seconds * 1000 }));
+        }
+        notify('danger', t(errorKeys(error)));
+      });
+  };
+
+  const waitSecondsFor = inviteId => {
+    const until = waitUntil[inviteId] || 0;
+    return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+  };
+
+  return { resend, waitSecondsFor };
+};
+
+const ResendButton = ({ invite, org, resend, waitSeconds }) => {
+  const { t } = useTranslation();
+  const waiting = waitSeconds > 0;
+  return (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-secondary"
+      disabled={waiting}
+      title={waiting ? t('orgConsole.invitation.throttled', { seconds: waitSeconds }) : undefined}
+      onClick={() => resend(org, invite)}
+    >
+      {t('orgConsole.invitation.resend')}
+    </button>
+  );
+};
+
+ResendButton.propTypes = {
+  invite: PropTypes.object.isRequired,
+  org: PropTypes.object.isRequired,
+  resend: PropTypes.func.isRequired,
+  waitSeconds: PropTypes.number.isRequired,
+};
+
 const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
   const { t } = useTranslation();
   const invites = pendingInvitesOf(org);
+  const selection = useRowSelection();
+  const { resend, waitSecondsFor } = useResend(organizations);
+  const [result, setResult] = useState(null);
+  const ids = invites.map(invite => invite.id);
+  const allSelected = selection.allSelected(ids);
+  const someSelected = selection.someSelected(ids);
+
+  const picked = invites.filter(invite => selection.selected.has(invite.id));
+
+  const bulkRevoke = async () => {
+    setResult(null);
+    const outcome = await runBulk(picked, invite =>
+      organizations.removeInvitation(org.uuid, invite.id)
+    );
+    setResult(outcome);
+    selection.clear();
+    await onChanged();
+  };
+
+  const bulkResend = async () => {
+    setResult(null);
+    const outcome = await runBulk(picked, invite =>
+      organizations.resendInvitation(org.uuid, invite.id)
+    );
+    setResult(outcome);
+    selection.clear();
+  };
+
+  const headingActions =
+    selection.selected.size > 0 ? (
+      <>
+        <strong>{t('orgConsole.bulk.selected', { count: selection.selected.size })}</strong>
+        <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+          {t('orgConsole.bulk.clearSelection')}
+        </button>
+        <button type="button" className="btn btn-sm btn-outline-danger" onClick={bulkRevoke}>
+          {t('orgConsole.revokeInvite')}
+        </button>
+        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={bulkResend}>
+          {t('orgConsole.invitation.resend')}
+        </button>
+      </>
+    ) : null;
+
   return (
     <>
       {org.can_manage ? (
@@ -441,14 +601,47 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
           <InviteForm org={org} organizations={organizations} onChanged={onChanged} />
         </SectionCard>
       ) : null}
-      <SectionHeading title={t('orgConsole.invitation.activeTitle')} count={invites.length} />
-      <MethodList empty={t('orgConsole.invitation.noActive')}>
+      <SectionHeading
+        title={t('orgConsole.invitation.activeTitle')}
+        count={invites.length}
+        actions={headingActions}
+      />
+      <BulkResultLine result={result} t={t} />
+      <MethodList
+        empty={t('orgConsole.invitation.noActive')}
+        selectAll={
+          invites.length > 0
+            ? {
+                checked: allSelected,
+                indeterminate: someSelected && !allSelected,
+                onToggle: () => selection.toggleAll(ids),
+                label: t('pages.selectColumn'),
+              }
+            : null
+        }
+      >
         {invites.map(invite => (
           <MethodRow
             key={invite.id}
             label={invite.email}
             subline={t(`roles.${String(invite.role || 'MEMBER').toLowerCase()}`)}
-            actions={org.can_manage ? <RevokeButton invite={invite} onRevoke={onRevoke} /> : null}
+            selectable
+            selected={selection.selected.has(invite.id)}
+            onToggle={() => selection.toggle(invite.id)}
+            selectLabel={invite.email}
+            actions={
+              org.can_manage ? (
+                <>
+                  <ResendButton
+                    invite={invite}
+                    org={org}
+                    resend={resend}
+                    waitSeconds={waitSecondsFor(invite.id)}
+                  />
+                  <RevokeButton invite={invite} onRevoke={onRevoke} />
+                </>
+              ) : null
+            }
           />
         ))}
       </MethodList>
@@ -862,6 +1055,126 @@ const useMemberships = (organizations, org) => {
 };
 
 /**
+ * The Members tab's select column and bulk actions: while rows are
+ * picked, "N selected", Clear selection, Change role (a role select,
+ * then apply) and Remove, each the existing per-row route
+ * (`organizations.memberRole`, `organizations.removeMember`) once per
+ * picked row, the last-owner and managed-row refusals counted per row
+ * into a result line naming processed, skipped and each error's code
+ * (identity contract decision 152).
+ */
+const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemove, onChanged }) => {
+  const { t } = useTranslation();
+  const members = membersOf(org);
+  const selection = useRowSelection();
+  const [result, setResult] = useState(null);
+  const [bulkRole, setBulkRole] = useState('MEMBER');
+  const ids = members.map(member => member.user_id);
+  const allSelected = selection.allSelected(ids);
+  const someSelected = selection.someSelected(ids);
+  const picked = members.filter(member => selection.selected.has(member.user_id));
+
+  const bulkChangeRole = async () => {
+    setResult(null);
+    const outcome = await runBulk(picked, member =>
+      organizations.memberRole(org.uuid, member.user_id, bulkRole)
+    );
+    setResult(outcome);
+    selection.clear();
+    await onChanged();
+  };
+
+  const bulkRemove = async () => {
+    setResult(null);
+    const outcome = await runBulk(picked, member =>
+      organizations.removeMember(org.uuid, member.user_id)
+    );
+    setResult(outcome);
+    selection.clear();
+    await onChanged();
+  };
+
+  const headingActions =
+    selection.selected.size > 0 ? (
+      <>
+        <strong>{t('orgConsole.bulk.selected', { count: selection.selected.size })}</strong>
+        <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+          {t('orgConsole.bulk.clearSelection')}
+        </button>
+        <label className="visually-hidden" htmlFor="org-console-bulk-role">
+          {t('orgConsole.bulk.role')}
+        </label>
+        <select
+          id="org-console-bulk-role"
+          className="form-select form-select-sm w-auto"
+          value={bulkRole}
+          onChange={event => setBulkRole(event.target.value)}
+        >
+          {ROLES.map(role => (
+            <option key={role} value={role}>
+              {t(`roles.${role.toLowerCase()}`)}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="btn btn-sm btn-outline-primary" onClick={bulkChangeRole}>
+          {t('orgConsole.bulk.changeRole')}
+        </button>
+        <button type="button" className="btn btn-sm btn-outline-danger" onClick={bulkRemove}>
+          {t('orgConsole.buttons.removeFromOrg')}
+        </button>
+      </>
+    ) : null;
+
+  return (
+    <>
+      <SectionHeading
+        title={t('orgConsole.tabs.members')}
+        count={members.length}
+        actions={headingActions}
+      />
+      <BulkResultLine result={result} t={t} />
+      <MethodList
+        empty={t('orgConsole.noMembers')}
+        selectAll={
+          members.length > 0
+            ? {
+                checked: allSelected,
+                indeterminate: someSelected && !allSelected,
+                onToggle: () => selection.toggleAll(ids),
+                label: t('pages.selectColumn'),
+              }
+            : null
+        }
+      >
+        {members.map(member => (
+          <MemberRow
+            key={member.user_id}
+            member={member}
+            org={org}
+            currentUserId={currentUserId}
+            owners={owners}
+            onRole={onRole}
+            onRemove={onRemove}
+            selected={selection.selected.has(member.user_id)}
+            onToggleSelect={selection.toggle}
+          />
+        ))}
+      </MethodList>
+    </>
+  );
+};
+
+MembersTab.propTypes = {
+  org: PropTypes.object.isRequired,
+  organizations: issuerOrganizationsShape.isRequired,
+  currentUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  owners: PropTypes.number.isRequired,
+  onRole: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onChanged: PropTypes.func.isRequired,
+};
+
+/**
  * The organization console in its identity-provider form over the active
  * organization's record from `GET /api/user/organizations`: the console
  * subscribes to the active organization, `org`, and re-reads the
@@ -1013,22 +1326,15 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
           </SectionCard>
         ) : null}
         {currentTab === 'members' ? (
-          <>
-            <SectionHeading title={t('orgConsole.tabs.members')} count={members.length} />
-            <MethodList empty={t('orgConsole.noMembers')}>
-              {members.map(member => (
-                <MemberRow
-                  key={member.user_id}
-                  member={member}
-                  org={current}
-                  currentUserId={currentUserId}
-                  owners={owners}
-                  onRole={setRole}
-                  onRemove={removeMember}
-                />
-              ))}
-            </MethodList>
-          </>
+          <MembersTab
+            org={current}
+            organizations={organizations}
+            currentUserId={currentUserId}
+            owners={owners}
+            onRole={setRole}
+            onRemove={removeMember}
+            onChanged={load}
+          />
         ) : null}
         {currentTab === 'joinRequests' ? (
           <JoinRequestsTab

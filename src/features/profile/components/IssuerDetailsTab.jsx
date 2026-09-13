@@ -151,12 +151,9 @@ const PhoneChange = ({ account, guard, onDone }) => {
 
   return (
     <div className="border rounded p-3 mb-3">
-      <div className="mb-3">
-        <label className="form-label" htmlFor="profile-phone">
-          {t('profile.details.mobile')}
-        </label>
-        <PhoneInput id="profile-phone" value={number} onChange={setNumber} />
-      </div>
+      <Field id="profile-phone" label={t('profile.details.mobile')}>
+        {aria => <PhoneInput id={aria.id} aria={aria} value={number} onChange={setNumber} />}
+      </Field>
       <button
         type="button"
         className="btn btn-sm btn-outline-primary"

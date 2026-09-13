@@ -41,7 +41,7 @@ const PhoneInput = ({
         countrySearch
         loadUtils={loadUtils}
         disabled={disabled}
-        inputProps={{ ...aria, id, autoComplete: 'tel', className: 'phone-input' }}
+        inputProps={{ ...aria, id, autoComplete: 'tel', className: 'form-control phone-input' }}
       />
     </Suspense>
   );

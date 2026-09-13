@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaStar } from 'react-icons/fa6';
 
@@ -72,10 +72,17 @@ AppIcon.propTypes = {
   app: PropTypes.object.isRequired,
 };
 
-const FavoriteRow = ({ app, handle, onRemove }) => {
+const FavoriteRow = ({ app, handle, onRemove, selected, onToggleSelect }) => {
   const { t } = useTranslation();
   return (
     <>
+      <input
+        type="checkbox"
+        className="form-check-input flex-shrink-0"
+        checked={selected}
+        onChange={() => onToggleSelect(app)}
+        aria-label={labelOf(app)}
+      />
       {handle}
       <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
         <AppIcon app={app} />
@@ -96,6 +103,8 @@ FavoriteRow.propTypes = {
   app: PropTypes.object.isRequired,
   handle: PropTypes.node.isRequired,
   onRemove: PropTypes.func.isRequired,
+  selected: PropTypes.bool.isRequired,
+  onToggleSelect: PropTypes.func.isRequired,
 };
 
 const AddButton = ({ app, onAdd }) => {
@@ -115,13 +124,17 @@ AddButton.propTypes = {
 
 /**
  * The Favorites tab of the identity contract: the ordered favorites with
- * drag handles and Remove over `PUT /api/user/favorites`, then the
- * connected applications not yet favorited with Add; the icon chain is
- * `icon_url`, the favicon of `home_url`, the star, every URL drawn only
- * with the `https:` scheme; the navbar search bound with a query over the
- * favorites and the available applications by label and client id; both
- * lists are glass sections of the pages contract, a `SectionHeading` over
- * the rows on the page's ground.
+ * drag handles, a select column whose head is a real checkbox, the
+ * select-all for the list, and Remove per row over `PUT
+ * /api/user/favorites`, then the connected applications not yet
+ * favorited with Add; the heading's action pane reads, while rows are
+ * picked, "N selected", Clear selection and Remove, which writes the
+ * whole list without the picked rows through the same write (decision
+ * 152); the icon chain is `icon_url`, the favicon of `home_url`, the
+ * star, every URL drawn only with the `https:` scheme; the navbar search
+ * bound with a query over the favorites and the available applications
+ * by label and client id; both lists are glass sections of the pages
+ * contract, a `SectionHeading` over the rows on the page's ground.
  */
 const FavoritesTab = ({ account }) => {
   const { t } = useTranslation();
@@ -129,6 +142,8 @@ const FavoritesTab = ({ account }) => {
   const [favorites, setFavorites] = useState([]);
   const [apps, setApps] = useState([]);
   const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(() => new Set());
+  const selectAllRef = useRef(null);
 
   const load = useCallback(
     () =>
@@ -162,6 +177,19 @@ const FavoritesTab = ({ account }) => {
 
   const remove = app => save(favorites.filter(entry => entry.client_id !== app.client_id));
 
+  const toggleSelect = app =>
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(app.client_id)) {
+        next.delete(app.client_id);
+      } else {
+        next.add(app.client_id);
+      }
+      return next;
+    });
+
+  const clearSelection = () => setSelected(new Set());
+
   const add = app =>
     save([
       ...favorites,
@@ -178,6 +206,22 @@ const FavoritesTab = ({ account }) => {
   const needle = query.trim().toLowerCase();
   const shownFavorites = needle ? favorites.filter(app => matches(app, needle)) : favorites;
   const shownAvailable = needle ? available.filter(app => matches(app, needle)) : available;
+  const allSelected =
+    shownFavorites.length > 0 && shownFavorites.every(app => selected.has(app.client_id));
+  const someSelected = shownFavorites.some(app => selected.has(app.client_id));
+  const toggleSelectAll = () =>
+    setSelected(allSelected ? new Set() : new Set(shownFavorites.map(app => app.client_id)));
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected && !allSelected;
+    }
+  }, [someSelected, allSelected]);
+
+  const removeSelected = () => {
+    save(favorites.filter(entry => !selected.has(entry.client_id)));
+    clearSelection();
+  };
 
   useNavbarSearchBinding({
     query,
@@ -189,21 +233,60 @@ const FavoritesTab = ({ account }) => {
     onClearFilters: () => setQuery(''),
   });
 
+  const headingActions =
+    selected.size > 0 ? (
+      <>
+        <strong>{t('profile.favorites.bulk.selected', { count: selected.size })}</strong>
+        <button type="button" className="btn btn-sm btn-link" onClick={clearSelection}>
+          {t('profile.favorites.bulk.clearSelection')}
+        </button>
+        <button type="button" className="btn btn-sm btn-outline-danger" onClick={removeSelected}>
+          {t('profile.favorites.bulk.remove')}
+        </button>
+      </>
+    ) : null;
+
   return (
     <div className="tab-pane fade show active">
-      <SectionHeading title={t('profile.favorites.title')} count={favorites.length} />
+      <SectionHeading
+        title={t('profile.favorites.title')}
+        count={favorites.length}
+        actions={headingActions}
+      />
       {shownFavorites.length === 0 ? (
         <p className="text-body-secondary small">
           {needle ? t('pages.noMatches') : t('profile.favorites.none')}
         </p>
       ) : (
-        <SortableList
-          items={shownFavorites}
-          keyOf={app => app.client_id}
-          onReorder={next => save(reorderWithin(favorites, next))}
-          className="mb-4"
-          renderItem={(app, handle) => <FavoriteRow app={app} handle={handle} onRemove={remove} />}
-        />
+        <>
+          <div className="list-group mb-2">
+            <div className="list-group-item d-flex align-items-center gap-3">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                className="form-check-input flex-shrink-0"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                aria-label={t('pages.selectColumn')}
+              />
+            </div>
+          </div>
+          <SortableList
+            items={shownFavorites}
+            keyOf={app => app.client_id}
+            onReorder={next => save(reorderWithin(favorites, next))}
+            className="mb-4"
+            renderItem={(app, handle) => (
+              <FavoriteRow
+                app={app}
+                handle={handle}
+                onRemove={remove}
+                selected={selected.has(app.client_id)}
+                onToggleSelect={toggleSelect}
+              />
+            )}
+          />
+        </>
       )}
       <SectionHeading
         title={t('profile.favorites.available')}

@@ -91,6 +91,12 @@
     "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
     "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
     "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero.",
+    "self": "tu propia cuenta",
+    "not_found": "ya no existe",
+    "not_a_member": "no es miembro de esa organización",
+    "personal": "una organización personal",
+    "not_blocked": "no está bloqueada actualmente",
+    "throttled": "demasiados intentos; vuelve a intentarlo en un momento",
     "title": {
       "403": "No tienes acceso a esta página",
       "404": "Página no encontrada",
@@ -533,7 +539,12 @@
       "noneAvailable": "Todas las aplicaciones conectadas ya son favoritas.",
       "add": "Añadir",
       "remove": "Quitar",
-      "search": "Buscar favoritos y aplicaciones"
+      "search": "Buscar favoritos y aplicaciones",
+      "bulk": {
+        "selected": "{{count}} seleccionadas",
+        "clearSelection": "Limpiar selección",
+        "remove": "Quitar"
+      }
     },
     "sessions": {
       "title": "Sesiones activas",
@@ -680,13 +691,25 @@
         "suspend": "Suspender",
         "add_role": "Añadir rol",
         "remove_role": "Quitar rol",
+        "set_customer_id": "Establecer ID de cliente",
+        "set_primary_organization": "Establecer organización principal",
+        "revoke_sessions": "Revocar sesiones",
+        "unlock": "Desbloquear",
         "delete": "Eliminar",
         "role": "Rol",
         "clearSelection": "Limpiar selección",
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
         "confirmBody": "{{action}} para {{count}} cuentas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
-        "stepUpReason": "Eliminar cuentas acaba con la forma en que esas personas inician sesión."
+        "stepUpReason": "Eliminar cuentas acaba con la forma en que esas personas inician sesión.",
+        "setCustomerId": "Establecer ID de cliente",
+        "setPrimaryOrganization": "Establecer organización principal",
+        "noSharedOrg": "Las cuentas seleccionadas no comparten ninguna organización.",
+        "errors": {
+          "self": "tu propia cuenta",
+          "not_found": "ya no existe",
+          "not_a_member": "no es miembro de esa organización"
+        }
       }
     },
     "organizations": {
@@ -735,12 +758,21 @@
         "selected": "{{count}} seleccionadas",
         "suspend": "Suspender",
         "resume": "Reanudar",
+        "set_customer_id": "Establecer ID de cliente",
+        "set_access_mode": "Establecer modo de acceso",
+        "set_default_role": "Establecer rol predeterminado",
+        "regenerate_invite_code": "Regenerar código de invitación",
         "delete": "Eliminar",
         "clearSelection": "Limpiar selección",
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
         "confirmBody": "{{action}} para {{count}} organizaciones seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
-        "stepUpReason": "Eliminar organizaciones no se puede deshacer."
+        "stepUpReason": "Eliminar organizaciones no se puede deshacer.",
+        "setCustomerId": "Establecer ID de cliente",
+        "errors": {
+          "personal": "una organización personal",
+          "not_found": "ya no existe"
+        }
       }
     },
     "activity": {
@@ -773,7 +805,17 @@
         "revoked": "La sesión se ha revocado.",
         "revokeTitle": "Revocar la sesión",
         "revokeBody": "{{user}} cierra sesión en {{app}} en ese dispositivo.",
-        "search": "Buscar sesiones por usuario o aplicación"
+        "search": "Buscar sesiones por usuario o aplicación",
+        "bulk": {
+          "selected": "{{count}} seleccionadas",
+          "clearSelection": "Limpiar selección",
+          "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+          "confirmBody": "{{count}} sesiones seleccionadas se revocan. Escribe \"{{keyword}}\" para confirmar.",
+          "stepUpReason": "Revocar sesiones cierra la sesión de esas personas de inmediato.",
+          "errors": {
+            "not_found": "ya no existe"
+          }
+        }
       },
       "time": "Hora",
       "username": "Usuario",
@@ -920,7 +962,17 @@
       "unblockTitle": "Desbloquear la dirección",
       "unblockBody": "{{ip}} podrá iniciar sesión de nuevo de inmediato.",
       "unblockAllTitle": "Desbloquear todas las direcciones",
-      "unblockAllBody": "{{count}} direcciones podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar."
+      "unblockAllBody": "{{count}} direcciones podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar.",
+      "bulk": {
+        "selected": "{{count}} seleccionadas",
+        "clearSelection": "Limpiar selección",
+        "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+        "confirmTitle": "Desbloquear la selección",
+        "confirmBody": "{{count}} direcciones seleccionadas podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar.",
+        "errors": {
+          "not_blocked": "no está bloqueada actualmente"
+        }
+      }
     },
     "terms": {
       "title": "Términos",
@@ -969,6 +1021,20 @@
         "eu": "Unión Europea",
         "eea": "Espacio Económico Europeo",
         "uk": "Reino Unido"
+      },
+      "bulk": {
+        "selected": "{{count}} seleccionadas",
+        "clearSelection": "Limpiar selección",
+        "set_public": "Hacer pública",
+        "set_private": "Hacer privada",
+        "delete": "Eliminar",
+        "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+        "confirmTitle": "Confirmar la acción en bloque",
+        "confirmBody": "{{count}} plantillas seleccionadas se eliminan con todos los registros de aceptación que las nombran. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Eliminar plantillas las quita para siempre.",
+        "errors": {
+          "not_found": "ya no existe"
+        }
       }
     },
     "config": {
@@ -1121,6 +1187,13 @@
     "messages": {
       "operationSuccessful": "Operación completada exitosamente"
     },
+    "bulk": {
+      "selected": "{{count}} seleccionados",
+      "clearSelection": "Limpiar selección",
+      "role": "Rol",
+      "changeRole": "Cambiar rol",
+      "result": "Procesados {{processed}}, omitidos {{skipped}}."
+    },
     "organization": {
       "title": "Detalles de la Organización",
       "ssoManaged": "Gestionada por SSO",
@@ -1190,7 +1263,10 @@
       "managedByIdp": "Enviada por el proveedor de identidad",
       "actions": "Acciones",
       "token": "Token",
-      "orgId": "ID de Organización"
+      "orgId": "ID de Organización",
+      "resend": "Reenviar",
+      "resent": "Invitación reenviada.",
+      "throttled": "Espera {{seconds}}s antes de reenviar."
     },
     "website": "Sitio web",
     "logoUrl": "URL del logotipo",
@@ -1277,9 +1353,11 @@
     "bulk": {
       "selected": "{{count}} seleccionadas",
       "markRead": "Marcar como leída",
+      "markUnread": "Marcar como no leída",
       "delete": "Eliminar",
       "deleteBody": "Se eliminan las notificaciones seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
-      "clearSelection": "Limpiar selección"
+      "clearSelection": "Limpiar selección",
+      "result": "Procesadas {{processed}}, omitidas {{skipped}}."
     }
   },
   "notifications": {

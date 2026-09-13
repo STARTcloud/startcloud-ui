@@ -37,7 +37,9 @@ export const followableUrl = value => {
 /**
  * One row of a method list: an icon or an `https:` image that falls back
  * to the icon when it fails to load, a label with its badges, a subline
- * and the trailing actions; the icon image never sends a referrer.
+ * and the trailing actions; the icon image never sends a referrer; an
+ * optional leading checkbox while `selectable`, the row's cell of a
+ * list's select column.
  */
 export const MethodRow = ({
   icon = null,
@@ -47,12 +49,25 @@ export const MethodRow = ({
   subline = null,
   actions = null,
   className = '',
+  selectable = false,
+  selected = false,
+  onToggle = null,
+  selectLabel = undefined,
 }) => {
   const [failed, setFailed] = useState('');
   const image = httpsUrl(iconUrl);
   const showImage = image && failed !== image;
   return (
     <li className={`list-group-item d-flex align-items-center gap-3 ${className}`}>
+      {selectable ? (
+        <input
+          type="checkbox"
+          className="form-check-input flex-shrink-0"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={selectLabel}
+        />
+      ) : null}
       <span className="d-inline-flex justify-content-center flex-shrink-0 method-row-icon">
         {showImage ? (
           <img
@@ -95,25 +110,59 @@ MethodRow.propTypes = {
   subline: PropTypes.node,
   actions: PropTypes.node,
   className: PropTypes.string,
+  selectable: PropTypes.bool,
+  selected: PropTypes.bool,
+  onToggle: PropTypes.func,
+  selectLabel: PropTypes.string,
 };
+
+export const selectAllShape = PropTypes.shape({
+  checked: PropTypes.bool.isRequired,
+  indeterminate: PropTypes.bool,
+  onToggle: PropTypes.func.isRequired,
+  label: PropTypes.string,
+});
 
 /**
  * The list rows of two-factor methods, passkeys, linked accounts,
  * connected applications and sessions share: an empty line while there
- * are no rows.
+ * are no rows, and an optional leading row carrying the real select-all
+ * checkbox for the list, indeterminate when some but not all rows are
+ * picked, while `selectAll` is given.
  */
-const MethodList = ({ children, empty = '', className = '' }) => {
+const MethodList = ({ children, empty = '', className = '', selectAll = null }) => {
   const rows = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
   if (rows.length === 0) {
     return empty ? <p className="text-body-secondary small mb-0">{empty}</p> : null;
   }
-  return <ul className={`list-group ${className}`}>{rows}</ul>;
+  return (
+    <ul className={`list-group ${className}`}>
+      {selectAll ? (
+        <li className="list-group-item d-flex align-items-center gap-3">
+          <input
+            type="checkbox"
+            className="form-check-input flex-shrink-0"
+            checked={selectAll.checked}
+            ref={element => {
+              if (element) {
+                element.indeterminate = Boolean(selectAll.indeterminate && !selectAll.checked);
+              }
+            }}
+            onChange={selectAll.onToggle}
+            aria-label={selectAll.label}
+          />
+        </li>
+      ) : null}
+      {rows}
+    </ul>
+  );
 };
 
 MethodList.propTypes = {
   children: PropTypes.node,
   empty: PropTypes.string,
   className: PropTypes.string,
+  selectAll: selectAllShape,
 };
 
 export default MethodList;

@@ -31,6 +31,9 @@ export const inviteMember = (uuid, email, role) =>
 
 export const revokeInvite = (uuid, inviteId) => client.delete(at(uuid, 'invites', inviteId));
 
+export const resendInvite = (uuid, inviteId) =>
+  client.post(at(uuid, 'invites', inviteId, 'resend'), {});
+
 export const setMembershipRole = (uuid, userId, role) =>
   client.put(at(uuid, 'members', userId, 'role'), { role });
 
@@ -75,7 +78,8 @@ export const discoverIssuerOrganizations = () =>
  * re-fetching the record afterward, and the directory routes of decision
  * 124 on BoxVault's paths, `discover` over `/api/organizations/discover`
  * and `join`, `requests`, `approveRequest` and `denyRequest` over
- * `/api/organization/{uuid}/requests`.
+ * `/api/organization/{uuid}/requests`; `resendInvitation` over
+ * `POST …/invites/{id}/resend` (decision 152).
  */
 export const issuerOrganizations = {
   list: listMemberships,
@@ -85,6 +89,7 @@ export const issuerOrganizations = {
   regenerateInviteCode,
   invite: inviteMember,
   removeInvitation: revokeInvite,
+  resendInvitation: resendInvite,
   memberRole: setMembershipRole,
   removeMember: removeMembership,
   leave: leaveOrganization,
@@ -105,6 +110,7 @@ export const issuerOrganizationsShape = PropTypes.shape({
   regenerateInviteCode: PropTypes.func.isRequired,
   invite: PropTypes.func.isRequired,
   removeInvitation: PropTypes.func.isRequired,
+  resendInvitation: PropTypes.func.isRequired,
   memberRole: PropTypes.func.isRequired,
   removeMember: PropTypes.func.isRequired,
   leave: PropTypes.func.isRequired,

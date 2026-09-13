@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
@@ -16,8 +17,13 @@ import { ORGANIZATIONS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import OrganizationDialog, { adminOrganizationShape } from './OrganizationDialog';
+import OrganizationDialog, {
+  ACCESS_MODES,
+  adminOrganizationShape,
+  DEFAULT_ROLES,
+} from './OrganizationDialog';
 import TableWrap from './TableWrap';
+import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
 
@@ -153,67 +159,179 @@ const useSelection = rows => {
   };
 };
 
+const CONFIRM_ACTIONS = ['suspend', 'resume', 'delete', 'regenerate_invite_code'];
+
+const ACCESS_MODE_KEYS = {
+  invite: 'orgConsole.organization.accessModes.inviteOnly',
+  request: 'orgConsole.organization.accessModes.requestToJoin',
+  private: 'orgConsole.organization.accessModes.private',
+};
+
+const SelectDialog = ({ title, label, options, labelOf, initial, save, onClose, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [value, setValue] = useState(initial);
+  const [busy, setBusy] = useState(false);
+
+  const submit = event => {
+    event.preventDefault();
+    setBusy(true);
+    save(value)
+      .then(answer => {
+        notify('success', t('admin.organizations.saved'));
+        onSaved(answer);
+        onClose();
+      })
+      .catch(error => notify('danger', t(error.messageKey || 'errors.request')))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <div className="d-inline-flex align-items-center gap-2">
+      <form onSubmit={submit} className="d-flex align-items-center gap-2">
+        <label className="visually-hidden" htmlFor="bulk-select-dialog">
+          {label}
+        </label>
+        <select
+          id="bulk-select-dialog"
+          className="form-select form-select-sm w-auto"
+          value={value}
+          onChange={event => setValue(event.target.value)}
+        >
+          {options.map(option => (
+            <option key={option} value={option}>
+              {labelOf(option)}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="btn btn-sm btn-outline-secondary" disabled={busy}>
+          {title}
+        </button>
+        <button type="button" className="btn btn-sm btn-link" onClick={onClose} disabled={busy}>
+          {t('admin.buttons.cancel')}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+SelectDialog.propTypes = {
+  title: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(PropTypes.string).isRequired,
+  labelOf: PropTypes.func.isRequired,
+  initial: PropTypes.string.isRequired,
+  save: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
 /**
  * The Organizations page's bulk actions, drawn in the section heading's
- * action pane while rows are selected: Suspend, Resume and Delete, the
- * delete action stepped up, and the result line naming processed, skipped
- * and errors while it has something to say (identity contract decision
- * 139).
+ * action pane while rows are selected: Set customer id, Set access mode,
+ * Set default role and Regenerate invite code beside Suspend, Resume and
+ * Delete, the delete action stepped up, a personal organization skipped
+ * with `personal`, and the result line naming processed, skipped and each
+ * error's code translated (identity contract decisions 139, 147).
  */
 const BulkActions = ({ selected, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
   const [pending, setPending] = useState('');
+  const [dialog, setDialog] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const send = () => {
-    const body = { action: pending, organization_ids: selected };
+  const run = (action, extra = {}) => {
     setBusy(true);
-    guard(() => organizationsBulk(body), t('admin.organizations.bulk.stepUpReason'))
+    return guard(
+      () => organizationsBulk({ action, organization_ids: selected, ...extra }),
+      t('admin.organizations.bulk.stepUpReason')
+    )
       .then(answer => {
         setResult(answer);
         onDone();
+        return answer;
       })
+      .finally(() => setBusy(false));
+  };
+
+  const send = () => {
+    run(pending)
       .catch(error => {
         if (error?.code !== 'step_up_required') {
           notify('danger', t(errorKeys(error)));
         }
       })
-      .finally(() => {
-        setBusy(false);
-        setPending('');
-      });
+      .finally(() => setPending(''));
   };
 
-  const button = (action, variant) => (
+  const button = (action, variant, onClick = () => setPending(action)) => (
     <button
       type="button"
       className={`btn btn-sm ${variant}`}
       disabled={busy || selected.length === 0}
-      onClick={() => setPending(action)}
+      onClick={onClick}
     >
       {t(`admin.organizations.bulk.${action}`)}
     </button>
   );
 
+  const line = resultLineOf(t, 'admin.organizations.bulk', result);
+
   return (
     <>
       {button('suspend', 'btn-outline-warning')}
       {button('resume', 'btn-outline-success')}
+      {button('set_customer_id', 'btn-outline-secondary', () => setDialog('customerId'))}
+      {dialog === 'accessMode' ? (
+        <SelectDialog
+          title={t('admin.organizations.bulk.set_access_mode')}
+          label={t('admin.organizations.field.accessMode')}
+          options={ACCESS_MODES}
+          labelOf={mode => t(ACCESS_MODE_KEYS[mode])}
+          initial={ACCESS_MODES[0]}
+          save={access_mode => run('set_access_mode', { access_mode })}
+          onClose={() => setDialog('')}
+          onSaved={() => setDialog('')}
+        />
+      ) : (
+        button('set_access_mode', 'btn-outline-secondary', () => setDialog('accessMode'))
+      )}
+      {dialog === 'defaultRole' ? (
+        <SelectDialog
+          title={t('admin.organizations.bulk.set_default_role')}
+          label={t('admin.organizations.field.defaultRole')}
+          options={DEFAULT_ROLES}
+          labelOf={role => t(`roles.${role.toLowerCase()}`)}
+          initial={DEFAULT_ROLES[0]}
+          save={default_role => run('set_default_role', { default_role })}
+          onClose={() => setDialog('')}
+          onSaved={() => setDialog('')}
+        />
+      ) : (
+        button('set_default_role', 'btn-outline-secondary', () => setDialog('defaultRole'))
+      )}
+      {button('regenerate_invite_code', 'btn-outline-secondary')}
       {button('delete', 'btn-outline-danger')}
-      {result ? (
+      {line ? (
         <span className="small text-muted" role="status">
-          {t('admin.organizations.bulk.result', {
-            processed: result.processed || 0,
-            skipped: result.skipped || 0,
-            errors: (result.errors || []).length,
-          })}
+          {line}
         </span>
       ) : null}
+      {dialog === 'customerId' ? (
+        <CustomerIdDialog
+          title={t('admin.organizations.bulk.setCustomerId')}
+          hint={t('admin.organizations.field.customerIdHint')}
+          initial=""
+          save={customer_id => run('set_customer_id', { customer_id })}
+          onClose={() => setDialog('')}
+          onSaved={() => setDialog('')}
+        />
+      ) : null}
       <ConfirmModal
-        show={pending !== ''}
+        show={CONFIRM_ACTIONS.includes(pending)}
         handleClose={() => setPending('')}
         handleConfirm={send}
         title={t('admin.organizations.bulk.confirmTitle')}

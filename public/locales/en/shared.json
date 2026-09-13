@@ -91,6 +91,12 @@
     "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
     "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
     "last_owner": "A team needs an owner; make someone else an owner first.",
+    "self": "your own account",
+    "not_found": "no longer exists",
+    "not_a_member": "not a member of that organization",
+    "personal": "a personal organization",
+    "not_blocked": "not currently blocked",
+    "throttled": "too many attempts; try again shortly",
     "title": {
       "403": "You don't have access to this page",
       "404": "Page not found",
@@ -533,7 +539,12 @@
       "noneAvailable": "Every connected application is already a favorite.",
       "add": "Add",
       "remove": "Remove",
-      "search": "Search favorites and applications"
+      "search": "Search favorites and applications",
+      "bulk": {
+        "selected": "{{count}} selected",
+        "clearSelection": "Clear selection",
+        "remove": "Remove"
+      }
     },
     "sessions": {
       "title": "Active sessions",
@@ -680,13 +691,25 @@
         "suspend": "Suspend",
         "add_role": "Add role",
         "remove_role": "Remove role",
+        "set_customer_id": "Set customer id",
+        "set_primary_organization": "Set primary organization",
+        "revoke_sessions": "Revoke sessions",
+        "unlock": "Unlock",
         "delete": "Delete",
         "role": "Role",
         "clearSelection": "Clear selection",
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
         "confirmBody": "{{action}} for {{count}} selected accounts. Type \"{{keyword}}\" to confirm.",
-        "stepUpReason": "Deleting accounts ends how those people sign in."
+        "stepUpReason": "Deleting accounts ends how those people sign in.",
+        "setCustomerId": "Set customer id",
+        "setPrimaryOrganization": "Set primary organization",
+        "noSharedOrg": "The selected accounts share no organization.",
+        "errors": {
+          "self": "your own account",
+          "not_found": "no longer exists",
+          "not_a_member": "not a member of that organization"
+        }
       }
     },
     "organizations": {
@@ -735,12 +758,21 @@
         "selected": "{{count}} selected",
         "suspend": "Suspend",
         "resume": "Resume",
+        "set_customer_id": "Set customer id",
+        "set_access_mode": "Set access mode",
+        "set_default_role": "Set default role",
+        "regenerate_invite_code": "Regenerate invite code",
         "delete": "Delete",
         "clearSelection": "Clear selection",
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
         "confirmBody": "{{action}} for {{count}} selected organizations. Type \"{{keyword}}\" to confirm.",
-        "stepUpReason": "Deleting organizations cannot be undone."
+        "stepUpReason": "Deleting organizations cannot be undone.",
+        "setCustomerId": "Set customer id",
+        "errors": {
+          "personal": "a personal organization",
+          "not_found": "no longer exists"
+        }
       }
     },
     "activity": {
@@ -773,7 +805,17 @@
         "revoked": "The session is revoked.",
         "revokeTitle": "Revoke the session",
         "revokeBody": "{{user}} is signed out of {{app}} on that device.",
-        "search": "Search sessions by user or application"
+        "search": "Search sessions by user or application",
+        "bulk": {
+          "selected": "{{count}} selected",
+          "clearSelection": "Clear selection",
+          "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+          "confirmBody": "{{count}} selected sessions are revoked. Type \"{{keyword}}\" to confirm.",
+          "stepUpReason": "Revoking sessions signs those people out at once.",
+          "errors": {
+            "not_found": "no longer exists"
+          }
+        }
       },
       "time": "Time",
       "username": "Username",
@@ -920,7 +962,17 @@
       "unblockTitle": "Unblock the address",
       "unblockBody": "{{ip}} may sign in again at once.",
       "unblockAllTitle": "Unblock every address",
-      "unblockAllBody": "{{count}} addresses may sign in again at once. Type \"{{keyword}}\" to confirm."
+      "unblockAllBody": "{{count}} addresses may sign in again at once. Type \"{{keyword}}\" to confirm.",
+      "bulk": {
+        "selected": "{{count}} selected",
+        "clearSelection": "Clear selection",
+        "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+        "confirmTitle": "Unblock the selection",
+        "confirmBody": "{{count}} selected addresses may sign in again at once. Type \"{{keyword}}\" to confirm.",
+        "errors": {
+          "not_blocked": "not currently blocked"
+        }
+      }
     },
     "terms": {
       "title": "Terms",
@@ -969,6 +1021,20 @@
         "eu": "European Union",
         "eea": "European Economic Area",
         "uk": "United Kingdom"
+      },
+      "bulk": {
+        "selected": "{{count}} selected",
+        "clearSelection": "Clear selection",
+        "set_public": "Make public",
+        "set_private": "Make private",
+        "delete": "Delete",
+        "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+        "confirmTitle": "Confirm the bulk action",
+        "confirmBody": "{{count}} selected templates are deleted with every acceptance record that names them. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Deleting templates removes them for good.",
+        "errors": {
+          "not_found": "no longer exists"
+        }
       }
     },
     "config": {
@@ -1121,6 +1187,13 @@
     "messages": {
       "operationSuccessful": "Operation completed successfully"
     },
+    "bulk": {
+      "selected": "{{count}} selected",
+      "clearSelection": "Clear selection",
+      "role": "Role",
+      "changeRole": "Change role",
+      "result": "Processed {{processed}}, skipped {{skipped}}."
+    },
     "organization": {
       "title": "Organization Details",
       "ssoManaged": "Managed by SSO",
@@ -1190,7 +1263,10 @@
       "managedByIdp": "Sent by identity provider",
       "actions": "Actions",
       "token": "Token",
-      "orgId": "Organization ID"
+      "orgId": "Organization ID",
+      "resend": "Resend",
+      "resent": "Invitation sent again.",
+      "throttled": "Wait {{seconds}}s before resending."
     },
     "website": "Website",
     "logoUrl": "Logo URL",
@@ -1277,9 +1353,11 @@
     "bulk": {
       "selected": "{{count}} selected",
       "markRead": "Mark as read",
+      "markUnread": "Mark as unread",
       "delete": "Delete",
       "deleteBody": "The picked notifications are deleted. Type \"{{keyword}}\" to confirm.",
-      "clearSelection": "Clear selection"
+      "clearSelection": "Clear selection",
+      "result": "Processed {{processed}}, skipped {{skipped}}."
     }
   },
   "notifications": {

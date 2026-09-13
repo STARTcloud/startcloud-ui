@@ -2374,6 +2374,19 @@ sessionRoute('DELETE', '/api/user/organizations/:uuid/invites/:id', ctx => {
   org.pending_invites = org.pending_invites.filter(invite => String(invite.id) !== ctx.params.id);
   return noContent();
 });
+sessionRoute('POST', '/api/user/organizations/:uuid/invites/:id/resend', ctx => {
+  const org = organizationOf(ctx);
+  const invite = org?.pending_invites.find(row => String(row.id) === ctx.params.id);
+  if (!invite) {
+    return problem(404, 'not_found');
+  }
+  const elapsed = invite._resent_at ? Date.now() - invite._resent_at : Infinity;
+  if (elapsed < 60000) {
+    return problem(429, 'throttled', { wait_seconds: Math.ceil((60000 - elapsed) / 1000) });
+  }
+  invite._resent_at = Date.now();
+  return noContent();
+});
 sessionRoute('PUT', '/api/user/organizations/:uuid/members/:user_id/role', ctx => {
   const org = organizationOf(ctx);
   const member = org?.members.find(row => String(row.user_id) === ctx.params.user_id);
@@ -2599,6 +2612,15 @@ sessionRoute('DELETE', '/api/notifications', () => {
   broadcast('unread-count', { count: 0 });
   return noContent();
 });
+sessionRoute('POST', '/api/notifications/:id/unread', ctx => {
+  const row = state.notifications.find(entry => entry.id === ctx.params.id);
+  if (!row) {
+    return problem(404, 'not_found');
+  }
+  row.readAt = null;
+  broadcast('unread-count', { count: unreadCount() });
+  return noContent();
+});
 
 adminRoute('GET', '/api/admin/stats', () => ok(STATS));
 adminRoute('GET', '/api/admin/login-heatmap', () => ok(HEATMAP));
@@ -2655,12 +2677,59 @@ adminRoute('PUT', '/api/admin/users/:id/roles', ctx => {
   return ok(user);
 });
 adminRoute('DELETE', '/api/admin/users/:id', () => noContent(), { stepUp: true });
+const USER_STEP_UP_ACTIONS = ['delete', 'revoke_sessions'];
 adminRoute('POST', '/api/admin/users/bulk', ctx => {
-  if (ctx.body.action === 'delete' && Date.now() > state.stepUpUntil) {
+  const { action, user_ids: ids = [] } = ctx.body;
+  if (USER_STEP_UP_ACTIONS.includes(action) && Date.now() > state.stepUpUntil) {
     return problem(403, 'step_up_required');
   }
-  const ids = Array.isArray(ctx.body.user_ids) ? ctx.body.user_ids : [];
-  return ok({ processed: ids.length, skipped: 0, errors: [] });
+  const errors = [];
+  let processed = 0;
+  (Array.isArray(ids) ? ids : []).forEach(id => {
+    const user = USERS.items.find(row => String(row.id) === String(id));
+    if (!user) {
+      errors.push({ id, code: 'not_found' });
+      return;
+    }
+    if (action === 'set_primary_organization') {
+      if (!user.organizations.some(org => org.uuid === ctx.body.primary_organization)) {
+        errors.push({ id, code: 'not_a_member' });
+        return;
+      }
+      user.organizations.forEach(org => {
+        org.primary = org.uuid === ctx.body.primary_organization;
+      });
+    }
+    if (action === 'set_customer_id') {
+      user.customer_id = ctx.body.customer_id || '';
+    }
+    if (action === 'enable') {
+      user.enabled = true;
+    }
+    if (action === 'suspend') {
+      if (user.id === 42) {
+        errors.push({ id, code: 'self' });
+        return;
+      }
+      user.enabled = false;
+    }
+    if (action === 'add_role' && ctx.body.role && !user.roles.includes(ctx.body.role)) {
+      user.roles.push(ctx.body.role);
+    }
+    if (action === 'remove_role' && ctx.body.role) {
+      if (user.id === 42 && ctx.body.role === 'ROLE_ADMIN') {
+        errors.push({ id, code: 'self' });
+        return;
+      }
+      user.roles = user.roles.filter(role => role !== ctx.body.role);
+    }
+    if (action === 'delete' && user.id === 42) {
+      errors.push({ id, code: 'self' });
+      return;
+    }
+    processed += 1;
+  });
+  return ok({ processed, skipped: errors.length, errors });
 });
 adminRoute('GET', '/api/admin/organizations', () => ok(ORGANIZATIONS));
 adminRoute('PATCH', '/api/admin/organizations/:id', ctx => {
@@ -2687,16 +2756,65 @@ adminRoute('DELETE', '/api/admin/organizations/:id', ctx => {
   }
   return noContent();
 });
+const ORG_PERSONAL_GATE = ['set_access_mode', 'set_default_role', 'regenerate_invite_code'];
 adminRoute('POST', '/api/admin/organizations/bulk', ctx => {
-  if (ctx.body.action === 'delete' && Date.now() > state.stepUpUntil) {
+  const { action, organization_ids: ids = [] } = ctx.body;
+  if (action === 'delete' && Date.now() > state.stepUpUntil) {
     return problem(403, 'step_up_required');
   }
-  const ids = Array.isArray(ctx.body.organization_ids) ? ctx.body.organization_ids : [];
-  return ok({ processed: ids.length, skipped: 0, errors: [] });
+  const errors = [];
+  let processed = 0;
+  (Array.isArray(ids) ? ids : []).forEach(id => {
+    const org = ORGANIZATIONS.find(row => String(row.id) === String(id));
+    if (!org) {
+      errors.push({ id, code: 'not_found' });
+      return;
+    }
+    if (ORG_PERSONAL_GATE.includes(action) && org.personal) {
+      errors.push({ id, code: 'personal' });
+      return;
+    }
+    if (action === 'suspend') {
+      org.enabled = false;
+    }
+    if (action === 'resume') {
+      org.enabled = true;
+    }
+    if (action === 'set_customer_id') {
+      org.customer_id = ctx.body.customer_id || '';
+    }
+    if (action === 'set_access_mode') {
+      org.access_mode = ctx.body.access_mode;
+    }
+    if (action === 'set_default_role') {
+      org.default_role = ctx.body.default_role;
+    }
+    if (action === 'regenerate_invite_code') {
+      org.invite_code = `INV-${randomBytes(4).toString('hex').toUpperCase()}`;
+    }
+    processed += 1;
+  });
+  return ok({ processed, skipped: errors.length, errors });
 });
 adminRoute('GET', '/api/admin/service-usage', () => ok(SERVICE_USAGE));
 adminRoute('GET', '/api/admin/insights', () => ok(INSIGHTS));
 adminRoute('GET', '/api/admin/client-health', () => ok(CLIENT_HEALTH));
+adminRoute('POST', '/api/admin/sessions/bulk', ctx => {
+  if (Date.now() > state.stepUpUntil) {
+    return problem(403, 'step_up_required');
+  }
+  const ids = Array.isArray(ctx.body.session_ids) ? ctx.body.session_ids : [];
+  const errors = [];
+  let processed = 0;
+  ids.forEach(id => {
+    if (!SESSIONS.items.some(row => row.id === id)) {
+      errors.push({ id, code: 'not_found' });
+      return;
+    }
+    processed += 1;
+  });
+  return ok({ processed, skipped: errors.length, errors });
+});
 adminRoute('GET', '/api/admin/brute-force', () =>
   ok({ enabled: BRUTE_FORCE.enabled, blocked: state.blocked })
 );
@@ -2705,6 +2823,26 @@ adminRoute('DELETE', '/api/admin/brute-force/:ip', ctx => {
   state.blocked = state.blocked.filter(row => row.ip !== ctx.params.ip);
   broadcast('blocked-count', { count: state.blocked.length });
   return noContent();
+});
+adminRoute('DELETE', '/api/admin/brute-force', () => {
+  state.blocked = [];
+  broadcast('blocked-count', { count: 0 });
+  return noContent();
+});
+adminRoute('POST', '/api/admin/brute-force/bulk', ctx => {
+  const addresses = Array.isArray(ctx.body.addresses) ? ctx.body.addresses : [];
+  const errors = [];
+  let processed = 0;
+  addresses.forEach(ip => {
+    if (!state.blocked.some(row => row.ip === ip)) {
+      errors.push({ id: ip, code: 'not_blocked' });
+      return;
+    }
+    processed += 1;
+  });
+  state.blocked = state.blocked.filter(row => !addresses.includes(row.ip));
+  broadcast('blocked-count', { count: state.blocked.length });
+  return ok({ processed, skipped: errors.length, errors });
 });
 adminRoute('GET', '/api/admin/rate-limit/banned', () => ok([43]));
 adminRoute('GET', '/api/admin/rate-limit/:user_id', () => ok(RATE_LIMIT));
@@ -2781,6 +2919,32 @@ adminRoute('DELETE', '/api/admin/terms/:name', ctx => {
   }
   state.terms = state.terms.filter(term => term !== row);
   return noContent();
+});
+adminRoute('POST', '/api/admin/terms/bulk', ctx => {
+  const { action, ids = [] } = ctx.body;
+  if (action === 'delete' && Date.now() > state.stepUpUntil) {
+    return problem(403, 'step_up_required');
+  }
+  const errors = [];
+  let processed = 0;
+  (Array.isArray(ids) ? ids : []).forEach(id => {
+    const term = state.terms.find(row => row.id === id);
+    if (!term) {
+      errors.push({ id, code: 'not_found' });
+      return;
+    }
+    if (action === 'delete') {
+      state.terms = state.terms.filter(row => row !== term);
+    }
+    if (action === 'set_public') {
+      term.is_public = true;
+    }
+    if (action === 'set_private') {
+      term.is_public = false;
+    }
+    processed += 1;
+  });
+  return ok({ processed, skipped: errors.length, errors });
 });
 adminRoute('GET', '/api/admin/dcr/clients', () => ok([]));
 adminRoute('DELETE', '/api/admin/dcr/clients/:id', () => noContent());
@@ -3038,8 +3202,21 @@ const handle = async (req, res) => {
  * `taken` is already taken on the email change; a current password of
  * `wrong` fails the step-up and the password change. The first sensitive
  * call answers `403 step_up_required` until `POST /api/user/step-up`
- * arms the five-minute window. `POST /api/admin/organizations/bulk`
- * answers the users bulk shape, its delete action stepped up the same way.
+ * arms the five-minute window. `POST /api/admin/users/bulk` answers
+ * `set_customer_id`, `set_primary_organization`, `revoke_sessions` and
+ * `unlock` beside its enable, suspend, role and delete actions, `delete`
+ * and `revoke_sessions` stepped up, a skipped row named `self`,
+ * `not_found` or `not_a_member`. `POST /api/admin/organizations/bulk`
+ * answers `set_customer_id`, `set_access_mode`, `set_default_role` and
+ * `regenerate_invite_code` beside suspend, resume and delete, its delete
+ * stepped up, a personal organization skipped as `personal`.
+ * `POST /api/admin/sessions/bulk` revokes a selection, stepped up, an
+ * unknown id skipped as `not_found`. `DELETE /api/admin/brute-force`
+ * unblocks every address and `POST /api/admin/brute-force/bulk` unblocks a
+ * selection, an address off the table skipped as `not_blocked`.
+ * `POST /api/admin/terms/bulk` deletes, publishes or unpublishes a
+ * selection of template ids, its delete stepped up, an unknown id skipped
+ * as `not_found`.
  * `GET /api/events` streams `ready`, one
  * `unread-count`, `blocked-count`, `restart-required` and `health` event
  * three seconds after connecting, and `:hb` every 25 seconds. The six
@@ -3057,6 +3234,11 @@ const handle = async (req, res) => {
  * membership, `403 not_open` elsewhere, `409 already_requested` twice),
  * `GET …/requests` lists a managed organization's, and `…/approve` makes
  * the membership at `assigned_role` while `…/deny` drops the request.
+ * `POST /api/notifications/{id}/unread` puts a row back to unread and
+ * broadcasts `unread-count` (decision 151).
+ * `POST /api/user/organizations/{uuid}/invites/{id}/resend` answers
+ * `204` and refuses `429 throttled` with `wait_seconds` inside its own
+ * sixty-second window per invite (decision 152).
  *
  * @returns {http.Server} The listening server
  */

@@ -13,7 +13,13 @@ const moved = (items, from, to) => {
   return next;
 };
 
-const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag }) => {
+export const selectableShape = PropTypes.shape({
+  isSelected: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  labelOf: PropTypes.func,
+});
+
+const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag, selectable }) => {
   const { t } = useTranslation();
   const key = keyOf(item);
   const onKeyDown = event => {
@@ -47,6 +53,15 @@ const SortableRow = ({ item, index, count, keyOf, renderItem, onMove, drag }) =>
       onDrop={() => drag.drop(index)}
       onDragEnd={drag.end}
     >
+      {selectable ? (
+        <input
+          type="checkbox"
+          className="form-check-input flex-shrink-0"
+          checked={selectable.isSelected(item)}
+          onChange={() => selectable.onToggle(item)}
+          aria-label={selectable.labelOf ? selectable.labelOf(item) : undefined}
+        />
+      ) : null}
       {renderItem(item, handle)}
     </li>
   );
@@ -65,15 +80,25 @@ SortableRow.propTypes = {
     drop: PropTypes.func.isRequired,
     end: PropTypes.func.isRequired,
   }).isRequired,
+  selectable: selectableShape,
 };
 
 /**
  * Drag-to-reorder over a keyed list: every row carries a grip the pointer
  * drags and the arrow keys move, and `onReorder` receives the whole list
  * in its new order after each move; `renderItem(item, handle)` draws the
- * row around the handle it is handed.
+ * row around the handle it is handed. `selectable`, when given, draws a
+ * checkbox at the row's leading edge, left of the drag handle, for a page
+ * that picks cards the way a table picks rows.
  */
-const SortableList = ({ items, keyOf, renderItem, onReorder, className = '' }) => {
+const SortableList = ({
+  items,
+  keyOf,
+  renderItem,
+  onReorder,
+  className = '',
+  selectable = null,
+}) => {
   const [from, setFrom] = useState(-1);
 
   const onMove = (source, target) => {
@@ -105,6 +130,7 @@ const SortableList = ({ items, keyOf, renderItem, onReorder, className = '' }) =
           renderItem={renderItem}
           onMove={onMove}
           drag={drag}
+          selectable={selectable}
         />
       ))}
     </ul>
@@ -117,6 +143,7 @@ SortableList.propTypes = {
   renderItem: PropTypes.func.isRequired,
   onReorder: PropTypes.func.isRequired,
   className: PropTypes.string,
+  selectable: selectableShape,
 };
 
 export default SortableList;

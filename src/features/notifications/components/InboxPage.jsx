@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import InboxList, { extractEntries, linkOf } from '../../../components/common/InboxList';
 import Pager from '../../../components/common/Pager';
@@ -25,6 +26,20 @@ const totalPagesOf = data => Math.max(0, Number(data?.total_pages) || 0);
 const totalOf = data => Math.max(0, Number(data?.total) || 0);
 
 const readNow = () => new Date().toISOString();
+
+const runBulk = async (rows, call) => {
+  const settled = await Promise.allSettled(rows.map(row => call(row)));
+  const succeeded = [];
+  const errors = [];
+  settled.forEach((outcome, index) => {
+    if (outcome.status === 'fulfilled') {
+      succeeded.push(rows[index]);
+    } else {
+      errors.push({ code: outcome.reason?.code || 'error' });
+    }
+  });
+  return { succeeded, processed: succeeded.length, skipped: errors.length, errors };
+};
 
 const useSelection = rows => {
   const [selected, setSelected] = useState(() => new Set());
@@ -50,8 +65,12 @@ const useSelection = rows => {
  * list, twenty-five per page with the pager over the hub's paged shape, a
  * `SectionHeading` whose title carries the count as muted text and whose
  * action pane reads, while rows are picked, "N selected", Clear
- * selection, Mark as read and Delete, then Mark all as read and Delete
- * all (`DELETE /api/notifications`, behind a confirm); a select column
+ * selection, Mark as read, Mark as unread and Delete, then Mark all as
+ * read and Delete all (`DELETE /api/notifications`, behind a confirm),
+ * each bulk action one existing per-row call per picked row (Mark as
+ * unread `POST /api/notifications/{id}/unread`, decision 151) counted
+ * into a result line under the heading naming processed, skipped and
+ * each error's code, clearing on the next bulk action; a select column
  * whose header cell is a real checkbox, the select-all for the page,
  * indeterminate when some but not all rows are picked, at the list's
  * head, the row checkboxes its cells; the per-row Mark as read and
@@ -73,6 +92,7 @@ const InboxPage = ({ notifications }) => {
   const [loadFailed, setLoadFailed] = useState(false);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
   const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
   const selection = useSelection(entries);
   const labels = {
     markRead: t('inbox.markRead'),
@@ -170,38 +190,52 @@ const InboxPage = ({ notifications }) => {
   );
 
   const bulkMarkRead = async () => {
-    const unread = picked.filter(entry => !entry.readAt);
-    if (unread.length === 0) {
-      selection.clear();
-      return;
-    }
-    try {
-      await Promise.all(unread.map(entry => notifications.markRead(entry.id)));
-      adjustUnread(-unread.length);
-      const ids = new Set(unread.map(entry => entry.id));
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.markRead(entry.id)
+    );
+    const newlyRead = succeeded.filter(entry => !entry.readAt);
+    if (newlyRead.length > 0) {
+      adjustUnread(-newlyRead.length);
+      const ids = new Set(newlyRead.map(entry => entry.id));
       setEntries(previous =>
         previous.map(item => (ids.has(item.id) ? { ...item, readAt: readNow() } : item))
       );
-      selection.clear();
-    } catch (error) {
-      notify('danger', t(error.messageKey || 'errors.request'));
     }
+    setBulkResult({ processed, skipped, errors });
+    selection.clear();
+  };
+
+  const bulkMarkUnread = async () => {
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.markUnread(entry.id)
+    );
+    const newlyUnread = succeeded.filter(entry => entry.readAt);
+    if (newlyUnread.length > 0) {
+      adjustUnread(newlyUnread.length);
+      const ids = new Set(newlyUnread.map(entry => entry.id));
+      setEntries(previous =>
+        previous.map(item => (ids.has(item.id) ? { ...item, readAt: null } : item))
+      );
+    }
+    setBulkResult({ processed, skipped, errors });
+    selection.clear();
   };
 
   const bulkDelete = async () => {
-    const unreadCount = picked.filter(entry => !entry.readAt).length;
-    try {
-      await Promise.all(picked.map(entry => notifications.remove(entry.id)));
-      if (unreadCount > 0) {
-        adjustUnread(-unreadCount);
-      }
-      selection.clear();
-      await load();
-    } catch (error) {
-      notify('danger', t(error.messageKey || 'errors.request'));
-    } finally {
-      setShowBulkDelete(false);
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.remove(entry.id)
+    );
+    const unreadDeleted = succeeded.filter(entry => !entry.readAt).length;
+    if (unreadDeleted > 0) {
+      adjustUnread(-unreadDeleted);
     }
+    setBulkResult({ processed, skipped, errors });
+    selection.clear();
+    setShowBulkDelete(false);
+    await load();
   };
 
   const needle = query.trim().toLowerCase();
@@ -227,6 +261,13 @@ const InboxPage = ({ notifications }) => {
           </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={bulkMarkRead}>
             {t('inbox.bulk.markRead')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={bulkMarkUnread}
+          >
+            {t('inbox.bulk.markUnread')}
           </button>
           <button
             type="button"
@@ -259,6 +300,11 @@ const InboxPage = ({ notifications }) => {
   return (
     <div className="list">
       <SectionHeading title={t('inbox.title')} count={paging.total} actions={headingActions} />
+      {resultLineOf(t, 'inbox.bulk', bulkResult) ? (
+        <p className="small text-muted" role="status">
+          {resultLineOf(t, 'inbox.bulk', bulkResult)}
+        </p>
+      ) : null}
       <div className="border rounded">
         {loadFailed ? <p className="small text-danger m-3">{t('inbox.loadError')}</p> : null}
         {!loadFailed && shown.length === 0 ? (

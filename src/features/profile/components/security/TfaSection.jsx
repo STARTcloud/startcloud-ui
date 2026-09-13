@@ -78,12 +78,9 @@ const AddPhone = ({ account, guard, onDone, onFail }) => {
   return (
     <div className="border rounded p-3 mb-3">
       <h6>{t('profile.security.tfa.addPhone')}</h6>
-      <div className="mb-3">
-        <label className="form-label" htmlFor="profile-tfa-phone">
-          {t('profile.details.mobile')}
-        </label>
-        <PhoneInput id="profile-tfa-phone" value={number} onChange={setNumber} />
-      </div>
+      <Field id="profile-tfa-phone" label={t('profile.details.mobile')}>
+        {aria => <PhoneInput id={aria.id} aria={aria} value={number} onChange={setNumber} />}
+      </Field>
       <button
         type="button"
         className="btn btn-sm btn-outline-primary"

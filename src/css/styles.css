@@ -2491,8 +2491,28 @@ button::-moz-focus-inner {
   color: var(--auth-ink-3);
 }
 
-.auth-field .iti {
+.iti {
+  --iti-hover-color: var(--bs-tertiary-bg);
+  --iti-border-color: var(--bs-border-color);
+  --iti-country-selector-bg: var(--bs-body-bg);
+  --iti-icon-color: var(--bs-secondary-color);
+  display: block;
   width: 100%;
+}
+
+.iti__country-selector {
+  border: var(--iti-border-width) solid var(--iti-border-color);
+  box-shadow: var(--bs-box-shadow);
+}
+
+.iti__search-input,
+.iti__country {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.iti__search-input-wrapper {
+  border-bottom-color: var(--iti-border-color);
 }
 
 .auth-field .phone-input {

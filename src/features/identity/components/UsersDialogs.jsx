@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
@@ -218,6 +218,87 @@ PrimaryOrgDialog.propTypes = {
 };
 
 /**
+ * The Set primary organization dialog of the Users bulk bar: a select over
+ * the organizations every picked user belongs to, from the loaded rows'
+ * `organizations`, one `save(uuid)` call the bulk bar sends as
+ * `set_primary_organization`; disabled with a notice when the picked users
+ * share none.
+ */
+export const BulkPrimaryOrgDialog = ({ users, save, onClose, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const shared = useMemo(() => {
+    const [first, ...rest] = users;
+    if (!first) {
+      return [];
+    }
+    return first.organizations.filter(org =>
+      rest.every(user => user.organizations.some(candidate => candidate.uuid === org.uuid))
+    );
+  }, [users]);
+  const [uuid, setUuid] = useState(shared[0]?.uuid || '');
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = event => {
+    event.preventDefault();
+    setBusy(true);
+    save(uuid)
+      .then(answer => {
+        notify('success', t('admin.users.primaryOrg.saved'));
+        onSaved(answer);
+        onClose();
+      })
+      .catch(error => notify('danger', t(error.messageKey || 'errors.request')))
+      .finally(() => setBusy(false));
+  };
+
+  return (
+    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
+      <form onSubmit={onSubmit} noValidate>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">{t('admin.users.bulk.setPrimaryOrganization')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {shared.length === 0 ? (
+            <p className="text-muted mb-0">{t('admin.users.bulk.noSharedOrg')}</p>
+          ) : (
+            <>
+              <label className="form-label" htmlFor="bulk-primary-org">
+                {t('admin.users.primaryOrg.label')}
+              </label>
+              <select
+                id="bulk-primary-org"
+                className="form-select"
+                value={uuid}
+                onChange={event => setUuid(event.target.value)}
+              >
+                {shared.map(org => (
+                  <option key={org.uuid} value={org.uuid}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+        </Modal.Body>
+        <DialogFooter
+          busy={busy || shared.length === 0 || !uuid}
+          label={t('admin.users.primaryOrg.confirm')}
+          onClose={onClose}
+        />
+      </form>
+    </Modal>
+  );
+};
+
+BulkPrimaryOrgDialog.propTypes = {
+  users: PropTypes.arrayOf(adminUserShape).isRequired,
+  save: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
+/**
  * The customer id dialog of a Users row or an organizations row: the six
  * hex characters validated through `useFormRules` against
  * `$defs.orgCode`, an empty value clearing it, one `PATCH` through
@@ -242,9 +323,9 @@ export const CustomerIdDialog = ({ title, hint, initial, save, onClose, onSaved 
     }
     setBusy(true);
     save(form.customer_id)
-      .then(() => {
+      .then(answer => {
         notify('success', t('admin.users.customerId.saved'));
-        onSaved();
+        onSaved(answer);
         onClose();
       })
       .catch(error => {

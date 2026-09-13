@@ -5,13 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { FaPlus } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SortableList from '../../../components/common/SortableList';
+import { errorKeys } from '../../../components/common/StepUpDialog';
 import TermIcon from '../../../components/common/TermIcon';
+import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useFormRules } from '../../../hooks/useFormRules';
@@ -23,6 +26,7 @@ import {
   placeholders as readPlaceholders,
   reorderTerms,
   terms,
+  termsBulk,
 } from '../api/content';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { PLACEHOLDERS, TERMS } from '../utils/examples';
@@ -325,6 +329,121 @@ const useOrdered = data => {
   return { ordered, setOrdered };
 };
 
+const useSelection = rows => {
+  const [selected, setSelected] = useState(() => new Set());
+  const toggle = id =>
+    setSelected(current => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  const allSelected = rows.length > 0 && rows.every(row => selected.has(idOf(row)));
+  const someSelected = selected.size > 0;
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(idOf)));
+  const clear = () => setSelected(new Set());
+  return {
+    selected,
+    toggleAll,
+    allSelected,
+    someSelected,
+    clear,
+    selectable: {
+      isSelected: row => selected.has(idOf(row)),
+      onToggle: row => toggle(idOf(row)),
+      labelOf: row => row.friendly_name || row.name,
+    },
+  };
+};
+
+/**
+ * The Terms page's bulk actions, drawn in the heading's action pane while
+ * cards are picked: Make public, Make private and Delete, Delete behind
+ * the shared confirm and the step-up dialog, over
+ * `POST /api/admin/terms/bulk`, and the result line naming processed,
+ * skipped and each error's code translated (decision 150).
+ */
+const TermsBulkActions = ({ selected, onDone }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const guard = useGuard();
+  const [pending, setPending] = useState('');
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const run = action => {
+    setBusy(true);
+    guard(() => termsBulk({ action, ids: selected }), t('admin.terms.bulk.stepUpReason'))
+      .then(answer => {
+        setResult(answer);
+        onDone();
+      })
+      .catch(error => {
+        if (error?.code !== 'step_up_required') {
+          notify('danger', t(errorKeys(error)));
+        }
+      })
+      .finally(() => {
+        setBusy(false);
+        setPending('');
+      });
+  };
+
+  const line = resultLineOf(t, 'admin.terms.bulk', result);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        disabled={busy || selected.length === 0}
+        onClick={() => run('set_public')}
+      >
+        {t('admin.terms.bulk.set_public')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        disabled={busy || selected.length === 0}
+        onClick={() => run('set_private')}
+      >
+        {t('admin.terms.bulk.set_private')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        disabled={busy || selected.length === 0}
+        onClick={() => setPending('delete')}
+      >
+        {t('admin.terms.bulk.delete')}
+      </button>
+      {line ? (
+        <span className="small text-muted" role="status">
+          {line}
+        </span>
+      ) : null}
+      <ConfirmModal
+        show={pending === 'delete'}
+        handleClose={() => setPending('')}
+        handleConfirm={() => run('delete')}
+        title={t('admin.terms.bulk.confirmTitle')}
+        message={t('admin.terms.bulk.confirmBody', {
+          count: selected.length,
+          keyword: t('pages.confirm.keyword'),
+        })}
+      />
+    </>
+  );
+};
+
+TermsBulkActions.propTypes = {
+  selected: PropTypes.array.isRequired,
+  onDone: PropTypes.func.isRequired,
+};
+
 /**
  * Legal › Terms: a `SectionHeading` over the cards, the template count as
  * muted text after the title, Create as the heading's action; the
@@ -340,7 +459,11 @@ const useOrdered = data => {
  * bound with a query over the cards by name and display name and the
  * Type and Public `toggle` groups narrowing the cards client-side, the
  * query and the groups' values in the URL as `search`, `type` and
- * `public` through `useUrlNarrowing`.
+ * `public` through `useUrlNarrowing`; a checkbox on every card and the
+ * heading's select-all at the title's leading edge, the heading's action
+ * pane gaining, while cards are picked, "N selected", Clear selection,
+ * Make public, Make private and Delete, Delete behind the confirm and the
+ * step-up dialog (decision 150).
  */
 const TermsPage = () => {
   const { t } = useTranslation();
@@ -364,6 +487,7 @@ const TermsPage = () => {
     groups: filters.groups,
     onClearFilters: filters.clear,
   });
+  const selection = useSelection(shown);
   const [dialog, setDialog] = useState({ open: false, term: null });
   const [previewing, setPreviewing] = useState(null);
   const [copying, setCopying] = useState(null);
@@ -414,12 +538,36 @@ const TermsPage = () => {
     </button>
   );
 
+  const headingActions = selection.someSelected ? (
+    <>
+      <strong>{t('admin.terms.bulk.selected', { count: selection.selected.size })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('admin.terms.bulk.clearSelection')}
+      </button>
+      <TermsBulkActions
+        selected={[...selection.selected]}
+        onDone={() => {
+          selection.clear();
+          reload();
+        }}
+      />
+    </>
+  ) : (
+    createAction
+  );
+
   return (
     <div>
       <SectionHeading
         title={t('admin.terms.title')}
         count={ordered.length}
-        actions={createAction}
+        actions={headingActions}
+        selectAll={{
+          allSelected: selection.allSelected,
+          someSelected: selection.someSelected,
+          onToggleAll: selection.toggleAll,
+          label: t('pages.selectColumn'),
+        }}
       />
       {shown.length === 0 ? (
         <div className="text-muted">{narrowing ? t('pages.noMatches') : t('pages.empty')}</div>
@@ -428,6 +576,7 @@ const TermsPage = () => {
         items={shown}
         keyOf={keyOf}
         onReorder={next => writeOrder(reorderWithin(ordered, next), ordered)}
+        selectable={selection.selectable}
         renderItem={(term, handle) => (
           <TermCard
             term={term}
