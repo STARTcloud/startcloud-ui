@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTrash } from 'react-icons/fa6';
@@ -16,6 +16,17 @@ const ROW_LABELS = { key: 'configManager.map.key', value: 'configManager.map.val
 const EMPTY_KEY_FORM = { key: '' };
 const EMPTY_ROW_FORM = { key: '', value: undefined };
 const FIRST_FIELD = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
+
+const NO_ARRIVAL = { key: '', clear: () => undefined };
+
+/**
+ * The map item a page arrived at: `key` the entry the URL's hash names,
+ * empty when none, and `clear` the page's way of dropping the hash once
+ * the item dialog closes; the config page provides it from
+ * `/admin/config/<name>#<key>` and the map that holds the key opens its
+ * dialog over that entry.
+ */
+export const ConfigArrivalContext = createContext(NO_ARRIVAL);
 
 const isSchema = value => value !== null && typeof value === 'object';
 
@@ -230,18 +241,41 @@ const ObjectMap = ({
     labels: KEY_LABELS,
     idPrefix: `${id}:dialog`,
   });
-  const close = () => setEditing(null);
+  const arrival = useContext(ConfigArrivalContext);
+  const arrivalKey = Object.hasOwn(entries, arrival.key) ? arrival.key : '';
+  const opened = useRef('');
+  const { reset } = dialog;
+  const openEdit = key => {
+    setForm({ ...entriesOf(entries[key]), key });
+    reset();
+    setEditing(key);
+  };
+  const close = () => {
+    setEditing(null);
+    if (editing === arrivalKey) {
+      arrival.clear();
+    }
+  };
   const focusFirst = () => formRef.current?.querySelector(FIRST_FIELD)?.focus();
   const openAdd = () => {
     setForm(EMPTY_KEY_FORM);
     dialog.reset();
     setEditing('');
   };
-  const openEdit = key => {
-    setForm({ ...entriesOf(entries[key]), key });
-    dialog.reset();
-    setEditing(key);
-  };
+
+  useEffect(() => {
+    if (!arrivalKey) {
+      opened.current = '';
+      return;
+    }
+    if (opened.current !== arrivalKey) {
+      opened.current = arrivalKey;
+      setForm({ ...entriesOf(entries[arrivalKey]), key: arrivalKey });
+      reset();
+      setEditing(arrivalKey);
+    }
+  }, [arrivalKey, entries, reset]);
+
   const save = event => {
     event.preventDefault();
     if (!dialog.validateAll()) {
@@ -482,7 +516,9 @@ ScalarMap.propTypes = mapShape;
  * sections and foldable subsections as the page groups the file's, two
  * columns where the page draws two, the `description` under each control,
  * a nested `additionalProperties` item as this component nested, and the
- * first enabled field focused when the dialog opens, and a Delete on each
+ * first enabled field focused when the dialog opens, the dialog opened on
+ * arrival over the entry whose key `ConfigArrivalContext` names and that
+ * context's `clear` called when that dialog closes, and a Delete on each
  * card; a scalar item draws as key and value rows with Add and Remove; an
  * item that is itself a map draws this component nested per entry; Add,
  * Delete and Remove change the form alone through `onChange` with the

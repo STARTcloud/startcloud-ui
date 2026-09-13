@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding } from 'react-icons/fa6';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
@@ -11,17 +11,17 @@ import MethodList, { MethodRow, httpsUrl } from '../../../components/common/Meth
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
+import { hasFeature } from '../../../utils/capabilities';
 import { readDetailPrefs, writeDetailPrefs } from '../../../utils/prefs';
 import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
 const CREATE_SCHEMA = { required: ['name'], properties: { name: NON_BLANK } };
 const CREATE_LABELS = { name: 'organizations.name' };
-const JOIN_SCHEMA = { required: ['invite_code'], properties: { invite_code: NON_BLANK } };
-const JOIN_LABELS = { invite_code: 'organizations.inviteCode' };
 const EMPTY = { organizations: [], organizations_enabled: false, personal_to_team_enabled: false };
 const PREFS_KEY = 'table_prefs_organizations';
 const VIEWS = ['table', 'cards'];
@@ -42,12 +42,17 @@ const membershipShape = PropTypes.shape({
   invite_code: PropTypes.string,
 });
 
-const InlineForm = ({ id, label, value, rules, onChange, onSubmit, button, primary }) => {
+const CreateForm = ({ value, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form onSubmit={onSubmit} noValidate className="mb-3">
+    <form onSubmit={onSubmit} noValidate className="flex-grow-1">
       <FormErrorSummary errors={rules.summary} />
-      <Field id={rules.idFor(id)} label={t(label)} error={rules.errors[id] || ''} className="mb-2">
+      <Field
+        id={rules.idFor('name')}
+        label={t('organizations.create')}
+        error={rules.errors.name || ''}
+        className="mb-0"
+      >
         {aria => (
           <div className="d-flex gap-2">
             <input
@@ -56,13 +61,10 @@ const InlineForm = ({ id, label, value, rules, onChange, onSubmit, button, prima
               className="form-control"
               value={value}
               onChange={event => onChange(event.target.value)}
-              onBlur={() => rules.onBlur(id)}
+              onBlur={() => rules.onBlur('name')}
             />
-            <button
-              type="submit"
-              className={`btn ${primary ? 'btn-primary' : 'btn-outline-secondary'} text-nowrap`}
-            >
-              {t(button)}
+            <button type="submit" className="btn btn-primary text-nowrap">
+              {t('organizations.createButton')}
             </button>
           </div>
         )}
@@ -71,15 +73,11 @@ const InlineForm = ({ id, label, value, rules, onChange, onSubmit, button, prima
   );
 };
 
-InlineForm.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
+CreateForm.propTypes = {
   value: PropTypes.string.isRequired,
   rules: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
-  button: PropTypes.string.isRequired,
-  primary: PropTypes.bool.isRequired,
 };
 
 const MembershipBadges = ({ org }) => {
@@ -241,19 +239,23 @@ MembershipCards.propTypes = {
 
 /**
  * The organizations page of the identity contract at `/user/organizations`:
- * Create an organization while the answer says `organizations_enabled`,
- * Join with an invite code, then the memberships under the pages contract's
- * one view toggle, a row or a card per membership with its badges, the
- * person's role, Make primary, the invite code with Regenerate while the
- * person can manage it, and View or Manage, which makes that organization
- * the active one under `activeOrgKey` and opens the shared console; a
- * `#<uuid>` in the URL does the same on load, and the chosen view persists
- * as `view` inside the one prefs object under `table_prefs_organizations`;
- * the navbar search is bound with a query over the memberships by name.
+ * Create a team, a name required, while the answer says
+ * `organizations_enabled`, beside a Find an organization link to the
+ * directory at `/organizations/discover` while the host advertises
+ * `discover`, no join-by-code form, then the memberships under the pages
+ * contract's one view toggle, a row or a card per membership with its
+ * badges, the person's role, Make primary, the invite code with Regenerate
+ * while the person can manage it, and View or Manage, which makes that
+ * organization the active one under `activeOrgKey` and opens the shared
+ * console; a `#<uuid>` in the URL does the same on load, and the chosen
+ * view persists as `view` inside the one prefs object under
+ * `table_prefs_organizations`; the navbar search is bound with a query
+ * over the memberships by name.
  */
 const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [data, setData] = useState(EMPTY);
@@ -261,18 +263,11 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const [view, setView] = useState(storedView);
   const [query, setQuery] = useState('');
   const [createForm, setCreateForm] = useState({ name: '' });
-  const [joinForm, setJoinForm] = useState({ invite_code: '' });
   const createRules = useFormRules({
     schema: CREATE_SCHEMA,
     values: createForm,
     labels: CREATE_LABELS,
     idPrefix: 'org-create',
-  });
-  const joinRules = useFormRules({
-    schema: JOIN_SCHEMA,
-    values: joinForm,
-    labels: JOIN_LABELS,
-    idPrefix: 'org-join',
   });
 
   useEffect(() => {
@@ -351,16 +346,6 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
     });
   };
 
-  const join = event => {
-    event.preventDefault();
-    submit({
-      rules: joinRules,
-      call: () => organizations.join(joinForm.invite_code),
-      done: 'organizations.joined',
-      reset: () => setJoinForm({ invite_code: '' }),
-    });
-  };
-
   const act = async (call, done) => {
     try {
       await call();
@@ -404,28 +389,21 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
         <h3 className="mb-0">{t('organizations.title')}</h3>
         <ViewToggle view={view} onChange={changeView} />
       </div>
-      {data.organizations_enabled ? (
-        <InlineForm
-          id="name"
-          label="organizations.create"
-          value={createForm.name}
-          rules={createRules}
-          onChange={name => setCreateForm({ name })}
-          onSubmit={create}
-          button="organizations.createButton"
-          primary
-        />
-      ) : null}
-      <InlineForm
-        id="invite_code"
-        label="organizations.join"
-        value={joinForm.invite_code}
-        rules={joinRules}
-        onChange={code => setJoinForm({ invite_code: code })}
-        onSubmit={join}
-        button="organizations.joinButton"
-        primary={false}
-      />
+      <div className="d-flex flex-wrap align-items-end gap-3 mb-3">
+        {data.organizations_enabled ? (
+          <CreateForm
+            value={createForm.name}
+            rules={createRules}
+            onChange={name => setCreateForm({ name })}
+            onSubmit={create}
+          />
+        ) : null}
+        {hasFeature(status, 'discover') ? (
+          <Link to="/organizations/discover" className="btn btn-outline-primary text-nowrap">
+            {t('organizations.find')}
+          </Link>
+        ) : null}
+      </div>
       {view === 'cards' ? (
         <MembershipCards
           organizations={shown}

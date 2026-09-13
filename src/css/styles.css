@@ -935,6 +935,27 @@ button::-moz-focus-inner {
   max-width: 320px;
 }
 
+.section-card-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.section-card-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .navbar:has(> .navbar-search-panel),
 .navbar:has(> .notice-banner) {
   flex-wrap: wrap;
@@ -1327,7 +1348,8 @@ button::-moz-focus-inner {
 }
 
 .items-table .col-watch,
-.items-table .col-quick {
+.items-table .col-quick,
+.items-table .col-select {
   width: 2.5rem;
 }
 
@@ -1390,6 +1412,10 @@ button::-moz-focus-inner {
 
 .items-table .col-seen {
   width: 10rem;
+}
+
+.items-table .col-actions {
+  width: 11rem;
 }
 
 .items-table tr.standby {

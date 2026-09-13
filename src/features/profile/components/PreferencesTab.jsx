@@ -1,14 +1,18 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaSliders } from 'react-icons/fa6';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import SectionCard from '../../../components/common/SectionCard';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useTheme } from '../../../hooks/useTheme';
 
+const PREFS_KEY = 'table_prefs_profile_preferences';
 const THEMES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
 const SCHEMA = {
@@ -83,44 +87,63 @@ PinStatus.propTypes = {
   onClear: PropTypes.func.isRequired,
 };
 
+const SelectField = ({ id, label, hint, error = '', value, onChange, onBlur, children }) => (
+  <Field id={id} label={label} hint={hint} error={error}>
+    {aria => (
+      <select {...aria} className="form-select" value={value} onChange={onChange} onBlur={onBlur}>
+        {children}
+      </select>
+    )}
+  </Field>
+);
+
+SelectField.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  hint: PropTypes.node.isRequired,
+  error: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  onBlur: PropTypes.func,
+  children: PropTypes.node.isRequired,
+};
+
 /**
- * The Preferences tab of the identity contract at `#preferences`: language
- * and theme as selects that write through on change, the same values the
- * chrome's controls write; the time zone from the `Intl` list with the
- * detected zone preselected while none is set, the sign-in approval
- * channel (SMS disabled with a hint while no verified number exists, the
- * stored value kept selected) and the approval PIN with its status line,
- * "No PIN · Set" revealing and focusing the PIN input or "A PIN is set ·
- * Clear", saved together by one Save through
+ * The Preferences section of the identity contract at
+ * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
+ * fold is kept under `table_prefs_profile_preferences`: language,
+ * theme and time zone on one row, language and theme as selects that
+ * write through on change, the same values the chrome's controls write
+ * through the shared `useTheme` and the shared `i18n`; the time zone from
+ * the `Intl` list with the detected zone preselected while none is set;
+ * on the next row the sign-in approval channel (SMS disabled with a hint
+ * while no verified number exists, the stored value kept selected) and
+ * the approval PIN as an input group with Set and Clear inline and its
+ * status line, "A PIN is set · Clear" or "No PIN · Set"; time zone,
+ * channel and PIN saved together by one Save preferences through
  * `PATCH /api/user/preferences`, the time zone in the patch only when the
  * person chose one that differs from the stored value, so a detected
- * preselection is never written; the theme goes through the shared
- * `useTheme` and the language through the shared `i18n`, the same the
- * chrome reads and writes; the page remounts it with every re-read of the
- * record.
+ * preselection is never written, while the rules evaluate the zone the
+ * select holds; the page remounts it with every re-read of the record.
  */
 const PreferencesTab = ({ account, profile, session, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const { preference: themePreference, setPreference: setThemePreference } = useTheme();
+  const folds = useFolds(PREFS_KEY);
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
   const [settings, setSettings] = useState(() => settingsOf(preferences));
   const [pin, setPin] = useState('');
   const [clearPin, setClearPin] = useState(false);
-  const [showPin, setShowPin] = useState(false);
   const pinRef = useRef(null);
   const zones = useMemo(() => timeZones(), []);
   const [detected] = useState(detectedZone);
   const zone = settings.timezone || detected;
   const smsAllowed = Boolean(profile.mobile_number?.verified);
   const values = useMemo(
-    () => ({
-      timezone: settings.timezone,
-      ciba_channel: settings.ciba_channel,
-      ciba_user_code: pin,
-    }),
-    [settings, pin]
+    () => ({ timezone: zone, ciba_channel: settings.ciba_channel, ciba_user_code: pin }),
+    [zone, settings.ciba_channel, pin]
   );
   const rules = useFormRules({
     formKey: 'preferences',
@@ -130,12 +153,6 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
     idPrefix: 'profile-preferences',
   });
 
-  useEffect(() => {
-    if (showPin) {
-      pinRef.current?.focus();
-    }
-  }, [showPin]);
-
   const set = (field, value) => setSettings(previous => ({ ...previous, [field]: value }));
 
   const changeLanguage = async language => {
@@ -143,7 +160,16 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
     await i18n.changeLanguage(language);
   };
 
-  const changeTheme = theme => setThemePreference(theme);
+  const setPinMode = () => {
+    setClearPin(false);
+    pinRef.current?.focus();
+  };
+
+  const clearPinMode = () => {
+    setClearPin(true);
+    setPin('');
+    rules.clear('ciba_user_code');
+  };
 
   const save = async event => {
     event.preventDefault();
@@ -164,7 +190,6 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
       await account.preferences(patch);
       setPin('');
       setClearPin(false);
-      setShowPin(false);
       rules.reset();
       notify('success', t('profile.preferences.saved'));
       await onSaved();
@@ -185,17 +210,21 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
 
   return (
     <div className="tab-pane fade show active">
-      <div className="row">
-        <div className="col-md-6">
-          <Field
-            id="profile-preferences-language"
-            label={t('profile.preferences.language')}
-            hint={t('profile.preferences.languageHint')}
-          >
-            {aria => (
-              <select
-                {...aria}
-                className="form-select"
+      <SectionCard
+        icon={<FaSliders aria-hidden />}
+        title={t('profile.preferences.title')}
+        className="mb-0"
+        folded={folds.folded('preferences')}
+        onFold={() => folds.toggle('preferences')}
+      >
+        <form onSubmit={save} noValidate>
+          <FormErrorSummary errors={rules.summary} />
+          <div className="row">
+            <div className="col-md-4">
+              <SelectField
+                id="profile-preferences-language"
+                label={t('profile.preferences.language')}
+                hint={t('profile.preferences.languageHint')}
                 value={i18n.language}
                 onChange={event => changeLanguage(event.target.value)}
               >
@@ -204,98 +233,64 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
                     {languageName(code)}
                   </option>
                 ))}
-              </select>
-            )}
-          </Field>
-        </div>
-        <div className="col-md-6">
-          <Field
-            id="profile-preferences-theme"
-            label={t('profile.preferences.theme.label')}
-            hint={t('profile.preferences.themeHint')}
-          >
-            {aria => (
-              <select
-                {...aria}
-                className="form-select"
+              </SelectField>
+            </div>
+            <div className="col-md-4">
+              <SelectField
+                id="profile-preferences-theme"
+                label={t('profile.preferences.theme.label')}
+                hint={t('profile.preferences.themeHint')}
                 value={themePreference}
-                onChange={event => changeTheme(event.target.value)}
+                onChange={event => setThemePreference(event.target.value)}
               >
                 {THEMES.map(theme => (
                   <option key={theme} value={theme}>
                     {t(`profile.preferences.theme.${theme}`)}
                   </option>
                 ))}
-              </select>
-            )}
-          </Field>
-        </div>
-      </div>
-      <form onSubmit={save} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <div className="row">
-          <div className="col-md-6">
-            <Field
-              id={rules.idFor('timezone')}
-              label={t('profile.preferences.timezone')}
-              hint={t('profile.preferences.timezoneHint')}
-              error={rules.errors.timezone || ''}
-            >
-              {aria => (
-                <select
-                  {...aria}
-                  className="form-select"
-                  value={zone}
-                  onChange={event => set('timezone', event.target.value)}
-                  onBlur={() => rules.onBlur('timezone')}
-                >
-                  {zones.includes(zone) ? null : <option value={zone}>{zone}</option>}
-                  {zones.map(name => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
+              </SelectField>
+            </div>
+            <div className="col-md-4">
+              <SelectField
+                id={rules.idFor('timezone')}
+                label={t('profile.preferences.timezone')}
+                hint={t('profile.preferences.timezoneHint')}
+                error={rules.errors.timezone || ''}
+                value={zone}
+                onChange={event => set('timezone', event.target.value)}
+                onBlur={() => rules.onBlur('timezone')}
+              >
+                {zones.includes(zone) ? null : <option value={zone}>{zone}</option>}
+                {zones.map(name => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
           </div>
-          <div className="col-md-6">
-            <Field
-              id={rules.idFor('ciba_channel')}
-              label={t('profile.preferences.channel.label')}
-              hint={channelHint}
-              error={rules.errors.ciba_channel || ''}
-            >
-              {aria => (
-                <select
-                  {...aria}
-                  className="form-select"
-                  value={settings.ciba_channel}
-                  onChange={event => set('ciba_channel', event.target.value)}
-                  onBlur={() => rules.onBlur('ciba_channel')}
-                >
-                  {CHANNELS.map(channel => (
-                    <option
-                      key={channel}
-                      value={channel}
-                      disabled={channel === 'SMS' && !smsAllowed}
-                    >
-                      {t(`profile.preferences.channel.${channel}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-          </div>
-          <div className="col-md-6">
-            <p className="small mb-1">
-              <PinStatus
-                pinSet={pinSet}
-                onSet={() => setShowPin(true)}
-                onClear={() => setClearPin(true)}
-              />
-            </p>
-            {showPin ? (
+          <div className="row">
+            <div className="col-md-6">
+              <SelectField
+                id={rules.idFor('ciba_channel')}
+                label={t('profile.preferences.channel.label')}
+                hint={channelHint}
+                error={rules.errors.ciba_channel || ''}
+                value={settings.ciba_channel}
+                onChange={event => set('ciba_channel', event.target.value)}
+                onBlur={() => rules.onBlur('ciba_channel')}
+              >
+                {CHANNELS.map(channel => (
+                  <option key={channel} value={channel} disabled={channel === 'SMS' && !smsAllowed}>
+                    {t(`profile.preferences.channel.${channel}`)}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+            <div className="col-md-6">
+              <p className="small mb-1">
+                <PinStatus pinSet={pinSet} onSet={setPinMode} onClear={clearPinMode} />
+              </p>
               <Field
                 id={rules.idFor('ciba_user_code')}
                 label={t('profile.preferences.pin')}
@@ -303,25 +298,39 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
                 error={rules.errors.ciba_user_code || ''}
               >
                 {aria => (
-                  <input
-                    {...aria}
-                    ref={pinRef}
-                    type="password"
-                    className="form-control"
-                    autoComplete="off"
-                    value={pin}
-                    onChange={event => setPin(event.target.value)}
-                    onBlur={() => rules.onBlur('ciba_user_code')}
-                  />
+                  <div className="input-group">
+                    <input
+                      {...aria}
+                      ref={pinRef}
+                      type="password"
+                      className="form-control"
+                      autoComplete="off"
+                      placeholder={t('profile.preferences.pinPlaceholder')}
+                      value={pin}
+                      onChange={event => setPin(event.target.value)}
+                      onBlur={() => rules.onBlur('ciba_user_code')}
+                    />
+                    <button type="button" className="btn btn-outline-primary" onClick={setPinMode}>
+                      {t('profile.preferences.set')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={clearPinMode}
+                      disabled={!pinSet && !pin}
+                    >
+                      {t('profile.preferences.clear')}
+                    </button>
+                  </div>
                 )}
               </Field>
-            ) : null}
+            </div>
           </div>
-        </div>
-        <button type="submit" className="btn btn-primary">
-          {t('profile.preferences.save')}
-        </button>
-      </form>
+          <button type="submit" className="btn btn-primary">
+            {t('profile.preferences.save')}
+          </button>
+        </form>
+      </SectionCard>
     </div>
   );
 };

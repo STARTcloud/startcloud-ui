@@ -1,9 +1,21 @@
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaChevronRight, FaCircleCheck, FaRegStar, FaStar } from 'react-icons/fa6';
+import {
+  FaBookOpen,
+  FaChevronRight,
+  FaCircleCheck,
+  FaListCheck,
+  FaRegStar,
+  FaSitemap,
+  FaStar,
+} from 'react-icons/fa6';
 
 import PageHeader from '../../../components/common/PageHeader';
+import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
+import { useFolds } from '../../../hooks/useFolds';
+
+const PREFS_KEY = 'table_prefs_about';
 
 const linkShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
@@ -77,17 +89,18 @@ AboutHeader.propTypes = {
   favorite: favoriteShape,
 };
 
-const StartHere = ({ docs, intro }) => {
+const StartHere = ({ docs, intro, folds }) => {
   const { t } = useTranslation();
   return (
-    <div className="card h-100">
-      <div className="card-header">
-        <h5 className="mb-0">{t('pages.about.startHere')}</h5>
-      </div>
-      <div className="card-body">
-        <p className="mb-0 text-body-secondary">{intro}</p>
-      </div>
-      <div className="list-group list-group-flush">
+    <SectionCard
+      icon={<FaBookOpen aria-hidden />}
+      title={t('pages.about.startHere')}
+      className="h-100"
+      folded={folds.folded('startHere')}
+      onFold={() => folds.toggle('startHere')}
+    >
+      <p className="text-body-secondary">{intro}</p>
+      <div className="list-group">
         {docs.map(({ key, href, label, Icon }) => (
           <a
             key={key}
@@ -102,46 +115,54 @@ const StartHere = ({ docs, intro }) => {
           </a>
         ))}
       </div>
-    </div>
+    </SectionCard>
   );
 };
 
 StartHere.propTypes = {
   docs: PropTypes.arrayOf(linkShape).isRequired,
   intro: PropTypes.string.isRequired,
+  folds: foldsShape.isRequired,
 };
 
-const Features = ({ features }) => {
+const Features = ({ features, folds }) => {
   const { t } = useTranslation();
   return (
-    <div className="card h-100">
-      <div className="card-header">
-        <h5 className="mb-0">{t('pages.about.whatYouCanDo')}</h5>
-      </div>
-      <div className="card-body">
-        <ul className="list-unstyled mb-0 row row-cols-1 row-cols-md-2 g-3">
-          {features.map(feature => (
-            <li key={feature} className="col d-flex align-items-start gap-2">
-              <FaCircleCheck className="text-success flex-shrink-0 mt-1" aria-hidden />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    <SectionCard
+      icon={<FaListCheck aria-hidden />}
+      title={t('pages.about.whatYouCanDo')}
+      className="h-100"
+      folded={folds.folded('features')}
+      onFold={() => folds.toggle('features')}
+    >
+      <ul className="list-unstyled mb-0 row row-cols-1 row-cols-md-2 g-3">
+        {features.map(feature => (
+          <li key={feature} className="col d-flex align-items-start gap-2">
+            <FaCircleCheck className="text-success flex-shrink-0 mt-1" aria-hidden />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+    </SectionCard>
   );
 };
 
 Features.propTypes = {
   features: PropTypes.arrayOf(PropTypes.string).isRequired,
+  folds: foldsShape.isRequired,
 };
 
-const Components = ({ components }) => {
+const Components = ({ components, folds }) => {
   const { t } = useTranslation();
   return (
-    <>
-      <h4 className="mb-3">{t('pages.about.howItFits')}</h4>
-      <div className="row g-3 mb-4 mx-0 px-0">
+    <SectionCard
+      icon={<FaSitemap aria-hidden />}
+      title={t('pages.about.howItFits')}
+      className="mb-4"
+      folded={folds.folded('components')}
+      onFold={() => folds.toggle('components')}
+    >
+      <div className="row g-3 mx-0 px-0">
         {components.map(component => (
           <div key={component.title} className="col-md">
             <div className="card h-100">
@@ -160,7 +181,7 @@ const Components = ({ components }) => {
           </div>
         ))}
       </div>
-    </>
+    </SectionCard>
   );
 };
 
@@ -171,6 +192,7 @@ Components.propTypes = {
       details: PropTypes.arrayOf(PropTypes.string).isRequired,
     })
   ).isRequired,
+  folds: foldsShape.isRequired,
 };
 
 const SupportStrip = ({ support, intro }) => {
@@ -211,8 +233,9 @@ SupportStrip.propTypes = {
  * description, the goal as a quote and the favorite toggle as its action;
  * Start here (the documentation links as a list) beside What you can do
  * here (features as a check grid); How it fits together (components as
- * headed cards); and Help and community (support links as a footer strip).
- * Every link on the page appears once.
+ * headed cards); and Help and community (support links as a footer strip);
+ * the three blocks are `SectionCard`s whose folds are kept under
+ * `table_prefs_about`. Every link on the page appears once.
  *
  * @param {Object} props
  * @param {import('react').ReactNode} props.brand - The app's mark, drawn in the header's media slot
@@ -245,6 +268,8 @@ const AboutPage = ({
   supportIntro,
   favorite = null,
 }) => {
+  const folds = useFolds(PREFS_KEY);
+
   useEffect(() => {
     document.title = title;
   }, [title]);
@@ -262,13 +287,13 @@ const AboutPage = ({
       />
       <div className="row g-3 mb-4 mx-0 px-0">
         <div className="col-lg-5 col-xl-4">
-          <StartHere docs={docs} intro={docsIntro} />
+          <StartHere docs={docs} intro={docsIntro} folds={folds} />
         </div>
         <div className="col">
-          <Features features={features} />
+          <Features features={features} folds={folds} />
         </div>
       </div>
-      <Components components={components} />
+      <Components components={components} folds={folds} />
       <SupportStrip support={support} intro={supportIntro} />
     </div>
   );

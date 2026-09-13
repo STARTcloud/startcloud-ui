@@ -24,6 +24,7 @@ import {
   suspendUser,
   updateStatus,
 } from '../features/admin';
+import { ApplicationsPage, issuerApplications } from '../features/applications';
 import {
   BootstrapLoginPage,
   CallbackPage,
@@ -125,6 +126,7 @@ import {
 } from '../features/profile';
 import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
+import { UserTermsPage, issuerTerms } from '../features/terms';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage, sidebar as vdiSidebar } from '../features/vdi';
 import { sessionStateShape } from '../hooks/useSession';
@@ -222,6 +224,8 @@ const PAGE_TITLES = {
   '/profile': 'profile.pageTitle',
   '/user/profile/:section?': 'profile.pageTitle',
   '/user/organizations': 'organizations.title',
+  '/user/applications': 'applications.title',
+  '/user/terms': 'userTerms.title',
   '/user/integrations': 'integrations.title',
   '/org-console': 'orgConsole.pageTitle',
   '/notifications': 'inbox.title',
@@ -286,7 +290,8 @@ export const routeTitleKey = pathname => {
 /**
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
  * in the order the column draws them: the profile feature's Account
- * group, the identity feature's operator group while the host's first
+ * group (handed the integrations adapter its Integrations entry reads
+ * once), the identity feature's operator group while the host's first
  * `auth` token is `cookie` (its Configuration row reaching the shared
  * configuration page in place of the shared admin feature's entries), the
  * vdi feature's Fleet group while the host advertises `fleet`, and on
@@ -300,11 +305,12 @@ export const routeTitleKey = pathname => {
  */
 export const sidebarEntries = ({ status, account }) => {
   const cookie = authMethod(status) === 'cookie';
+  const admin = adminAdapterFor(status);
   return [
-    ...profileSidebar(status, account),
-    ...(cookie ? identitySidebar(status, account) : []),
+    ...profileSidebar(status, account, issuerIntegrations),
+    ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
-    ...(cookie ? [] : adminSidebar(status, account, adminAdapterFor(status))),
+    ...(cookie ? [] : adminSidebar(status, account, admin)),
   ];
 };
 
@@ -660,8 +666,17 @@ const issuerProfile = ({ account, status, globalAdmin }) => (
   />
 );
 
-const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications }) => {
+const signedInRoutes = ({
+  status,
+  cookie,
+  account,
+  globalAdmin,
+  notifications,
+  theme,
+  ticketUrl,
+}) => {
   const profile = issuerProfile({ account, status, globalAdmin });
+  const notFound = <ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} notFound />;
   return gatedRoutes([
     { path: '/user/profile/:section?', open: cookie, element: profile, token: 'cookie' },
     {
@@ -708,11 +723,23 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications })
       token: 'invitations',
     },
     {
+      path: '/user/applications',
+      open: cookie,
+      element: (
+        <ApplicationsPage applications={issuerApplications} stepUp={stepUp} user={account.user} />
+      ),
+      token: 'cookie',
+    },
+    {
+      path: '/user/terms',
+      open: cookie && hasFeature(status, 'policies'),
+      element: <UserTermsPage terms={issuerTerms} />,
+      token: 'policies',
+    },
+    {
       path: '/user/integrations',
       open: cookie && hasFeature(status, 'integrations'),
-      element: (
-        <IntegrationsPage integrations={issuerIntegrations} stepUp={stepUp} user={account.user} />
-      ),
+      element: <IntegrationsPage integrations={issuerIntegrations} fallback={notFound} />,
       token: 'integrations',
     },
     {
@@ -739,10 +766,13 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
   ));
 
 const sharedAdminRoutes = ({ globalAdmin, user }) =>
-  ['config', 'system'].map(page => (
+  [
+    { path: '/admin/config/:name?', page: 'config' },
+    { path: '/admin/system', page: 'system' },
+  ].map(({ path, page }) => (
     <Route
-      key={`/admin/${page}`}
-      path={`/admin/${page}`}
+      key={path}
+      path={path}
       element={<AdminRoute globalAdmin={globalAdmin} user={user} page={page} />}
     />
   ));
@@ -785,10 +815,13 @@ const homeElementFor = ({
  * and the page drawing its complete state after, each feature route gated by
  * its feature token or by the host's first `auth` token, and the identity
  * contract's five groups behind the `cookie` token and their feature
- * tokens, a route the host lacks rendering `NotAvailableStub` instead; the
- * shared admin pages at `/admin/config` and `/admin/system` on every host,
- * the Configuration page on a `cookie` host reading its names from
- * `status.config` behind the identity feature's Configuration row; the
+ * tokens, a route the host lacks rendering `NotAvailableStub` instead
+ * (`/user/integrations` drawing the ErrorPage's 404 while the issuer's
+ * answer carries no `services`); the
+ * shared admin pages at `/admin/config/:name?` and `/admin/system` on
+ * every host, the Configuration page drawing the named file of
+ * `status.config` and the first without a name, on a `cookie` host behind
+ * the identity feature's Configuration entry; the
  * sign-in, register and profile pages take the session state, whose
  * adopted session alone sends a signed-in person off a sign-in page or
  * draws the profile; on a `cookie` host
@@ -858,7 +891,7 @@ const AppRoutes = ({
             <DiscoveryPage
               session={session}
               returnTo={returnTo}
-              organizations={organizationsAdapter}
+              organizations={cookie ? issuerOrganizations : organizationsAdapter}
               orgMark={<BrandLogo theme={theme} className="logo-lg icon-with-margin" />}
               joinIntentKey={JOIN_INTENT_KEY}
             />
@@ -953,7 +986,15 @@ const AppRoutes = ({
           )
         }
       />
-      {signedInRoutes({ status, cookie, account, globalAdmin, notifications })}
+      {signedInRoutes({
+        status,
+        cookie,
+        account,
+        globalAdmin,
+        notifications,
+        theme,
+        ticketUrl,
+      })}
       <Route
         path="/admin"
         element={

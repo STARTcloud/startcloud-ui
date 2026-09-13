@@ -89,7 +89,6 @@
     "last_method": "Remove another method first; the last method cannot be removed.",
     "no_methods": "Add a phone number or an authenticator app before enabling two-factor.",
     "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
-    "unknown_code": "That invite code did not match an organization.",
     "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
     "last_owner": "A team needs an owner; make someone else an owner first.",
     "title": {
@@ -278,6 +277,7 @@
         "disable": "Disable two-factor",
         "disableTitle": "Disable two-factor authentication",
         "disableBody": "Disabling two-factor authentication makes your sign-in rely on your password alone.",
+        "methods": "Enrolled methods",
         "noMethods": "No methods are enrolled yet.",
         "preferredBadge": "Preferred",
         "setPreferred": "Set preferred",
@@ -306,6 +306,7 @@
       },
       "passkeys": {
         "title": "Passkeys",
+        "intro": "A passkey signs you in with your device's screen lock or a security key, on its own or as a second factor.",
         "none": "No passkeys yet.",
         "name": "Passkey name",
         "add": "Add passkey",
@@ -320,6 +321,25 @@
         "removed": "Passkey removed.",
         "renamed": "Passkey renamed.",
         "unsupported": "This browser does not support passkeys."
+      },
+      "linked": {
+        "title": "Linked accounts",
+        "none": "No linked accounts.",
+        "linkedAs": "Linked as {{name}}",
+        "lastUsed": "last used",
+        "status": {
+          "valid": "Active",
+          "revoked": "Revoked",
+          "unknown": "Unknown"
+        },
+        "unlink": "Unlink",
+        "unlinkBody": "Unlink {{provider}} from your account. Type \"{{keyword}}\" to confirm.",
+        "unlinkReason": "Unlinking {{provider}} changes how you sign in.",
+        "unlinked": "Account unlinked.",
+        "available": "Available providers",
+        "link": "Link account",
+        "setPassword": "Set a password so you can still sign in if a linked account is unlinked.",
+        "enableTfa": "Enable two-factor authentication to protect your account."
       },
       "recovery": {
         "title": "Recovery",
@@ -466,6 +486,7 @@
       "confirm": "Confirm"
     },
     "preferences": {
+      "title": "Preferences",
       "language": "Language",
       "languageHint": "Saved as you change it, the same value the globe in the header writes.",
       "theme": {
@@ -487,11 +508,12 @@
       "channelSmsHint": "SMS needs a verified mobile number.",
       "pin": "Sign-in approval PIN",
       "pinHint": "Optional PIN an application must present before a sign-in request reaches you.",
+      "pinPlaceholder": "4–64 characters",
       "pinSet": "A PIN is set",
       "pinNone": "No PIN",
       "set": "Set",
       "clear": "Clear",
-      "save": "Save",
+      "save": "Save preferences",
       "saved": "Preferences saved."
     },
     "favorites": {
@@ -525,6 +547,8 @@
       "title": "Account",
       "profile": "Profile",
       "organizations": "Organizations",
+      "applications": "Applications",
+      "terms": "Terms and policies",
       "integrations": "Integrations",
       "inbox": "Inbox"
     }
@@ -669,10 +693,28 @@
       "personal": "Personal",
       "team": "Team",
       "search": "Search organizations",
-      "customerId": {
-        "title": "Customer ID of {{org}}",
-        "hint": "Six hexadecimal characters (0-9, A-F); leave empty to clear it."
+      "edit": {
+        "title": "Edit {{org}}",
+        "details": "Details",
+        "address": "Address",
+        "access": "Access"
       },
+      "field": {
+        "name": "Name",
+        "email": "Email",
+        "websiteUrl": "Website URL",
+        "logoUrl": "Logo URL",
+        "description": "Description",
+        "locale": "Locale",
+        "timezone": "Time zone",
+        "timezoneNone": "Not set",
+        "telephone": "Telephone",
+        "accessMode": "Access mode",
+        "defaultRole": "Default role",
+        "customerId": "Customer ID",
+        "customerIdHint": "Six hexadecimal characters (0-9, A-F); leave empty to clear it."
+      },
+      "saved": "The organization is saved.",
       "deleted": "The organization is deleted.",
       "delete": {
         "title": "Delete the organization",
@@ -811,7 +853,6 @@
       "clients": {
         "title": "Client health",
         "summary": "{{healthy}} of {{total}} clients are healthy",
-        "heading": "Clients",
         "responseTime": "{{ms}} ms",
         "noResponse": "no answer",
         "checked": "checked",
@@ -822,17 +863,12 @@
         },
         "endpoint": "Endpoint",
         "reason": "Reason",
-        "search": "Search clients and providers",
+        "search": "Search clients",
         "table": {
           "name": "Name",
-          "kind": "Kind",
           "status": "Status",
           "responseTime": "Response time",
           "lastChecked": "Last checked"
-        },
-        "kind": {
-          "client": "Client",
-          "provider": "Provider"
         }
       },
       "definitions": "What these numbers mean",
@@ -843,9 +879,9 @@
         "unknown": "Not probeable"
       },
       "providers": {
-        "one": "provider",
-        "summary": "{{healthy}} of {{total}} providers",
-        "heading": "Providers"
+        "title": "Provider health",
+        "summary": "{{healthy}} of {{total}} providers are healthy",
+        "search": "Search providers"
       }
     },
     "blocked": {
@@ -870,6 +906,7 @@
       "copyName": "Name of the copy",
       "copyTitle": "Copy {{name}}",
       "preview": "Preview",
+      "openPublic": "Open public page",
       "delete": "Delete",
       "undo": "Undo",
       "public": "Public",
@@ -1097,6 +1134,8 @@
       "noMessage": "No message",
       "approveAsMember": "Approve as Member",
       "approveAsAdmin": "Approve as Admin",
+      "approve": "Approve",
+      "role": "Role",
       "deny": "Deny",
       "approved": "Join request approved successfully!",
       "denied": "Join request denied."
@@ -2193,13 +2232,11 @@
   },
   "organizations": {
     "title": "Organizations",
-    "create": "Create an organization",
+    "create": "Create a team",
     "createButton": "Create",
     "created": "Organization created.",
     "name": "Organization name",
-    "join": "Join with an invite code",
-    "joinButton": "Join",
-    "joined": "You joined the organization.",
+    "find": "Find an organization",
     "inviteCode": "Invite code",
     "regenerate": "Regenerate",
     "regenerated": "Invite code regenerated.",
@@ -2214,58 +2251,46 @@
     "none": "You are not a member of any organization yet.",
     "search": "Search organizations"
   },
+  "applications": {
+    "title": "Applications",
+    "search": "Search applications",
+    "none": "No connected applications.",
+    "activeSessions_one": "{{count}} active session",
+    "activeSessions_other": "{{count}} active sessions",
+    "unregistered": "Unregistered",
+    "firstUsed": "First connected",
+    "lastUsed": "last used",
+    "permissions": "Permissions:",
+    "removeScope": "Remove {{scope}} permission",
+    "removeScopeBody": "Remove the {{scope}} permission from {{app}}. Type \"{{keyword}}\" to confirm.",
+    "sessions": "Sessions",
+    "revoke": "Revoke access",
+    "revokeBody": "Revoke {{app}}'s access to your account; its {{count}} active sessions end. Type \"{{keyword}}\" to confirm.",
+    "revokeReason": "Revoking {{app}} changes how you are signed in."
+  },
+  "userTerms": {
+    "title": "Terms and policies",
+    "search": "Search accepted terms",
+    "none": "No accepted terms yet.",
+    "version": "Version {{version}}",
+    "accepted": "accepted",
+    "view": "View",
+    "type": {
+      "site": "Site",
+      "client": "Client",
+      "both": "Both"
+    }
+  },
   "integrations": {
-    "title": "Integrations & connected accounts",
-    "search": "Search accounts, terms and applications",
-    "notices": {
-      "setPassword": "Set a password so you can still sign in if a linked account is unlinked.",
-      "enableTfa": "Enable two-factor authentication to protect your account."
-    },
-    "linked": {
-      "title": "Linked external accounts",
-      "none": "No linked accounts.",
-      "linkedAs": "Linked as {{name}}",
-      "lastUsed": "last used",
-      "status": {
-        "valid": "Active",
-        "revoked": "Revoked",
-        "unknown": "Unknown"
-      },
-      "unlink": "Unlink",
-      "unlinkBody": "Unlink {{provider}} from your account. Type \"{{keyword}}\" to confirm.",
-      "unlinkReason": "Unlinking {{provider}} changes how you sign in."
-    },
-    "available": {
-      "notLinked": "Not linked",
-      "link": "Link account"
-    },
-    "terms": {
-      "title": "Accepted terms & policies",
-      "none": "No accepted terms yet.",
-      "version": "Version {{version}}",
-      "accepted": "accepted",
-      "view": "View",
-      "type": {
-        "site": "Site",
-        "client": "Client",
-        "both": "Both"
-      }
-    },
-    "apps": {
-      "title": "Connected applications",
-      "none": "No connected applications.",
-      "activeSessions_one": "{{count}} active session",
-      "activeSessions_other": "{{count}} active sessions",
-      "unregistered": "Unregistered",
-      "firstUsed": "First connected",
-      "lastUsed": "last used",
-      "permissions": "Permissions:",
-      "removeScope": "Remove {{scope}} permission",
-      "removeScopeBody": "Remove the {{scope}} permission from {{app}}. Type \"{{keyword}}\" to confirm.",
-      "sessions": "Sessions",
-      "revoke": "Revoke access",
-      "revokeBody": "Revoke {{app}}'s access to your account; its {{count}} active sessions end. Type \"{{keyword}}\" to confirm.",
-      "revokeReason": "Revoking {{app}} changes how you are signed in."
+    "title": "Integrations",
+    "search": "Search services",
+    "none": "No connected services.",
+    "connected": "Connected",
+    "manage": "Manage",
+    "status": {
+      "connected": "Connected",
+      "expired": "Expired",
+      "error": "Error"
     }
   },
   "dateRange": {

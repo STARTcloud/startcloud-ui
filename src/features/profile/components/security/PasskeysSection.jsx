@@ -5,6 +5,7 @@ import { FaKey } from 'react-icons/fa6';
 
 import Field from '../../../../components/common/Field';
 import MethodList, { MethodRow } from '../../../../components/common/MethodList';
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { isSupported, register } from '../../../../lib/passkeys';
@@ -82,7 +83,7 @@ PasskeyActions.propTypes = {
  * stepped up, and Add with a name through the shared WebAuthn calls,
  * stepped up.
  */
-const PasskeysSection = ({ account, guard, onSaved }) => {
+const PasskeysSection = ({ account, guard, onSaved, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [rows, setRows] = useState([]);
@@ -153,8 +154,13 @@ const PasskeysSection = ({ account, guard, onSaved }) => {
   };
 
   return (
-    <div className="mb-4">
-      <h5>{t('profile.security.passkeys.title')}</h5>
+    <SectionCard
+      icon={<FaKey aria-hidden />}
+      title={t('profile.security.passkeys.title')}
+      folded={folds.folded('passkeys')}
+      onFold={() => folds.toggle('passkeys')}
+    >
+      <p className="small text-body-secondary">{t('profile.security.passkeys.intro')}</p>
       <MethodList empty={t('profile.security.passkeys.none')} className="mb-3">
         {rows.map(passkey => (
           <MethodRow
@@ -200,14 +206,14 @@ const PasskeysSection = ({ account, guard, onSaved }) => {
         </form>
       ) : null}
       {supported ? (
-        <form onSubmit={add} noValidate>
+        <form onSubmit={add} noValidate className="mt-3">
           <Field
             id="profile-passkey-name"
             label={t('profile.security.passkeys.name')}
-            className="mb-2"
+            className="mb-0"
           >
             {aria => (
-              <div className="d-flex gap-2">
+              <div className="input-group">
                 <input
                   {...aria}
                   type="text"
@@ -215,11 +221,7 @@ const PasskeysSection = ({ account, guard, onSaved }) => {
                   value={name}
                   onChange={event => setName(event.target.value)}
                 />
-                <button
-                  type="submit"
-                  className="btn btn-outline-primary text-nowrap"
-                  disabled={!name}
-                >
+                <button type="submit" className="btn btn-outline-primary" disabled={!name}>
                   {t('profile.security.passkeys.add')}
                 </button>
               </div>
@@ -227,9 +229,11 @@ const PasskeysSection = ({ account, guard, onSaved }) => {
           </Field>
         </form>
       ) : (
-        <p className="small text-body-secondary">{t('profile.security.passkeys.unsupported')}</p>
+        <p className="small text-body-secondary mb-0">
+          {t('profile.security.passkeys.unsupported')}
+        </p>
       )}
-    </div>
+    </SectionCard>
   );
 };
 
@@ -245,6 +249,7 @@ PasskeysSection.propTypes = {
   }).isRequired,
   guard: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
+  folds: foldsShape.isRequired,
 };
 
 export default PasskeysSection;

@@ -66,6 +66,7 @@ const STATUS = {
     'interstitials',
     'policies',
     'org-console',
+    'discover',
     'invitations',
     'integrations',
     'search',
@@ -83,6 +84,7 @@ const STATUS = {
     fallbackCustomerId: 'A55DF1',
   },
   events: { path: '/api/events', topics: ['notifications', 'session', 'admin'] },
+  config: ['application', 'security', 'sites', 'clients', 'providers', 'mail'],
 };
 
 const health = () => ({
@@ -115,6 +117,8 @@ const RULES = {
     providerName: { type: 'string', pattern: '^[a-z0-9_]+$' },
     hex: { type: 'string', pattern: '^[a-fA-F0-9]+$' },
     icon: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
+    languageTag: { type: 'string', pattern: '^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$', maxLength: 10 },
+    timezone: { type: 'string', pattern: '^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$' },
   },
   forms: {
     password: {
@@ -144,6 +148,23 @@ const RULES = {
         is_public: { type: 'boolean' },
         display_order: { type: 'integer', minimum: 0 },
         content: { type: 'string' },
+      },
+    },
+    organization: {
+      type: 'object',
+      required: ['name'],
+      properties: {
+        name: { type: 'string', minLength: 1, pattern: '\\S', unique: 'global' },
+        email: { $ref: '#/$defs/email' },
+        website_url: { type: 'string', format: 'uri' },
+        logo_url: { type: 'string', format: 'uri' },
+        description: { type: 'string' },
+        locale: { $ref: '#/$defs/languageTag' },
+        timezone: { $ref: '#/$defs/timezone' },
+        telephone: { type: 'string' },
+        access_mode: { type: 'string', enum: ['invite', 'request', 'private'] },
+        default_role: { type: 'string', enum: ['MEMBER', 'ADMIN'] },
+        customer_id: { $ref: '#/$defs/orgCode' },
       },
     },
   },
@@ -414,7 +435,7 @@ const organizationRecord = (uuid, name, personal) => ({
   locale: 'en',
   timezone: 'America/Chicago',
   telephone: '',
-  access_mode: 'invite',
+  access_mode: personal ? 'private' : 'request',
   default_role: 'MEMBER',
   address: { ...ADDRESS },
   members: personal ? [MEMBERS[0]] : MEMBERS.map(member => ({ ...member })),
@@ -426,7 +447,60 @@ const freshOrganizations = () => [
   organizationRecord('j1', 'Mark Gilbert', true),
 ];
 
-const freshIntegrations = () => ({
+const DIRECTORY = [
+  {
+    uuid: 'r1',
+    name: 'Prominic',
+    description: 'The Prominic.NET operations team.',
+    logo_url: '',
+    access_mode: 'request',
+    member_count: 12,
+  },
+  {
+    uuid: 'i1',
+    name: 'Hart Consulting',
+    description: 'Joined by invitation.',
+    logo_url: '',
+    access_mode: 'invite',
+    member_count: 4,
+  },
+  {
+    uuid: 'x1',
+    name: 'Nomad Field Team',
+    description: '',
+    logo_url: '',
+    access_mode: 'private',
+    member_count: 7,
+  },
+];
+
+const freshJoinRequests = () => [
+  {
+    id: 1,
+    org: 'a1',
+    user: { id: 44, name: 'Sam Rivera', email: 'sam@example.com' },
+    message: 'I work with the Acme operations team.',
+    created_at: '2026-09-10T15:20:00Z',
+  },
+];
+
+const requestEntry = ({ id, user, message, created_at: createdAt }) => ({
+  id,
+  user,
+  message,
+  created_at: createdAt,
+});
+
+const directoryRow = org => ({
+  uuid: org.uuid,
+  name: org.name,
+  description: org.description,
+  logo_url: org.logo_url,
+  access_mode: org.access_mode,
+  member_count: org.members ? org.members.length : org.member_count,
+});
+
+const freshLinkedAccounts = () => ({
   linked: [
     {
       provider_id: 'github',
@@ -448,30 +522,32 @@ const freshIntegrations = () => ({
       icon_url: '/brand/providers/microsoft.svg',
     },
   ],
-  accepted_terms: [
-    {
-      name: 'terms',
-      label: 'Terms of Service',
-      icon: 'file-text',
-      version: '2.0',
-      accepted_at: '2026-01-10T00:00:00Z',
-      type: 'site',
-    },
-  ],
-  apps: [
-    {
-      client_id: 'conductor',
-      client_name: 'Conductor',
-      icon_url: '',
-      registered: true,
-      first_used_at: '2025-01-09T00:00:00Z',
-      last_used_at: '2026-09-06T14:00:00Z',
-      active_sessions: 1,
-      consent_required: true,
-      consent_scopes: ['openid', 'profile', 'organizations'],
-    },
-  ],
 });
+
+const freshAcceptedTerms = () => [
+  {
+    name: 'terms',
+    label: 'Terms of Service',
+    icon: 'file-text',
+    version: '2.0',
+    accepted_at: '2026-01-10T00:00:00Z',
+    type: 'site',
+  },
+];
+
+const freshApplications = () => [
+  {
+    client_id: 'conductor',
+    client_name: 'Conductor',
+    icon_url: '',
+    registered: true,
+    first_used_at: '2025-01-09T00:00:00Z',
+    last_used_at: '2026-09-06T14:00:00Z',
+    active_sessions: 1,
+    consent_required: true,
+    consent_scopes: ['openid', 'profile', 'organizations'],
+  },
+];
 
 const freshUserSessions = () => [
   {
@@ -556,7 +632,7 @@ const freshNotifications = () => [
     severity: 'INFO',
     title: 'GitHub linked to your account',
     body: 'You can now sign in with GitHub.',
-    navigate: '/user/integrations',
+    navigate: '/user/profile/security',
     readAt: null,
     createdAt: '2026-09-05T08:02:00Z',
   },
@@ -623,6 +699,380 @@ const ADMIN_CONFIG = {
   baseDefaults: {},
 };
 
+const BOUND = 'configuration is bound at boot';
+
+const bound = property => ({ ...property, requiresRestart: true, restartReason: BOUND });
+
+const configSchema = ({ title, sections, properties }) => ({
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  title,
+  schemaVersion: 1,
+  sections,
+  properties: {
+    schemaVersion: { type: 'integer', readOnly: true, default: 1, title: 'Schema version' },
+    ...properties,
+  },
+});
+
+const SLUG_KEY = { type: 'string', pattern: '^[a-z0-9-]+$' };
+
+const CONFIG_SCHEMAS = {
+  application: configSchema({
+    title: 'Application',
+    sections: {
+      server: { title: 'Server', order: 1 },
+      application: { title: 'Application', order: 2 },
+    },
+    properties: {
+      server: {
+        type: 'object',
+        section: 'server',
+        subsection: 'serverSettings',
+        title: 'Listener',
+        properties: {
+          port: bound({
+            type: 'integer',
+            minimum: 1,
+            maximum: 65535,
+            default: 8443,
+            title: 'Port',
+            description: 'The port the issuer listens on',
+            order: 1,
+          }),
+          issuer: bound({
+            type: 'string',
+            format: 'uri',
+            title: 'Issuer',
+            description: 'The issuer URL every token names',
+            order: 2,
+          }),
+        },
+        required: ['issuer'],
+      },
+      application: {
+        type: 'object',
+        section: 'application',
+        subsection: 'applicationSettings',
+        title: 'Application',
+        properties: {
+          name: bound({ type: 'string', title: 'Name', order: 1 }),
+          default_site: bound({ type: 'string', title: 'Default site', order: 2 }),
+          log_level: bound({
+            type: 'string',
+            enum: ['error', 'warn', 'info', 'debug'],
+            default: 'info',
+            title: 'Log level',
+            order: 3,
+          }),
+        },
+      },
+    },
+  }),
+  security: configSchema({
+    title: 'Security',
+    sections: { security: { title: 'Security', order: 1 } },
+    properties: {
+      security: {
+        type: 'object',
+        section: 'security',
+        subsection: 'sessionSettings',
+        title: 'Session',
+        properties: {
+          session: {
+            type: 'object',
+            subsection: 'sessionSettings',
+            title: 'Session',
+            properties: {
+              timeout: bound({
+                type: 'string',
+                format: 'ttl',
+                default: '30m',
+                title: 'Session timeout',
+                order: 1,
+              }),
+              'remember-me-days': bound({
+                type: 'integer',
+                minimum: 1,
+                maximum: 365,
+                default: 30,
+                title: 'Remember-me days',
+                order: 2,
+              }),
+            },
+          },
+          cors: {
+            type: 'object',
+            subsection: 'corsSettings',
+            title: 'CORS',
+            properties: {
+              'allowed-origins': bound({
+                type: 'array',
+                items: { type: 'string' },
+                title: 'Allowed origins',
+                order: 1,
+              }),
+            },
+          },
+        },
+      },
+    },
+  }),
+  sites: configSchema({
+    title: 'Sites',
+    sections: { sites: { title: 'Sites', order: 1 } },
+    properties: {
+      sites: {
+        type: 'object',
+        section: 'sites',
+        subsection: 'sites',
+        title: 'Sites',
+        propertyNames: SLUG_KEY,
+        additionalProperties: {
+          type: 'object',
+          properties: {
+            name: bound({ type: 'string', title: 'Name', order: 1 }),
+            domains: bound({
+              type: 'array',
+              items: { type: 'string' },
+              title: 'Domains',
+              order: 2,
+            }),
+            customer_id: bound({
+              type: 'string',
+              pattern: '^[0-9A-F]{6}$',
+              title: 'Customer id',
+              order: 3,
+            }),
+          },
+          required: ['name'],
+        },
+      },
+    },
+  }),
+  clients: configSchema({
+    title: 'Clients',
+    sections: { clients: { title: 'Clients', order: 1 } },
+    properties: {
+      clients: {
+        type: 'object',
+        section: 'clients',
+        subsection: 'clients',
+        title: 'Clients',
+        propertyNames: SLUG_KEY,
+        additionalProperties: {
+          type: 'object',
+          properties: {
+            client: {
+              type: 'object',
+              title: 'Client',
+              properties: {
+                'client-id': bound({ type: 'string', title: 'Client id', order: 1 }),
+                'client-name': bound({ type: 'string', title: 'Client name', order: 2 }),
+                'redirect-uris': bound({
+                  type: 'array',
+                  items: { type: 'string' },
+                  title: 'Redirect URIs',
+                  order: 3,
+                }),
+              },
+              required: ['client-id'],
+            },
+          },
+        },
+      },
+    },
+  }),
+  providers: configSchema({
+    title: 'Identity providers',
+    sections: { providers: { title: 'Identity providers', order: 1 } },
+    properties: {
+      providers: {
+        type: 'object',
+        section: 'providers',
+        subsection: 'providers',
+        title: 'Identity providers',
+        propertyNames: SLUG_KEY,
+        additionalProperties: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'object',
+              title: 'Provider',
+              properties: {
+                'provider-name': bound({ type: 'string', title: 'Provider name', order: 1 }),
+                'issuer-uri': bound({
+                  type: 'string',
+                  format: 'uri',
+                  title: 'Issuer URI',
+                  order: 2,
+                }),
+                'client-id': bound({ type: 'string', title: 'Client id', order: 3 }),
+                'client-secret': bound({
+                  type: 'string',
+                  writeOnly: true,
+                  title: 'Client secret',
+                  order: 4,
+                }),
+              },
+              required: ['provider-name'],
+            },
+          },
+        },
+      },
+    },
+  }),
+  mail: configSchema({
+    title: 'Mail',
+    sections: {
+      mail: {
+        title: 'Mail',
+        order: 1,
+        action: {
+          kind: 'test',
+          route: '/api/mail/test-smtp',
+          method: 'POST',
+          body: 'form',
+          step_up: false,
+        },
+      },
+    },
+    properties: {
+      spring: {
+        type: 'object',
+        section: 'mail',
+        subsection: 'smtp',
+        title: 'SMTP',
+        properties: {
+          mail: {
+            type: 'object',
+            subsection: 'smtp',
+            title: 'SMTP',
+            properties: {
+              host: bound({ type: 'string', title: 'Host', order: 1 }),
+              port: bound({
+                type: 'integer',
+                minimum: 1,
+                maximum: 65535,
+                default: 587,
+                title: 'Port',
+                order: 2,
+              }),
+              username: bound({ type: 'string', title: 'Username', order: 3 }),
+              password: bound({ type: 'string', writeOnly: true, title: 'Password', order: 4 }),
+            },
+            required: ['host'],
+          },
+        },
+      },
+    },
+  }),
+};
+
+const CONFIG_FILES = {
+  application: {
+    schemaVersion: 1,
+    server: { port: 8443, issuer: 'https://auth.startcloud.com' },
+    application: { name: 'STARTcloud', default_site: 'startcloud', log_level: 'info' },
+  },
+  security: {
+    schemaVersion: 1,
+    security: {
+      session: { timeout: '30m', 'remember-me-days': 30 },
+      cors: { 'allowed-origins': ['https://boxvault.startcloud.com'] },
+    },
+  },
+  sites: {
+    schemaVersion: 1,
+    sites: {
+      startcloud: { name: 'STARTcloud', domains: ['auth.startcloud.com'], customer_id: 'A55DF1' },
+      moonshinedev: { name: 'Moonshine.dev', domains: ['auth.moonshine.dev'] },
+    },
+  },
+  clients: {
+    schemaVersion: 1,
+    clients: {
+      conductor: {
+        client: {
+          'client-id': 'conductor',
+          'client-name': 'Conductor',
+          'redirect-uris': ['https://conductor.startcloud.com/callback'],
+        },
+      },
+      boxvault: {
+        client: {
+          'client-id': 'boxvault',
+          'client-name': 'BoxVault',
+          'redirect-uris': ['https://boxvault.startcloud.com/auth/callback'],
+        },
+      },
+    },
+  },
+  providers: {
+    schemaVersion: 1,
+    providers: {
+      github: {
+        provider: {
+          'provider-name': 'GitHub',
+          'issuer-uri': 'https://github.com',
+          'client-id': 'Iv1.4b2c8d9e',
+          'client-secret': 'secret',
+        },
+      },
+    },
+  },
+  mail: {
+    schemaVersion: 1,
+    spring: { mail: { host: 'smtp.startcloud.com', port: 587, username: 'noreply', password: '' } },
+  },
+};
+
+const freshConfigs = () => JSON.parse(JSON.stringify(CONFIG_FILES));
+
+const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const mergePatch = (target, patch) => {
+  if (!isObject(patch)) {
+    return patch;
+  }
+  const result = isObject(target) ? { ...target } : {};
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value === null) {
+      delete result[key];
+    } else {
+      result[key] = mergePatch(result[key], value);
+    }
+  });
+  return result;
+};
+
+const childOf = (value, key) => (isObject(value) ? value[key] : undefined);
+
+const changedFlags = (node, before, after, pointer = '') => {
+  if (node.properties) {
+    return Object.entries(node.properties).flatMap(([key, property]) =>
+      changedFlags(property, childOf(before, key), childOf(after, key), `${pointer}/${key}`)
+    );
+  }
+  if (isObject(node.additionalProperties)) {
+    const keys = new Set([
+      ...Object.keys(isObject(before) ? before : {}),
+      ...Object.keys(isObject(after) ? after : {}),
+    ]);
+    return [...keys].flatMap(key =>
+      changedFlags(
+        node.additionalProperties,
+        childOf(before, key),
+        childOf(after, key),
+        `${pointer}/${key}`
+      )
+    );
+  }
+  if (node.requiresRestart && JSON.stringify(before) !== JSON.stringify(after)) {
+    return [{ pointer, title: node.title || pointer.split('/').pop(), reason: node.restartReason }];
+  }
+  return [];
+};
+
 const STEP_PATHS = {
   name: '/complete-onboarding/name',
   phone: '/complete-onboarding/phone-setup',
@@ -650,14 +1100,21 @@ const state = {
   onboarding: freshOnboarding(),
   profile: freshProfile(),
   organizations: freshOrganizations(),
-  integrations: freshIntegrations(),
+  joinRequests: freshJoinRequests(),
+  linkedAccounts: freshLinkedAccounts(),
+  acceptedTerms: freshAcceptedTerms(),
+  applications: freshApplications(),
   sessions: freshUserSessions(),
   tfaMethods: freshTfaMethods(),
   passkeys: freshPasskeys(),
   notifications: freshNotifications(),
   blocked: BRUTE_FORCE.blocked.map(row => ({ ...row })),
   terms: TERMS.map(row => ({ ...row })),
-  restart: { ...RESTART_STATUS },
+  configs: freshConfigs(),
+  restart: {
+    ...RESTART_STATUS,
+    requires_restart: [{ pointer: '/server/port', title: 'Port', reason: BOUND }],
+  },
   frontchannel: true,
   streams: new Set(),
   seq: 0,
@@ -932,7 +1389,7 @@ const has = (needle, ...texts) =>
   );
 
 const searchApplications = needle => {
-  const rows = isAdmin() ? SERVICE_USAGE.items : state.integrations.apps;
+  const rows = isAdmin() ? SERVICE_USAGE.items : state.applications;
   return rows
     .filter(app => has(needle, app.client_id, app.client_name))
     .map(app =>
@@ -948,7 +1405,7 @@ const searchApplications = needle => {
 };
 
 const searchIdentityProviders = needle =>
-  [...state.integrations.linked, ...state.integrations.available]
+  [...state.linkedAccounts.linked, ...state.linkedAccounts.available]
     .filter(provider => has(needle, provider.provider_name))
     .map(provider =>
       searchRow({
@@ -1084,6 +1541,24 @@ const endStreams = () => {
   broadcast('session-terminated', {});
   state.streams.forEach(res => res.end());
   state.streams.clear();
+};
+
+const recordRestart = flagged => {
+  const kept = state.restart.requires_restart.filter(
+    entry => !flagged.some(next => next.pointer === entry.pointer)
+  );
+  const pending = [...kept, ...flagged];
+  state.restart = {
+    restart_required: pending.length > 0,
+    requires_restart: pending,
+    last_modified_by: state.profile.email,
+    last_modified_time: NOW(),
+  };
+  broadcast('restart-required', {
+    required: state.restart.restart_required,
+    last_modified_by: state.restart.last_modified_by,
+    last_modified_time: state.restart.last_modified_time,
+  });
 };
 
 const eventStream = ctx => {
@@ -1725,24 +2200,6 @@ sessionRoute('POST', '/api/user/organizations', ctx => {
   state.organizations.push(record);
   return ok(record, 201);
 });
-sessionRoute('POST', '/api/user/organizations/join', ctx => {
-  const code = String(ctx.body.invite_code || '');
-  if (code === 'INV-2B8XQ4LM') {
-    const record = organizationRecord('p1', 'Prominic', false);
-    record.primary = false;
-    record.my_role = 'MEMBER';
-    record.can_manage = false;
-    record.can_rename = false;
-    record.is_owner = false;
-    delete record.invite_code;
-    state.organizations.push(record);
-    return ok(record);
-  }
-  if (code === 'INV-THROTTLE') {
-    return throttled();
-  }
-  return problem(404, 'unknown_code');
-});
 sessionRoute('PATCH', '/api/user/organizations/:uuid', ctx => {
   const org = organizationOf(ctx);
   if (!org) {
@@ -1828,34 +2285,131 @@ sessionRoute('PUT', '/api/user/primary-organization', ctx => {
   });
   return noContent();
 });
+sessionRoute('GET', '/api/organizations/discover', () =>
+  ok(
+    [...state.organizations, ...DIRECTORY]
+      .filter(org => ['invite', 'request'].includes(org.access_mode) || isAdmin())
+      .map(directoryRow)
+  )
+);
 
-sessionRoute('GET', '/api/user/integrations', () => ok(state.integrations));
+const listedOrganization = uuid =>
+  state.organizations.find(org => org.uuid === uuid) || DIRECTORY.find(org => org.uuid === uuid);
+
+const managedOrganization = ctx => {
+  const org = state.organizations.find(entry => entry.uuid === ctx.params.org);
+  if (!org) {
+    return { refused: problem(404, 'not_found') };
+  }
+  if (!org.can_manage) {
+    return { refused: problem(403, 'insufficient_role') };
+  }
+  return { org };
+};
+
+sessionRoute('POST', '/api/organization/:org/requests', ctx => {
+  const org = listedOrganization(ctx.params.org);
+  if (!org) {
+    return problem(404, 'not_found');
+  }
+  const message = String(ctx.body.message || '') || null;
+  if (message && message.length > 1000) {
+    return invalid('/message', 'maxLength', { maxLength: 1000 });
+  }
+  if (state.organizations.some(entry => entry.uuid === org.uuid)) {
+    return problem(409, 'already_member');
+  }
+  if (org.access_mode !== 'request') {
+    return problem(403, 'not_open');
+  }
+  if (state.joinRequests.some(row => row.org === org.uuid && row.user.id === state.profile.id)) {
+    return problem(409, 'already_requested');
+  }
+  const row = {
+    id: Math.max(...state.joinRequests.map(entry => entry.id), 0) + 1,
+    org: org.uuid,
+    user: { id: state.profile.id, name: state.profile.name, email: state.profile.email },
+    message,
+    created_at: NOW(),
+  };
+  state.joinRequests.push(row);
+  return ok(requestEntry(row), 201);
+});
+sessionRoute('GET', '/api/organization/:org/requests', ctx => {
+  const { org, refused } = managedOrganization(ctx);
+  if (refused) {
+    return refused;
+  }
+  return ok(state.joinRequests.filter(row => row.org === org.uuid).map(requestEntry));
+});
+sessionRoute('POST', '/api/organization/:org/requests/:id/approve', ctx => {
+  const { org, refused } = managedOrganization(ctx);
+  if (refused) {
+    return refused;
+  }
+  const row = state.joinRequests.find(
+    entry => entry.org === org.uuid && String(entry.id) === ctx.params.id
+  );
+  if (!row) {
+    return problem(404, 'not_found');
+  }
+  const role =
+    ctx.body.assigned_role === undefined
+      ? org.default_role
+      : String(ctx.body.assigned_role).toUpperCase();
+  if (!['MEMBER', 'ADMIN'].includes(role)) {
+    return invalid('/assigned_role', 'enum', { enum: ['MEMBER', 'ADMIN'] });
+  }
+  org.members.push({
+    user_id: row.user.id,
+    email: row.user.email,
+    name: row.user.name,
+    role,
+    managed_by: null,
+  });
+  state.joinRequests = state.joinRequests.filter(entry => entry !== row);
+  return noContent();
+});
+sessionRoute('POST', '/api/organization/:org/requests/:id/deny', ctx => {
+  const { org, refused } = managedOrganization(ctx);
+  if (refused) {
+    return refused;
+  }
+  const before = state.joinRequests.length;
+  state.joinRequests = state.joinRequests.filter(
+    entry => !(entry.org === org.uuid && String(entry.id) === ctx.params.id)
+  );
+  return state.joinRequests.length === before ? problem(404, 'not_found') : noContent();
+});
+
+sessionRoute('GET', '/api/user/linked-accounts', () => ok(state.linkedAccounts));
+sessionRoute('GET', '/api/user/terms', () => ok(state.acceptedTerms));
+sessionRoute('GET', '/api/user/applications', () => ok(state.applications));
+sessionRoute('GET', '/api/user/integrations', () => ok({}));
 sessionRoute('GET', '/api/user/integrations/providers/:id/status', ctx =>
   ok({ status: ctx.params.id === 'github' ? 'valid' : 'unknown' })
 );
 steppedRoute('POST', '/api/user/integrations/providers/:id/link', ctx =>
-  ok({ next: `/user/integrations?linked=${ctx.params.id}` })
+  ok({ next: `/user/profile/security?linked=${ctx.params.id}` })
 );
 steppedRoute('DELETE', '/api/user/integrations/providers/:id', ctx => {
-  if (state.integrations.linked.length <= 1 && !state.profile.has_local_auth) {
+  if (state.linkedAccounts.linked.length <= 1 && !state.profile.has_local_auth) {
     return problem(409, 'last_login_method');
   }
-  state.integrations.linked = state.integrations.linked.filter(
+  state.linkedAccounts.linked = state.linkedAccounts.linked.filter(
     row => row.provider_id !== ctx.params.id
   );
   return noContent();
 });
 steppedRoute('DELETE', '/api/user/integrations/apps/:client_id', ctx => {
-  state.integrations.apps = state.integrations.apps.filter(
-    row => row.client_id !== ctx.params.client_id
-  );
+  state.applications = state.applications.filter(row => row.client_id !== ctx.params.client_id);
   return noContent();
 });
 sessionRoute('DELETE', '/api/user/integrations/apps/:client_id/scopes/:scope', ctx => {
   if (ctx.params.scope === 'openid') {
     return problem(403, 'openid_required');
   }
-  const app = state.integrations.apps.find(row => row.client_id === ctx.params.client_id);
+  const app = state.applications.find(row => row.client_id === ctx.params.client_id);
   if (app) {
     app.consent_scopes = app.consent_scopes.filter(scope => scope !== ctx.params.scope);
   }
@@ -1987,6 +2541,15 @@ adminRoute('PATCH', '/api/admin/organizations/:id', ctx => {
   if (!org) {
     return problem(404, 'not_found');
   }
+  const name = String(ctx.body.name ?? org.name);
+  if (ORGANIZATIONS.some(row => row !== org && row.name === name)) {
+    return problem(409, 'unique', {
+      errors: [{ pointer: '/name', rule: 'unique', params: { scope: 'global' } }],
+    });
+  }
+  if (ctx.body.customer_id !== undefined && !/^(?:[0-9A-F]{6})?$/.test(ctx.body.customer_id)) {
+    return invalid('/customer_id', 'pattern', { pattern: 'orgCode' });
+  }
   Object.assign(org, ctx.body);
   return ok(org);
 });
@@ -2056,6 +2619,48 @@ adminRoute('DELETE', '/api/admin/terms/:name', ctx => {
 });
 adminRoute('GET', '/api/admin/dcr/clients', () => ok([]));
 adminRoute('DELETE', '/api/admin/dcr/clients/:id', () => noContent());
+adminRoute('GET', '/api/config/restart-status', () => ok(state.restart));
+adminRoute('GET', '/api/config/:name', ctx => {
+  const file = state.configs[ctx.params.name];
+  return file ? ok(file) : problem(404, 'not_found');
+});
+adminRoute('GET', '/api/config/:name/schema', ctx => {
+  const schema = CONFIG_SCHEMAS[ctx.params.name];
+  return schema ? ok(schema) : problem(404, 'not_found');
+});
+adminRoute('PUT', '/api/config/:name', ctx => {
+  const { name } = ctx.params;
+  const schema = CONFIG_SCHEMAS[name];
+  if (!schema) {
+    return problem(404, 'not_found');
+  }
+  const before = state.configs[name];
+  const after = mergePatch(before, ctx.body);
+  const flagged = changedFlags(schema, before, after);
+  state.configs[name] = after;
+  recordRestart(flagged);
+  return ok({ message: 'Configuration saved.', requires_restart: flagged });
+});
+adminRoute(
+  'POST',
+  '/api/config/restart',
+  () => {
+    state.restart = {
+      restart_required: false,
+      requires_restart: [],
+      last_modified_by: null,
+      last_modified_time: null,
+    };
+    broadcast('restart-required', {
+      required: false,
+      last_modified_by: null,
+      last_modified_time: null,
+    });
+    return ok({ message: 'Restarting.' }, 202);
+  },
+  { stepUp: true }
+);
+adminRoute('POST', '/api/mail/test-smtp', () => ok({ message: 'Sent.' }));
 adminRoute('GET', '/api/admin/config/schema', () => ok(ADMIN_CONFIG.schema));
 adminRoute('GET', '/api/admin/config/values', () => ok(ADMIN_CONFIG.values));
 adminRoute('GET', '/api/admin/config/base-defaults', () => ok(ADMIN_CONFIG.baseDefaults));
@@ -2244,6 +2849,12 @@ const handle = async (req, res) => {
  * (every organization for an admin), users, logins, registrations and
  * blocked addresses for an admin, applications, identity providers, terms,
  * notifications and sessions under the same visibility as their pages.
+ * The four reads of decision 123 answer their row shapes:
+ * `GET /api/user/linked-accounts`, `GET /api/user/terms` and
+ * `GET /api/user/applications` from the fixtures, and
+ * `GET /api/user/integrations` answers `{}` with no `services`, so the
+ * Integrations entry and page stay absent as on an issuer that connects
+ * no third-party service.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,
@@ -2255,7 +2866,21 @@ const handle = async (req, res) => {
  * call answers `403 step_up_required` until `POST /api/user/step-up`
  * arms the five-minute window. `GET /api/events` streams `ready`, one
  * `unread-count`, `blocked-count`, `restart-required` and `health` event
- * three seconds after connecting, and `:hb` every 25 seconds.
+ * three seconds after connecting, and `:hb` every 25 seconds. The six
+ * configuration files `status.config` names are answered in the config
+ * contract's shapes over in-memory fixtures: `GET /api/config/<name>` the
+ * raw file, `GET /api/config/<name>/schema` its schema, `PUT` a JSON Merge
+ * Patch answering `requires_restart` as the diff of the flagged leaves,
+ * `GET /api/config/restart-status` the pending union and
+ * `POST /api/config/restart`, stepped up, `202` clearing it; the mail
+ * section's test action posts `/api/mail/test-smtp`. The directory of
+ * decision 124 is answered from the memberships and three fixtures a
+ * person is not a member of, `GET /api/organizations/discover`, and the
+ * join requests live in memory: `POST /api/organization/{uuid}/requests`
+ * files one on a `request` organization (`409 already_member` on a
+ * membership, `403 not_open` elsewhere, `409 already_requested` twice),
+ * `GET …/requests` lists a managed organization's, and `…/approve` makes
+ * the membership at `assigned_role` while `…/deny` drops the request.
  *
  * @returns {http.Server} The listening server
  */

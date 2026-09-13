@@ -7,12 +7,14 @@ import {
   FaGauge,
   FaGear,
   FaHeartPulse,
+  FaIdBadge,
   FaRightToBracket,
   FaShieldHalved,
   FaUserPlus,
   FaUsers,
 } from 'react-icons/fa6';
 
+import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
 
 const isAdmin = account => Boolean(account?.user?.roles?.includes('ROLE_ADMIN'));
@@ -24,21 +26,25 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * group 5: nothing unless the host advertises `admin` and the account's
  * roles hold `ROLE_ADMIN`, else one Admin group with the seven sections
  * Overview, Accounts, Activity, Health, Security, Content (while the host
- * also advertises `policies`) and System (while `status.config` names a
- * file), the Dashboard row exact-match, the Blocked IPs row carrying the
- * `blockedCount` badge the shell resolves from the `admin` topic and the
- * Configuration row an in-router link to the shared configuration page at
- * `/admin/config`.
+ * also advertises `policies`) and System (while `status.config` names
+ * exactly one file), the Dashboard row exact-match, the Blocked IPs row
+ * carrying the `blockedCount` badge the shell resolves from the `admin`
+ * topic and the Configuration row an in-router link to the shared
+ * configuration page at `/admin/config`; while `status.config` names more
+ * than one file the group carries the configuration tree of decision 122
+ * in the row's place, one Configuration node with one child per file over
+ * the shared `useConfigTree` fed the admin adapter's `config`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
+ * @param {Object} admin - The app's admin adapter
  * @returns {Array} The sidebar groups
  */
-export const sidebar = (status, account) => {
+export const sidebar = (status, account, admin) => {
   if (!hasFeature(status, 'admin') || !isAdmin(account)) {
     return [];
   }
-  const hasConfigFiles = Array.isArray(status.config) && status.config.length > 0;
+  const configCount = admin.config ? configNamesOf(status).length : 0;
   const sections = [
     section('overview', [
       {
@@ -97,6 +103,12 @@ export const sidebar = (status, account) => {
         labelKey: 'admin.health.clients.title',
         to: '/admin/client-health',
       },
+      {
+        key: 'providers',
+        icon: FaIdBadge,
+        labelKey: 'admin.health.providers.title',
+        to: '/admin/provider-health',
+      },
     ]),
     section('security', [
       {
@@ -115,12 +127,20 @@ export const sidebar = (status, account) => {
       ])
     );
   }
-  if (hasConfigFiles) {
+  if (configCount === 1) {
     sections.push(
       section('system', [
         { key: 'config', icon: FaGear, labelKey: 'admin.config.title', to: '/admin/config' },
       ])
     );
   }
-  return [{ key: 'admin', labelKey: 'admin.sidebar.title', sections }];
+  const useTree = () => useConfigTree(admin.config);
+  return [
+    {
+      key: 'admin',
+      labelKey: 'admin.sidebar.title',
+      sections,
+      ...(configCount > 1 ? { tree: useTree } : {}),
+    },
+  ];
 };

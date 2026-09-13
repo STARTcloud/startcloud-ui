@@ -13,6 +13,7 @@ import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { organizationsShape } from '../../../utils/organizations';
+import { issuerOrganizationsShape } from '../api/issuer';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
@@ -22,13 +23,13 @@ const JOIN_LABELS = { message: 'discovery.modal.messageLabel' };
 const EMPTY_JOIN = { message: '' };
 
 const ACCESS_MODE_KEYS = {
-  invite_only: 'discovery.buttons.inviteOnly',
-  request_to_join: 'discovery.buttons.requestToJoin',
+  invite: 'discovery.buttons.inviteOnly',
+  request: 'discovery.buttons.requestToJoin',
 };
 
 const ACCESS_MODE_CLASSES = {
-  invite_only: 'bg-warning',
-  request_to_join: 'bg-success',
+  invite: 'bg-warning',
+  request: 'bg-success',
 };
 
 const matchesQuery = (org, term) =>
@@ -39,7 +40,16 @@ const matchesQuery = (org, term) =>
 const OrgIcon = ({ org, gravatarUrl, orgMark }) => {
   const iconUrl = org.logo || gravatarUrl;
   if (iconUrl) {
-    return <img src={iconUrl} alt="" className="rounded-circle me-2" width="24" height="24" />;
+    return (
+      <img
+        src={iconUrl}
+        alt=""
+        className="rounded-circle me-2"
+        width="24"
+        height="24"
+        referrerPolicy="no-referrer"
+      />
+    );
   }
   return orgMark;
 };
@@ -52,14 +62,14 @@ OrgIcon.propTypes = {
 
 const JoinButton = ({ org, onRequest }) => {
   const { t } = useTranslation();
-  if (org.accessMode === 'invite_only') {
+  if (org.access_mode === 'invite') {
     return (
       <button type="button" className="btn btn-outline-secondary w-100" disabled>
         {t('discovery.buttons.inviteOnly')}
       </button>
     );
   }
-  if (org.accessMode === 'request_to_join') {
+  if (org.access_mode === 'request') {
     return (
       <button type="button" className="btn btn-primary w-100" onClick={() => onRequest(org)}>
         {t('discovery.buttons.requestToJoin')}
@@ -74,8 +84,35 @@ const JoinButton = ({ org, onRequest }) => {
 };
 
 JoinButton.propTypes = {
-  org: PropTypes.shape({ accessMode: PropTypes.string }).isRequired,
+  org: PropTypes.shape({ access_mode: PropTypes.string }).isRequired,
   onRequest: PropTypes.func.isRequired,
+};
+
+const BoxCounts = ({ org }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="d-flex flex-column align-items-end">
+      <span>
+        <FaBox className="me-1" />
+        <Link to={`/${org.name}`} className="text-decoration-none">
+          {org.publicBoxCount} {t('discovery.public')}
+        </Link>
+      </span>
+      {org.totalBoxCount > org.publicBoxCount && (
+        <span className="text-muted">
+          {org.totalBoxCount - org.publicBoxCount} {t('discovery.private')}
+        </span>
+      )}
+    </div>
+  );
+};
+
+BoxCounts.propTypes = {
+  org: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    publicBoxCount: PropTypes.number.isRequired,
+    totalBoxCount: PropTypes.number,
+  }).isRequired,
 };
 
 const OrgCard = ({ org, gravatarUrl, orgMark, onRequest }) => {
@@ -89,8 +126,8 @@ const OrgCard = ({ org, gravatarUrl, orgMark, onRequest }) => {
               <OrgIcon org={org} gravatarUrl={gravatarUrl} orgMark={orgMark} />
               {org.display_name || org.name}
             </h5>
-            <span className={`badge ${ACCESS_MODE_CLASSES[org.accessMode] || 'bg-secondary'}`}>
-              {t(ACCESS_MODE_KEYS[org.accessMode] || 'discovery.buttons.private')}
+            <span className={`badge ${ACCESS_MODE_CLASSES[org.access_mode] || 'bg-secondary'}`}>
+              {t(ACCESS_MODE_KEYS[org.access_mode] || 'discovery.buttons.private')}
             </span>
           </div>
         </div>
@@ -101,19 +138,7 @@ const OrgCard = ({ org, gravatarUrl, orgMark, onRequest }) => {
               <FaUsers className="me-1" />
               {org.memberCount} {t('discovery.members')}
             </span>
-            <div className="d-flex flex-column align-items-end">
-              <span>
-                <FaBox className="me-1" />
-                <Link to={`/${org.name}`} className="text-decoration-none">
-                  {org.publicBoxCount} {t('discovery.public')}
-                </Link>
-              </span>
-              {org.totalBoxCount > org.publicBoxCount && (
-                <span className="text-muted">
-                  {org.totalBoxCount - org.publicBoxCount} {t('discovery.private')}
-                </span>
-              )}
-            </div>
+            {typeof org.publicBoxCount === 'number' ? <BoxCounts org={org} /> : null}
           </div>
         </div>
         <div className="card-footer">
@@ -133,10 +158,14 @@ OrgCard.propTypes = {
 
 /**
  * The public page that lists the organizations open to discovery, each
- * with its logo (stored, else Gravatar through `organizations.gravatarProfile`,
- * else the app's mark), its access mode, member and box counts, and a
- * request-to-join dialog; a visitor is sent to sign in first, the intended
- * organization kept under `joinIntentKey` for the return.
+ * with its logo (stored, else Gravatar through `organizations.gravatarProfile`
+ * for a row carrying `emailHash`, else the app's mark), its `access_mode`
+ * (`invite`, `request` or `private`), the member count, the box counts
+ * while the row carries them, and the join dialog on a `request`
+ * organization, sent through `organizations.join` under the row's `name`;
+ * a visitor is sent to sign in first, the intended organization kept
+ * under `joinIntentKey` for the return. The adapter is the app's own
+ * `organizations` or the issuer's, which answers the same row shape.
  */
 const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKey }) => {
   const { t } = useTranslation();
@@ -373,7 +402,7 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
 DiscoveryPage.propTypes = {
   session: PropTypes.object.isRequired,
   returnTo: returnToShape.isRequired,
-  organizations: organizationsShape.isRequired,
+  organizations: PropTypes.oneOfType([organizationsShape, issuerOrganizationsShape]).isRequired,
   orgMark: PropTypes.node.isRequired,
   joinIntentKey: PropTypes.string.isRequired,
 };

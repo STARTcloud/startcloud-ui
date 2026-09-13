@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MarkdownArticle from '../../../components/common/MarkdownArticle';
 import SortableList from '../../../components/common/SortableList';
 import TermIcon from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -70,7 +71,46 @@ const reorderWithin = (all, shown) => {
   });
 };
 
-const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
+const TypeBadge = ({ term }) => {
+  const { t } = useTranslation();
+  return (
+    <span className="badge bg-info text-dark">
+      {t(`admin.terms.type.${String(term.type).toLowerCase()}`, { defaultValue: term.type })}
+    </span>
+  );
+};
+
+TypeBadge.propTypes = {
+  term: termShape.isRequired,
+};
+
+const PreviewDialog = ({ term, onClose }) => {
+  const { t } = useTranslation();
+  return (
+    <Modal show onHide={onClose} dialogClassName="list-modal" scrollable>
+      <Modal.Header closeButton>
+        <Modal.Title as="h5" className="d-flex flex-wrap align-items-center gap-2">
+          <TermIcon icon={term.icon} className={term.icon} aria-hidden="true" />
+          <span>{term.friendly_name || term.name}</span>
+          <span className="badge bg-secondary">
+            {t('admin.terms.version', { version: term.version || '' })}
+          </span>
+          <TypeBadge term={term} />
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <MarkdownArticle markdown={term.content || ''} />
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+PreviewDialog.propTypes = {
+  term: termShape.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+const TermCard = ({ term, handle, onPreview, onEdit, onCopy, onDelete }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -82,9 +122,7 @@ const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
           {term.is_public ? (
             <span className="badge bg-success">{t('admin.terms.public')}</span>
           ) : null}
-          <span className="badge bg-info text-dark">
-            {t(`admin.terms.type.${String(term.type).toLowerCase()}`, { defaultValue: term.type })}
-          </span>
+          <TypeBadge term={term} />
         </div>
         <div className="small text-muted">
           <code>{term.name}</code>
@@ -100,12 +138,23 @@ const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
         </div>
       </div>
       <div className="d-flex flex-wrap gap-1">
-        <Link
-          to={`/public/policies/${encodeURIComponent(term.name)}`}
+        <button
+          type="button"
           className="btn btn-sm btn-outline-secondary"
+          onClick={() => onPreview(term)}
         >
           {t('admin.terms.preview')}
-        </Link>
+        </button>
+        {term.is_public ? (
+          <Link
+            to={`/public/policies/${encodeURIComponent(term.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm btn-outline-secondary"
+          >
+            {t('admin.terms.openPublic')}
+          </Link>
+        ) : null}
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
@@ -135,6 +184,7 @@ const TermCard = ({ term, handle, onEdit, onCopy, onDelete }) => {
 TermCard.propTypes = {
   term: termShape.isRequired,
   handle: PropTypes.node.isRequired,
+  onPreview: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onCopy: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
@@ -260,7 +310,9 @@ const useOrdered = data => {
  * Content › Terms: the templates as cards in a `SortableList`, a drag
  * writing the order at once and raising a success card carrying Undo,
  * which writes the previous order back; Public and type badges, Preview
- * to the public policy page, Copy through a small dialog asking the new
+ * drawing the template's markdown in a list dialog through the shared
+ * `MarkdownArticle` for every template public or not, a public card
+ * also linking to the public policy page in a new tab, Copy through a small dialog asking the new
  * name, Edit and Create in one dialog, Delete behind the confirm; every
  * change saved as it is made and the list re-fetched; the navbar search
  * bound with a query over the cards by name and display name and the
@@ -291,6 +343,7 @@ const TermsPage = () => {
     onClearFilters: filters.clear,
   });
   const [dialog, setDialog] = useState({ open: false, term: null });
+  const [previewing, setPreviewing] = useState(null);
   const [copying, setCopying] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
@@ -351,6 +404,7 @@ const TermsPage = () => {
           <TermCard
             term={term}
             handle={handle}
+            onPreview={setPreviewing}
             onEdit={entry => setDialog({ open: true, term: entry })}
             onCopy={setCopying}
             onDelete={setDeleting}
@@ -365,6 +419,7 @@ const TermsPage = () => {
           onSaved={reload}
         />
       ) : null}
+      {previewing ? <PreviewDialog term={previewing} onClose={() => setPreviewing(null)} /> : null}
       {copying ? (
         <CopyDialog source={copying} onClose={() => setCopying(null)} onSaved={reload} />
       ) : null}

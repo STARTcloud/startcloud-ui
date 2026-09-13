@@ -364,7 +364,15 @@ side.
   label, then rows of an icon, a label and an optional badge, active by
   route with the primary wash and a 3px left tab, the icon alone with the
   label as its title in the rail; a section left without rows by gating
-  is not drawn. Tree: nodes with a caret, children loaded on expand, a
+  is not drawn; a parent row's children fold like a tree node's, a caret
+  before the icon, open while a child is the current route, the state
+  kept under `sidebar_open_<group>` beside the tree's open nodes, and the
+  parent's own link still navigates, because a column that lists every
+  child of every parent at once is a page long before the rows it exists
+  to reach, while a fold that hides the row a person stands on would hide
+  where they are. Tree: nodes with a caret, children loaded on expand and
+  for the node the current route descends from, so a deep link to a child
+  route crumbs down the tree before the node was ever expanded, a
   status dot, a right-click menu from one presenter, the selection driven
   by the route and never by checkboxes; a tree may carry views, a select
   at its top switching between the shapes the feature exports (by pool,
@@ -531,7 +539,7 @@ UI reads nothing else to decide what to render:
 | `links`           | `docs` and `contact`: the signed-out cluster's Need help? (while `ticket` is null) and Email support, rows of the app section signed in                                                                                                                                                                                                                                                                                                                                                                             |
 | `ticket`          | `{ baseUrl, reqType, fallbackCustomerId }` for a UI backend with no config route; `null` when the UI backend serves them at `/api/config/ticket`                                                                                                                                                                                                                                                                                                                                                                    |
 | `events`          | Present only with the `events` token: `{ path, topics }`, the one stream of the [Universal Events Contract](universal-events/) and every topic the UI backend can stream; the runtime opens it once per tab                                                                                                                                                                                                                                                                                                         |
-| `config`          | The config file names the admin page draws one tab each for, served at `/api/config/<name>` (`["app"]` on the VDI Health Monitor; absent means `["app"]`)                                                                                                                                                                                                                                                                                                                                                           |
+| `config`          | The config file names the admin page draws one file per route for, each file a child node of the Configuration tree in the sidebar, served at `/api/config/<name>` (`["app"]` on the VDI Health Monitor; absent means `["app"]`)                                                                                                                                                                                                                                                                                    |
 
 The feature tokens and the surface each unlocks:
 

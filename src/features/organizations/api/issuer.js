@@ -1,7 +1,16 @@
 import PropTypes from 'prop-types';
 
+import { httpsUrl } from '../../../components/common/MethodList';
 import { encodePath } from '../../../lib/apiClient';
 import { client } from '../../../lib/runtime';
+
+import {
+  approveRequest,
+  createJoinRequest,
+  denyRequest,
+  discoverOrganizations,
+  organizationRequests,
+} from './organizations';
 
 const ORGANIZATIONS = '/api/user/organizations';
 
@@ -10,9 +19,6 @@ const at = (uuid, ...segments) => `${ORGANIZATIONS}${encodePath(uuid, ...segment
 export const listMemberships = () => client.get(ORGANIZATIONS);
 
 export const createOrganization = name => client.post(ORGANIZATIONS, { name });
-
-export const joinOrganization = inviteCode =>
-  client.post(`${ORGANIZATIONS}/join`, { invite_code: inviteCode });
 
 export const patchOrganization = (uuid, body) => client.patch(at(uuid), body);
 
@@ -37,18 +43,43 @@ export const deleteOrganization = uuid => client.delete(at(uuid));
 export const setPrimaryOrganization = uuid =>
   client.put('/api/user/primary-organization', { uuid });
 
+const directoryRow = row => ({
+  id: row.uuid,
+  name: row.uuid,
+  display_name: row.name,
+  description: row.description || '',
+  logo: httpsUrl(row.logo_url),
+  access_mode: row.access_mode,
+  memberCount: row.member_count,
+});
+
+/**
+ * The issuer's directory in the row shape the shared DiscoveryPage draws:
+ * `GET /api/organizations/discover` answers `uuid`, `name`, `description`,
+ * `logo_url`, `access_mode` and `member_count`, and the page keys a row by
+ * `id`, sends its request to the organization under `name` (the uuid on
+ * the issuer, the segment `/api/organization/{org}` takes), draws
+ * `display_name` as the title, the logo only with the `https:` scheme,
+ * and the count as `memberCount`.
+ *
+ * @returns {Promise<Array<Object>>} The discoverable organizations
+ */
+export const discoverIssuerOrganizations = () =>
+  discoverOrganizations().then(rows => rows.map(directoryRow));
+
 /**
  * The identity provider's own `organizations` adapter of the shared
- * organization console and the organizations page: one read of every
- * membership with the console's fields, and the fourteen writes of the
- * identity contract's group 4 under `/api/user/organizations`, each
- * re-fetching the record afterward; it carries no `requests` and no
- * `discover`, so the console draws neither Join requests nor Discovery.
+ * organization console, the organizations page and the DiscoveryPage:
+ * one read of every membership with the console's fields, the writes of
+ * the identity contract's group 4 under `/api/user/organizations`, each
+ * re-fetching the record afterward, and the directory routes of decision
+ * 124 on BoxVault's paths, `discover` over `/api/organizations/discover`
+ * and `join`, `requests`, `approveRequest` and `denyRequest` over
+ * `/api/organization/{uuid}/requests`.
  */
 export const issuerOrganizations = {
   list: listMemberships,
   create: createOrganization,
-  join: joinOrganization,
   update: patchOrganization,
   convert: convertOrganization,
   regenerateInviteCode,
@@ -59,12 +90,16 @@ export const issuerOrganizations = {
   leave: leaveOrganization,
   remove: deleteOrganization,
   setPrimary: setPrimaryOrganization,
+  discover: discoverIssuerOrganizations,
+  join: createJoinRequest,
+  requests: organizationRequests,
+  approveRequest,
+  denyRequest,
 };
 
 export const issuerOrganizationsShape = PropTypes.shape({
   list: PropTypes.func.isRequired,
   create: PropTypes.func.isRequired,
-  join: PropTypes.func.isRequired,
   update: PropTypes.func.isRequired,
   convert: PropTypes.func.isRequired,
   regenerateInviteCode: PropTypes.func.isRequired,
@@ -75,4 +110,9 @@ export const issuerOrganizationsShape = PropTypes.shape({
   leave: PropTypes.func.isRequired,
   remove: PropTypes.func.isRequired,
   setPrimary: PropTypes.func.isRequired,
+  discover: PropTypes.func.isRequired,
+  join: PropTypes.func.isRequired,
+  requests: PropTypes.func.isRequired,
+  approveRequest: PropTypes.func.isRequired,
+  denyRequest: PropTypes.func.isRequired,
 });

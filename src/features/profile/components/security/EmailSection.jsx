@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaEnvelope } from 'react-icons/fa6';
 
 import CodeInput from '../../../../components/common/CodeInput';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { useFormRules } from '../../../../hooks/useFormRules';
@@ -17,7 +19,7 @@ const LABELS = { new_email: 'profile.security.email.new' };
  * over `POST /api/user/email/request`, stepped up, then the code over
  * `POST /api/user/email/verify`.
  */
-const EmailSection = ({ account, guard, onSaved, sectionRef }) => {
+const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [values, setValues] = useState({ new_email: '' });
@@ -66,8 +68,14 @@ const EmailSection = ({ account, guard, onSaved, sectionRef }) => {
   };
 
   return (
-    <div className="mb-4" ref={sectionRef} id="profile-email-section">
-      <h5>{t('profile.security.email.title')}</h5>
+    <SectionCard
+      icon={<FaEnvelope aria-hidden />}
+      title={t('profile.security.email.title')}
+      id="profile-email-section"
+      sectionRef={sectionRef}
+      folded={folds.folded('email')}
+      onFold={() => folds.toggle('email')}
+    >
       <form onSubmit={request} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <Field
@@ -112,7 +120,7 @@ const EmailSection = ({ account, guard, onSaved, sectionRef }) => {
           </button>
         </div>
       ) : null}
-    </div>
+    </SectionCard>
   );
 };
 
@@ -126,6 +134,7 @@ EmailSection.propTypes = {
   guard: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
   sectionRef: PropTypes.shape({ current: PropTypes.any }),
+  folds: foldsShape.isRequired,
 };
 
 export default EmailSection;

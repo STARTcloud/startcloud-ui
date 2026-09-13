@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { ConfigArrivalContext } from '../../../components/common/ConfigMap';
 import ConfigSections, {
   countFields,
   filterSections,
@@ -20,26 +22,35 @@ const EMPTY_CONFIG = {};
 const EMPTY_SCHEMA = { properties: {} };
 const EMPTY_NAMES = [];
 const NO_FILTERS = [];
+const PREFS_KEY = 'table_prefs_admin_config';
 const clearNothing = () => undefined;
 
 const nameOf = pointer => pointer.slice(1);
 
 /**
- * The Configuration page of the admin feature: one tab per name in the
- * host's `status.config`, labelled by the file's schema root `title`, no
- * tab strip while the names number one, Update alone in its place;
- * `config: []`, a missing member and an adapter without `config` draw the
- * empty state `configManager.noFiles` and no tab, no Update and no
- * Restart; the selected file and its schema fetched together, the sections
- * and foldable subsections drawn through `ConfigSections` and searched
- * from the navbar by title or key, every value validated through the
- * schema on blur and on Update with the summary above the sections, the
- * `PUT` sending the merge patch `patchOf(before, after)` of the changed
- * paths, the refused write painted by pointer, the tab that carries an
- * error marked, every control id `config:<name><pointer>`, the shared
- * `RestartCard` fed by `restart-status` on mount and after every write,
- * and every `action` through the adapter's `action(route, method, body)`,
- * the restart and every action running through the shell's `useGuard` so a
+ * The Configuration page of the admin feature: one file per route, the
+ * `name` segment of `/admin/config/:name?` naming a file of the host's
+ * `status.config` and `/admin/config` drawing the first, its sections
+ * under the page heading with no tab strip (identity contract decisions
+ * 105 and 122), Update on the right above them; `config: []`, a missing
+ * member and an adapter without `config` draw the empty state
+ * `configManager.noFiles` and no Update and no Restart; the file and its
+ * schema fetched together, the schema through the adapter's cached
+ * `schema` the sidebar's configuration tree shares, the sections and
+ * foldable subsections drawn through `ConfigSections`, their folds kept
+ * per file under `table_prefs_admin_config`, and searched from
+ * the navbar by title or key, every value validated through the schema on
+ * blur and on Update with the summary above the sections, the URL's hash
+ * read on mount and on every change as the map item the page arrived at,
+ * `/admin/config/<name>#<key>`, handed through `ConfigArrivalContext` to
+ * the map that holds the key, which opens its item dialog over that entry
+ * and clears the hash when the dialog closes, the `PUT`
+ * sending the merge patch `patchOf(before, after)` of the changed paths,
+ * the refused write painted by pointer, every control id
+ * `config:<name><pointer>`, the shared `RestartCard` fed by
+ * `restart-status` on mount and after every write, and every `action`
+ * through the adapter's `action(route, method, body)`, the restart and
+ * every action running through the shell's `useGuard` so a
  * `403 step_up_required` opens the step-up dialog and retries.
  */
 const AdminConfig = ({ config: configApi = null }) => {
@@ -47,8 +58,18 @@ const AdminConfig = ({ config: configApi = null }) => {
   const notify = useNotify();
   const guard = useGuard();
   const status = useStatus();
+  const { name = '' } = useParams();
+  const { hash, pathname, search } = useLocation();
+  const navigate = useNavigate();
+  const arrival = useMemo(
+    () => ({
+      key: decodeURIComponent(hash.slice(1)),
+      clear: () => navigate(`${pathname}${search}`, { replace: true }),
+    }),
+    [hash, pathname, search, navigate]
+  );
   const configNames = Array.isArray(status.config) ? status.config : EMPTY_NAMES;
-  const [selectedConfig, setSelectedConfig] = useState(configNames[0] || '');
+  const selectedConfig = configNames.includes(name) ? name : configNames[0] || '';
   const [schemas, setSchemas] = useState({});
   const [loaded, setLoaded] = useState({ name: '', original: null, config: null });
   const [refresh, setRefresh] = useState(0);
@@ -64,26 +85,27 @@ const AdminConfig = ({ config: configApi = null }) => {
   const { reset } = rules;
 
   useEffect(() => {
-    if (!configApi) {
+    if (!configApi || !selectedConfig) {
       return undefined;
     }
     let mounted = true;
-    configNames.forEach(configName => {
-      configApi.schema(configName).then(
-        fileSchema => {
-          if (mounted) {
-            setSchemas(current => ({ ...current, [configName]: fileSchema }));
-          }
-        },
-        error => {
-          log.api.error('Error fetching config schema', { configName, error: error.message });
+    configApi.schema(selectedConfig).then(
+      fileSchema => {
+        if (mounted) {
+          setSchemas(current => ({ ...current, [selectedConfig]: fileSchema }));
         }
-      );
-    });
+      },
+      error => {
+        log.api.error('Error fetching config schema', {
+          configName: selectedConfig,
+          error: error.message,
+        });
+      }
+    );
     return () => {
       mounted = false;
     };
-  }, [configApi, configNames]);
+  }, [configApi, selectedConfig]);
 
   const fetchConfig = useCallback(
     configName => {
@@ -137,7 +159,6 @@ const AdminConfig = ({ config: configApi = null }) => {
   };
 
   const visibleSections = filterSections(sections, searchTerm.toLowerCase());
-  const hasErrors = Object.keys(rules.errors).length > 0;
 
   useNavbarSearchBinding({
     query: searchTerm,
@@ -161,34 +182,11 @@ const AdminConfig = ({ config: configApi = null }) => {
 
   return (
     <div className="mt-5">
-      {configNames.length > 1 ? (
-        <ul className="nav nav-tabs d-flex">
-          {configNames.map(configName => (
-            <li className="nav-item" key={configName}>
-              <button
-                type="button"
-                className={`nav-link ${selectedConfig === configName ? 'active' : ''} ${
-                  selectedConfig === configName && hasErrors ? 'text-danger' : ''
-                }`}
-                onClick={() => setSelectedConfig(configName)}
-              >
-                {schemas[configName]?.title || configName}
-              </button>
-            </li>
-          ))}
-          <li className="nav-item ms-auto">
-            <button type="button" className="nav-link cursor-pointer" onClick={updateConfig}>
-              {t('configManager.buttons.update')}
-            </button>
-          </li>
-        </ul>
-      ) : (
-        <div className="d-flex justify-content-end">
-          <button type="button" className="btn btn-link" onClick={updateConfig}>
-            {t('configManager.buttons.update')}
-          </button>
-        </div>
-      )}
+      <div className="d-flex justify-content-end">
+        <button type="button" className="btn btn-link" onClick={updateConfig}>
+          {t('configManager.buttons.update')}
+        </button>
+      </div>
       <div className="config-container mt-3">
         <RestartCard
           restartStatus={configApi.restartStatus}
@@ -201,15 +199,19 @@ const AdminConfig = ({ config: configApi = null }) => {
           <div className="alert alert-info">{t('pages.noMatches')}</div>
         )}
         {ready ? (
-          <ConfigSections
-            sections={visibleSections}
-            config={config}
-            rules={rules}
-            nameFor={nameOf}
-            onChange={handleFieldChange}
-            callAction={configApi.action}
-            guard={guard}
-          />
+          <ConfigArrivalContext.Provider value={arrival}>
+            <ConfigSections
+              sections={visibleSections}
+              config={config}
+              rules={rules}
+              nameFor={nameOf}
+              onChange={handleFieldChange}
+              callAction={configApi.action}
+              guard={guard}
+              prefsKey={PREFS_KEY}
+              foldKey={`${selectedConfig}/`}
+            />
+          </ConfigArrivalContext.Provider>
         ) : (
           <p>{t('loading')}</p>
         )}

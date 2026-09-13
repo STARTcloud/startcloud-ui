@@ -113,10 +113,45 @@ export const readDetailPrefs = (key, columns, { views = null } = {}) => {
  * @param {{ sort?: Array, hiddenColumns?: Set, view?: string }} prefs - The preferences
  */
 export const writeDetailPrefs = (key, { sort = [], hiddenColumns = new Set(), view = '' }) => {
+  const { folds } = parse(key);
   localStorage.setItem(
     key,
-    JSON.stringify({ sort, hiddenColumns: [...hiddenColumns], ...(view ? { view } : {}) })
+    JSON.stringify({
+      sort,
+      hiddenColumns: [...hiddenColumns],
+      ...(view ? { view } : {}),
+      ...(folds ? { folds } : {}),
+    })
   );
+};
+
+const foldsOf = saved =>
+  saved && typeof saved === 'object' && !Array.isArray(saved)
+    ? Object.fromEntries(Object.entries(saved).map(([id, folded]) => [id, Boolean(folded)]))
+    : {};
+
+/**
+ * The folds a page's section cards keep under its `table_prefs_*` key,
+ * `folds` of the one object per key: section id to `true` while folded,
+ * a section never folded absent and so open.
+ *
+ * @param {string} key - The localStorage key, empty for no storage
+ * @returns {Object<string, boolean>} The folds
+ */
+export const readFolds = key => (key ? foldsOf(parse(key).folds) : {});
+
+/**
+ * Writes a page's folds as the `folds` member of its one object, the
+ * other members left as they are.
+ *
+ * @param {string} key - The localStorage key, empty for no storage
+ * @param {Object<string, boolean>} folds - The folds
+ */
+export const writeFolds = (key, folds) => {
+  if (!key) {
+    return;
+  }
+  localStorage.setItem(key, JSON.stringify({ ...parse(key), folds }));
 };
 
 export const emptyFilters = collections => ({

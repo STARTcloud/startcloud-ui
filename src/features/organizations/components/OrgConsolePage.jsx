@@ -94,7 +94,7 @@ const OrgConsoleTabs = ({
   invitationsEnabled,
 }) => {
   const { t } = useTranslation();
-  const showJoinRequests = !isExternalOrg || orgAccessMode === 'request_to_join';
+  const showJoinRequests = !isExternalOrg || orgAccessMode === 'request';
   const showInvitations = !isExternalOrg && invitationsEnabled;
   const tabs = [
     { key: 'organization', labelKey: 'orgConsole.tabs.organization', count: 0 },
@@ -138,7 +138,7 @@ const visibleTab = (tab, isExternalOrg, orgAccessMode, invitationsEnabled) => {
   if (tab === 'invitations') {
     return 'organization';
   }
-  if (tab === 'joinRequests' && orgAccessMode !== 'request_to_join') {
+  if (tab === 'joinRequests' && orgAccessMode !== 'request') {
     return 'organization';
   }
   return tab;
@@ -222,8 +222,8 @@ OrgProfileRow.propTypes = {
 
 const ACCESS_MODE_LABEL_KEYS = {
   private: 'orgConsole.organization.accessModes.private',
-  invite_only: 'orgConsole.organization.accessModes.inviteOnly',
-  request_to_join: 'orgConsole.organization.accessModes.requestToJoin',
+  invite: 'orgConsole.organization.accessModes.inviteOnly',
+  request: 'orgConsole.organization.accessModes.requestToJoin',
 };
 
 const OrgProfileDisplay = ({
@@ -985,10 +985,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                                   <option value="private">
                                     {t('orgConsole.organization.accessModes.private')}
                                   </option>
-                                  <option value="invite_only">
+                                  <option value="invite">
                                     {t('orgConsole.organization.accessModes.inviteOnly')}
                                   </option>
-                                  <option value="request_to_join">
+                                  <option value="request">
                                     {t('orgConsole.organization.accessModes.requestToJoin')}
                                   </option>
                                 </select>

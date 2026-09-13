@@ -89,7 +89,6 @@
     "last_method": "Quita otro método primero; el último método no se puede quitar.",
     "no_methods": "Añade un número de teléfono o una aplicación de autenticación antes de activar la verificación en dos pasos.",
     "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
-    "unknown_code": "Ese código de invitación no coincide con ninguna organización.",
     "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
     "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero.",
     "title": {
@@ -278,6 +277,7 @@
         "disable": "Desactivar la verificación en dos pasos",
         "disableTitle": "Desactivar la verificación en dos pasos",
         "disableBody": "Desactivar la verificación en dos pasos hace que tu inicio de sesión dependa solo de tu contraseña.",
+        "methods": "Métodos registrados",
         "noMethods": "Todavía no hay métodos registrados.",
         "preferredBadge": "Preferido",
         "setPreferred": "Marcar como preferido",
@@ -306,6 +306,7 @@
       },
       "passkeys": {
         "title": "Llaves de acceso",
+        "intro": "Una llave de acceso te identifica con el bloqueo de pantalla de tu dispositivo o una llave de seguridad, por sí sola o como segundo factor.",
         "none": "Todavía no hay llaves de acceso.",
         "name": "Nombre de la llave de acceso",
         "add": "Añadir llave de acceso",
@@ -320,6 +321,25 @@
         "removed": "Llave de acceso quitada.",
         "renamed": "Llave de acceso renombrada.",
         "unsupported": "Este navegador no admite llaves de acceso."
+      },
+      "linked": {
+        "title": "Cuentas vinculadas",
+        "none": "No hay cuentas vinculadas.",
+        "linkedAs": "Vinculada como {{name}}",
+        "lastUsed": "último uso",
+        "status": {
+          "valid": "Activa",
+          "revoked": "Revocada",
+          "unknown": "Desconocido"
+        },
+        "unlink": "Desvincular",
+        "unlinkBody": "Desvincula {{provider}} de tu cuenta. Escribe \"{{keyword}}\" para confirmar.",
+        "unlinkReason": "Desvincular {{provider}} cambia cómo inicias sesión.",
+        "unlinked": "Cuenta desvinculada.",
+        "available": "Proveedores disponibles",
+        "link": "Vincular cuenta",
+        "setPassword": "Establece una contraseña para poder iniciar sesión si se desvincula una cuenta vinculada.",
+        "enableTfa": "Activa la verificación en dos pasos para proteger tu cuenta."
       },
       "recovery": {
         "title": "Recuperación",
@@ -466,6 +486,7 @@
       "confirm": "Confirmar"
     },
     "preferences": {
+      "title": "Preferencias",
       "language": "Idioma",
       "languageHint": "Se guarda al cambiarlo, el mismo valor que escribe el globo de la cabecera.",
       "theme": {
@@ -487,11 +508,12 @@
       "channelSmsHint": "El SMS necesita un número de móvil verificado.",
       "pin": "PIN de aprobación de inicio de sesión",
       "pinHint": "PIN opcional que una aplicación debe presentar antes de que una solicitud de inicio de sesión te llegue.",
+      "pinPlaceholder": "De 4 a 64 caracteres",
       "pinSet": "Hay un PIN establecido",
       "pinNone": "Sin PIN",
       "set": "Establecer",
       "clear": "Borrar",
-      "save": "Guardar",
+      "save": "Guardar preferencias",
       "saved": "Preferencias guardadas."
     },
     "favorites": {
@@ -525,6 +547,8 @@
       "title": "Cuenta",
       "profile": "Perfil",
       "organizations": "Organizaciones",
+      "applications": "Aplicaciones",
+      "terms": "Términos y políticas",
       "integrations": "Integraciones",
       "inbox": "Bandeja de entrada"
     }
@@ -669,10 +693,28 @@
       "personal": "Personal",
       "team": "Equipo",
       "search": "Buscar organizaciones",
-      "customerId": {
-        "title": "ID de cliente de {{org}}",
-        "hint": "Seis caracteres hexadecimales (0-9, A-F); déjalo vacío para borrarlo."
+      "edit": {
+        "title": "Editar {{org}}",
+        "details": "Detalles",
+        "address": "Dirección",
+        "access": "Acceso"
       },
+      "field": {
+        "name": "Nombre",
+        "email": "Correo electrónico",
+        "websiteUrl": "URL del sitio web",
+        "logoUrl": "URL del logotipo",
+        "description": "Descripción",
+        "locale": "Configuración regional",
+        "timezone": "Zona horaria",
+        "timezoneNone": "Sin establecer",
+        "telephone": "Teléfono",
+        "accessMode": "Modo de acceso",
+        "defaultRole": "Rol predeterminado",
+        "customerId": "ID de cliente",
+        "customerIdHint": "Seis caracteres hexadecimales (0-9, A-F); déjalo vacío para borrarlo."
+      },
+      "saved": "La organización se ha guardado.",
       "deleted": "La organización se ha eliminado.",
       "delete": {
         "title": "Eliminar la organización",
@@ -811,7 +853,6 @@
       "clients": {
         "title": "Salud de los clientes",
         "summary": "{{healthy}} de {{total}} clientes están correctos",
-        "heading": "Clientes",
         "responseTime": "{{ms}} ms",
         "noResponse": "sin respuesta",
         "checked": "comprobado",
@@ -822,17 +863,12 @@
         },
         "endpoint": "Punto de acceso",
         "reason": "Motivo",
-        "search": "Buscar clientes y proveedores",
+        "search": "Buscar clientes",
         "table": {
           "name": "Nombre",
-          "kind": "Tipo",
           "status": "Estado",
           "responseTime": "Tiempo de respuesta",
           "lastChecked": "Última comprobación"
-        },
-        "kind": {
-          "client": "Cliente",
-          "provider": "Proveedor"
         }
       },
       "definitions": "Qué significan estas cifras",
@@ -843,9 +879,9 @@
         "unknown": "No comprobable"
       },
       "providers": {
-        "one": "proveedor",
-        "summary": "{{healthy}} de {{total}} proveedores",
-        "heading": "Proveedores"
+        "title": "Salud de los proveedores",
+        "summary": "{{healthy}} de {{total}} proveedores están correctos",
+        "search": "Buscar proveedores"
       }
     },
     "blocked": {
@@ -870,6 +906,7 @@
       "copyName": "Nombre de la copia",
       "copyTitle": "Copiar {{name}}",
       "preview": "Vista previa",
+      "openPublic": "Abrir la página pública",
       "delete": "Eliminar",
       "undo": "Deshacer",
       "public": "Público",
@@ -1097,6 +1134,8 @@
       "noMessage": "Sin mensaje",
       "approveAsMember": "Aprobar como Miembro",
       "approveAsAdmin": "Aprobar como Administrador",
+      "approve": "Aprobar",
+      "role": "Rol",
       "deny": "Denegar",
       "approved": "¡Solicitud de unión aprobada exitosamente!",
       "denied": "Solicitud de unión denegada."
@@ -2193,13 +2232,11 @@
   },
   "organizations": {
     "title": "Organizaciones",
-    "create": "Crear una organización",
+    "create": "Crear un equipo",
     "createButton": "Crear",
     "created": "Organización creada.",
     "name": "Nombre de la organización",
-    "join": "Unirse con un código de invitación",
-    "joinButton": "Unirse",
-    "joined": "Te uniste a la organización.",
+    "find": "Buscar una organización",
     "inviteCode": "Código de invitación",
     "regenerate": "Regenerar",
     "regenerated": "Código de invitación regenerado.",
@@ -2214,58 +2251,46 @@
     "none": "Todavía no eres miembro de ninguna organización.",
     "search": "Buscar organizaciones"
   },
+  "applications": {
+    "title": "Aplicaciones",
+    "search": "Buscar aplicaciones",
+    "none": "No hay aplicaciones conectadas.",
+    "activeSessions_one": "{{count}} sesión activa",
+    "activeSessions_other": "{{count}} sesiones activas",
+    "unregistered": "No registrada",
+    "firstUsed": "Primera conexión",
+    "lastUsed": "último uso",
+    "permissions": "Permisos:",
+    "removeScope": "Quitar el permiso {{scope}}",
+    "removeScopeBody": "Quita el permiso {{scope}} de {{app}}. Escribe \"{{keyword}}\" para confirmar.",
+    "sessions": "Sesiones",
+    "revoke": "Revocar el acceso",
+    "revokeBody": "Revoca el acceso de {{app}} a tu cuenta; sus {{count}} sesiones activas terminan. Escribe \"{{keyword}}\" para confirmar.",
+    "revokeReason": "Revocar {{app}} cambia cómo tienes la sesión iniciada."
+  },
+  "userTerms": {
+    "title": "Términos y políticas",
+    "search": "Buscar términos aceptados",
+    "none": "Todavía no hay términos aceptados.",
+    "version": "Versión {{version}}",
+    "accepted": "aceptado",
+    "view": "Ver",
+    "type": {
+      "site": "Sitio",
+      "client": "Cliente",
+      "both": "Ambos"
+    }
+  },
   "integrations": {
-    "title": "Integraciones y cuentas conectadas",
-    "search": "Buscar cuentas, términos y aplicaciones",
-    "notices": {
-      "setPassword": "Establece una contraseña para poder iniciar sesión si se desvincula una cuenta vinculada.",
-      "enableTfa": "Activa la verificación en dos pasos para proteger tu cuenta."
-    },
-    "linked": {
-      "title": "Cuentas externas vinculadas",
-      "none": "No hay cuentas vinculadas.",
-      "linkedAs": "Vinculada como {{name}}",
-      "lastUsed": "último uso",
-      "status": {
-        "valid": "Activa",
-        "revoked": "Revocada",
-        "unknown": "Desconocido"
-      },
-      "unlink": "Desvincular",
-      "unlinkBody": "Desvincula {{provider}} de tu cuenta. Escribe \"{{keyword}}\" para confirmar.",
-      "unlinkReason": "Desvincular {{provider}} cambia cómo inicias sesión."
-    },
-    "available": {
-      "notLinked": "No vinculada",
-      "link": "Vincular cuenta"
-    },
-    "terms": {
-      "title": "Términos y políticas aceptados",
-      "none": "Todavía no hay términos aceptados.",
-      "version": "Versión {{version}}",
-      "accepted": "aceptado",
-      "view": "Ver",
-      "type": {
-        "site": "Sitio",
-        "client": "Cliente",
-        "both": "Ambos"
-      }
-    },
-    "apps": {
-      "title": "Aplicaciones conectadas",
-      "none": "No hay aplicaciones conectadas.",
-      "activeSessions_one": "{{count}} sesión activa",
-      "activeSessions_other": "{{count}} sesiones activas",
-      "unregistered": "No registrada",
-      "firstUsed": "Primera conexión",
-      "lastUsed": "último uso",
-      "permissions": "Permisos:",
-      "removeScope": "Quitar el permiso {{scope}}",
-      "removeScopeBody": "Quita el permiso {{scope}} de {{app}}. Escribe \"{{keyword}}\" para confirmar.",
-      "sessions": "Sesiones",
-      "revoke": "Revocar el acceso",
-      "revokeBody": "Revoca el acceso de {{app}} a tu cuenta; sus {{count}} sesiones activas terminan. Escribe \"{{keyword}}\" para confirmar.",
-      "revokeReason": "Revocar {{app}} cambia cómo tienes la sesión iniciada."
+    "title": "Integraciones",
+    "search": "Buscar servicios",
+    "none": "No hay servicios conectados.",
+    "connected": "Conectado",
+    "manage": "Administrar",
+    "status": {
+      "connected": "Conectado",
+      "expired": "Caducado",
+      "error": "Error"
     }
   },
   "dateRange": {

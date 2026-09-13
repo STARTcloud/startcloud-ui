@@ -2,8 +2,11 @@ import { encodePath } from '../../../lib/apiClient';
 import { client, hubClient } from '../../../lib/runtime';
 
 const USER = '/api/user';
+const PROVIDERS = `${USER}/integrations/providers`;
 
 const at = (...segments) => `${USER}${encodePath(...segments)}`;
+
+const providerAt = (...segments) => `${PROVIDERS}${encodePath(...segments)}`;
 
 export const stepUp = body => client.post(`${USER}/step-up`, body);
 
@@ -76,7 +79,15 @@ export const menuFavorites = () => hubClient.get(`${USER}/favorites`);
 
 export const saveFavorites = list => client.put(`${USER}/favorites`, list);
 
-export const connectedApps = () => client.get(`${USER}/integrations`).then(data => data.apps || []);
+export const connectedApps = () => client.get(`${USER}/applications`);
+
+export const linkedAccounts = () => client.get(`${USER}/linked-accounts`);
+
+export const providerStatus = providerId => client.get(providerAt(providerId, 'status'));
+
+export const linkProvider = providerId => client.post(providerAt(providerId, 'link'), {});
+
+export const unlinkProvider = providerId => client.delete(providerAt(providerId));
 
 export const savePreferences = patch => client.patch(`${USER}/preferences`, patch);
 
@@ -91,8 +102,11 @@ export const placesKey = () => client.get('/api/config/places');
  * `/api/user/*`, JSON in snake_case, grouped by the tab that draws them;
  * the page draws a tab only while the adapter carries its calls, so an
  * adapter without `sessions` draws no Sessions tab. `stepUp` arms the
- * five-minute window a sensitive call needs and `places` answers the
- * Google Places key the address block loads its autocomplete with.
+ * five-minute window a sensitive call needs, `places` answers the
+ * Google Places key the address block loads its autocomplete with, and
+ * `linked` carries the Security page's Linked accounts calls: the read of
+ * `GET /api/user/linked-accounts`, the live provider status, and the link
+ * and unlink routes under `/api/user/integrations/providers`.
  */
 export const issuerAccount = {
   profile,
@@ -120,6 +134,12 @@ export const issuerAccount = {
     register: registerPasskey,
   },
   backupCodes: { count: backupCodesCount, generate: generateBackupCodes },
+  linked: {
+    list: linkedAccounts,
+    status: providerStatus,
+    link: linkProvider,
+    unlink: unlinkProvider,
+  },
   sessions: { list: sessions, revoke: revokeSession, revokeAll: revokeSessions },
   favorites: { list: favorites, save: saveFavorites, apps: connectedApps },
   preferences: savePreferences,

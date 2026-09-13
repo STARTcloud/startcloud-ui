@@ -7,27 +7,16 @@ import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
-import { deleteOrganization, organizations, updateOrganization } from '../api/accounts';
+import { deleteOrganization, organizations } from '../api/accounts';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { ORGANIZATIONS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
+import OrganizationDialog, { adminOrganizationShape } from './OrganizationDialog';
 import TableWrap from './TableWrap';
-import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
-
-const organizationShape = PropTypes.shape({
-  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  uuid: PropTypes.string,
-  name: PropTypes.string.isRequired,
-  personal: PropTypes.bool,
-  invite_code: PropTypes.string,
-  customer_id: PropTypes.string,
-  created_at: PropTypes.string,
-  member_count: PropTypes.number,
-});
 
 const deletable = org => !org.personal || (org.member_count || 0) === 0;
 
@@ -122,7 +111,7 @@ const RowActions = ({ org, onEdit, onDelete }) => {
 };
 
 RowActions.propTypes = {
-  org: organizationShape.isRequired,
+  org: adminOrganizationShape.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
@@ -134,10 +123,11 @@ RowActions.propTypes = {
  * client-side, its value in the URL as `type`, and the Columns group
  * under `table_prefs_admin_organizations`,
  * the table (name with the uuid in its tooltip, Personal or Team, invite
- * code, customer id behind Edit, members, created), the customer id
- * dialog with an empty value clearing it, and Delete behind the confirm
- * for a team or an empty personal organization, the service's refusal
- * drawn as a card.
+ * code, customer id, members, created), Edit opening the
+ * `OrganizationDialog` over the whole record prefilled from the row and
+ * re-reading the list once saved, and Delete behind the confirm for a
+ * team or an empty personal organization, the service's refusal drawn as
+ * a card.
  */
 const OrganizationsPage = () => {
   const { t, i18n } = useTranslation();
@@ -197,14 +187,7 @@ const OrganizationsPage = () => {
         />
       </TableWrap>
       {editing ? (
-        <CustomerIdDialog
-          title={t('admin.organizations.customerId.title', { org: editing.name })}
-          hint={t('admin.organizations.customerId.hint')}
-          initial={editing.customer_id || ''}
-          save={value => updateOrganization(editing.id, { customer_id: value })}
-          onClose={() => setEditing(null)}
-          onSaved={reload}
-        />
+        <OrganizationDialog org={editing} onClose={() => setEditing(null)} onSaved={reload} />
       ) : null}
       <ConfirmModal
         show={Boolean(deleting)}

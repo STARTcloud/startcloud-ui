@@ -1,9 +1,11 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaLock } from 'react-icons/fa6';
 
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import PasswordField from '../../../../components/common/PasswordField';
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { useFormRules } from '../../../../hooks/useFormRules';
@@ -30,7 +32,7 @@ const EMPTY = { current_password: '', password: '', confirm: '' };
  * generator, the confirmation as the page's `equals` rule, over
  * `PUT /api/user/password`, stepped up.
  */
-const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved }) => {
+const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [values, setValues] = useState(EMPTY);
@@ -79,56 +81,62 @@ const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved }) =>
   };
 
   return (
-    <form onSubmit={submit} noValidate className="mb-4">
-      <h5>{t('profile.security.password.title')}</h5>
-      {hasPassword ? null : (
-        <p className="text-body-secondary small">{t('profile.security.password.none')}</p>
-      )}
-      <FormErrorSummary errors={rules.summary} />
-      {hasPassword ? (
+    <SectionCard
+      icon={<FaLock aria-hidden />}
+      title={t('profile.security.password.title')}
+      folded={folds.folded('password')}
+      onFold={() => folds.toggle('password')}
+    >
+      <form onSubmit={submit} noValidate>
+        {hasPassword ? null : (
+          <p className="text-body-secondary small">{t('profile.security.password.none')}</p>
+        )}
+        <FormErrorSummary errors={rules.summary} />
+        {hasPassword ? (
+          <PasswordField
+            id={rules.idFor('current_password')}
+            name="current_password"
+            label={t(LABELS.current_password)}
+            autoComplete="current-password"
+            value={values.current_password}
+            onChange={change}
+            onBlur={() => rules.onBlur('current_password')}
+            revealed={revealed}
+            onToggleReveal={toggleReveal}
+            error={rules.errors.current_password || ''}
+          />
+        ) : null}
         <PasswordField
-          id={rules.idFor('current_password')}
-          name="current_password"
-          label={t(LABELS.current_password)}
-          autoComplete="current-password"
-          value={values.current_password}
+          id={rules.idFor('password')}
+          name="password"
+          label={t(LABELS.password)}
+          autoComplete="new-password"
+          hint={t('profile.security.password.hint', { count: minLength })}
+          value={values.password}
           onChange={change}
-          onBlur={() => rules.onBlur('current_password')}
+          onBlur={() => rules.onBlur('password')}
           revealed={revealed}
           onToggleReveal={toggleReveal}
-          error={rules.errors.current_password || ''}
+          error={rules.errors.password || ''}
+          onGenerate={generate}
         />
-      ) : null}
-      <PasswordField
-        id={rules.idFor('password')}
-        name="password"
-        label={t(LABELS.password)}
-        autoComplete="new-password"
-        hint={t('profile.security.password.hint', { count: minLength })}
-        value={values.password}
-        onChange={change}
-        onBlur={() => rules.onBlur('password')}
-        revealed={revealed}
-        onToggleReveal={toggleReveal}
-        error={rules.errors.password || ''}
-        onGenerate={generate}
-      />
-      <PasswordField
-        id={rules.idFor('confirm')}
-        name="confirm"
-        label={t(LABELS.confirm)}
-        autoComplete="new-password"
-        value={values.confirm}
-        onChange={change}
-        onBlur={() => rules.onBlur('confirm')}
-        revealed={revealed}
-        onToggleReveal={toggleReveal}
-        error={rules.errors.confirm || ''}
-      />
-      <button type="submit" className="btn btn-primary mt-2">
-        {hasPassword ? t('profile.security.password.change') : t('profile.security.password.set')}
-      </button>
-    </form>
+        <PasswordField
+          id={rules.idFor('confirm')}
+          name="confirm"
+          label={t(LABELS.confirm)}
+          autoComplete="new-password"
+          value={values.confirm}
+          onChange={change}
+          onBlur={() => rules.onBlur('confirm')}
+          revealed={revealed}
+          onToggleReveal={toggleReveal}
+          error={rules.errors.confirm || ''}
+        />
+        <button type="submit" className="btn btn-primary mt-2">
+          {hasPassword ? t('profile.security.password.change') : t('profile.security.password.set')}
+        </button>
+      </form>
+    </SectionCard>
   );
 };
 
@@ -138,6 +146,7 @@ PasswordSection.propTypes = {
   minLength: PropTypes.number.isRequired,
   guard: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
+  folds: foldsShape.isRequired,
 };
 
 export default PasswordSection;

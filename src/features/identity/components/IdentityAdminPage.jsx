@@ -10,6 +10,7 @@ import DashboardPage from './DashboardPage';
 import InsightsPage from './InsightsPage';
 import LoginsPage from './LoginsPage';
 import OrganizationsPage from './OrganizationsPage';
+import ProviderHealthPage from './ProviderHealthPage';
 import RegistrationsPage from './RegistrationsPage';
 import ServiceUsagePage from './ServiceUsagePage';
 import SessionsPage from './SessionsPage';
@@ -26,6 +27,7 @@ const PAGES = {
   'service-usage': ServiceUsagePage,
   insights: InsightsPage,
   'client-health': ClientHealthPage,
+  'provider-health': ProviderHealthPage,
   'brute-force': BlockedIpsPage,
   terms: TermsPage,
 };
@@ -36,7 +38,8 @@ export const IDENTITY_ADMIN_PAGES = Object.keys(PAGES);
  * One operator page per sidebar row of the identity contract's group 5,
  * the row's route naming the page: Dashboard, Users, All organizations,
  * Logins, Registrations, Sessions, Service usage, Insights, Client
- * health, Blocked IPs and Terms, each reading its own calls and drawing
+ * health, Provider health, Blocked IPs and Terms, each reading its own
+ * calls and drawing
  * in the scroll region beside the column; the sidebar rows are the one
  * navigation and no tab strip is drawn. A visitor is sent to sign in with
  * the page as the return path and a signed-in non-admin home, `allowed`

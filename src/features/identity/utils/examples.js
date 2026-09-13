@@ -84,6 +84,19 @@ export const RATE_LIMIT = {
   banned: false,
 };
 
+const EMPTY_ADDRESS = {
+  line1: '',
+  line2: '',
+  city: '',
+  state: '',
+  postal_code: '',
+  country: '',
+  country_code: '',
+  formatted: '',
+  latitude: null,
+  longitude: null,
+};
+
 export const ORGANIZATIONS = [
   {
     id: 1,
@@ -94,6 +107,24 @@ export const ORGANIZATIONS = [
     customer_id: 'A55DF0',
     created_at: '2025-01-09T00:00:00Z',
     member_count: 3,
+    email: 'ops@acme.example',
+    website_url: 'https://acme.example',
+    logo_url: '',
+    description: 'Acme Inc.',
+    locale: 'en',
+    timezone: 'America/Chicago',
+    telephone: '+15125550100',
+    address: {
+      ...EMPTY_ADDRESS,
+      line1: '100 Congress Ave',
+      city: 'Austin',
+      state: 'Texas',
+      postal_code: '78701',
+      country: 'United States',
+      country_code: 'US',
+    },
+    access_mode: 'invite',
+    default_role: 'MEMBER',
   },
   {
     id: 2,
@@ -104,6 +135,16 @@ export const ORGANIZATIONS = [
     customer_id: '',
     created_at: '2024-12-28T00:00:00Z',
     member_count: 1,
+    email: 'mark@m4kr.net',
+    website_url: '',
+    logo_url: '',
+    description: '',
+    locale: 'en',
+    timezone: 'America/Chicago',
+    telephone: '',
+    address: { ...EMPTY_ADDRESS },
+    access_mode: 'private',
+    default_role: 'MEMBER',
   },
   {
     id: 3,
@@ -114,6 +155,24 @@ export const ORGANIZATIONS = [
     customer_id: 'A55DF1',
     created_at: '2024-12-28T00:00:00Z',
     member_count: 12,
+    email: 'support@prominic.net',
+    website_url: 'https://prominic.net',
+    logo_url: '',
+    description: 'Prominic.NET, Inc.',
+    locale: 'en',
+    timezone: 'America/Chicago',
+    telephone: '+12173561300',
+    address: {
+      ...EMPTY_ADDRESS,
+      line1: '105 W Main St',
+      city: 'Urbana',
+      state: 'Illinois',
+      postal_code: '61801',
+      country: 'United States',
+      country_code: 'US',
+    },
+    access_mode: 'request',
+    default_role: 'MEMBER',
   },
 ];
 

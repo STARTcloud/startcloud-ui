@@ -34,6 +34,7 @@ export const issuerAccountShape = PropTypes.shape({
   tfa: PropTypes.object,
   passkeys: PropTypes.object,
   backupCodes: PropTypes.object,
+  linked: PropTypes.object,
   sessions: PropTypes.object,
   favorites: PropTypes.object,
   preferences: PropTypes.func,

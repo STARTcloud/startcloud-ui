@@ -44,12 +44,15 @@ export const collectionOfRow = (row, collections) =>
 
 const narrowed = (path, key, value) => `${path}?${key}=${encodeURIComponent(value)}`;
 
+const configItem = (file, key) => `/admin/config/${file}#${encodeURIComponent(key)}`;
+
 const ISSUER_PATHS = {
   organization: ({ admin, row }) =>
     admin ? narrowed('/admin/organizations', 'search', row.org) : '/user/organizations',
   user: ({ row }) => narrowed('/admin/users', 'search', row.name),
-  application: ({ admin }) => (admin ? '/admin/service-usage' : '/user/integrations'),
-  'identity-provider': () => '/user/integrations',
+  application: ({ admin, row }) => (admin ? configItem('clients', row.name) : '/user/applications'),
+  'identity-provider': ({ admin, row }) =>
+    admin ? configItem('providers', row.name) : '/user/profile/security',
   terms: ({ admin, row }) =>
     admin ? '/admin/terms' : `/public/policies/${encodeURIComponent(row.name)}`,
   notification: () => '/notifications',
@@ -63,9 +66,11 @@ const ISSUER_PATHS = {
  * The in-app path a search row leads to: on the `auth-server` role the page
  * the identity contract's search table names for the kind (an organization
  * to `/user/organizations` or `/admin/organizations?search=` for an admin,
- * a user to `/admin/users?search=`, an application to `/user/integrations`
- * or `/admin/service-usage` for an admin, an identity provider to
- * `/user/integrations`, terms to `/public/policies/<name>` or `/admin/terms`
+ * a user to `/admin/users?search=`, an application to `/user/applications`
+ * or, for an admin, the config item deep link `/admin/config/clients#<name>`
+ * over the client whose id the row's `name` carries, an identity provider
+ * to `/user/profile/security` or, for an admin,
+ * `/admin/config/providers#<name>`, terms to `/public/policies/<name>` or `/admin/terms`
  * for an admin, a notification to `/notifications`, a session to
  * `/user/profile/sessions` or `/admin/sessions` for an admin, a login to
  * `/admin/logins?username=`, a registration to

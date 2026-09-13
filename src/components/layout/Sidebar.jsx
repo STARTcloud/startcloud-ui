@@ -44,6 +44,51 @@ const persistMinimized = minimized => {
 
 const rowClass = ({ isActive }) => (isActive ? 'sidebar-row active' : 'sidebar-row');
 
+const descendsFrom = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
+
+const useOpenKeys = groupKey => {
+  const [open, setOpen] = useState(() => storedOpen(groupKey));
+  const toggle = useCallback(
+    key => {
+      setOpen(previous => {
+        const next = previous.includes(key)
+          ? previous.filter(entry => entry !== key)
+          : [...previous, key];
+        localStorage.setItem(openKeyOf(groupKey), JSON.stringify(next));
+        return next;
+      });
+    },
+    [groupKey]
+  );
+  return { open, toggle };
+};
+
+const Caret = ({ open, onToggle }) => (
+  <span
+    role="presentation"
+    className="sidebar-caret"
+    onClick={event => {
+      event.preventDefault();
+      event.stopPropagation();
+      onToggle();
+    }}
+  >
+    {open ? <FaCaretDown /> : <FaCaretRight />}
+  </span>
+);
+
+Caret.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};
+
+const foldKeys = (event, open, onToggle) => {
+  if ((event.key === 'ArrowLeft' && open) || (event.key === 'ArrowRight' && !open)) {
+    event.preventDefault();
+    onToggle();
+  }
+};
+
 const focusSibling = (container, step) => {
   const rows = [...container.querySelectorAll(ROW_SELECTOR)];
   const index = rows.indexOf(document.activeElement);
@@ -101,7 +146,7 @@ RowBadge.propTypes = {
   count: PropTypes.number.isRequired,
 };
 
-const SectionRow = ({ row, badges, depth = 0 }) => {
+const SectionRow = ({ row, badges, depth = 0, fold = null }) => {
   const { t } = useTranslation();
   const link = useRef(null);
   const Icon = row.icon;
@@ -109,6 +154,7 @@ const SectionRow = ({ row, badges, depth = 0 }) => {
   useCssVar(link, '--sidebar-depth', depth ? String(depth) : null);
   const body = (
     <>
+      {fold ? <Caret open={fold.open} onToggle={fold.onToggle} /> : null}
       <Icon className="sidebar-row-icon" />
       <span className="sidebar-row-label">{label}</span>
       {row.badge ? <RowBadge count={badges[row.badge] || 0} /> : null}
@@ -128,7 +174,9 @@ const SectionRow = ({ row, badges, depth = 0 }) => {
       end={Boolean(row.end)}
       className={rowClass}
       title={label}
+      aria-expanded={fold ? fold.open : undefined}
       data-sidebar-row
+      onKeyDown={fold ? event => foldKeys(event, fold.open, fold.onToggle) : undefined}
     >
       {body}
     </NavLink>
@@ -139,27 +187,50 @@ SectionRow.propTypes = {
   row: sidebarRowShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   depth: PropTypes.number,
+  fold: PropTypes.shape({
+    open: PropTypes.bool.isRequired,
+    onToggle: PropTypes.func.isRequired,
+  }),
 };
 
-const SectionEntry = ({ row, badges }) => (
-  <>
-    <SectionRow row={row} badges={badges} />
-    {row.children && row.children.length > 0 ? (
-      <div className="sidebar-children">
-        {row.children.map(child => (
-          <SectionRow key={child.key} row={child} badges={badges} depth={1} />
-        ))}
-      </div>
-    ) : null}
-  </>
-);
+const SectionEntry = ({ row, badges, pathname, opened }) => {
+  const children = row.children || [];
+  if (children.length === 0) {
+    return <SectionRow row={row} badges={badges} />;
+  }
+  const open =
+    opened.open.includes(row.key) || children.some(child => descendsFrom(pathname, child.to));
+  return (
+    <>
+      <SectionRow
+        row={row}
+        badges={badges}
+        fold={{ open, onToggle: () => opened.toggle(row.key) }}
+      />
+      {open ? (
+        <div className="sidebar-children">
+          {children.map(child => (
+            <SectionRow key={child.key} row={child} badges={badges} depth={1} />
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+const openedShape = PropTypes.shape({
+  open: PropTypes.arrayOf(PropTypes.string).isRequired,
+  toggle: PropTypes.func.isRequired,
+});
 
 SectionEntry.propTypes = {
   row: sidebarRowShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
+  pathname: PropTypes.string.isRequired,
+  opened: openedShape.isRequired,
 };
 
-const SectionRows = ({ section, badges }) => {
+const SectionRows = ({ section, badges, pathname, opened }) => {
   const { t } = useTranslation();
   if (section.items.length === 0) {
     return null;
@@ -168,7 +239,7 @@ const SectionRows = ({ section, badges }) => {
     <div className="sidebar-section">
       {section.labelKey ? <div className="sidebar-section-label">{t(section.labelKey)}</div> : null}
       {section.items.map(row => (
-        <SectionEntry key={row.key} row={row} badges={badges} />
+        <SectionEntry key={row.key} row={row} badges={badges} pathname={pathname} opened={opened} />
       ))}
     </div>
   );
@@ -177,6 +248,8 @@ const SectionRows = ({ section, badges }) => {
 SectionRows.propTypes = {
   section: sidebarSectionShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
+  pathname: PropTypes.string.isRequired,
+  opened: openedShape.isRequired,
 };
 
 const nodeShape = PropTypes.shape({
@@ -202,9 +275,9 @@ StatusDot.propTypes = {
 const TreeNode = ({ node, depth, tree, current }) => {
   const navigate = useNavigate();
   const Icon = node.icon || null;
-  const open = tree.open.includes(node.key);
-  const kids = tree.kids[node.key] || null;
   const branch = Boolean(node.children);
+  const open = branch && (tree.open.includes(node.key) || current.startsWith(`${node.to}/`));
+  const kids = tree.kids[node.key] || null;
   const active = current === node.to;
   const { load } = tree;
   const row = useRef(null);
@@ -217,13 +290,8 @@ const TreeNode = ({ node, depth, tree, current }) => {
   }, [branch, open, kids, node, load]);
 
   const onKeyDown = event => {
-    if (event.key === 'ArrowLeft' && branch && open) {
-      event.preventDefault();
-      tree.toggle(node);
-    }
-    if (event.key === 'ArrowRight' && branch && !open) {
-      event.preventDefault();
-      tree.toggle(node);
+    if (branch) {
+      foldKeys(event, open, () => tree.toggle(node));
     }
   };
 
@@ -253,18 +321,7 @@ const TreeNode = ({ node, depth, tree, current }) => {
         onKeyDown={onKeyDown}
         onContextMenu={onContextMenu}
       >
-        {branch ? (
-          <span
-            role="presentation"
-            className="sidebar-caret"
-            onClick={event => {
-              event.stopPropagation();
-              tree.toggle(node);
-            }}
-          >
-            {open ? <FaCaretDown /> : <FaCaretRight />}
-          </span>
-        ) : null}
+        {branch ? <Caret open={open} onToggle={() => tree.toggle(node)} /> : null}
         {Icon ? <Icon className="sidebar-row-icon" /> : null}
         <StatusDot status={node.status} />
         <span className="sidebar-row-label">{node.label}</span>
@@ -340,9 +397,8 @@ ContextMenu.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-const TreeView = ({ groupKey, useTree, current, onTree }) => {
+const TreeView = ({ groupKey, useTree, current, onTree, opened }) => {
   const { nodes, menu = null } = useTree();
-  const [open, setOpen] = useState(() => storedOpen(groupKey));
   const [kids, setKids] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
 
@@ -357,20 +413,10 @@ const TreeView = ({ groupKey, useTree, current, onTree }) => {
     });
   }, []);
 
-  const toggle = useCallback(
-    node => {
-      setOpen(previous => {
-        const next = previous.includes(node.key)
-          ? previous.filter(key => key !== node.key)
-          : [...previous, node.key];
-        localStorage.setItem(openKeyOf(groupKey), JSON.stringify(next));
-        return next;
-      });
-    },
-    [groupKey]
-  );
+  const { toggle: toggleKey } = opened;
+  const toggle = useCallback(node => toggleKey(node.key), [toggleKey]);
 
-  const tree = { open, kids, load, toggle, menu, openMenu: setContextMenu };
+  const tree = { open: opened.open, kids, load, toggle, menu, openMenu: setContextMenu };
 
   return (
     <div
@@ -395,10 +441,12 @@ TreeView.propTypes = {
   useTree: PropTypes.func.isRequired,
   current: PropTypes.string.isRequired,
   onTree: PropTypes.func,
+  opened: openedShape.isRequired,
 };
 
-const GroupView = ({ group, badges, current, onTree }) => {
+const GroupView = ({ group, badges, current, pathname, onTree }) => {
   const { t } = useTranslation();
+  const opened = useOpenKeys(group.key);
   const [view, setView] = useState(
     () => localStorage.getItem(viewKeyOf(group.key)) || group.views?.[0]?.key || ''
   );
@@ -408,7 +456,13 @@ const GroupView = ({ group, badges, current, onTree }) => {
   return (
     <div className="sidebar-group">
       {(group.sections || []).map(section => (
-        <SectionRows key={section.key} section={section} badges={badges} />
+        <SectionRows
+          key={section.key}
+          section={section}
+          badges={badges}
+          pathname={pathname}
+          opened={opened}
+        />
       ))}
       {group.views && group.views.length > 1 ? (
         <label className="sidebar-view">
@@ -436,6 +490,7 @@ const GroupView = ({ group, badges, current, onTree }) => {
           useTree={useTree}
           current={current}
           onTree={onTree}
+          opened={opened}
         />
       ) : null}
     </div>
@@ -446,6 +501,7 @@ GroupView.propTypes = {
   group: sidebarGroupShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   current: PropTypes.string.isRequired,
+  pathname: PropTypes.string.isRequired,
   onTree: PropTypes.func,
 };
 
@@ -490,11 +546,15 @@ const useResize = (asideRef, setWidth) => {
  * band, 260px by default and 180 to 400px by the drag handle on its right
  * edge; the section entries (an uppercase label, rows of an icon, a label
  * and an optional badge, active by route, an `external` row followed as
- * a top-level navigation and never active) and the tree entries (a hook
+ * a top-level navigation and never active, a row with `children` folding
+ * them like a tree node with a caret, open while a child is the current
+ * route, the row's own link still navigating) and the tree entries (a hook
  * answering `{ nodes, menu }`, nodes with a caret, `children()` called on
- * expand, a status dot for `up` and `idle`, the right-click rows from
- * `menu(node)`, the selection driven by the route, a view select when
- * the group exports more than one shape); the rail, the width, the open nodes and the
+ * expand and for the node the current route descends from, so a deep link
+ * crumbs down the tree, a status dot for `up` and `idle`, the right-click
+ * rows from `menu(node)`, the selection driven by the route, a view select
+ * when the group exports more than one shape); the rail, the width, the
+ * open rows and nodes under one `sidebar_open_<group>` and the
  * chosen view persisted per origin; arrow keys between rows, Left and
  * Right on a node, Escape closing a menu; and under 900px an overlay from
  * the left the header toggle opens. Every entry comes from the mounted
@@ -584,6 +644,7 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
                 group={group}
                 badges={badges}
                 current={current}
+                pathname={pathname}
                 onTree={onTree}
               />
             ))}

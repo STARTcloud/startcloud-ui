@@ -2,13 +2,14 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaCommentSms, FaMobileScreen } from 'react-icons/fa6';
+import { FaCommentSms, FaMobileScreen, FaShieldHalved } from 'react-icons/fa6';
 
 import CodeInput from '../../../../components/common/CodeInput';
 import CopyButton from '../../../../components/common/CopyButton';
 import Field from '../../../../components/common/Field';
 import MethodList, { MethodRow } from '../../../../components/common/MethodList';
 import PhoneInput from '../../../../components/common/PhoneInput';
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
 
@@ -287,19 +288,14 @@ const ToggleButton = ({ enabled, count, onEnable, onDisable }) => {
   const { t } = useTranslation();
   if (enabled) {
     return (
-      <button type="button" className="btn btn-sm btn-outline-danger" onClick={onDisable}>
+      <button type="button" className="btn btn-outline-danger" onClick={onDisable}>
         {t('profile.security.tfa.disable')}
       </button>
     );
   }
   return (
     <span title={count === 0 ? t('errors.no_methods') : undefined}>
-      <button
-        type="button"
-        className="btn btn-sm btn-primary"
-        disabled={count === 0}
-        onClick={onEnable}
-      >
+      <button type="button" className="btn btn-primary" disabled={count === 0} onClick={onEnable}>
         {t('profile.security.tfa.enable')}
       </button>
     </span>
@@ -321,7 +317,7 @@ ToggleButton.propTypes = {
  * and Enable or Disable two-factor, the disable dialog stepping up; every
  * change is stepped up and re-reads the methods.
  */
-const TfaSection = ({ account, profile, guard, onSaved }) => {
+const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [methods, setMethods] = useState([]);
@@ -396,14 +392,20 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
   const labelOf = method =>
     method.type === 'SMS' ? t('profile.security.tfa.sms') : t('profile.security.tfa.app');
 
+  const stateBadge = (
+    <span className={`badge ${tfa.enabled ? 'bg-success' : 'bg-secondary'}`}>
+      {tfa.enabled ? t('profile.security.tfa.on') : t('profile.security.tfa.off')}
+    </span>
+  );
+
   return (
-    <div className="mb-4">
-      <h5>
-        {t('profile.security.tfa.title')}{' '}
-        <span className={`badge ${tfa.enabled ? 'bg-success' : 'bg-secondary'}`}>
-          {tfa.enabled ? t('profile.security.tfa.on') : t('profile.security.tfa.off')}
-        </span>
-      </h5>
+    <SectionCard
+      icon={<FaShieldHalved aria-hidden />}
+      title={t('profile.security.tfa.title')}
+      badge={stateBadge}
+      folded={folds.folded('tfa')}
+      onFold={() => folds.toggle('tfa')}
+    >
       {locked.map(method => (
         <div
           key={method}
@@ -420,8 +422,11 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
           </button>
         </div>
       ))}
+      <h6>{t('profile.security.tfa.methods')}</h6>
       {rows.some(method => method.type === 'SMS') ? (
-        <p className="small text-body-secondary">{t('profile.security.tfa.smsRisk')}</p>
+        <div className="alert alert-warning small" role="status">
+          {t('profile.security.tfa.smsRisk')}
+        </div>
       ) : null}
       <MethodList empty={t('profile.security.tfa.noMethods')} className="mb-3">
         {rows.map(method => {
@@ -467,12 +472,6 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
         >
           {t('profile.security.tfa.addApp')}
         </button>
-        <ToggleButton
-          enabled={Boolean(tfa.enabled)}
-          count={rows.length}
-          onEnable={() => toggle(true)}
-          onDisable={() => setShowDisable(true)}
-        />
       </div>
       {adding === 'phone' ? (
         <AddPhone account={account} guard={guard} onDone={finishAdding} onFail={fail} />
@@ -486,6 +485,14 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
           onClose={closeAdding}
         />
       ) : null}
+      <div className="border-top pt-3">
+        <ToggleButton
+          enabled={Boolean(tfa.enabled)}
+          count={rows.length}
+          onEnable={() => toggle(true)}
+          onDisable={() => setShowDisable(true)}
+        />
+      </div>
       <DisableDialog
         show={showDisable}
         onHide={() => setShowDisable(false)}
@@ -494,7 +501,7 @@ const TfaSection = ({ account, profile, guard, onSaved }) => {
           toggle(false);
         }}
       />
-    </div>
+    </SectionCard>
   );
 };
 
@@ -508,6 +515,7 @@ TfaSection.propTypes = {
   }).isRequired,
   guard: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
+  folds: foldsShape.isRequired,
 };
 
 export default TfaSection;

@@ -2,8 +2,10 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaUserXmark } from 'react-icons/fa6';
 
 import Field from '../../../../components/common/Field';
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 
 const SAFE_PATH = /^\/(?![/\\])/;
@@ -18,7 +20,7 @@ const teamsOf = error =>
  * sole-owner refusal naming the teams, over `POST /api/user/deletion`,
  * stepped up; the answer's `next` is handed to `onDeleted`.
  */
-const DeleteAccountSection = ({ account, email, guard, onDeleted }) => {
+const DeleteAccountSection = ({ account, email, guard, onDeleted, folds }) => {
   const { t } = useTranslation();
   const [show, setShow] = useState(false);
   const [confirmation, setConfirmation] = useState('');
@@ -64,8 +66,13 @@ const DeleteAccountSection = ({ account, email, guard, onDeleted }) => {
   };
 
   return (
-    <div className="mb-4">
-      <h5 className="text-danger">{t('profile.security.delete.title')}</h5>
+    <SectionCard
+      icon={<FaUserXmark aria-hidden />}
+      title={t('profile.security.delete.title')}
+      tone="danger"
+      folded={folds.folded('delete')}
+      onFold={() => folds.toggle('delete')}
+    >
       <p className="small text-body-secondary">{t('profile.security.delete.destroys')}</p>
       <button type="button" className="btn btn-danger" onClick={() => setShow(true)}>
         {t('profile.security.delete.button')}
@@ -121,7 +128,7 @@ const DeleteAccountSection = ({ account, email, guard, onDeleted }) => {
           </Modal.Footer>
         </form>
       </Modal>
-    </div>
+    </SectionCard>
   );
 };
 
@@ -130,6 +137,7 @@ DeleteAccountSection.propTypes = {
   email: PropTypes.string.isRequired,
   guard: PropTypes.func.isRequired,
   onDeleted: PropTypes.func.isRequired,
+  folds: foldsShape.isRequired,
 };
 
 export default DeleteAccountSection;

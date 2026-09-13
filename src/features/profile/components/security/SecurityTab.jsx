@@ -1,29 +1,35 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef } from 'react';
 
+import { useFolds } from '../../../../hooks/useFolds';
 import { rules } from '../../../../lib/runtime';
 
 import DeleteAccountSection from './DeleteAccountSection';
 import EmailSection from './EmailSection';
+import LinkedAccountsSection from './LinkedAccountsSection';
 import PasskeysSection from './PasskeysSection';
 import PasswordSection from './PasswordSection';
 import RecoverySection from './RecoverySection';
 import TfaSection from './TfaSection';
 
 const DEFAULT_MIN_LENGTH = 15;
+const PREFS_KEY = 'table_prefs_profile_security';
 
 const passwordMinLength = () =>
   Number(rules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
 
 /**
- * The Security tab of the identity contract at `#security`: the password,
- * email, two-factor, passkeys, recovery and delete-account sections, each
- * over the `account` adapter and the step-up guard; `focusEmail` scrolls
- * the email section into view when the Profile tab's Change link opened
- * the tab.
+ * The Security section of the identity contract at `/user/profile/security`:
+ * the password, email, two-factor, passkeys, linked accounts (while the
+ * adapter carries `linked`), recovery and delete-account cards stacked
+ * full width in the contract's order, each a `SectionCard` whose fold is
+ * kept under `table_prefs_profile_security`, each over the `account`
+ * adapter and the step-up guard; `focusEmail` scrolls the email card into
+ * view when the Profile section's Change link opened it.
  */
 const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }) => {
   const emailRef = useRef(null);
+  const folds = useFolds(PREFS_KEY);
 
   useEffect(() => {
     if (focusEmail) {
@@ -33,29 +39,46 @@ const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }
 
   return (
     <div className="tab-pane fade show active">
-      <div className="row">
-        <div className="col-lg-6">
-          <PasswordSection
-            account={account}
-            hasPassword={Boolean(profile.has_local_auth)}
-            minLength={passwordMinLength()}
-            guard={guard}
-            onSaved={onSaved}
-          />
-          <EmailSection account={account} guard={guard} onSaved={onSaved} sectionRef={emailRef} />
-          <PasskeysSection account={account} guard={guard} onSaved={onSaved} />
-        </div>
-        <div className="col-lg-6">
-          <TfaSection account={account} profile={profile} guard={guard} onSaved={onSaved} />
-          <RecoverySection account={account} guard={guard} />
-          <DeleteAccountSection
-            account={account}
-            email={profile.email || ''}
-            guard={guard}
-            onDeleted={onDeleted}
-          />
-        </div>
-      </div>
+      <PasswordSection
+        account={account}
+        hasPassword={Boolean(profile.has_local_auth)}
+        minLength={passwordMinLength()}
+        guard={guard}
+        onSaved={onSaved}
+        folds={folds}
+      />
+      <EmailSection
+        account={account}
+        guard={guard}
+        onSaved={onSaved}
+        sectionRef={emailRef}
+        folds={folds}
+      />
+      <TfaSection
+        account={account}
+        profile={profile}
+        guard={guard}
+        onSaved={onSaved}
+        folds={folds}
+      />
+      <PasskeysSection account={account} guard={guard} onSaved={onSaved} folds={folds} />
+      {account.linked ? (
+        <LinkedAccountsSection
+          account={account}
+          profile={profile}
+          guard={guard}
+          onSaved={onSaved}
+          folds={folds}
+        />
+      ) : null}
+      <RecoverySection account={account} guard={guard} folds={folds} />
+      <DeleteAccountSection
+        account={account}
+        email={profile.email || ''}
+        guard={guard}
+        onDeleted={onDeleted}
+        folds={folds}
+      />
     </div>
   );
 };

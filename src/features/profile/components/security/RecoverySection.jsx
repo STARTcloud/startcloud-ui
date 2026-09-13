@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaLifeRing } from 'react-icons/fa6';
 
+import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
 
@@ -21,7 +23,7 @@ const download = codes => {
  * stepped up, and the codes drawn once with Download shown only while
  * they are on screen.
  */
-const RecoverySection = ({ account, guard }) => {
+const RecoverySection = ({ account, guard, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [remaining, setRemaining] = useState(null);
@@ -58,17 +60,21 @@ const RecoverySection = ({ account, guard }) => {
   const zero = remaining === 0;
 
   return (
-    <div className="mb-4">
-      <h5>
-        {t('profile.security.recovery.title')}{' '}
-        {remaining === null ? null : (
+    <SectionCard
+      icon={<FaLifeRing aria-hidden />}
+      title={t('profile.security.recovery.title')}
+      folded={folds.folded('recovery')}
+      onFold={() => folds.toggle('recovery')}
+      badge={
+        remaining === null ? null : (
           <span className={`badge ${zero ? 'bg-warning text-dark' : 'bg-secondary'}`}>
             {zero
               ? t('profile.security.recovery.none')
               : t('profile.security.recovery.remaining', { count: remaining })}
           </span>
-        )}
-      </h5>
+        )
+      }
+    >
       {codes.length > 0 ? (
         <div className="mb-3">
           <p className="small text-body-secondary">{t('profile.security.recovery.once')}</p>
@@ -88,10 +94,10 @@ const RecoverySection = ({ account, guard }) => {
           </button>
         </div>
       ) : null}
-      <button type="button" className="btn btn-sm btn-outline-primary" onClick={generate}>
+      <button type="button" className="btn btn-outline-primary" onClick={generate}>
         {zero ? t('profile.security.recovery.generate') : t('profile.security.recovery.regenerate')}
       </button>
-    </div>
+    </SectionCard>
   );
 };
 
@@ -103,6 +109,7 @@ RecoverySection.propTypes = {
     }).isRequired,
   }).isRequired,
   guard: PropTypes.func.isRequired,
+  folds: foldsShape.isRequired,
 };
 
 export default RecoverySection;

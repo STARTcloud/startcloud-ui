@@ -1,5 +1,6 @@
 import { FaBuilding, FaGear, FaHardDrive } from 'react-icons/fa6';
 
+import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
 
 const isAdmin = account =>
@@ -13,8 +14,13 @@ const isAdmin = account =>
  * advertises `admin`, for a `ROLE_ADMIN` account, one Admin group with
  * Organizations and users at `/admin`, Configuration at `/admin/config`
  * and System at `/admin/system`, each drawn only while the app's `admin`
- * adapter carries `organizationsWithUsers`, `config` or `storage`; nothing
- * when the adapter carries none, and never a branch on the host's role.
+ * adapter carries `organizationsWithUsers`, `config` or `storage`; the
+ * Configuration entry is the plain row while `status.config` names one
+ * file and the configuration tree of identity contract decision 122, one
+ * Configuration node with one child per file over the shared
+ * `useConfigTree` fed the adapter's `config`, while it names more;
+ * nothing when the adapter carries none, and never a branch on the host's
+ * role.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -25,6 +31,7 @@ export const sidebar = (status, account, admin) => {
   if (!hasFeature(status, 'admin') || !isAdmin(account)) {
     return [];
   }
+  const configTree = admin.config && configNamesOf(status).length > 1;
   const items = [];
   if (admin.organizationsWithUsers) {
     items.push({
@@ -35,7 +42,7 @@ export const sidebar = (status, account, admin) => {
       end: true,
     });
   }
-  if (admin.config) {
+  if (admin.config && !configTree) {
     items.push({
       key: 'config',
       icon: FaGear,
@@ -51,14 +58,16 @@ export const sidebar = (status, account, admin) => {
       to: '/admin/system',
     });
   }
-  if (items.length === 0) {
+  if (items.length === 0 && !configTree) {
     return [];
   }
+  const useTree = () => useConfigTree(admin.config);
   return [
     {
       key: 'admin',
       labelKey: 'admin.sidebar.title',
       sections: [{ key: 'admin', labelKey: 'admin.sidebar.title', items }],
+      ...(configTree ? { tree: useTree } : {}),
     },
   ];
 };

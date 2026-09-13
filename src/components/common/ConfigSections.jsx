@@ -1,16 +1,8 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FaChevronDown,
-  FaChevronRight,
-  FaDatabase,
-  FaEnvelope,
-  FaGear,
-  FaGears,
-  FaShieldHalved,
-} from 'react-icons/fa6';
+import { FaDatabase, FaEnvelope, FaGear, FaGears, FaShieldHalved } from 'react-icons/fa6';
 
+import { useFolds } from '../../hooks/useFolds';
 import { formRulesShape } from '../../hooks/useFormRules';
 import { valueAt } from '../../utils/schemaSections';
 import { isVisible, scopesFor } from '../../utils/validation';
@@ -18,6 +10,7 @@ import { isVisible, scopesFor } from '../../utils/validation';
 import ConfigAction from './ConfigAction';
 import ConfigField, { configFieldShape } from './ConfigField';
 import ConfigMap from './ConfigMap';
+import SectionCard, { foldsShape } from './SectionCard';
 
 const SECTION_ICONS = {
   authentication: FaShieldHalved,
@@ -142,7 +135,7 @@ const sectionValues = (section, config) => {
 
 const SectionIcon = ({ sectionKey }) => {
   const Icon = SECTION_ICONS[sectionKey] || FaGear;
-  return <Icon className="me-2" />;
+  return <Icon aria-hidden />;
 };
 
 SectionIcon.propTypes = {
@@ -233,49 +226,44 @@ ConfigFields.propTypes = {
   fields: PropTypes.arrayOf(configFieldShape).isRequired,
 };
 
-const Subsection = ({ sectionKey, subsection, ...drawing }) => {
+const SettingsBadge = ({ fields, config }) => {
   const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState(false);
-  const shown = subsection.fields.filter(field =>
-    isVisible(field, scopesFor(drawing.config, field.pointer))
-  );
+  const shown = fields.filter(field => isVisible(field, scopesFor(config, field.pointer)));
   return (
-    <div className="card mb-4">
-      <button
-        type="button"
-        className="card-header text-start w-100 border-0"
-        onClick={() => setCollapsed(current => !current)}
-        aria-expanded={!collapsed}
-      >
-        <h6 className="mb-0">
-          {collapsed ? <FaChevronRight className="me-2" /> : <FaChevronDown className="me-2" />}
-          <SectionIcon sectionKey={sectionKey} />
-          {subsection.title}
-          <span className="badge bg-light text-dark ms-2">
-            {t('configManager.settingsCount', { count: settingCount(shown, drawing.config) })}
-          </span>
-        </h6>
-      </button>
-      {!collapsed && (
-        <div className="card-body">
-          <ConfigFields fields={subsection.fields} {...drawing} />
-        </div>
-      )}
-    </div>
+    <span className="badge bg-light text-dark">
+      {t('configManager.settingsCount', { count: settingCount(shown, config) })}
+    </span>
   );
 };
+
+SettingsBadge.propTypes = {
+  fields: PropTypes.arrayOf(configFieldShape).isRequired,
+  config: PropTypes.object.isRequired,
+};
+
+const Subsection = ({ sectionKey, subsection, folds, foldId, ...drawing }) => (
+  <SectionCard
+    icon={<SectionIcon sectionKey={sectionKey} />}
+    title={subsection.title}
+    badge={<SettingsBadge fields={subsection.fields} config={drawing.config} />}
+    className="mb-4"
+    folded={folds.folded(foldId)}
+    onFold={() => folds.toggle(foldId)}
+  >
+    <ConfigFields fields={subsection.fields} {...drawing} />
+  </SectionCard>
+);
 
 Subsection.propTypes = {
   ...drawingShape,
   sectionKey: PropTypes.string.isRequired,
   subsection: subsectionShape.isRequired,
+  folds: foldsShape.isRequired,
+  foldId: PropTypes.string.isRequired,
 };
 
-const Section = ({ section, ...drawing }) => {
-  const { t } = useTranslation();
-  const shown = section.fields.filter(field =>
-    isVisible(field, scopesFor(drawing.config, field.pointer))
-  );
+const Section = ({ section, folds, foldKey, ...drawing }) => {
+  const foldId = `${foldKey}${section.key}`;
   const action =
     section.action && drawing.callAction ? (
       <ConfigAction
@@ -290,29 +278,25 @@ const Section = ({ section, ...drawing }) => {
   return (
     <div>
       {section.fields.length > 0 || action ? (
-        <div className="card mb-4">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">
-              <SectionIcon sectionKey={section.key} />
-              {section.title}
-              <span className="badge bg-light text-dark ms-2">
-                {t('configManager.settingsCount', { count: settingCount(shown, drawing.config) })}
-              </span>
-            </h5>
-            {action}
-          </div>
-          {section.fields.length > 0 ? (
-            <div className="card-body">
-              <ConfigFields fields={section.fields} {...drawing} />
-            </div>
-          ) : null}
-        </div>
+        <SectionCard
+          icon={<SectionIcon sectionKey={section.key} />}
+          title={section.title}
+          badge={<SettingsBadge fields={section.fields} config={drawing.config} />}
+          actions={action}
+          className="mb-4"
+          folded={folds.folded(foldId)}
+          onFold={() => folds.toggle(foldId)}
+        >
+          <ConfigFields fields={section.fields} {...drawing} />
+        </SectionCard>
       ) : null}
       {section.subsections.map(subsection => (
         <Subsection
           key={subsection.key}
           sectionKey={section.key}
           subsection={subsection}
+          folds={folds}
+          foldId={`${foldId}/${subsection.key}`}
           {...drawing}
         />
       ))}
@@ -320,7 +304,12 @@ const Section = ({ section, ...drawing }) => {
   );
 };
 
-Section.propTypes = { ...drawingShape, section: sectionShape.isRequired };
+Section.propTypes = {
+  ...drawingShape,
+  section: sectionShape.isRequired,
+  folds: foldsShape.isRequired,
+  foldKey: PropTypes.string.isRequired,
+};
 
 /**
  * The sections and foldable subsections of one configuration file, every
@@ -328,18 +317,29 @@ Section.propTypes = { ...drawingShape, section: sectionShape.isRequired };
  * `config`, the error `rules` holds under `nameFor(pointer)`, and a field
  * hidden by `dependsOn`/`showWhen` folded away; every map field
  * (`additionalProperties`) through the generic `ConfigMap`, the section
- * and subsection heads counting every leaf as a setting, a map's leaves
- * per entry; a
+ * and subsection heads each a `SectionCard` counting every leaf as a
+ * setting, a map's leaves per entry, their folds kept under `prefsKey`
+ * (in memory alone without one) with `foldKey` before each section key
+ * so a page drawing several files keeps their folds apart; a
  * property-level `action` beside its control and a section-level `action`
  * at the section head, each calling `callAction(route, method, body)`
  * through `guard` and painting a 422's pointers on the form; every map
  * receives this component as `Sections` so its item dialog draws the
  * item schema's sections and subsections the way the page draws the file's.
  */
-const ConfigSections = ({ sections, ...drawing }) =>
-  sections.map(section => (
-    <Section key={section.key} section={section} Sections={ConfigSections} {...drawing} />
+const ConfigSections = ({ sections, prefsKey = '', foldKey = '', ...drawing }) => {
+  const folds = useFolds(prefsKey);
+  return sections.map(section => (
+    <Section
+      key={section.key}
+      section={section}
+      folds={folds}
+      foldKey={foldKey}
+      Sections={ConfigSections}
+      {...drawing}
+    />
   ));
+};
 
 ConfigSections.propTypes = {
   config: PropTypes.object.isRequired,
@@ -349,6 +349,8 @@ ConfigSections.propTypes = {
   callAction: PropTypes.func,
   guard: PropTypes.func,
   sections: PropTypes.arrayOf(sectionShape).isRequired,
+  prefsKey: PropTypes.string,
+  foldKey: PropTypes.string,
 };
 
 export default ConfigSections;

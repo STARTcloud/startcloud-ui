@@ -2,16 +2,18 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding } from 'react-icons/fa6';
+import { FaBuilding, FaEnvelopeOpenText, FaUserPlus, FaUsers } from 'react-icons/fa6';
 
 import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
+import SectionCard from '../../../components/common/SectionCard';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
@@ -19,11 +21,11 @@ import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
 const ROLES = ['MEMBER', 'ADMIN', 'OWNER'];
-const ACCESS_MODES = ['private', 'invite_only', 'request_to_join'];
+const ACCESS_MODES = ['private', 'invite', 'request'];
 const ACCESS_MODE_KEYS = {
   private: 'orgConsole.organization.accessModes.private',
-  invite_only: 'orgConsole.organization.accessModes.inviteOnly',
-  request_to_join: 'orgConsole.organization.accessModes.requestToJoin',
+  invite: 'orgConsole.organization.accessModes.inviteOnly',
+  request: 'orgConsole.organization.accessModes.requestToJoin',
 };
 const RECORD_FIELDS = [
   'name',
@@ -75,6 +77,7 @@ const INVITE_LABELS = {
 const CONVERT_SCHEMA = { required: ['name'], properties: { name: NON_BLANK } };
 const CONVERT_LABELS = { name: 'orgConsole.convertName' };
 const EMPTY_INVITE = { email: '', role: 'MEMBER' };
+const PREFS_KEY = 'table_prefs_org_console';
 
 const timeZones = () => {
   try {
@@ -96,6 +99,8 @@ const changedFields = (record, org) =>
   );
 
 const ownerCount = members => members.filter(member => member.role === 'OWNER').length;
+
+const pendingInvitesOf = org => (Array.isArray(org.pending_invites) ? org.pending_invites : []);
 
 const confirmMessage = t => t('pages.confirm.message', { keyword: t('pages.confirm.keyword') });
 
@@ -424,7 +429,7 @@ RevokeButton.propTypes = {
 
 const InvitationsTab = ({ org, organizations, onChanged, onRevoke }) => {
   const { t } = useTranslation();
-  const invites = Array.isArray(org.pending_invites) ? org.pending_invites : [];
+  const invites = pendingInvitesOf(org);
   return (
     <>
       {org.can_manage ? (
@@ -630,15 +635,167 @@ const usePlacesKey = places => {
   return key;
 };
 
-const tabsFor = invitationsEnabled => {
+const tabsFor = (invitationsEnabled, requestsEnabled) => {
   const tabs = [
     { key: 'organization', labelKey: 'orgConsole.tabs.organization' },
     { key: 'members', labelKey: 'orgConsole.tabs.members' },
   ];
+  if (requestsEnabled) {
+    tabs.push({ key: 'joinRequests', labelKey: 'orgConsole.tabs.joinRequests' });
+  }
   if (invitationsEnabled) {
     tabs.push({ key: 'invitations', labelKey: 'orgConsole.tabs.invitations' });
   }
   return tabs;
+};
+
+const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny }) => {
+  const { t } = useTranslation();
+  const [role, setRole] = useState(defaultRole);
+  const subline = (
+    <>
+      {request.user.email}
+      {' · '}
+      {request.message || t('orgConsole.joinRequest.noMessage')}
+      {' · '}
+      {t('orgConsole.joinRequest.requested')} {new Date(request.created_at).toLocaleString()}
+    </>
+  );
+  const actions = (
+    <>
+      <select
+        className="form-select form-select-sm w-auto"
+        value={role}
+        aria-label={t('orgConsole.joinRequest.role')}
+        onChange={event => setRole(event.target.value)}
+      >
+        {ROLES.slice(0, 2).map(option => (
+          <option key={option} value={option}>
+            {t(`roles.${option.toLowerCase()}`)}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="btn btn-sm btn-primary"
+        onClick={() => onApprove(request, role)}
+      >
+        {t('orgConsole.joinRequest.approve')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        onClick={() => onDeny(request)}
+      >
+        {t('orgConsole.joinRequest.deny')}
+      </button>
+    </>
+  );
+  return (
+    <MethodRow
+      label={request.user.name || request.user.email}
+      subline={subline}
+      actions={actions}
+    />
+  );
+};
+
+JoinRequestRow.propTypes = {
+  request: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    user: PropTypes.shape({ name: PropTypes.string, email: PropTypes.string }).isRequired,
+    message: PropTypes.string,
+    created_at: PropTypes.string,
+  }).isRequired,
+  defaultRole: PropTypes.string.isRequired,
+  onApprove: PropTypes.func.isRequired,
+  onDeny: PropTypes.func.isRequired,
+};
+
+const useJoinRequests = (organizations, org) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [rows, setRows] = useState([]);
+
+  const load = useCallback(
+    () =>
+      organizations
+        .requests(org)
+        .then(setRows)
+        .catch(error => {
+          log.api.error('Error loading join requests', { error: error.message });
+          notify('danger', t(error.messageKey || 'errors.request'));
+        }),
+    [notify, org, organizations, t]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { rows, load };
+};
+
+const JoinRequestsTab = ({ org, organizations, defaultRole, folds, onApproved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const { rows, load } = useJoinRequests(organizations, org);
+
+  const act = async (call, done, afterward) => {
+    try {
+      await call();
+      notify('success', t(done));
+      await afterward();
+    } catch (error) {
+      notify('danger', t(errorKeys(error)));
+    }
+  };
+
+  const approve = (request, role) =>
+    act(
+      () => organizations.approveRequest(org, request.id, role),
+      'orgConsole.joinRequest.approved',
+      async () => {
+        await load();
+        await onApproved();
+      }
+    );
+
+  const deny = request =>
+    act(() => organizations.denyRequest(org, request.id), 'orgConsole.joinRequest.denied', load);
+
+  return (
+    <SectionCard
+      icon={<FaUserPlus aria-hidden />}
+      title={t('orgConsole.tabs.joinRequests')}
+      badge={<span className="badge bg-secondary">{rows.length}</span>}
+      folded={folds.folded('joinRequests')}
+      onFold={() => folds.toggle('joinRequests')}
+    >
+      <MethodList empty={t('orgConsole.joinRequest.noRequests')}>
+        {rows.map(request => (
+          <JoinRequestRow
+            key={request.id}
+            request={request}
+            defaultRole={defaultRole}
+            onApprove={approve}
+            onDeny={deny}
+          />
+        ))}
+      </MethodList>
+    </SectionCard>
+  );
+};
+
+JoinRequestsTab.propTypes = {
+  org: PropTypes.string.isRequired,
+  organizations: issuerOrganizationsShape.isRequired,
+  defaultRole: PropTypes.string.isRequired,
+  folds: PropTypes.shape({
+    folded: PropTypes.func.isRequired,
+    toggle: PropTypes.func.isRequired,
+  }).isRequired,
+  onApproved: PropTypes.func.isRequired,
 };
 
 const ConsoleTabs = ({ tabs, currentTab, onPick }) => {
@@ -671,7 +828,15 @@ ConsoleTabs.propTypes = {
   onPick: PropTypes.func.isRequired,
 };
 
-const useMemberships = organizations => {
+const membersOf = current => (Array.isArray(current?.members) ? current.members : []);
+
+const tabsOf = (status, current) =>
+  tabsFor(
+    hasFeature(status, 'invitations') && Boolean(current?.can_manage),
+    current?.access_mode === 'request' && Boolean(current?.can_manage)
+  );
+
+const useMemberships = (organizations, org) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [state, setState] = useState({ memberships: null, version: 0 });
@@ -696,32 +861,41 @@ const useMemberships = organizations => {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, org]);
 
   return { ...state, load };
 };
 
 /**
  * The organization console in its identity-provider form over the active
- * organization's record from `GET /api/user/organizations`: the shared
- * record grown by the issuer's fields and the address block (editable
- * while `can_rename`, the access mode while `can_manage`, the default role
- * while `is_owner`), Convert to a team on a personal organization, Leave
- * and Delete, the members with the owner's role select (disabled on the
- * last owner's own row) and Remove while `can_manage`, a managed row's
- * source in place of its controls, and the invitations while the host
- * advertises `invitations`; no tab strip while the tabs number one;
- * every action re-fetches the record.
+ * organization's record from `GET /api/user/organizations`: the console
+ * subscribes to the active organization, `org`, and re-reads the
+ * memberships on every change, so picking a row in the switcher redraws
+ * the record, the members, the invitations, the join requests and the
+ * controls at that organization's role while the page stays where it is;
+ * the shared record grown by the issuer's fields and the address block
+ * (editable while `can_rename`, the access mode while `can_manage`, the
+ * default role while `is_owner`), Convert to a team on a personal
+ * organization, Leave and Delete, the members with the owner's role select
+ * (disabled on the last owner's own row) and Remove while `can_manage`, a
+ * managed row's source in place of its controls, the join requests from
+ * `organizations.requests` with Approve at a chosen role, the default role
+ * preselected, and Deny while `access_mode` is `request` and the person
+ * holds `can_manage`, and the invitations while the host advertises
+ * `invitations`; no tab strip while the tabs number one; each tab's
+ * content a `SectionCard` whose fold is kept under
+ * `table_prefs_org_console`; every action re-fetches the record.
  */
 const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, places = null }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const status = useStatus();
-  const { memberships, version, load } = useMemberships(organizations);
+  const { memberships, version, load } = useMemberships(organizations, org);
   const [tab, setTab] = useState('organization');
   const [pending, setPending] = useState(null);
   const [showConvert, setShowConvert] = useState(false);
   const placesKey = usePlacesKey(places);
+  const folds = useFolds(PREFS_KEY);
   const currentUserId = session.restore()?.user?.id;
 
   useEffect(() => {
@@ -729,8 +903,8 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   }, [t]);
 
   const current = memberships?.find(entry => entry.uuid === org) || null;
-  const tabs = tabsFor(hasFeature(status, 'invitations') && Boolean(current?.can_manage));
-  const members = Array.isArray(current?.members) ? current.members : [];
+  const tabs = tabsOf(status, current);
+  const members = membersOf(current);
   const owners = ownerCount(members);
   const currentTab = tabs.some(entry => entry.key === tab) ? tab : 'organization';
 
@@ -827,20 +1001,29 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
 
       <div className="tab-content mt-3">
         {currentTab === 'organization' ? (
-          <RecordTab
-            key={version}
-            org={current}
-            organizations={organizations}
-            onSaved={load}
-            placesKey={placesKey}
-          />
+          <SectionCard
+            icon={<FaBuilding aria-hidden />}
+            title={t('orgConsole.organization.title')}
+            folded={folds.folded('organization')}
+            onFold={() => folds.toggle('organization')}
+          >
+            <RecordTab
+              key={`${org}:${version}`}
+              org={current}
+              organizations={organizations}
+              onSaved={load}
+              placesKey={placesKey}
+            />
+          </SectionCard>
         ) : null}
         {currentTab === 'members' ? (
-          <>
-            <h5>
-              {t('orgConsole.tabs.members')}{' '}
-              <span className="badge bg-secondary">{members.length}</span>
-            </h5>
+          <SectionCard
+            icon={<FaUsers aria-hidden />}
+            title={t('orgConsole.tabs.members')}
+            badge={<span className="badge bg-secondary">{members.length}</span>}
+            folded={folds.folded('members')}
+            onFold={() => folds.toggle('members')}
+          >
             <MethodList empty={t('orgConsole.noMembers')}>
               {members.map(member => (
                 <MemberRow
@@ -854,15 +1037,33 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
                 />
               ))}
             </MethodList>
-          </>
+          </SectionCard>
+        ) : null}
+        {currentTab === 'joinRequests' ? (
+          <JoinRequestsTab
+            key={org}
+            org={org}
+            organizations={organizations}
+            defaultRole={current.default_role || 'MEMBER'}
+            folds={folds}
+            onApproved={load}
+          />
         ) : null}
         {currentTab === 'invitations' ? (
-          <InvitationsTab
-            org={current}
-            organizations={organizations}
-            onChanged={load}
-            onRevoke={revokeInvite}
-          />
+          <SectionCard
+            icon={<FaEnvelopeOpenText aria-hidden />}
+            title={t('orgConsole.tabs.invitations')}
+            badge={<span className="badge bg-secondary">{pendingInvitesOf(current).length}</span>}
+            folded={folds.folded('invitations')}
+            onFold={() => folds.toggle('invitations')}
+          >
+            <InvitationsTab
+              org={current}
+              organizations={organizations}
+              onChanged={load}
+              onRevoke={revokeInvite}
+            />
+          </SectionCard>
         ) : null}
       </div>
 
