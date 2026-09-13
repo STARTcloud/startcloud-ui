@@ -9,6 +9,8 @@ Written by the auth-server session for the session that grows G:\Projects\startc
 - The word "host" in the contracts was renamed "UI backend" (the application, in any language, that serves the build and answers GET /api/status).
 - Visual references: universal-identity.html (five groups), universal-sidebar.html (the sidebar) and preferences-and-branding.html (the four sites), all beside the contracts in G:\Projects\startcloud-ui\docs\guides.
 - The gap channel: when the startcloud-ui session meets a page, shape or key the contracts do not say, it writes the gap into G:\Projects\startcloud-ui\NOTIFICATIONS.md (the page, the shape it needs, the contract section it belongs to), and Mark carries it here; this session answers by amending the contract, never by a fix in either repo alone, and the other apps stay safe because the conformance checklists and the adapter and token gates decide what draws where.
+- Do not hash files. No file hashing.
+- The developer knows how to clear a browser cache; when you think it is a caching issue, tell him to clear it, but he has probably already cleared it.
 - Settled for good, never re-raised: the password floor is 15 (NIST SP 800-63B rev 4 §3.1.1.2), published by `/api/rules`; the contract drives every shape, and where this server or another app differs from a contract the app changes, with a NOTIFICATIONS.md addendum in that repo when the app is not this one; this work is the UI conversion of the auth server and nothing else from priorities.yaml; the shared UI grows first, both run locally in WSL; the guide's work items are named in chat by what they are, never by row number, and "twins" is never said.
 
 ## 1. What the shared UI is today (read in full this session)

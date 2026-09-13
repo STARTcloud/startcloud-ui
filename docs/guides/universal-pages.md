@@ -174,7 +174,16 @@ creation the way it refuses `api`.
   `/`, then the group and the row a sidebar row matches, the group a
   plain word; a route a child row matches draws the group, the parent
   row, then the child's label, so `/user/profile/favorites` reads
-  Account, Profile, Favorites; a reserved route no row matches draws the
+  Account, Profile, Favorites; a page reached from a sidebar row but
+  living at its own path crumbs as that row's child, the group, the row
+  linking to its own page, then the page's own name last as plain text,
+  the route table naming the row's path as the route's `crumbParent` and
+  the name the page carries (the organization console at `/org-console`,
+  opened by Manage on `/user/organizations`, reads Account,
+  Organizations, then the active organization's name), because the crumb
+  is where the person came from and a page named by its data is named by
+  that data, never by a title that repeats the column (identity contract
+  decision 130); a reserved route no row matches draws the
   root crumb and the page's title as the second crumb, so the row is
   never empty.
 - One crumb per present level, each a plain link (`to`) to that level's
@@ -400,14 +409,27 @@ adds its own foldable section to an item page (the catalog's Quality).
 
 ## Pages
 
+- **Page frame**: every page draws on the ground of the scroll region and
+  never inside a card of its own: the page heading first (`PageHeader`
+  where the page has media, a subtitle or chips, else the `h3` heading
+  row with the page's actions at its right), then the body, its sections
+  as `SectionCard`s where the page has sections and a plain list or table
+  otherwise, and no page carries a panel colour of its own, because a
+  page wrapped in a card puts a second surface under its sections and
+  lists, and on the dark variant's surface steps the same section reads
+  one tone on one page and another on the next; so the profile's avatar
+  card is the page's heading card and the section the route names draws
+  under it on the ground, and the inbox's rows are a bordered list on the
+  ground beside the organizations', applications' and terms' lists.
 - **PageHeader**: media (artwork), title with an optional trailing control
   (the watch star), subtitle, chips (`StatusChips`: published/pending,
   public/private, OS, deprecated), an actions row on the right, children
   (description, CI bar). No crumbs.
 - **SectionCard**: the one section card every page draws its sections
   with, `src/components/common/SectionCard.jsx`: the header row with the
-  icon, the title, the trailing badge or actions and a chevron on the
-  right, then the body; a section card folds from its header, open by
+  icon, the title, the trailing badge or actions and the chevron last,
+  flush right, then the body; the whole header folds the card except its
+  action controls, the chevron turning as it folds, open by
   default, its fold kept in the page's prefs object under `folds`
   (identity contract decision 117), the same fold the configuration
   editor's sections have, so the profile's Security cards, the
@@ -539,7 +561,11 @@ activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
   suspend, resume, delete), Configuration (`AdminConfig`: one file per
   route, `/admin/config/<name>` the file of that name in `status.config`
   and `/admin/config` the first, drawn under the page heading with no
-  tab strip, the sidebar's Configuration entry a tree over the list with
+  tab strip, the configuration page's heading being the file's root
+  `title` in the `PageHeader` shape with Update as its action and the
+  shared admin page's own heading not drawn above it, because the crumb
+  names the place, the file's `schemaVersion` a muted line under that
+  heading and never a section (config contract), the sidebar's Configuration entry a tree over the list with
   one child per file while it names more than one (identity contract
   decision 122), the served schema walked by `schemaSections.js` into
   sections and foldable subsections drawn through `ConfigSections` and
@@ -702,6 +728,14 @@ the "How it fits" section of
   The SPA owns `/`, programs call `/api` and the protocol paths, a machine
   and a browser on one root URL are told apart by the client's own signal,
   and no UI backend redirects or fronts itself with a proxy.
+- The files Vite creates are never hashed: every entry, chunk, stylesheet
+  and asset keeps its fixed name (`assets/<name>.js`, `assets/<name>.css`),
+  and no build step, plugin, server or contract may add a content hash to
+  a file name, ever; caching is the server's job through `no-cache` and an
+  ETag per file, so every UI backend serves every file of the build,
+  `/assets/` included, `Cache-Control: no-cache` with an ETag, never
+  `immutable`, and `index.html` and `/` `no-store` (identity contract
+  decision 132).
 - BoxVault's SPA catch-all serves `index.html` from `backend/ui` for every
   browser path, and the Vagrant handler keys on the `Vagrant/` user agent
   before the catch-all, so shared page routes need no server change;

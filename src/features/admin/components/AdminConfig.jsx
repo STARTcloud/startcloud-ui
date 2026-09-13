@@ -9,6 +9,7 @@ import ConfigSections, {
   filterSections,
 } from '../../../components/common/ConfigSections';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import PageHeader from '../../../components/common/PageHeader';
 import RestartCard from '../../../components/common/RestartCard';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -16,23 +17,54 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { patchOf, schemaSections, setValueAt } from '../../../utils/schemaSections';
+import { patchOf, schemaSections, setValueAt, valueAt } from '../../../utils/schemaSections';
 
 const EMPTY_CONFIG = {};
 const EMPTY_SCHEMA = { properties: {} };
 const EMPTY_NAMES = [];
 const NO_FILTERS = [];
 const PREFS_KEY = 'table_prefs_admin_config';
+const SCHEMA_VERSION_POINTER = '/schemaVersion';
 const clearNothing = () => undefined;
 
 const nameOf = pointer => pointer.slice(1);
 
+const versionOf = (config, schema) => {
+  const value = valueAt(config, SCHEMA_VERSION_POINTER);
+  return value === undefined ? schema.schemaVersion : value;
+};
+
+const ConfigHeading = ({ name, schema, config, ready, onUpdate }) => {
+  const { t } = useTranslation();
+  const subtitle = ready
+    ? t('configManager.schemaVersion', { version: versionOf(config, schema) })
+    : undefined;
+  const update = (
+    <button type="button" className="btn btn-link" onClick={onUpdate}>
+      {t('configManager.buttons.update')}
+    </button>
+  );
+  return <PageHeader title={schema?.title || name} subtitle={subtitle} actions={update} />;
+};
+
+ConfigHeading.propTypes = {
+  name: PropTypes.string.isRequired,
+  schema: PropTypes.object,
+  config: PropTypes.object.isRequired,
+  ready: PropTypes.bool.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+};
+
 /**
  * The Configuration page of the admin feature: one file per route, the
  * `name` segment of `/admin/config/:name?` naming a file of the host's
- * `status.config` and `/admin/config` drawing the first, its sections
- * under the page heading with no tab strip (identity contract decisions
- * 105 and 122), Update on the right above them; `config: []`, a missing
+ * `status.config` and `/admin/config` drawing the first, the page heading
+ * the file's schema root `title` in the `PageHeader` shape (the name until
+ * the schema answers) with Update as its action and the file's
+ * `schemaVersion` as the muted line under it, the shared admin page
+ * drawing no heading of its own above (identity contract decision 129),
+ * its sections under that heading with no tab strip (identity contract
+ * decisions 105 and 122); `config: []`, a missing
  * member and an adapter without `config` draw the empty state
  * `configManager.noFiles` and no Update and no Restart; the file and its
  * schema fetched together, the schema through the adapter's cached
@@ -181,13 +213,15 @@ const AdminConfig = ({ config: configApi = null }) => {
   }
 
   return (
-    <div className="mt-5">
-      <div className="d-flex justify-content-end">
-        <button type="button" className="btn btn-link" onClick={updateConfig}>
-          {t('configManager.buttons.update')}
-        </button>
-      </div>
-      <div className="config-container mt-3">
+    <div>
+      <ConfigHeading
+        name={selectedConfig}
+        schema={schema}
+        config={config}
+        ready={ready}
+        onUpdate={updateConfig}
+      />
+      <div className="config-container">
         <RestartCard
           restartStatus={configApi.restartStatus}
           restart={configApi.restart}

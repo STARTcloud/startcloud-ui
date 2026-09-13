@@ -4,6 +4,8 @@ import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaRightToBracket, FaSliders, FaTicket } from 'react-icons/fa6';
 
+import { useUnread } from '../../contexts/UnreadContext';
+
 import FavoriteApps from './FavoriteApps';
 import IdentityCard, { localProfileShape } from './IdentityCard';
 import LogoutItem from './LogoutItem';
@@ -66,6 +68,27 @@ PreferencesItem.propTypes = {
   issuerUrl: PropTypes.string.isRequired,
   preferencesTo: PropTypes.string.isRequired,
   LinkComponent: PropTypes.elementType.isRequired,
+};
+
+/**
+ * The account button's avatar with the unread count on its top right, the
+ * same number the menu's Notifications row shows from the notifications
+ * feature's one context, hidden at zero, in the sidebar Inbox badge's look.
+ */
+const AvatarBadge = ({ renderAvatar }) => {
+  const { unread } = useUnread();
+  return (
+    <span className="user-menu-avatar">
+      {renderAvatar(34)}
+      {unread > 0 ? (
+        <span className="badge rounded-pill bg-danger user-menu-badge">{unread}</span>
+      ) : null}
+    </span>
+  );
+};
+
+AvatarBadge.propTypes = {
+  renderAvatar: PropTypes.func.isRequired,
 };
 
 const UserMenu = ({
@@ -131,7 +154,7 @@ const UserMenu = ({
           aria-label={t('navbar.accountMenu')}
         >
           <span className="fw-semibold">{displayName}</span>
-          {renderAvatar(34)}
+          <AvatarBadge renderAvatar={renderAvatar} />
         </Dropdown.Toggle>
         <Dropdown.Menu>
           <IdentityCard

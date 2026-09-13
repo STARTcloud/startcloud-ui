@@ -154,10 +154,10 @@ const SectionRow = ({ row, badges, depth = 0, fold = null }) => {
   useCssVar(link, '--sidebar-depth', depth ? String(depth) : null);
   const body = (
     <>
-      {fold ? <Caret open={fold.open} onToggle={fold.onToggle} /> : null}
       <Icon className="sidebar-row-icon" />
       <span className="sidebar-row-label">{label}</span>
       {row.badge ? <RowBadge count={badges[row.badge] || 0} /> : null}
+      {fold ? <Caret open={fold.open} onToggle={fold.onToggle} /> : null}
     </>
   );
   if (row.external) {
@@ -321,10 +321,10 @@ const TreeNode = ({ node, depth, tree, current }) => {
         onKeyDown={onKeyDown}
         onContextMenu={onContextMenu}
       >
-        {branch ? <Caret open={open} onToggle={() => tree.toggle(node)} /> : null}
         {Icon ? <Icon className="sidebar-row-icon" /> : null}
         <StatusDot status={node.status} />
         <span className="sidebar-row-label">{node.label}</span>
+        {branch ? <Caret open={open} onToggle={() => tree.toggle(node)} /> : null}
       </button>
       {branch && open && kids ? (
         <div className="sidebar-children">
@@ -547,9 +547,10 @@ const useResize = (asideRef, setWidth) => {
  * edge; the section entries (an uppercase label, rows of an icon, a label
  * and an optional badge, active by route, an `external` row followed as
  * a top-level navigation and never active, a row with `children` folding
- * them like a tree node with a caret, open while a child is the current
- * route, the row's own link still navigating) and the tree entries (a hook
- * answering `{ nodes, menu }`, nodes with a caret, `children()` called on
+ * them like a tree node with a caret at the row's right end, open while a
+ * child is the current route, the row's own link still navigating) and the
+ * tree entries (a hook answering `{ nodes, menu }`, nodes with a caret at
+ * the row's right end, `children()` called on
  * expand and for the node the current route descends from, so a deep link
  * crumbs down the tree, a status dot for `up` and `idle`, the right-click
  * rows from `menu(node)`, the selection driven by the route, a view select

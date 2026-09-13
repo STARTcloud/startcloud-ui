@@ -79,9 +79,31 @@ const TAG_ATTRS = {
 };
 const URL_ATTRS = new Set(['href', 'src']);
 const SAFE_URL = /^(?:https?:|mailto:|tel:|#|\/(?![/\\]))/i;
+const BLOCK_CLASSES = new Set(['callout', 'callout-lock', 'callout-doc']);
+const SPAN_CLASSES = new Set(['tos-blank']);
 
 const allowedAttribute = (tag, name) =>
   COMMON_ATTRS.includes(name) || (TAG_ATTRS[tag] || []).includes(name);
+
+const allowedClasses = (tag, value) => {
+  const allowed = tag === 'span' ? SPAN_CLASSES : BLOCK_CLASSES;
+  return value
+    .split(/\s+/)
+    .filter(token => allowed.has(token))
+    .join(' ');
+};
+
+const cleanClass = element => {
+  if (!element.hasAttribute('class')) {
+    return;
+  }
+  const kept = allowedClasses(element.tagName.toLowerCase(), element.getAttribute('class'));
+  if (kept) {
+    element.setAttribute('class', kept);
+  } else {
+    element.removeAttribute('class');
+  }
+};
 
 const cleanAttributes = element => {
   const tag = element.tagName.toLowerCase();
@@ -91,6 +113,7 @@ const cleanAttributes = element => {
       element.removeAttribute(name);
     }
   });
+  cleanClass(element);
   if (tag === 'a' && element.hasAttribute('href')) {
     element.setAttribute('target', '_blank');
     element.setAttribute('rel', 'noopener noreferrer');
@@ -125,7 +148,9 @@ const cleanNode = node => {
  * The allowlist pass every `*_html` member goes through before it is
  * injected: every formatting element, link, table and image an author
  * would use kept, script, handlers and `javascript:` URLs stripped, links
- * opening a new tab with `rel="noopener"`.
+ * opening a new tab with `rel="noopener"`, and `class` kept only from the
+ * named set, `callout`, `callout-lock` and `callout-doc` on a block
+ * element and `tos-blank` on a span, every other token dropped.
  *
  * @param {string} html - The server's HTML
  * @returns {DocumentFragment} The sanitized nodes

@@ -261,6 +261,25 @@ const PAGE_TITLES = {
   '/error': 'errors.title.other',
 };
 
+const CRUMB_PARENTS = {
+  '/org-console': {
+    parent: '/user/organizations',
+    name: ({ activeOrganization }) => activeOrganization?.name || '',
+  },
+};
+
+/**
+ * The sidebar row a page living at its own path descends from, for the
+ * crumbs of the pages contract's Breadcrumb section: the row's path as
+ * `parent` and `name`, the page's own name resolved from what the shell
+ * holds (the organization console's is the active membership's name);
+ * null for a route no row parents.
+ *
+ * @param {string} pathname - The current path
+ * @returns {{ parent: string, name: Function }|null} The parent row and the name resolver
+ */
+export const routeCrumbParent = pathname => CRUMB_PARENTS[pathname] || null;
+
 const titleOf = path => PAGE_TITLES[path];
 
 const prefixOf = path => path.split('/:')[0];

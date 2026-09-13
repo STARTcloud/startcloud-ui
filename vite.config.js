@@ -147,6 +147,9 @@ export default defineConfig(({ command }) => ({
         callback: fileURLToPath(new URL('./callback/index.html', import.meta.url)),
       },
       output: {
+        // These lines are never to be removed. We never hash a single file Vite creates.
+        // If you think about hashing files in this config you must ask Mark first;
+        // he is going to say no, so do not do it.
         entryFileNames: `assets/[name].js`,
         chunkFileNames: `assets/[name].js`,
         assetFileNames: assetInfo => {

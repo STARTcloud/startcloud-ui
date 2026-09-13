@@ -46,7 +46,7 @@ CI (release-please → build) publishes each release as a versioned GitHub Relea
 
 A host is a backend that serves this build and answers `GET /api/status`. Nothing in the UI names a host; a new one is a status payload and the `/api/*` routes its tokens call.
 
-1. Pin a release as `startcloudUiVersion` in your `package.json`, fetch `startcloud-ui-<version>.tar.gz` into `ui/` at build time and serve it statically at `/` with an SPA fallback to `index.html` (and `callback/index.html` at `/callback/` when you answer `idp`), the fallback tried after every `/api` and protocol route; no redirect from `/`, no proxy in front.
+1. Pin a release as `startcloudUiVersion` in your `package.json`, fetch `startcloud-ui-<version>.tar.gz` into `ui/` at build time and serve it statically at `/` with an SPA fallback to `index.html` (and `callback/index.html` at `/callback/` when you answer `idp`), the fallback tried after every `/api` and protocol route; no redirect from `/`, no proxy in front. Do not hash files. No file hashing.
 2. Answer `GET /api/status` before login, without auth:
 
    ```json

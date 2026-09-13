@@ -1,5 +1,6 @@
 const GENERAL_KEY = 'general';
 const GENERAL_TITLE = 'General';
+const SCHEMA_VERSION_KEY = 'schemaVersion';
 
 const isSchema = value => value !== null && typeof value === 'object';
 
@@ -97,6 +98,9 @@ const placeField = ({ sections, schema, sectionKey, subsection, field }) => {
 const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }) => {
   const required = node.required || [];
   Object.entries(node.properties || {}).forEach(([key, property], index) => {
+    if (base === '' && key === SCHEMA_VERSION_KEY) {
+      return;
+    }
     const pointer = `${base}/${key}`;
     const section = property.section || sectionKey;
     const own = property.subsection
@@ -139,7 +143,10 @@ const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }
  * `sections`; a subsection titled and ordered by the object property that
  * names it; fields by `order` ascending, a field without `order` after
  * every ordered sibling in schema key order; every field through
- * `fieldOf`; a free subtree the schema does not describe is not drawn.
+ * `fieldOf`; a free subtree the schema does not describe is not drawn;
+ * the root `schemaVersion` is never a field of any section, the page
+ * drawing it as the line under its heading, so a section whose only
+ * leaf it would be is not drawn.
  *
  * @param {Object} schema - The file's schema from `GET /api/config/<name>/schema`
  * @returns {Array<{ key: string, title: string, action: Object|null, fields: Array<Object>, subsections: Array<{ key: string, title: string, fields: Array<Object> }> }>}

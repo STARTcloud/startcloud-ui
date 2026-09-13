@@ -23,8 +23,11 @@ export const ADMIN_PAGES = ['organizations', 'config', 'system'];
  * state when the adapter carries no `config` and reached by URL alone,
  * System while it carries `storage`, every call through the
  * app's `admin` adapter; the sidebar rows are the one navigation and no
- * tab strip is drawn; a visitor is sent to sign in and a signed-in
- * non-admin home, `allowed` being the app's global-admin flag.
+ * tab strip is drawn; the page's own heading is drawn above Organizations
+ * and System and not above Configuration, whose heading is the file's
+ * root `title` drawn by `AdminConfig` (identity contract decision 129); a
+ * visitor is sent to sign in and a signed-in non-admin home, `allowed`
+ * being the app's global-admin flag.
  */
 const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateCommand, page }) => {
   const { t } = useTranslation();
@@ -61,9 +64,11 @@ const AdminPage = ({ session, returnTo, allowed, admin, activeOrgKey, updateComm
 
   return (
     <div className="list row">
-      <header>
-        <h3 className="text-center">{t('admin.title')}</h3>
-      </header>
+      {page === 'config' ? null : (
+        <header>
+          <h3 className="text-center">{t('admin.title')}</h3>
+        </header>
+      )}
       {updateInfo && <UpdateNotice updateInfo={updateInfo} command={updateCommand} />}
       <div className="mt-2">
         {page === 'organizations' && admin.organizationsWithUsers ? (

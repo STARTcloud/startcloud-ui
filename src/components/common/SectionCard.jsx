@@ -1,21 +1,25 @@
 import PropTypes from 'prop-types';
 import { useId } from 'react';
-
-import { CollapseButton } from './GroupHeading';
+import { Collapse } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
+import { FaChevronDown } from 'react-icons/fa6';
 
 export const foldsShape = PropTypes.shape({
   folded: PropTypes.func.isRequired,
   toggle: PropTypes.func.isRequired,
 });
 
+const stop = event => event.stopPropagation();
+
 /**
  * One section card of the pages contract, the house card shape every
  * page's sections share: the header row with the icon, the title, the
- * trailing badge and actions, and the chevron on the right; the card
- * folds from its header, open by default, `folded` and `onFold` the
- * page's own state kept in its prefs object under `folds` (identity
- * contract decision 117); `tone="danger"` draws the border and the header
- * in the danger colours.
+ * trailing badge and actions, and the chevron last, flush right; the
+ * whole header folds the card except its action controls, the body
+ * collapsing under it, open by default, `folded` and `onFold` the page's
+ * own state kept in its prefs object under `folds` (identity contract
+ * decision 117); `tone="danger"` draws the border and the header in the
+ * danger colours.
  */
 const SectionCard = ({
   icon = null,
@@ -30,33 +34,43 @@ const SectionCard = ({
   onFold,
   children,
 }) => {
+  const { t } = useTranslation();
   const bodyId = useId();
   return (
     <div className={`card ${className}${tone ? ` border-${tone}` : ''}`} id={id} ref={sectionRef}>
       <div
+        role="presentation"
         className={`card-header section-card-head d-flex align-items-center gap-2${
-          tone ? ` bg-${tone}-subtle` : ''
+          tone ? ` bg-${tone}-subtle text-${tone}` : ''
         }`}
+        onClick={onFold}
       >
+        {icon ? <span className="d-inline-flex">{icon}</span> : null}
+        <h5 className="mb-0 section-card-title">{title}</h5>
+        {badge}
+        {actions ? (
+          <span role="presentation" className="d-flex align-items-center gap-2" onClick={stop}>
+            {actions}
+          </span>
+        ) : null}
         <button
           type="button"
-          className={`section-card-toggle${tone ? ` text-${tone}` : ''}`}
+          className={`btn btn-link btn-sm p-0 text-reset ms-auto section-card-chevron${
+            folded ? ' folded' : ''
+          }`}
           aria-expanded={!folded}
           aria-controls={bodyId}
-          onClick={onFold}
+          aria-label={t('pages.toggle')}
+          title={t('pages.toggle')}
         >
-          {icon ? <span className="d-inline-flex">{icon}</span> : null}
-          <h5 className="mb-0 section-card-title">{title}</h5>
-          {badge}
+          <FaChevronDown aria-hidden />
         </button>
-        {actions}
-        <CollapseButton collapsed={folded} onToggle={onFold} />
       </div>
-      {folded ? null : (
+      <Collapse in={!folded}>
         <div className="card-body" id={bodyId}>
           {children}
         </div>
-      )}
+      </Collapse>
     </div>
   );
 };

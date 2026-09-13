@@ -617,7 +617,13 @@ nonce today and the published hash after the cutover.
   consumers cache in-process on the same clock.
 - **Pack CSS and assets**: versioned via `?v=<hash>` with a long `max-age`.
   The version is in the query string, not the filename. Consumers never
-  construct these URLs, so versioning costs them nothing.
+  construct these URLs, so versioning costs them nothing. The files Vite
+  creates are never hashed: every entry, chunk, stylesheet and asset keeps
+  its fixed name (`assets/<name>.js`, `assets/<name>.css`), and no build
+  step, plugin, server or contract may add a content hash to a file name,
+  ever; caching is the server's job through `no-cache` and an ETag per
+  file. The pack's `?v=<hash>` query stays; a file name never carries one
+  (identity contract decision 132).
 - **A re-brand reaches reloads, not live sessions** — absent app-shell
   caching of the served HTML, which a service worker with a `fetch` handler
   would introduce.

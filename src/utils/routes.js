@@ -113,6 +113,27 @@ export const sidebarCrumbs = ({ groups, pathname, t }) => {
   return crumbs;
 };
 
+/**
+ * The crumbs of a page reached from a sidebar row but living at its own
+ * path: the row's own crumbs as a child route draws them, the row linking
+ * to its page, then the page's name as the last crumb, plain text; none
+ * while no row matches the parent path or the page has no name yet.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Array} options.groups - The sidebar groups the features exported
+ * @param {string} options.parent - The path of the row the page descends from
+ * @param {string} options.name - The page's own name
+ * @param {Function} options.t - The translator
+ * @returns {Array} The crumbs after the root crumb
+ */
+export const parentedCrumbs = ({ groups, parent, name, t }) => {
+  if (!parent || !name) {
+    return [];
+  }
+  const crumbs = sidebarCrumbs({ groups, pathname: parent, t });
+  return crumbs.length > 0 ? [...crumbs, { key: 'page', label: name }] : [];
+};
+
 export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
   if (!route) {
     return [];

@@ -152,7 +152,8 @@ const usePlacesKey = places => {
 
 /**
  * The profile page in its identity-provider form: the avatar card from the
- * cached display fields, then the one section the route names under it,
+ * cached display fields as the page heading, then the one section the
+ * route names under it on the page's ground, the pages contract's frame,
  * Profile at `/user/profile`, Security at `/user/profile/security`,
  * Preferences at `/user/profile/preferences`, Favorites at
  * `/user/profile/favorites` and Sessions at `/user/profile/sessions`, the
@@ -242,31 +243,29 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
   }
 
   return (
-    <div className="list row">
-      <div className="card mt-2 mb-2">
-        <div className="card-header text-center">
+    <div className="list">
+      <div className="card mb-3">
+        <div className="card-body text-center">
           <Avatar picture={user.picture || ''} size={100} />
           <h3 className="mt-3">{user.name || user.email}</h3>
-          <p className="text-muted">{user.email}</p>
+          <p className="text-muted mb-0">{user.email}</p>
         </div>
-        <div className="card-body">
-          <div className="tab-content">
-            {profile === null ? (
-              <p>{t('loading')}</p>
-            ) : (
-              <ActiveSection
-                active={active}
-                account={account}
-                profile={profile}
-                version={version}
-                session={session}
-                guard={guard}
-                placesKey={placesKey}
-                page={{ focusEmail, refresh, signedOut, openEmailChange }}
-              />
-            )}
-          </div>
-        </div>
+      </div>
+      <div className="tab-content">
+        {profile === null ? (
+          <p>{t('loading')}</p>
+        ) : (
+          <ActiveSection
+            active={active}
+            account={account}
+            profile={profile}
+            version={version}
+            session={session}
+            guard={guard}
+            placesKey={placesKey}
+            page={{ focusEmail, refresh, signedOut, openEmailChange }}
+          />
+        )}
       </div>
       {dialog}
     </div>

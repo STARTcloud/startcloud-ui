@@ -172,7 +172,7 @@ const InboxPage = ({ notifications }) => {
           </button>
         </div>
       </div>
-      <div className="card">
+      <div className="border rounded">
         {loadFailed ? <p className="small text-danger m-3">{t('inbox.loadError')}</p> : null}
         {!loadFailed && shown.length === 0 ? (
           <p className="small text-body-secondary m-3">

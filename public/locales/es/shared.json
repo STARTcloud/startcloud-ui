@@ -1007,6 +1007,7 @@
     "noFiles": "Este servidor no tiene archivos de configuración que editar.",
     "defaultHint": "Predeterminado: {{value}}",
     "restarting": "Reiniciando.",
+    "schemaVersion": "Versión del esquema {{version}}",
     "settingsCount_one": "{{count}} configuración",
     "settingsCount_other": "{{count}} configuraciones",
     "buttons": {

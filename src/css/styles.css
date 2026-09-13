@@ -268,6 +268,19 @@ button::-moz-focus-inner {
   min-width: 20rem;
 }
 
+.user-menu-avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.user-menu-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 11px;
+}
+
 .user-card {
   margin: 0.25rem 0.5rem 0.5rem;
   width: auto;
@@ -935,18 +948,13 @@ button::-moz-focus-inner {
   max-width: 320px;
 }
 
-.section-card-toggle {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
+.section-card-head {
+  cursor: pointer;
+}
+
+.section-card-head:has(+ .collapse:not(.show)) {
+  border-bottom: 0;
+  border-radius: var(--bs-card-inner-border-radius);
 }
 
 .section-card-title {
@@ -954,6 +962,19 @@ button::-moz-focus-inner {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.section-card-chevron {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.section-card-chevron svg {
+  transition: transform 0.15s ease;
+}
+
+.section-card-chevron.folded svg {
+  transform: rotate(-90deg);
 }
 
 .navbar:has(> .navbar-search-panel),
@@ -2072,6 +2093,49 @@ button::-moz-focus-inner {
 .tos-blank {
   border-bottom: 1px dashed var(--auth-ink-3);
   color: var(--auth-ink-2);
+}
+
+.prose .callout,
+.auth-doc-flow blockquote {
+  --callout-glyph: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none'%3E%3Crect x='3.5' y='8' width='11' height='7.5' rx='2' stroke='%23000' stroke-width='1.4'/%3E%3Cpath d='M6 8V6a3 3 0 0 1 6 0v2' stroke='%23000' stroke-width='1.4'/%3E%3C/svg%3E");
+  margin: 22px 0;
+  padding: 22px 24px;
+  border: 1px solid var(--auth-line, var(--bs-border-color));
+  border-radius: 12px;
+  background: var(--auth-elev, var(--bs-tertiary-bg));
+  color: var(--auth-ink, var(--bs-body-color));
+}
+
+.prose .callout-doc {
+  --callout-glyph: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none'%3E%3Cpath d='M4 1.5h7l3.5 3.5V16a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5V2a.5.5 0 0 1 .5-.5Z' stroke='%23000' stroke-width='1.4'/%3E%3Cpath d='M11 1.5V5h3.5M6 9h6M6 12h6' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.prose .callout p,
+.auth-doc-flow blockquote p {
+  margin: 0;
+}
+
+.prose .callout p + p,
+.auth-doc-flow blockquote p + p {
+  margin-top: 8px;
+}
+
+.prose .callout strong,
+.auth-doc-flow blockquote strong {
+  color: var(--auth-ink-2, var(--bs-emphasis-color));
+}
+
+.prose .callout-lock > :first-child::before,
+.prose .callout-doc > :first-child::before,
+.auth-doc-flow blockquote:has(p + p) > p:first-child::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  vertical-align: -4px;
+  background: var(--auth-accent, var(--bs-primary));
+  mask: var(--callout-glyph) no-repeat center / contain;
 }
 
 .auth-ack {

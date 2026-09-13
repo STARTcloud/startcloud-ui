@@ -328,7 +328,7 @@ const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
   const group = key => fields.filter(field => (field.group || 'identity') === key);
 
   return (
-    <form className="auth-form auth-form-wide" onSubmit={submit} noValidate>
+    <form className="auth-form" onSubmit={submit} noValidate>
       <TermsHead state={state} scale={scale} onScale={onScale} />
       <MarkdownArticle html={state.content_html} fontScale={scale} className="auth-doc-flow" />
       <FormErrorSummary errors={rules.summary} />

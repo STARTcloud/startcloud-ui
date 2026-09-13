@@ -1007,6 +1007,7 @@
     "noFiles": "This server has no configuration files to edit.",
     "defaultHint": "Default: {{value}}",
     "restarting": "Restarting.",
+    "schemaVersion": "Schema version {{version}}",
     "settingsCount_one": "{{count}} setting",
     "settingsCount_other": "{{count}} settings",
     "buttons": {

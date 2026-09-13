@@ -16,6 +16,7 @@ import { authMethod, hasFeature } from '../../utils/capabilities';
 import { userDisplayName, userSecondaryLine } from '../../utils/identity';
 import {
   buildRouteCrumbs,
+  parentedCrumbs,
   parseRoute,
   rootCrumb,
   sidebarCrumbs,
@@ -226,6 +227,47 @@ const shellCrumbs = ({
   return reservedRoute ? [root, ...titleCrumb(titleKey, t)] : [root];
 };
 
+const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, t }) => {
+  if (!parented) {
+    return [];
+  }
+  const activeOrganization = organizations.find(entry => entry.uuid === activeOrgUuid) || null;
+  return parentedCrumbs({
+    groups,
+    parent: parented.parent,
+    name: parented.name({ activeOrganization }),
+    t,
+  });
+};
+
+const sidebarMatchFor = ({
+  showSidebar,
+  groups,
+  trees,
+  pathname,
+  search,
+  routeCrumbParent,
+  organizations,
+  activeOrgUuid,
+  t,
+}) => {
+  if (!showSidebar) {
+    return [];
+  }
+  const lists = [
+    treeCrumbs({ groups, trees, current: `${pathname}${search}`, t }),
+    sidebarCrumbs({ groups, pathname, t }),
+    pageCrumbsFor({
+      groups,
+      parented: routeCrumbParent ? routeCrumbParent(pathname) : null,
+      organizations,
+      activeOrgUuid,
+      t,
+    }),
+  ];
+  return lists.find(list => list.length > 0) || [];
+};
+
 const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) => {
   const route = parseRoute(pathname, { reserved, collections });
   const routeOrg = route?.org || '';
@@ -376,7 +418,10 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * on a route a sidebar row matches, `<group> › <row> › <child>` on a
  * route a child row matches, `<group> › <node> › …` down the
  * loaded tree on a route a tree node matches, the way the sidebar mock's
- * `pathTo` walks it, and the page's title from `routeTitleKey` on a
+ * `pathTo` walks it, `<group> › <row> › <name>` on a page
+ * `routeCrumbParent` names a parent row for, the page's own name last,
+ * the organization console's the active membership's name, and the
+ * page's title from `routeTitleKey` on a
  * reserved route no row matches, so the row is never empty), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
@@ -421,6 +466,7 @@ const AppShell = ({
   fetchHealth = null,
   sidebar = [],
   routeTitleKey = null,
+  routeCrumbParent = null,
   children,
 }) => {
   const { t, i18n } = useTranslation();
@@ -455,13 +501,19 @@ const AppShell = ({
   }, []);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
   const route = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
-  const nodeCrumbs = showSidebar
-    ? treeCrumbs({ groups: sidebar, trees, current: `${pathname}${search}`, t })
-    : [];
-  const rowCrumbs = showSidebar ? sidebarCrumbs({ groups: sidebar, pathname, t }) : [];
   const crumbs = shellCrumbs({
     showSidebar,
-    sidebarMatch: nodeCrumbs.length > 0 ? nodeCrumbs : rowCrumbs,
+    sidebarMatch: sidebarMatchFor({
+      showSidebar,
+      groups: sidebar,
+      trees,
+      pathname,
+      search,
+      routeCrumbParent,
+      organizations,
+      activeOrgUuid,
+      t,
+    }),
     routeCrumbs: route.crumbs,
     reservedRoute: route.reserved,
     name: status.brand.name,
@@ -594,6 +646,7 @@ AppShell.propTypes = {
   fetchHealth: PropTypes.func,
   sidebar: PropTypes.arrayOf(sidebarGroupShape),
   routeTitleKey: PropTypes.func,
+  routeCrumbParent: PropTypes.func,
   children: PropTypes.node.isRequired,
 };
 
