@@ -391,6 +391,7 @@ export const BRUTE_FORCE = {
 export const TERMS = [
   {
     name: 'privacy',
+    regions: [],
     friendly_name: 'Privacy Policy',
     icon: 'file-text',
     version: '3.0',
@@ -403,6 +404,7 @@ export const TERMS = [
   },
   {
     name: 'terms',
+    regions: [],
     friendly_name: 'Terms of Service',
     icon: 'file-text',
     version: '2.0',
@@ -415,6 +417,7 @@ export const TERMS = [
   },
   {
     name: 'conductor-msa',
+    regions: [],
     friendly_name: 'Master Services Agreement',
     icon: 'shield-lock',
     version: '2.1',
@@ -423,6 +426,20 @@ export const TERMS = [
     display_order: 100,
     content:
       '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} …',
+    created_by: 'mark@m4kr.net',
+    updated_at: '2026-07-02T00:00:00Z',
+  },
+  {
+    name: 'conductor-msa',
+    regions: ['EU'],
+    friendly_name: 'Master Services Agreement',
+    icon: 'shield-lock',
+    version: '2.1',
+    type: 'CLIENT',
+    is_public: false,
+    display_order: 100,
+    content:
+      '## 1. Services\n\nProminic.NET, Inc. provides the Conductor platform to {{full_name}} under the law of the European Union …',
     created_by: 'mark@m4kr.net',
     updated_at: '2026-07-02T00:00:00Z',
   },

@@ -1,8 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaHardDrive, FaCompactDisc } from 'react-icons/fa6';
+import { FaHardDrive, FaCompactDisc, FaDatabase } from 'react-icons/fa6';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useCssVar } from '../../../hooks/useCssVar';
 import { log } from '../../../lib/logger';
@@ -71,8 +72,9 @@ StorageBar.propTypes = {
 };
 
 /**
- * The System tab of the admin page: one usage bar per storage path the
- * app's `storage` call answers, boxes and ISOs.
+ * The System page of the admin feature: one usage bar per storage path
+ * the app's `storage` call answers, boxes and ISOs, a glass section of the
+ * pages contract, a `SectionHeading` over the bars on the page's ground.
  */
 const AdminStorage = ({ storage }) => {
   const { t } = useTranslation();
@@ -101,26 +103,22 @@ const AdminStorage = ({ storage }) => {
   }
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h4>{t('admin.storage.title')}</h4>
-      </div>
-      <div className="card-body">
-        {storageInfo?.boxes && (
-          <StorageBar
-            usage={storageInfo.boxes}
-            label={t('admin.storage.boxStorage')}
-            icon={<FaHardDrive />}
-          />
-        )}
-        {storageInfo?.isos && (
-          <StorageBar
-            usage={storageInfo.isos}
-            label={t('admin.storage.isoStorage')}
-            icon={<FaCompactDisc />}
-          />
-        )}
-      </div>
+    <div>
+      <SectionHeading icon={<FaDatabase aria-hidden />} title={t('admin.storage.title')} />
+      {storageInfo?.boxes && (
+        <StorageBar
+          usage={storageInfo.boxes}
+          label={t('admin.storage.boxStorage')}
+          icon={<FaHardDrive />}
+        />
+      )}
+      {storageInfo?.isos && (
+        <StorageBar
+          usage={storageInfo.isos}
+          label={t('admin.storage.isoStorage')}
+          icon={<FaCompactDisc />}
+        />
+      )}
     </div>
   );
 };

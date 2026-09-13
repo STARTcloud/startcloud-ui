@@ -16,6 +16,7 @@ import {
   FaUsers,
 } from 'react-icons/fa6';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
 import { useCssVar } from '../../../hooks/useCssVar';
@@ -157,7 +158,7 @@ const rowsOf = (data, key) => (Array.isArray(data[key]) ? data[key] : []);
 
 const Section = ({ title, children }) => (
   <div className="mb-4">
-    <h5 className="text-uppercase small text-muted mb-2">{title}</h5>
+    <SectionHeading title={title} className="mb-2" />
     {children}
   </div>
 );
@@ -267,7 +268,8 @@ Definition.propTypes = {
  * Health › Insights over the members of the insights read: the active-user
  * and security-posture figures as `StatCard`s; app activity, apps per user,
  * top combinations and the organizations rollup as sorted `SubTable`s with
- * header sort, the navbar search bound for a query over their rows, the
+ * header sort, every section a glass one under a `SectionHeading` (the
+ * pages contract's frame rule), the navbar search bound for a query over their rows, the
  * organizations rollup's Personal `toggle` group (Personal or Team)
  * narrowing its rows client-side, and one Columns group per table under
  * `table_prefs_admin_insights`; registrations
@@ -363,7 +365,7 @@ const InsightsPage = () => {
                 />
               ))}
             </div>
-            <h6 className="small text-muted mb-2">{t('admin.health.insights.quiet_users')}</h6>
+            <SectionHeading title={t('admin.health.insights.quiet_users')} className="mb-2" />
             <InsightTable tableKey="quiet_users" search={search} />
           </div>
           <div className="col-lg-4">

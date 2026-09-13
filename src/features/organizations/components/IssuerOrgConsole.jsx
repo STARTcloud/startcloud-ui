@@ -9,7 +9,8 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
-import SectionCard from '../../../components/common/SectionCard';
+import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -351,8 +352,7 @@ const InviteForm = ({ org, organizations, onChanged }) => {
   };
 
   return (
-    <form onSubmit={send} noValidate className="mb-4">
-      <h5>{t('orgConsole.invitation.sendTitle')}</h5>
+    <form onSubmit={send} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <div className="row">
         <div className="col-md-8">
@@ -427,18 +427,26 @@ RevokeButton.propTypes = {
   onRevoke: PropTypes.func.isRequired,
 };
 
-const InvitationsTab = ({ org, organizations, onChanged, onRevoke }) => {
+const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
   const { t } = useTranslation();
   const invites = pendingInvitesOf(org);
   return (
     <>
       {org.can_manage ? (
-        <InviteForm org={org} organizations={organizations} onChanged={onChanged} />
+        <SectionCard
+          icon={<FaEnvelopeOpenText aria-hidden />}
+          title={t('orgConsole.invitation.sendTitle')}
+          folded={folds.folded('invite')}
+          onFold={() => folds.toggle('invite')}
+        >
+          <InviteForm org={org} organizations={organizations} onChanged={onChanged} />
+        </SectionCard>
       ) : null}
-      <h5>
-        {t('orgConsole.invitation.activeTitle')}{' '}
-        <span className="badge bg-secondary">{invites.length}</span>
-      </h5>
+      <SectionHeading
+        icon={<FaEnvelopeOpenText aria-hidden />}
+        title={t('orgConsole.invitation.activeTitle')}
+        badge={<span className="badge bg-secondary">{invites.length}</span>}
+      />
       <MethodList empty={t('orgConsole.invitation.noActive')}>
         {invites.map(invite => (
           <MethodRow
@@ -456,6 +464,7 @@ const InvitationsTab = ({ org, organizations, onChanged, onRevoke }) => {
 InvitationsTab.propTypes = {
   org: PropTypes.object.isRequired,
   organizations: issuerOrganizationsShape.isRequired,
+  folds: foldsShape.isRequired,
   onChanged: PropTypes.func.isRequired,
   onRevoke: PropTypes.func.isRequired,
 };
@@ -736,7 +745,7 @@ const useJoinRequests = (organizations, org) => {
   return { rows, load };
 };
 
-const JoinRequestsTab = ({ org, organizations, defaultRole, folds, onApproved }) => {
+const JoinRequestsTab = ({ org, organizations, defaultRole, onApproved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const { rows, load } = useJoinRequests(organizations, org);
@@ -765,13 +774,12 @@ const JoinRequestsTab = ({ org, organizations, defaultRole, folds, onApproved })
     act(() => organizations.denyRequest(org, request.id), 'orgConsole.joinRequest.denied', load);
 
   return (
-    <SectionCard
-      icon={<FaUserPlus aria-hidden />}
-      title={t('orgConsole.tabs.joinRequests')}
-      badge={<span className="badge bg-secondary">{rows.length}</span>}
-      folded={folds.folded('joinRequests')}
-      onFold={() => folds.toggle('joinRequests')}
-    >
+    <>
+      <SectionHeading
+        icon={<FaUserPlus aria-hidden />}
+        title={t('orgConsole.tabs.joinRequests')}
+        badge={<span className="badge bg-secondary">{rows.length}</span>}
+      />
       <MethodList empty={t('orgConsole.joinRequest.noRequests')}>
         {rows.map(request => (
           <JoinRequestRow
@@ -783,7 +791,7 @@ const JoinRequestsTab = ({ org, organizations, defaultRole, folds, onApproved })
           />
         ))}
       </MethodList>
-    </SectionCard>
+    </>
   );
 };
 
@@ -791,10 +799,6 @@ JoinRequestsTab.propTypes = {
   org: PropTypes.string.isRequired,
   organizations: issuerOrganizationsShape.isRequired,
   defaultRole: PropTypes.string.isRequired,
-  folds: PropTypes.shape({
-    folded: PropTypes.func.isRequired,
-    toggle: PropTypes.func.isRequired,
-  }).isRequired,
   onApproved: PropTypes.func.isRequired,
 };
 
@@ -882,9 +886,11 @@ const useMemberships = (organizations, org) => {
  * `organizations.requests` with Approve at a chosen role, the default role
  * preselected, and Deny while `access_mode` is `request` and the person
  * holds `can_manage`, and the invitations while the host advertises
- * `invitations`; no tab strip while the tabs number one; each tab's
- * content a `SectionCard` whose fold is kept under
- * `table_prefs_org_console`; every action re-fetches the record.
+ * `invitations`; no tab strip while the tabs number one; the record form
+ * and the invitation form are `SectionCard`s whose folds are kept under
+ * `table_prefs_org_console`, and the members, the join requests and the
+ * pending invitations are glass lists under a `SectionHeading`, the pages
+ * contract's frame rule; every action re-fetches the record.
  */
 const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, places = null }) => {
   const { t } = useTranslation();
@@ -1017,13 +1023,12 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
           </SectionCard>
         ) : null}
         {currentTab === 'members' ? (
-          <SectionCard
-            icon={<FaUsers aria-hidden />}
-            title={t('orgConsole.tabs.members')}
-            badge={<span className="badge bg-secondary">{members.length}</span>}
-            folded={folds.folded('members')}
-            onFold={() => folds.toggle('members')}
-          >
+          <>
+            <SectionHeading
+              icon={<FaUsers aria-hidden />}
+              title={t('orgConsole.tabs.members')}
+              badge={<span className="badge bg-secondary">{members.length}</span>}
+            />
             <MethodList empty={t('orgConsole.noMembers')}>
               {members.map(member => (
                 <MemberRow
@@ -1037,7 +1042,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
                 />
               ))}
             </MethodList>
-          </SectionCard>
+          </>
         ) : null}
         {currentTab === 'joinRequests' ? (
           <JoinRequestsTab
@@ -1045,25 +1050,17 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
             org={org}
             organizations={organizations}
             defaultRole={current.default_role || 'MEMBER'}
-            folds={folds}
             onApproved={load}
           />
         ) : null}
         {currentTab === 'invitations' ? (
-          <SectionCard
-            icon={<FaEnvelopeOpenText aria-hidden />}
-            title={t('orgConsole.tabs.invitations')}
-            badge={<span className="badge bg-secondary">{pendingInvitesOf(current).length}</span>}
-            folded={folds.folded('invitations')}
-            onFold={() => folds.toggle('invitations')}
-          >
-            <InvitationsTab
-              org={current}
-              organizations={organizations}
-              onChanged={load}
-              onRevoke={revokeInvite}
-            />
-          </SectionCard>
+          <InvitationsTab
+            org={current}
+            organizations={organizations}
+            folds={folds}
+            onChanged={load}
+            onRevoke={revokeInvite}
+          />
         ) : null}
       </div>
 

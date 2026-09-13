@@ -1975,7 +1975,7 @@ button::-moz-focus-inner {
 }
 
 .auth-column-wide {
-  max-width: 640px;
+  max-width: 1120px;
 }
 
 .auth-row {
@@ -2046,6 +2046,46 @@ button::-moz-focus-inner {
 
 .auth-grid-full {
   grid-column: 1 / -1;
+}
+
+.auth-address {
+  margin-bottom: -1rem;
+}
+
+.auth-address .form-label {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--auth-ink-2);
+}
+
+.auth-address .form-control,
+.auth-address .form-select {
+  padding: 14px 16px;
+  font: inherit;
+  color: var(--auth-ink);
+  background-color: var(--auth-field-bg);
+  border: 1px solid var(--auth-line);
+  border-radius: 12px;
+}
+
+.auth-address .form-select {
+  padding-right: 40px;
+}
+
+.auth-address .form-control::placeholder {
+  color: var(--auth-ink-4);
+}
+
+.auth-address .form-control:hover,
+.auth-address .form-select:hover {
+  border-color: var(--auth-line-strong);
+}
+
+.auth-address .form-control:focus,
+.auth-address .form-select:focus {
+  border-color: var(--auth-accent);
+  box-shadow: var(--auth-focus);
 }
 
 .auth-doc {

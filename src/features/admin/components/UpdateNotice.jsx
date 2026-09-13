@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDownload, FaCopy, FaCheck } from 'react-icons/fa6';
 
+import { copyToClipboard } from '../../../lib/clipboard';
+
 /**
  * The notice the admin page shows when a newer version is available: the
  * two versions and the app's own update command with a copy button.
@@ -12,7 +14,7 @@ const UpdateNotice = ({ updateInfo, command }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyCommand = () => {
-    navigator.clipboard.writeText(command).then(() => {
+    copyToClipboard(command).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });

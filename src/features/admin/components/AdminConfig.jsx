@@ -57,8 +57,9 @@ ConfigHeading.propTypes = {
 
 /**
  * The Configuration page of the admin feature: one file per route, the
- * `name` segment of `/admin/config/:name?` naming a file of the host's
- * `status.config` and `/admin/config` drawing the first, the page heading
+ * `name` segment of `/admin/config/:name` naming a file of the host's
+ * `status.config`, the bare `/admin/config` redirecting to the first
+ * file's route, the page heading
  * the file's schema root `title` in the `PageHeader` shape (the name until
  * the schema answers) with Update as its action and the file's
  * `schemaVersion` as the muted line under it, the shared admin page

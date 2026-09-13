@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthShell from '../../../components/common/AuthShell';
 import BrandLogo from '../../../components/common/BrandLogo';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { copyToClipboard } from '../../../lib/clipboard';
 import { errorDetails } from '../api/errors';
 
 const STATUS = /^\d{3}$/;
@@ -118,8 +119,7 @@ const useCopied = () => {
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = text =>
-    navigator.clipboard
-      .writeText(text)
+    copyToClipboard(text)
       .then(() => {
         setCopied(true);
         clearTimeout(timer.current);

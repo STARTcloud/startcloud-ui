@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import PageHeader from '../../../components/common/PageHeader';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -165,7 +166,9 @@ OrgCard.propTypes = {
  * organization, sent through `organizations.join` under the row's `name`;
  * a visitor is sent to sign in first, the intended organization kept
  * under `joinIntentKey` for the return. The adapter is the app's own
- * `organizations` or the issuer's, which answers the same row shape.
+ * `organizations` or the issuer's, which answers the same row shape; the
+ * page is glass in the pages contract's frame, a `PageHeader` and the
+ * organization cards straight on the page's ground.
  */
 const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKey }) => {
   const { t } = useTranslation();
@@ -303,14 +306,14 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
   const requestingName = requestingOrg ? requestingOrg.display_name || requestingOrg.name : '';
 
   return (
-    <div className="container mt-4">
+    <div className="list">
       <div className="row">
         <div className="col-12">
-          <h2 className="mb-4">
-            <FaBuilding className="me-2" />
-            {t('discovery.title')}
-          </h2>
-          <p className="text-muted">{t('discovery.description')}</p>
+          <PageHeader
+            media={<FaBuilding className="fs-3 text-body-secondary" aria-hidden />}
+            title={t('discovery.title')}
+            subtitle={t('discovery.description')}
+          />
 
           {loading && (
             <div className="text-center">

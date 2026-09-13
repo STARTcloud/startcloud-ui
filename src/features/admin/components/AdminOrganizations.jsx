@@ -2,11 +2,13 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaBuilding } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import SectionHeading from '../../../components/common/SectionHeading';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
@@ -202,55 +204,39 @@ EditOrganizationModal.propTypes = {
   onSave: PropTypes.func.isRequired,
 };
 
-const OrgTitle = ({ org, renaming, rename, rules, onNameChange, onRename, onCancel }) => {
+const RenameForm = ({ rename, rules, onNameChange, onRename, onCancel }) => {
   const { t } = useTranslation();
-  if (renaming) {
-    return (
-      <form onSubmit={onRename} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <Field
-          id={rules.idFor('organization')}
-          label={t('orgUserManager.rename.name')}
-          error={rules.errors.organization || ''}
-          className="mb-2"
-        >
-          {aria => (
-            <input
-              {...aria}
-              type="text"
-              className="form-control"
-              value={rename.organization}
-              onChange={e => onNameChange(e.target.value)}
-              onBlur={() => rules.onBlur('organization')}
-            />
-          )}
-        </Field>
-        <button className="btn btn-success btn-sm" type="submit">
-          {t('admin.buttons.save')}
-        </button>
-        <button className="btn btn-secondary btn-sm ms-2" type="button" onClick={onCancel}>
-          {t('admin.buttons.cancel')}
-        </button>
-      </form>
-    );
-  }
   return (
-    <Link to={`/${org.name}`} className="card-title">
-      {org.org_code
-        ? `${org.org_code} - ${org.display_name || org.name}`
-        : org.display_name || org.name}
-      {org.external_issuer && (
-        <span className="badge bg-info ms-2" title={t('orgUserManager.ssoManagedHint')}>
-          {t('orgUserManager.ssoManaged')}
-        </span>
-      )}
-    </Link>
+    <form onSubmit={onRename} noValidate className="mb-3">
+      <FormErrorSummary errors={rules.summary} />
+      <Field
+        id={rules.idFor('organization')}
+        label={t('orgUserManager.rename.name')}
+        error={rules.errors.organization || ''}
+        className="mb-2"
+      >
+        {aria => (
+          <input
+            {...aria}
+            type="text"
+            className="form-control"
+            value={rename.organization}
+            onChange={e => onNameChange(e.target.value)}
+            onBlur={() => rules.onBlur('organization')}
+          />
+        )}
+      </Field>
+      <button className="btn btn-success btn-sm" type="submit">
+        {t('admin.buttons.save')}
+      </button>
+      <button className="btn btn-secondary btn-sm ms-2" type="button" onClick={onCancel}>
+        {t('admin.buttons.cancel')}
+      </button>
+    </form>
   );
 };
 
-OrgTitle.propTypes = {
-  org: PropTypes.object.isRequired,
-  renaming: PropTypes.bool.isRequired,
+RenameForm.propTypes = {
   rename: PropTypes.shape({ organization: PropTypes.string.isRequired }).isRequired,
   rules: formRulesShape.isRequired,
   onNameChange: PropTypes.func.isRequired,
@@ -258,10 +244,81 @@ OrgTitle.propTypes = {
   onCancel: PropTypes.func.isRequired,
 };
 
+const OrgTitle = ({ org }) => (
+  <Link to={`/${org.name}`}>
+    {org.org_code
+      ? `${org.org_code} - ${org.display_name || org.name}`
+      : org.display_name || org.name}
+  </Link>
+);
+
+OrgTitle.propTypes = {
+  org: PropTypes.object.isRequired,
+};
+
+const SsoBadge = ({ org }) => {
+  const { t } = useTranslation();
+  if (!org.external_issuer) {
+    return null;
+  }
+  return (
+    <span className="badge bg-info" title={t('orgUserManager.ssoManagedHint')}>
+      {t('orgUserManager.ssoManaged')}
+    </span>
+  );
+};
+
+SsoBadge.propTypes = {
+  org: PropTypes.object.isRequired,
+};
+
+const OrgActions = ({ org, onEdit, onRename, onSuspendOrResume, onDelete }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <button type="button" className="btn btn-info btn-sm" onClick={() => onEdit(org)}>
+        {t('admin.buttons.edit')}
+      </button>
+      {!org.external_issuer && (
+        <button type="button" className="btn btn-primary btn-sm" onClick={() => onRename(org)}>
+          {t('admin.buttons.rename')}
+        </button>
+      )}
+      <button
+        type="button"
+        className={`btn btn-${org.suspended ? 'success' : 'warning'} btn-sm`}
+        onClick={() => onSuspendOrResume(org.name, org.suspended)}
+      >
+        {org.suspended ? t('admin.buttons.resume') : t('admin.buttons.suspend')}
+      </button>
+      {!org.external_issuer && (
+        <button
+          type="button"
+          className="btn btn-danger btn-sm"
+          onClick={() => onDelete({ type: 'organization', name: org.name })}
+        >
+          {t('admin.buttons.delete')}
+        </button>
+      )}
+    </>
+  );
+};
+
+OrgActions.propTypes = {
+  org: PropTypes.object.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onRename: PropTypes.func.isRequired,
+  onSuspendOrResume: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
 /**
- * The Organizations and users tab of the admin page: every organization
- * with its members as `UserCard` rows, searched from the navbar; edit,
- * rename, suspend, resume and delete on the organization, suspend, resume,
+ * The Organizations and users page of the admin feature: every
+ * organization a glass section of the pages contract, a `SectionHeading`
+ * carrying its name, the SSO badge and the edit, rename, suspend, resume
+ * and delete controls over its box count and its members as `UserCard`
+ * rows on the page's ground, the rename form drawn under the heading
+ * while a rename is open, searched from the navbar; suspend, resume,
  * remove and delete on its members, every call through the app's `admin`
  * adapter, and a rename of the active organization stored under
  * `activeOrgKey` with the session refreshed.
@@ -485,80 +542,57 @@ const AdminOrganizations = ({ session, activeOrgKey, admin }) => {
   return (
     <>
       <div className="row">
-        {filteredOrganizations.map(org => (
-          <div className="col-md-6" key={org.id}>
-            <div className="card mt-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <OrgTitle
-                  org={org}
-                  renaming={renamingId === org.id}
+        {filteredOrganizations.map(org => {
+          const orgActions = (
+            <OrgActions
+              org={org}
+              onEdit={openEdit}
+              onRename={startRename}
+              onSuspendOrResume={handleSuspendOrResumeOrganization}
+              onDelete={askDelete}
+            />
+          );
+          return (
+            <div className="col-md-6 mb-4" key={org.id}>
+              <SectionHeading
+                icon={<FaBuilding aria-hidden />}
+                title={<OrgTitle org={org} />}
+                badge={<SsoBadge org={org} />}
+                actions={orgActions}
+              />
+              {renamingId === org.id ? (
+                <RenameForm
                   rename={rename}
                   rules={renameRules}
                   onNameChange={value => setRename({ organization: value })}
                   onRename={handleRenameOrganization}
                   onCancel={() => setRenamingId(null)}
                 />
-                <div>
-                  <button
-                    type="button"
-                    className="btn btn-info btn-sm me-2"
-                    onClick={() => openEdit(org)}
-                  >
-                    {t('admin.buttons.edit')}
-                  </button>
-                  {!org.external_issuer && (
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm me-2"
-                      onClick={() => startRename(org)}
-                    >
-                      {t('admin.buttons.rename')}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className={`btn btn-${org.suspended ? 'success' : 'warning'} btn-sm me-2`}
-                    onClick={() => handleSuspendOrResumeOrganization(org.name, org.suspended)}
-                  >
-                    {org.suspended ? t('admin.buttons.resume') : t('admin.buttons.suspend')}
-                  </button>
-                  {!org.external_issuer && (
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => askDelete({ type: 'organization', name: org.name })}
-                    >
-                      {t('admin.buttons.delete')}
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="card-body">
-                <p>{t('orgUserManager.totalBoxes', { count: org.totalBoxes })}</p>
-                <div className="row">
-                  {org.members.map(user => (
-                    <UserCard
-                      key={user.id}
-                      user={user}
-                      currentUser={currentUser}
-                      orgRole={user.orgRole}
-                      columnClass="col-12 col-xxl-6"
-                      gravatarProfile={admin.gravatarProfile}
-                      onSuspend={() => handleSuspendOrResumeUser(user.id, false)}
-                      onResume={() => handleSuspendOrResumeUser(user.id, true)}
-                      onRemoveFromOrg={
-                        org.external_issuer
-                          ? undefined
-                          : () => askDelete({ type: 'user_remove', id: user.id, orgName: org.name })
-                      }
-                      onDelete={() => askDelete({ type: 'user', id: user.id })}
-                    />
-                  ))}
-                </div>
+              ) : null}
+              <p>{t('orgUserManager.totalBoxes', { count: org.totalBoxes })}</p>
+              <div className="row">
+                {org.members.map(user => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    currentUser={currentUser}
+                    orgRole={user.orgRole}
+                    columnClass="col-12 col-xxl-6"
+                    gravatarProfile={admin.gravatarProfile}
+                    onSuspend={() => handleSuspendOrResumeUser(user.id, false)}
+                    onResume={() => handleSuspendOrResumeUser(user.id, true)}
+                    onRemoveFromOrg={
+                      org.external_issuer
+                        ? undefined
+                        : () => askDelete({ type: 'user_remove', id: user.id, orgName: org.name })
+                    }
+                    onDelete={() => askDelete({ type: 'user', id: user.id })}
+                  />
+                ))}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <ConfirmModal
         show={showDeleteModal}

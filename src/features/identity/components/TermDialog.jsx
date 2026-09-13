@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
@@ -9,12 +9,18 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { TERM_ICON_NAMES } from '../../../components/common/TermIcon';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { loadCountries } from '../../../lib/countries';
 import { createTerm, updateTerm } from '../api/content';
 
 export const TERM_TYPES = ['CLIENT', 'SITE', 'BOTH'];
 
+export const REGION_SETS = ['EU', 'EEA', 'UK'];
+
+export const regionsOf = term => (Array.isArray(term.regions) ? term.regions : []);
+
 export const termShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
+  regions: PropTypes.arrayOf(PropTypes.string),
   friendly_name: PropTypes.string,
   icon: PropTypes.string,
   version: PropTypes.string,
@@ -36,6 +42,7 @@ const SCHEMA = {
   required: ['name', 'version', 'type', 'content'],
   properties: {
     name: { $ref: '#/$defs/slug' },
+    regions: { type: 'array', items: { $ref: '#/$defs/region' } },
     friendly_name: { type: 'string' },
     icon: { $ref: '#/$defs/iconName' },
     version: { type: 'string' },
@@ -48,6 +55,7 @@ const SCHEMA = {
 
 const LABELS = {
   name: 'admin.terms.field.name',
+  regions: 'admin.terms.field.regions',
   friendly_name: 'admin.terms.field.displayName',
   icon: 'admin.terms.field.icon',
   version: 'admin.terms.field.version',
@@ -59,6 +67,7 @@ const LABELS = {
 
 const EMPTY = {
   name: '',
+  regions: [],
   friendly_name: '',
   icon: 'file-text',
   version: '1.0',
@@ -70,6 +79,7 @@ const EMPTY = {
 
 const formOf = term => ({
   name: term.name || '',
+  regions: regionsOf(term),
   friendly_name: term.friendly_name || '',
   icon: TERM_ICON_NAMES.includes(term.icon) ? term.icon : 'file-text',
   version: term.version || '',
@@ -138,14 +148,76 @@ SelectField.propTypes = {
   labelOf: PropTypes.func.isRequired,
 };
 
+const useCountries = () => {
+  const [countries, setCountries] = useState([]);
+  useEffect(() => {
+    let active = true;
+    loadCountries()
+      .then(list => {
+        if (active) {
+          setCountries(list);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, []);
+  return countries;
+};
+
+const RegionsField = ({ form, rules, onChange }) => {
+  const { t } = useTranslation();
+  const countries = useCountries();
+  return (
+    <Field id={rules.idFor('regions')} label={t(LABELS.regions)} error={rules.errors.regions || ''}>
+      {aria => (
+        <select
+          {...aria}
+          multiple
+          className="form-select"
+          value={form.regions}
+          onChange={event =>
+            onChange(
+              'regions',
+              [...event.target.selectedOptions].map(option => option.value)
+            )
+          }
+          onBlur={() => rules.onBlur('regions')}
+        >
+          {REGION_SETS.map(set => (
+            <option key={set} value={set}>
+              {t(`admin.terms.region.${set.toLowerCase()}`)}
+            </option>
+          ))}
+          {countries.map(country => (
+            <option key={country.code} value={country.code}>
+              {`${country.label} (${country.code})`}
+            </option>
+          ))}
+        </select>
+      )}
+    </Field>
+  );
+};
+
+RegionsField.propTypes = {
+  form: PropTypes.object.isRequired,
+  rules: PropTypes.object.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 /**
  * The Create and Edit dialog of the Terms page, mounted per opening: name
- * as a slug (read-only while editing), display name, the icon picked
+ * as a slug (read-only while editing), the `regions` multi-select over the
+ * three sets and the shared country list, empty for the default variant,
+ * display name, the icon picked
  * from the estate's glyph set and stored as its name, version, type,
  * public, order, and the markdown content in a textarea with its preview
  * beside it and the placeholder help from the placeholders call;
  * validated through `useFormRules` against the issuer's `terms` form, one
- * `POST` or `PATCH` on Save.
+ * `POST` or `PATCH` on Save, the `PATCH` addressing the edited variant by
+ * the first region it carries.
  */
 const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
   const { t } = useTranslation();
@@ -169,7 +241,7 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
       return;
     }
     setBusy(true);
-    const call = editing ? updateTerm(term.name, form) : createTerm(form);
+    const call = editing ? updateTerm(term.name, form, regionsOf(term)[0]) : createTerm(form);
     call
       .then(() => {
         notify('success', t(editing ? 'admin.terms.updated' : 'admin.terms.created'));
@@ -250,7 +322,10 @@ const TermDialog = ({ term = null, placeholders, onClose, onSaved }) => {
                 )}
               </Field>
             </div>
-            <div className="col-md-8 d-flex align-items-center">
+            <div className="col-md-4">
+              <RegionsField form={form} rules={rules} onChange={onChange} />
+            </div>
+            <div className="col-md-4 d-flex align-items-center">
               <div className="form-check">
                 <input
                   className="form-check-input"

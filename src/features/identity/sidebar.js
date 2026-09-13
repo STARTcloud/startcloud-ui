@@ -33,7 +33,8 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * configuration page at `/admin/config`; while `status.config` names more
  * than one file the group carries the configuration tree of decision 122
  * in the row's place, one Configuration node with one child per file over
- * the shared `useConfigTree` fed the admin adapter's `config`.
+ * the shared `useConfigTree` fed the admin adapter's `config` and the
+ * System heading's key, answered as the tree's `labelKey` (decision 135).
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -134,7 +135,7 @@ export const sidebar = (status, account, admin) => {
       ])
     );
   }
-  const useTree = () => useConfigTree(admin.config);
+  const useTree = () => useConfigTree(admin.config, 'admin.sidebar.system');
   return [
     {
       key: 'admin',

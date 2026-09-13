@@ -256,10 +256,24 @@ const nodeShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   icon: PropTypes.elementType,
   label: PropTypes.string.isRequired,
-  to: PropTypes.string.isRequired,
+  to: PropTypes.string,
   status: PropTypes.oneOf(['up', 'idle']),
   children: PropTypes.func,
 });
+
+const nodeOpen = ({ node, tree, kids, current }) => {
+  if (!node.children) {
+    return false;
+  }
+  if (tree.open.includes(node.key)) {
+    return true;
+  }
+  if (node.to) {
+    return current.startsWith(`${node.to}/`);
+  }
+  const [pathname] = current.split('?');
+  return Boolean(kids?.some(child => child.to && descendsFrom(pathname, child.to)));
+};
 
 const StatusDot = ({ status }) => {
   if (!status) {
@@ -276,15 +290,15 @@ const TreeNode = ({ node, depth, tree, current }) => {
   const navigate = useNavigate();
   const Icon = node.icon || null;
   const branch = Boolean(node.children);
-  const open = branch && (tree.open.includes(node.key) || current.startsWith(`${node.to}/`));
   const kids = tree.kids[node.key] || null;
-  const active = current === node.to;
+  const open = nodeOpen({ node, tree, kids, current });
+  const active = Boolean(node.to) && current === node.to;
   const { load } = tree;
   const row = useRef(null);
   useCssVar(row, '--sidebar-depth', String(depth));
 
   useEffect(() => {
-    if (branch && open && !kids) {
+    if (branch && (open || !node.to) && !kids) {
       load(node);
     }
   }, [branch, open, kids, node, load]);
@@ -293,6 +307,17 @@ const TreeNode = ({ node, depth, tree, current }) => {
     if (branch) {
       foldKeys(event, open, () => tree.toggle(node));
     }
+  };
+
+  const onClick = () => {
+    if (!node.to) {
+      tree.toggle(node);
+      return;
+    }
+    if (branch && !open) {
+      tree.toggle(node);
+    }
+    navigate(node.to);
   };
 
   const onContextMenu = event => {
@@ -312,12 +337,7 @@ const TreeNode = ({ node, depth, tree, current }) => {
         title={node.label}
         aria-expanded={branch ? open : undefined}
         data-sidebar-row
-        onClick={() => {
-          if (branch && !open) {
-            tree.toggle(node);
-          }
-          navigate(node.to);
-        }}
+        onClick={onClick}
         onKeyDown={onKeyDown}
         onContextMenu={onContextMenu}
       >
@@ -398,7 +418,8 @@ ContextMenu.propTypes = {
 };
 
 const TreeView = ({ groupKey, useTree, current, onTree, opened }) => {
-  const { nodes, menu = null } = useTree();
+  const { t } = useTranslation();
+  const { nodes, menu = null, labelKey = null } = useTree();
   const [kids, setKids] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
 
@@ -428,6 +449,7 @@ const TreeView = ({ groupKey, useTree, current, onTree, opened }) => {
         }
       }}
     >
+      {labelKey ? <div className="sidebar-section-label">{t(labelKey)}</div> : null}
       {nodes.map(node => (
         <TreeNode key={node.key} node={node} depth={0} tree={tree} current={current} />
       ))}
@@ -549,10 +571,14 @@ const useResize = (asideRef, setWidth) => {
  * a top-level navigation and never active, a row with `children` folding
  * them like a tree node with a caret at the row's right end, open while a
  * child is the current route, the row's own link still navigating) and the
- * tree entries (a hook answering `{ nodes, menu }`, nodes with a caret at
- * the row's right end, `children()` called on
+ * tree entries (a hook answering `{ nodes, menu, labelKey }`, the
+ * `labelKey` drawn as a section heading above the nodes when the answer
+ * carries one, nodes with a caret at the row's right end, `children()`
+ * called on
  * expand and for the node the current route descends from, so a deep link
- * crumbs down the tree, a status dot for `up` and `idle`, the right-click
+ * crumbs down the tree, a node without `to` folding on click and never
+ * navigating, its children loaded on mount because only they say
+ * whether the current route lies under it, a status dot for `up` and `idle`, the right-click
  * rows from `menu(node)`, the selection driven by the route, a view select
  * when the group exports more than one shape); the rail, the width, the
  * open rows and nodes under one `sidebar_open_<group>` and the

@@ -374,7 +374,12 @@ side.
   where they are. Tree: nodes with a caret at the row's right end,
   children loaded on expand and
   for the node the current route descends from, so a deep link to a child
-  route crumbs down the tree before the node was ever expanded, a
+  route crumbs down the tree before the node was ever expanded; a node
+  with children and no page of its own carries no `to`, folds on click
+  and never navigates, its children loaded on mount because only they
+  say whether the current route lies under it, and it names itself in
+  the crumb as plain text, because two rows that open one page confuse
+  and a node that only folds is a group, not a page; a
   status dot, a right-click menu from one presenter, the selection driven
   by the route and never by checkboxes; a tree may carry views, a select
   at its top switching between the shapes the feature exports (by pool,
@@ -392,8 +397,14 @@ side.
   shell follows as a top-level navigation rather than a router link,
   never active, because a page still served by another chrome is
   reached and left by a full load. A bare `tree` is a hook, the same
-  shape a view's `useTree` answers: `{ nodes, menu? }`, every node
-  `{ key, icon?, label, to, children?, status? }`, `children` a function
+  shape a view's `useTree` answers: `{ nodes, menu?, labelKey? }`,
+  `labelKey` drawn as a section heading above the tree in the same
+  style as a section's, so a tree that stands in for a section keeps
+  the section's name (the issuer's Configuration tree under System),
+  because a tree draws after every section and a tree without a heading
+  reads as the last section's rows; every node
+  `{ key, icon?, label, to?, children?, status? }`, `to` absent on a node
+  that only folds, `children` a function
   the sidebar calls on expand answering the child nodes, `status` a word
   the status dot draws (`up`, `idle`, absent for none), and `menu(node)`
   answering the right-click rows as `[{ key, labelKey, onClick }]`; a

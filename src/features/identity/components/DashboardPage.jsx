@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaDesktop,
+  FaMapLocationDot,
   FaRightToBracket,
   FaTriangleExclamation,
   FaUserPlus,
@@ -11,8 +12,11 @@ import {
 import { Link } from 'react-router-dom';
 
 import RestartCard from '../../../components/common/RestartCard';
+import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import { useGuard } from '../../../contexts/GuardContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { loginHeatmap, restart, restartStatus, stats } from '../api/overview';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { HEATMAP, STATS } from '../utils/examples';
@@ -24,8 +28,9 @@ const LoginMap = lazy(() => import('./LoginMap'));
 
 const MAP_DAYS = [7, 30, 90];
 const DEFAULT_DAYS = 30;
+const PREFS_KEY = 'table_prefs_admin_dashboard';
 
-const MapCard = () => {
+const MapCard = ({ folds }) => {
   const { t } = useTranslation();
   const [days, setDays] = useState(DEFAULT_DAYS);
   const { data, loading } = useAdminRead({
@@ -33,51 +38,54 @@ const MapCard = () => {
     example: HEATMAP,
     key: String(days),
   });
-  return (
-    <div className="card mb-3">
-      <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h5 className="mb-0">{t('admin.dashboard.map.title')}</h5>
-        <div
-          className="btn-group btn-group-sm"
-          role="group"
-          aria-label={t('admin.dashboard.map.days')}
+  const dayButtons = (
+    <div className="btn-group btn-group-sm" role="group" aria-label={t('admin.dashboard.map.days')}>
+      {MAP_DAYS.map(option => (
+        <button
+          key={option}
+          type="button"
+          className={`btn ${days === option ? 'btn-primary' : 'btn-outline-secondary'}`}
+          onClick={() => setDays(option)}
         >
-          {MAP_DAYS.map(option => (
-            <button
-              key={option}
-              type="button"
-              className={`btn ${days === option ? 'btn-primary' : 'btn-outline-secondary'}`}
-              onClick={() => setDays(option)}
-            >
-              {t('admin.dashboard.map.daysCount', { count: option })}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="card-body">
-        {loading || !data ? (
-          <AdminLoading />
-        ) : (
-          <Suspense fallback={<AdminLoading />}>
-            <LoginMap tiles={data.tiles} points={data.points || []} />
-          </Suspense>
-        )}
-      </div>
+          {t('admin.dashboard.map.daysCount', { count: option })}
+        </button>
+      ))}
     </div>
+  );
+  return (
+    <SectionCard
+      icon={<FaMapLocationDot aria-hidden />}
+      title={t('admin.dashboard.map.title')}
+      actions={dayButtons}
+      folded={folds.folded('map')}
+      onFold={() => folds.toggle('map')}
+    >
+      {loading || !data ? (
+        <AdminLoading />
+      ) : (
+        <Suspense fallback={<AdminLoading />}>
+          <LoginMap tiles={data.tiles} points={data.points || []} />
+        </Suspense>
+      )}
+    </SectionCard>
   );
 };
 
-const RecentList = ({ title, to, rows, renderRow }) => {
+MapCard.propTypes = {
+  folds: foldsShape.isRequired,
+};
+
+const RecentList = ({ icon, title, to, rows, renderRow }) => {
   const { t } = useTranslation();
+  const viewAll = (
+    <Link to={to} className="btn btn-sm btn-outline-primary">
+      {t('admin.dashboard.viewAll')}
+    </Link>
+  );
   return (
-    <div className="card mb-3">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">{title}</h5>
-        <Link to={to} className="btn btn-sm btn-outline-primary">
-          {t('admin.dashboard.viewAll')}
-        </Link>
-      </div>
-      <ul className="list-group list-group-flush">
+    <div className="mb-3">
+      <SectionHeading icon={icon} title={title} actions={viewAll} />
+      <ul className="list-group">
         {rows.length === 0 ? (
           <li className="list-group-item text-muted">{t('pages.empty')}</li>
         ) : null}
@@ -96,6 +104,7 @@ const RecentList = ({ title, to, rows, renderRow }) => {
 };
 
 RecentList.propTypes = {
+  icon: PropTypes.node.isRequired,
   title: PropTypes.string.isRequired,
   to: PropTypes.string.isRequired,
   rows: PropTypes.array.isRequired,
@@ -104,15 +113,19 @@ RecentList.propTypes = {
 
 /**
  * Overview › Dashboard: the five stat cards, each a link into its entry
- * with the filter preset, the login map over the heatmap answer with its
- * 7, 30 and 90 day buttons, the recent logins and registrations with View
- * all, and the shared `RestartCard` of the config contract, fed by
- * `restart-status` and re-read on the `admin` topic's `restart-required`,
- * its Restart behind the page's step-up guard and the confirm dialog.
+ * with the filter preset, the login map in a `SectionCard` over the
+ * heatmap answer with its 7, 30 and 90 day buttons as the card's actions
+ * and its fold under `table_prefs_admin_dashboard`, the recent logins and
+ * registrations as glass lists under a `SectionHeading` carrying View all
+ * (the pages contract's frame rule), and the shared `RestartCard` of the
+ * config contract, fed by `restart-status` and re-read on the `admin`
+ * topic's `restart-required`, its Restart behind the page's step-up guard
+ * and the confirm dialog.
  */
 const DashboardPage = () => {
   const { t } = useTranslation();
   const guard = useGuard();
+  const folds = useFolds(PREFS_KEY);
   const { data, loading } = useAdminRead({ read: stats, example: STATS });
 
   useEffect(() => {
@@ -182,10 +195,11 @@ const DashboardPage = () => {
           to="/admin/sessions"
         />
       </div>
-      <MapCard />
+      <MapCard folds={folds} />
       <div className="row">
         <div className="col-lg-6">
           <RecentList
+            icon={<FaRightToBracket aria-hidden />}
             title={t('admin.dashboard.recentLogins')}
             to="/admin/logins"
             rows={data.recent_logins || []}
@@ -194,6 +208,7 @@ const DashboardPage = () => {
         </div>
         <div className="col-lg-6">
           <RecentList
+            icon={<FaUserPlus aria-hidden />}
             title={t('admin.dashboard.recentRegistrations')}
             to="/admin/registrations"
             rows={data.recent_registrations || []}

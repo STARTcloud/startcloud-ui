@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
 import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
@@ -11,16 +12,31 @@ import PhoneInput from '../../../components/common/PhoneInput';
 import ProblemAlert from '../../../components/common/ProblemAlert';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
-import { loadCountries, regionsFor } from '../../../lib/countries';
+import { loadCountries } from '../../../lib/countries';
 import { followNext } from '../../../lib/next';
 import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { NON_BLANK } from '../../../utils/validation';
-import { acceptProviderTerms, acceptTerms, terms as fetchTerms } from '../api/onboarding';
+import {
+  acceptProviderTerms,
+  acceptTerms,
+  geoCountry,
+  placesKey as fetchPlacesKey,
+  terms as fetchTerms,
+} from '../api/onboarding';
 
 const PROVIDER_ROUTE = '/provider-registration/tos';
 const SESSION_EXPIRED = '/login?error=session_expired';
 const SCALES = [0.85, 1, 1.15, 1.3];
+const ADDRESS_PARTS = {
+  'address-line1': 'line1',
+  'address-line2': 'line2',
+  'country-name': 'country',
+  'address-level1': 'state',
+  'address-level2': 'city',
+  'postal-code': 'postal_code',
+};
+const ADDRESS_JOIN = ['line1', 'line2', 'city', 'state', 'postal_code', 'country'];
 
 const fieldShape = PropTypes.shape({
   param: PropTypes.string.isRequired,
@@ -47,18 +63,25 @@ const schemaFor = fields => ({
   },
 });
 
-const initialValues = fields => ({
-  fields: Object.fromEntries(fields.map(field => [field.param, field.value || ''])),
+const partOf = field => ADDRESS_PARTS[field.autocomplete] || field.param;
+
+const initialValues = fields =>
+  Object.fromEntries(fields.map(field => [field.param, field.value || '']));
+
+const initialAddress = fields => ({
+  ...EMPTY_ADDRESS,
+  ...Object.fromEntries(fields.map(field => [partOf(field), field.value || ''])),
 });
 
 const useCountries = enabled => {
+  const { i18n } = useTranslation();
   const [countries, setCountries] = useState([]);
   useEffect(() => {
     if (!enabled) {
       return undefined;
     }
     let active = true;
-    loadCountries()
+    loadCountries(i18n.language)
       .then(list => {
         if (active) {
           setCountries(list);
@@ -68,8 +91,50 @@ const useCountries = enabled => {
     return () => {
       active = false;
     };
-  }, [enabled]);
+  }, [enabled, i18n.language]);
   return countries;
+};
+
+const useGeoCountry = enabled => {
+  const [country, setCountry] = useState('');
+  useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+    let active = true;
+    geoCountry()
+      .then(answer => {
+        if (active && answer?.country_code) {
+          setCountry(String(answer.country_code).toLowerCase());
+        }
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, [enabled]);
+  return country;
+};
+
+const usePlacesKey = enabled => {
+  const [key, setKey] = useState('');
+  useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+    let active = true;
+    fetchPlacesKey()
+      .then(data => {
+        if (active && typeof data?.key === 'string') {
+          setKey(data.key);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, [enabled]);
+  return key;
 };
 
 const FontSize = ({ scale, onScale }) => {
@@ -104,13 +169,11 @@ FontSize.propTypes = {
   onScale: PropTypes.func.isRequired,
 };
 
-const TermsField = ({ field, value, rules, countries, countryCode, onChange }) => {
+const TermsField = ({ field, value, rules, country, onChange }) => {
   const { t } = useTranslation(['auth']);
   const name = `fields/${field.param}`;
   const label = field.required ? field.label : `${field.label} ${t('terms.optional')}`;
-  const control = field.control || 'text';
-  const listId = `${rules.idFor(name)}-list`;
-  const regions = control === 'state' ? regionsFor(countryCode) : [];
+  const onBlur = () => rules.onBlur(name);
   return (
     <Field
       id={rules.idFor(name)}
@@ -118,58 +181,28 @@ const TermsField = ({ field, value, rules, countries, countryCode, onChange }) =
       error={rules.errors[name] || ''}
       className={`auth-field${field.span === 'full' ? ' auth-grid-full' : ''}`}
     >
-      {aria => {
-        if (control === 'country') {
-          return (
-            <div className="auth-input-wrap">
-              <select
-                {...aria}
-                autoComplete={field.autocomplete}
-                value={value}
-                onChange={event => onChange(field.param, event.target.value)}
-                onBlur={() => rules.onBlur(name)}
-              >
-                <option value="">{value && countries.length === 0 ? value : ''}</option>
-                {countries.map(country => (
-                  <option key={country.code} value={country.label}>
-                    {country.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          );
-        }
-        if (control === 'tel' || control === 'phone') {
-          return (
-            <PhoneInput
-              id={aria.id}
-              aria={aria}
-              value={value}
-              onChange={number => onChange(field.param, number)}
-            />
-          );
-        }
-        return (
+      {aria =>
+        field.autocomplete === 'tel' ? (
+          <PhoneInput
+            id={aria.id}
+            aria={{ ...aria, onBlur }}
+            value={value}
+            initialCountry={country}
+            onChange={number => onChange(field.param, number)}
+          />
+        ) : (
           <div className="auth-input-wrap">
             <input
               {...aria}
-              type={control === 'email' ? 'email' : 'text'}
+              type={field.control === 'email' ? 'email' : 'text'}
               autoComplete={field.autocomplete}
               value={value}
-              list={regions.length > 0 ? listId : undefined}
               onChange={event => onChange(field.param, event.target.value)}
-              onBlur={() => rules.onBlur(name)}
+              onBlur={onBlur}
             />
-            {regions.length > 0 ? (
-              <datalist id={listId}>
-                {regions.map(region => (
-                  <option key={region} value={region} />
-                ))}
-              </datalist>
-            ) : null}
           </div>
-        );
-      }}
+        )
+      }
     </Field>
   );
 };
@@ -178,12 +211,11 @@ TermsField.propTypes = {
   field: fieldShape.isRequired,
   value: PropTypes.string.isRequired,
   rules: PropTypes.object.isRequired,
-  countries: PropTypes.array.isRequired,
-  countryCode: PropTypes.string.isRequired,
+  country: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
-const FieldGroup = ({ title, fields, values, rules, countries, countryCode, onChange }) => {
+const FieldGroup = ({ title, fields, values, rules, country, onChange }) => {
   if (fields.length === 0) {
     return null;
   }
@@ -197,8 +229,7 @@ const FieldGroup = ({ title, fields, values, rules, countries, countryCode, onCh
             field={field}
             value={values[field.param] || ''}
             rules={rules}
-            countries={countries}
-            countryCode={countryCode}
+            country={country}
             onChange={onChange}
           />
         ))}
@@ -212,8 +243,53 @@ FieldGroup.propTypes = {
   fields: PropTypes.arrayOf(fieldShape).isRequired,
   values: PropTypes.object.isRequired,
   rules: PropTypes.object.isRequired,
-  countries: PropTypes.array.isRequired,
-  countryCode: PropTypes.string.isRequired,
+  country: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const AddressGroup = ({ fields, address, rules, placesKey, onChange }) => {
+  const { t } = useTranslation(['auth']);
+  if (fields.length === 0) {
+    return null;
+  }
+  const paramByPart = Object.fromEntries(fields.map(field => [partOf(field), field.param]));
+  const nameOf = part => {
+    const param = paramByPart[part === 'country_code' ? 'country' : part];
+    return param ? `fields/${param}` : '';
+  };
+  const errors = Object.fromEntries(
+    [...Object.keys(paramByPart), 'country_code'].map(part => [
+      part,
+      rules.errors[nameOf(part)] || '',
+    ])
+  );
+  const onBlur = part => {
+    const name = nameOf(part);
+    if (name) {
+      rules.onBlur(name);
+    }
+  };
+  return (
+    <>
+      <p className="auth-group">{t('terms.address')}</p>
+      <div className="auth-address">
+        <AddressFields
+          value={address}
+          onChange={onChange}
+          rules={{ errors, onBlur }}
+          idPrefix="terms-address"
+          placesKey={placesKey}
+        />
+      </div>
+    </>
+  );
+};
+
+AddressGroup.propTypes = {
+  fields: PropTypes.arrayOf(fieldShape).isRequired,
+  address: PropTypes.object.isRequired,
+  rules: PropTypes.object.isRequired,
+  placesKey: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -257,6 +333,7 @@ const TermsHead = ({ state, scale, onScale }) => {
   return (
     <div className="auth-row">
       <span className="auth-hint">{t('terms.version', { version: state.version })}</span>
+      {state.region ? <span className="auth-badge">{state.region}</span> : null}
       <span className="auth-badge">{t('terms.step', { n: state.step, m: state.total })}</span>
       <FontSize scale={scale} onScale={onScale} />
     </div>
@@ -300,22 +377,62 @@ const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }
   };
 };
 
+const useCollectedFields = (fields, countries) => {
+  const identityFields = useMemo(
+    () => fields.filter(field => (field.group || 'identity') !== 'address'),
+    [fields]
+  );
+  const addressFields = useMemo(() => fields.filter(field => field.group === 'address'), [fields]);
+  const [identity, setIdentity] = useState(() => initialValues(identityFields));
+  const [address, setAddress] = useState(() => initialAddress(addressFields));
+  const record = useMemo(
+    () => ({
+      ...address,
+      country_code:
+        address.country_code ||
+        countries.find(country => country.label === address.country)?.code ||
+        '',
+    }),
+    [address, countries]
+  );
+  const values = useMemo(
+    () => ({
+      fields: {
+        ...identity,
+        ...Object.fromEntries(
+          addressFields.map(field => [field.param, record[partOf(field)] || ''])
+        ),
+      },
+    }),
+    [identity, addressFields, record]
+  );
+  const changeIdentity = (param, value) =>
+    setIdentity(previous => ({ ...previous, [param]: value }));
+  return { identityFields, addressFields, values, record, changeIdentity, setAddress };
+};
+
 const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
   const { t } = useTranslation(['auth']);
   const fields = useMemo(() => state.fields || [], [state.fields]);
   const schema = useMemo(() => schemaFor(fields), [fields]);
-  const [values, setValues] = useState(() => initialValues(fields));
+  const hasAddress = fields.some(field => field.group === 'address');
+  const hasPhone = fields.some(field => field.autocomplete === 'tel');
+  const countries = useCountries(hasAddress);
+  const placesKey = usePlacesKey(hasAddress);
+  const geo = useGeoCountry(hasPhone);
+  const { identityFields, addressFields, values, record, changeIdentity, setAddress } =
+    useCollectedFields(fields, countries);
   const rules = useFormRules({ schema, values, idPrefix: 'terms' });
-  const countries = useCountries(fields.some(field => field.control === 'country'));
-  const countryValue = values.fields.country || '';
-  const countryCode = countries.find(country => country.label === countryValue)?.code || '';
   const fills = useMemo(() => {
     const { first_name: first = '', last_name: last = '' } = values.fields;
-    return { ...values.fields, full_name: [first, last].filter(Boolean).join(' ') };
-  }, [values.fields]);
-
-  const change = (param, value) =>
-    setValues(previous => ({ fields: { ...previous.fields, [param]: value } }));
+    return {
+      ...values.fields,
+      full_name: [first, last].filter(Boolean).join(' '),
+      address: ADDRESS_JOIN.map(part => record[part])
+        .filter(Boolean)
+        .join(', '),
+    };
+  }, [values.fields, record]);
 
   const submit = event => {
     event.preventDefault();
@@ -325,30 +442,30 @@ const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
     onAccept(values.fields, rules);
   };
 
-  const group = key => fields.filter(field => (field.group || 'identity') === key);
-
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
       <TermsHead state={state} scale={scale} onScale={onScale} />
-      <MarkdownArticle html={state.content_html} fontScale={scale} className="auth-doc-flow" />
+      <MarkdownArticle
+        html={state.content_html}
+        fills={fills}
+        fontScale={scale}
+        className="auth-doc-flow"
+      />
       <FormErrorSummary errors={rules.summary} />
       <FieldGroup
         title={state.identity_group_title || t('terms.yourDetails')}
-        fields={group('identity')}
+        fields={identityFields}
         values={values.fields}
         rules={rules}
-        countries={countries}
-        countryCode={countryCode}
-        onChange={change}
+        country={geo}
+        onChange={changeIdentity}
       />
-      <FieldGroup
-        title={t('terms.address')}
-        fields={group('address')}
-        values={values.fields}
+      <AddressGroup
+        fields={addressFields}
+        address={record}
         rules={rules}
-        countries={countries}
-        countryCode={countryCode}
-        onChange={change}
+        placesKey={placesKey}
+        onChange={setAddress}
       />
       <MarkdownArticle
         html={state.content_middle_html || ''}
@@ -358,6 +475,7 @@ const CollectingTerms = ({ state, scale, onScale, busy, onAccept }) => {
       />
       <MarkdownArticle
         html={state.content_bottom_html || ''}
+        fills={fills}
         fontScale={scale}
         className="auth-doc-flow auth-doc-fine"
       />
@@ -383,12 +501,17 @@ CollectingTerms.propTypes = {
 
 /**
  * `/oauth2/accept-terms` and `/provider-registration/tos`: one document
- * from `GET /api/auth/terms`, classic (the pane, "I accept and continue")
- * or collecting (the wide column, the document as page copy, the identity
- * and address field groups prefilled and editable, the blanks filling as
- * the person types, the acknowledgment row and "I Agree & Continue");
- * Decline posts `/auth-cancel`; a `next` that is this route again swaps
- * the document, moves focus to the heading and announces the step.
+ * from `GET /api/auth/terms` in the one wide column, classic (the pane,
+ * "I accept and continue") or collecting (the document as page copy, the identity
+ * field group and the address as the shared `AddressFields` with the
+ * Places lookup, every field prefilled from its `value` and editable, the
+ * address parts posted under the listed fields' params, the `tel` field
+ * as the shared `PhoneInput`, the blanks in every HTML member filling as
+ * the person types, `full_name` joined from the names and `address` from
+ * the parts present, the acknowledgment row and "I Agree & Continue");
+ * Decline posts `/auth-cancel`; a `next` that is this route
+ * again swaps the document, moves focus to the heading and announces the
+ * step.
  */
 const TermsPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -422,7 +545,7 @@ const TermsPage = ({ returnTo }) => {
     <AuthShell
       title={state?.label || t('terms.pageTitle')}
       subtitle={state && !collecting ? t('terms.before', { client: state.client_name }) : ''}
-      wide={collecting}
+      wide
       headingRef={heading}
     >
       {announce && state ? (

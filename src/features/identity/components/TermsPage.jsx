@@ -28,7 +28,7 @@ import { PLACEHOLDERS, TERMS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TermDialog, { termShape } from './TermDialog';
+import TermDialog, { regionsOf, termShape } from './TermDialog';
 
 const COPY_SCHEMA = { required: ['name'], properties: { name: { $ref: '#/$defs/slug' } } };
 const COPY_LABELS = { name: 'admin.terms.field.name' };
@@ -36,7 +36,9 @@ const ORDER_KEY = 'terms-order';
 
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
 
-const keyOf = term => term.name;
+const keyOf = term => [term.name, ...regionsOf(term)].join(':');
+
+const nameOf = term => term.name;
 
 const matches = (term, needle) =>
   [term.name, term.friendly_name || ''].some(text => text.toLowerCase().includes(needle));
@@ -60,10 +62,10 @@ const FILTER_GROUPS = [
 const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 
 const reorderWithin = (all, shown) => {
-  const names = new Set(shown.map(keyOf));
+  const keys = new Set(shown.map(keyOf));
   let index = 0;
   return all.map(term => {
-    if (!names.has(term.name)) {
+    if (!keys.has(keyOf(term))) {
       return term;
     }
     index += 1;
@@ -81,6 +83,20 @@ const TypeBadge = ({ term }) => {
 };
 
 TypeBadge.propTypes = {
+  term: termShape.isRequired,
+};
+
+const RegionBadge = ({ term }) => {
+  const { t } = useTranslation();
+  const regions = regionsOf(term);
+  return (
+    <span className="badge bg-secondary">
+      {regions.length > 0 ? regions.join(', ') : t('admin.terms.region.default')}
+    </span>
+  );
+};
+
+RegionBadge.propTypes = {
   term: termShape.isRequired,
 };
 
@@ -123,6 +139,7 @@ const TermCard = ({ term, handle, onPreview, onEdit, onCopy, onDelete }) => {
             <span className="badge bg-success">{t('admin.terms.public')}</span>
           ) : null}
           <TypeBadge term={term} />
+          <RegionBadge term={term} />
         </div>
         <div className="small text-muted">
           <code>{term.name}</code>
@@ -211,6 +228,7 @@ const CopyDialog = ({ source, onClose, onSaved }) => {
     setBusy(true);
     createTerm({
       name: form.name,
+      regions: regionsOf(source),
       friendly_name: source.friendly_name,
       icon: source.icon,
       version: source.version,
@@ -309,7 +327,8 @@ const useOrdered = data => {
 /**
  * Content › Terms: the templates as cards in a `SortableList`, a drag
  * writing the order at once and raising a success card carrying Undo,
- * which writes the previous order back; Public and type badges, Preview
+ * which writes the previous order back; Public, type and region badges,
+ * one card per variant keyed by name and regions, Preview
  * drawing the template's markdown in a list dialog through the shared
  * `MarkdownArticle` for every template public or not, a public card
  * also linking to the public policy page in a new tab, Copy through a small dialog asking the new
@@ -355,7 +374,7 @@ const TermsPage = () => {
 
   const writeOrder = (next, previous) => {
     setOrdered(next);
-    reorderTerms(next.map(keyOf))
+    reorderTerms(next.map(nameOf))
       .then(() => {
         notify('success', t('admin.terms.orderSaved'), {
           key: ORDER_KEY,
@@ -369,7 +388,7 @@ const TermsPage = () => {
   };
 
   const confirmDelete = () => {
-    deleteTerm(deleting.name)
+    deleteTerm(deleting.name, regionsOf(deleting)[0])
       .then(() => {
         notify('success', t('admin.terms.deleted', { name: deleting.name }));
         reload();

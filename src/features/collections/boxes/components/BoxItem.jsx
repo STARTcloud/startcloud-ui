@@ -8,6 +8,7 @@ import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
+import { copyToClipboard } from '../../../../lib/clipboard';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import {
@@ -145,7 +146,7 @@ const CopyButton = ({ text }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    navigator.clipboard.writeText(text).then(
+    copyToClipboard(text).then(
       () => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

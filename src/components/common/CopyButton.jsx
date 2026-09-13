@@ -2,22 +2,9 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const COPIED_MS = 2000;
+import { copyToClipboard } from '../../lib/clipboard';
 
-const writeClipboard = text => {
-  if (navigator.clipboard?.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-  const area = document.createElement('textarea');
-  area.value = text;
-  area.setAttribute('readonly', '');
-  area.className = 'visually-hidden';
-  document.body.appendChild(area);
-  area.select();
-  const done = document.execCommand('copy');
-  area.remove();
-  return done ? Promise.resolve() : Promise.reject(new Error('copy refused'));
-};
+const COPIED_MS = 2000;
 
 /**
  * Copy `text` to the clipboard: the label flips to "Copied!" for two
@@ -33,7 +20,7 @@ const CopyButton = ({ text, label = '', className = 'auth-btn auth-btn-secondary
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = () =>
-    writeClipboard(text)
+    copyToClipboard(text)
       .then(() => {
         setCopied(true);
         clearTimeout(timer.current);

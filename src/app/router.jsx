@@ -129,6 +129,7 @@ import { SetupPage, setupApi } from '../features/setup';
 import { UserTermsPage, issuerTerms } from '../features/terms';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage, sidebar as vdiSidebar } from '../features/vdi';
+import { configNamesOf } from '../hooks/useConfigTree';
 import { sessionStateShape } from '../hooks/useSession';
 import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
@@ -368,6 +369,20 @@ AdminRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   page: PropTypes.string,
+};
+
+const ConfigRedirect = ({ globalAdmin, user = null }) => {
+  const status = useStatus();
+  const [first] = configNamesOf(status);
+  if (!first) {
+    return <AdminRoute globalAdmin={globalAdmin} user={user} page="config" />;
+  }
+  return <Navigate to={`/admin/config/${encodeURIComponent(first)}`} replace />;
+};
+
+ConfigRedirect.propTypes = {
+  globalAdmin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
 };
 
 const IdentityAdminRoute = ({ globalAdmin, user, page }) => {
@@ -784,9 +799,14 @@ const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
     />
   ));
 
-const sharedAdminRoutes = ({ globalAdmin, user }) =>
-  [
-    { path: '/admin/config/:name?', page: 'config' },
+const sharedAdminRoutes = ({ globalAdmin, user }) => [
+  <Route
+    key="/admin/config"
+    path="/admin/config"
+    element={<ConfigRedirect globalAdmin={globalAdmin} user={user} />}
+  />,
+  ...[
+    { path: '/admin/config/:name', page: 'config' },
     { path: '/admin/system', page: 'system' },
   ].map(({ path, page }) => (
     <Route
@@ -794,7 +814,8 @@ const sharedAdminRoutes = ({ globalAdmin, user }) =>
       path={path}
       element={<AdminRoute globalAdmin={globalAdmin} user={user} page={page} />}
     />
-  ));
+  )),
+];
 
 const homeElementFor = ({
   status,
@@ -837,9 +858,11 @@ const homeElementFor = ({
  * tokens, a route the host lacks rendering `NotAvailableStub` instead
  * (`/user/integrations` drawing the ErrorPage's 404 while the issuer's
  * answer carries no `services`); the
- * shared admin pages at `/admin/config/:name?` and `/admin/system` on
+ * shared admin pages at `/admin/config/:name` and `/admin/system` on
  * every host, the Configuration page drawing the named file of
- * `status.config` and the first without a name, on a `cookie` host behind
+ * `status.config`, the bare `/admin/config` redirecting to the first
+ * name's route and drawing the empty state while the list is empty, on a
+ * `cookie` host behind
  * the identity feature's Configuration entry; the
  * sign-in, register and profile pages take the session state, whose
  * adopted session alone sends a signed-in person off a sign-in page or

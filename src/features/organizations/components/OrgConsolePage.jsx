@@ -1,14 +1,23 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaArrowUpRightFromSquare, FaBuilding } from 'react-icons/fa6';
+import {
+  FaArrowUpRightFromSquare,
+  FaBuilding,
+  FaEnvelopeOpenText,
+  FaUserPlus,
+  FaUsers,
+} from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import SectionCard from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
@@ -21,6 +30,7 @@ import IssuerOrgConsole from './IssuerOrgConsole';
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
+const PREFS_KEY = 'table_prefs_org_console';
 
 const ORG_SCHEMA = {
   required: ['organization', 'email'],
@@ -350,67 +360,67 @@ const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h4>{t('orgConsole.joinRequest.title')}</h4>
-      </div>
-      <div className="card-body">
-        {joinRequests.length === 0 ? (
-          <div className="alert alert-info">{emptyText}</div>
-        ) : (
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>{t('orgConsole.joinRequest.user')}</th>
-                  <th>{t('orgConsole.joinRequest.email')}</th>
-                  <th>{t('orgConsole.joinRequest.message')}</th>
-                  <th>{t('orgConsole.joinRequest.requested')}</th>
-                  <th>{t('orgConsole.joinRequest.actions')}</th>
+    <>
+      <SectionHeading
+        icon={<FaUserPlus aria-hidden />}
+        title={t('orgConsole.joinRequest.title')}
+        badge={<span className="badge bg-secondary">{joinRequests.length}</span>}
+      />
+      {joinRequests.length === 0 ? (
+        <div className="alert alert-info">{emptyText}</div>
+      ) : (
+        <div className="table-responsive">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('orgConsole.joinRequest.user')}</th>
+                <th>{t('orgConsole.joinRequest.email')}</th>
+                <th>{t('orgConsole.joinRequest.message')}</th>
+                <th>{t('orgConsole.joinRequest.requested')}</th>
+                <th>{t('orgConsole.joinRequest.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {joinRequests.map(request => (
+                <tr key={request.id}>
+                  <td>
+                    <strong>{request.user.username}</strong>
+                  </td>
+                  <td>{request.user.email}</td>
+                  <td>{request.message || t('orgConsole.joinRequest.noMessage')}</td>
+                  <td>{new Date(request.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <div className="btn-group" role="group">
+                      <button
+                        type="button"
+                        className="btn btn-success btn-sm"
+                        onClick={() => onApprove(request.id, 'member')}
+                      >
+                        {t('orgConsole.joinRequest.approveAsMember')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-warning btn-sm"
+                        onClick={() => onApprove(request.id, 'admin')}
+                      >
+                        {t('orgConsole.joinRequest.approveAsAdmin')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => onDeny(request.id)}
+                      >
+                        {t('orgConsole.joinRequest.deny')}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {joinRequests.map(request => (
-                  <tr key={request.id}>
-                    <td>
-                      <strong>{request.user.username}</strong>
-                    </td>
-                    <td>{request.user.email}</td>
-                    <td>{request.message || t('orgConsole.joinRequest.noMessage')}</td>
-                    <td>{new Date(request.created_at).toLocaleDateString()}</td>
-                    <td>
-                      <div className="btn-group" role="group">
-                        <button
-                          type="button"
-                          className="btn btn-success btn-sm"
-                          onClick={() => onApprove(request.id, 'member')}
-                        >
-                          {t('orgConsole.joinRequest.approveAsMember')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-warning btn-sm"
-                          onClick={() => onApprove(request.id, 'admin')}
-                        >
-                          {t('orgConsole.joinRequest.approveAsAdmin')}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => onDeny(request.id)}
-                        >
-                          {t('orgConsole.joinRequest.deny')}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -489,7 +499,10 @@ InvitationsTable.propTypes = {
  * IdP-managed one, the members with role and removal controls), Join
  * requests (approve as member or admin, deny) and Invitations (send, list,
  * delete, when the host advertises `invitations`), no tab strip while the
- * tabs number one, each tab's list
+ * tabs number one, the record form and the invitation form each a
+ * `SectionCard` whose fold is kept under `table_prefs_org_console`, the
+ * members, the join requests and the active invitations glass lists under
+ * a `SectionHeading` (the pages contract's frame rule), each tab's list
  * searched from the navbar, every call through the app's `organizations`
  * adapter; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
@@ -523,6 +536,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
   const [orgIdpLink, setOrgIdpLink] = useState('');
   const [orgDisplayName, setOrgDisplayName] = useState('');
   const [activeTab, setActiveTab] = useState('organization');
+  const folds = useFolds(PREFS_KEY);
   const current = session.restore();
   const currentUser = current ? current.user : null;
   const canManageRoles = isOwner(membershipsOf(current), org, admin);
@@ -862,207 +876,204 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
         <div className="tab-content mt-3">
           {currentTab === 'organization' && (
             <div className="row">
-              <div className="col-md-12 mb-4">
-                <div className="card mt-2 mb-2">
-                  <div className="card-header">
-                    <h4>
-                      {t('orgConsole.organization.title')}
-                      {isExternalOrg && (
-                        <span
-                          className="badge bg-info ms-2"
-                          title={t('orgConsole.organization.ssoManagedHint')}
-                        >
-                          {t('orgConsole.organization.ssoManaged')}
-                        </span>
-                      )}
-                    </h4>
-                  </div>
-                  <div className="card-body">
-                    {isExternalOrg && (
-                      <>
-                        <div className="alert alert-info" role="status">
-                          {t('orgConsole.organization.ssoManagedHint')}
-                        </div>
-                        <OrgProfileDisplay
-                          orgName={orgForm.organization}
-                          orgDisplayName={orgDisplayName}
-                          orgLogo={orgLogo}
-                          orgEmail={orgForm.email}
-                          orgDescription={orgForm.description}
-                          orgUrl={orgUrl}
-                          orgTelephone={orgTelephone}
-                          orgLocale={orgLocale}
-                          orgTimezone={orgTimezone}
-                          orgAddress={orgAddress}
-                          orgAccessMode={orgForm.access_mode}
-                          orgDefaultRole={orgForm.default_role}
-                          orgIdpLink={orgIdpLink}
-                        />
-                      </>
-                    )}
-                    {!isExternalOrg && (
-                      <form onSubmit={handleUpdateOrganization} noValidate>
-                        <FormErrorSummary errors={[...orgRules.summary, ...accessRules.summary]} />
-                        <Field
-                          id={orgRules.idFor('organization')}
-                          label={t('orgConsole.organization.name')}
-                          error={orgRules.errors.organization}
-                        >
-                          {aria => (
-                            <input
-                              {...aria}
-                              type="text"
-                              className="form-control"
-                              value={orgForm.organization}
-                              onChange={e => setOrgField('organization', e.target.value)}
-                              onBlur={() => orgRules.onBlur('organization')}
-                            />
-                          )}
-                        </Field>
-                        <Field
-                          id={orgRules.idFor('email')}
-                          label={t('orgConsole.organization.email')}
-                          error={orgRules.errors.email}
-                        >
-                          {aria => (
-                            <input
-                              {...aria}
-                              type="email"
-                              className="form-control"
-                              value={orgForm.email}
-                              onChange={e => setOrgField('email', e.target.value)}
-                              onBlur={() => orgRules.onBlur('email')}
-                            />
-                          )}
-                        </Field>
-                        <div className="mb-3">
-                          <label className="form-label" htmlFor="orgEmailHash">
-                            {t('orgConsole.organization.emailHash')}
-                          </label>
+              <div className="col-md-12">
+                <SectionCard
+                  icon={<FaBuilding aria-hidden />}
+                  title={t('orgConsole.organization.title')}
+                  badge={
+                    isExternalOrg ? (
+                      <span
+                        className="badge bg-info"
+                        title={t('orgConsole.organization.ssoManagedHint')}
+                      >
+                        {t('orgConsole.organization.ssoManaged')}
+                      </span>
+                    ) : null
+                  }
+                  className="mb-4"
+                  folded={folds.folded('organization')}
+                  onFold={() => folds.toggle('organization')}
+                >
+                  {isExternalOrg && (
+                    <>
+                      <div className="alert alert-info" role="status">
+                        {t('orgConsole.organization.ssoManagedHint')}
+                      </div>
+                      <OrgProfileDisplay
+                        orgName={orgForm.organization}
+                        orgDisplayName={orgDisplayName}
+                        orgLogo={orgLogo}
+                        orgEmail={orgForm.email}
+                        orgDescription={orgForm.description}
+                        orgUrl={orgUrl}
+                        orgTelephone={orgTelephone}
+                        orgLocale={orgLocale}
+                        orgTimezone={orgTimezone}
+                        orgAddress={orgAddress}
+                        orgAccessMode={orgForm.access_mode}
+                        orgDefaultRole={orgForm.default_role}
+                        orgIdpLink={orgIdpLink}
+                      />
+                    </>
+                  )}
+                  {!isExternalOrg && (
+                    <form onSubmit={handleUpdateOrganization} noValidate>
+                      <FormErrorSummary errors={[...orgRules.summary, ...accessRules.summary]} />
+                      <Field
+                        id={orgRules.idFor('organization')}
+                        label={t('orgConsole.organization.name')}
+                        error={orgRules.errors.organization}
+                      >
+                        {aria => (
                           <input
+                            {...aria}
                             type="text"
                             className="form-control"
-                            id="orgEmailHash"
-                            value={orgEmailHash}
-                            readOnly
+                            value={orgForm.organization}
+                            onChange={e => setOrgField('organization', e.target.value)}
+                            onBlur={() => orgRules.onBlur('organization')}
                           />
-                          <div className="form-text">
-                            {t('orgConsole.organization.emailHashHint')}
-                          </div>
+                        )}
+                      </Field>
+                      <Field
+                        id={orgRules.idFor('email')}
+                        label={t('orgConsole.organization.email')}
+                        error={orgRules.errors.email}
+                      >
+                        {aria => (
+                          <input
+                            {...aria}
+                            type="email"
+                            className="form-control"
+                            value={orgForm.email}
+                            onChange={e => setOrgField('email', e.target.value)}
+                            onBlur={() => orgRules.onBlur('email')}
+                          />
+                        )}
+                      </Field>
+                      <div className="mb-3">
+                        <label className="form-label" htmlFor="orgEmailHash">
+                          {t('orgConsole.organization.emailHash')}
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="orgEmailHash"
+                          value={orgEmailHash}
+                          readOnly
+                        />
+                        <div className="form-text">
+                          {t('orgConsole.organization.emailHashHint')}
                         </div>
-                        <Field
-                          id={orgRules.idFor('description')}
-                          label={t('orgConsole.organization.description')}
-                          error={orgRules.errors.description}
-                        >
-                          {aria => (
-                            <textarea
-                              {...aria}
-                              className="form-control"
-                              value={orgForm.description}
-                              onChange={e => setOrgField('description', e.target.value)}
-                              onBlur={() => orgRules.onBlur('description')}
-                            />
-                          )}
-                        </Field>
+                      </div>
+                      <Field
+                        id={orgRules.idFor('description')}
+                        label={t('orgConsole.organization.description')}
+                        error={orgRules.errors.description}
+                      >
+                        {aria => (
+                          <textarea
+                            {...aria}
+                            className="form-control"
+                            value={orgForm.description}
+                            onChange={e => setOrgField('description', e.target.value)}
+                            onBlur={() => orgRules.onBlur('description')}
+                          />
+                        )}
+                      </Field>
 
-                        <div className="row">
-                          <div className="col-md-6">
-                            <Field
-                              id={accessRules.idFor('access_mode')}
-                              label={t('orgConsole.organization.accessMode')}
-                              hint={t('orgConsole.organization.accessModeHint')}
-                              error={accessRules.errors.access_mode}
-                            >
-                              {aria => (
-                                <select
-                                  {...aria}
-                                  className="form-select"
-                                  value={orgForm.access_mode}
-                                  onChange={e => setOrgField('access_mode', e.target.value)}
-                                  onBlur={() => accessRules.onBlur('access_mode')}
-                                >
-                                  <option value="private">
-                                    {t('orgConsole.organization.accessModes.private')}
-                                  </option>
-                                  <option value="invite">
-                                    {t('orgConsole.organization.accessModes.inviteOnly')}
-                                  </option>
-                                  <option value="request">
-                                    {t('orgConsole.organization.accessModes.requestToJoin')}
-                                  </option>
-                                </select>
-                              )}
-                            </Field>
-                          </div>
-                          <div className="col-md-6">
-                            <Field
-                              id={accessRules.idFor('default_role')}
-                              label={t('orgConsole.organization.defaultRole')}
-                              hint={t('orgConsole.organization.defaultRoleHint')}
-                              error={accessRules.errors.default_role}
-                            >
-                              {aria => (
-                                <select
-                                  {...aria}
-                                  className="form-select"
-                                  value={orgForm.default_role}
-                                  onChange={e => setOrgField('default_role', e.target.value)}
-                                  onBlur={() => accessRules.onBlur('default_role')}
-                                >
-                                  <option value="member">{t('roles.member')}</option>
-                                  <option value="admin">{t('roles.admin')}</option>
-                                </select>
-                              )}
-                            </Field>
-                          </div>
+                      <div className="row">
+                        <div className="col-md-6">
+                          <Field
+                            id={accessRules.idFor('access_mode')}
+                            label={t('orgConsole.organization.accessMode')}
+                            hint={t('orgConsole.organization.accessModeHint')}
+                            error={accessRules.errors.access_mode}
+                          >
+                            {aria => (
+                              <select
+                                {...aria}
+                                className="form-select"
+                                value={orgForm.access_mode}
+                                onChange={e => setOrgField('access_mode', e.target.value)}
+                                onBlur={() => accessRules.onBlur('access_mode')}
+                              >
+                                <option value="private">
+                                  {t('orgConsole.organization.accessModes.private')}
+                                </option>
+                                <option value="invite">
+                                  {t('orgConsole.organization.accessModes.inviteOnly')}
+                                </option>
+                                <option value="request">
+                                  {t('orgConsole.organization.accessModes.requestToJoin')}
+                                </option>
+                              </select>
+                            )}
+                          </Field>
                         </div>
+                        <div className="col-md-6">
+                          <Field
+                            id={accessRules.idFor('default_role')}
+                            label={t('orgConsole.organization.defaultRole')}
+                            hint={t('orgConsole.organization.defaultRoleHint')}
+                            error={accessRules.errors.default_role}
+                          >
+                            {aria => (
+                              <select
+                                {...aria}
+                                className="form-select"
+                                value={orgForm.default_role}
+                                onChange={e => setOrgField('default_role', e.target.value)}
+                                onBlur={() => accessRules.onBlur('default_role')}
+                              >
+                                <option value="member">{t('roles.member')}</option>
+                                <option value="admin">{t('roles.admin')}</option>
+                              </select>
+                            )}
+                          </Field>
+                        </div>
+                      </div>
 
-                        <button type="submit" className="btn btn-primary mt-2">
-                          {t('orgConsole.organization.updateButton')}
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                </div>
+                      <button type="submit" className="btn btn-primary mt-2">
+                        {t('orgConsole.organization.updateButton')}
+                      </button>
+                    </form>
+                  )}
+                </SectionCard>
               </div>
               <div className="col-md-12 mb-4">
-                <div className="card mt-2 mb-2">
-                  <div className="card-header">
-                    <h4>
-                      {t('orgConsole.users.title', {
-                        organization: org,
-                      })}
-                    </h4>
-                  </div>
-                  <div className="card-body">
-                    <TabSearch
-                      query={searchTerm}
-                      onQueryChange={setSearchTerm}
-                      placeholder={t('search.open')}
-                      matched={filteredUsers.length}
-                      total={users.length}
+                <SectionHeading
+                  icon={<FaUsers aria-hidden />}
+                  title={t('orgConsole.users.title', {
+                    organization: org,
+                  })}
+                  badge={<span className="badge bg-secondary">{users.length}</span>}
+                />
+                <TabSearch
+                  query={searchTerm}
+                  onQueryChange={setSearchTerm}
+                  placeholder={t('search.open')}
+                  matched={filteredUsers.length}
+                  total={users.length}
+                />
+                <div className="row">
+                  {filteredUsers.map(user => (
+                    <UserCard
+                      key={user.id}
+                      user={user}
+                      currentUser={currentUser}
+                      orgRole={user.orgRole}
+                      gravatarProfile={organizations.gravatarProfile}
+                      onChangeRole={
+                        canManageMembership
+                          ? newRole => handleSetOrgRole(user.id, newRole)
+                          : undefined
+                      }
+                      onRemoveFromOrg={
+                        canManageMembership ? () => handleRemoveUserFromOrg(user.id) : undefined
+                      }
                     />
-                    <div className="row">
-                      {filteredUsers.map(user => (
-                        <UserCard
-                          key={user.id}
-                          user={user}
-                          currentUser={currentUser}
-                          orgRole={user.orgRole}
-                          gravatarProfile={organizations.gravatarProfile}
-                          onChangeRole={
-                            canManageMembership
-                              ? newRole => handleSetOrgRole(user.id, newRole)
-                              : undefined
-                          }
-                          onRemoveFromOrg={
-                            canManageMembership ? () => handleRemoveUserFromOrg(user.id) : undefined
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1087,7 +1098,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
           )}
 
           {currentTab === 'invitations' && (
-            <div className="card">
+            <>
               <TabSearch
                 query={searchTerm}
                 onQueryChange={setSearchTerm}
@@ -1095,78 +1106,79 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                 matched={filteredInvitations.length}
                 total={activeInvitations.length}
               />
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h4>{t('orgConsole.invitation.manageTitle')}</h4>
-                </div>
-              </div>
-              <div className="card-body">
-                <div className="mb-4">
-                  <h5>{t('orgConsole.invitation.sendTitle')}</h5>
-                  <form onSubmit={handleSendInvitation} noValidate>
-                    <FormErrorSummary errors={inviteRules.summary} />
-                    <div className="row">
-                      <div className="col-md-8">
-                        <Field
-                          id={inviteRules.idFor('email')}
-                          label={t('orgConsole.invitation.email')}
-                          error={inviteRules.errors.email}
-                        >
-                          {aria => (
-                            <input
-                              {...aria}
-                              type="email"
-                              className="form-control"
-                              value={inviteForm.email}
-                              onChange={e =>
-                                setInviteForm(previous => ({ ...previous, email: e.target.value }))
-                              }
-                              onBlur={() => inviteRules.onBlur('email')}
-                            />
-                          )}
-                        </Field>
-                      </div>
-                      <div className="col-md-4">
-                        <Field
-                          id={inviteRules.idFor('invite_role')}
-                          label={t('orgConsole.invitation.assignRole')}
-                          error={inviteRules.errors.invite_role}
-                        >
-                          {aria => (
-                            <select
-                              {...aria}
-                              className="form-select"
-                              value={inviteForm.invite_role}
-                              onChange={e =>
-                                setInviteForm(previous => ({
-                                  ...previous,
-                                  invite_role: e.target.value,
-                                }))
-                              }
-                              onBlur={() => inviteRules.onBlur('invite_role')}
-                            >
-                              <option value="member">{t('roles.member')}</option>
-                              {canManageRoles && <option value="admin">{t('roles.admin')}</option>}
-                            </select>
-                          )}
-                        </Field>
-                      </div>
+              <SectionCard
+                icon={<FaEnvelopeOpenText aria-hidden />}
+                title={t('orgConsole.invitation.sendTitle')}
+                className="mb-4"
+                folded={folds.folded('invite')}
+                onFold={() => folds.toggle('invite')}
+              >
+                <form onSubmit={handleSendInvitation} noValidate>
+                  <FormErrorSummary errors={inviteRules.summary} />
+                  <div className="row">
+                    <div className="col-md-8">
+                      <Field
+                        id={inviteRules.idFor('email')}
+                        label={t('orgConsole.invitation.email')}
+                        error={inviteRules.errors.email}
+                      >
+                        {aria => (
+                          <input
+                            {...aria}
+                            type="email"
+                            className="form-control"
+                            value={inviteForm.email}
+                            onChange={e =>
+                              setInviteForm(previous => ({ ...previous, email: e.target.value }))
+                            }
+                            onBlur={() => inviteRules.onBlur('email')}
+                          />
+                        )}
+                      </Field>
                     </div>
-                    <button type="submit" className="btn btn-primary mt-2">
-                      {t('orgConsole.invitation.sendButton')}
-                    </button>
-                  </form>
-                </div>
-
-                <h5>{t('orgConsole.invitation.activeTitle')}</h5>
-                <InvitationsTable
-                  invitations={filteredInvitations}
-                  emptyText={emptyTextFor(t, searchTerm, 'orgConsole.invitation.noActive')}
-                  orgIdpLink={orgIdpLink}
-                  onDelete={handleDeleteClick}
-                />
-              </div>
-            </div>
+                    <div className="col-md-4">
+                      <Field
+                        id={inviteRules.idFor('invite_role')}
+                        label={t('orgConsole.invitation.assignRole')}
+                        error={inviteRules.errors.invite_role}
+                      >
+                        {aria => (
+                          <select
+                            {...aria}
+                            className="form-select"
+                            value={inviteForm.invite_role}
+                            onChange={e =>
+                              setInviteForm(previous => ({
+                                ...previous,
+                                invite_role: e.target.value,
+                              }))
+                            }
+                            onBlur={() => inviteRules.onBlur('invite_role')}
+                          >
+                            <option value="member">{t('roles.member')}</option>
+                            {canManageRoles && <option value="admin">{t('roles.admin')}</option>}
+                          </select>
+                        )}
+                      </Field>
+                    </div>
+                  </div>
+                  <button type="submit" className="btn btn-primary mt-2">
+                    {t('orgConsole.invitation.sendButton')}
+                  </button>
+                </form>
+              </SectionCard>
+              <SectionHeading
+                icon={<FaEnvelopeOpenText aria-hidden />}
+                title={t('orgConsole.invitation.activeTitle')}
+                badge={<span className="badge bg-secondary">{activeInvitations.length}</span>}
+              />
+              <InvitationsTable
+                invitations={filteredInvitations}
+                emptyText={emptyTextFor(t, searchTerm, 'orgConsole.invitation.noActive')}
+                orgIdpLink={orgIdpLink}
+                onDelete={handleDeleteClick}
+              />
+            </>
           )}
         </div>
       )}

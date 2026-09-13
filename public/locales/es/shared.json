@@ -144,7 +144,8 @@
       "personName": "Introduce {{label}} empezando por una letra, con letras, espacios, puntos, apóstrofos y guiones.",
       "iconName": "Usa solo letras minúsculas, dígitos, espacios y guiones en {{label}}, hasta 64 caracteres.",
       "languageTag": "Introduce {{label}} como una etiqueta de idioma, como es o es-MX.",
-      "timezone": "Introduce {{label}} como una zona horaria, como America/Chicago o UTC."
+      "timezone": "Introduce {{label}} como una zona horaria, como America/Chicago o UTC.",
+      "region": "Introduce {{label}} como códigos de país de dos letras o uno de EU, EEA y UK."
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
@@ -383,6 +384,7 @@
         "90": "90 días",
         "365": "365 días"
       },
+      "createTitle": "Nueva cuenta de servicio",
       "createButton": "Crear Cuenta de Servicio",
       "organization": "Organización",
       "role": "Rol",
@@ -924,6 +926,7 @@
       "placeholders": "Marcadores:",
       "field": {
         "name": "Nombre",
+        "regions": "Regiones",
         "displayName": "Nombre visible",
         "icon": "Icono",
         "version": "Versión",
@@ -937,6 +940,12 @@
         "client": "Cliente (aplicaciones OAuth)",
         "site": "Sitio (registro)",
         "both": "Ambos"
+      },
+      "region": {
+        "default": "Predeterminada",
+        "eu": "Unión Europea",
+        "eea": "Espacio Económico Europeo",
+        "uk": "Reino Unido"
       }
     },
     "config": {
@@ -2233,6 +2242,7 @@
   },
   "organizations": {
     "title": "Organizaciones",
+    "memberships": "Tus organizaciones",
     "create": "Crear un equipo",
     "createButton": "Crear",
     "created": "Organización creada.",

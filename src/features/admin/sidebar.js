@@ -18,7 +18,9 @@ const isAdmin = account =>
  * Configuration entry is the plain row while `status.config` names one
  * file and the configuration tree of identity contract decision 122, one
  * Configuration node with one child per file over the shared
- * `useConfigTree` fed the adapter's `config`, while it names more;
+ * `useConfigTree` fed the adapter's `config` and the System heading's
+ * key, answered as the tree's `labelKey` (decision 135), while it names
+ * more;
  * nothing when the adapter carries none, and never a branch on the host's
  * role.
  *
@@ -61,7 +63,7 @@ export const sidebar = (status, account, admin) => {
   if (items.length === 0 && !configTree) {
     return [];
   }
-  const useTree = () => useConfigTree(admin.config);
+  const useTree = () => useConfigTree(admin.config, 'admin.sidebar.system');
   return [
     {
       key: 'admin',

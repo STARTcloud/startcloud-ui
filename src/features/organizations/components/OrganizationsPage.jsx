@@ -2,16 +2,19 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding } from 'react-icons/fa6';
+import { FaBuilding, FaPlus } from 'react-icons/fa6';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
+import SectionCard from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
@@ -45,11 +48,11 @@ const membershipShape = PropTypes.shape({
 const CreateForm = ({ value, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
   return (
-    <form onSubmit={onSubmit} noValidate className="flex-grow-1">
+    <form onSubmit={onSubmit} noValidate>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('name')}
-        label={t('organizations.create')}
+        label={t('organizations.name')}
         error={rules.errors.name || ''}
         className="mb-0"
       >
@@ -239,11 +242,13 @@ MembershipCards.propTypes = {
 
 /**
  * The organizations page of the identity contract at `/user/organizations`:
- * Create a team, a name required, while the answer says
- * `organizations_enabled`, beside a Find an organization link to the
- * directory at `/organizations/discover` while the host advertises
- * `discover`, no join-by-code form, then the memberships under the pages
- * contract's one view toggle, a row or a card per membership with its
+ * Create a team, a name required, in a `SectionCard` whose fold lives
+ * under `table_prefs_organizations`, while the answer says
+ * `organizations_enabled`, a Find an organization link to the directory
+ * at `/organizations/discover` beside the view toggle while the host
+ * advertises `discover`, no join-by-code form, then the memberships as a
+ * glass section under a `SectionHeading` and the pages contract's one
+ * view toggle, a row or a card per membership with its
  * badges, the person's role, Make primary, the invite code with Regenerate
  * while the person can manage it, and View or Manage, which makes that
  * organization the active one under `activeOrgKey` and opens the shared
@@ -261,6 +266,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const [data, setData] = useState(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState(storedView);
+  const folds = useFolds(PREFS_KEY);
   const [query, setQuery] = useState('');
   const [createForm, setCreateForm] = useState({ name: '' });
   const createRules = useFormRules({
@@ -387,23 +393,38 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
     <div className="list">
       <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
         <h3 className="mb-0">{t('organizations.title')}</h3>
-        <ViewToggle view={view} onChange={changeView} />
+        <div className="d-flex align-items-center gap-2">
+          {hasFeature(status, 'discover') ? (
+            <Link
+              to="/organizations/discover"
+              className="btn btn-sm btn-outline-primary text-nowrap"
+            >
+              {t('organizations.find')}
+            </Link>
+          ) : null}
+          <ViewToggle view={view} onChange={changeView} />
+        </div>
       </div>
-      <div className="d-flex flex-wrap align-items-end gap-3 mb-3">
-        {data.organizations_enabled ? (
+      {data.organizations_enabled ? (
+        <SectionCard
+          icon={<FaPlus aria-hidden />}
+          title={t('organizations.create')}
+          folded={folds.folded('create')}
+          onFold={() => folds.toggle('create')}
+        >
           <CreateForm
             value={createForm.name}
             rules={createRules}
             onChange={name => setCreateForm({ name })}
             onSubmit={create}
           />
-        ) : null}
-        {hasFeature(status, 'discover') ? (
-          <Link to="/organizations/discover" className="btn btn-outline-primary text-nowrap">
-            {t('organizations.find')}
-          </Link>
-        ) : null}
-      </div>
+        </SectionCard>
+      ) : null}
+      <SectionHeading
+        icon={<FaBuilding aria-hidden />}
+        title={t('organizations.memberships')}
+        badge={<span className="badge bg-secondary">{data.organizations.length}</span>}
+      />
       {view === 'cards' ? (
         <MembershipCards
           organizations={shown}

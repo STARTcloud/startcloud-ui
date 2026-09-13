@@ -119,6 +119,7 @@ const RULES = {
     icon: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
     languageTag: { type: 'string', pattern: '^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$', maxLength: 10 },
     timezone: { type: 'string', pattern: '^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$' },
+    region: { type: 'string', pattern: '^[A-Z]{2}$|^(EU|EEA|UK)$' },
   },
   forms: {
     password: {
@@ -141,6 +142,7 @@ const RULES = {
       required: ['name', 'friendly_name', 'version', 'type', 'content'],
       properties: {
         name: { $ref: '#/$defs/slug', unique: 'global' },
+        regions: { type: 'array', items: { $ref: '#/$defs/region' } },
         friendly_name: { type: 'string', minLength: 1, maxLength: 255 },
         icon: { $ref: '#/$defs/icon' },
         version: { type: 'string', minLength: 1, maxLength: 32 },
@@ -216,37 +218,29 @@ const BACKUP_CODES = [
 ];
 
 const TERMS_STATE = {
-  name: 'conductor-msa',
-  label: 'Master Services Agreement',
-  version: '2.1',
-  step: 1,
+  name: 'hcl-mla',
+  label: 'HCL Master License Agreement',
+  version: '2025.3',
+  region: null,
+  step: 2,
   total: 2,
-  client_name: 'Conductor',
+  client_name: 'SwitchBoard Desktop',
   collecting: true,
-  content_html: '<p>This Master Services Agreement governs the use of the Conductor platform.</p>',
+  content_html:
+    '<h1>HCL Master License Agreement</h1>\n<p>Version 2025.3, effective September 12, 2026.</p>\n<p>This Master License Agreement is entered into between HCL Technologies Limited and the licensee named below for the use of HCL Nomad through SwitchBoard Desktop, provided by STARTcloud.</p>\n<p><strong>Licensee:</strong> Mark Gilbert (mark@example.com)</p>\n<p><strong>Telephone:</strong> <span class="tos-blank" data-tos-field="phone_number">________</span></p>\n<p><strong>Address:</strong> <span class="tos-blank" data-tos-field="address">________</span></p>\n',
   content_middle_html:
-    '<p>I, <span class="tos-blank" data-tos-field="full_name">________</span>, agree to the terms above on behalf of <span class="tos-blank" data-tos-field="country">________</span>.</p>',
-  content_bottom_html: '<p>By clicking I Agree &amp; Continue you accept this agreement.</p>',
+    '<h2>1. Grant of license</h2><p>HCL grants the licensee a non-exclusive, non-transferable license to use HCL Nomad through SwitchBoard Desktop for the term of the subscription.</p><h2>2. Restrictions</h2><p>The licensee shall not sublicense, resell or reverse engineer the software.</p>',
+  content_bottom_html:
+    '<p>By accepting, Mark Gilbert confirms the details above are accurate and agrees to be bound by this agreement on behalf of the licensee.</p>',
   fields: [
     {
-      param: 'first_name',
-      label: 'First name',
-      autocomplete: 'given-name',
+      param: 'phone_number',
+      label: 'Phone number',
+      autocomplete: 'tel',
       group: 'identity',
       control: 'text',
-      span: 'half',
+      span: 'full',
       required: true,
-      value: 'Mark',
-    },
-    {
-      param: 'last_name',
-      label: 'Last name',
-      autocomplete: 'family-name',
-      group: 'identity',
-      control: 'text',
-      span: 'half',
-      required: true,
-      value: 'Gilbert',
     },
     {
       param: 'country',
@@ -257,13 +251,115 @@ const TERMS_STATE = {
       span: 'half',
       required: true,
     },
+    {
+      param: 'state',
+      label: 'State/Region',
+      autocomplete: 'address-level1',
+      group: 'address',
+      control: 'state',
+      span: 'half',
+      required: true,
+    },
+    {
+      param: 'city',
+      label: 'City',
+      autocomplete: 'address-level2',
+      group: 'address',
+      control: 'text',
+      span: 'half',
+      required: true,
+    },
+    {
+      param: 'postal_code',
+      label: 'Postal/Zip code',
+      autocomplete: 'postal-code',
+      group: 'address',
+      control: 'text',
+      span: 'half',
+      required: true,
+    },
+    {
+      param: 'address_line_1',
+      label: 'Street address',
+      autocomplete: 'address-line1',
+      group: 'address',
+      control: 'text',
+      span: 'full',
+      required: true,
+    },
+    {
+      param: 'address_line_2',
+      label: 'Street address 2 (optional)',
+      autocomplete: 'address-line2',
+      group: 'address',
+      control: 'text',
+      span: 'full',
+      required: false,
+    },
   ],
   identity_group_title: 'Phone verification',
 };
 
-const POLICIES = {
-  privacy: {
+const EU_COUNTRIES = [
+  'AT',
+  'BE',
+  'BG',
+  'HR',
+  'CY',
+  'CZ',
+  'DK',
+  'EE',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'HU',
+  'IE',
+  'IT',
+  'LV',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'PL',
+  'PT',
+  'RO',
+  'SK',
+  'SI',
+  'ES',
+  'SE',
+];
+
+const REGION_SETS = {
+  EU: EU_COUNTRIES,
+  EEA: [...EU_COUNTRIES, 'IS', 'LI', 'NO'],
+  UK: ['GB'],
+};
+
+const regionsOf = row => (Array.isArray(row.regions) ? row.regions : []);
+
+const countriesOf = regions => new Set(regions.flatMap(region => REGION_SETS[region] || [region]));
+
+const covers = (regions, region) => regions.includes(region) || countriesOf(regions).has(region);
+
+const overlaps = (left, right) => {
+  const claimed = countriesOf(left);
+  return [...countriesOf(right)].some(code => claimed.has(code));
+};
+
+const policyAnswer = ({ name, label, version, created_at, updated_at, content_html }) => ({
+  name,
+  label,
+  version,
+  created_at,
+  updated_at,
+  content_html,
+});
+
+const POLICIES = [
+  {
     name: 'privacy',
+    regions: [],
     label: 'Privacy Policy',
     version: '3.0',
     created_at: '2025-01-09T00:00:00Z',
@@ -271,15 +367,26 @@ const POLICIES = {
     content_html:
       '<h2>1. Information We Collect</h2><p>We collect information you provide directly to us.</p>',
   },
-  terms: {
+  {
+    name: 'privacy',
+    regions: ['EEA', 'UK'],
+    label: 'Privacy Policy',
+    version: '3.0',
+    created_at: '2025-01-09T00:00:00Z',
+    updated_at: '2026-08-14T00:00:00Z',
+    content_html:
+      '<h2>1. Information We Collect</h2><p>We collect information you provide directly to us, as the GDPR and the UK GDPR allow.</p>',
+  },
+  {
     name: 'terms',
+    regions: [],
     label: 'Terms of Service',
     version: '2.0',
     created_at: '2025-01-09T00:00:00Z',
     updated_at: '2026-01-09T00:00:00Z',
     content_html: '<h2>Terms</h2><p>These terms govern your use of the service.</p>',
   },
-};
+];
 
 const SCOPES = [
   { id: 'openid', label: 'openid', description: 'Authenticate your identity' },
@@ -1627,9 +1734,18 @@ publicRoute('GET', '/api/rules', () => ok(RULES));
 publicRoute('GET', '/api/auth/methods', () => ok(METHODS));
 publicRoute('GET', '/api/public/site/branding', () => ok(BRANDING));
 publicRoute('GET', '/api/public/geo/country', () => ok({ country_code: 'US' }));
+const resolveVariant = (variants, forced) => {
+  const region = forced || state.profile.address.country_code || 'US';
+  return (
+    variants.find(row => covers(regionsOf(row), region)) ||
+    variants.find(row => regionsOf(row).length === 0)
+  );
+};
+
 publicRoute('GET', '/api/policies/:name', ctx => {
-  const policy = POLICIES[ctx.params.name];
-  return policy ? ok(policy) : problem(404, 'not_found');
+  const variants = POLICIES.filter(row => row.name === ctx.params.name);
+  const policy = resolveVariant(variants, ctx.url.searchParams.get('region') || '');
+  return policy ? ok(policyAnswer(policy)) : problem(404, 'not_found');
 });
 publicRoute('POST', '/api/client-errors', ctx => {
   if (!Array.isArray(ctx.body.entries)) {
@@ -2584,13 +2700,35 @@ adminRoute('POST', '/api/admin/rate-limit/:user_id/ban', () => noContent());
 adminRoute('POST', '/api/admin/rate-limit/:user_id/unban', () => noContent());
 adminRoute('GET', '/api/admin/terms', () => ok(state.terms));
 adminRoute('GET', '/api/admin/terms/placeholders', () => ok(PLACEHOLDERS));
-adminRoute('POST', '/api/admin/terms', ctx => {
-  if (state.terms.some(row => row.name === ctx.body.name)) {
-    return problem(409, 'unique', {
-      errors: [{ pointer: '/name', rule: 'unique', params: { scope: 'global' } }],
-    });
+const uniqueProblem = (pointer, scope) =>
+  problem(409, 'unique', { errors: [{ pointer, rule: 'unique', params: { scope } }] });
+
+const variantConflict = (name, regions, self = null) => {
+  const siblings = state.terms.filter(row => row.name === name && row !== self);
+  if (regions.length === 0 && siblings.some(row => regionsOf(row).length === 0)) {
+    return uniqueProblem('/name', 'global');
   }
-  const row = { created_by: 'mark@m4kr.net', updated_at: NOW(), ...ctx.body };
+  if (siblings.some(row => overlaps(regionsOf(row), regions))) {
+    return uniqueProblem('/regions', name);
+  }
+  return null;
+};
+
+const termVariant = ctx => {
+  const region = ctx.url.searchParams.get('region') || '';
+  const variants = state.terms.filter(row => row.name === ctx.params.name);
+  return region
+    ? variants.find(row => regionsOf(row).includes(region))
+    : variants.find(row => regionsOf(row).length === 0);
+};
+
+adminRoute('POST', '/api/admin/terms', ctx => {
+  const regions = regionsOf(ctx.body);
+  const refused = variantConflict(ctx.body.name, regions);
+  if (refused) {
+    return refused;
+  }
+  const row = { created_by: 'mark@m4kr.net', updated_at: NOW(), ...ctx.body, regions };
   state.terms.push(row);
   return ok(row, 201);
 });
@@ -2606,15 +2744,24 @@ adminRoute('PUT', '/api/admin/terms/order', ctx => {
   return noContent();
 });
 adminRoute('PATCH', '/api/admin/terms/:name', ctx => {
-  const row = state.terms.find(term => term.name === ctx.params.name);
+  const row = termVariant(ctx);
   if (!row) {
     return problem(404, 'not_found');
   }
-  Object.assign(row, ctx.body, { updated_at: NOW() });
+  const regions = ctx.body.regions === undefined ? regionsOf(row) : regionsOf(ctx.body);
+  const refused = variantConflict(row.name, regions, row);
+  if (refused) {
+    return refused;
+  }
+  Object.assign(row, ctx.body, { regions, updated_at: NOW() });
   return ok(row);
 });
 adminRoute('DELETE', '/api/admin/terms/:name', ctx => {
-  state.terms = state.terms.filter(term => term.name !== ctx.params.name);
+  const row = termVariant(ctx);
+  if (!row) {
+    return problem(404, 'not_found');
+  }
+  state.terms = state.terms.filter(term => term !== row);
   return noContent();
 });
 adminRoute('GET', '/api/admin/dcr/clients', () => ok([]));
@@ -2854,7 +3001,13 @@ const handle = async (req, res) => {
  * `GET /api/user/applications` from the fixtures, and
  * `GET /api/user/integrations` answers `{}` with no `services`, so the
  * Integrations entry and page stay absent as on an issuer that connects
- * no third-party service.
+ * no third-party service. Terms templates carry `regions` (decision 133):
+ * `GET /api/policies/{name}` resolves the variant by `?region=`, else the
+ * profile's address country, else `US`, then the default; the admin terms
+ * routes answer one row per variant, `POST` refuses `409 unique` at
+ * `/name` for a second default and at `/regions` when the sets overlap,
+ * and `PATCH` and `DELETE` address the default unless `?region=` names one
+ * the variant carries.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,

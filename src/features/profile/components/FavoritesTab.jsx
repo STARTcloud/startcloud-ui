@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaStar } from 'react-icons/fa6';
+import { FaPuzzlePiece, FaStar } from 'react-icons/fa6';
 
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SortableList from '../../../components/common/SortableList';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -118,7 +119,9 @@ AddButton.propTypes = {
  * connected applications not yet favorited with Add; the icon chain is
  * `icon_url`, the favicon of `home_url`, the star, every URL drawn only
  * with the `https:` scheme; the navbar search bound with a query over the
- * favorites and the available applications by label and client id.
+ * favorites and the available applications by label and client id; both
+ * lists are glass sections of the pages contract, a `SectionHeading` over
+ * the rows on the page's ground.
  */
 const FavoritesTab = ({ account }) => {
   const { t } = useTranslation();
@@ -188,7 +191,7 @@ const FavoritesTab = ({ account }) => {
 
   return (
     <div className="tab-pane fade show active">
-      <h5>{t('profile.favorites.title')}</h5>
+      <SectionHeading icon={<FaStar aria-hidden />} title={t('profile.favorites.title')} />
       {shownFavorites.length === 0 ? (
         <p className="text-body-secondary small">
           {needle ? t('pages.noMatches') : t('profile.favorites.none')}
@@ -202,7 +205,11 @@ const FavoritesTab = ({ account }) => {
           renderItem={(app, handle) => <FavoriteRow app={app} handle={handle} onRemove={remove} />}
         />
       )}
-      <h5>{t('profile.favorites.available')}</h5>
+      <SectionHeading
+        icon={<FaPuzzlePiece aria-hidden />}
+        title={t('profile.favorites.available')}
+        className="mb-3 mt-4"
+      />
       <MethodList empty={needle ? t('pages.noMatches') : t('profile.favorites.noneAvailable')}>
         {shownAvailable.map(app => (
           <MethodRow

@@ -144,7 +144,8 @@
       "personName": "Enter {{label}} starting with a letter, using letters, spaces, periods, apostrophes and hyphens.",
       "iconName": "Use only lowercase letters, digits, spaces and dashes in {{label}}, up to 64 characters.",
       "languageTag": "Enter {{label}} as a language tag such as en or es-MX.",
-      "timezone": "Enter {{label}} as a time zone such as America/Chicago or UTC."
+      "timezone": "Enter {{label}} as a time zone such as America/Chicago or UTC.",
+      "region": "Enter {{label}} as two-letter country codes or one of EU, EEA and UK."
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",
@@ -383,6 +384,7 @@
         "90": "90 days",
         "365": "365 days"
       },
+      "createTitle": "New service account",
       "createButton": "Create Service Account",
       "organization": "Organization",
       "role": "Role",
@@ -924,6 +926,7 @@
       "placeholders": "Placeholders:",
       "field": {
         "name": "Name",
+        "regions": "Regions",
         "displayName": "Display name",
         "icon": "Icon",
         "version": "Version",
@@ -937,6 +940,12 @@
         "client": "Client (OAuth apps)",
         "site": "Site (Registration)",
         "both": "Both"
+      },
+      "region": {
+        "default": "Default",
+        "eu": "European Union",
+        "eea": "European Economic Area",
+        "uk": "United Kingdom"
       }
     },
     "config": {
@@ -2233,6 +2242,7 @@
   },
   "organizations": {
     "title": "Organizations",
+    "memberships": "Your organizations",
     "create": "Create a team",
     "createButton": "Create",
     "created": "Organization created.",

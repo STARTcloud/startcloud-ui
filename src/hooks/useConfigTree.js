@@ -32,34 +32,37 @@ export const configNamesOf = status =>
 
 /**
  * The sidebar tree of the configuration files (identity contract decision
- * 122): one Configuration node at `/admin/config` whose children are one
+ * 122): one Configuration node without `to`, folding on click and never
+ * navigating, whose children are one
  * node per name in `status.config`, in list order, labelled by the
  * schema's root `title` once `GET /api/config/<name>/schema` has answered
  * and by the name when it does not, each a deep link to
  * `/admin/config/<name>`; the schemas come through the caller's admin
  * `config` adapter's cached `schema`, so the page and the tree share one
  * fetch, the adapter handed in because the shared layer imports no
- * feature's api.
+ * feature's api; the answer carries the caller's `labelKey`, the section
+ * heading the sidebar draws above the tree (decision 135).
  *
  * @param {{ schema: Function }} config - The admin adapter's `config` member
- * @returns {{ nodes: Array<Object> }} The tree the sidebar draws
+ * @param {string} labelKey - The heading key drawn above the tree
+ * @returns {{ nodes: Array<Object>, labelKey: string }} The tree the sidebar draws
  */
-export const useConfigTree = config => {
+export const useConfigTree = (config, labelKey) => {
   const { t } = useTranslation();
   const status = useStatus();
   const configNames = configNamesOf(status);
   return useMemo(
     () => ({
+      labelKey,
       nodes: [
         {
           key: 'config',
           icon: FaGear,
           label: t('admin.config.title'),
-          to: '/admin/config',
           children: () => fileNodes(config, configNames),
         },
       ],
     }),
-    [t, config, configNames]
+    [t, config, configNames, labelKey]
   );
 };

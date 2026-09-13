@@ -1,13 +1,25 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  FaBuilding,
+  FaEnvelope,
+  FaKey,
+  FaLock,
+  FaUser,
+  FaUserPlus,
+  FaUserXmark,
+} from 'react-icons/fa6';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import SectionCard from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
@@ -49,6 +61,7 @@ const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
 
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
+const PREFS_KEY = 'table_prefs_profile';
 
 const SEARCH_PLACEHOLDER_KEYS = {
   organizations: 'profile.search.organizations',
@@ -156,20 +169,27 @@ const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
 
 /**
  * The profile page every estate app with accounts of its own draws the same
- * way: the avatar card with the verification notice, then Profile (display
- * name and the Gravatar facts), Organizations (memberships, make primary,
- * leave, pending join requests), Security (password, email, delete account,
- * only while the host advertises `local-accounts` and the account is not
- * signed in through the identity provider, whose accounts get a link to
- * manage themselves at the provider instead) and Service accounts
- * (create, the one-time token, select and delete), the Organizations and
- * Service accounts lists searched from the navbar, every call through the
- * app's `account` adapter and the session's own `reload` and
- * `signOutEverywhere`; `admin` is the app's global-admin flag, the one
- * that offers the superadmin role on a new service account; `user`,
- * `loaded` and `oidc` are the session state's, the page drawing nothing
- * until `loaded` and sending a visitor to sign in only once `loaded` says
- * there is no session, because the cached account is a paint hint.
+ * way: the avatar card as the page heading, the verification notice, the
+ * tab strip, then the active tab on the page's ground under the pages
+ * contract's frame rule, every fold kept under `table_prefs_profile`:
+ * Profile (the display name form and the Gravatar facts in one
+ * `SectionCard`), Organizations (the memberships with make primary and
+ * leave, and the pending join requests, two glass lists under a
+ * `SectionHeading`), Security (the password, email and delete-account
+ * forms as three `SectionCard`s, only while the host advertises
+ * `local-accounts` and the account is not signed in through the identity
+ * provider, whose accounts get a link to manage themselves at the provider
+ * instead) and Service accounts (the create form in a `SectionCard`, the
+ * one-time token notice, then the keys grouped per organization as a glass
+ * list under a `SectionHeading` carrying select all and delete selected),
+ * the Organizations and Service accounts lists searched from the navbar,
+ * every call through the app's `account` adapter and the session's own
+ * `reload` and `signOutEverywhere`; `admin` is the app's global-admin
+ * flag, the one that offers the superadmin role on a new service account;
+ * `user`, `loaded` and `oidc` are the session state's, the page drawing
+ * nothing until `loaded` and sending a visitor to sign in only once
+ * `loaded` says there is no session, because the cached account is a paint
+ * hint.
  */
 const BackendProfilePage = ({
   session,
@@ -186,6 +206,7 @@ const BackendProfilePage = ({
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const folds = useFolds(PREFS_KEY);
   useEffect(() => {
     document.title = t('profile.pageTitle');
   }, [t]);
@@ -656,160 +677,186 @@ const BackendProfilePage = ({
 
   const renderProfileTab = () => (
     <div className="tab-pane fade show active">
-      <form onSubmit={handleDisplayNameChange} className="mb-4" noValidate>
-        <div className="col-md-4">
-          <FormErrorSummary errors={nameRules.summary} />
-          <Field
-            id={nameRules.idFor('name')}
-            label={<strong>{t('profile.fields.displayName')}</strong>}
-            hint={t('profile.fields.displayNameHint')}
-            error={nameRules.errors.name || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={nameForm.name}
-                onChange={event => setNameForm({ name: event.target.value })}
-                onBlur={() => nameRules.onBlur('name')}
-                placeholder={currentUser.username}
-              />
-            )}
-          </Field>
-          <button className="btn btn-primary" type="submit">
-            {t('profile.buttons.save')}
-          </button>
-        </div>
-      </form>
-      <p>
-        <strong>{t('profile.fields.fullName')}:</strong> {gravatarProfile.first_name}{' '}
-        {gravatarProfile.last_name}
-      </p>
-      <p>
-        <strong>{t('profile.fields.location')}:</strong>{' '}
-        {gravatarProfile.location || t('profile.noLocation')}
-      </p>
-      <p>
-        <strong>{t('profile.fields.email')}:</strong> {currentUser.email}
-      </p>
-      <p>
-        <strong>{t('profile.fields.organization')}:</strong> {currentUser.organization}
-      </p>
-      <p>
-        <strong>{t('profile.fields.roles')}:</strong>{' '}
-        {currentUser.roles ? currentUser.roles.join(', ') : t('profile.noRoles')}
-      </p>
-      <p>
-        <strong>{t('profile.fields.profileUrl')}:</strong>{' '}
-        <a href={gravatarProfile.profile_url} target="_blank" rel="noopener noreferrer">
-          {gravatarProfile.profile_url}
-        </a>
-      </p>
-      <p>
-        <strong>{t('profile.fields.verifiedAccounts')}:</strong>{' '}
-        {gravatarProfile.number_verified_accounts}
-      </p>
-      <p>
-        <strong>{t('profile.fields.registrationDate')}:</strong>{' '}
-        {new Date(gravatarProfile.registration_date).toLocaleDateString()}
-      </p>
-      <p>
-        <strong>{t('profile.fields.emailHash')}:</strong> {currentUser.emailHash}
-      </p>
-      <p>
-        <strong>{t('profile.fields.userId')}:</strong> {currentUser.id}
-      </p>
-      {currentUser.accessToken ? (
+      <SectionCard
+        icon={<FaUser aria-hidden />}
+        title={t('profile.tabs.profile')}
+        className="mb-0"
+        folded={folds.folded('profile')}
+        onFold={() => folds.toggle('profile')}
+      >
+        <form onSubmit={handleDisplayNameChange} className="mb-4" noValidate>
+          <div className="col-md-4">
+            <FormErrorSummary errors={nameRules.summary} />
+            <Field
+              id={nameRules.idFor('name')}
+              label={<strong>{t('profile.fields.displayName')}</strong>}
+              hint={t('profile.fields.displayNameHint')}
+              error={nameRules.errors.name || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  value={nameForm.name}
+                  onChange={event => setNameForm({ name: event.target.value })}
+                  onBlur={() => nameRules.onBlur('name')}
+                  placeholder={currentUser.username}
+                />
+              )}
+            </Field>
+            <button className="btn btn-primary" type="submit">
+              {t('profile.buttons.save')}
+            </button>
+          </div>
+        </form>
         <p>
-          <strong>{t('profile.fields.accessToken')}:</strong>{' '}
-          {currentUser.accessToken.substring(0, 20)}...
+          <strong>{t('profile.fields.fullName')}:</strong> {gravatarProfile.first_name}{' '}
+          {gravatarProfile.last_name}
         </p>
-      ) : null}
+        <p>
+          <strong>{t('profile.fields.location')}:</strong>{' '}
+          {gravatarProfile.location || t('profile.noLocation')}
+        </p>
+        <p>
+          <strong>{t('profile.fields.email')}:</strong> {currentUser.email}
+        </p>
+        <p>
+          <strong>{t('profile.fields.organization')}:</strong> {currentUser.organization}
+        </p>
+        <p>
+          <strong>{t('profile.fields.roles')}:</strong>{' '}
+          {currentUser.roles ? currentUser.roles.join(', ') : t('profile.noRoles')}
+        </p>
+        <p>
+          <strong>{t('profile.fields.profileUrl')}:</strong>{' '}
+          <a href={gravatarProfile.profile_url} target="_blank" rel="noopener noreferrer">
+            {gravatarProfile.profile_url}
+          </a>
+        </p>
+        <p>
+          <strong>{t('profile.fields.verifiedAccounts')}:</strong>{' '}
+          {gravatarProfile.number_verified_accounts}
+        </p>
+        <p>
+          <strong>{t('profile.fields.registrationDate')}:</strong>{' '}
+          {new Date(gravatarProfile.registration_date).toLocaleDateString()}
+        </p>
+        <p>
+          <strong>{t('profile.fields.emailHash')}:</strong> {currentUser.emailHash}
+        </p>
+        <p className="mb-0">
+          <strong>{t('profile.fields.userId')}:</strong> {currentUser.id}
+        </p>
+        {currentUser.accessToken ? (
+          <p className="mt-3 mb-0">
+            <strong>{t('profile.fields.accessToken')}:</strong>{' '}
+            {currentUser.accessToken.substring(0, 20)}...
+          </p>
+        ) : null}
+      </SectionCard>
     </div>
   );
 
   const renderSecurityTab = () => (
     <div className="tab-pane fade show active">
-      <form onSubmit={handlePasswordChange} noValidate>
-        <h5>{t('profile.security.changePassword.title')}</h5>
-        <div className="col-md-3">
-          <FormErrorSummary errors={passwordRules.summary} />
-          <Field
-            id={passwordRules.idFor('password')}
-            label={t('profile.security.changePassword.newPasswordPlaceholder')}
-            hint={t('profile.security.password.hint', { count: passwordMinLength() })}
-            error={passwordRules.errors.password || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="password"
-                className="form-control"
-                autoComplete="new-password"
-                value={passwordForm.password}
-                onChange={e => setPasswordForm({ ...passwordForm, password: e.target.value })}
-                onBlur={() => passwordRules.onBlur('password')}
-              />
-            )}
-          </Field>
-          <Field
-            id={passwordRules.idFor('confirmPassword')}
-            label={t('profile.security.changePassword.confirmPasswordPlaceholder')}
-            error={passwordRules.errors.confirmPassword || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="password"
-                className="form-control"
-                autoComplete="new-password"
-                value={passwordForm.confirmPassword}
-                onChange={e =>
-                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                }
-                onBlur={() => passwordRules.onBlur('confirmPassword')}
-              />
-            )}
-          </Field>
-        </div>
-        <button className="btn btn-primary mb-3" type="submit">
-          {t('profile.security.changePassword.button')}
-        </button>
-      </form>
-      <form onSubmit={handleEmailChange} noValidate>
-        <h5>{t('profile.security.changeEmail.title')}</h5>
-        <div className="col-md-3">
-          <FormErrorSummary errors={emailRules.summary} />
-          <Field
-            id={emailRules.idFor('new_email')}
-            label={t('profile.security.changeEmail.newEmailPlaceholder')}
-            error={emailRules.errors.new_email || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="email"
-                className="form-control"
-                autoComplete="email"
-                value={emailForm.new_email}
-                onChange={e => setEmailForm({ new_email: e.target.value })}
-                onBlur={() => emailRules.onBlur('new_email')}
-              />
-            )}
-          </Field>
-        </div>
-        <button className="btn btn-primary mb-3" type="submit">
-          {t('profile.security.changeEmail.button')}
-        </button>
-      </form>
-      <div className="mt-3">
-        <h4>{t('profile.security.deleteAccount.title')}</h4>
+      <SectionCard
+        icon={<FaLock aria-hidden />}
+        title={t('profile.security.changePassword.title')}
+        folded={folds.folded('password')}
+        onFold={() => folds.toggle('password')}
+      >
+        <form onSubmit={handlePasswordChange} noValidate>
+          <div className="col-md-3">
+            <FormErrorSummary errors={passwordRules.summary} />
+            <Field
+              id={passwordRules.idFor('password')}
+              label={t('profile.security.changePassword.newPasswordPlaceholder')}
+              hint={t('profile.security.password.hint', { count: passwordMinLength() })}
+              error={passwordRules.errors.password || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="password"
+                  className="form-control"
+                  autoComplete="new-password"
+                  value={passwordForm.password}
+                  onChange={e => setPasswordForm({ ...passwordForm, password: e.target.value })}
+                  onBlur={() => passwordRules.onBlur('password')}
+                />
+              )}
+            </Field>
+            <Field
+              id={passwordRules.idFor('confirmPassword')}
+              label={t('profile.security.changePassword.confirmPasswordPlaceholder')}
+              error={passwordRules.errors.confirmPassword || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="password"
+                  className="form-control"
+                  autoComplete="new-password"
+                  value={passwordForm.confirmPassword}
+                  onChange={e =>
+                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                  }
+                  onBlur={() => passwordRules.onBlur('confirmPassword')}
+                />
+              )}
+            </Field>
+          </div>
+          <button className="btn btn-primary" type="submit">
+            {t('profile.security.changePassword.button')}
+          </button>
+        </form>
+      </SectionCard>
+      <SectionCard
+        icon={<FaEnvelope aria-hidden />}
+        title={t('profile.security.changeEmail.title')}
+        folded={folds.folded('email')}
+        onFold={() => folds.toggle('email')}
+      >
+        <form onSubmit={handleEmailChange} noValidate>
+          <div className="col-md-3">
+            <FormErrorSummary errors={emailRules.summary} />
+            <Field
+              id={emailRules.idFor('new_email')}
+              label={t('profile.security.changeEmail.newEmailPlaceholder')}
+              error={emailRules.errors.new_email || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="email"
+                  className="form-control"
+                  autoComplete="email"
+                  value={emailForm.new_email}
+                  onChange={e => setEmailForm({ new_email: e.target.value })}
+                  onBlur={() => emailRules.onBlur('new_email')}
+                />
+              )}
+            </Field>
+          </div>
+          <button className="btn btn-primary" type="submit">
+            {t('profile.security.changeEmail.button')}
+          </button>
+        </form>
+      </SectionCard>
+      <SectionCard
+        icon={<FaUserXmark aria-hidden />}
+        title={t('profile.security.deleteAccount.title')}
+        tone="danger"
+        className="mb-0"
+        folded={folds.folded('delete')}
+        onFold={() => folds.toggle('delete')}
+      >
         <p>{t('profile.security.deleteAccount.warning')}</p>
         <button type="button" className="btn btn-danger" onClick={openDeleteModal}>
           {t('profile.security.deleteAccount.button')}
         </button>
-      </div>
+      </SectionCard>
     </div>
   );
 
@@ -843,8 +890,6 @@ const BackendProfilePage = ({
 
   const renderOrganizationsTab = () => (
     <div className="tab-pane fade show active">
-      <h3>{t('profile.organizations.title')}</h3>
-
       {organizationsLoading ? (
         <div className="text-center">
           <div className="spinner-border text-primary" role="status">
@@ -853,231 +898,257 @@ const BackendProfilePage = ({
         </div>
       ) : (
         <>
-          <div className="card mb-4">
-            <div className="card-header">
-              <h5>{t('profile.organizations.belongToTitle')}</h5>
-            </div>
-            <div className="card-body">
-              {filteredOrganizations.length === 0 ? (
-                <div className="alert alert-info">{emptyOrganizationsText}</div>
-              ) : (
-                <ul className="list-group">
-                  {filteredOrganizations.map(org => {
-                    const orgName = org.name || org.organization?.name;
-                    const orgDesc = org.description || org.organization?.description;
-                    const isPrimary = !!org.isPrimary;
-                    const orgId = org.id || org.organization?.id;
+          <SectionHeading
+            icon={<FaBuilding aria-hidden />}
+            title={t('profile.organizations.belongToTitle')}
+            badge={<span className="badge bg-secondary">{userOrganizations.length}</span>}
+          />
+          {filteredOrganizations.length === 0 ? (
+            <div className="alert alert-info">{emptyOrganizationsText}</div>
+          ) : (
+            <ul className="list-group mb-4">
+              {filteredOrganizations.map(org => {
+                const orgName = org.name || org.organization?.name;
+                const orgDesc = org.description || org.organization?.description;
+                const isPrimary = !!org.isPrimary;
+                const orgId = org.id || org.organization?.id;
 
-                    return (
-                      <li key={orgId} className="list-group-item">
-                        <div className="d-flex justify-content-between align-items-center">
+                return (
+                  <li key={orgId} className="list-group-item">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="d-flex align-items-center">
                           <div>
-                            <div className="d-flex align-items-center">
-                              <div>
-                                <strong>{orgName}</strong>
-                                {isPrimary && (
-                                  <span className="badge bg-primary ms-2">
-                                    {t('profile.organizations.primary')}
-                                  </span>
-                                )}
-                                <br />
-                                {orgDesc && <small className="text-muted">{orgDesc}</small>}
-                                <br />
-                                <small className="text-muted">
-                                  {t('profile.organizations.joined')}:{' '}
-                                  {new Date(org.joinedAt).toLocaleDateString()}
-                                </small>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center">
-                            <span
-                              className={`badge ${ROLE_CLASSES[org.role] || 'bg-secondary'} me-3`}
-                            >
-                              {t(`roles.${org.role}`)}
-                            </span>
-                            {!isPrimary && !oidc && (
-                              <button
-                                type="button"
-                                className="btn btn-outline-primary btn-sm me-2"
-                                onClick={() => handleSetPrimaryOrganization(orgName)}
-                              >
-                                {t('profile.organizations.makePrimary')}
-                              </button>
+                            <strong>{orgName}</strong>
+                            {isPrimary && (
+                              <span className="badge bg-primary ms-2">
+                                {t('profile.organizations.primary')}
+                              </span>
                             )}
-                            {userOrganizations.length > 1 && (
-                              <button
-                                type="button"
-                                className="btn btn-outline-danger btn-sm"
-                                onClick={() => handleLeaveOrganization(orgName)}
-                              >
-                                {t('profile.buttons.leave')}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          {joinRequests.length > 0 && (
-            <div className="card">
-              <div className="card-header">
-                <h5>{t('profile.organizations.pendingRequestsTitle')}</h5>
-              </div>
-              <div className="card-body">
-                {filteredJoinRequests.length === 0 ? (
-                  <div className="alert alert-info mb-0">{t('pages.noMatches')}</div>
-                ) : (
-                  <ul className="list-group">
-                    {filteredJoinRequests.map(request => (
-                      <li key={request.id} className="list-group-item">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{request.organization.name}</strong>
                             <br />
-                            {request.organization.description && (
-                              <small className="text-muted">
-                                {request.organization.description}
-                              </small>
-                            )}
+                            {orgDesc && <small className="text-muted">{orgDesc}</small>}
                             <br />
                             <small className="text-muted">
-                              {t('profile.organizations.requested')}:{' '}
-                              {new Date(request.created_at).toLocaleDateString()}
+                              {t('profile.organizations.joined')}:{' '}
+                              {new Date(org.joinedAt).toLocaleDateString()}
                             </small>
                           </div>
-                          <div>
-                            <span className="badge bg-warning me-3">
-                              {t('pages.status.pending')}
-                            </span>
-                            <button
-                              type="button"
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() => handleCancelJoinRequest(request.id)}
-                            >
-                              {t('profile.buttons.cancel')}
-                            </button>
-                          </div>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <span className={`badge ${ROLE_CLASSES[org.role] || 'bg-secondary'} me-3`}>
+                          {t(`roles.${org.role}`)}
+                        </span>
+                        {!isPrimary && !oidc && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary btn-sm me-2"
+                            onClick={() => handleSetPrimaryOrganization(orgName)}
+                          >
+                            {t('profile.organizations.makePrimary')}
+                          </button>
+                        )}
+                        {userOrganizations.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleLeaveOrganization(orgName)}
+                          >
+                            {t('profile.buttons.leave')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {joinRequests.length > 0 && (
+            <>
+              <SectionHeading
+                icon={<FaUserPlus aria-hidden />}
+                title={t('profile.organizations.pendingRequestsTitle')}
+                badge={<span className="badge bg-secondary">{joinRequests.length}</span>}
+              />
+              {filteredJoinRequests.length === 0 ? (
+                <div className="alert alert-info mb-0">{t('pages.noMatches')}</div>
+              ) : (
+                <ul className="list-group">
+                  {filteredJoinRequests.map(request => (
+                    <li key={request.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{request.organization.name}</strong>
+                          <br />
+                          {request.organization.description && (
+                            <small className="text-muted">{request.organization.description}</small>
+                          )}
+                          <br />
+                          <small className="text-muted">
+                            {t('profile.organizations.requested')}:{' '}
+                            {new Date(request.created_at).toLocaleDateString()}
+                          </small>
+                        </div>
+                        <div>
+                          <span className="badge bg-warning me-3">{t('pages.status.pending')}</span>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={() => handleCancelJoinRequest(request.id)}
+                          >
+                            {t('profile.buttons.cancel')}
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </>
       )}
     </div>
   );
 
+  const serviceAccountListActions = (
+    <>
+      <div className="form-check">
+        <input
+          type="checkbox"
+          className="form-check-input"
+          id="selectAllServiceAccounts"
+          checked={allServiceAccountsSelected}
+          onChange={event => selectAllServiceAccounts(event.target.checked)}
+        />
+        <label className="form-check-label" htmlFor="selectAllServiceAccounts">
+          {t('profile.serviceAccounts.selectAll')}
+        </label>
+      </div>
+      <button
+        type="button"
+        className="btn btn-danger btn-sm"
+        disabled={selectedAccounts.length === 0}
+        onClick={openDeleteSelectedModal}
+      >
+        {t('profile.serviceAccounts.deleteSelected', { count: selectedAccounts.length })}
+      </button>
+    </>
+  );
+
   const renderServiceAccountsTab = () => (
     <div className="tab-pane fade show active">
-      <h3>{t('profile.serviceAccounts.title')}</h3>
-      <form onSubmit={handleCreateServiceAccount} noValidate>
-        <div className="col-md-3">
-          <FormErrorSummary errors={serviceAccountRules.summary} />
-          <Field
-            id={serviceAccountRules.idFor('organization_id')}
-            label={t('profile.serviceAccounts.organization')}
-            error={serviceAccountRules.errors.organization_id || ''}
-          >
-            {aria => (
-              <select
-                {...aria}
-                className="form-select"
-                value={serviceAccountForm.organization_id}
-                onChange={e =>
-                  setServiceAccountForm({ ...serviceAccountForm, organization_id: e.target.value })
-                }
-                onBlur={() => serviceAccountRules.onBlur('organization_id')}
-              >
-                {serviceAccountOrgs.map(org => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field
-            id={serviceAccountRules.idFor('description')}
-            label={t('profile.serviceAccounts.descriptionPlaceholder')}
-            error={serviceAccountRules.errors.description || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={serviceAccountForm.description}
-                onChange={e =>
-                  setServiceAccountForm({ ...serviceAccountForm, description: e.target.value })
-                }
-                onBlur={() => serviceAccountRules.onBlur('description')}
-              />
-            )}
-          </Field>
-          <Field
-            id={serviceAccountRules.idFor('expiration_days')}
-            label={t('profile.serviceAccounts.expires')}
-            error={serviceAccountRules.errors.expiration_days || ''}
-          >
-            {aria => (
-              <select
-                {...aria}
-                className="form-select"
-                value={serviceAccountForm.expiration_days}
-                onChange={e =>
-                  setServiceAccountForm({
-                    ...serviceAccountForm,
-                    expiration_days: Number(e.target.value),
-                  })
-                }
-                onBlur={() => serviceAccountRules.onBlur('expiration_days')}
-              >
-                {EXPIRATIONS.map(days => (
-                  <option key={days} value={days}>
-                    {t(`profile.serviceAccounts.expiration.${days}`)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field
-            id={serviceAccountRules.idFor('role')}
-            label={t('profile.serviceAccounts.role')}
-            error={serviceAccountRules.errors.role || ''}
-          >
-            {aria => (
-              <select
-                {...aria}
-                className="form-select"
-                value={serviceAccountForm.role}
-                onChange={e =>
-                  setServiceAccountForm({ ...serviceAccountForm, role: e.target.value })
-                }
-                onBlur={() => serviceAccountRules.onBlur('role')}
-              >
-                {SERVICE_ACCOUNT_ROLES.map(role => (
-                  <option key={role} value={role}>
-                    {t(`roles.${role}`)}
-                  </option>
-                ))}
-                {admin && <option value="superadmin">{t('roles.superadmin')}</option>}
-              </select>
-            )}
-          </Field>
-        </div>
-        <button className="btn btn-primary mb-3" type="submit">
-          {t('profile.serviceAccounts.createButton')}
-        </button>
-      </form>
+      <SectionCard
+        icon={<FaKey aria-hidden />}
+        title={t('profile.serviceAccounts.createTitle')}
+        folded={folds.folded('serviceAccount')}
+        onFold={() => folds.toggle('serviceAccount')}
+      >
+        <form onSubmit={handleCreateServiceAccount} noValidate>
+          <div className="col-md-3">
+            <FormErrorSummary errors={serviceAccountRules.summary} />
+            <Field
+              id={serviceAccountRules.idFor('organization_id')}
+              label={t('profile.serviceAccounts.organization')}
+              error={serviceAccountRules.errors.organization_id || ''}
+            >
+              {aria => (
+                <select
+                  {...aria}
+                  className="form-select"
+                  value={serviceAccountForm.organization_id}
+                  onChange={e =>
+                    setServiceAccountForm({
+                      ...serviceAccountForm,
+                      organization_id: e.target.value,
+                    })
+                  }
+                  onBlur={() => serviceAccountRules.onBlur('organization_id')}
+                >
+                  {serviceAccountOrgs.map(org => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field
+              id={serviceAccountRules.idFor('description')}
+              label={t('profile.serviceAccounts.descriptionPlaceholder')}
+              error={serviceAccountRules.errors.description || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  value={serviceAccountForm.description}
+                  onChange={e =>
+                    setServiceAccountForm({ ...serviceAccountForm, description: e.target.value })
+                  }
+                  onBlur={() => serviceAccountRules.onBlur('description')}
+                />
+              )}
+            </Field>
+            <Field
+              id={serviceAccountRules.idFor('expiration_days')}
+              label={t('profile.serviceAccounts.expires')}
+              error={serviceAccountRules.errors.expiration_days || ''}
+            >
+              {aria => (
+                <select
+                  {...aria}
+                  className="form-select"
+                  value={serviceAccountForm.expiration_days}
+                  onChange={e =>
+                    setServiceAccountForm({
+                      ...serviceAccountForm,
+                      expiration_days: Number(e.target.value),
+                    })
+                  }
+                  onBlur={() => serviceAccountRules.onBlur('expiration_days')}
+                >
+                  {EXPIRATIONS.map(days => (
+                    <option key={days} value={days}>
+                      {t(`profile.serviceAccounts.expiration.${days}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field
+              id={serviceAccountRules.idFor('role')}
+              label={t('profile.serviceAccounts.role')}
+              error={serviceAccountRules.errors.role || ''}
+            >
+              {aria => (
+                <select
+                  {...aria}
+                  className="form-select"
+                  value={serviceAccountForm.role}
+                  onChange={e =>
+                    setServiceAccountForm({ ...serviceAccountForm, role: e.target.value })
+                  }
+                  onBlur={() => serviceAccountRules.onBlur('role')}
+                >
+                  {SERVICE_ACCOUNT_ROLES.map(role => (
+                    <option key={role} value={role}>
+                      {t(`roles.${role}`)}
+                    </option>
+                  ))}
+                  {admin && <option value="superadmin">{t('roles.superadmin')}</option>}
+                </select>
+              )}
+            </Field>
+          </div>
+          <button className="btn btn-primary" type="submit">
+            {t('profile.serviceAccounts.createButton')}
+          </button>
+        </form>
+      </SectionCard>
       {newServiceAccountToken && (
         <div className="alert alert-warning" role="alert">
           <strong>{t('profile.serviceAccounts.token')}:</strong>{' '}
@@ -1086,38 +1157,22 @@ const BackendProfilePage = ({
           <small>{t('profile.serviceAccounts.tokenShownOnce')}</small>
         </div>
       )}
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <div className="form-check">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="selectAllServiceAccounts"
-            checked={allServiceAccountsSelected}
-            onChange={event => selectAllServiceAccounts(event.target.checked)}
-          />
-          <label className="form-check-label" htmlFor="selectAllServiceAccounts">
-            {t('profile.serviceAccounts.selectAll')}
-          </label>
-        </div>
-        <button
-          type="button"
-          className="btn btn-danger btn-sm"
-          disabled={selectedAccounts.length === 0}
-          onClick={openDeleteSelectedModal}
-        >
-          {t('profile.serviceAccounts.deleteSelected', { count: selectedAccounts.length })}
-        </button>
-      </div>
+      <SectionHeading
+        icon={<FaKey aria-hidden />}
+        title={t('profile.serviceAccounts.title')}
+        badge={<span className="badge bg-secondary">{serviceAccounts.length}</span>}
+        actions={serviceAccountListActions}
+      />
       {serviceAccounts.length > 0 && filteredServiceAccounts.length === 0 && (
         <div className="alert alert-info">{t('pages.noMatches')}</div>
       )}
       {groupByOrganization(filteredServiceAccounts, t('profile.unknown')).map(group => (
-        <div key={group.name} className="card mb-3">
-          <div className="card-header d-flex align-items-center gap-2">
-            <h5 className="mb-0">{group.name}</h5>
+        <div key={group.name} className="mb-3">
+          <div className="d-flex align-items-center gap-2 mb-2">
+            <h6 className="mb-0">{group.name}</h6>
             <span className="badge bg-secondary bg-opacity-50">{group.accounts.length}</span>
           </div>
-          <ul className="list-group list-group-flush">
+          <ul className="list-group">
             {group.accounts.map(entry => (
               <li key={entry.id} className="list-group-item">
                 <div className="d-flex justify-content-between align-items-center">
@@ -1157,46 +1212,44 @@ const BackendProfilePage = ({
   return (
     <div className="list row">
       {currentUser && (
-        <div className="card mt-2 mb-2">
-          <div className="card-header text-center">
-            <Avatar
-              picture={currentUser.avatarUrl || gravatarProfile.avatar_url || ''}
-              size={100}
-            />
-            <h3 className="mt-3">{gravatarProfile.display_name || currentUser.username}</h3>
-            <p className="text-muted">{gravatarProfile.job_title || t('profile.noJobTitle')}</p>
-          </div>
-          <div className="card-body">
-            {!currentUser.verified && (
-              <div className="alert alert-warning" role="alert">
-                {t('profile.messages.emailNotVerified')}
-                <button
-                  type="button"
-                  className="btn btn-link"
-                  onClick={handleResendVerificationMail}
-                >
-                  {t('profile.buttons.resendVerification')}
-                </button>
-              </div>
-            )}
-            <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
-            {searchCounts && (
-              <PageSearch
-                query={searchTerm}
-                onQueryChange={setSearchTerm}
-                placeholder={t(SEARCH_PLACEHOLDER_KEYS[activeTab])}
-                matched={searchCounts.matched}
-                total={searchCounts.total}
+        <>
+          <div className="card mt-2 mb-3">
+            <div className="card-body text-center">
+              <Avatar
+                picture={currentUser.avatarUrl || gravatarProfile.avatar_url || ''}
+                size={100}
               />
-            )}
-            <div className="tab-content mt-3">
-              {activeTab === 'profile' && renderProfileTab()}
-              {activeTab === 'organizations' && renderOrganizationsTab()}
-              {activeTab === 'security' && showSecurity && renderSecurityTab()}
-              {activeTab === 'serviceAccounts' && renderServiceAccountsTab()}
+              <h3 className="mt-3">{gravatarProfile.display_name || currentUser.username}</h3>
+              <p className="text-muted mb-0">
+                {gravatarProfile.job_title || t('profile.noJobTitle')}
+              </p>
             </div>
           </div>
-        </div>
+          {!currentUser.verified && (
+            <div className="alert alert-warning" role="alert">
+              {t('profile.messages.emailNotVerified')}
+              <button type="button" className="btn btn-link" onClick={handleResendVerificationMail}>
+                {t('profile.buttons.resendVerification')}
+              </button>
+            </div>
+          )}
+          <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
+          {searchCounts && (
+            <PageSearch
+              query={searchTerm}
+              onQueryChange={setSearchTerm}
+              placeholder={t(SEARCH_PLACEHOLDER_KEYS[activeTab])}
+              matched={searchCounts.matched}
+              total={searchCounts.total}
+            />
+          )}
+          <div className="tab-content mt-3">
+            {activeTab === 'profile' && renderProfileTab()}
+            {activeTab === 'organizations' && renderOrganizationsTab()}
+            {activeTab === 'security' && showSecurity && renderSecurityTab()}
+            {activeTab === 'serviceAccounts' && renderServiceAccountsTab()}
+          </div>
+        </>
       )}
       <ConfirmModal
         show={showDeleteModal}

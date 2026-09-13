@@ -17,14 +17,14 @@ const formatDate = (value, language) => {
   return new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(date);
 };
 
-const usePolicy = name => {
+const usePolicy = (name, region) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [loaded, setLoaded] = useState(EMPTY);
 
   useEffect(() => {
     let active = true;
-    fetchPolicy(name)
+    fetchPolicy(name, region)
       .then(answer => {
         if (active) {
           setLoaded({ name, answer, failed: false });
@@ -39,14 +39,15 @@ const usePolicy = name => {
     return () => {
       active = false;
     };
-  }, [name, notify, t]);
+  }, [name, region, notify, t]);
 
   return loaded.name === name ? loaded : EMPTY;
 };
 
 /**
  * `/public/policies/:name`: the wide article column with the title, the
- * version badge and dates, the prose from `GET /api/policies/{name}`, and
+ * version badge and dates, the prose from `GET /api/policies/{name}`, the
+ * URL's `?region=` passed to the read to force a regional variant, and
  * "Back" to the referring page when there is one, else "Back to sign in".
  */
 const PolicyPage = () => {
@@ -54,7 +55,8 @@ const PolicyPage = () => {
   const { name } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { answer: state, failed } = usePolicy(name);
+  const region = new URLSearchParams(location.search).get('region') || '';
+  const { answer: state, failed } = usePolicy(name, region);
   const hasReferrer = location.key !== 'default';
 
   useEffect(() => {

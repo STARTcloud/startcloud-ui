@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { useNotify } from '../../../contexts/NoticeContext';
+import { copyToClipboard } from '../../../lib/clipboard';
 
 /**
  * One checksum drawn anywhere a table cell or facts row shows it: the type
@@ -14,7 +15,7 @@ const ChecksumCell = ({ checksum, checksumType = '' }) => {
   const notify = useNotify();
   const title = checksumType ? `${checksumType}:${checksum}` : checksum;
   const copy = () => {
-    navigator.clipboard.writeText(checksum).then(
+    copyToClipboard(checksum).then(
       () => notify('success', t('pages.provider.checksumCopied')),
       () => notify('danger', t('pages.provider.copyFailed'))
     );

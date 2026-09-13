@@ -3,4 +3,8 @@ import { client } from '../../../lib/runtime';
 
 const PUBLIC = { auth: false };
 
-export const policy = name => client.get(encodePath('api', 'policies', name), PUBLIC);
+export const policy = (name, region = '') =>
+  client.get(encodePath('api', 'policies', name), {
+    ...PUBLIC,
+    params: region ? { region } : undefined,
+  });

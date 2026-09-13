@@ -5,6 +5,7 @@ import { FaDesktop } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { log } from '../../../lib/logger';
@@ -94,7 +95,8 @@ SignOutButton.propTypes = {
  * that says this browser is signed out too; the other rows' Sign out and
  * the revoke-all are stepped up, the current row's Sign out is the plain
  * sign-out, and an answer's `next` is followed when the call ended this
- * session.
+ * session; the list is a glass section of the pages contract, a
+ * `SectionHeading` carrying Revoke all over the rows on the page's ground.
  */
 const SessionsTab = ({ account, guard, onSignedOut }) => {
   const { t } = useTranslation();
@@ -182,19 +184,24 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
     ? t('profile.sessions.revokeAllBody', { keyword: t('pages.confirm.keyword') })
     : t('pages.confirm.message', { keyword: t('pages.confirm.keyword') });
 
+  const revokeAllButton = (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-danger"
+      onClick={() => setPending({ kind: 'all' })}
+      disabled={rows.length === 0}
+    >
+      {t('profile.sessions.revokeAll')}
+    </button>
+  );
+
   return (
     <div className="tab-pane fade show active">
-      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <h5 className="mb-0">{t('profile.sessions.title')}</h5>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-danger"
-          onClick={() => setPending({ kind: 'all' })}
-          disabled={rows.length === 0}
-        >
-          {t('profile.sessions.revokeAll')}
-        </button>
-      </div>
+      <SectionHeading
+        icon={<FaDesktop aria-hidden />}
+        title={t('profile.sessions.title')}
+        actions={revokeAllButton}
+      />
       <MethodList empty={t('profile.sessions.none')}>
         {rows.map(row => (
           <MethodRow

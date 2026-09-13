@@ -24,6 +24,7 @@ const PATTERN_KEYS = [
   'iconName',
   'languageTag',
   'timezone',
+  'region',
 ];
 const RULE_KEYS = [
   'required',
@@ -103,6 +104,7 @@ export const DEFS = {
   iconName: { type: 'string', pattern: '^[a-z0-9 -]{1,64}$' },
   languageTag: { type: 'string', pattern: '^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$', maxLength: 10 },
   timezone: { type: 'string', pattern: '^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$' },
+  region: { type: 'string', pattern: '^[A-Z]{2}$|^(EU|EEA|UK)$' },
 };
 
 export const NON_BLANK = { type: 'string', minLength: 1, pattern: NON_BLANK_PATTERN };
@@ -480,7 +482,7 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
  * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
- * `personName`, `iconName`, `languageTag`, `timezone`) or `nonBlank` for
+ * `personName`, `iconName`, `languageTag`, `timezone`, `region`) or `nonBlank` for
  * the contract's whitespace rule, a format and a type by theirs; the
  * config contract's `propertyNames` (`params.key`), `readOnly`,
  * `writable` (`params.user`), `reachable` (`params.host`, `params.port`)

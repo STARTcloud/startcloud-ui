@@ -45,3 +45,5 @@ export const acceptProviderTerms = body =>
   client.post('/provider-registration/tos/accept', body, OPTIONS);
 
 export const geoCountry = () => client.get('/api/public/geo/country', PUBLIC);
+
+export const placesKey = () => client.get('/api/config/places', OPTIONS);

@@ -9,8 +9,11 @@ export const placeholders = () => client.get('/api/admin/terms/placeholders');
 
 export const createTerm = body => client.post('/api/admin/terms', body);
 
-export const updateTerm = (name, patch) => client.patch(term(name), patch);
+const variant = region => ({ params: region ? { region } : undefined });
 
-export const deleteTerm = name => client.delete(term(name));
+export const updateTerm = (name, patch, region = '') =>
+  client.patch(term(name), patch, variant(region));
+
+export const deleteTerm = (name, region = '') => client.delete(term(name), variant(region));
 
 export const reorderTerms = names => client.put('/api/admin/terms/order', { names });
