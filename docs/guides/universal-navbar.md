@@ -749,7 +749,9 @@ keys keep them apart:
 | **In-app notices**                     | what the app itself tells the user on the page: the Notices section's banners and cards (failed actions, validation, the session ending) |
 
 Title "Notification Channel Notifications", header action "Mark all read",
-close button; the dialog is 720px wide. Rows: type icon colored by
+close button; the dialog is a list dialog of the pages contract,
+`list-modal`, 720px wide, the metric every dialog that carries a list or a
+choice takes. Rows: type icon colored by
 severity, title (bold when unread, followed by an open-in glyph when the
 row carries an `https://` `navigate` link), body, relative time, unread
 dot, and on hover a per-row mark-read (unread rows only) beside the

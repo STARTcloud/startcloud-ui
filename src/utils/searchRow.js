@@ -10,10 +10,18 @@ export const SEARCH_KINDS = [
   'architecture',
   'artifact',
   'user',
+  'application',
+  'identity-provider',
+  'terms',
+  'notification',
+  'session',
+  'login',
+  'registration',
+  'blocked-address',
 ];
 
 export const searchRowShape = PropTypes.shape({
-  kind: PropTypes.oneOf(SEARCH_KINDS).isRequired,
+  kind: PropTypes.string.isRequired,
   collection: PropTypes.string,
   org: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
@@ -34,31 +42,47 @@ export const searchAnswerShape = PropTypes.shape({
 export const collectionOfRow = (row, collections) =>
   collections.find(collection => collection.key === row.collection) || null;
 
-const issuerRowPath = (row, admin) => {
-  if (row.kind === 'user') {
-    return `/admin/users?search=${encodeURIComponent(row.name)}`;
-  }
-  return admin
-    ? `/admin/organizations?search=${encodeURIComponent(row.org)}`
-    : '/user/organizations';
+const narrowed = (path, key, value) => `${path}?${key}=${encodeURIComponent(value)}`;
+
+const ISSUER_PATHS = {
+  organization: ({ admin, row }) =>
+    admin ? narrowed('/admin/organizations', 'search', row.org) : '/user/organizations',
+  user: ({ row }) => narrowed('/admin/users', 'search', row.name),
+  application: ({ admin }) => (admin ? '/admin/service-usage' : '/user/integrations'),
+  'identity-provider': () => '/user/integrations',
+  terms: ({ admin, row }) =>
+    admin ? '/admin/terms' : `/public/policies/${encodeURIComponent(row.name)}`,
+  notification: () => '/notifications',
+  session: ({ admin }) => (admin ? '/admin/sessions' : '/user/profile/sessions'),
+  login: ({ row }) => narrowed('/admin/logins', 'username', row.name),
+  registration: ({ row }) => narrowed('/admin/registrations', 'username', row.name),
+  'blocked-address': () => '/admin/brute-force',
 };
 
 /**
- * The in-app path a search row leads to: on the `auth-server` role an
- * organization row to `/user/organizations` (`/admin/organizations?search=`
- * for an admin) and a user row to `/admin/users?search=`; elsewhere the
- * organization page for an organization, the org console or the admin
- * board for a user, and for everything else the deepest page of the row's
- * collection the row names (provider, an architecture where the collection
- * has no providers, version, else item).
+ * The in-app path a search row leads to: on the `auth-server` role the page
+ * the identity contract's search table names for the kind (an organization
+ * to `/user/organizations` or `/admin/organizations?search=` for an admin,
+ * a user to `/admin/users?search=`, an application to `/user/integrations`
+ * or `/admin/service-usage` for an admin, an identity provider to
+ * `/user/integrations`, terms to `/public/policies/<name>` or `/admin/terms`
+ * for an admin, a notification to `/notifications`, a session to
+ * `/user/profile/sessions` or `/admin/sessions` for an admin, a login to
+ * `/admin/logins?username=`, a registration to
+ * `/admin/registrations?username=`, a blocked address to
+ * `/admin/brute-force`); elsewhere the organization page for an
+ * organization, the org console or the admin board for a user, and for
+ * everything else the deepest page of the row's collection the row names
+ * (provider, an architecture where the collection has no providers,
+ * version, else item).
  *
  * @param {Object} row - One search result row
  * @param {{ collections: Array<Object>, role: string, admin: boolean }} app - The app search: the collections the host mounts, the host's role and whether the person is a global admin
  * @returns {string} The path
  */
 export const searchRowPath = (row, { collections, role, admin }) => {
-  if (role === 'auth-server' && (row.kind === 'organization' || row.kind === 'user')) {
-    return issuerRowPath(row, admin);
+  if (role === 'auth-server' && ISSUER_PATHS[row.kind]) {
+    return ISSUER_PATHS[row.kind]({ admin, row });
   }
   if (row.kind === 'organization') {
     return `/${row.org}`;

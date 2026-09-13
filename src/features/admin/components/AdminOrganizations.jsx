@@ -70,7 +70,7 @@ const EditOrganizationModal = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <Modal show={Boolean(organization)} onHide={onClose}>
+    <Modal show={Boolean(organization)} onHide={onClose} dialogClassName="form-modal" scrollable>
       <form onSubmit={onSave} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">

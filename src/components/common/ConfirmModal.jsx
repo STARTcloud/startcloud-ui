@@ -45,7 +45,7 @@ const ConfirmModal = ({
   };
 
   return (
-    <Modal show={show} onHide={handleModalClose} dialogClassName="form-modal" scrollable>
+    <Modal show={show} onHide={handleModalClose} dialogClassName="list-modal" scrollable>
       <Modal.Header closeButton>
         <Modal.Title>{title || t(`${keys}.title`)}</Modal.Title>
       </Modal.Header>

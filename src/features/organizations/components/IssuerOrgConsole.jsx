@@ -486,7 +486,7 @@ const ConvertDialog = ({ show, org, organizations, onHide, onDone }) => {
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered>
+    <Modal show={show} onHide={onHide} centered dialogClassName="form-modal" scrollable>
       <form onSubmit={convert} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('orgConsole.convert')}</Modal.Title>

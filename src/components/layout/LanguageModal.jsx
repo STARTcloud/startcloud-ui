@@ -48,7 +48,7 @@ export const getLanguageFlag = languageCode => {
 export const LanguageModal = ({ show, current, languages, onPick, onClose }) => {
   const { t } = useTranslation();
   return (
-    <Modal show={show} onHide={onClose} dialogClassName="chrome-modal">
+    <Modal show={show} onHide={onClose} dialogClassName="chrome-modal list-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           <FaGlobe className="me-2" />

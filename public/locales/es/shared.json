@@ -1243,7 +1243,15 @@
       "provider": "Proveedores",
       "architecture": "Arquitecturas",
       "artifact": "Artefactos",
-      "user": "Usuarios"
+      "user": "Usuarios",
+      "application": "Aplicaciones",
+      "identity-provider": "Proveedores de identidad",
+      "terms": "Términos",
+      "notification": "Notificaciones",
+      "session": "Sesiones",
+      "login": "Inicios de sesión",
+      "registration": "Registros",
+      "blocked-address": "Direcciones bloqueadas"
     },
     "columns": {
       "title": "Título",
@@ -1266,7 +1274,9 @@
       "email": "Correo",
       "display_name": "Nombre visible",
       "label": "Etiqueta",
-      "os": "SO"
+      "os": "SO",
+      "title": "Título",
+      "address": "Dirección"
     }
   },
   "footer": {

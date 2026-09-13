@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTrash } from 'react-icons/fa6';
 
 import { formRulesShape, useFormRules } from '../../hooks/useFormRules';
-import { fieldOf, setValueAt, valueAt } from '../../utils/schemaSections';
+import { fieldOf, schemaSections, setValueAt, valueAt } from '../../utils/schemaSections';
 
 import ConfigField from './ConfigField';
 import Field from './Field';
@@ -15,6 +15,7 @@ const KEY_LABELS = { key: 'configManager.map.key' };
 const ROW_LABELS = { key: 'configManager.map.key', value: 'configManager.map.value' };
 const EMPTY_KEY_FORM = { key: '' };
 const EMPTY_ROW_FORM = { key: '', value: undefined };
+const FIRST_FIELD = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled])';
 
 const isSchema = value => value !== null && typeof value === 'object';
 
@@ -57,19 +58,6 @@ const cardFields = (node, base) =>
     })
     .sort(byOrder);
 
-const dialogFields = (node, base) =>
-  Object.entries(node.properties || {})
-    .map(([key, property], index) =>
-      fieldOf({
-        pointer: `${base}/${key}`,
-        key,
-        property,
-        required: (node.required || []).includes(key),
-        index,
-      })
-    )
-    .sort(byOrder);
-
 const nameOf = pointer => pointer.slice(1);
 
 const errorsUnder = (errors, name, inline) =>
@@ -87,6 +75,8 @@ const mapShape = {
   rules: formRulesShape.isRequired,
   nameFor: PropTypes.func.isRequired,
 };
+
+const configMapShape = { ...mapShape, Sections: PropTypes.elementType.isRequired };
 
 const MapHeader = ({ id, title, count, error, onAdd }) => {
   const { t } = useTranslation();
@@ -201,72 +191,6 @@ EntryCard.propTypes = {
   onDelete: PropTypes.func.isRequired,
 };
 
-const DialogFields = ({ node, base, form, setForm, rules, Nested }) => (
-  <>
-    {dialogFields(node, base).map(field => {
-      const name = nameOf(field.pointer);
-      if (field.type === 'object' && field.additionalProperties) {
-        return (
-          <div key={field.pointer} className="col-12">
-            <Nested
-              pointer={field.pointer}
-              title={field.title}
-              item={field.additionalProperties}
-              propertyNames={field.propertyNames}
-              value={valueAt(form, field.pointer)}
-              onChange={next => setForm(previous => setValueAt(previous, field.pointer, next))}
-              rules={rules}
-              nameFor={nameOf}
-            />
-          </div>
-        );
-      }
-      if (field.type === 'object') {
-        const child = node.properties[field.key];
-        if (!child.properties) {
-          return null;
-        }
-        return (
-          <div key={field.pointer} className="col-12 mb-3">
-            <h6>{field.title}</h6>
-            <div className="row">
-              <DialogFields
-                node={child}
-                base={field.pointer}
-                form={form}
-                setForm={setForm}
-                rules={rules}
-                Nested={Nested}
-              />
-            </div>
-          </div>
-        );
-      }
-      return (
-        <div key={field.pointer} className={field.type === 'array' ? 'col-12' : 'col-md-6'}>
-          <ConfigField
-            field={field}
-            id={rules.idFor(name)}
-            value={valueAt(form, field.pointer)}
-            error={rules.errors[name] || ''}
-            onChange={next => setForm(previous => setValueAt(previous, field.pointer, next))}
-            onBlur={() => rules.onBlur(name)}
-          />
-        </div>
-      );
-    })}
-  </>
-);
-
-DialogFields.propTypes = {
-  node: PropTypes.object.isRequired,
-  base: PropTypes.string.isRequired,
-  form: PropTypes.object.isRequired,
-  setForm: PropTypes.func.isRequired,
-  rules: formRulesShape.isRequired,
-  Nested: PropTypes.elementType.isRequired,
-};
-
 const ObjectMap = ({
   pointer,
   title,
@@ -276,14 +200,16 @@ const ObjectMap = ({
   onChange,
   rules,
   nameFor,
-  Nested,
+  Sections,
 }) => {
   const { t } = useTranslation();
   const name = nameFor(pointer);
   const id = rules.idFor(name);
   const entries = entriesOf(value);
+  const formRef = useRef(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_KEY_FORM);
+  const sections = useMemo(() => schemaSections(item), [item]);
   const schema = useMemo(
     () => ({
       required: ['key', ...(item.required || [])],
@@ -305,6 +231,7 @@ const ObjectMap = ({
     idPrefix: `${id}:dialog`,
   });
   const close = () => setEditing(null);
+  const focusFirst = () => formRef.current?.querySelector(FIRST_FIELD)?.focus();
   const openAdd = () => {
     setForm(EMPTY_KEY_FORM);
     dialog.reset();
@@ -357,8 +284,14 @@ const ObjectMap = ({
           )}
         </div>
       </div>
-      <Modal show={editing !== null} onHide={close} dialogClassName="form-modal" scrollable>
-        <form onSubmit={save} noValidate>
+      <Modal
+        show={editing !== null}
+        onHide={close}
+        onEntered={focusFirst}
+        dialogClassName="form-modal"
+        scrollable
+      >
+        <form ref={formRef} onSubmit={save} noValidate>
           <Modal.Header closeButton>
             <Modal.Title as="h5">
               {editing
@@ -377,15 +310,16 @@ const ObjectMap = ({
                   onChange={key => setForm(previous => ({ ...previous, key }))}
                 />
               </div>
-              <DialogFields
-                node={item}
-                base=""
-                form={form}
-                setForm={setForm}
-                rules={dialog}
-                Nested={Nested}
-              />
             </div>
+            <Sections
+              sections={sections}
+              config={form}
+              rules={dialog}
+              nameFor={nameOf}
+              onChange={(fieldPointer, next) =>
+                setForm(previous => setValueAt(previous, fieldPointer, next))
+              }
+            />
           </Modal.Body>
           <Modal.Footer>
             <button type="button" className="btn btn-secondary" onClick={close}>
@@ -401,7 +335,7 @@ const ObjectMap = ({
   );
 };
 
-ObjectMap.propTypes = { ...mapShape, Nested: PropTypes.elementType.isRequired };
+ObjectMap.propTypes = configMapShape;
 
 const ScalarMap = ({
   pointer,
@@ -540,16 +474,19 @@ ScalarMap.propTypes = mapShape;
  * every item property carrying `order` 1 or 2 as its field drawn inline
  * and edited in place, a leaf at any depth inside the item reached through
  * its nested `properties` included, the other errors of the entry listed
- * under them, with Add opening a wide dialog that scrolls inside itself
- * over the item's fields (an object property with `properties` as a titled
- * group of its fields, recursively, and a nested `additionalProperties`
- * item as this component nested) and a key field validated against `propertyNames`
- * and the existing keys with `unique`, `params.scope` the map's `title`, and a
- * Delete on each card; a scalar item draws as key and value rows with Add
- * and Remove; an item that is itself a map draws this component nested per
- * entry; Add, Delete and Remove change the form alone through `onChange`
- * with the whole map, which reaches the backend in the next Update's merge
- * patch.
+ * under them, with Add opening the form dialog (`form-modal`, the
+ * `modal-xl` metric, its body scrolling inside it) over a key field
+ * validated against `propertyNames` and the existing keys with `unique`,
+ * `params.scope` the map's `title`, and the item's fields drawn through
+ * `Sections` (the page's `ConfigSections`) grouped by the item schema's
+ * sections and foldable subsections as the page groups the file's, two
+ * columns where the page draws two, the `description` under each control,
+ * a nested `additionalProperties` item as this component nested, and the
+ * first enabled field focused when the dialog opens, and a Delete on each
+ * card; a scalar item draws as key and value rows with Add and Remove; an
+ * item that is itself a map draws this component nested per entry; Add,
+ * Delete and Remove change the form alone through `onChange` with the
+ * whole map, which reaches the backend in the next Update's merge patch.
  */
 const ConfigMap = ({
   pointer,
@@ -560,6 +497,7 @@ const ConfigMap = ({
   onChange,
   rules,
   nameFor,
+  Sections,
 }) => {
   const { t } = useTranslation();
   const kind = kindOf(item);
@@ -589,7 +527,7 @@ const ConfigMap = ({
         onChange={onChange}
         rules={rules}
         nameFor={nameFor}
-        Nested={ConfigMap}
+        Sections={Sections}
       />
     );
   }
@@ -651,6 +589,7 @@ const ConfigMap = ({
               onChange={next => onChange({ ...entries, [key]: next })}
               rules={rules}
               nameFor={nameFor}
+              Sections={Sections}
             />
           </div>
         ))}
@@ -677,6 +616,6 @@ const ConfigMap = ({
   );
 };
 
-ConfigMap.propTypes = mapShape;
+ConfigMap.propTypes = configMapShape;
 
 export default ConfigMap;

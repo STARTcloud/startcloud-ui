@@ -1,6 +1,23 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding, FaCube, FaFile, FaMicrochip, FaServer, FaTag, FaUser } from 'react-icons/fa6';
+import {
+  FaBan,
+  FaBell,
+  FaBuilding,
+  FaCircleQuestion,
+  FaCube,
+  FaDesktop,
+  FaFile,
+  FaFileContract,
+  FaIdBadge,
+  FaMicrochip,
+  FaRightToBracket,
+  FaServer,
+  FaTag,
+  FaUser,
+  FaUserPlus,
+  FaWindowMaximize,
+} from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import { appSearchShape } from '../../contexts/SearchContext';
@@ -19,7 +36,24 @@ const KIND_ICONS = {
   architecture: FaMicrochip,
   artifact: FaFile,
   user: FaUser,
+  application: FaWindowMaximize,
+  'identity-provider': FaIdBadge,
+  terms: FaFileContract,
+  notification: FaBell,
+  session: FaDesktop,
+  login: FaRightToBracket,
+  registration: FaUserPlus,
+  'blocked-address': FaBan,
 };
+
+/**
+ * The heading of a kind's group: its translated name, else the kind itself.
+ *
+ * @param {Function} t - The translator
+ * @param {string} kind - The row kind
+ * @returns {string} The label
+ */
+export const kindLabel = (t, kind) => t(`search.kinds.${kind}`, { defaultValue: kind });
 
 const rowKey = row =>
   [row.kind, row.org, row.name, row.version, row.provider, row.architecture, row.matched].join(':');
@@ -50,18 +84,19 @@ const groupRows = (rows, collections) => {
 
 /**
  * The glyph a search row wears: its collection's icon when it has one, else
- * the glyph of its kind.
+ * the glyph of its kind, else a question mark for a kind this build does
+ * not know.
  */
 export const KindGlyph = ({ kind, collection = null }) => {
   if (collection?.icon) {
     return collection.icon;
   }
-  const Icon = KIND_ICONS[kind];
+  const Icon = KIND_ICONS[kind] || FaCircleQuestion;
   return <Icon aria-hidden />;
 };
 
 KindGlyph.propTypes = {
-  kind: PropTypes.oneOf(SEARCH_KINDS).isRequired,
+  kind: PropTypes.string.isRequired,
   collection: PropTypes.object,
 };
 
@@ -71,7 +106,7 @@ const GroupHeading = ({ group }) => {
     <div className="navbar-search-results-group">
       <KindGlyph kind={group.kind} collection={group.collection} />
       {group.collection ? `${t(group.collection.labelKey)} · ` : ''}
-      {t(`search.kinds.${group.kind}`)}
+      {kindLabel(t, group.kind)}
     </div>
   );
 };

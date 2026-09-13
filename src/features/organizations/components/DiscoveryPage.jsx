@@ -316,7 +316,12 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
         </div>
       </div>
 
-      <Modal show={Boolean(requestingOrg)} onHide={closeRequest}>
+      <Modal
+        show={Boolean(requestingOrg)}
+        onHide={closeRequest}
+        dialogClassName="form-modal"
+        scrollable
+      >
         <form onSubmit={handleJoinRequest} noValidate>
           <Modal.Header closeButton>
             <Modal.Title as="h5">

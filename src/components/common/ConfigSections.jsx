@@ -47,6 +47,7 @@ const drawingShape = {
   onChange: PropTypes.func.isRequired,
   callAction: PropTypes.func,
   guard: PropTypes.func,
+  Sections: PropTypes.elementType.isRequired,
 };
 
 const matchesField = (field, term) =>
@@ -183,7 +184,16 @@ FieldCell.propTypes = {
   field: configFieldShape.isRequired,
 };
 
-const ConfigFields = ({ fields, config, rules, nameFor, onChange, callAction = null, guard }) => (
+const ConfigFields = ({
+  fields,
+  config,
+  rules,
+  nameFor,
+  onChange,
+  callAction = null,
+  guard,
+  Sections,
+}) => (
   <div className="row">
     {fields
       .filter(field => isVisible(field, scopesFor(config, field.pointer)))
@@ -199,6 +209,7 @@ const ConfigFields = ({ fields, config, rules, nameFor, onChange, callAction = n
               onChange={value => onChange(field.pointer, value)}
               rules={rules}
               nameFor={nameFor}
+              Sections={Sections}
             />
           </div>
         ) : (
@@ -321,13 +332,22 @@ Section.propTypes = { ...drawingShape, section: sectionShape.isRequired };
  * per entry; a
  * property-level `action` beside its control and a section-level `action`
  * at the section head, each calling `callAction(route, method, body)`
- * through `guard` and painting a 422's pointers on the form.
+ * through `guard` and painting a 422's pointers on the form; every map
+ * receives this component as `Sections` so its item dialog draws the
+ * item schema's sections and subsections the way the page draws the file's.
  */
 const ConfigSections = ({ sections, ...drawing }) =>
-  sections.map(section => <Section key={section.key} section={section} {...drawing} />);
+  sections.map(section => (
+    <Section key={section.key} section={section} Sections={ConfigSections} {...drawing} />
+  ));
 
 ConfigSections.propTypes = {
-  ...drawingShape,
+  config: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  nameFor: PropTypes.func.isRequired,
+  onChange: PropTypes.func.isRequired,
+  callAction: PropTypes.func,
+  guard: PropTypes.func,
   sections: PropTypes.arrayOf(sectionShape).isRequired,
 };
 

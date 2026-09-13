@@ -220,7 +220,7 @@ button::-moz-focus-inner {
   margin-top: 102px;
 }
 
-.notifications-modal {
+.list-modal {
   --bs-modal-width: 720px;
 }
 
@@ -228,8 +228,16 @@ button::-moz-focus-inner {
   margin: 0;
 }
 
-.form-modal {
-  --bs-modal-width: 720px;
+@media (min-width: 992px) {
+  .form-modal {
+    --bs-modal-width: 800px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .form-modal {
+    --bs-modal-width: 1140px;
+  }
 }
 
 .form-modal .modal-content > form {

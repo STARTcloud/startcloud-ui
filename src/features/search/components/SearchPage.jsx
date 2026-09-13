@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
-import { KindGlyph } from '../../../components/common/SearchResults';
+import { KindGlyph, kindLabel } from '../../../components/common/SearchResults';
 import SubTable from '../../../components/common/SubTable';
 import { EMPTY_APP_RESULTS, NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -47,6 +47,11 @@ const columnsFor = appSearch => [
 ];
 
 const sumOf = counts => Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+const kindsOf = rows => [
+  ...SEARCH_KINDS.filter(kind => rows.some(row => row.kind === kind)),
+  ...[...new Set(rows.map(row => row.kind))].filter(kind => !SEARCH_KINDS.includes(kind)),
+];
 
 const usePageResults = ({ appSearch, query }) => {
   const [answered, setAnswered] = useState(EMPTY_APP_RESULTS);
@@ -94,7 +99,7 @@ const KindSection = ({ kind, rows, columns, search, ctx }) => {
     <div className="list-table mb-4">
       <h4 className="d-flex align-items-center gap-2">
         <KindGlyph kind={kind} />
-        {t(`search.kinds.${kind}`)}
+        {kindLabel(t, kind)}
         <span className="badge bg-secondary bg-opacity-50">{rows.length}</span>
       </h4>
       <SubTable
@@ -112,7 +117,7 @@ const KindSection = ({ kind, rows, columns, search, ctx }) => {
 };
 
 KindSection.propTypes = {
-  kind: PropTypes.oneOf(SEARCH_KINDS).isRequired,
+  kind: PropTypes.string.isRequired,
   rows: PropTypes.array.isRequired,
   columns: PropTypes.array.isRequired,
   search: PropTypes.object.isRequired,
@@ -130,7 +135,7 @@ const PageBody = ({ data, query, columns, search, ctx }) => {
   if (search.rows.length === 0) {
     return <div>{t('search.noHits')}</div>;
   }
-  return SEARCH_KINDS.filter(kind => search.rows.some(row => row.kind === kind)).map(kind => (
+  return kindsOf(search.rows).map(kind => (
     <KindSection
       key={kind}
       kind={kind}

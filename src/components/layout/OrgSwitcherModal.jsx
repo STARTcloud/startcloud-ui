@@ -132,7 +132,7 @@ export const OrgSwitcherModal = ({
   const rows = [...organizations].sort(byPersonalLastThenName);
 
   return (
-    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal">
+    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal list-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           <FaBuilding className="me-2" />

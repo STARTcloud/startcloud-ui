@@ -215,7 +215,11 @@ const NotificationsModal = ({
   };
 
   return (
-    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal notifications-modal">
+    <Modal
+      show={show}
+      onHide={onHide}
+      dialogClassName="chrome-modal list-modal notifications-modal"
+    >
       <Modal.Header closeButton>
         <Modal.Title as="h5" className="flex-grow-1">
           {t('inbox.channelTitle')}

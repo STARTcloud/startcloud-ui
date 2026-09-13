@@ -2551,6 +2551,23 @@ Settled before code, in the order they were raised:
      column carries no About row and the About page, where the role's
      version chips are read and a fault is reported, must be reachable
      from the one control on every page.
+121. Every dialog takes one of two metrics: a dialog that carries a form,
+     one field or many (the config editor's map item dialogs, the terms
+     create, edit and copy dialogs, the users' roles, primary organization,
+     customer id and rate-limits dialogs, the profile's security dialogs,
+     the step-up dialog, the organization edit, convert and join-request
+     dialogs), is a form dialog, `form-modal`, Bootstrap's `modal-xl`
+     width, 1140px capped to the viewport, its body scrolling inside the
+     dialog, its fields grouped under the schema's sections and
+     subsections with a heading each as the page's `ConfigSections` groups
+     them, foldable subsections included, two columns where the page draws
+     two, the `description` under each control, the first field focused on
+     open and the primary action in the footer; a dialog that carries a
+     list or a choice (the notifications, language and organization
+     switcher modals, every confirm, the disable two-factor dialog) is a
+     list dialog, `list-modal`, 720px; because a form the page draws wide
+     and grouped must not collapse into a narrow flat column when it opens
+     in a dialog, and a list reads in one column.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

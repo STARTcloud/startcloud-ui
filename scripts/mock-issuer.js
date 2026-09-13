@@ -922,6 +922,122 @@ const searchUsers = needle => {
     );
 };
 
+const isAdmin = () => state.profile.roles.includes('ROLE_ADMIN');
+
+const has = (needle, ...texts) =>
+  texts.some(text =>
+    String(text || '')
+      .toLowerCase()
+      .includes(needle)
+  );
+
+const searchApplications = needle => {
+  const rows = isAdmin() ? SERVICE_USAGE.items : state.integrations.apps;
+  return rows
+    .filter(app => has(needle, app.client_id, app.client_name))
+    .map(app =>
+      searchRow({
+        kind: 'application',
+        org: '',
+        name: app.client_id,
+        title: app.client_name,
+        subtitle: app.client_id,
+        matched: 'name',
+      })
+    );
+};
+
+const searchIdentityProviders = needle =>
+  [...state.integrations.linked, ...state.integrations.available]
+    .filter(provider => has(needle, provider.provider_name))
+    .map(provider =>
+      searchRow({
+        kind: 'identity-provider',
+        org: '',
+        name: provider.provider_id,
+        title: provider.provider_name,
+        subtitle: provider.provider_id,
+        matched: 'name',
+      })
+    );
+
+const searchTerms = needle =>
+  state.terms
+    .filter(term => isAdmin() || term.is_public)
+    .filter(term => has(needle, term.name, term.friendly_name, term.content))
+    .map(term =>
+      searchRow({
+        kind: 'terms',
+        org: '',
+        name: term.name,
+        title: term.friendly_name,
+        subtitle: `v${term.version}`,
+        matched: has(needle, term.name, term.friendly_name) ? 'name' : 'description',
+      })
+    );
+
+const searchNotifications = needle =>
+  state.notifications
+    .filter(row => has(needle, row.title, row.body))
+    .map(row =>
+      searchRow({
+        kind: 'notification',
+        org: '',
+        name: row.id,
+        title: row.title,
+        subtitle: row.body,
+        matched: 'title',
+      })
+    );
+
+const searchSessions = needle => {
+  const rows = isAdmin() ? SESSIONS.items : state.sessions;
+  return rows
+    .filter(row => has(needle, row.client_name, row.user_agent, row.location))
+    .map(row =>
+      searchRow({
+        kind: 'session',
+        org: '',
+        name: row.id,
+        title: row.client_name,
+        subtitle: `${row.user_agent} · ${row.location}`,
+        matched: 'name',
+      })
+    );
+};
+
+const searchActivity = (kind, rows, needle) =>
+  isAdmin()
+    ? rows
+        .filter(row => has(needle, row.username, row.city, row.country))
+        .map(row =>
+          searchRow({
+            kind,
+            org: '',
+            name: row.username,
+            title: row.username,
+            subtitle: `${row.city}, ${row.country}`,
+            matched: 'username',
+          })
+        )
+    : [];
+
+const searchBlocked = needle =>
+  isAdmin()
+    ? state.blocked
+        .filter(row => has(needle, row.ip))
+        .map(row =>
+          searchRow({
+            kind: 'blocked-address',
+            org: '',
+            name: row.ip,
+            title: row.ip,
+            subtitle: `${row.attempts} attempts`,
+            matched: 'address',
+          })
+        )
+    : [];
+
 const search = query => {
   const needle = String(query.get('q') || '')
     .trim()
@@ -932,7 +1048,18 @@ const search = query => {
   }
   const results = [];
   const truncated = {};
-  [searchOrganizations(needle), searchUsers(needle)].forEach(rows => {
+  [
+    searchOrganizations(needle),
+    searchUsers(needle),
+    searchApplications(needle),
+    searchIdentityProviders(needle),
+    searchTerms(needle),
+    searchNotifications(needle),
+    searchSessions(needle),
+    searchActivity('login', LOGINS.items, needle),
+    searchActivity('registration', REGISTRATIONS.items, needle),
+    searchBlocked(needle),
+  ].forEach(rows => {
     results.push(...rows.slice(0, limit));
     if (rows.length > limit) {
       truncated[rows[0].kind] = rows.length - limit;
@@ -2111,9 +2238,12 @@ const handle = async (req, res) => {
  * The users, logins and registrations lists honor the navbar panel's
  * parameters (`search`, `enabled`, `using_2fa`, `has_customer_id`,
  * `active_after`; `username`, `success`, `start_date`, `end_date`) and
- * `page` and `size`. `GET /api/search?q=&limit=` answers organization
- * rows over the person's memberships (every organization for an admin)
- * and user rows for an admin, in the navbar contract's row shape.
+ * `page` and `size`. `GET /api/search?q=&limit=` answers, in the navbar
+ * contract's row shape, every kind of the identity contract's search
+ * table from the fixtures: organizations over the person's memberships
+ * (every organization for an admin), users, logins, registrations and
+ * blocked addresses for an admin, applications, identity providers, terms,
+ * notifications and sessions under the same visibility as their pages.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,
