@@ -41,7 +41,7 @@ export const useSessionKeepalive = ({ enabled, user, loaded, reload }) => {
     }
     connectEventStream(status);
     return disconnectEventStream;
-  }, [connected, status, user]);
+  }, [connected, status]);
 
   useEffect(() => eventHub.subscribe('session-terminated', () => events.endSession()), []);
 };

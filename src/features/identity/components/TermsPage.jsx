@@ -36,9 +36,9 @@ const ORDER_KEY = 'terms-order';
 
 const byOrder = (a, b) => (a.display_order || 0) - (b.display_order || 0);
 
-const keyOf = term => [term.name, ...regionsOf(term)].join(':');
+const keyOf = term => term.id;
 
-const nameOf = term => term.name;
+const idOf = term => term.id;
 
 const matches = (term, needle) =>
   [term.name, term.friendly_name || ''].some(text => text.toLowerCase().includes(needle));
@@ -328,7 +328,7 @@ const useOrdered = data => {
  * Content › Terms: the templates as cards in a `SortableList`, a drag
  * writing the order at once and raising a success card carrying Undo,
  * which writes the previous order back; Public, type and region badges,
- * one card per variant keyed by name and regions, Preview
+ * one card per variant keyed by id, Preview
  * drawing the template's markdown in a list dialog through the shared
  * `MarkdownArticle` for every template public or not, a public card
  * also linking to the public policy page in a new tab, Copy through a small dialog asking the new
@@ -374,7 +374,7 @@ const TermsPage = () => {
 
   const writeOrder = (next, previous) => {
     setOrdered(next);
-    reorderTerms(next.map(nameOf))
+    reorderTerms(next.map(idOf))
       .then(() => {
         notify('success', t('admin.terms.orderSaved'), {
           key: ORDER_KEY,

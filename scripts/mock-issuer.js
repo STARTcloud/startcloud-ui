@@ -2733,9 +2733,9 @@ adminRoute('POST', '/api/admin/terms', ctx => {
   return ok(row, 201);
 });
 adminRoute('PUT', '/api/admin/terms/order', ctx => {
-  const names = Array.isArray(ctx.body.names) ? ctx.body.names : [];
+  const ids = Array.isArray(ctx.body.ids) ? ctx.body.ids : [];
   state.terms.forEach(row => {
-    const index = names.indexOf(row.name);
+    const index = ids.indexOf(row.id);
     if (index >= 0) {
       row.display_order = (index + 1) * 10;
     }

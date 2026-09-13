@@ -69,6 +69,7 @@ export const useSession = ({
   const { t } = useTranslation();
   const notify = useNotify();
   const onAdoptRef = useRef(onAdopt);
+  const navigateRef = useRef(navigate);
   const favoritesPromise = useRef(null);
   const [session, setSession] = useState(() => {
     const restored = provider.restore();
@@ -87,6 +88,7 @@ export const useSession = ({
 
   useEffect(() => {
     onAdoptRef.current = onAdopt;
+    navigateRef.current = navigate;
   });
 
   const persistActiveOrg = useCallback(
@@ -143,12 +145,14 @@ export const useSession = ({
       adopt(null);
       setEnded({ returnTo: detail?.returnTo || '/' });
     });
-    const offLogin = events.on('login', () => provider.load({ navigate }).then(adopt));
+    const offLogin = events.on('login', () =>
+      provider.load({ navigate: navigateRef.current }).then(adopt)
+    );
     const offLogout = events.on('logout', () => {
       provider.signOut();
       adopt(null);
     });
-    provider.load({ navigate }).then(next => {
+    provider.load({ navigate: navigateRef.current }).then(next => {
       adopt(next);
       setLoaded(true);
     });
@@ -157,7 +161,7 @@ export const useSession = ({
       offLogin();
       offLogout();
     };
-  }, [adopt, events, navigate, provider]);
+  }, [adopt, events, provider]);
 
   useEffect(() => {
     if (!loaded || !session.user || !push || !push.isPushEnabled()) {
@@ -180,7 +184,7 @@ export const useSession = ({
     const onAuthPage = returnTo.onAuthPage(window.location.pathname);
     returnTo.remember(ended?.returnTo || (onAuthPage ? '' : currentPath()));
     setEnded(null);
-    return provider.begin({ navigate });
+    return provider.begin({ navigate: navigateRef.current });
   };
 
   const signOut = () => {
@@ -189,13 +193,13 @@ export const useSession = ({
   };
 
   const refresh = useCallback(
-    () => provider.refresh({ navigate }).then(adopt),
-    [adopt, navigate, provider]
+    () => provider.refresh({ navigate: navigateRef.current }).then(adopt),
+    [adopt, provider]
   );
 
   const reload = useCallback(
-    () => provider.reload({ navigate }).then(adopt),
-    [adopt, navigate, provider]
+    () => provider.reload({ navigate: navigateRef.current }).then(adopt),
+    [adopt, provider]
   );
 
   return {

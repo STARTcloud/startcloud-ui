@@ -390,6 +390,7 @@ export const BRUTE_FORCE = {
 
 export const TERMS = [
   {
+    id: 1,
     name: 'privacy',
     regions: [],
     friendly_name: 'Privacy Policy',
@@ -403,6 +404,7 @@ export const TERMS = [
     updated_at: '2026-08-14T00:00:00Z',
   },
   {
+    id: 2,
     name: 'terms',
     regions: [],
     friendly_name: 'Terms of Service',
@@ -416,6 +418,7 @@ export const TERMS = [
     updated_at: '2026-01-09T00:00:00Z',
   },
   {
+    id: 3,
     name: 'conductor-msa',
     regions: [],
     friendly_name: 'Master Services Agreement',
@@ -430,6 +433,7 @@ export const TERMS = [
     updated_at: '2026-07-02T00:00:00Z',
   },
   {
+    id: 4,
     name: 'conductor-msa',
     regions: ['EU'],
     friendly_name: 'Master Services Agreement',

@@ -19,6 +19,7 @@ export const REGION_SETS = ['EU', 'EEA', 'UK'];
 export const regionsOf = term => (Array.isArray(term.regions) ? term.regions : []);
 
 export const termShape = PropTypes.shape({
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   name: PropTypes.string.isRequired,
   regions: PropTypes.arrayOf(PropTypes.string),
   friendly_name: PropTypes.string,
