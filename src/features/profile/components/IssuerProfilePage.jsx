@@ -6,6 +6,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Avatar from '../../../components/common/Avatar';
 import { useStepUp } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { isPendingGate } from '../../../lib/gates';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 
@@ -210,6 +211,9 @@ const IssuerProfilePage = ({ session, events, returnTo, account, user, loaded })
         .profile()
         .then(next => setRecord(previous => ({ profile: next, version: previous.version + 1 })))
         .catch(error => {
+          if (isPendingGate(error)) {
+            return;
+          }
           log.api.error('Error loading profile', { error: error.message });
           notify('danger', t(error.messageKey || 'errors.request'));
         }),

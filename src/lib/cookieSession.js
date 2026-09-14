@@ -1,4 +1,5 @@
 import { createApiClient } from './apiClient';
+import { isPendingGate } from './gates';
 
 const DISPLAY_FIELDS = ['name', 'email', 'picture', 'roles', 'organizations', 'has_local_auth'];
 const DROPPED_KEYS = [
@@ -10,7 +11,6 @@ const DROPPED_KEYS = [
   'sidebar_minimized',
 ];
 const DROPPED_PREFIXES = ['table_prefs_', 'sidebar_open_', 'sidebar_view_'];
-const PENDING_CODES = ['onboarding_required', 'terms_required'];
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
 const THEME_VALUES = ['auto', 'light', 'dark'];
@@ -89,12 +89,17 @@ export const accountMemberships = user =>
  * `next`, and `POST /user/logout` for both sign-outs. A session it
  * restores or loads is `{ user, organizations, oidc, issuerUrl }`, the
  * user being the cached display fields and `oidc` always false. The API
- * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`.
- * `load({ navigate })` and `begin({ method, navigate })` take the router's
- * `navigate` from `useSession`: a `403` `onboarding_required` or
- * `terms_required` caches the pending profile the body carries and moves
- * in-router to its `next`, and `begin` with no method, `local` or
- * `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a
+ * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`,
+ * and its `onError` is the one place every request's failure passes
+ * through: a `403` `onboarding_required` or `terms_required` (`isPendingGate`
+ * of `gates.js`) caches the pending profile the body carries and moves
+ * in-router to its `next` through the `navigate` `setNavigate(fn)` holds,
+ * so `load` and every other call the session drives follow the same gate
+ * the moment it answers, not only the one that noticed it first.
+ * `load({ navigate })` sets that holder once before reading `GET /api/user`
+ * and falls back to the cached profile on any failure but a `401`, which
+ * clears it instead. `begin({ method, navigate })` with no method, `local`
+ * or `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a
  * top-level navigation.
  *
  * @param {Object} options - The app's side of the session
@@ -105,6 +110,11 @@ export const accountMemberships = user =>
  */
 export const createCookieSession = ({ baseUrl, events, storageKey = 'account' }) => {
   let claimsPromise = null;
+  let navigateHolder = null;
+
+  const setNavigate = fn => {
+    navigateHolder = fn;
+  };
 
   const current = () => JSON.parse(localStorage.getItem(storageKey) || 'null');
 
@@ -137,7 +147,22 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
 
   const provider = { headers, retryAuth, adoptResponse, endSession };
 
-  const api = createApiClient({ baseUrl, session: provider });
+  const followPendingGate = error => {
+    store(error.data);
+    const next = typeof error.data?.next === 'string' ? error.data.next : '';
+    if (!navigateHolder || !SAFE_PATH.test(next) || window.location.pathname === next) {
+      return;
+    }
+    navigateHolder(next, { replace: true });
+  };
+
+  const onError = error => {
+    if (isPendingGate(error)) {
+      followPendingGate(error);
+    }
+  };
+
+  const api = createApiClient({ baseUrl, session: provider, onError });
 
   const sessionOf = user => {
     if (!user) {
@@ -150,6 +175,9 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
 
   const load = async ({ navigate } = {}) => {
     claimsPromise = null;
+    if (navigate) {
+      setNavigate(navigate);
+    }
     try {
       const profile = await api.get('/api/user', OPTIONAL);
       applyAccountPreferences(profile?.preferences);
@@ -159,13 +187,6 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
       if (error.status === 401) {
         clear();
         return null;
-      }
-      if (error.status === 403 && PENDING_CODES.includes(error.code)) {
-        store(error.data);
-        const next = typeof error.data?.next === 'string' ? error.data.next : '';
-        if (navigate && SAFE_PATH.test(next)) {
-          navigate(next, { replace: true });
-        }
       }
       return restore();
     }
@@ -234,6 +255,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     load,
     reload: load,
     refresh: load,
+    setNavigate,
     begin,
     login,
     complete,

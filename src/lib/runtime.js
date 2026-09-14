@@ -4,6 +4,7 @@ import { createApiClient } from './apiClient';
 import { createSession } from './createSession';
 import { createEventHub } from './eventHub';
 import { createSessionEvents } from './events';
+import { isPendingGate } from './gates';
 import { log } from './logger';
 
 const PUBLIC = { auth: false };
@@ -37,13 +38,17 @@ const appendAnalytics = analytics => {
   document.head.appendChild(script);
 };
 
-const onError = error =>
+const onError = error => {
+  if (isPendingGate(error)) {
+    return;
+  }
   log.api.error('Request failed', {
     method: error.request.method,
     url: error.request.url,
     status: error.status,
     message: error.message,
   });
+};
 
 export const events = createSessionEvents();
 

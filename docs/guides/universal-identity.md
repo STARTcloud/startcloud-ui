@@ -3516,7 +3516,15 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      authorize URL or `/`; because the step-up on the first reuse of a
      site or a client that grew a document, or changed a version, is what
      closes the loophole a one-time gate leaves, and a multi-tenant,
-     white-label issuer must let a site carry no terms at all.
+     white-label issuer must let a site carry no terms at all. The UI
+     follows `next` on the first `terms_required` or `onboarding_required`
+     refusal from any route, not the session probe alone, calls nothing
+     gated while on the terms or onboarding pages, draws the name and
+     avatar from the display fields the refusal of `GET /api/user`
+     carries, and never ships such a refusal to `/api/client-errors`,
+     because a gate the shell obeys forty seconds late is a gate the
+     person walks around, and a refusal the server designed is not an
+     error of the client.
 159. Every version of a copy is kept, the revision rows and the two acts
      that write them being decision 161's, so the words a person agreed
      to are never lost; `GET /api/auth/terms` gains

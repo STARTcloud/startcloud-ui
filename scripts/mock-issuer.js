@@ -2,6 +2,8 @@ import { randomBytes } from 'crypto';
 import http from 'http';
 import process from 'process';
 
+// THIS FILE IS GOING TO BEREMOVED, DO NOT ATTEMPT TO UPDATE WITHOUT MARK EXPLICTY SAYING TO UPDATE THE MOCK
+
 import {
   BRUTE_FORCE,
   CLIENT_HEALTH,
@@ -3422,17 +3424,19 @@ const onboardingRefusal = gate => {
 };
 
 const sessionRefusal = gate => {
-  if (
-    (gate.session || gate.admin) &&
-    !state.signedIn &&
-    !(gate.terms && state.pending === 'terms')
-  ) {
-    if (state.pending === 'onboarding') {
-      return problem(403, 'onboarding_required', { next: onboardingNext(state.onboarding) });
-    }
-    return problem(401, 'unauthenticated');
+  if (!(gate.session || gate.admin) || state.signedIn) {
+    return null;
   }
-  return null;
+  if (gate.terms && state.pending === 'terms') {
+    return null;
+  }
+  if (state.pending === 'onboarding') {
+    return problem(403, 'onboarding_required', { next: onboardingNext(state.onboarding) });
+  }
+  if (state.pending === 'terms') {
+    return problem(403, 'terms_required', { next: '/oauth2/accept-terms' });
+  }
+  return problem(401, 'unauthenticated');
 };
 
 const adminRefusal = gate => {
@@ -3555,7 +3559,10 @@ const handle = async (req, res) => {
  * answers a fixture's `content_html` for a known version and `404 not_found`
  * otherwise. Both routes and `POST /oauth2/accept-terms` stay open while
  * `state.pending` is `'terms'`, the way the onboarding routes stay open
- * while it is `'onboarding'`.
+ * while it is `'onboarding'`; every other session- or admin-gated route
+ * answers `403 terms_required` with `next: '/oauth2/accept-terms'` the
+ * same way `GET /api/user` does, so `?mock=terms` shows the gate on every
+ * page and not `/api/user` alone.
  * Every code entry accepts any six digits except `000000` (invalid),
  * `111111` (expired), `222222` (locked) and `333333` (throttled); a token
  * of `invalid` or `expired` refuses a magic, bootstrap, verification,

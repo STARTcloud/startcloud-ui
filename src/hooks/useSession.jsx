@@ -39,14 +39,16 @@ export const sessionStateShape = PropTypes.shape({
  * stored session on the first render and its loaded one after, its
  * claims, the favorites the user menu draws (read once per session
  * through `loadFavorites`, memoized like the claims, reset on sign-out and
- * on every reload), the memberships in the chrome's organization shape,
+ * on every reload, and never read while the current page is one of
+ * `returnTo`'s auth paths, a provider's own pending-gate page included),
+ * the memberships in the chrome's organization shape,
  * the active organization resolved stored → primary → first and persisted
  * under the app's key, whether `load()` has confirmed the session, the
  * ended state with the page to return to, the sign-in and sign-out
  * handlers, and the push subscription kept in sync while signed in.
  *
  * @param {Object} options - The app's side
- * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`
+ * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`; a provider carrying `setNavigate(fn)` gets the router's `navigate` on every render, so a pending-gate refusal it sees outside `load` can still move the page in-router
  * @param {Object} options.events - The bus from `createSessionEvents`
  * @param {Object} options.returnTo - The helper from `createReturnTo`
  * @param {Function} options.navigate - The router's `navigate`, handed to the provider's `load`, `reload`, `refresh` and `begin`
@@ -89,6 +91,7 @@ export const useSession = ({
   useEffect(() => {
     onAdoptRef.current = onAdopt;
     navigateRef.current = navigate;
+    provider.setNavigate?.(navigate);
   });
 
   const persistActiveOrg = useCallback(
@@ -131,13 +134,15 @@ export const useSession = ({
       if (next) {
         setEnded(null);
         provider.claims().then(setClaims);
-        readFavorites();
+        if (!returnTo.onAuthPage(window.location.pathname)) {
+          readFavorites();
+        }
       } else {
         setClaims(null);
         setFavorites([]);
       }
     },
-    [activeOrgKey, persistActiveOrg, provider, readFavorites]
+    [activeOrgKey, persistActiveOrg, provider, readFavorites, returnTo]
   );
 
   useEffect(() => {

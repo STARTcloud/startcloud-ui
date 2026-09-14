@@ -145,10 +145,10 @@ const EditOrganizationModal = ({
                 onBlur={() => accessRules.onBlur('access_mode')}
               >
                 <option value="private">{t('orgUserManager.editModal.accessModes.private')}</option>
-                <option value="invite_only">
+                <option value="invite">
                   {t('orgUserManager.editModal.accessModes.inviteOnly')}
                 </option>
-                <option value="request_to_join">
+                <option value="request">
                   {t('orgUserManager.editModal.accessModes.requestToJoin')}
                 </option>
               </select>
