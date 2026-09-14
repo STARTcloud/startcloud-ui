@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.14.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.13.0...v0.14.0) (2026-09-14)
+
+
+### Features
+
+* add the bootstrap sign-in and invitation pages, send the first email code on mount and carry the amended contracts ([2f43867](https://github.com/STARTcloud/startcloud-ui/commit/2f4386746b60b466ce3006e4deffbe10c98b9745))
+* bulk actions on users, organizations, sessions, blocked addresses and terms, mark as unread, console member and invitation selections with resend, favorites removal, the phone field as a form control ([1987761](https://github.com/STARTcloud/startcloud-ui/commit/1987761235e029ebf9b4be786827ce99535af747))
+* console crumbs through the Organizations row, terms callouts as cards, the avatar unread badge, the file's title as the configuration heading, one frame for every account page, fold chevrons on the right ([df9b44b](https://github.com/STARTcloud/startcloud-ui/commit/df9b44b4be9e5f6c71b2ed64267450bf1ea7cfd9))
+* form dialogs at the xl metric grouped by the schema's sections, list dialogs at 720px, every search kind of the issuer drawn and routed ([dc09c3c](https://github.com/STARTcloud/startcloud-ui/commit/dc09c3ca226c42c0b4825450c14ec1f02e868c98))
+* forms in cards and lists glass on every page, the configuration parent folds only, the System heading over its tree, terms regions, wider terms pages with the profile's address block, one clipboard copy ([93bc352](https://github.com/STARTcloud/startcloud-ui/commit/93bc3528cefd1326d25ca29639a2948f33c3eb57))
+* linked accounts on security, applications and terms pages, integrations for third-party services alone, the directory-driven join with the console following the switcher, the admin's organization edit dialog ([a1ccd3b](https://github.com/STARTcloud/startcloud-ui/commit/a1ccd3bc46133fa2139fb57e1de4f3441905e12e))
+* one heading row per section with the action pane at its right, the select-all a real checkbox, no icons in headings, terms regions and country codes, login after the second factor, one PIN control, the avatar card on the profile alone ([82fa84c](https://github.com/STARTcloud/startcloud-ui/commit/82fa84c639c9b40505bc2dc0ad126b2eb080cf5e))
+* one heading row per section with the action pane at its right, the select-all a real checkbox, no icons in headings, terms regions and country codes, login after the second factor, one PIN control, the avatar card on the profile alone ([afdba08](https://github.com/STARTcloud/startcloud-ui/commit/afdba08bcd4865e65892add23d9efd983f1d8361))
+* packs emit their rgb triples so the chrome follows the site, admin narrowing mirrored in the URL through one hook, step-up on the enroll read, client-error entries in one shape, client health under the view toggle ([c5a88fd](https://github.com/STARTcloud/startcloud-ui/commit/c5a88fd44ca3c41c6bdcdbcb61e2ba0dc3a732bd))
+* profile tabs as sidebar child rows, version chips on About, client-health probe members, placeholder and readOnly leaves in the config editor, flags from the sprite, Places as a plain script, TOTP entry and insights glyphs on the issuer ([734778b](https://github.com/STARTcloud/startcloud-ui/commit/734778bd2ebb9e404e5b34fe93865d1d414becb8))
+* revisions under a copy's version on the legal terms page, save as a revision or publish a version, history with every revision readable ([8db3544](https://github.com/STARTcloud/startcloud-ui/commit/8db3544b63083fc960a024e6586609948e42bb8d))
+* startcloud pack, need-help and support labels, accent links and centered auth column, password outline, 720px scrolling dialogs, favorites icon chain, Preferences and ticket rows, insights rework, restart confirm keys and one chrome row height ([16e5c40](https://github.com/STARTcloud/startcloud-ui/commit/16e5c40182da73f70e24141a271736981027bdd6))
+* style every element by class, forbid the style prop in lint and answer the issuer's CSP questions ([797f15f](https://github.com/STARTcloud/startcloud-ui/commit/797f15f5acf94c0691020772219fd2a267ee2b2c))
+* the pager as a centered section foot, a Per page group in the filter panel kept in prefs, row menus escaping the table wrap, maps inside dialogs as plain rows ([c25553d](https://github.com/STARTcloud/startcloud-ui/commit/c25553d9890a603bb1b7970128c80dcb3baabbff))
+* the pager as a foot at the bottom of the section, a Per page group in the filter panel, row menus never clipped, the Elsewhere results foldable, maps inside dialogs as plain rows ([7b68f82](https://github.com/STARTcloud/startcloud-ui/commit/7b68f825fea1f41571b608591018bd84aeb88b59))
+* the region as a flagged button opening a picker, site terms in the same chain, terms_required handled like onboarding, version history with what changed, legal documents with their copies inside, orderable term lists in the config editor ([b8a697e](https://github.com/STARTcloud/startcloud-ui/commit/b8a697e5749770875a7ce84faeaf9f2d5fd2867c))
+* the signed-out cluster and the issuer's menu as law, flags from the sprite, the panel inside the header row, one filter group per enumerable column mirrored in the URL, one prefs object per table, the current session marked ([84da8b3](https://github.com/STARTcloud/startcloud-ui/commit/84da8b3262e24c94127eab3f3ffd1d1ffd57708f))
+
+
+### Bug Fixes
+
+* map cards draw ordered leaves at any depth, the item dialog scrolls inside, duration and ttl controls, profile children without a duplicate, child-route crumbs, no empty app section on the issuer and a dark variant with four surface steps ([d2343da](https://github.com/STARTcloud/startcloud-ui/commit/d2343dabd696e723fabb1644a8efcad4b5407fba))
+* name the placeholder rule's message and let the cookie session reload without a navigate ([86960fc](https://github.com/STARTcloud/startcloud-ui/commit/86960fc5bb3ba02d604b89eb6b504429a90b4b7f))
+* terms order written by id, one stream per tab held across route changes ([b25cb56](https://github.com/STARTcloud/startcloud-ui/commit/b25cb56049ec1086d4fc84103315c8508309682d))
+* the auth server's five requests, contract first ([dc3f35a](https://github.com/STARTcloud/startcloud-ui/commit/dc3f35a73b4547f0c9746d5c4654c7496f61a900))
+
 ## [0.13.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.12.2...v0.13.0) (2026-09-11)
 
 
