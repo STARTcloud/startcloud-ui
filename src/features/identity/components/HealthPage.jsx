@@ -15,7 +15,6 @@ import { CLIENT_HEALTH } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TableWrap from './TableWrap';
 
 const KINDS = {
   client: {
@@ -352,18 +351,16 @@ const HealthPage = ({ kind }) => {
       {search.view === 'cards' ? (
         <CardGrid probes={search.rows} file={page.file} emptyText={emptyText} />
       ) : (
-        <TableWrap>
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={row => row.client_id}
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            ctx={{ t, language: i18n.language }}
-            emptyText={emptyText}
-          />
-        </TableWrap>
+        <SubTable
+          columns={columns}
+          rows={search.rows}
+          rowKey={row => row.client_id}
+          sort={search.sort}
+          onSort={search.setSort}
+          hiddenColumns={search.hiddenColumns}
+          ctx={{ t, language: i18n.language }}
+          emptyText={emptyText}
+        />
       )}
     </div>
   );

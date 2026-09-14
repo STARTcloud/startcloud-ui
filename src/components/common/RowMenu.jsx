@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import { Dropdown } from 'react-bootstrap';
 
 /**
- * A row's More menu: one shared `Dropdown` whose `Dropdown.Menu` opens over
- * the page with `popperConfig={{ strategy: 'fixed' }}`, escaping the table
- * wrap and the page's one scroll region rather than being clipped by
- * either's `overflow`.
+ * A row's More menu: one shared `Dropdown`, opening the plain absolute way
+ * with `flip` on so it turns upward near the bottom of the scroll region;
+ * the table wrap it sits over never clips, so the menu draws over the rows
+ * under it.
  *
  * @param {Object} props
  * @param {import('react').ReactNode} props.label - The toggle's text
@@ -18,7 +18,7 @@ const RowMenu = ({ label, variant = 'outline-secondary', size = 'sm', children }
     <Dropdown.Toggle variant={variant} size={size}>
       {label}
     </Dropdown.Toggle>
-    <Dropdown.Menu popperConfig={{ strategy: 'fixed' }}>{children}</Dropdown.Menu>
+    <Dropdown.Menu>{children}</Dropdown.Menu>
   </Dropdown>
 );
 

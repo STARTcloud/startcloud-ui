@@ -499,13 +499,14 @@ adds its own foldable section to an item page (the catalog's Quality).
   thing twice; the row checkboxes are that column's cells (identity
   contract decisions 137, 139, 142).
 - **Pager**: a paged list's pager, `Pager` in `src/components/common/Pager.jsx`,
-  draws as the section's foot, centered under its table or list: the page
-  buttons — previous, the pages around the current one, next — on one line,
-  and the "Showing a to b of n" line as muted small text centered under
-  them, never in the heading row, whose action pane already holds the
-  section's actions, and never left- or right-aligned, because a foot
-  found under the middle of a table is found where a footer is found and
-  the heading's pane already carries the section's actions. A paged
+  draws as the section's foot: the page buttons — previous, the pages
+  around the current one, next — on one line, and the "Showing a to b of
+  n" line as muted small text centered under them, never in the heading
+  row, whose action pane already holds the section's actions, and never
+  left- or right-aligned. The foot sits at the bottom of the section's
+  area, the page a column filling the scroll region and the foot pushed to
+  its end, and under the table when the table is taller than the region,
+  because below is not bottom. A paged
   list's page size is a "Per page" pill group in the navbar filter panel
   (25, 50, 100, 250; 25 the default), drawn after the page's own groups
   and before Columns, not a filter — Clear filters leaves it alone and it
@@ -514,10 +515,10 @@ adds its own foldable section to an item page (the catalog's Quality).
   hidden columns and folds, and sent to the list as `size`, because the
   panel is the one place a page is narrowed and shaped and the page
   carries no control of its own. A row's More menu is `RowMenu` in
-  `src/components/common/RowMenu.jsx`, one shared component opening over
-  the page, escaping the table wrap and the scroll region, never clipped
-  by either's `overflow`, because a menu a person cannot read is not a
-  menu.
+  `src/components/common/RowMenu.jsx`, one shared component: the table
+  wrap never clips, so the menu draws over the rows under it and flips
+  upward near the bottom of the scroll region, because a menu pinned to
+  the viewport loses its row when the page scrolls inside its own region.
 - **HomePage**: `Listing` over every collection, grouped by organization,
   the Discover organizations button and the toggle on the first
   collection's heading row.

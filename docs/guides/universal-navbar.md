@@ -254,7 +254,10 @@ here, not in any one app's backlog.
   asked through `GET /api/search?q=&limit=`; any other UI backend is searched
   client-side from what its collections' adapters already load (the
   catalog's `catalog.json` plus the private catalogs), the same rows and
-  the same list either way.
+  the same list either way. The app-wide results block under the panel
+  folds by its heading, the fold kept in local storage, so the filter band
+  stays open while the results are put away, because a person narrowing a
+  page does not always want the estate's hits under it.
 - **Search page**: `/search?q=`, a reserved segment on every UI backend, is the
   full result: the same query bound to the navbar box so typing refines
   the page, one table per kind (Title, Where, Matched) with header sort

@@ -27,7 +27,6 @@ import { INSIGHTS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TableWrap from './TableWrap';
 
 const PREFS_KEY = 'table_prefs_admin_insights';
 
@@ -185,18 +184,16 @@ const InsightTable = ({ tableKey, search }) => {
   const { t, i18n } = useTranslation();
   const spec = TABLES.find(entry => entry.key === tableKey);
   return (
-    <TableWrap>
-      <SubTable
-        columns={spec.columns}
-        rows={search.rows[tableKey]}
-        rowKey={ROW_KEYS[tableKey]}
-        sort={search.sort[tableKey]}
-        onSort={(column, options) => search.setSort(tableKey, column, options)}
-        hiddenColumns={search.hiddenColumns[tableKey]}
-        ctx={{ t, language: i18n.language }}
-        emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
-      />
-    </TableWrap>
+    <SubTable
+      columns={spec.columns}
+      rows={search.rows[tableKey]}
+      rowKey={ROW_KEYS[tableKey]}
+      sort={search.sort[tableKey]}
+      onSort={(column, options) => search.setSort(tableKey, column, options)}
+      hiddenColumns={search.hiddenColumns[tableKey]}
+      ctx={{ t, language: i18n.language }}
+      emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+    />
   );
 };
 

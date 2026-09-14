@@ -174,6 +174,32 @@ export const emptyFilters = collections => ({
   watched: new Set(),
 });
 
+const ELSEWHERE_FOLD_KEY = 'navbar_search_elsewhere';
+
+/**
+ * Whether the navbar search's app-wide results block is folded, kept as
+ * one boolean under its own key rather than a page's `table_prefs_*`
+ * object.
+ *
+ * @returns {boolean} Whether it is folded
+ */
+export const readElsewhereFold = () => {
+  try {
+    return localStorage.getItem(ELSEWHERE_FOLD_KEY) === 'folded';
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Writes the navbar search's app-wide results fold.
+ *
+ * @param {boolean} folded - Whether the block is folded
+ */
+export const writeElsewhereFold = folded => {
+  localStorage.setItem(ELSEWHERE_FOLD_KEY, folded ? 'folded' : '');
+};
+
 export const toggleIn = (set, value) => {
   const next = new Set(set);
   if (next.has(value)) {

@@ -22,7 +22,6 @@ import OrganizationDialog, {
   adminOrganizationShape,
   DEFAULT_ROLES,
 } from './OrganizationDialog';
-import TableWrap from './TableWrap';
 import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
@@ -432,22 +431,20 @@ const OrganizationsPage = () => {
         count={t('admin.organizations.count', { count: rows.length })}
         actions={headingActions}
       />
-      <TableWrap>
-        <SubTable
-          columns={columns}
-          rows={search.rows}
-          rowKey={row => row.id}
-          RowActions={RowActions}
-          actionsProps={{ onEdit: setEditing, onDelete: setDeleting }}
-          rowProp="org"
-          sort={search.sort}
-          onSort={search.setSort}
-          hiddenColumns={search.hiddenColumns}
-          ctx={{ t, language: i18n.language }}
-          emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
-          selection={selection.subtable}
-        />
-      </TableWrap>
+      <SubTable
+        columns={columns}
+        rows={search.rows}
+        rowKey={row => row.id}
+        RowActions={RowActions}
+        actionsProps={{ onEdit: setEditing, onDelete: setDeleting }}
+        rowProp="org"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        ctx={{ t, language: i18n.language }}
+        emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+        selection={selection.subtable}
+      />
       {editing ? (
         <OrganizationDialog org={editing} onClose={() => setEditing(null)} onSaved={reload} />
       ) : null}

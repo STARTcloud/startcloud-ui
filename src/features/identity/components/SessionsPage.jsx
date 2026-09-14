@@ -18,7 +18,6 @@ import { SESSIONS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TableWrap from './TableWrap';
 
 const PREFS_KEY = 'table_prefs_admin_sessions';
 const PAGE_SIZE = 25;
@@ -281,7 +280,7 @@ const SessionsPage = () => {
   ) : null;
 
   return (
-    <div>
+    <div className="page-column">
       <SectionHeading
         title={t('admin.activity.sessions.title')}
         count={data ? data.total || 0 : null}
@@ -290,22 +289,20 @@ const SessionsPage = () => {
       {loading && !data ? (
         <AdminLoading />
       ) : (
-        <TableWrap>
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={row => row.id}
-            RowActions={RowActions}
-            actionsProps={{ onRevoke: setRevoking }}
-            rowProp="session"
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            ctx={{ t, language: i18n.language }}
-            emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
-            selection={selection.subtable}
-          />
-        </TableWrap>
+        <SubTable
+          columns={columns}
+          rows={search.rows}
+          rowKey={row => row.id}
+          RowActions={RowActions}
+          actionsProps={{ onRevoke: setRevoking }}
+          rowProp="session"
+          sort={search.sort}
+          onSort={search.setSort}
+          hiddenColumns={search.hiddenColumns}
+          ctx={{ t, language: i18n.language }}
+          emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+          selection={selection.subtable}
+        />
       )}
       {data ? (
         <Pager

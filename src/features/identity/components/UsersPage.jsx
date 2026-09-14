@@ -22,7 +22,6 @@ import { USERS } from '../utils/examples';
 import AdminLoading from './AdminLoading';
 import BulkBar from './BulkBar';
 import RateLimitsDialog from './RateLimitsDialog';
-import TableWrap from './TableWrap';
 import {
   CustomerIdDialog,
   PrimaryOrgDialog,
@@ -431,7 +430,7 @@ const UsersPage = () => {
   ) : null;
 
   return (
-    <div>
+    <div className="page-column">
       <SectionHeading
         title={t('admin.users.title')}
         count={data ? data.total || 0 : null}
@@ -440,22 +439,20 @@ const UsersPage = () => {
       {loading && !data ? (
         <AdminLoading />
       ) : (
-        <TableWrap>
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={row => row.id}
-            RowActions={RowActions}
-            actionsProps={{ onAction }}
-            rowProp="user"
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            ctx={ctx}
-            emptyText={Object.keys(narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')}
-            selection={selection.subtable}
-          />
-        </TableWrap>
+        <SubTable
+          columns={columns}
+          rows={search.rows}
+          rowKey={row => row.id}
+          RowActions={RowActions}
+          actionsProps={{ onAction }}
+          rowProp="user"
+          sort={search.sort}
+          onSort={search.setSort}
+          hiddenColumns={search.hiddenColumns}
+          ctx={ctx}
+          emptyText={Object.keys(narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')}
+          selection={selection.subtable}
+        />
       )}
       {data ? (
         <Pager

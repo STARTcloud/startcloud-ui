@@ -13,7 +13,6 @@ import { useAdminRead } from '../hooks/useAdminRead';
 import { BRUTE_FORCE } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
-import TableWrap from './TableWrap';
 
 const NO_SORT = [];
 const NO_HIDDEN = new Set();
@@ -237,22 +236,20 @@ const BlockedIpsPage = () => {
         count={enabledCount}
         actions={headingActions}
       />
-      <TableWrap>
-        <SubTable
-          columns={columns}
-          rows={blocked}
-          rowKey={row => row.ip}
-          RowActions={RowActions}
-          actionsProps={{ onUnblock: setUnblocking }}
-          rowProp="entry"
-          sort={NO_SORT}
-          onSort={noSort}
-          hiddenColumns={NO_HIDDEN}
-          ctx={{ t, language: i18n.language }}
-          emptyText={t('pages.empty')}
-          selection={selection.subtable}
-        />
-      </TableWrap>
+      <SubTable
+        columns={columns}
+        rows={blocked}
+        rowKey={row => row.ip}
+        RowActions={RowActions}
+        actionsProps={{ onUnblock: setUnblocking }}
+        rowProp="entry"
+        sort={NO_SORT}
+        onSort={noSort}
+        hiddenColumns={NO_HIDDEN}
+        ctx={{ t, language: i18n.language }}
+        emptyText={t('pages.empty')}
+        selection={selection.subtable}
+      />
       <ConfirmModal
         show={Boolean(unblocking)}
         handleClose={() => setUnblocking(null)}

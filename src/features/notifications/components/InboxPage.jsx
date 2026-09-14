@@ -322,7 +322,7 @@ const InboxPage = ({ notifications }) => {
   );
 
   return (
-    <div className="list">
+    <div className="list page-column">
       <SectionHeading title={t('inbox.title')} count={paging.total} actions={headingActions} />
       {resultLineOf(t, 'inbox.bulk', bulkResult) ? (
         <p className="small text-muted" role="status">

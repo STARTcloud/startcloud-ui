@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import {
@@ -16,6 +17,7 @@ import {
   useNavbarSearch,
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
+import { readElsewhereFold, writeElsewhereFold } from '../../utils/prefs';
 import DateRange from '../common/DateRange';
 import SearchResults from '../common/SearchResults';
 
@@ -220,24 +222,42 @@ const AppSection = ({ context, bound, query }) => {
   const status = useStatus();
   const { appSearch, appResults, resultsRef, inputRef, setExpanded, setPanelOpen, setAppQuery } =
     context;
+  const [folded, setFolded] = useState(() => readElsewhereFold());
   const onPick = () => {
     setPanelOpen(false);
     setExpanded(false);
     setAppQuery('');
   };
+  const toggleFold = () => {
+    const next = !folded;
+    writeElsewhereFold(next);
+    setFolded(next);
+  };
   return (
     <div className="navbar-search-app">
-      <span className="navbar-search-group-label">
-        {t(bound ? 'search.elsewhere' : 'search.inApp', { app: status.brand.name })}
-      </span>
-      <AppBody
-        query={query}
-        appResults={appResults}
-        appSearch={appSearch}
-        resultsRef={resultsRef}
-        onPick={onPick}
-        onEscape={() => inputRef.current?.focus()}
-      />
+      <button
+        type="button"
+        className="btn btn-link btn-sm p-0 text-reset text-decoration-none d-flex align-items-center gap-2 w-100"
+        onClick={toggleFold}
+        aria-expanded={!folded}
+      >
+        <span className="navbar-search-group-label flex-grow-1 text-start">
+          {t(bound ? 'search.elsewhere' : 'search.inApp', { app: status.brand.name })}
+        </span>
+        <span className="section-card-chevron">
+          {folded ? <FaChevronRight aria-hidden /> : <FaChevronDown aria-hidden />}
+        </span>
+      </button>
+      {folded ? null : (
+        <AppBody
+          query={query}
+          appResults={appResults}
+          appSearch={appSearch}
+          resultsRef={resultsRef}
+          onPick={onPick}
+          onEscape={() => inputRef.current?.focus()}
+        />
+      )}
     </div>
   );
 };
@@ -254,7 +274,8 @@ AppSection.propTypes = {
  * as the shared `DateRange` with its presets, the page's registered action
  * at the foot beside Clear filters, and the app-wide results for the query
  * in the box, headed "Elsewhere in the app" beside a page binding and "In
- * the app" without one.
+ * the app" without one, that heading a fold button (kept in local storage)
+ * so the results can be put away while the filter band stays open.
  */
 export const NavbarSearchPanel = () => {
   const context = useContext(NavbarSearchContext);

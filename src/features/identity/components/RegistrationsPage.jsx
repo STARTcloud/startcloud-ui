@@ -13,7 +13,6 @@ import { REGISTRATIONS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TableWrap from './TableWrap';
 
 const PREFS_KEY = 'table_prefs_admin_registrations';
 
@@ -144,7 +143,7 @@ const RegistrationsPage = () => {
   }, [t]);
 
   return (
-    <div>
+    <div className="page-column">
       <SectionHeading
         title={t('admin.activity.registrations.title')}
         count={state.data ? state.data.total || 0 : null}
@@ -152,20 +151,18 @@ const RegistrationsPage = () => {
       {state.loading && !state.data ? (
         <AdminLoading />
       ) : (
-        <TableWrap>
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={rowKey}
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            ctx={{ t, language: i18n.language }}
-            emptyText={
-              Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
-            }
-          />
-        </TableWrap>
+        <SubTable
+          columns={columns}
+          rows={search.rows}
+          rowKey={rowKey}
+          sort={search.sort}
+          onSort={search.setSort}
+          hiddenColumns={search.hiddenColumns}
+          ctx={{ t, language: i18n.language }}
+          emptyText={
+            Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
+          }
+        />
       )}
       {state.data ? (
         <Pager

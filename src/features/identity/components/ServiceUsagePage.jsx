@@ -13,7 +13,6 @@ import { SERVICE_USAGE } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
-import TableWrap from './TableWrap';
 
 const NO_SORT = [];
 const NO_HIDDEN = new Set();
@@ -120,18 +119,16 @@ const ServiceUsagePage = () => {
           label={t('admin.health.usage.totalAuthorizations')}
         />
       </div>
-      <TableWrap>
-        <SubTable
-          columns={columns}
-          rows={data.items || []}
-          rowKey={row => row.client_id}
-          sort={NO_SORT}
-          onSort={noSort}
-          hiddenColumns={NO_HIDDEN}
-          ctx={{ t, language: i18n.language, totalSessions: data.total_sessions }}
-          emptyText={t('pages.empty')}
-        />
-      </TableWrap>
+      <SubTable
+        columns={columns}
+        rows={data.items || []}
+        rowKey={row => row.client_id}
+        sort={NO_SORT}
+        onSort={noSort}
+        hiddenColumns={NO_HIDDEN}
+        ctx={{ t, language: i18n.language, totalSessions: data.total_sessions }}
+        emptyText={t('pages.empty')}
+      />
       <details className="mt-3">
         <summary>{t('admin.health.definitions')}</summary>
         <dl className="row mt-2 mb-0 small">
