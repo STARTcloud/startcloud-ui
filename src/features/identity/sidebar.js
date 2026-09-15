@@ -2,6 +2,7 @@ import {
   FaChartBar,
   FaChartPie,
   FaDesktop,
+  FaEnvelope,
   FaFileContract,
   FaFolderTree,
   FaGauge,
@@ -24,10 +25,10 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
 /**
  * The identity feature's operator export of the identity contract's
  * group 5: nothing unless the host advertises `admin` and the account's
- * roles hold `ROLE_ADMIN`, else one Admin group with the seven sections
+ * roles hold `ROLE_ADMIN`, else one Admin group with the eight sections
  * Overview, Accounts, Activity, Health, Security, Legal (while the host
- * also advertises `policies`) and System (while `status.config` names
- * exactly one file), the Dashboard row exact-match, the Blocked IPs row
+ * also advertises `policies`), Messaging and System (while `status.config`
+ * names exactly one file), the Dashboard row exact-match, the Blocked IPs row
  * carrying the `blockedCount` badge the shell resolves from the `admin`
  * topic and the Configuration row an in-router link to the shared
  * configuration page at `/admin/config`; while `status.config` names more
@@ -128,6 +129,16 @@ export const sidebar = (status, account, admin) => {
       ])
     );
   }
+  sections.push(
+    section('messaging', [
+      {
+        key: 'emailTemplates',
+        icon: FaEnvelope,
+        labelKey: 'admin.emailTemplates.title',
+        to: '/admin/email-templates',
+      },
+    ])
+  );
   if (configCount === 1) {
     sections.push(
       section('system', [

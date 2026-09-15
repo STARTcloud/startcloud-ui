@@ -235,6 +235,7 @@ const PAGE_TITLES = {
   '/notifications': 'inbox.title',
   '/admin': 'admin.pageTitle',
   '/admin/terms': 'admin.terms.title',
+  '/admin/email-templates': 'admin.emailTemplates.title',
   '/setup': 'setup.title',
   '/vm/:instance': 'vdi.vm.title',
   '/authenticator': 'auth:tfa.title',

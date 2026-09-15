@@ -489,6 +489,11 @@ Bootstrap where the site's own accent belongs, and `theme_id: light` is
 retired as a site value (the variant is the person's, decision 70's list
 is amended).
 
+Email is branded through the identity provider's email-template
+documents, a copy per site and per locale edited on its Email templates
+page (Universal Identity Contract decision 164), never through a key in
+the server's jar.
+
 ---
 
 ## Artwork

@@ -591,6 +591,7 @@
       "health": "Health",
       "security": "Security",
       "legal": "Legal",
+      "messaging": "Messaging",
       "system": "System"
     },
     "dashboard": {
@@ -1043,6 +1044,76 @@
         "confirmTitle": "Confirm the bulk action",
         "confirmBody": "{{count}} selected documents are deleted with every acceptance record that names them. Type \"{{keyword}}\" to confirm.",
         "stepUpReason": "Deleting documents removes them for good.",
+        "errors": {
+          "not_found": "no longer exists"
+        }
+      }
+    },
+    "emailTemplates": {
+      "title": "Email templates",
+      "search": "Search email templates",
+      "kind": {
+        "account_verification": "Account verification",
+        "password_reset": "Password reset",
+        "magic_login": "Magic sign-in link",
+        "onboarding_verification": "Onboarding verification",
+        "org_invite": "Organization invitation",
+        "email_change": "Email change",
+        "account_event": "Account event",
+        "ciba_approval": "CIBA approval",
+        "admin_new_registration": "New registration (admin)"
+      },
+      "edit": "Edit",
+      "preview": "Preview",
+      "delete": "Delete",
+      "history": "History",
+      "everySite": "Every site",
+      "everyLanguage": "Every language",
+      "locale": {
+        "en": "English",
+        "es": "Español"
+      },
+      "version": "v{{version}}",
+      "revision": "r{{revision}}",
+      "current": "Current",
+      "save": "Save",
+      "saveAsRevision": "Save as a revision of {{version}}",
+      "publish": "Publish",
+      "publishTitle": "Publish a new version",
+      "publishVersion": "Version",
+      "historyTitle": "History · {{name}}",
+      "updatedAt": "updated",
+      "updated": "The template is saved.",
+      "added": "The copy is added.",
+      "deleted": "{{name}} is deleted.",
+      "deleteTitle": "Delete the copy",
+      "deleteBody": "{{name}} loses this copy for good; its mail falls back to the next copy or the generic text. Type \"{{keyword}}\" to confirm.",
+      "editTitle": "Edit · {{name}}",
+      "addCopy": "Add a copy",
+      "addTitle": "Add a copy · {{name}}",
+      "noCopies": "No copies; sent from the generic text.",
+      "arguments": "Arguments:",
+      "insertArgument": "Insert {{name}}",
+      "previewTitle": "Preview",
+      "previewFrame": "Preview of the email body",
+      "field": {
+        "site": "Site",
+        "locale": "Language",
+        "version": "Version",
+        "subject": "Subject",
+        "body": "Body (HTML)"
+      },
+      "filter": {
+        "site": "Site"
+      },
+      "bulk": {
+        "selected": "{{count}} selected",
+        "clearSelection": "Clear selection",
+        "delete": "Delete",
+        "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+        "confirmTitle": "Confirm the bulk action",
+        "confirmBody": "{{count}} selected kinds lose every copy for good. Type \"{{keyword}}\" to confirm.",
+        "stepUpReason": "Deleting copies removes them for good.",
         "errors": {
           "not_found": "no longer exists"
         }

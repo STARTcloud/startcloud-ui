@@ -591,6 +591,7 @@
       "health": "Salud",
       "security": "Seguridad",
       "legal": "Legal",
+      "messaging": "Mensajería",
       "system": "Sistema"
     },
     "dashboard": {
@@ -1043,6 +1044,76 @@
         "confirmTitle": "Confirmar la acción en bloque",
         "confirmBody": "{{count}} documentos seleccionados se eliminan con todos los registros de aceptación que los nombran. Escribe \"{{keyword}}\" para confirmar.",
         "stepUpReason": "Eliminar documentos los quita para siempre.",
+        "errors": {
+          "not_found": "ya no existe"
+        }
+      }
+    },
+    "emailTemplates": {
+      "title": "Plantillas de correo",
+      "search": "Buscar plantillas de correo",
+      "kind": {
+        "account_verification": "Verificación de la cuenta",
+        "password_reset": "Restablecimiento de contraseña",
+        "magic_login": "Enlace mágico de inicio de sesión",
+        "onboarding_verification": "Verificación del alta",
+        "org_invite": "Invitación a la organización",
+        "email_change": "Cambio de correo",
+        "account_event": "Evento de la cuenta",
+        "ciba_approval": "Aprobación CIBA",
+        "admin_new_registration": "Registro nuevo (admin)"
+      },
+      "edit": "Editar",
+      "preview": "Vista previa",
+      "delete": "Eliminar",
+      "history": "Historial",
+      "everySite": "Todos los sitios",
+      "everyLanguage": "Todos los idiomas",
+      "locale": {
+        "en": "Inglés",
+        "es": "Español"
+      },
+      "version": "v{{version}}",
+      "revision": "r{{revision}}",
+      "current": "Actual",
+      "save": "Guardar",
+      "saveAsRevision": "Guardar como revisión de {{version}}",
+      "publish": "Publicar",
+      "publishTitle": "Publicar una nueva versión",
+      "publishVersion": "Versión",
+      "historyTitle": "Historial · {{name}}",
+      "updatedAt": "actualizada",
+      "updated": "La plantilla se ha guardado.",
+      "added": "La copia se ha añadido.",
+      "deleted": "{{name}} se ha eliminado.",
+      "deleteTitle": "Eliminar la copia",
+      "deleteBody": "{{name}} pierde esta copia para siempre; su correo pasa a la siguiente copia o al texto genérico. Escribe \"{{keyword}}\" para confirmar.",
+      "editTitle": "Editar · {{name}}",
+      "addCopy": "Añadir una copia",
+      "addTitle": "Añadir una copia · {{name}}",
+      "noCopies": "Sin copias; se envía desde el texto genérico.",
+      "arguments": "Argumentos:",
+      "insertArgument": "Insertar {{name}}",
+      "previewTitle": "Vista previa",
+      "previewFrame": "Vista previa del cuerpo del correo",
+      "field": {
+        "site": "Sitio",
+        "locale": "Idioma",
+        "version": "Versión",
+        "subject": "Asunto",
+        "body": "Cuerpo (HTML)"
+      },
+      "filter": {
+        "site": "Sitio"
+      },
+      "bulk": {
+        "selected": "{{count}} seleccionados",
+        "clearSelection": "Limpiar selección",
+        "delete": "Eliminar",
+        "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+        "confirmTitle": "Confirmar la acción en bloque",
+        "confirmBody": "{{count}} tipos seleccionados pierden todas sus copias para siempre. Escribe \"{{keyword}}\" para confirmar.",
+        "stepUpReason": "Eliminar copias las quita para siempre.",
         "errors": {
           "not_found": "ya no existe"
         }

@@ -2829,6 +2829,10 @@ a.stat-card:focus-visible {
   overflow-y: auto;
 }
 
+.email-preview {
+  height: 24rem;
+}
+
 .term-document-copies {
   border-left: 2px solid var(--bs-border-color);
   margin-left: 0.75rem;

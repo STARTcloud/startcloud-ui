@@ -480,3 +480,135 @@ export const PLACEHOLDERS = [
   { name: 'postal_code', scope: 'address', description: 'The postal code' },
   { name: 'date', scope: 'document', description: 'The acceptance date' },
 ];
+
+export const EMAIL_TEMPLATES = [
+  {
+    kind: 'account_verification',
+    copies: [
+      {
+        id: 1,
+        site: '',
+        locale: '',
+        version: '1.0',
+        revision: 2,
+        subject: 'Verify your {2} account',
+        body: '<p>Hello {0},</p>\n<p>Confirm your {2} account:</p>\n<p><a href="{1}">Verify</a></p>',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-09-14T00:00:00Z',
+      },
+      {
+        id: 2,
+        site: 'prominic',
+        locale: 'es',
+        version: '1.0',
+        revision: 1,
+        subject: 'Verifica tu cuenta de {2}',
+        body: '<p>Hola {0},</p>\n<p>Confirma tu cuenta de {2}:</p>\n<p><a href="{1}">Verificar</a></p>',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-09-14T00:00:00Z',
+      },
+    ],
+  },
+  { kind: 'password_reset', copies: [] },
+  { kind: 'magic_login', copies: [] },
+  { kind: 'onboarding_verification', copies: [] },
+  {
+    kind: 'org_invite',
+    copies: [
+      {
+        id: 3,
+        site: 'startcloud',
+        locale: '',
+        version: '2.0',
+        revision: 1,
+        subject: '{0} invited you to {1}',
+        body: '<p>{0} invited you to join {1}.</p>\n<p><a href="{2}">Accept the invitation</a> within {3} days.</p>',
+        created_by: 'mark@m4kr.net',
+        updated_at: '2026-08-30T00:00:00Z',
+      },
+    ],
+  },
+  { kind: 'email_change', copies: [] },
+  { kind: 'account_event', copies: [] },
+  { kind: 'ciba_approval', copies: [] },
+  { kind: 'admin_new_registration', copies: [] },
+];
+
+export const EMAIL_ARGUMENTS = [
+  {
+    kind: 'account_verification',
+    arguments: [
+      { index: 0, name: 'name', description: 'The recipient name' },
+      { index: 1, name: 'link', description: 'The verification link' },
+      { index: 2, name: 'company name', description: 'The site company name' },
+    ],
+  },
+  {
+    kind: 'password_reset',
+    arguments: [
+      { index: 0, name: 'name', description: 'The recipient name' },
+      { index: 1, name: 'link', description: 'The reset link' },
+      { index: 2, name: 'expiry minutes', description: 'Minutes until the link expires' },
+    ],
+  },
+  {
+    kind: 'magic_login',
+    arguments: [
+      { index: 0, name: 'name', description: 'The recipient name' },
+      { index: 1, name: 'link', description: 'The sign-in link' },
+      { index: 2, name: 'expiry minutes', description: 'Minutes until the link expires' },
+    ],
+  },
+  {
+    kind: 'onboarding_verification',
+    arguments: [{ index: 0, name: 'code', description: 'The verification code' }],
+  },
+  {
+    kind: 'org_invite',
+    arguments: [
+      { index: 0, name: 'inviter name', description: 'Who sent the invitation' },
+      { index: 1, name: 'organization name', description: 'The organization invited to' },
+      { index: 2, name: 'invite link', description: 'The invitation link' },
+      { index: 3, name: 'expiry days', description: 'Days until the invitation expires' },
+    ],
+  },
+  {
+    kind: 'email_change',
+    arguments: [{ index: 0, name: 'code', description: 'The verification code' }],
+  },
+  {
+    kind: 'account_event',
+    arguments: [
+      { index: 0, name: 'event title', description: 'The event title' },
+      { index: 1, name: 'event message', description: 'The event message' },
+      { index: 2, name: 'support email', description: 'The support address' },
+    ],
+  },
+  {
+    kind: 'ciba_approval',
+    arguments: [
+      { index: 0, name: 'client name', description: 'The application asking' },
+      { index: 1, name: 'approval link', description: 'The approval link' },
+      { index: 2, name: 'binding message', description: 'The binding message' },
+    ],
+  },
+  {
+    kind: 'admin_new_registration',
+    arguments: [
+      { index: 0, name: 'user name', description: 'The new account name' },
+      { index: 1, name: 'user email', description: 'The new account email' },
+      { index: 2, name: 'timestamp', description: 'When the account registered' },
+      { index: 3, name: 'IP address', description: 'The registering address' },
+      { index: 4, name: 'location', description: 'The registering location' },
+      { index: 5, name: 'dashboard link', description: 'The admin dashboard link' },
+    ],
+  },
+];
+
+export const SITES_CONFIG = {
+  sites: {
+    startcloud: { name: 'STARTcloud' },
+    prominic: { name: 'Prominic' },
+    moonshinedev: { name: 'Moonshine Dev' },
+  },
+};

@@ -3906,8 +3906,14 @@
               >
             </div>
             <div>
-              <div class="sb-sec">Content</div>
+              <div class="sb-sec">Legal</div>
               <span class="row"><span class="i">▭</span><span class="l">Terms</span></span>
+            </div>
+            <div>
+              <div class="sb-sec">Messaging</div>
+              <span class="row"
+                ><span class="i">✉</span><span class="l">Email templates</span></span
+              >
             </div>
             <div>
               <div class="sb-sec">System</div>
@@ -4754,8 +4760,14 @@
               >
             </div>
             <div>
-              <div class="sb-sec">Content</div>
+              <div class="sb-sec">Legal</div>
               <span class="row"><span class="i">▭</span><span class="l">Terms</span></span>
+            </div>
+            <div>
+              <div class="sb-sec">Messaging</div>
+              <span class="row"
+                ><span class="i">✉</span><span class="l">Email templates</span></span
+              >
             </div>
             <div>
               <div class="sb-sec">System</div>
@@ -4898,8 +4910,14 @@
               >
             </div>
             <div>
-              <div class="sb-sec">Content</div>
+              <div class="sb-sec">Legal</div>
               <span class="row"><span class="i">▭</span><span class="l">Terms</span></span>
+            </div>
+            <div>
+              <div class="sb-sec">Messaging</div>
+              <span class="row"
+                ><span class="i">✉</span><span class="l">Email templates</span></span
+              >
             </div>
             <div>
               <div class="sb-sec">System</div>
@@ -5083,8 +5101,14 @@
               >
             </div>
             <div>
-              <div class="sb-sec">Content</div>
+              <div class="sb-sec">Legal</div>
               <span class="row"><span class="i">▭</span><span class="l">Terms</span></span>
+            </div>
+            <div>
+              <div class="sb-sec">Messaging</div>
+              <span class="row"
+                ><span class="i">✉</span><span class="l">Email templates</span></span
+              >
             </div>
             <div>
               <div class="sb-sec">System</div>
@@ -5586,7 +5610,7 @@
 
   <div class="state">
     <div class="state-label">
-      Security › Blocked IPs, Content › Terms, the Rate limits dialog on a Users row, and where
+      Security › Blocked IPs, Legal › Terms, the Rate limits dialog on a Users row, and where
       Configuration goes
     </div>
     <div class="frame">
@@ -5854,6 +5878,227 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
         restart card and Restart move from the footer's thirty-second poll to this page and to the
         Dashboard, both fed by the <code>admin</code> topic's <code>restart-required</code> event,
         never a timer.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      Messaging › Email templates — one card per kind with a row per copy by site and language, and
+      the copy dialog with the argument chips, the HTML body and its sandboxed preview
+    </div>
+    <div class="frame">
+      <div class="two">
+        <div class="auth-page" style="align-items: stretch; text-align: left; padding: 16px">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="a-row">
+              <div class="crumbs">Admin<span class="sep">›</span>Email templates</div>
+              <span class="a-hint">9 kinds</span>
+            </div>
+            <div class="tcard" style="flex-direction: column; align-items: stretch; gap: 8px">
+              <div class="a-row">
+                <span class="t"
+                  ><span class="l"
+                    ><input type="checkbox" /> ✉ Account verification
+                    <code style="font-size: 11px">account_verification</code></span
+                  ><span class="h">{0} name · {1} link · {2} company name</span></span
+                ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
+              </div>
+              <div class="a-row" style="padding-left: 22px">
+                <span
+                  ><span class="a-badge">Every site</span>
+                  <span class="a-badge">Every language</span>
+                  <span class="a-hint">v1.0 r2 · updated Sep 14, 2026</span></span
+                ><span class="m-act"
+                  ><span class="btn sm">Preview</span><span class="btn sm">Edit</span
+                  ><span class="btn sm">History</span
+                  ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                    >Delete</span
+                  ></span
+                >
+              </div>
+              <div class="a-row" style="padding-left: 22px">
+                <span
+                  ><span class="status" style="background: var(--primary)">prominic</span>
+                  <span class="a-badge">es</span>
+                  <span class="a-hint">v1.0 r1 · updated Sep 14, 2026</span></span
+                ><span class="m-act"
+                  ><span class="btn sm">Preview</span><span class="btn sm">Edit</span
+                  ><span class="btn sm">History</span
+                  ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                    >Delete</span
+                  ></span
+                >
+              </div>
+            </div>
+            <div class="tcard" style="flex-direction: column; align-items: stretch; gap: 8px">
+              <div class="a-row">
+                <span class="t"
+                  ><span class="l"
+                    ><input type="checkbox" /> ✉ Password reset
+                    <code style="font-size: 11px">password_reset</code></span
+                  ><span class="h">{0} name · {1} link · {2} expiry minutes</span></span
+                ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
+              </div>
+              <div class="a-hint" style="padding-left: 22px">
+                No copies; sent from the generic text.
+              </div>
+            </div>
+            <div class="tcard" style="flex-direction: column; align-items: stretch; gap: 8px">
+              <div class="a-row">
+                <span class="t"
+                  ><span class="l"
+                    ><input type="checkbox" /> ✉ Organization invitation
+                    <code style="font-size: 11px">org_invite</code></span
+                  ><span class="h"
+                    >{0} inviter name · {1} organization name · {2} invite link · {3} expiry
+                    days</span
+                  ></span
+                ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
+              </div>
+              <div class="a-row" style="padding-left: 22px">
+                <span
+                  ><span class="status" style="background: var(--primary)">startcloud</span>
+                  <span class="a-badge">Every language</span>
+                  <span class="a-hint">v2.0 r1 · updated Aug 30, 2026</span></span
+                ><span class="m-act"
+                  ><span class="btn sm">Preview</span><span class="btn sm">Edit</span
+                  ><span class="btn sm">History</span
+                  ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                    >Delete</span
+                  ></span
+                >
+              </div>
+            </div>
+            <span class="a-hint"
+              >the navbar search binds a query over the cards by kind and a Site group; picking
+              cards swaps the heading's actions for N selected, Clear selection and Delete over
+              <code>POST /api/admin/email-templates/bulk</code>, stepped up.</span
+            >
+          </div>
+        </div>
+        <div class="auth-page" style="align-items: stretch; text-align: left; padding: 16px">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="dlg">
+              <div class="h">
+                <span>Edit Account verification · prominic · es</span
+                ><span class="a-link muted">×</span>
+              </div>
+              <div class="b">
+                <div class="grid2">
+                  <div class="a-field sm">
+                    <label>Site</label>
+                    <div class="a-wrap">
+                      <select>
+                        <option>Every site</option>
+                        <option>STARTcloud (startcloud)</option>
+                        <option selected>Prominic (prominic)</option>
+                        <option>Moonshine Dev (moonshinedev)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="a-field sm">
+                    <label>Language</label>
+                    <div class="a-wrap">
+                      <select>
+                        <option>Every language</option>
+                        <option>English (en)</option>
+                        <option selected>Español (es)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="a-field sm">
+                    <label>Version</label>
+                    <div class="a-wrap"><input value="1.0" readonly /></div>
+                  </div>
+                  <div class="a-field sm full">
+                    <label>Subject</label>
+                    <div class="a-wrap"><input value="Verifica tu cuenta de {2}" /></div>
+                  </div>
+                  <div class="a-field sm full">
+                    <label>Body (HTML)</label
+                    ><span class="a-hint"
+                      >Arguments: <span class="btn sm">{0} name</span>
+                      <span class="btn sm">{1} link</span>
+                      <span class="btn sm">{2} company name</span> — a chip inserts its
+                      <code>{n}</code> at the caret</span
+                    >
+                    <div class="grid2">
+                      <div class="a-wrap">
+                        <textarea
+                          rows="7"
+                          style="
+                            flex: 1;
+                            border: 0;
+                            background: transparent;
+                            padding: 8px 12px;
+                            font: inherit;
+                            font-size: 12px;
+                            font-family: ui-monospace, monospace;
+                            color: var(--heading);
+                            resize: vertical;
+                          "
+                        >
+&lt;p&gt;Hola {0},&lt;/p&gt;
+&lt;p&gt;Confirma tu cuenta de {2}:&lt;/p&gt;
+&lt;p&gt;&lt;a href="{1}"&gt;Verificar&lt;/a&gt;&lt;/p&gt;</textarea>
+                      </div>
+                      <div class="a-doc" style="max-height: 170px; font-size: 13px">
+                        <p>Hola <span class="a-blank">name</span>,</p>
+                        <p>Confirma tu cuenta de <span class="a-blank">company name</span>:</p>
+                        <p><span class="a-link">Verificar</span></p>
+                        <span class="a-hint">sandboxed frame · nothing runs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="f">
+                <span class="btn">Cancel</span><span class="btn">Publish</span
+                ><span class="btn primary">Save as a revision of 1.0</span>
+              </div>
+            </div>
+            <div class="dlg" style="margin-top: 6px">
+              <div class="h">
+                <span>History · Account verification · prominic · es</span
+                ><span class="a-link muted">×</span>
+              </div>
+              <div class="b">
+                <span class="a-row"
+                  ><span><strong>Version 1.0</strong></span></span
+                ><span class="a-row"
+                  ><span><span class="a-link">r2</span> · mark@m4kr.net · Sep 14, 2026</span
+                  ><span class="status success">Current</span></span
+                ><span class="a-row"
+                  ><span><span class="a-link">r1</span> · mark@m4kr.net · Sep 12, 2026</span></span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>Email templates</strong> are documents the way terms are (decision 164): the nine
+        kinds fixed by the server, one card per kind from
+        <code>GET /api/admin/email-templates</code>, its argument list under the title from
+        <code>GET /api/admin/email-templates/arguments</code>, a row per copy naming its site
+        ("Every site" for the default copy) and language ("Every language" for the site's default),
+        <code>v{version} r{revision}</code> beside it, Preview, Edit, History and Delete per row and
+        Add a copy on the card; a kind with no copy says it is sent from the generic text.
+      </div>
+      <div class="callout">
+        <strong>The copy dialog</strong> is the terms copy dialog's shape: Site over the keys of the
+        <code>sites</code> config file labelled by name and id, Language over the estate's locales
+        plus "Every language", Version read-only while editing, Subject, the body in a monospace
+        textarea with the argument chips above it inserting <code>{n}</code> at the caret, and
+        beside it the preview, the body in a sandboxed <code>iframe srcdoc</code> with every
+        <code>{n}</code> replaced by its argument's name so no script or link runs; Save as a
+        revision (<code>PATCH</code>), Publish asking the new version (<code
+          >POST …/{kind}/publish</code
+        >), History from <code>…/{kind}/history</code>; a <code>{n}</code> the kind does not carry
+        paints the <code>422 format</code> on the field.
       </div>
     </div>
   </div>
