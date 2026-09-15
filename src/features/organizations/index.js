@@ -32,5 +32,5 @@ export {
   updateOrganization,
 } from './api/organizations';
 export { default as DiscoveryPage } from './components/DiscoveryPage';
-export { default as OrgConsolePage } from './components/OrgConsolePage';
+export { ORG_CONSOLE_SEGMENTS, default as OrgConsolePage } from './components/OrgConsolePage';
 export { default as OrganizationsPage } from './components/OrganizationsPage';

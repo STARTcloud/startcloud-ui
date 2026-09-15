@@ -21,7 +21,12 @@ import {
   VERSION_SCHEMA,
 } from '../../../../utils/forms';
 import { itemShape, versionShape } from '../../../../utils/itemShape';
-import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../../../utils/permissions';
+import {
+  isGlobalAdmin,
+  isOrgGuest,
+  isOrgManager,
+  isOrgMember,
+} from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
 
@@ -221,7 +226,7 @@ export const IsoListActions = ({ ctx }) => {
       {isGlobalAdmin(user) && !isOrgMember(user, org) ? (
         <JoinAsOwner org={org} notify={notify} />
       ) : null}
-      {uploads && isOrgMember(user, org) ? (
+      {uploads && isOrgMember(user, org) && !isOrgGuest(user, org) ? (
         <>
           <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.iso.create') : t('pages.addNew')}

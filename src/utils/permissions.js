@@ -1,6 +1,6 @@
 import { profileMemberships } from '../lib/backendSession';
 
-import { isManager, isMember, isOwner } from './membership';
+import { isGuest, isManager, isMember, isOwner, managesAny } from './membership';
 
 /** Whether the user holds the global admin role (matches App.jsx / backend isAdmin). */
 export const isGlobalAdmin = user =>
@@ -9,6 +9,20 @@ export const isGlobalAdmin = user =>
 /** Member of the organization (any role). Mirrors verifyOrgAccess.isOrgMember. */
 export const isOrgMember = (user, organizationName) =>
   isMember(profileMemberships(user), organizationName);
+
+/**
+ * The organization's read-only membership: a guest sees what a member
+ * sees and every write control is absent for one.
+ */
+export const isOrgGuest = (user, organizationName) =>
+  isGuest(profileMemberships(user), organizationName);
+
+/**
+ * Owner or admin of at least one organization, or a global admin: what a
+ * listing spanning organizations asks before it draws its select column.
+ */
+export const managesAnyOrganization = user =>
+  managesAny(profileMemberships(user), isGlobalAdmin(user));
 
 /**
  * Org admin/owner, or a global admin.
@@ -37,7 +51,7 @@ export const isOrgOwner = (user, organizationName) =>
  * @param {object|null} box - must include `userId` (the owner).
  */
 export const canManageBox = (user, organizationName, box) => {
-  if (!user) {
+  if (!user || isGuest(profileMemberships(user), organizationName)) {
     return false;
   }
   if (box && box.userId === user.id) {

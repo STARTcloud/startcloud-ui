@@ -193,6 +193,7 @@
     "primaryOrg": "Organización Principal"
   },
   "roles": {
+    "guest": "Invitado",
     "member": "Miembro",
     "admin": "Administrador",
     "owner": "Propietario",

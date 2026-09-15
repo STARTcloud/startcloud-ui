@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useArrival } from '../../../hooks/useArrival';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -18,7 +19,6 @@ import { rules } from '../../../lib/runtime';
 import { returnToShape } from '../../../utils/auth';
 
 import IssuerProfilePage, { issuerAccountShape } from './IssuerProfilePage';
-import ProfileTabs from './ProfileTabs';
 
 /**
  * The app's side of the shared profile page: the calls behind the display
@@ -53,6 +53,19 @@ const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 const PREFS_KEY = 'table_prefs_profile';
+
+export const PROFILE_SECTIONS = ['profile', 'security', 'organizations', 'serviceAccounts'];
+
+/**
+ * The profile sections of a `backend` UI backend by their route segment,
+ * the sidebar's Account rows and the router reading the one table.
+ */
+export const PROFILE_ROUTE_SECTIONS = {
+  '': 'profile',
+  security: 'security',
+  organizations: 'organizations',
+  'service-accounts': 'serviceAccounts',
+};
 
 const SEARCH_PLACEHOLDER_KEYS = {
   organizations: 'profile.search.organizations',
@@ -139,31 +152,14 @@ const groupByOrganization = (accounts, unknownLabel) => {
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
 
-const tabsFor = ({ showSecurity, oidc, issuerUrl }) => {
-  const tabs = [
-    { key: 'profile', labelKey: 'profile.tabs.profile' },
-    { key: 'organizations', labelKey: 'profile.tabs.organizations' },
-  ];
-  if (showSecurity) {
-    tabs.push({ key: 'security', labelKey: 'profile.tabs.security' });
-  }
-  if (oidc && issuerUrl) {
-    tabs.push({
-      key: 'manageAtIdp',
-      labelKey: 'profile.manageAtIdp',
-      href: `${issuerUrl}/user/profile`,
-    });
-  }
-  tabs.push({ key: 'serviceAccounts', labelKey: 'profile.tabs.serviceAccounts' });
-  return tabs;
-};
-
 /**
  * The profile page every estate app with accounts of its own draws the same
- * way: the avatar card as the page heading on the Profile tab alone, the
- * verification notice, the
- * tab strip, then the active tab on the page's ground under the pages
- * contract's frame rule, every fold kept under `table_prefs_profile`:
+ * way as the identity provider's, one section per route and the sidebar's
+ * Account rows the one navigation: the avatar card as the page heading on
+ * `/profile` alone, the
+ * verification notice, then the route's own section on the page's ground
+ * under the pages contract's frame rule, every fold kept under
+ * `table_prefs_profile`:
  * Profile (the display name form and the Gravatar facts in one
  * `SectionCard`), Organizations (the memberships with make primary and
  * leave, and the pending join requests, two glass lists under a
@@ -190,11 +186,11 @@ const BackendProfilePage = ({
   account,
   activeOrgUuid,
   localAccounts,
-  issuerUrl,
   admin,
   user,
   loaded,
   oidc,
+  section,
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -206,7 +202,7 @@ const BackendProfilePage = ({
   const currentUser = loaded ? user : null;
   const currentName = nameOf(currentUser);
   const showSecurity = localAccounts && !oidc;
-  const tabs = tabsFor({ showSecurity, oidc, issuerUrl });
+  const activeTab = section;
   const [gravatarProfile, setGravatarProfile] = useState({});
   const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD);
   const [emailForm, setEmailForm] = useState(EMPTY_EMAIL);
@@ -216,8 +212,12 @@ const BackendProfilePage = ({
     setSeededName(currentName);
     setNameForm({ name: currentName });
   }
-  const [activeTab, setActiveTab] = useState('profile');
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchedTab, setSearchedTab] = useState(activeTab);
+  if (searchedTab !== activeTab) {
+    setSearchedTab(activeTab);
+    setSearchTerm('');
+  }
   const [serviceAccounts, setServiceAccounts] = useState([]);
   const [serviceAccountOrgs, setServiceAccountOrgs] = useState([]);
   const [serviceAccountForm, setServiceAccountForm] = useState(() => ({
@@ -254,6 +254,7 @@ const BackendProfilePage = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+  const serviceAccountArrival = useArrival(serviceAccounts);
   const [userOrganizations, setUserOrganizations] = useState([]);
   const [joinRequests, setJoinRequests] = useState([]);
   const [organizationsLoading, setOrganizationsLoading] = useState(false);
@@ -311,18 +312,19 @@ const BackendProfilePage = ({
     resetServiceAccountRules();
   }, [resetServiceAccountRules]);
 
-  const handleTabChange = useCallback(
-    tab => {
-      if (tab === 'serviceAccounts') {
-        resetServiceAccountStates();
-      } else {
-        resetFormStates();
-      }
-      setSearchTerm('');
-      setActiveTab(tab);
-    },
-    [resetFormStates, resetServiceAccountStates]
-  );
+  const resetRef = useRef({});
+  useEffect(() => {
+    resetRef.current = { form: resetFormStates, service: resetServiceAccountStates };
+  });
+
+  useEffect(() => {
+    const reset = resetRef.current;
+    if (activeTab === 'serviceAccounts') {
+      reset.service();
+    } else {
+      reset.form();
+    }
+  }, [activeTab]);
 
   const handleDeleteAccount = async () => {
     try {
@@ -1158,7 +1160,12 @@ const BackendProfilePage = ({
           </div>
           <ul className="list-group">
             {group.accounts.map(entry => (
-              <li key={entry.id} className="list-group-item">
+              <li
+                key={entry.id}
+                className="list-group-item"
+                ref={serviceAccountArrival.ref(entry.id)}
+                tabIndex={-1}
+              >
                 <div className="d-flex justify-content-between align-items-center">
                   <input
                     type="checkbox"
@@ -1219,7 +1226,6 @@ const BackendProfilePage = ({
               </button>
             </div>
           )}
-          <ProfileTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
           {searchCounts && (
             <PageSearch
               query={searchTerm}
@@ -1229,7 +1235,7 @@ const BackendProfilePage = ({
               total={searchCounts.total}
             />
           )}
-          <div className="tab-content mt-3">
+          <div className="mt-3">
             {activeTab === 'profile' && renderProfileTab()}
             {activeTab === 'organizations' && renderOrganizationsTab()}
             {activeTab === 'security' && showSecurity && renderSecurityTab()}
@@ -1262,20 +1268,22 @@ BackendProfilePage.propTypes = {
   account: accountShape.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
-  issuerUrl: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   loaded: PropTypes.bool.isRequired,
   oidc: PropTypes.bool.isRequired,
+  section: PropTypes.oneOf(PROFILE_SECTIONS).isRequired,
 };
 
 /**
- * The shared profile page: the identity provider's form with its five
- * tabs while the `account` adapter carries `profile` and `stepUp` (the
- * issuer's adapter), else the page every app with accounts of its own
- * draws, unchanged; `user` and `loaded` are the session state's adopted
- * user and whether `load()` has answered, and neither page draws before
- * `loaded`.
+ * The shared profile page: the identity provider's sections while the
+ * `account` adapter carries `profile` and `stepUp` (the issuer's
+ * adapter), else the page every app with accounts of its own draws, one
+ * section per route either way; `section` is the route's own, the router
+ * mapping `/profile`, `/profile/security`, `/profile/organizations` and
+ * `/profile/service-accounts` onto it; `user` and `loaded` are the
+ * session state's adopted user and whether `load()` has answered, and
+ * neither page draws before `loaded`.
  */
 const ProfilePage = ({
   session,
@@ -1284,11 +1292,11 @@ const ProfilePage = ({
   account,
   activeOrgUuid,
   localAccounts,
-  issuerUrl,
   admin,
   user = null,
   loaded,
   oidc,
+  section = 'profile',
 }) => {
   if (account.profile && account.stepUp) {
     return (
@@ -1310,11 +1318,11 @@ const ProfilePage = ({
       account={account}
       activeOrgUuid={activeOrgUuid}
       localAccounts={localAccounts}
-      issuerUrl={issuerUrl}
       admin={admin}
       user={user}
       loaded={loaded}
       oidc={oidc}
+      section={section}
     />
   );
 };
@@ -1326,11 +1334,11 @@ ProfilePage.propTypes = {
   account: PropTypes.oneOfType([accountShape, issuerAccountShape]).isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
   localAccounts: PropTypes.bool.isRequired,
-  issuerUrl: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   loaded: PropTypes.bool.isRequired,
   oidc: PropTypes.bool.isRequired,
+  section: PropTypes.oneOf(PROFILE_SECTIONS),
 };
 
 export default ProfilePage;

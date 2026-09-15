@@ -15,7 +15,7 @@ import { NON_BLANK } from '../../../utils/validation';
 import { updateOrganization } from '../api/accounts';
 
 export const ACCESS_MODES = ['invite', 'request', 'private'];
-export const DEFAULT_ROLES = ['MEMBER', 'ADMIN'];
+export const DEFAULT_ROLES = ['MEMBER', 'ADMIN', 'GUEST'];
 
 const ACCESS_MODE_KEYS = {
   private: 'orgConsole.organization.accessModes.private',

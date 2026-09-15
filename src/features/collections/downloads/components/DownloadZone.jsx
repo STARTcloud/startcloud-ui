@@ -16,17 +16,21 @@ const UPLOAD_KEY = 'download-upload';
  * @param {Object} options - The page's side
  * @param {Function} options.notify - The chrome's notice function
  * @param {Function} options.reload - Reloads the page's data
- * @returns {Object} `uploading`, `progress`, `isPublic`, `setIsPublic`, `upload`
+ * @returns {Object} `uploading`, `progress`, `file`, `error`, `isPublic`, `setIsPublic`, `upload`
  */
 export const useUpload = ({ notify, reload }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [failure, setFailure] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
   const upload = send => file => {
     setUploading(true);
     setProgress(0);
+    setPicked(file);
+    setFailure('');
     notify('', '', { key: UPLOAD_KEY });
     send({
       file,
@@ -34,6 +38,7 @@ export const useUpload = ({ notify, reload }) => {
       onUploadProgress: event => setProgress(event.progress ?? 0),
     })
       .then(() => {
+        setPicked(null);
         notify('success', t('downloads.upload.done'), { key: UPLOAD_KEY });
         reload();
       })
@@ -42,20 +47,31 @@ export const useUpload = ({ notify, reload }) => {
           fileName: file.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'), { key: UPLOAD_KEY });
+        const text = t(error.messageKey || 'errors.request');
+        setFailure(text);
+        notify('danger', text, { key: UPLOAD_KEY });
       })
       .finally(() => setUploading(false));
   };
 
-  return { uploading, progress, isPublic, setIsPublic, upload };
+  return { uploading, progress, file: picked, error: failure, isPublic, setIsPublic, upload };
 };
 
 /**
  * The one Add New of every downloads page: the shared upload zone with the
  * file and the Public / Private switch and nothing else in it, relative to
- * the page it sits on.
+ * the page it sits on, the box architecture upload's own progress block and
+ * failure line drawn under it once a file is picked.
  */
-const DownloadZone = ({ uploading, progress, isPublic, onVisibility, onFile }) => {
+const DownloadZone = ({
+  uploading,
+  progress,
+  isPublic,
+  onVisibility,
+  onFile,
+  file = null,
+  error = '',
+}) => {
   const { t } = useTranslation();
   const switchId = useId();
   return (
@@ -65,6 +81,8 @@ const DownloadZone = ({ uploading, progress, isPublic, onVisibility, onFile }) =
       dropText={t('downloads.upload.drop')}
       uploadingText={t('downloads.upload.uploading', { percent: progress })}
       onFile={onFile}
+      file={file}
+      error={error}
     >
       <div className="form-check form-switch">
         <input
@@ -89,6 +107,8 @@ DownloadZone.propTypes = {
   isPublic: PropTypes.bool.isRequired,
   onVisibility: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
+  file: PropTypes.shape({ size: PropTypes.number.isRequired }),
+  error: PropTypes.string,
 };
 
 export default DownloadZone;

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import InboxList, { extractEntries, linkOf } from '../../../components/common/InboxList';
+import { inAppPath } from '../../../components/common/MethodList';
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { notificationsAdapterShape } from '../../../components/layout/NotificationsModal';
@@ -157,8 +158,9 @@ const InboxPage = ({ notifications }) => {
     if (!link) {
       return;
     }
-    if (link.startsWith('/')) {
-      navigate(link);
+    const path = inAppPath(link);
+    if (path) {
+      navigate(path);
     } else {
       window.location.assign(link);
     }

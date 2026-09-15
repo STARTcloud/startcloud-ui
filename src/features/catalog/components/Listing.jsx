@@ -6,6 +6,7 @@ import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
+import { isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
 
 import BulkActions from './BulkActions';
@@ -265,8 +266,10 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
     notify,
   });
 
+  const manages = org ? isOrgManager(context.user, org) : managesAnyOrganization(context.user);
+
   const bulkableFor = collection =>
-    Boolean(collection.bulk && collection.adapter.bulk && signedIn && (member || !org));
+    Boolean(collection.bulk && collection.adapter.bulk && signedIn && manages);
 
   const renderCollection = (collection, index) => {
     const items = filtered[collection.key];

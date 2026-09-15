@@ -1,0 +1,6 @@
+primary: '#67142c'
+on_primary: '#ffffff'
+logo: mark.svg
+logo_color:
+  light: '#67142c'
+  dark: '#e07a9a'

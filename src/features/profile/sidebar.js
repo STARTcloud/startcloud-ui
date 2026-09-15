@@ -3,6 +3,7 @@ import {
   FaBuilding,
   FaDesktop,
   FaFileContract,
+  FaKey,
   FaPuzzlePiece,
   FaShieldHalved,
   FaSliders,
@@ -13,6 +14,63 @@ import {
 import { authMethod, hasFeature } from '../../utils/capabilities';
 
 import { useIntegrationsTree } from './hooks/useIntegrationsTree';
+
+const BACKEND_CHILDREN = ({ status, account }) => {
+  const children = [];
+  if (hasFeature(status, 'local-accounts') && !account?.oidc) {
+    children.push({
+      key: 'security',
+      icon: FaShieldHalved,
+      labelKey: 'profile.tabs.security',
+      to: '/profile/security',
+    });
+  }
+  children.push({
+    key: 'organizations',
+    icon: FaBuilding,
+    labelKey: 'profile.tabs.organizations',
+    to: '/profile/organizations',
+  });
+  if (account?.oidc && account?.issuerUrl) {
+    children.push({
+      key: 'manageAtIdp',
+      icon: FaUser,
+      labelKey: 'profile.manageAtIdp',
+      to: `${account.issuerUrl}/user/profile`,
+      external: true,
+    });
+  }
+  children.push({
+    key: 'serviceAccounts',
+    icon: FaKey,
+    labelKey: 'profile.tabs.serviceAccounts',
+    to: '/profile/service-accounts',
+  });
+  return children;
+};
+
+const backendSidebar = (status, account) => [
+  {
+    key: 'account',
+    labelKey: 'account.sidebar.title',
+    sections: [
+      {
+        key: 'account',
+        labelKey: 'account.sidebar.title',
+        items: [
+          {
+            key: 'profile',
+            icon: FaUser,
+            labelKey: 'account.sidebar.profile',
+            to: '/profile',
+            end: true,
+            children: BACKEND_CHILDREN({ status, account }),
+          },
+        ],
+      },
+    ],
+  },
+];
 
 const PROFILE_CHILDREN = [
   {
@@ -54,7 +112,13 @@ const PROFILE_CHILDREN = [
  * (`/user/profile`, active on its exact path alone) and carries
  * `children`, exactly Security, Preferences, Favorites and Sessions under
  * `/user/profile`, each a deep link into the one page (decision 109);
- * nothing on any other host.
+ * on a `backend` host the same Account group over that host's own profile
+ * routes, Profile at `/profile` with Security (`/profile/security`, while
+ * the host advertises `local-accounts` and the session is not the identity
+ * provider's), Organizations (`/profile/organizations`), the external
+ * manage-at-the-provider row for an identity-provider session and Service
+ * accounts (`/profile/service-accounts`) as its children, so one profile
+ * shape serves both; nothing on any other host.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -62,7 +126,13 @@ const PROFILE_CHILDREN = [
  * @returns {Array} The sidebar groups
  */
 export const sidebar = (status, account, integrations) => {
-  if (authMethod(status) !== 'cookie' || !account?.user) {
+  if (!account?.user) {
+    return [];
+  }
+  if (authMethod(status) === 'backend') {
+    return backendSidebar(status, account);
+  }
+  if (authMethod(status) !== 'cookie') {
     return [];
   }
   const items = [

@@ -51,5 +51,9 @@ export {
   setPrimaryOrganization,
 } from './api/profile';
 export { issuerAccountShape } from './components/IssuerProfilePage';
-export { default as ProfilePage, accountShape } from './components/ProfilePage';
+export {
+  PROFILE_ROUTE_SECTIONS,
+  default as ProfilePage,
+  accountShape,
+} from './components/ProfilePage';
 export { sidebar } from './sidebar';

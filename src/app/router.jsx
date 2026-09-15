@@ -89,6 +89,7 @@ import {
 } from '../features/onboarding';
 import {
   DiscoveryPage,
+  ORG_CONSOLE_SEGMENTS,
   OrgConsolePage,
   OrganizationsPage,
   approveRequest,
@@ -109,6 +110,7 @@ import {
 } from '../features/organizations';
 import { PolicyPage } from '../features/policies';
 import {
+  PROFILE_ROUTE_SECTIONS,
   ProfilePage,
   cancelRequest,
   changeEmail,
@@ -229,6 +231,7 @@ const PAGE_TITLES = {
   '/user/terms': 'userTerms.title',
   '/user/integrations': 'integrations.title',
   '/org-console': 'orgConsole.pageTitle',
+  '/org-console/:tab': 'orgConsole.pageTitle',
   '/notifications': 'inbox.title',
   '/admin': 'admin.pageTitle',
   '/admin/terms': 'admin.terms.title',
@@ -700,13 +703,71 @@ const issuerProfile = ({ account, status, globalAdmin }) => (
     account={issuerAccount}
     activeOrgUuid={account.activeOrgUuid}
     localAccounts={hasFeature(status, 'local-accounts')}
-    issuerUrl={account.issuerUrl}
     admin={globalAdmin}
     user={account.user}
     loaded={account.loaded}
     oidc={account.oidc}
   />
 );
+
+const BackendProfileRoute = ({ account, status, globalAdmin }) => {
+  const { section = '' } = useParams();
+  return (
+    <ProfilePage
+      session={session}
+      events={events}
+      returnTo={returnTo}
+      account={accountAdapter}
+      activeOrgUuid={account.activeOrgUuid}
+      localAccounts={hasFeature(status, 'local-accounts')}
+      admin={globalAdmin}
+      user={account.user}
+      loaded={account.loaded}
+      oidc={account.oidc}
+      section={PROFILE_ROUTE_SECTIONS[section] || 'profile'}
+    />
+  );
+};
+
+BackendProfileRoute.propTypes = {
+  account: sessionStateShape.isRequired,
+  status: PropTypes.object.isRequired,
+  globalAdmin: PropTypes.bool.isRequired,
+};
+
+const OrgConsoleRoute = ({ cookie, account, globalAdmin }) => {
+  const { tab = '' } = useParams();
+  const segment = ORG_CONSOLE_SEGMENTS.includes(tab) ? tab : '';
+  if (cookie) {
+    return (
+      <OrgConsolePage
+        session={session}
+        events={events}
+        activeOrgKey={ACTIVE_ORG_KEY}
+        organizations={issuerOrganizations}
+        org={account.activeOrgUuid}
+        admin={globalAdmin}
+        places={placesKey}
+      />
+    );
+  }
+  return (
+    <OrgConsolePage
+      session={session}
+      activeOrgKey={ACTIVE_ORG_KEY}
+      organizations={organizationsAdapter}
+      org={account.activeOrgUuid}
+      admin={globalAdmin}
+      tab={segment}
+    />
+  );
+};
+
+OrgConsoleRoute.propTypes = {
+  cookie: PropTypes.bool.isRequired,
+  account: sessionStateShape.isRequired,
+  globalAdmin: PropTypes.bool.isRequired,
+};
 
 const signedInRoutes = ({
   status,
@@ -737,25 +798,13 @@ const signedInRoutes = ({
     {
       path: '/org-console',
       open: hasFeature(status, 'org-console'),
-      element: cookie ? (
-        <OrgConsolePage
-          session={session}
-          events={events}
-          activeOrgKey={ACTIVE_ORG_KEY}
-          organizations={issuerOrganizations}
-          org={account.activeOrgUuid}
-          admin={globalAdmin}
-          places={placesKey}
-        />
-      ) : (
-        <OrgConsolePage
-          session={session}
-          activeOrgKey={ACTIVE_ORG_KEY}
-          organizations={organizationsAdapter}
-          org={account.activeOrgUuid}
-          admin={globalAdmin}
-        />
-      ),
+      element: <OrgConsoleRoute cookie={cookie} account={account} globalAdmin={globalAdmin} />,
+      token: 'org-console',
+    },
+    {
+      path: '/org-console/:tab',
+      open: hasFeature(status, 'org-console'),
+      element: <OrgConsoleRoute cookie={cookie} account={account} globalAdmin={globalAdmin} />,
       token: 'org-console',
     },
     {
@@ -893,7 +942,7 @@ const AppRoutes = ({
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
   const fleet = hasFeatureStrict(status, 'fleet');
-  const { activeOrgUuid, organizations, oidc, issuerUrl } = account;
+  const { organizations, oidc } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
     <Route path="/setup" element={<SetupPage setup={setupApi} />} />
   ) : null;
@@ -1009,33 +1058,24 @@ const AppRoutes = ({
       {signInRoutes({ status, cookie, account })}
       {onboardingRoutes({ status, cookie })}
       {interstitialRoutes({ status, cookie })}
-      <Route
-        path="/profile"
-        element={
-          backend ? (
-            <ProfilePage
-              session={session}
-              events={events}
-              returnTo={returnTo}
-              account={accountAdapter}
-              activeOrgUuid={activeOrgUuid}
-              localAccounts={hasFeature(status, 'local-accounts')}
-              issuerUrl={issuerUrl}
-              admin={globalAdmin}
-              user={account.user}
-              loaded={account.loaded}
-              oidc={oidc}
-            />
-          ) : (
-            gated(
-              cookie,
-              issuerProfile({ account, status, globalAdmin }),
-              titleOf('/profile'),
-              'backend'
+      {['/profile', '/profile/:section'].map(path => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            backend ? (
+              <BackendProfileRoute account={account} status={status} globalAdmin={globalAdmin} />
+            ) : (
+              gated(
+                cookie,
+                issuerProfile({ account, status, globalAdmin }),
+                titleOf('/profile'),
+                'backend'
+              )
             )
-          )
-        }
-      />
+          }
+        />
+      ))}
       {signedInRoutes({
         status,
         cookie,

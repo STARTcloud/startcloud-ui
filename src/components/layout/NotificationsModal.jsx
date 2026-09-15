@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { Form, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaArrowUpRightFromSquare, FaDesktop, FaPaperPlane } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
 
 import { useNotify } from '../../contexts/NoticeContext';
 import InboxList, { extractEntries, linkOf } from '../common/InboxList';
+import { inAppPath } from '../common/MethodList';
 
 export const notificationsAdapterShape = PropTypes.shape({
   list: PropTypes.func.isRequired,
@@ -148,6 +150,7 @@ const NotificationsModal = ({
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(push.isEnabled);
@@ -185,9 +188,16 @@ const NotificationsModal = ({
   const handleSelect = async entry => {
     await markRead(entry);
     const link = linkOf(entry);
-    if (link) {
-      window.location.assign(link);
+    if (!link) {
+      return;
     }
+    const path = inAppPath(link);
+    if (path) {
+      onHide();
+      navigate(path);
+      return;
+    }
+    window.location.assign(link);
   };
 
   const handleDismiss = async entry => {

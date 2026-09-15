@@ -95,7 +95,19 @@ against the apps as they were before it.
   three lines: public and published, anyone can access, period; published
   and private, anyone in the same organization can access; unpublished, no
   one but the user who uploaded it can access, not even people in their
-  organization.
+  organization. A guest of an organization, the read-only fourth role of
+  the [Universal Identity Contract](universal-identity/), sees exactly
+  what a member sees, the published private items of their organization
+  included, and never a write control: every Add New, upload zone, edit,
+  delete, select column and bulk pane, org-console management control and
+  the profile's service-account role list is absent for a guest as it is
+  for a signed-out visitor, the Download button staying. `isMember`
+  counts a guest, because a guest is a membership and the rows a
+  membership may read are the same rows; `isManager` and a collection's
+  `canManage` never do; and a fourth predicate, `isGuest`, stands beside
+  them so a page that must tell a guest from a writing member asks one
+  question of the one vocabulary, rather than reading roles itself and
+  growing a second.
 - **Read-only is a valid app.** The catalog's collection carries no write
   slots and its UI backend advertises no `uploads`, so the pages render without
   a single management control.
@@ -250,7 +262,8 @@ adapter, registers the search binding, and renders:
   collection's icon, label and count on the left and the collection's
   `ListActions` slot on the right, the same pair for every collection
   that can be written to: a green Add New and a red Remove All (nothing
-  for the catalog); Add New opens the create form on boxes and the upload
+  for the catalog, and nothing for a guest of the organization, whose
+  pages carry no write control at all); Add New opens the create form on boxes and the upload
   zone on ISOs and downloads, and whatever it opens wraps under the row at
   full width. That is the estate's one add and one edit shape: a record's
   create form and its edit form open inline under the heading row of the
@@ -265,7 +278,12 @@ adapter, registers the search binding, and renders:
   collection carries a select column first, before the watch cell, its
   header a real checkbox, the select-all for the page, checked, unchecked
   or indeterminate, and one checkbox per row, the identity contract's
-  shape (decisions 137, 139, 142); while rows are picked the section's
+  shape (decisions 137, 139, 142); the column and the action pane's bulk
+  group draw for a viewer who may manage the rows alone, an owner or an
+  admin of the organization or a global admin, and never for a member
+  without that standing, for a guest or for a signed-out visitor, because
+  a checkbox over a row the server will refuse is a promise the page
+  cannot keep; while rows are picked the section's
   heading row reads the picked count as its muted text and the action
   pane opens with "N selected", Clear selection and the collection's bulk
   actions for that level (Delete, Make public, Make private, Publish,
@@ -434,7 +452,7 @@ architecture {
   file hide the Downloads column and the count in the Download button the
   same way, and BoxVault answers both as `null` on a download to anyone
   who is not a member of the organization, because a public file's tally
-  is the organization's own fact and a guest has no need of it. A
+  is the organization's own fact and nobody outside it has need of it. A
   download's `family` draws where the OS chip draws and its `vendor` is a
   line under the title as a box's description is, never a chip.
 
@@ -706,9 +724,23 @@ adds its own foldable section to an item page (the catalog's Quality).
   `load()` has answered; the page draws nothing until `loaded`, then the
   profile for `user`, and sends a visitor to sign in only once `loaded`
   says there is none, because the cached account is a paint hint and
-  never a session; the avatar card draws on `/user/profile` alone, gone
-  on the page's other sections since the header's own avatar and name
-  already carry that identity in the chrome there (decision 143); then
+  never a session. Its sections are sidebar rows and routes on every UI
+  backend with accounts of its own, the identity provider and BoxVault
+  alike, one profile shape: the profile feature's `sidebar(status,
+account)` answers the Account group with Profile and its children, the
+  issuer's `/user/profile` with `/user/profile/security`,
+  `/user/profile/preferences`, `/user/profile/favorites` and
+  `/user/profile/sessions`, a `backend` UI backend's `/profile` with
+  `/profile/security`, `/profile/organizations` and
+  `/profile/service-accounts`, each row gated by the adapter's calls and
+  the UI backend's tokens the way the sections were; the router mounts
+  one route per row, each drawing its section under the page heading, the
+  crumbs Account › Profile › Security from the row and its child, and no
+  page draws a tab strip, because one profile shape means one navigation
+  and the column is it. The avatar card draws on the Profile route alone,
+  gone on the page's other sections since the header's own avatar and
+  name already carry that identity in the chrome there (decision 143);
+  the sections are
   Profile (display name, the Gravatar facts, the verification notice),
   Organizations
   (memberships with make-primary for local sessions and leave, pending join
@@ -797,6 +829,26 @@ storage, updateStatus }`, `allowed` the app's global-admin flag; a
   `orgUserManager.*`, `configManager.*`, `configField.*` and `oidc.*` in
   `shared.json`; every glyph is `react-icons/fa6`; the catalog carries it
   unrouted.
+- **Arrival on a row**: every page that lists things takes an arrival in
+  its URL the way the configuration editor does, a hash naming the row:
+  `/profile/service-accounts#<id>`, `/admin/config/<file>#<key>` (the
+  editor's, already), `/admin/system#<path>`,
+  `/org-console/members#<user id>` and `/org-console/requests#<request
+id>`, and a hub notification's `navigate` names that address, never a
+  query member of its own. On arrival the page scrolls the row into view
+  and moves focus to it once the rows are rendered, and paints nothing —
+  no table of the estate marks a row, the file address of a downloads
+  patch page included. The notification menu and the inbox follow a
+  same-origin `navigate`, a path starting with one slash or an `https://`
+  URL on this origin, in-router with the hash kept, an off-origin
+  `https://` as a full load as today, and a page already mounted reacts
+  to a hash change the way the configuration editor reads its hash on
+  mount and on every change. The one hook behind it is
+  `src/hooks/useArrival.js`, used by the profile's service accounts, the
+  organization console's members and join requests and the admin System
+  page's storage paths, because a person told about one row is owed that
+  row and not the page it sits on, and a row that is highlighted on
+  arrival is a second selection state beside the select column's.
 - **SetupPage**: the first-run page of an app that configures itself in
   the browser, `SetupPage({ setup })` with `setup` as `{ status,
 verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
@@ -1000,7 +1052,7 @@ One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcl
 | `src/lib/sse.js`, `src/hooks/useEventStream.js`               | The shared event-stream client and the hook a page subscribes to named events with, per the [Universal Events Contract](universal-events/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/components/common/`                                      | `PageHeader.jsx`, `SectionCard.jsx` and `SectionHeading.jsx` (the card a form draws in and the heading line a list draws over, each with the section's one action pane at its right, the Pages section's frame rule), `StatusChips.jsx`, `DeprecationBanner.jsx`, `GroupHeading.jsx`, `ConfirmModal.jsx` (the type-to-confirm modal every destructive action opens, its keys under `pages.confirm.*`; every dialog of the estate takes one of two metrics: a dialog that carries a form, one field or many (the config editor's map item dialogs, the terms create, edit and copy dialogs, the users' roles, primary organization, customer id and rate-limits dialogs, the profile's security dialogs, the step-up dialog, the organization edit, convert and join-request dialogs), is a form dialog, `form-modal`, Bootstrap's `modal-xl` width, 1140px capped to the viewport, its body scrolling inside the dialog, its fields grouped under the schema's sections and subsections with a heading each where a schema describes them, foldable subsections included, two columns where the page draws two, the `description` hint under each control, the first field focused on open and the primary action in the footer, because a form the page draws wide and grouped must not collapse into a narrow flat column the moment it opens in a dialog; a dialog that carries a list or a choice (the notifications, language and organization switcher modals, every confirm, the disable two-factor dialog) is a list dialog, `list-modal`, 720px, because a list reads in one column and a wider confirm spreads one question across the screen), `ConfigField.jsx`, `UserCard.jsx`, `columns.jsx` (the shared listing columns), `SubTable.jsx` and `SortHeader.jsx` (the one table behind every detail and admin list), `AuthShell.jsx` and `ProblemAlert.jsx` (the auth column and its problem alert every sign-in, onboarding and interstitial page draws in), `SearchResults.jsx` (the list under the navbar panel) |
 | `src/hooks/`, `src/lib/`                                      | `useDetailSearch.js` (a detail table's navbar binding), `useProblemReporter.js` (`problemShape`, `problemOf`, the reporter every auth page answers a failure with); `lib/organizations.js` (`getOrganization`, `userOrganizations`, `joinOrganizationAsAdmin`, `fetchOrganization`, `loadOrganizations`, `logoFor`, `withLogos`), `lib/next.js` (`followNext`, `isPagePath`), `lib/signin.js` (the sign-in, magic-link, recovery and reset calls), `lib/passkeys.js` (WebAuthn plus `passkeyRequestOptions` and `passkeyVerify`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `src/utils/`                                                  | `membership.js` (`isMember`, `isManager`, `isOwner` over the chrome's organization shape), `organizations.js` (`organizationsShape`, `ORG_NAME_PATTERN`, `membershipsOf`), `auth.js` (`authShape`, `returnToShape`, `passwordMinimum` and the sign-in method helpers), `validation.js` (the shared evaluator), `itemShape.js` (the item shape and its helpers), `permissions.js`, `forms.js`, `distroIcons.js`, `prefs.js`, `sort.js`, `schemaSections.js`, `searchRow.js` (the row shape and its path)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/utils/`                                                  | `membership.js` (`isMember`, `isGuest`, `isManager`, `isOwner`, `managesAny` over the chrome's organization shape), `organizations.js` (`organizationsShape`, `ORG_NAME_PATTERN`, `membershipsOf`), `auth.js` (`authShape`, `returnToShape`, `passwordMinimum` and the sign-in method helpers), `validation.js` (the shared evaluator), `itemShape.js` (the item shape and its helpers), `permissions.js`, `forms.js`, `distroIcons.js`, `prefs.js`, `sort.js`, `schemaSections.js`, `searchRow.js` (the row shape and its path)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 Shared by every UI backend, once: `src/css/styles.css` (the auth pages' rules
 included), `src/css/fonts.css` (the auth pages' IBM Plex Sans and Source

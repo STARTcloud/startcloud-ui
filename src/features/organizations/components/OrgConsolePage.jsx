@@ -11,6 +11,7 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useArrival } from '../../../hooks/useArrival';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -25,6 +26,10 @@ import IssuerOrgConsole from './IssuerOrgConsole';
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 const PREFS_KEY = 'table_prefs_org_console';
+
+export const ORG_CONSOLE_SEGMENTS = ['members', 'requests'];
+
+const TAB_OF_SEGMENT = { members: 'organization', requests: 'joinRequests' };
 
 const ORG_SCHEMA = {
   required: ['organization', 'email'],
@@ -350,7 +355,7 @@ InvitationLinkCell.propTypes = {
   orgIdpLink: PropTypes.string,
 };
 
-const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny }) => {
+const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny, rowRef }) => {
   const { t } = useTranslation();
 
   return (
@@ -372,7 +377,7 @@ const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny }) => {
             </thead>
             <tbody>
               {joinRequests.map(request => (
-                <tr key={request.id}>
+                <tr key={request.id} ref={rowRef(request.id)} tabIndex={-1}>
                   <td>
                     <strong>{request.user.username}</strong>
                   </td>
@@ -419,6 +424,7 @@ JoinRequestsTab.propTypes = {
   emptyText: PropTypes.string.isRequired,
   onApprove: PropTypes.func.isRequired,
   onDeny: PropTypes.func.isRequired,
+  rowRef: PropTypes.func.isRequired,
 };
 
 const InvitationsTable = ({ invitations, emptyText, orgIdpLink, onDelete }) => {
@@ -498,7 +504,7 @@ InvitationsTable.propTypes = {
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
  */
-const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin }) => {
+const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, tab }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const status = useStatus();
@@ -525,8 +531,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
   const [isExternalOrg, setIsExternalOrg] = useState(false);
   const [orgIdpLink, setOrgIdpLink] = useState('');
   const [orgDisplayName, setOrgDisplayName] = useState('');
-  const [activeTab, setActiveTab] = useState('organization');
+  const [activeTab, setActiveTab] = useState(() => TAB_OF_SEGMENT[tab] || 'organization');
   const folds = useFolds(PREFS_KEY);
+  const memberArrival = useArrival(users);
+  const requestArrival = useArrival(joinRequests);
   const current = session.restore();
   const currentUser = current ? current.user : null;
   const canManageRoles = isOwner(membershipsOf(current), org, admin);
@@ -820,9 +828,9 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
     }
   };
 
-  const selectTab = tab => {
+  const selectTab = next => {
     setSearchTerm('');
-    setActiveTab(tab);
+    setActiveTab(next);
   };
 
   const term = searchTerm.toLowerCase();
@@ -1013,6 +1021,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                               >
                                 <option value="member">{t('roles.member')}</option>
                                 <option value="admin">{t('roles.admin')}</option>
+                                <option value="guest">{t('roles.guest')}</option>
                               </select>
                             )}
                           </Field>
@@ -1047,6 +1056,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                       user={user}
                       currentUser={currentUser}
                       orgRole={user.orgRole}
+                      rowRef={memberArrival.ref(user.id)}
                       gravatarProfile={organizations.gravatarProfile}
                       onChangeRole={
                         canManageMembership
@@ -1077,6 +1087,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                 emptyText={emptyTextFor(t, searchTerm, 'orgConsole.joinRequest.noRequests')}
                 onApprove={handleApproveJoinRequest}
                 onDeny={handleDenyJoinRequest}
+                rowRef={requestArrival.ref}
               />
             </>
           )}
@@ -1138,6 +1149,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin })
                             }
                             onBlur={() => inviteRules.onBlur('invite_role')}
                           >
+                            <option value="guest">{t('roles.guest')}</option>
                             <option value="member">{t('roles.member')}</option>
                             {canManageRoles && <option value="admin">{t('roles.admin')}</option>}
                           </select>
@@ -1188,6 +1200,7 @@ BackendOrgConsole.propTypes = {
   organizations: organizationsShape.isRequired,
   org: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
+  tab: PropTypes.string.isRequired,
 };
 
 /**
@@ -1206,6 +1219,7 @@ const OrgConsolePage = ({
   admin,
   events = null,
   places = null,
+  tab = '',
 }) => {
   if (organizations.list && events) {
     return (
@@ -1226,6 +1240,7 @@ const OrgConsolePage = ({
       organizations={organizations}
       org={org}
       admin={admin}
+      tab={tab}
     />
   );
 };
@@ -1238,6 +1253,7 @@ OrgConsolePage.propTypes = {
   admin: PropTypes.bool.isRequired,
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }),
   places: PropTypes.func,
+  tab: PropTypes.oneOf(['', ...ORG_CONSOLE_SEGMENTS]),
 };
 
 export default OrgConsolePage;

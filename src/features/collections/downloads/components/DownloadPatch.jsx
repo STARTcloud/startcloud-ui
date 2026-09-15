@@ -226,6 +226,8 @@ export const DownloadArchitecturesActions = ({ item, version, provider, ctx }) =
     <DownloadZone
       uploading={upload.uploading}
       progress={upload.progress}
+      file={upload.file}
+      error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
       onFile={upload.upload(options =>

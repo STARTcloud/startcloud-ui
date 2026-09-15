@@ -530,17 +530,18 @@ The files the identity provider's sites need in the shared build, every
 one supplied by the estate's owner and none drawn by the UI work; the
 shell ships the fallbacks until each lands:
 
-| File                                                          | Size                  | Used by                                                                                                             |
-| ------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `public/brand/<site>/icon.png`, one per site                  | 64×64                 | `brand.logoUrl`: the chrome's mark, the org mark, the favicon                                                       |
-| `public/brand/<site>/logo-small.png`, one per site            | 640×104               | the branding endpoint's `small` slot for relying apps                                                               |
-| `public/brand/providers/<id>.svg`, one per federated provider | square, monochrome    | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands              |
-| `public/themes/<pack>/mark.svg`, optional                     | 512×512, monochrome   | `--brand-logo` when the pack's YAML names it                                                                        |
-| `public/themes/switchboard/poppins-<weight>.woff2`            | weights 500, 600, 700 | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land |
-| `public/themes/startcloud/startcloud.css` and its YAML source | the fourth pack       | the accent the retired `auth.css` painted for the `startcloud` site                                                 |
+| File                                                                                                                         | Size                                                                    | Used by                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `public/brand/<site>/icon.png`, one per site                                                                                 | 64×64                                                                   | `brand.logoUrl`: the chrome's mark, the org mark, the favicon                                                        |
+| `public/brand/<site>/logo-small.png`, one per site                                                                           | 640×104                                                                 | the branding endpoint's `small` slot for relying apps                                                                |
+| `public/brand/providers/<id>.svg`, one per federated provider                                                                | square, monochrome                                                      | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands               |
+| `public/themes/<pack>/mark.svg`, optional                                                                                    | 512×512, monochrome                                                     | `--brand-logo` when the pack's YAML names it                                                                         |
+| `public/themes/switchboard/poppins-<weight>.woff2`                                                                           | weights 500, 600, 700                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land  |
+| `public/themes/startcloud/startcloud.css` and its YAML source                                                                | the fourth pack                                                         | the accent the retired `auth.css` painted for the `startcloud` site                                                  |
+| `public/themes/prominic/prominic.css`, its YAML source and `mark.svg`, `public/brand/prominic/icon.png` and `logo-small.png` | the fifth pack, the Prominic accent `#67142c`, the asterisk as the mark | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logoUrl` |
 
-The sites are `startcloud`, `moonshinedev`, `switchboard` and
-`nomadservices`.
+The sites are `startcloud`, `moonshinedev`, `switchboard`,
+`nomadservices` and, on BoxVault's downloads face alone, `prominic`.
 
 ---
 

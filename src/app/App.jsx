@@ -99,7 +99,16 @@ const App = ({ getSupportedLanguages }) => {
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
     loadFavorites: menuFavorites,
   });
-  const { user, claims, organizations: memberships, activeOrgUuid, loaded, reload } = account;
+  const {
+    user,
+    claims,
+    organizations: memberships,
+    activeOrgUuid,
+    loaded,
+    reload,
+    oidc,
+    issuerUrl,
+  } = account;
   const {
     theme,
     preference: themePreference,
@@ -126,7 +135,10 @@ const App = ({ getSupportedLanguages }) => {
   });
   useAccountPreferences({ user, setThemePreference });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
-  const sidebar = useMemo(() => sidebarEntries({ status, account: { user } }), [status, user]);
+  const sidebar = useMemo(
+    () => sidebarEntries({ status, account: { user, oidc, issuerUrl } }),
+    [status, user, oidc, issuerUrl]
+  );
 
   if (setupComplete === null) {
     return <div>{t('loading')}</div>;

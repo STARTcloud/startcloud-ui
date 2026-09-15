@@ -12,7 +12,7 @@ import { joinOrganizationAsAdmin } from '../../../../lib/organizations';
 import { session } from '../../../../lib/runtime';
 import { hasFeature } from '../../../../utils/capabilities';
 import { BOX_LABELS, BOX_SCHEMA } from '../../../../utils/forms';
-import { isGlobalAdmin, isOrgMember } from '../../../../utils/permissions';
+import { isGlobalAdmin, isOrgGuest, isOrgMember } from '../../../../utils/permissions';
 import { api } from '../api/boxes';
 
 const EMPTY_BOX = { name: '', description: '', is_public: false };
@@ -211,7 +211,7 @@ export const BoxListActions = ({ ctx }) => {
       {isGlobalAdmin(user) && !isOrgMember(user, org) ? (
         <JoinAsOwner org={org} notify={notify} />
       ) : null}
-      {uploads && isOrgMember(user, org) ? (
+      {uploads && isOrgMember(user, org) && !isOrgGuest(user, org) ? (
         <>
           <button type="button" className="btn btn-sm btn-outline-success" onClick={create}>
             {creating ? t('boxes.box.organization.buttons.createBox') : t('pages.addNew')}

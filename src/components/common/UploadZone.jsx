@@ -5,14 +5,17 @@ import { FaUpload, FaXmark } from 'react-icons/fa6';
 
 import { useCssVar } from '../../hooks/useCssVar';
 
+import UploadProgress from './UploadProgress';
+
 const HOVER_DWELL_MS = 400;
 
 /**
  * The one upload zone the estate's collections add a file through: a green
  * Add New that opens, on click or on a hover dwell, a full-width drop target
- * under the heading row with the caller's own fields above it, the progress
- * bar while a file is going up and a close control. The zone is relative to
- * the page it sits on: the caller decides where the file lands.
+ * under the heading row with the caller's own fields above it, the shared
+ * `UploadProgress` block while a file is going up and a close control. The
+ * zone is relative to the page it sits on: the caller decides where the
+ * file lands.
  *
  * @param {Object} props - The zone
  * @param {boolean} props.uploading - Whether a file is going up
@@ -21,6 +24,8 @@ const HOVER_DWELL_MS = 400;
  * @param {string} props.dropText - The invitation drawn on the target
  * @param {string} props.uploadingText - The text drawn while uploading
  * @param {Function} props.onFile - Called with the picked or dropped file
+ * @param {{ size: number }} [props.file] - The file the caller last picked
+ * @param {string} [props.error] - The failure of the last send, translated
  * @param {React.ReactNode} [props.children] - The caller's own fields
  * @returns {React.ReactNode} The zone
  */
@@ -31,6 +36,8 @@ const UploadZone = ({
   uploadingText,
   onFile,
   accept = '',
+  file = null,
+  error = '',
   children = null,
 }) => {
   const { t } = useTranslation();
@@ -50,9 +57,9 @@ const UploadZone = ({
 
   const stopDwell = () => clearTimeout(dwell.current);
 
-  const pick = file => {
-    if (file) {
-      onFile(file);
+  const pick = picked => {
+    if (picked) {
+      onFile(picked);
     }
   };
 
@@ -121,18 +128,29 @@ const UploadZone = ({
           event.target.value = '';
         }}
       />
-      {uploading ? (
-        <div className="progress upload-zone-progress">
-          <div
-            ref={bar}
-            className="progress-bar progress-fill progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
-          />
-        </div>
-      ) : null}
+      {file ? (
+        <UploadProgress file={file} progress={progress} error={error} />
+      ) : (
+        <>
+          {uploading ? (
+            <div className="progress upload-zone-progress">
+              <div
+                ref={bar}
+                className="progress-bar progress-fill progress-bar-striped progress-bar-animated"
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin="0"
+                aria-valuemax="100"
+              />
+            </div>
+          ) : null}
+          {error ? (
+            <small className="text-danger d-block mt-1" role="alert">
+              {error}
+            </small>
+          ) : null}
+        </>
+      )}
     </div>
   );
 };
@@ -144,6 +162,8 @@ UploadZone.propTypes = {
   uploadingText: PropTypes.string.isRequired,
   onFile: PropTypes.func.isRequired,
   accept: PropTypes.string,
+  file: PropTypes.shape({ size: PropTypes.number.isRequired }),
+  error: PropTypes.string,
   children: PropTypes.node,
 };
 

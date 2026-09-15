@@ -10,6 +10,7 @@ const ROLE_CLASSES = {
   OWNER: 'bg-danger',
   ADMIN: 'bg-warning',
   MEMBER: 'bg-secondary',
+  GUEST: 'bg-secondary',
 };
 
 export const organizationShape = PropTypes.shape({

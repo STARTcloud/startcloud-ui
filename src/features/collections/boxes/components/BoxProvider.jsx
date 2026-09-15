@@ -6,8 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import UploadProgress from '../../../../components/common/UploadProgress';
 import { useStatus } from '../../../../contexts/StatusContext';
-import { useCssVar } from '../../../../hooks/useCssVar';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
@@ -225,46 +225,6 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
 };
 
 BoxProviderActions.propTypes = slotShape;
-
-const UploadProgress = ({ file, progress }) => {
-  const { t } = useTranslation();
-  const bar = useRef(null);
-  useCssVar(bar, '--progress-width', `${progress}%`);
-  return (
-    <div>
-      <div className="progress progress-lg mb-2">
-        <div
-          ref={bar}
-          className="progress-bar progress-fill bg-success progress-bar-striped progress-bar-animated"
-          role="progressbar"
-          aria-valuenow={progress}
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <span>{progress}%</span>
-        </div>
-      </div>
-      <div className="text-muted upload-stats d-flex justify-content-between">
-        <small>
-          <strong>{t('boxes.architecture.fileSize')}:</strong> {formatFileSize(file.size)}
-        </small>
-        <small>
-          <strong>{t('boxes.architecture.uploaded')}:</strong>{' '}
-          {formatFileSize(Math.round((progress / 100) * file.size))} ({progress}%)
-        </small>
-        <small>
-          <strong>{t('boxes.architecture.remaining')}:</strong>{' '}
-          {formatFileSize(Math.round(((100 - progress) / 100) * file.size))}
-        </small>
-      </div>
-    </div>
-  );
-};
-
-UploadProgress.propTypes = {
-  file: PropTypes.shape({ size: PropTypes.number.isRequired }).isRequired,
-  progress: PropTypes.number.isRequired,
-};
 
 const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmit }) => {
   const { t } = useTranslation();

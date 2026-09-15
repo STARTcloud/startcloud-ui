@@ -22,7 +22,8 @@ import { hasFeature } from '../../../utils/capabilities';
 import { NON_BLANK } from '../../../utils/validation';
 import { issuerOrganizationsShape } from '../api/issuer';
 
-const ROLES = ['MEMBER', 'ADMIN', 'OWNER'];
+const ROLES = ['GUEST', 'MEMBER', 'ADMIN', 'OWNER'];
+const JOINING_ROLES = ['MEMBER', 'ADMIN', 'GUEST'];
 const ACCESS_MODES = ['private', 'invite', 'request'];
 const ACCESS_MODE_KEYS = {
   private: 'orgConsole.organization.accessModes.private',
@@ -262,7 +263,7 @@ const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
         )}
         {selectField(
           'default_role',
-          ROLES.slice(0, 2),
+          JOINING_ROLES,
           role => t(`roles.${role.toLowerCase()}`),
           org.is_owner
         )}
@@ -456,6 +457,7 @@ const InviteForm = ({ org, organizations, onChanged }) => {
                 onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))}
                 onBlur={() => rules.onBlur('role')}
               >
+                <option value="GUEST">{t('roles.guest')}</option>
                 <option value="MEMBER">{t('roles.member')}</option>
                 {org.is_owner ? <option value="ADMIN">{t('roles.admin')}</option> : null}
               </select>
@@ -866,7 +868,7 @@ const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny }) => {
         aria-label={t('orgConsole.joinRequest.role')}
         onChange={event => setRole(event.target.value)}
       >
-        {ROLES.slice(0, 2).map(option => (
+        {JOINING_ROLES.map(option => (
           <option key={option} value={option}>
             {t(`roles.${option.toLowerCase()}`)}
           </option>

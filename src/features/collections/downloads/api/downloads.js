@@ -11,13 +11,17 @@ const patch = (organization, name, number, patchName) =>
 const file = (organization, name, number, patchName, key) =>
   `${patch(organization, name, number, patchName)}${encodePath('file', key)}`;
 
-const uploadTo = (base, { isPublic, file: picked, onUploadProgress }) =>
+const uploadTo = (base, { isPublic, file: picked, onUploadProgress }, info = null) =>
   uploadChunked({
     client,
     path: `${base}/file/upload?is_public=${isPublic ? 'true' : 'false'}`,
     file: picked,
     onUploadProgress,
+    info,
   });
+
+const fileInfo = (organization, name, number, patchName, key) => () =>
+  client.get(`${file(organization, name, number, patchName, key)}/info`);
 
 /**
  * Every downloads call, one line each over the API client; every call
@@ -25,7 +29,12 @@ const uploadTo = (base, { isPublic, file: picked, onUploadProgress }) =>
  * from raw names through `encodePath`. A product owns releases, a release
  * owns patches and a patch owns files; a file is uploaded through the box's
  * chunked route relative to the level the person stands on, the route
- * creating the levels the file name names when they are absent.
+ * creating the levels the file name names when they are absent, and the
+ * assembly polled through the file's own `info` route wherever the finished
+ * file's address is known before the send (the release and patch levels,
+ * whose patch and key the route derives as `release` and the file name);
+ * the collection and product levels, whose product or release the route
+ * reads out of the file name, take the last chunk's answer.
  */
 export const api = {
   downloads: {
@@ -56,7 +65,7 @@ export const api = {
     update: (organization, name, number, patchName, key, body) =>
       client.put(file(organization, name, number, patchName, key), body),
     remove: (organization, name, number, patchName, key) =>
-      client.delete(file(organization, name, number, patchName, key)),
+      client.delete(`${file(organization, name, number, patchName, key)}/delete`),
     downloadLink: (organization, name, number, patchName, key) =>
       client
         .post(`${file(organization, name, number, patchName, key)}/get-download-link`, {})
@@ -66,9 +75,17 @@ export const api = {
     collection: (organization, options) => uploadTo(`${org(organization)}/download`, options),
     product: (organization, name, options) => uploadTo(product(organization, name), options),
     release: (organization, name, number, options) =>
-      uploadTo(release(organization, name, number), options),
+      uploadTo(
+        release(organization, name, number),
+        options,
+        fileInfo(organization, name, number, 'release', options.file.name)
+      ),
     patch: (organization, name, number, patchName, options) =>
-      uploadTo(patch(organization, name, number, patchName), options),
+      uploadTo(
+        patch(organization, name, number, patchName),
+        options,
+        fileInfo(organization, name, number, patchName, options.file.name)
+      ),
   },
   bulk: {
     items: (organization, body) => client.post(`${org(organization)}/download/bulk`, body),

@@ -36,6 +36,7 @@ const UserCardActions = ({
           onChange={e => onChangeRole(e.target.value)}
           aria-label={t('orgConsole.users.roles')}
         >
+          <option value="guest">{t('roles.guest')}</option>
           <option value="member">{t('roles.member')}</option>
           <option value="admin">{t('roles.admin')}</option>
           <option value="owner">{t('roles.owner')}</option>
@@ -104,13 +105,16 @@ const roleNamesOf = user =>
  * Gravatar fetched through `gravatarProfile`), name, email, the role badge
  * (the organization role when the card manages one, else the global role),
  * a suspended badge, the box count, and the actions the caller wires:
- * change role, suspend, resume, remove from the organization, delete.
+ * change role, suspend, resume, remove from the organization, delete;
+ * `rowRef` is the arrival ref a listing page registers the card under so
+ * a hash naming the member lands on it.
  */
 const UserCard = ({
   user,
   currentUser,
   orgRole,
   columnClass = 'col-md-6 col-xl-4',
+  rowRef = null,
   gravatarProfile,
   onChangeRole,
   onSuspend,
@@ -168,6 +172,13 @@ const UserCard = ({
         </span>
       );
     }
+    if (badgeRole === 'guest') {
+      return (
+        <span className="badge bg-secondary me-1">
+          <FaUser className="me-1" /> {t('roles.guest')}
+        </span>
+      );
+    }
     return (
       <span className="badge bg-secondary me-1">
         <FaUser className="me-1" /> {t('roles.user')}
@@ -179,7 +190,7 @@ const UserCard = ({
   const secondaryLine = userSecondaryLine(user);
 
   return (
-    <div className={`${columnClass} mb-3`}>
+    <div className={`${columnClass} mb-3`} ref={rowRef} tabIndex={-1}>
       <div className={`card h-100 ${user.suspended ? 'border-danger' : ''}`}>
         <div className="card-body">
           <div className="d-flex align-items-center mb-3">
@@ -243,6 +254,7 @@ UserCard.propTypes = {
   currentUser: PropTypes.object,
   orgRole: PropTypes.string,
   columnClass: PropTypes.string,
+  rowRef: PropTypes.func,
   gravatarProfile: PropTypes.func.isRequired,
   onChangeRole: PropTypes.func,
   onSuspend: PropTypes.func,

@@ -245,6 +245,8 @@ export const DownloadProvidersActions = ({ item, version, ctx }) => {
     <DownloadZone
       uploading={upload.uploading}
       progress={upload.progress}
+      file={upload.file}
+      error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
       onFile={upload.upload(options =>

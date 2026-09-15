@@ -35,6 +35,31 @@ export const followableUrl = value => {
 };
 
 /**
+ * The in-router destination a followable link names when it is this
+ * origin's, the pages contract's arrival rule: the path with its query
+ * and its hash kept, empty for a link that belongs to another origin.
+ * @param {string} link - The link `followableUrl` answered
+ * @returns {string} The path to navigate in-router, or empty
+ */
+export const inAppPath = link => {
+  if (typeof link !== 'string' || link === '') {
+    return '';
+  }
+  if (SAFE_PATH.test(link)) {
+    return link;
+  }
+  try {
+    const url = new URL(link);
+    if (url.origin !== window.location.origin) {
+      return '';
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return '';
+  }
+};
+
+/**
  * One row of a method list: an icon or an `https:` image that falls back
  * to the icon when it fails to load, a label with its badges, a subline
  * and the trailing actions; the icon image never sends a referrer; an

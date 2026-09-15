@@ -1,0 +1,19 @@
+[data-brand='prominic'] {
+  --brand-primary: #67142c;
+  --brand-primary-rgb: 103, 20, 44;
+  --brand-on-primary: #ffffff;
+  --brand-logo: url('/themes/prominic/mark.svg');
+  --brand-logo-color: #67142c;
+  --brand-focus-ring: rgba(103, 20, 44, 0.5);
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 103, 20, 44;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+}
+
+[data-brand='prominic'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(156, 102, 118, 0.91);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #e07a9a;
+}

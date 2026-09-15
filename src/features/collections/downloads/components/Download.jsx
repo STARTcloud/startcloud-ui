@@ -12,7 +12,7 @@ import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { DOWNLOAD_LABELS, DOWNLOAD_SCHEMA } from '../../../../utils/forms';
 import { itemShape } from '../../../../utils/itemShape';
-import { isOrgManager, isOrgMember } from '../../../../utils/permissions';
+import { isOrgGuest, isOrgManager, isOrgMember } from '../../../../utils/permissions';
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
@@ -46,11 +46,16 @@ export const DownloadListActions = ({ ctx }) => {
   if (!org || !user || !hasFeature(status, 'uploads') || !isOrgMember(user, org)) {
     return null;
   }
+  if (isOrgGuest(user, org)) {
+    return null;
+  }
 
   return (
     <DownloadZone
       uploading={upload.uploading}
       progress={upload.progress}
+      file={upload.file}
+      error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
       onFile={upload.upload(options => api.uploads.collection(org, options))}
@@ -302,6 +307,8 @@ export const DownloadVersionsActions = ({ item, ctx }) => {
     <DownloadZone
       uploading={upload.uploading}
       progress={upload.progress}
+      file={upload.file}
+      error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
       onFile={upload.upload(options => api.uploads.product(org, item.name, options))}

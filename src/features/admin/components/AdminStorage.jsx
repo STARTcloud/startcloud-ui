@@ -5,6 +5,7 @@ import { FaHardDrive, FaCompactDisc } from 'react-icons/fa6';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useArrival } from '../../../hooks/useArrival';
 import { useCssVar } from '../../../hooks/useCssVar';
 import { log } from '../../../lib/logger';
 import { formatFileSize } from '../../../utils/formatFileSize';
@@ -19,7 +20,7 @@ const progressClass = percent => {
   return 'bg-primary';
 };
 
-const StorageBar = ({ usage, label, icon }) => {
+const StorageBar = ({ usage, label, icon, rowRef = null }) => {
   const { t } = useTranslation();
   const bar = useRef(null);
   const usedPercent = usage && usage.total > 0 ? (usage.used / usage.total) * 100 : 0;
@@ -33,7 +34,7 @@ const StorageBar = ({ usage, label, icon }) => {
   }
 
   return (
-    <div className="mb-4">
+    <div className="mb-4" ref={rowRef} tabIndex={-1}>
       <h5 className="d-flex align-items-center">
         {icon}
         <span className="ms-2">{label}</span>
@@ -69,18 +70,23 @@ StorageBar.propTypes = {
   }),
   label: PropTypes.string.isRequired,
   icon: PropTypes.element.isRequired,
+  rowRef: PropTypes.func,
 };
 
 /**
  * The System page of the admin feature: one usage bar per storage path
  * the app's `storage` call answers, boxes and ISOs, a glass section of the
- * pages contract, a `SectionHeading` over the bars on the page's ground.
+ * pages contract, a `SectionHeading` over the bars on the page's ground;
+ * `/admin/system#<path>` arrives on the bar whose storage path the hash
+ * names, scrolled into view and focused, nothing painted.
  */
 const AdminStorage = ({ storage }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [storageInfo, setStorageInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const paths = [storageInfo?.boxes?.path || '', storageInfo?.isos?.path || ''];
+  const arrival = useArrival(paths);
 
   useEffect(() => {
     storage()
@@ -110,6 +116,7 @@ const AdminStorage = ({ storage }) => {
           usage={storageInfo.boxes}
           label={t('admin.storage.boxStorage')}
           icon={<FaHardDrive />}
+          rowRef={arrival.ref(storageInfo.boxes.path || 'boxes')}
         />
       )}
       {storageInfo?.isos && (
@@ -117,6 +124,7 @@ const AdminStorage = ({ storage }) => {
           usage={storageInfo.isos}
           label={t('admin.storage.isoStorage')}
           icon={<FaCompactDisc />}
+          rowRef={arrival.ref(storageInfo.isos.path || 'isos')}
         />
       )}
     </div>

@@ -583,7 +583,9 @@ differ by hostname, nothing else, so one instance wears two faces from one
 build, the first collection of each face owning that face's root; BoxVault
 takes the map from its app configuration, one entry per hostname, the
 unnamed hostname answering as today, and the identity provider from its
-sites. This is an option a UI backend takes by serving several hostnames,
+sites. In BoxVault's map a site entry without a `features` list answers
+the defaults, and a site entry with one answers exactly the tokens it
+lists. This is an option a UI backend takes by serving several hostnames,
 never a rule every UI backend meets, and the estate already carries it:
 the identity provider answers per site today and BoxVault joins it with
 its downloads; a UI backend on one hostname answers one payload and is
@@ -777,7 +779,9 @@ Title "Switch Organization". One row per membership from the
 
 - org logo → Gravatar (org email hash) → the app's mark
 - name and description
-- role badge: Owner (danger), Administrator (warning), Member (secondary)
+- role badge: Owner (danger), Administrator (warning), Member (secondary),
+  Guest (secondary, like Member: the read-only membership of the
+  [Universal Identity Contract](universal-identity/))
 - crown icon on the `primary` membership; active row: primary border +
   green check; a row that is both shows crown then check
 - picking a row switches and closes and never navigates: the page stays
