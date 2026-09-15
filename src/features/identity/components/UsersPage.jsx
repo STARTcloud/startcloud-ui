@@ -12,6 +12,7 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useSelection } from '../../../hooks/useSelection';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { deleteUser, updateUser, users } from '../api/accounts';
 import { exportUrl } from '../api/activity';
@@ -209,40 +210,6 @@ const columnsFor = () => [
   },
 ];
 
-const useSelection = rows => {
-  const [selected, setSelected] = useState(() => new Set());
-  const toggle = id =>
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
-  const someSelected = selected.size > 0;
-  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
-  const clear = () => setSelected(new Set());
-  return {
-    selected,
-    toggle,
-    toggleAll,
-    allSelected,
-    someSelected,
-    clear,
-    subtable: {
-      allSelected,
-      someSelected,
-      onToggleAll: toggleAll,
-      isSelected: row => selected.has(row.id),
-      onToggleRow: row => toggle(row.id),
-      labelOf: row => row.username,
-    },
-  };
-};
-
 const UserDialogs = ({ open, catalog, onClose, onSaved }) => {
   const { t } = useTranslation();
   const { kind, user } = open;
@@ -330,7 +297,7 @@ const UsersPage = () => {
   const [answer, setAnswer] = useState({ params: null, data: null });
 
   const rows = useMemo(() => answer.data?.items || [], [answer]);
-  const selection = useSelection(rows);
+  const selection = useSelection(rows, { labelOf: row => row.username });
   const columns = useMemo(() => columnsFor(), []);
   const clientGroups = useMemo(() => rolesGroupOf(catalog), [catalog]);
   const search = useListSearch({

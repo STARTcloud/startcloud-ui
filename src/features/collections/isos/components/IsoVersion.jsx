@@ -1,14 +1,13 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaUpload, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import UploadZone from '../../../../components/common/UploadZone';
 import { useStatus } from '../../../../contexts/StatusContext';
-import { useCssVar } from '../../../../hooks/useCssVar';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
@@ -25,7 +24,6 @@ import { isOrgManager } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
 
-const HOVER_DWELL_MS = 400;
 const EMPTY_ARCHITECTURE = { name: '' };
 const EMPTY_DEPRECATION = { deprecation_reason: '' };
 const UPLOAD_KEY = 'iso-upload';
@@ -394,69 +392,10 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
 
 IsoVersionNotesActions.propTypes = slotShape;
 
-const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
+const IsoUploadFields = ({ uploading, form, rules, onName }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [over, setOver] = useState(false);
-  const dwell = useRef(null);
-  const inputRef = useRef(null);
-  const bar = useRef(null);
-  useCssVar(bar, '--progress-width', `${progress}%`);
-
-  useEffect(() => () => clearTimeout(dwell.current), []);
-
-  const startDwell = () => {
-    clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => setOpen(true), HOVER_DWELL_MS);
-  };
-
-  const stopDwell = () => clearTimeout(dwell.current);
-
-  const pick = file => {
-    if (file) {
-      onFile(file);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-success"
-        onClick={() => setOpen(true)}
-        onMouseEnter={startDwell}
-        onMouseLeave={stopDwell}
-      >
-        {t('pages.addNew')}
-      </button>
-    );
-  }
-
   return (
-    <div
-      role="presentation"
-      className={`upload-zone w-100 order-last${over ? ' over' : ''}`}
-      onDragOver={event => {
-        event.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={event => {
-        event.preventDefault();
-        setOver(false);
-        pick(event.dataTransfer.files[0]);
-      }}
-    >
-      <button
-        type="button"
-        className="navbar-search-tool upload-zone-close"
-        onClick={() => setOpen(false)}
-        disabled={uploading}
-        title={t('boxes.buttons.close')}
-        aria-label={t('boxes.buttons.close')}
-      >
-        <FaXmark />
-      </button>
+    <>
       <FormErrorSummary errors={rules.summary} />
       <Field
         id={rules.idFor('name')}
@@ -476,58 +415,15 @@ const UploadZone = ({ uploading, progress, form, rules, onName, onFile }) => {
           />
         )}
       </Field>
-      <button
-        type="button"
-        className="upload-zone-target"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={event => {
-          if (event.key === 'Escape' && !uploading) {
-            setOpen(false);
-          }
-        }}
-        disabled={uploading}
-      >
-        <FaUpload className="upload-zone-icon" aria-hidden />
-        <span>
-          {uploading
-            ? t('boxes.iso.upload.uploading', { percent: progress })
-            : t('boxes.iso.upload.drop')}
-        </span>
-      </button>
-      <input
-        ref={inputRef}
-        type="file"
-        hidden
-        accept=".iso"
-        disabled={uploading}
-        onChange={event => {
-          pick(event.target.files[0]);
-          event.target.value = '';
-        }}
-      />
-      {uploading ? (
-        <div className="progress upload-zone-progress">
-          <div
-            ref={bar}
-            className="progress-bar progress-fill progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
-          />
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 };
 
-UploadZone.propTypes = {
+IsoUploadFields.propTypes = {
   uploading: PropTypes.bool.isRequired,
-  progress: PropTypes.number.isRequired,
   form: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
   rules: formRulesShape.isRequired,
   onName: PropTypes.func.isRequired,
-  onFile: PropTypes.func.isRequired,
 };
 
 export const IsoArtifactsActions = ({ item, version, ctx }) => {
@@ -584,11 +480,18 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
     <UploadZone
       uploading={uploading}
       progress={progress}
-      form={form}
-      rules={rules}
-      onName={name => setForm({ name })}
+      accept=".iso"
+      dropText={t('boxes.iso.upload.drop')}
+      uploadingText={t('boxes.iso.upload.uploading', { percent: progress })}
       onFile={upload}
-    />
+    >
+      <IsoUploadFields
+        uploading={uploading}
+        form={form}
+        rules={rules}
+        onName={name => setForm({ name })}
+      />
+    </UploadZone>
   );
 };
 

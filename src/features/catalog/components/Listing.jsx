@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
 
+import BulkActions from './BulkActions';
 import ItemCards from './ItemCards';
 import ItemsTable from './ItemsTable';
 
@@ -78,14 +80,18 @@ const useWatches = ({ collections, user, notify }) => {
   return { ids, toggle, available };
 };
 
-const CollectionHeading = ({ collection, count, children }) => {
+const CollectionHeading = ({ collection, count, picked, children }) => {
   const { t } = useTranslation();
   return (
     <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
       <h2 className="h5 mb-0 me-auto d-flex align-items-center gap-2">
         {collection.icon}
         {t(collection.labelKey)}
-        <span className="badge bg-secondary bg-opacity-50">{count}</span>
+        {picked > 0 ? (
+          <span className="small text-muted">· {t('pages.bulk.selected', { count: picked })}</span>
+        ) : (
+          <span className="badge bg-secondary bg-opacity-50">{count}</span>
+        )}
       </h2>
       {children}
     </div>
@@ -95,7 +101,84 @@ const CollectionHeading = ({ collection, count, children }) => {
 CollectionHeading.propTypes = {
   collection: collectionShape.isRequired,
   count: PropTypes.number.isRequired,
+  picked: PropTypes.number.isRequired,
   children: PropTypes.node,
+};
+
+const bulkGroupsOf = picked => {
+  const byOrg = new Map();
+  picked.forEach(item => {
+    const org = item.organization.name;
+    if (!byOrg.has(org)) {
+      byOrg.set(org, { scope: { org }, names: [] });
+    }
+    byOrg.get(org).names.push(item.name);
+  });
+  return [...byOrg.values()];
+};
+
+/**
+ * One collection's section of a listing page: the heading row with the
+ * count or the picked state as its muted text and the one action pane at
+ * its right — the picked-state group first, then the collection's own list
+ * actions, then the page's actions and the view toggle — and under it the
+ * collection's one table or card grid, each row carrying its select
+ * checkbox while the collection has bulk actions the viewer may run.
+ */
+const CollectionSection = ({
+  collection,
+  items,
+  bulkable,
+  reload,
+  table,
+  common,
+  view,
+  ctx,
+  actions = null,
+}) => {
+  const selection = useSelection(items, { keyOf: item => item.id, labelOf: item => item.name });
+  const picked = items.filter(item => selection.selected.has(item.id));
+  const { ListActions } = collection.slots;
+  const shared = {
+    collection,
+    items,
+    ctx,
+    selection: bulkable ? selection.subtable : null,
+    ...common,
+  };
+  return (
+    <div className="mb-4">
+      <CollectionHeading collection={collection} count={items.length} picked={picked.length}>
+        {bulkable ? (
+          <BulkActions
+            collection={collection}
+            level="items"
+            groups={bulkGroupsOf(picked)}
+            onClear={selection.clear}
+            onDone={() => {
+              selection.clear();
+              reload();
+            }}
+          />
+        ) : null}
+        {ListActions ? <ListActions ctx={ctx} /> : null}
+        {actions}
+      </CollectionHeading>
+      {view === 'cards' ? <ItemCards {...shared} /> : <ItemsTable {...shared} {...table} />}
+    </div>
+  );
+};
+
+CollectionSection.propTypes = {
+  collection: collectionShape.isRequired,
+  items: PropTypes.array.isRequired,
+  bulkable: PropTypes.bool.isRequired,
+  reload: PropTypes.func.isRequired,
+  table: PropTypes.object.isRequired,
+  common: PropTypes.object.isRequired,
+  view: PropTypes.string.isRequired,
+  ctx: PropTypes.object.isRequired,
+  actions: PropTypes.node,
 };
 
 /**
@@ -182,47 +265,46 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
     notify,
   });
 
-  const listOf = (collection, items) => {
-    const shared = {
-      collection,
-      items,
-      groups: grouped ? groupByOrganization(collection, items) : null,
-      collapsed,
-      onToggleGroup: toggleCollapsed,
-      watches:
-        watches.available && collection.adapter.watches
-          ? {
-              ids: watches.ids[collection.key] || NO_IDS,
-              toggle: item => watches.toggle(collection, item),
-            }
-          : null,
-      ctx: ctxFor(collection),
-    };
-    if (view === 'cards') {
-      return <ItemCards {...shared} />;
-    }
-    return (
-      <ItemsTable
-        {...shared}
-        sort={sort[collection.key]}
-        onSort={(column, options) => setSort(collection.key, column, options)}
-        hiddenColumns={hiddenColumns[collection.key]}
-      />
-    );
-  };
+  const bulkableFor = collection =>
+    Boolean(collection.bulk && collection.adapter.bulk && signedIn && (member || !org));
 
   const renderCollection = (collection, index) => {
     const items = filtered[collection.key];
-    const { ListActions } = collection.slots;
     return (
-      <div key={collection.key} className="mb-4">
-        <CollectionHeading collection={collection} count={items.length}>
-          {ListActions ? <ListActions ctx={ctxFor(collection)} /> : null}
-          {!header && index === 0 ? actions : null}
-          {!header && index === 0 ? toggle : null}
-        </CollectionHeading>
-        {listOf(collection, items)}
-      </div>
+      <CollectionSection
+        key={collection.key}
+        collection={collection}
+        items={items}
+        bulkable={bulkableFor(collection)}
+        reload={reload}
+        view={view}
+        ctx={ctxFor(collection)}
+        common={{
+          groups: grouped ? groupByOrganization(collection, items) : null,
+          collapsed,
+          onToggleGroup: toggleCollapsed,
+          watches:
+            watches.available && collection.adapter.watches
+              ? {
+                  ids: watches.ids[collection.key] || NO_IDS,
+                  toggle: item => watches.toggle(collection, item),
+                }
+              : null,
+        }}
+        table={{
+          sort: sort[collection.key],
+          onSort: (column, options) => setSort(collection.key, column, options),
+          hiddenColumns: hiddenColumns[collection.key],
+        }}
+        actions={
+          !header && index === 0 ? (
+            <>
+              {actions}
+              {toggle}
+            </>
+          ) : null
+        }
+      />
     );
   };
 

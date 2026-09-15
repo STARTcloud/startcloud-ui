@@ -15,8 +15,11 @@ organization owns items, an item has versions, a version has providers or
 architectures, a provider has architectures, and an architecture has one
 file. BoxVault serves boxes and ISOs that way, the ISOs gaining the same
 fields as the boxes (item → versions → architectures → file, the Debian
-ISO having versions and architectures like any box); the provisioner
-catalog serves provisioners the same way; provisioners become a third
+ISO having versions and architectures like any box); BoxVault also serves
+downloads that way, a product owning releases, a release owning patches
+and a patch owning files, the patch standing where a box's provider
+stands and a file where an architecture stands; the provisioner
+catalog serves provisioners the same way; provisioners become a further
 BoxVault collection later, so nothing in the pages may know which
 collection it is drawing. This contract fixes the information
 architecture, the routes each app maps onto it, the breadcrumb, the one
@@ -88,7 +91,11 @@ against the apps as they were before it.
   who uploaded it, never to other members; the catalog by
   its adapter, which merges each membership's private catalog with the
   public one. No page or second adapter re-decides it, and no collection
-  has a second route for its public rows.
+  has a second route for its public rows. On downloads the rule reads in
+  three lines: public and published, anyone can access, period; published
+  and private, anyone in the same organization can access; unpublished, no
+  one but the user who uploaded it can access, not even people in their
+  organization.
 - **Read-only is a valid app.** The catalog's collection carries no write
   slots and its UI backend advertises no `uploads`, so the pages render without
   a single management control.
@@ -111,15 +118,15 @@ An app maps its own paths onto those levels; the shape above is the
 canonical one and the one a new app adopts. Two existing apps map it as
 follows.
 
-| Level                | BoxVault (unchanged paths)                                                    | Catalog                                     |
-| -------------------- | ----------------------------------------------------------------------------- | ------------------------------------------- |
-| home                 | `/`                                                                           | `/`                                         |
-| collection, all orgs | `/isos` (boxes have no page of their own; the Collection filter narrows home) | `/` is provisioners                         |
-| organization         | `/{org}`                                                                      | `/{org}`                                    |
-| collection, one org  | `/{org}/isos`                                                                 | `/{org}`                                    |
-| item                 | `/{org}/{box}`, `/{org}/isos/{iso}`                                           | `/{org}/{provisioner}`                      |
-| version              | `/{org}/{box}/{version}`, `/{org}/isos/{iso}/{version}`                       | `/{org}/{provisioner}/{version}`            |
-| provider             | `/{org}/{box}/{version}/{provider}`, `/{org}/isos/{iso}/{version}/{arch}`     | `/{org}/{provisioner}/{version}/{provider}` |
+| Level                | BoxVault (unchanged paths)                                                                                                | Catalog                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| home                 | `/`                                                                                                                       | `/`                                         |
+| collection, all orgs | `/isos`, `/downloads` (boxes have no page of their own; the Collection filter narrows home)                               | `/` is provisioners                         |
+| organization         | `/{org}`                                                                                                                  | `/{org}`                                    |
+| collection, one org  | `/{org}/isos`, `/{org}/downloads`                                                                                         | `/{org}`                                    |
+| item                 | `/{org}/{box}`, `/{org}/isos/{iso}`, `/{org}/downloads/{product}`                                                         | `/{org}/{provisioner}`                      |
+| version              | `/{org}/{box}/{version}`, `/{org}/isos/{iso}/{version}`, `/{org}/downloads/{product}/{release}`                           | `/{org}/{provisioner}/{version}`            |
+| provider             | `/{org}/{box}/{version}/{provider}`, `/{org}/isos/{iso}/{version}/{arch}`, `/{org}/downloads/{product}/{release}/{patch}` | `/{org}/{provisioner}/{version}/{provider}` |
 
 `/isos`, `/{org}/isos`, `/{org}/isos/{iso}`, `/{org}/isos/{iso}/{version}` and
 `/{org}/isos/{iso}/{version}/{arch}` are additive browser routes, the ISO's
@@ -127,6 +134,19 @@ versions and architectures reached the way a box's are, the architecture
 drawn by the shared leaf page (`ProviderPage`) a box provider draws, one
 component both call; the Vagrant handler keys on the `Vagrant/` user agent
 before any of them.
+
+`/downloads`, `/{org}/downloads`, `/{org}/downloads/{product}`,
+`/{org}/downloads/{product}/{release}` and
+`/{org}/downloads/{product}/{release}/{patch}` are additive browser routes
+of the same shape, the product's releases and patches reached the way a
+box's versions and providers are, the patch drawn by the shared leaf page
+(`ProviderPage`) with its files as the architectures table. A file has an
+address of its own one level further,
+`/{org}/downloads/{product}/{release}/{patch}/{file}`, the file named by
+its key (`linux-x64`) or by the file name it was uploaded with
+(`Domino_1451FP1_Linux.tar`), both spellings one address: a browser at it
+is shown the patch page with that row marked, a program at it receives
+the bytes (Hosting notes).
 
 The catalog identifies an organization by the membership name from the
 token, the same word BoxVault routes by. Public items are grouped under
@@ -151,7 +171,7 @@ oauth2, activate, activated, ciba, connect, continue,
 link-account-consent, link-account, user, org, notifications,
 error` of the
 [Universal Identity Contract](universal-identity/), plus the segment of
-every mounted collection (`isos`). `api` is reserved on every UI backend, the `/api/status`
+every mounted collection (`isos`, `downloads`). `api` is reserved on every UI backend, the `/api/status`
 probe answering before any page renders. The build's own folders are
 reserved on every UI backend too: `assets` (Vite's bundle folder),
 `brand`, `locales`, `fonts` and `themes` (the folders under `public/`),
@@ -167,7 +187,10 @@ creation the way it refuses `api`.
 `src/utils/routes.js` turns the current path into crumbs for the header:
 
 - Parse the path with the mounted collections: `org`, `name`, `version`,
-  `provider`, each optional in that order, the collection read from its
+  `provider` and `architecture`, each optional in that order, the fifth
+  part read only by a collection whose leaf is a file (downloads), where
+  it names the last crumb and marks that row on the patch page, and
+  ignored by boxes and ISOs, the collection read from its
   segment or implied for the collection whose `segment` is empty; a
   reserved first segment yields no crumbs of its own. On a host with a
   column the crumbs open with a root crumb, the product name linking to
@@ -228,8 +251,34 @@ adapter, registers the search binding, and renders:
   `ListActions` slot on the right, the same pair for every collection
   that can be written to: a green Add New and a red Remove All (nothing
   for the catalog); Add New opens the create form on boxes and the upload
-  zone on ISOs, and whatever it opens wraps under the row at full width.
-  Headings are labels, not links; there are no "All …" links.
+  zone on ISOs and downloads, and whatever it opens wraps under the row at
+  full width. That is the estate's one add and one edit shape: a record's
+  create form and its edit form open inline under the heading row of the
+  section they belong to, drawn by the collection's slots and never in a
+  dialog, on every level page too (Add Version, Add Provider, Add
+  Architecture, Edit on a row), because a person adds and corrects a
+  thing where they see it; the identity provider's dialogs are its own
+  divergence on pages that have no section for the record to sit under,
+  and no new form surface is added beside these two. Headings are labels,
+  not links; there are no "All …" links.
+- **Bulk on every table.** Every listing and detail table of every
+  collection carries a select column first, before the watch cell, its
+  header a real checkbox, the select-all for the page, checked, unchecked
+  or indeterminate, and one checkbox per row, the identity contract's
+  shape (decisions 137, 139, 142); while rows are picked the section's
+  heading row reads the picked count as its muted text and the action
+  pane opens with "N selected", Clear selection and the collection's bulk
+  actions for that level (Delete, Make public, Make private, Publish,
+  Unpublish on items; Delete and Deprecate on versions; Delete on
+  providers, architectures, releases, patches and files), then the
+  section's own actions, then the toggle; Remove All is the bulk Delete
+  of every row on the page and no longer a button of its own. The
+  registry's `bulk` names the actions per level and the adapter's
+  `bulk(level, action, names)` sends them as one call, `POST …/bulk
+{ action, names }` per level on BoxVault, the result line naming
+  processed, skipped and each error's code as the users' bulk does;
+  because the estate has one bulk shape and one select column and a
+  second would be a fork.
 - **One view toggle per page**, list or cards, drawn once at the right of
   the org header row when the page has one, else at the right of the first
   collection's heading row beside the page's actions (home: Discover
@@ -264,21 +313,25 @@ adapter, registers the search binding, and renders:
 ### Columns
 
 Every collection's table starts with the same columns in the same order,
-then adds its own. The watch cell is drawn on every table, star or blank,
+then adds its own. The select cell is first, a real checkbox in the
+header and one per row (Bulk on every table); the watch cell is drawn
+after it on every table, star or blank,
 so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
 the viewer can watch it sorts watched rows first. The table is
 fixed-layout and every short column carries a fixed width in the shared
-stylesheet (star and quick-actions cells 2.5rem, Name 28% with the text
+stylesheet (select, star and quick-actions cells 2.5rem, Name 28% with the text
 ellipsized, Visibility 6.3rem, Created and Updated 6.5rem, Status 6.8rem,
-Downloads and Versions 7.3rem, right-aligned with a wider right gutter,
-Latest release 9.3rem, OS 10rem, Tier 7rem; header cells never wrap), so
+Downloads, Versions and Releases 7.3rem, right-aligned with a wider right
+gutter, Latest release 9.3rem, OS 10rem, Tier 7rem, Family and Vendor
+9rem with the text ellipsized; header cells never wrap), so
 the shared columns sit at the same x on every table of both apps however
-many columns follow, and only the wide columns — Providers, Architectures
-and the catalog's coverage — share the remainder:
+many columns follow, and only the wide columns — Providers, Architectures,
+Platforms and the catalog's coverage — share the remainder:
 
 | Column      | Boxes                                                                                    | ISOs                                                                         | Provisioners                                 |
 | ----------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------- |
+| select      | checkbox, the header the select-all                                                      | checkbox, the header the select-all                                          | checkbox, the header the select-all          |
 | watch       | star signed in, blank signed out                                                         | star signed in, blank signed out                                             | star signed in, blank signed out             |
 | Name        | org logo + `org/name` link                                                               | org logo + `org/name` link                                                   | icon + label link, slug beside it            |
 | Visibility  | Public / Private                                                                         | Public / Private                                                             | Public / Private                             |
@@ -288,8 +341,12 @@ and the catalog's coverage — share the remainder:
 | then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · OS · Latest release · Versions · Architectures (hidden until shown) | Tier · Latest release · Versions · Providers |
 | row actions | none                                                                                     | none                                                                         | none                                         |
 
+Downloads draw the same shared columns, then Status · Family · Vendor ·
+Latest release · Releases · Platforms (hidden until shown), Downloads
+being the sum of its files' `downloadCount`.
+
 Rows carry no action buttons; an item's actions live on its page and the
-watch star is the only in-row control. One label key per column,
+select checkbox and the watch star are the only in-row controls. One label key per column,
 `pages.table.*`, shared by every collection. Providers and Architectures
 draw one badge per name, alphabetical and case-insensitive, the same
 order the filter pills use. Every column carries a sort rule, so every
@@ -318,8 +375,9 @@ item {
   organization, name, label, description, icon, artwork,
   isPublic, published, createdAt, updatedAt, latestReleaseAt, downloads,
   os { label, iconUrl } | null,
+  family | null, vendor | null,        downloads alone
   metadata | null, readme | null,
-  links { repo, homepage, issues, pipeline, badge },
+  links { repo, homepage, issues, pipeline, badge, docs, notes },
   extras { ... }                       app-only data for slots, never read by a page
   versions [ version ]
 }
@@ -328,10 +386,15 @@ version {
   deprecated, deprecationReason,
   providers [ provider ], artifacts [ architecture ]
 }
-provider { name, description, architectures [ architecture ] }
+provider {
+  name, description, architectures [ architecture ],
+  kind | null, releasedAt | null, notesUrl | null    downloads alone: the patch
+}
 architecture {
   name, defaultBox, fileName, fileSize, checksum, checksumType,
-  downloadUrl, downloadCount
+  downloadUrl, downloadCount,
+  kind | null, platform | null, architecture | null, language | null, variant | null
+                                       downloads alone: the file
 }
 ```
 
@@ -350,18 +413,41 @@ architecture {
   far as the box shape carries it.
 - A catalog artifact maps to an `architecture` with `downloadUrl`,
   `checksum` and `checksumType` and no size or count.
+- A download's patch maps to a `provider`: its `name` is `release` for the
+  release itself, drawn as the release's own number, and the patch
+  identifier otherwise (`FP1`, `IF1`, `FP7HF25`); its `kind` is one of
+  `release`, `fixpack`, `interim-fix`, `hotfix`; `releasedAt` is the date
+  it shipped and `notesUrl` its notes where the vendor publishes them.
+- A download's file maps to an `architecture`: `name` is its key
+  (`linux-x64`), `fileName` the name it was uploaded with, `kind` one of
+  `installer`, `fixpack`, `hotfix`, `interim-fix`, `container-image`,
+  `package`, `template`, `notes`, `tool`, `other`; `platform` one of
+  `linux`, `windows`, `macos`, `omnios`, `other`, `any`; `architecture` one
+  of `x64`, `x86`, `arm64`, `other`, `any`; `language` a BCP 47 tag or
+  `any`; `variant` free text or empty. `any` is the one word for "not
+  specific" and for "does not apply"; a value is never empty.
+- A download's `downloadUrl` comes from `get-download-link` as a box's
+  does and is never the page address, because a browser click sends
+  `text/html` and the page address would answer the page.
 - `published: null` and `isPublic: null` hide the matching chip and
-  column.
+  column; `downloads: null` on an item and `downloadCount: null` on a
+  file hide the Downloads column and the count in the Download button the
+  same way, and BoxVault answers both as `null` on a download to anyone
+  who is not a member of the organization, because a public file's tally
+  is the organization's own fact and a guest has no need of it. A
+  download's `family` draws where the OS chip draws and its `vendor` is a
+  line under the title as a box's description is, never a chip.
 
-| Source         | BoxVault adapter                                                                                                                                                                | Catalog adapter                                                                                                                                                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| list, all orgs | `BoxService.discoverAll`, `IsoService.discoverAll`, both widened by the caller's token to the token's memberships                                                               | `/api/catalog` plus `/api/private/{uuid}/catalog` for every membership while the UI backend advertises `private-catalogs`                                                                                                        |
-| list, one org  | `BoxService.getAll`, `IsoService.getAll`, both widened by the caller's token                                                                                                    | `/api/private/{uuid}/catalog` + public items by owner                                                                                                                                                                            |
-| item           | `BoxService.get` + `VersionService.getVersions` + `ProviderService.getProviders`; `IsoService.get` + its versions, each with its files                                          | the item from the list, providers per version from `/api/catalog/health`                                                                                                                                                         |
-| version        | `VersionService.getVersion` + providers + architectures + `FileService.getDownloadLink`; the ISO version's files as artifacts, each with its download link                      | the version's artifacts                                                                                                                                                                                                          |
-| provider       | `ProviderService.getProvider` + `ArchitectureService.getArchitectures` + `FileService.info`; the ISO architecture's one file from its version, drawn by the same ProviderPage   | the version's artifacts                                                                                                                                                                                                          |
-| watches        | `BoxService.watch/unwatch/getUserWatches`, `IsoService.watch/unwatch/getUserWatches`, one watch set per collection; dropped by the registry when the UI backend lacks `watches` | the Worker's `/api/watches`: `GET` the caller's ids, `POST { id }`, `DELETE ?id=`, kept in KV under the token's uuid so they follow the user; the data job notifies each watcher of a new version through the hub inbox and push |
-| health extras  | none                                                                                                                                                                            | `tier`, `failed_rules`, `presentation`, coverage per version                                                                                                                                                                     |
+| Source         | BoxVault adapter                                                                                                                                                                                                                                                                                                      | Catalog adapter                                                                                                                                                                                                                  |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| list, all orgs | `BoxService.discoverAll`, `IsoService.discoverAll`, both widened by the caller's token to the token's memberships                                                                                                                                                                                                     | `/api/catalog` plus `/api/private/{uuid}/catalog` for every membership while the UI backend advertises `private-catalogs`                                                                                                        |
+| list, one org  | `BoxService.getAll`, `IsoService.getAll`, both widened by the caller's token                                                                                                                                                                                                                                          | `/api/private/{uuid}/catalog` + public items by owner                                                                                                                                                                            |
+| item           | `BoxService.get` + `VersionService.getVersions` + `ProviderService.getProviders`; `IsoService.get` + its versions, each with its files                                                                                                                                                                                | the item from the list, providers per version from `/api/catalog/health`                                                                                                                                                         |
+| version        | `VersionService.getVersion` + providers + architectures + `FileService.getDownloadLink`; the ISO version's files as artifacts, each with its download link                                                                                                                                                            | the version's artifacts                                                                                                                                                                                                          |
+| provider       | `ProviderService.getProvider` + `ArchitectureService.getArchitectures` + `FileService.info`; the ISO architecture's one file from its version, drawn by the same ProviderPage                                                                                                                                         | the version's artifacts                                                                                                                                                                                                          |
+| watches        | `BoxService.watch/unwatch/getUserWatches`, `IsoService.watch/unwatch/getUserWatches`, one watch set per collection; dropped by the registry when the UI backend lacks `watches`                                                                                                                                       | the Worker's `/api/watches`: `GET` the caller's ids, `POST { id }`, `DELETE ?id=`, kept in KV under the token's uuid so they follow the user; the data job notifies each watcher of a new version through the hub inbox and push |
+| health extras  | none                                                                                                                                                                                                                                                                                                                  | `tier`, `failed_rules`, `presentation`, coverage per version                                                                                                                                                                     |
+| downloads      | `DownloadService.discoverAll` and `getAll` widened by the caller's token; `get` with its releases; `ReleaseService.get` with its patches; `PatchService.get` with its files, each with its download link from `get-download-link`; the upload through the chunked route the box slot uses; watches as boxes have them | none                                                                                                                                                                                                                             |
 
 ---
 
@@ -388,6 +474,11 @@ collection {
   canManage      (item, user) → boolean, for the write slots
   filterGroups   the collection's own groups for the navbar panel
   columns        the collection's columns after the shared ones
+  levels         per level (versions, providers, architectures): the label key
+                 the tables, the crumbs and the search page's headings use
+                 (Releases, Patches, Files on downloads; Versions, Providers,
+                 Architectures otherwise) and the column list that level's
+                 table draws; the pages read them and never branch on key
   matches        optional query matcher
   slots {
     ListActions, ItemQuickActions, RowActions,
@@ -555,6 +646,40 @@ adds its own foldable section to an item page (the catalog's Quality).
   actions slot); the same component is the ISO architecture's leaf at
   `/{org}/isos/{iso}/{version}/{arch}`, one file in its table, a shared
   component both collections call.
+- **Downloads on the same pages**: the ItemPage lists a product's releases
+  newest first with a Patches count in place of Providers, the word
+  Patches on every screen of the level because a patch is a thing a
+  person downloads and an update is something a machine does; the
+  VersionPage's providers table is the patches table (the name drawn as the
+  release number for `release` and the patch identifier otherwise, kind,
+  released, files count, the row actions slot); the ProviderPage is the
+  patch page, its architectures table the files table (key, file name,
+  kind, platform, architecture, language, size, checksum click-to-copy,
+  download with count, the row actions slot), a file address landing on
+  that page with the fifth crumb drawn and nothing painted on the row,
+  because no table of the estate marks a row; the columns and labels of
+  those three tables come from the collection's `levels` in the registry.
+  Every page of the hierarchy carries one Add New on its heading row and
+  it opens the upload zone under the row at full width, the file and the
+  Public / Private switch and nothing else drawn in it, as ISOs do; no
+  downloads page carries a second add and no record is created by a form
+  before a drop, because everything below a product is born from a file
+  and the ISO already makes its tree from one drop. A product's icon is
+  drawn before its title as a provisioner's is, from the record's
+  `icon_url`, the vendor's mark when it has none. The zone is relative to the page it sits on: a file
+  dropped on a patch page goes into that patch, on a release page into
+  that release, on a product page into that product, and on the downloads
+  heading into the product, release and patch the file name names, every
+  absent level created by the upload route (Hosting notes), through the
+  box slot's chunked upload; when the upload completes the new file's row
+  appears and Edit on it opens the file's form inline under the files
+  heading row as a box architecture's does, kind, platform, architecture,
+  language and variant prefilled from the file name for correction, the
+  product, release and patch edited the same way on their own pages
+  (`PUT …/download/{name}`, `…/release/{number}`, `…/patch/{name}`,
+  `…/file/{key}` with the validation contract's members), because a
+  person uploads where the file belongs and corrects it where they see it,
+  never on a form before the drop and never in a dialog.
 - **AboutPage**: the app's About at `/about`, drawn from props only: a
   page header in the PageHeader shape with the brand, the title, two
   version chips, the app's from `status.version` through `useStatus()`,
@@ -751,13 +876,13 @@ The search module and its panel are the navbar contract's; a listing page
 registers one binding over every collection it shows. Groups appear in
 this order:
 
-| Group                | When                                                                      | Values                                                                                                                                                                                                                                   |
-| -------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Collection           | the page lists more than one collection                                   | one pill per collection (Boxes, ISOs), counts of rows                                                                                                                                                                                    |
-| Visibility           | private rows exist on the page                                            | Public, Private                                                                                                                                                                                                                          |
-| Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                                                     |
-| the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs: Organization (primary) across organizations · Architecture (info) · OS (success); catalog provisioners: Tier (badge colors) · Provider (primary) |
-| Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                                                                   |
+| Group                | When                                                                      | Values                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Collection           | the page lists more than one collection                                   | one pill per collection (Boxes, ISOs), counts of rows                                                                                                                                                                                                                                                                                                                                         |
+| Visibility           | private rows exist on the page                                            | Public, Private                                                                                                                                                                                                                                                                                                                                                                               |
+| Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                                                                                                                                                                                                          |
+| the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs: Organization (primary) across organizations · Architecture (info) · OS (success); catalog provisioners: Tier (badge colors) · Provider (primary); BoxVault downloads: Family (primary) · Vendor (secondary) · Platform (info) · Kind (success), narrowing client-side over the rows the list answered |
+| Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                                                                                                                                                                                                                        |
 
 Query matches: BoxVault name, label, description and organization; the
 catalog also the repository. Picking a Collection pill hides the other
@@ -824,6 +949,24 @@ the "How it fits" section of
   before the catch-all, so shared page routes need no server change;
   `/api/status` answers in its setup-only mode too, so the setup gate
   renders.
+- BoxVault's downloads share one address between the page and the file: a
+  request for `/{org}/downloads/…` whose `Accept` names `text/html` is the
+  SPA page; any other request at a product, release or patch address is
+  answered the JSON of that level, and at a file address the bytes with
+  `Content-Disposition: attachment` and the file name, under the
+  credentials every download route takes (none for a public product, a
+  service account as Basic, Bearer or a `?token=` link otherwise); a
+  handler in front of the SPA catch-all decides, the way the Vagrant
+  handler does.
+- The upload route of a download file creates the product, the release and
+  the patch it names when they are absent, the caller holding what a create
+  needs: any member of the organization creates a product, its owner or an
+  admin or owner of the organization adds to it, no other member does.
+- A UI backend that serves more than one hostname stamps `index.html` per
+  host as it serves it, by the branding contract's rule, a direct
+  `/index.html` refused so the stamped page is the only one; BoxVault does
+  so from a per-hostname map in its configuration, the identity provider
+  from its sites.
 - The catalog is on GitHub Pages, which has no rewrite; the Cloudflare
   Worker is routed on the whole hostname, answers `/api/*` itself (the
   one API surface the UI calls on every UI backend, the old `/private/*`,
@@ -904,6 +1047,8 @@ backend they are on.
 | Home, Org, Collection, Item, Version, Provider pages from `features/catalog`                                                                                      | ✓                                                                              | ✓                                                                                                                                     | n/a — `FleetPage` at `/`                                                                                         |
 | Fleet pages from `features/vdi` while the UI backend advertises `fleet`, live through the `fleet` topic                                                           | n/a                                                                            | n/a                                                                                                                                   | ✓ `FleetPage`, `VmPage`, `useFleet`                                                                              |
 | ISOs versioned like boxes: item → versions → architectures → file                                                                                                 | n/a                                                                            | ✓ `/{org}/isos/{iso}`, `/{org}/isos/{iso}/{version}` and `/{org}/isos/{iso}/{version}/{arch}` on the shared pages with the ISO slots  | n/a                                                                                                              |
+| Downloads: product → releases → patches → files on the shared pages with the downloads slots, the fifth route part marking the file                               | n/a                                                                            | to come                                                                                                                               | n/a                                                                                                              |
+| One address for a download, the page or the bytes by `Accept`                                                                                                     | n/a                                                                            | to come                                                                                                                               | n/a                                                                                                              |
 | Write actions only in slots, shown while the UI backend advertises `uploads`                                                                                      | n/a — read-only                                                                | ✓ `components/BoxList.jsx`, `components/BoxItem.jsx`, `components/BoxVersion.jsx`, `components/BoxProvider.jsx`, `components/Iso.jsx` | n/a — read-only                                                                                                  |
 | Collection, Visibility and Watched groups first in the panel, own groups prefixed, then a Columns group per collection in list view, one watch set per collection | ✓ `useCatalogSearch.jsx`                                                       | ✓ the same file                                                                                                                       | ✓ `useFleetSearch.js`: Status, Pool, Session, Cache, Drives, Publication, Columns                                |
 | Sign-in returns to the page the session ended on                                                                                                                  | n/a — one-click sign in                                                        | ✓ `returnTo` remembered on `/login` for every sign-in path                                                                            | n/a — one-click sign in                                                                                          |

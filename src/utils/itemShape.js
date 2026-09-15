@@ -11,6 +11,11 @@ export const architectureShape = PropTypes.shape({
   downloadCount: PropTypes.number,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
+  kind: PropTypes.string,
+  platform: PropTypes.string,
+  architecture: PropTypes.string,
+  language: PropTypes.string,
+  variant: PropTypes.string,
 });
 
 export const providerShape = PropTypes.shape({
@@ -20,6 +25,9 @@ export const providerShape = PropTypes.shape({
   updatedAt: PropTypes.string,
   downloads: PropTypes.number,
   architectures: PropTypes.arrayOf(architectureShape),
+  kind: PropTypes.string,
+  releasedAt: PropTypes.string,
+  notesUrl: PropTypes.string,
   extras: PropTypes.object,
 });
 
@@ -60,6 +68,8 @@ export const itemShape = PropTypes.shape({
   latestReleaseAt: PropTypes.string,
   downloads: PropTypes.number,
   os: PropTypes.shape({ label: PropTypes.string, iconUrl: PropTypes.string }),
+  family: PropTypes.string,
+  vendor: PropTypes.string,
   metadata: PropTypes.object,
   readme: PropTypes.string,
   links: PropTypes.object,
@@ -131,6 +141,18 @@ export const columnShape = PropTypes.shape({
   defaultHidden: PropTypes.bool,
 });
 
+export const levelShape = PropTypes.shape({
+  labelKey: PropTypes.string.isRequired,
+  columns: PropTypes.func.isRequired,
+});
+
+export const bulkActionShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  variant: PropTypes.string.isRequired,
+  confirm: PropTypes.bool.isRequired,
+});
+
 export const collectionShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
@@ -139,12 +161,24 @@ export const collectionShape = PropTypes.shape({
   segment: PropTypes.string.isRequired,
   hasVersions: PropTypes.bool.isRequired,
   hasProviders: PropTypes.bool.isRequired,
+  leafIsFile: PropTypes.bool,
   itemRoute: PropTypes.bool.isRequired,
   searchKey: PropTypes.string.isRequired,
   defaultView: PropTypes.oneOf(['table', 'cards']).isRequired,
   adapter: PropTypes.object.isRequired,
   filterGroups: PropTypes.arrayOf(filterGroupShape).isRequired,
   columns: PropTypes.arrayOf(columnShape).isRequired,
+  levels: PropTypes.shape({
+    versions: levelShape,
+    providers: levelShape,
+    architectures: levelShape,
+  }),
+  bulk: PropTypes.shape({
+    items: PropTypes.arrayOf(bulkActionShape),
+    versions: PropTypes.arrayOf(bulkActionShape),
+    providers: PropTypes.arrayOf(bulkActionShape),
+    architectures: PropTypes.arrayOf(bulkActionShape),
+  }),
   matches: PropTypes.func,
   canManage: PropTypes.func,
   slots: PropTypes.object.isRequired,
@@ -204,6 +238,21 @@ export const architectureNames = item =>
       ...(version.artifacts || []).map(artifact => artifact.name),
     ])
   );
+
+const filesOf = item =>
+  (item.versions || []).flatMap(version => [
+    ...(version.providers || []).flatMap(provider => provider.architectures || []),
+    ...(version.artifacts || []),
+  ]);
+
+const fileValues = (item, field) => {
+  const values = filesOf(item).map(file => file[field] || '');
+  return sortNames(values.filter(Boolean));
+};
+
+export const platformNames = item => fileValues(item, 'platform');
+
+export const fileKinds = item => fileValues(item, 'kind');
 
 export const defaultMatches = (item, needle) =>
   [item.name, item.label || '', item.description || '', item.organization.name].some(text =>

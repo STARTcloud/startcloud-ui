@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { itemPath, providerPath, versionPath } from './routes';
+import { architecturePath, itemPath, providerPath, versionPath } from './routes';
 
 export const SEARCH_KINDS = [
   'organization',
@@ -78,8 +78,9 @@ const ISSUER_PATHS = {
  * `/admin/brute-force`); elsewhere the organization page for an
  * organization, the org console or the admin board for a user, and for
  * everything else the deepest page of the row's collection the row names
- * (provider, an architecture where the collection has no providers,
- * version, else item).
+ * (the file's own address where the collection's leaf is a file, provider,
+ * an architecture where the collection has no providers, version, else
+ * item).
  *
  * @param {Object} row - One search result row
  * @param {{ collections: Array<Object>, role: string, admin: boolean }} app - The app search: the collections the host mounts, the host's role and whether the person is a global admin
@@ -98,6 +99,16 @@ export const searchRowPath = (row, { collections, role, admin }) => {
   const collection = collectionOfRow(row, collections);
   if (!collection) {
     return row.org ? `/${row.org}` : '/';
+  }
+  if (row.architecture && row.provider && collection.leafIsFile) {
+    return architecturePath(
+      collection,
+      row.org,
+      row.name,
+      row.version,
+      row.provider,
+      row.architecture
+    );
   }
   if (row.provider && collection.hasProviders) {
     return providerPath(collection, row.org, row.name, row.version, row.provider);

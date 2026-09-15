@@ -157,42 +157,11 @@ JoinAsOwner.propTypes = {
   notify: PropTypes.func.isRequired,
 };
 
-const RemoveAll = ({ org, reload, notify }) => {
-  const { t } = useTranslation();
-  const [show, setShow] = useState(false);
-  const removeAll = () => {
-    api.isos
-      .removeAll(org)
-      .then(() => {
-        notify('success', t('boxes.messages.operationSuccessful'));
-        reload();
-      })
-      .catch(error => {
-        log.api.error('Error removing all ISOs', { org, error: error.message });
-        notify('danger', t('boxes.messages.deleteFailed'));
-      });
-  };
-  return (
-    <>
-      <button type="button" className="btn btn-sm btn-danger" onClick={() => setShow(true)}>
-        {t('pages.removeAll')}
-      </button>
-      <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={removeAll} />
-    </>
-  );
-};
-
-RemoveAll.propTypes = {
-  org: PropTypes.string.isRequired,
-  reload: PropTypes.func.isRequired,
-  notify: PropTypes.func.isRequired,
-};
-
 export const IsoListActions = ({ ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const status = useStatus();
-  const { user, org, reload, notify } = ctx;
+  const { user, org, notify } = ctx;
   const uploads = hasFeature(status, 'uploads');
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_ISO);
@@ -264,9 +233,6 @@ export const IsoListActions = ({ ctx }) => {
           ) : null}
         </>
       ) : null}
-      {uploads && isOrgManager(user, org) ? (
-        <RemoveAll org={org} reload={reload} notify={notify} />
-      ) : null}
       {creating ? (
         <CreateIsoForm
           org={org}
@@ -284,7 +250,6 @@ IsoListActions.propTypes = {
   ctx: PropTypes.shape({
     user: PropTypes.object,
     org: PropTypes.string.isRequired,
-    reload: PropTypes.func.isRequired,
     notify: PropTypes.func.isRequired,
   }).isRequired,
 };

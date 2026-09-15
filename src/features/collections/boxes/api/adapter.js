@@ -240,6 +240,30 @@ const watches = {
       : api.boxes.unwatch(item.organization.name, item.name),
 };
 
+/**
+ * One bulk call for one level of one scope: `POST …/bulk { action, names }`
+ * on the level's own route, the answer `{ processed, skipped, errors }`.
+ *
+ * @param {string} level - `items`, `versions`, `providers` or `architectures`
+ * @param {string} action - The action the level's `bulk` definition names
+ * @param {Array<string>} names - The picked rows' names
+ * @param {Object} scope - The levels above: `org`, `name`, `version`, `provider`
+ * @returns {Promise<Object>} The bulk answer
+ */
+const bulk = (level, action, names, scope) => {
+  const body = { action, names };
+  if (level === 'items') {
+    return api.bulk.items(scope.org, body);
+  }
+  if (level === 'versions') {
+    return api.bulk.versions(scope.org, scope.name, body);
+  }
+  if (level === 'providers') {
+    return api.bulk.providers(scope.org, scope.name, scope.version, body);
+  }
+  return api.bulk.architectures(scope.org, scope.name, scope.version, scope.provider, body);
+};
+
 export const boxesAdapter = {
   listAll: () => api.boxes.discover().then(data => withLogos(rows(data), 'Unknown', boxItem)),
   listOrg: org => api.boxes.list(org).then(data => withLogos(rows(data), org, boxItem)),
@@ -248,5 +272,6 @@ export const boxesAdapter = {
   getVersion,
   getProvider,
   getOrganization: fetchOrganization,
+  bulk,
   watches,
 };

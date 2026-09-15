@@ -1,10 +1,11 @@
 import { hasFeature } from '../../utils/capabilities';
 
 import { boxes } from './boxes';
+import { downloads } from './downloads';
 import { isos } from './isos';
 import { provisioners } from './provisioners';
 
-const REGISTRY = { boxes, isos, provisioners };
+const REGISTRY = { boxes, downloads, isos, provisioners };
 
 const withoutWatches = collection => ({
   ...collection,

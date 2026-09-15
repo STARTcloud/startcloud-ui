@@ -13,14 +13,26 @@ export const versionPath = (collection, org, name, version) =>
 export const providerPath = (collection, org, name, version, provider) =>
   `${versionPath(collection, org, name, version)}/${provider}`;
 
-const emptyRoute = { org: '', collection: null, item: '', version: '', provider: '' };
+export const architecturePath = (collection, org, name, version, provider, architecture) =>
+  `${providerPath(collection, org, name, version, provider)}/${architecture}`;
+
+const emptyRoute = {
+  org: '',
+  collection: null,
+  item: '',
+  version: '',
+  provider: '',
+  architecture: '',
+};
 
 /**
  * Reads the current path as the shared page levels. Returns null on a
  * reserved first segment (an app page that is not an organization), the
  * empty route on the home page, and otherwise the organization, the
  * collection (the implicit one when the route carries no segment for it),
- * the item, the version and the provider.
+ * the item, the version, the provider and, for a collection whose leaf is a
+ * file, the architecture, read from the fifth part alone and ignored by
+ * every other collection.
  */
 export const parseRoute = (pathname, { reserved, collections }) => {
   const segments = pathname.split('/').filter(Boolean).map(decodeURIComponent);
@@ -45,6 +57,7 @@ export const parseRoute = (pathname, { reserved, collections }) => {
     item: tail[0] || '',
     version: tail[1] || '',
     provider: tail[2] || '',
+    architecture: collection && collection.leafIsFile ? tail[3] || '' : '',
   };
 };
 
@@ -138,7 +151,7 @@ export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
   if (!route) {
     return [];
   }
-  const { org, collection, item, version, provider } = route;
+  const { org, collection, item, version, provider, architecture } = route;
   const crumbs = [];
   if (org) {
     crumbs.push({ key: 'org', icon: orgIcon, label: org, to: `/${org}` });
@@ -167,6 +180,9 @@ export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
       label: provider,
       to: providerPath(collection, org, item, version, provider),
     });
+  }
+  if (architecture) {
+    crumbs.push({ key: 'architecture', label: architecture });
   }
   return crumbs;
 };

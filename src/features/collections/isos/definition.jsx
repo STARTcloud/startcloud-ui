@@ -12,8 +12,13 @@ import {
   versionsColumn,
   visibilityColumn,
 } from '../../../components/common/columns';
+import {
+  architectureLevelColumns,
+  versionLevelColumns,
+} from '../../../components/common/levelColumns';
 import { architectureNames } from '../../../utils/itemShape';
 import { isOrgManager } from '../../../utils/permissions';
+import { DELETE_BULK, ITEM_BULK, VERSION_BULK } from '../bulkActions';
 
 import { isosAdapter } from './api/adapter';
 import {
@@ -76,6 +81,15 @@ export const isos = {
     versionsColumn,
     architecturesColumn,
   ],
+  levels: {
+    versions: { labelKey: 'pages.item.versions', columns: versionLevelColumns },
+    architectures: { labelKey: 'pages.version.artifacts', columns: architectureLevelColumns },
+  },
+  bulk: {
+    items: ITEM_BULK,
+    versions: VERSION_BULK,
+    architectures: DELETE_BULK,
+  },
   slots: {
     ListActions: IsoListActions,
     ItemActions: IsoItemActions,

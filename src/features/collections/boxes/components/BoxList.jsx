@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../../contexts/StatusContext';
@@ -13,7 +12,7 @@ import { joinOrganizationAsAdmin } from '../../../../lib/organizations';
 import { session } from '../../../../lib/runtime';
 import { hasFeature } from '../../../../utils/capabilities';
 import { BOX_LABELS, BOX_SCHEMA } from '../../../../utils/forms';
-import { isGlobalAdmin, isOrgManager, isOrgMember } from '../../../../utils/permissions';
+import { isGlobalAdmin, isOrgMember } from '../../../../utils/permissions';
 import { api } from '../api/boxes';
 
 const EMPTY_BOX = { name: '', description: '', is_public: false };
@@ -148,42 +147,11 @@ JoinAsOwner.propTypes = {
   notify: PropTypes.func.isRequired,
 };
 
-const RemoveAll = ({ org, reload, notify }) => {
-  const { t } = useTranslation();
-  const [show, setShow] = useState(false);
-  const removeAll = () => {
-    api.boxes
-      .removeAll(org)
-      .then(() => {
-        notify('success', t('boxes.box.organization.messages.removeAllSuccess'));
-        reload();
-      })
-      .catch(error => {
-        log.api.error('Error removing all boxes', { org, error: error.message });
-        notify('danger', t('boxes.box.organization.errors.removeAll'));
-      });
-  };
-  return (
-    <>
-      <button type="button" className="btn btn-sm btn-danger" onClick={() => setShow(true)}>
-        {t('pages.removeAll')}
-      </button>
-      <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={removeAll} />
-    </>
-  );
-};
-
-RemoveAll.propTypes = {
-  org: PropTypes.string.isRequired,
-  reload: PropTypes.func.isRequired,
-  notify: PropTypes.func.isRequired,
-};
-
 export const BoxListActions = ({ ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const status = useStatus();
-  const { user, org, reload, notify } = ctx;
+  const { user, org, notify } = ctx;
   const uploads = hasFeature(status, 'uploads');
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState(EMPTY_BOX);
@@ -255,9 +223,6 @@ export const BoxListActions = ({ ctx }) => {
           ) : null}
         </>
       ) : null}
-      {uploads && isOrgManager(user, org) ? (
-        <RemoveAll org={org} reload={reload} notify={notify} />
-      ) : null}
       {creating ? (
         <CreateBoxForm
           org={org}
@@ -275,7 +240,6 @@ BoxListActions.propTypes = {
   ctx: PropTypes.shape({
     user: PropTypes.object,
     org: PropTypes.string.isRequired,
-    reload: PropTypes.func.isRequired,
     notify: PropTypes.func.isRequired,
   }).isRequired,
 };

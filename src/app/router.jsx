@@ -494,7 +494,7 @@ VmRoute.propTypes = {
 };
 
 const ProviderRoute = ({ collection, context }) => {
-  const { org, name, version, provider } = useParams();
+  const { org, name, version, provider, architecture } = useParams();
   return (
     <ProviderPage
       collection={collection}
@@ -502,6 +502,7 @@ const ProviderRoute = ({ collection, context }) => {
       name={name}
       version={version}
       provider={provider}
+      architecture={architecture || ''}
       context={context}
     />
   );
@@ -559,6 +560,15 @@ const collectionRoutes = ({ collection, collections, organizations, context }) =
       <Route
         key={`${base}/:name/:version/:provider`}
         path={`${base}/:name/:version/:provider`}
+        element={<ProviderRoute collection={collection} context={context} />}
+      />
+    );
+  }
+  if (collection.hasVersions && collection.leafIsFile) {
+    routes.push(
+      <Route
+        key={`${base}/:name/:version/:provider/:architecture`}
+        path={`${base}/:name/:version/:provider/:architecture`}
         element={<ProviderRoute collection={collection} context={context} />}
       />
     );

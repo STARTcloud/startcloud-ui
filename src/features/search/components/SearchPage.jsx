@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
-import { KindGlyph, kindLabel } from '../../../components/common/SearchResults';
+import { KindGlyph, levelLabel } from '../../../components/common/SearchResults';
 import SubTable from '../../../components/common/SubTable';
 import { EMPTY_APP_RESULTS, NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { pageContextShape } from '../../../utils/itemShape';
-import { SEARCH_KINDS, searchRowPath } from '../../../utils/searchRow';
+import { SEARCH_KINDS, collectionOfRow, searchRowPath } from '../../../utils/searchRow';
 
 const PAGE_LIMIT = 50;
 const MIN_QUERY = 2;
@@ -93,13 +93,13 @@ const usePageResults = ({ appSearch, query }) => {
   return answered;
 };
 
-const KindSection = ({ kind, rows, columns, search, ctx }) => {
+const KindSection = ({ kind, rows, columns, search, collection, ctx }) => {
   const { t } = useTranslation();
   return (
     <div className="list-table mb-4">
       <h4 className="d-flex align-items-center gap-2">
-        <KindGlyph kind={kind} />
-        {kindLabel(t, kind)}
+        <KindGlyph kind={kind} collection={collection} />
+        {levelLabel(t, kind, collection)}
         <span className="badge bg-secondary bg-opacity-50">{rows.length}</span>
       </h4>
       <SubTable
@@ -121,10 +121,11 @@ KindSection.propTypes = {
   rows: PropTypes.array.isRequired,
   columns: PropTypes.array.isRequired,
   search: PropTypes.object.isRequired,
+  collection: PropTypes.object,
   ctx: PropTypes.object.isRequired,
 };
 
-const PageBody = ({ data, query, columns, search, ctx }) => {
+const PageBody = ({ data, query, columns, search, collections, ctx }) => {
   const { t } = useTranslation();
   if (query.length < MIN_QUERY) {
     return null;
@@ -135,16 +136,20 @@ const PageBody = ({ data, query, columns, search, ctx }) => {
   if (search.rows.length === 0) {
     return <div>{t('search.noHits')}</div>;
   }
-  return kindsOf(search.rows).map(kind => (
-    <KindSection
-      key={kind}
-      kind={kind}
-      rows={search.rows.filter(row => row.kind === kind)}
-      columns={columns}
-      search={search}
-      ctx={ctx}
-    />
-  ));
+  return kindsOf(search.rows).map(kind => {
+    const rows = search.rows.filter(row => row.kind === kind);
+    return (
+      <KindSection
+        key={kind}
+        kind={kind}
+        rows={rows}
+        columns={columns}
+        search={search}
+        collection={collectionOfRow(rows[0], collections)}
+        ctx={ctx}
+      />
+    );
+  });
 };
 
 PageBody.propTypes = {
@@ -152,6 +157,7 @@ PageBody.propTypes = {
   query: PropTypes.string.isRequired,
   columns: PropTypes.array.isRequired,
   search: PropTypes.object.isRequired,
+  collections: PropTypes.array.isRequired,
   ctx: PropTypes.object.isRequired,
 };
 
@@ -205,7 +211,14 @@ const SearchPage = ({ context }) => {
         title={t('search.page.title')}
         subtitle={query.length >= MIN_QUERY ? t('search.page.count', { count: total, query }) : ''}
       />
-      <PageBody data={data} query={query} columns={columns} search={search} ctx={ctx} />
+      <PageBody
+        data={data}
+        query={query}
+        columns={columns}
+        search={search}
+        collections={appSearch.collections}
+        ctx={ctx}
+      />
     </div>
   );
 };

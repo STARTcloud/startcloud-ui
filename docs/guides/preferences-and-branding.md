@@ -291,7 +291,9 @@ the shell stamps `data-brand` and appends the `<link>` from that member
 alone, and a payload without it stamps nothing. A UI backend that rewrites
 `index.html` per site stamps the same two values into the file and
 answers the same `brand.pack`, so the shell finds them present and
-appends nothing, the identity provider being the first such backend. One
+appends nothing, the identity provider and BoxVault being such backends,
+the hostnames and what may differ per host fixed by the navbar contract's
+status payload section. One
 member, one branch, and the branding endpoint stays a server-to-server
 call, because a shell that guessed a route per UI backend would carry a
 per-app path the status payload exists to remove.

@@ -1,20 +1,14 @@
 import PropTypes from 'prop-types';
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment } from 'react';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import { sortShape } from '../../utils/itemShape';
 
+import { RowCheckbox, SelectAllCheckbox, selectionShape } from './SelectCheckbox';
 import SortHeader from './SortHeader';
 
-export const selectionShape = PropTypes.shape({
-  allSelected: PropTypes.bool.isRequired,
-  someSelected: PropTypes.bool.isRequired,
-  onToggleAll: PropTypes.func.isRequired,
-  isSelected: PropTypes.func.isRequired,
-  onToggleRow: PropTypes.func.isRequired,
-  labelOf: PropTypes.func,
-});
+export { selectionShape };
 
 /**
  * Builds a column `when` that is true when any row satisfies `pick`.
@@ -36,12 +30,14 @@ export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
  * under `rowProp`), a leading select column when `selection` is given (a
  * real checkbox header, checked, unchecked or indeterminate, the select-all
  * for the page, and one row checkbox per cell), and one full-width
- * `emptyText` row when there are no rows.
+ * `emptyText` row when there are no rows. `rowId`, where given, is the DOM
+ * id each row carries, so a page can bring one row into view.
  */
 const SubTable = ({
   columns,
   rows,
   rowKey,
+  rowId = null,
   RowActions = null,
   actionsProps = {},
   rowProp = 'row',
@@ -57,14 +53,6 @@ const SubTable = ({
   selection = null,
 }) => {
   const { t } = useTranslation();
-  const selectAllRef = useRef(null);
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = Boolean(
-        selection && selection.someSelected && !selection.allSelected
-      );
-    }
-  }, [selection]);
   const drawn = columns.filter(
     column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
   );
@@ -88,14 +76,7 @@ const SubTable = ({
         <tr>
           {selection ? (
             <th className="col-select">
-              <input
-                ref={selectAllRef}
-                type="checkbox"
-                className="form-check-input"
-                checked={selection.allSelected}
-                onChange={selection.onToggleAll}
-                aria-label={t('pages.selectColumn')}
-              />
+              <SelectAllCheckbox selection={selection} />
             </th>
           ) : null}
           {drawn.map(column => (
@@ -116,16 +97,13 @@ const SubTable = ({
         ) : (
           rows.map(row => (
             <Fragment key={rowKey(row)}>
-              <tr className={rowClass ? rowClass(row) : undefined}>
+              <tr
+                id={rowId ? rowId(row) : undefined}
+                className={rowClass ? rowClass(row) : undefined}
+              >
                 {selection ? (
                   <td className="col-select">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={selection.isSelected(row)}
-                      onChange={() => selection.onToggleRow(row)}
-                      aria-label={selection.labelOf ? selection.labelOf(row) : undefined}
-                    />
+                    <RowCheckbox selection={selection} row={row} />
                   </td>
                 ) : null}
                 {drawn.map(column => (
@@ -168,6 +146,7 @@ SubTable.propTypes = {
   ).isRequired,
   rows: PropTypes.array.isRequired,
   rowKey: PropTypes.func.isRequired,
+  rowId: PropTypes.func,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
   rowProp: PropTypes.string,

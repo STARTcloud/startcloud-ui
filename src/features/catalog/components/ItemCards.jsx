@@ -1,10 +1,20 @@
 import PropTypes from 'prop-types';
 import { Card, Col, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBug, FaGears, FaGithub, FaHouse, FaRegStar, FaStar } from 'react-icons/fa6';
+import {
+  FaBook,
+  FaBug,
+  FaGears,
+  FaGithub,
+  FaHouse,
+  FaRegStar,
+  FaScroll,
+  FaStar,
+} from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
+import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
 import { collectionShape, itemShape, statusOf, visibilityOf } from '../../../utils/itemShape';
@@ -44,6 +54,8 @@ const LINKS = [
   { key: 'homepage', Icon: FaHouse, labelKey: 'pages.links.homepage' },
   { key: 'issues', Icon: FaBug, labelKey: 'pages.links.issues' },
   { key: 'pipeline', Icon: FaGears, labelKey: 'pages.links.pipeline' },
+  { key: 'docs', Icon: FaBook, labelKey: 'pages.links.docs' },
+  { key: 'notes', Icon: FaScroll, labelKey: 'pages.links.notes' },
 ];
 
 const CardLinks = ({ item, ItemQuickActions, ctx }) => {
@@ -83,7 +95,7 @@ CardLinks.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
-const ItemCard = ({ collection, item, watches, ctx }) => {
+const ItemCard = ({ collection, item, watches, selection, ctx }) => {
   const { t } = useTranslation();
   const { ItemChips, ItemQuickActions, CardExtras, RowActions } = collection.slots;
   const title = item.label || item.name;
@@ -92,6 +104,7 @@ const ItemCard = ({ collection, item, watches, ctx }) => {
     <Card className="h-100 shadow-sm catalog-card">
       <Card.Body className="d-flex flex-column">
         <div className="d-flex align-items-start gap-2 mb-2">
+          {selection ? <RowCheckbox selection={selection} row={item} /> : null}
           <CardMedia item={item} ctx={ctx} />
           <div className="flex-grow-1 min-width-0">
             <Card.Title className="mb-0 text-break">
@@ -148,14 +161,21 @@ ItemCard.propTypes = {
     ids: PropTypes.instanceOf(Set).isRequired,
     toggle: PropTypes.func.isRequired,
   }),
+  selection: selectionShape,
   ctx: PropTypes.object.isRequired,
 };
 
-const CardGrid = ({ collection, items, watches, ctx }) => (
+const CardGrid = ({ collection, items, watches, selection, ctx }) => (
   <Row xs={1} md={2} xl={3} className="g-3 mb-3">
     {items.map(item => (
       <Col key={item.id}>
-        <ItemCard collection={collection} item={item} watches={watches} ctx={ctx} />
+        <ItemCard
+          collection={collection}
+          item={item}
+          watches={watches}
+          selection={selection}
+          ctx={ctx}
+        />
       </Col>
     ))}
   </Row>
@@ -165,10 +185,20 @@ CardGrid.propTypes = {
   collection: collectionShape.isRequired,
   items: PropTypes.arrayOf(itemShape).isRequired,
   watches: PropTypes.object,
+  selection: selectionShape,
   ctx: PropTypes.object.isRequired,
 };
 
-const ItemCards = ({ collection, items, groups, collapsed, onToggleGroup, watches, ctx }) => {
+const ItemCards = ({
+  collection,
+  items,
+  groups,
+  collapsed,
+  onToggleGroup,
+  watches,
+  ctx,
+  selection = null,
+}) => {
   const { t } = useTranslation();
   if (items.length === 0) {
     return (
@@ -178,7 +208,15 @@ const ItemCards = ({ collection, items, groups, collapsed, onToggleGroup, watche
     );
   }
   if (!groups) {
-    return <CardGrid collection={collection} items={items} watches={watches} ctx={ctx} />;
+    return (
+      <CardGrid
+        collection={collection}
+        items={items}
+        watches={watches}
+        selection={selection}
+        ctx={ctx}
+      />
+    );
   }
   return groups.map(group => (
     <div key={group.key} className="mb-3">
@@ -192,7 +230,13 @@ const ItemCards = ({ collection, items, groups, collapsed, onToggleGroup, watche
         />
       </div>
       {collapsed[group.key] ? null : (
-        <CardGrid collection={collection} items={group.items} watches={watches} ctx={ctx} />
+        <CardGrid
+          collection={collection}
+          items={group.items}
+          watches={watches}
+          selection={selection}
+          ctx={ctx}
+        />
       )}
     </div>
   ));
@@ -209,6 +253,7 @@ ItemCards.propTypes = {
     toggle: PropTypes.func.isRequired,
   }),
   ctx: PropTypes.object.isRequired,
+  selection: selectionShape,
 };
 
 export default ItemCards;

@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 
-import { architectureNames, latestReleaseTime, providerNames } from '../../utils/itemShape';
+import {
+  architectureNames,
+  latestReleaseTime,
+  platformNames,
+  providerNames,
+} from '../../utils/itemShape';
 import { formatRelativeTime } from '../../utils/relativeTime';
 import { itemPath } from '../../utils/routes';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
@@ -8,6 +13,19 @@ import { OrgLogo } from '../layout/OrgSwitcherModal';
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
 const namesKey = names => names.join(' ').toLowerCase();
+
+const itemIcon = icon =>
+  icon ? (
+    <img
+      src={icon}
+      alt=""
+      className="rounded icon-with-margin-sm v-align-middle prov-icon-sm"
+      loading="lazy"
+      onError={event => {
+        event.currentTarget.classList.add('d-none');
+      }}
+    />
+  ) : null;
 
 const nameBadges = names =>
   names.length > 0 ? (
@@ -37,6 +55,7 @@ export const nameColumn = {
           className="rounded-circle avatar-lg icon-with-margin-sm v-align-middle"
           fallback={ctx.orgMark}
         />
+        {itemIcon(item.icon)}
         {ctx.collection.itemRoute ? (
           <Link to={itemPath(ctx.collection, orgName, item.name)} className="v-align-middle">
             {text}
@@ -55,17 +74,7 @@ export const labelColumn = {
   sortValue: item => (item.label || item.name).toLowerCase(),
   render: (item, ctx) => (
     <>
-      {item.icon ? (
-        <img
-          src={item.icon}
-          alt=""
-          className="rounded icon-with-margin-sm v-align-middle prov-icon-sm"
-          loading="lazy"
-          onError={event => {
-            event.currentTarget.classList.add('d-none');
-          }}
-        />
-      ) : null}
+      {itemIcon(item.icon)}
       <Link
         to={itemPath(ctx.collection, item.organization.name, item.name)}
         className="v-align-middle"
@@ -152,7 +161,7 @@ export const downloadsColumn = {
   key: 'downloads',
   labelKey: 'pages.table.downloads',
   sortValue: item => item.downloads || 0,
-  render: item => item.downloads || 0,
+  render: item => (typeof item.downloads === 'number' ? item.downloads : ''),
 };
 
 export const versionsColumn = {
@@ -167,6 +176,35 @@ export const providersColumn = {
   labelKey: 'pages.table.providers',
   sortValue: item => namesKey(providerNames(item)),
   render: item => nameBadges(providerNames(item)),
+};
+
+export const familyColumn = {
+  key: 'family',
+  labelKey: 'pages.table.family',
+  sortValue: item => (item.family || '').toLowerCase(),
+  render: item => item.family || '',
+};
+
+export const vendorColumn = {
+  key: 'vendor',
+  labelKey: 'pages.table.vendor',
+  sortValue: item => (item.vendor || '').toLowerCase(),
+  render: item => item.vendor || '',
+};
+
+export const releasesColumn = {
+  key: 'releases',
+  labelKey: 'pages.table.releases',
+  sortValue: item => (item.versions || []).length,
+  render: item => (item.versions || []).length,
+};
+
+export const platformsColumn = {
+  key: 'platforms',
+  labelKey: 'pages.table.platforms',
+  defaultHidden: true,
+  sortValue: item => namesKey(platformNames(item)),
+  render: item => nameBadges(platformNames(item)),
 };
 
 export const architecturesColumn = {

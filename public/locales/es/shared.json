@@ -1479,7 +1479,10 @@
     "boxesCount_other": "{{count}} boxes",
     "isos": "ISOs",
     "isosCount_one": "{{count}} ISO",
-    "isosCount_other": "{{count}} ISOs"
+    "isosCount_other": "{{count}} ISOs",
+    "downloads": "Descargas",
+    "downloadsCount_one": "{{count}} descarga",
+    "downloadsCount_other": "{{count}} descargas"
   },
   "vdi": {
     "sidebar": {
@@ -1742,6 +1745,10 @@
       "collection": "Colección",
       "provider": "Proveedor",
       "architecture": "Arquitectura",
+      "family": "Familia",
+      "vendor": "Fabricante",
+      "platform": "Plataforma",
+      "kind": "Tipo",
       "perPage": "Por página",
       "columns": "Columnas"
     },
@@ -1753,6 +1760,24 @@
     "toggle": "Mostrar u ocultar",
     "addNew": "Añadir nuevo",
     "removeAll": "Eliminar todo",
+    "bulk": {
+      "selected": "{{count}} seleccionados",
+      "clearSelection": "Borrar selección",
+      "delete": "Eliminar",
+      "makePublic": "Hacer público",
+      "makePrivate": "Hacer privado",
+      "publish": "Publicar",
+      "unpublish": "Despublicar",
+      "deprecate": "Marcar obsoleta",
+      "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
+      "confirmTitle": "Confirmar la acción masiva",
+      "confirmBody": "{{action}} para {{count}} filas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+      "errors": {
+        "not_found": "ya no existe",
+        "not_allowed": "no es tuyo para cambiarlo",
+        "in_use": "aún está en uso"
+      }
+    },
     "confirm": {
       "title": "Confirmar Acción",
       "message": "Por favor escribe \"{{keyword}}\" para confirmar.",
@@ -1772,7 +1797,9 @@
       "repo": "Repositorio",
       "homepage": "Página web",
       "issues": "Informar de un problema",
-      "pipeline": "Pipeline de CI"
+      "pipeline": "Pipeline de CI",
+      "docs": "Documentación",
+      "notes": "Notas de la versión"
     },
     "table": {
       "name": "Nombre",
@@ -1795,7 +1822,21 @@
       "defaultBox": "Box predeterminada",
       "fileSize": "Tamaño de archivo",
       "checksumType": "Tipo de checksum",
-      "tier": "Nivel"
+      "tier": "Nivel",
+      "family": "Familia",
+      "vendor": "Fabricante",
+      "release": "Lanzamiento",
+      "releases": "Lanzamientos",
+      "patches": "Parches",
+      "files": "Archivos",
+      "platforms": "Plataformas",
+      "platform": "Plataforma",
+      "architecture": "Arquitectura",
+      "kind": "Tipo",
+      "language": "Idioma",
+      "variant": "Variante",
+      "fileName": "Nombre del archivo",
+      "key": "Clave"
     },
     "status": {
       "published": "Publicado",
@@ -2037,6 +2078,99 @@
         "repository": "Repositorio",
         "issues": "Informar de un problema"
       }
+    }
+  },
+  "downloads": {
+    "search": "Buscar descargas",
+    "visibility": {
+      "public": "Público",
+      "private": "Privado"
+    },
+    "upload": {
+      "drop": "Suelte un archivo aquí o haga clic para elegir uno",
+      "uploading": "Subiendo… {{percent}}%",
+      "done": "El archivo se subió."
+    },
+    "actions": {
+      "makePublic": "Hacer público",
+      "makePrivate": "Hacer privado",
+      "publish": "Publicar",
+      "unpublish": "Despublicar",
+      "docs": "Documentación",
+      "notes": "Notas"
+    },
+    "hints": {
+      "slug": "Letras, dígitos, guiones y puntos.",
+      "identifier": "Letras, dígitos, guiones y puntos.",
+      "language": "en, en-US, o any para todos los idiomas."
+    },
+    "product": {
+      "name": "Nombre del producto",
+      "description": "Descripción",
+      "family": "Familia",
+      "vendor": "Fabricante",
+      "iconUrl": "URL del icono",
+      "docsUrl": "URL de la documentación",
+      "notesUrl": "URL de las notas de la versión",
+      "visibility": "Visibilidad",
+      "updated": "El producto se actualizó."
+    },
+    "release": {
+      "number": "Lanzamiento",
+      "description": "Descripción",
+      "notes": "Notas de la versión",
+      "updated": "El lanzamiento se actualizó.",
+      "deleted": "El lanzamiento se eliminó."
+    },
+    "patch": {
+      "name": "Nombre del parche",
+      "kind": "Tipo",
+      "releasedAt": "Publicado",
+      "notesUrl": "URL de las notas de la versión",
+      "updated": "El parche se actualizó.",
+      "deleted": "El parche se eliminó."
+    },
+    "file": {
+      "key": "Clave",
+      "fileName": "Nombre del archivo",
+      "kind": "Tipo",
+      "platform": "Plataforma",
+      "architecture": "Arquitectura",
+      "language": "Idioma",
+      "variant": "Variante",
+      "checksumType": "Tipo de checksum",
+      "checksum": "Suma de comprobación",
+      "downloadWithCount": "Descargar ({{n}})",
+      "updated": "El archivo se actualizó.",
+      "deleted": "El archivo se eliminó."
+    },
+    "kind": {
+      "release": "lanzamiento",
+      "fixpack": "fix pack",
+      "interim-fix": "corrección provisional",
+      "hotfix": "hotfix",
+      "installer": "instalador",
+      "container-image": "imagen de contenedor",
+      "package": "paquete",
+      "template": "plantilla",
+      "notes": "notas",
+      "tool": "herramienta",
+      "other": "otro"
+    },
+    "platform": {
+      "linux": "Linux",
+      "windows": "Windows",
+      "macos": "macOS",
+      "omnios": "OmniOS",
+      "other": "otra",
+      "any": "cualquiera"
+    },
+    "architecture": {
+      "x64": "x64",
+      "x86": "x86",
+      "arm64": "arm64",
+      "other": "otra",
+      "any": "cualquiera"
     }
   },
   "boxes": {

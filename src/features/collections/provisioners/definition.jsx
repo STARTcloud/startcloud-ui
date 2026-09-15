@@ -12,6 +12,11 @@ import {
   visibilityColumn,
 } from '../../../components/common/columns';
 import { CollapseButton } from '../../../components/common/GroupHeading';
+import {
+  architectureLevelColumns,
+  providerLevelColumns,
+  versionLevelColumns,
+} from '../../../components/common/levelColumns';
 import { itemShape } from '../../../utils/itemShape';
 
 import { catalogAdapter } from './api/adapter';
@@ -364,6 +369,11 @@ export const provisioners = {
     versionsColumn,
     coverageColumn,
   ],
+  levels: {
+    versions: { labelKey: 'pages.item.versions', columns: versionLevelColumns },
+    providers: { labelKey: 'pages.table.providers', columns: providerLevelColumns },
+    architectures: { labelKey: 'pages.table.architectures', columns: architectureLevelColumns },
+  },
   matches: (item, needle) =>
     [
       item.name,

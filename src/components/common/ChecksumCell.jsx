@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import { useNotify } from '../../../contexts/NoticeContext';
-import { copyToClipboard } from '../../../lib/clipboard';
+import { useNotify } from '../../contexts/NoticeContext';
+import { copyToClipboard } from '../../lib/clipboard';
 
 /**
  * One checksum drawn anywhere a table cell or facts row shows it: the type

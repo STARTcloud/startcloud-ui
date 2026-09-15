@@ -1,0 +1,108 @@
+import PropTypes from 'prop-types';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { resultLineOf } from '../../../components/common/bulkResult';
+import ConfirmModal from '../../../components/common/ConfirmModal';
+import { useNotify } from '../../../contexts/NoticeContext';
+import { collectionShape } from '../../../utils/itemShape';
+
+const EMPTY_RESULT = { processed: 0, skipped: 0, errors: [] };
+
+const merged = answers =>
+  answers.reduce(
+    (total, answer) => ({
+      processed: total.processed + (answer?.processed || 0),
+      skipped: total.skipped + (answer?.skipped || 0),
+      errors: [...total.errors, ...(answer?.errors || [])],
+    }),
+    EMPTY_RESULT
+  );
+
+export const bulkGroupShape = PropTypes.shape({
+  scope: PropTypes.object.isRequired,
+  names: PropTypes.arrayOf(PropTypes.string).isRequired,
+});
+
+/**
+ * The picked-state group of a section's action pane: Clear selection, then
+ * the collection's bulk actions for this level as `definition.bulk` names
+ * them, each destructive one gated by the shared confirm, sent as one
+ * `bulk(level, action, names, scope)` call per scope the picked rows span,
+ * the one result line naming processed, skipped and each error's code after
+ * it. Draws nothing while no row is picked or the collection names no bulk
+ * action for the level.
+ */
+const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [pending, setPending] = useState(null);
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const actions = (collection.bulk || {})[level] || [];
+  const count = groups.reduce((sum, group) => sum + group.names.length, 0);
+
+  if (count === 0 || actions.length === 0 || !collection.adapter.bulk) {
+    return null;
+  }
+
+  const run = action => {
+    setBusy(true);
+    Promise.all(
+      groups.map(group => collection.adapter.bulk(level, action.key, group.names, group.scope))
+    )
+      .then(answers => {
+        setResult(merged(answers));
+        onDone();
+      })
+      .catch(error => notify('danger', t(error.messageKey || 'errors.request')))
+      .finally(() => setBusy(false));
+  };
+
+  const line = resultLineOf(t, 'pages.bulk', result);
+
+  return (
+    <>
+      <button type="button" className="btn btn-sm btn-link" onClick={onClear}>
+        {t('pages.bulk.clearSelection')}
+      </button>
+      {actions.map(action => (
+        <button
+          key={action.key}
+          type="button"
+          className={`btn btn-sm ${action.variant}`}
+          disabled={busy}
+          onClick={() => (action.confirm ? setPending(action) : run(action))}
+        >
+          {t(action.labelKey)}
+        </button>
+      ))}
+      {line ? (
+        <span className="small text-muted" role="status">
+          {line}
+        </span>
+      ) : null}
+      <ConfirmModal
+        show={Boolean(pending)}
+        handleClose={() => setPending(null)}
+        handleConfirm={() => run(pending)}
+        title={t('pages.bulk.confirmTitle')}
+        message={t('pages.bulk.confirmBody', {
+          action: pending ? t(pending.labelKey) : '',
+          count,
+          keyword: t('pages.confirm.keyword'),
+        })}
+      />
+    </>
+  );
+};
+
+BulkActions.propTypes = {
+  collection: collectionShape.isRequired,
+  level: PropTypes.oneOf(['items', 'versions', 'providers', 'architectures']).isRequired,
+  groups: PropTypes.arrayOf(bulkGroupShape).isRequired,
+  onClear: PropTypes.func.isRequired,
+  onDone: PropTypes.func.isRequired,
+};
+
+export default BulkActions;

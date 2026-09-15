@@ -286,7 +286,12 @@ here, not in any one app's backlog.
   providers, built, provisioner and driver versions, never the password
   fact); versions (number, description, release notes, deprecation
   reason); providers and architectures (name); artifacts (checksum by
-  exact value or a prefix of six or more characters, file name); and
+  exact value or a prefix of six or more characters, file name); downloads
+  (product name, description, family, vendor), their releases, patches
+  and files under the downloads list's visibility, a file hit carrying
+  `kind: architecture` with `collection: downloads` and the route parts
+  filled to `architecture`, the screen word coming from the registry's
+  level labels; and
   users (username, email) for a global admin everywhere and for an
   organization's owners and admins within it. The catalog matches
   provisioners (name, label, description, repository), their versions and
@@ -512,7 +517,11 @@ in it, `/assets/` included, `Cache-Control: no-cache` with an ETag, a
 conditional request per file and the bytes only when they changed, never
 `immutable`, and `index.html` and `/` `no-store`, because a fixed name
 cached for a year pins one deploy's chunk against another's, and a lazy
-chunk fetched fresh then binds to the wrong export table.
+chunk fetched fresh then binds to the wrong export table. A UI backend
+that serves more than one hostname stamps `index.html` per host as it
+serves it, the way the identity provider does and the branding contract
+fixes, a direct `/index.html` refused so the stamped page is the only
+one; BoxVault is the second such backend.
 hyperweaver-ui is served at `/ui/`
 today because its agents mount their whole API at the origin root; it
 joins this rule when those routes move under `/api`, and until then the
@@ -533,7 +542,7 @@ UI reads nothing else to decide what to render:
     "repo": "https://github.com/Makr91/BoxVault"
   },
   "auth": ["backend"],
-  "collections": ["boxes", "isos"],
+  "collections": ["boxes", "isos", "downloads"],
   "features": [
     "local-accounts",
     "setup",
@@ -567,6 +576,18 @@ UI reads nothing else to decide what to render:
 | `ticket`          | `{ baseUrl, reqType, fallbackCustomerId }` for a UI backend with no config route; `null` when the UI backend serves them at `/api/config/ticket`                                                                                                                                                                                                                                                                                                                                                                    |
 | `events`          | Present only with the `events` token: `{ path, topics }`, the one stream of the [Universal Events Contract](universal-events/) and every topic the UI backend can stream; the runtime opens it once per tab                                                                                                                                                                                                                                                                                                         |
 | `config`          | The config file names the admin page draws one file per route for, each file a child node of the Configuration tree in the sidebar, served at `/api/config/<name>` (`["app"]` on the VDI Health Monitor; absent means `["app"]`)                                                                                                                                                                                                                                                                                    |
+
+A UI backend that answers on more than one hostname answers `/api/status`
+per Host header: `brand`, `collections` and its order, and `features` may
+differ by hostname, nothing else, so one instance wears two faces from one
+build, the first collection of each face owning that face's root; BoxVault
+takes the map from its app configuration, one entry per hostname, the
+unnamed hostname answering as today, and the identity provider from its
+sites. This is an option a UI backend takes by serving several hostnames,
+never a rule every UI backend meets, and the estate already carries it:
+the identity provider answers per site today and BoxVault joins it with
+its downloads; a UI backend on one hostname answers one payload and is
+conformant as it is, so no checklist line records it.
 
 The feature tokens and the surface each unlocks:
 

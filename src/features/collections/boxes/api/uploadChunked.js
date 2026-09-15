@@ -149,7 +149,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
  * @param {File} options.file - The file to send
  * @param {string} [options.checksum] - The declared checksum
  * @param {string} [options.checksum_type] - The checksum algorithm, `NULL` when none
- * @param {() => Promise<Object>} options.info - Reads the assembled file's info
+ * @param {() => Promise<Object>} [options.info] - Reads the assembled file's info; absent where the route names the file itself, the last chunk's answer then standing for completion
  * @param {Function} [options.onUploadProgress] - Progress callback
  * @returns {Promise<Object>} The backend's completion result
  */
@@ -159,8 +159,8 @@ export const uploadChunked = async ({
   file,
   checksum,
   checksum_type: checksumType,
-  info,
   onUploadProgress,
+  info = null,
 }) => {
   if (!file) {
     throw new Error('boxes.errors.upload.noFile');
@@ -180,6 +180,13 @@ export const uploadChunked = async ({
     if (result) {
       log.file.info('Upload completed successfully', { result });
       return result;
+    }
+    if (!info) {
+      reportProgress(onUploadProgress, file.size, file.size, 'complete', 'Upload complete');
+      return {
+        message: 'File upload completed',
+        details: { isComplete: true, status: 'complete', fileSize: file.size },
+      };
     }
     log.file.info('All chunks uploaded, starting assembly phase');
     reportProgress(

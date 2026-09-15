@@ -55,6 +55,28 @@ const KIND_ICONS = {
  */
 export const kindLabel = (t, kind) => t(`search.kinds.${kind}`, { defaultValue: kind });
 
+const LEVEL_OF_KIND = {
+  version: 'versions',
+  provider: 'providers',
+  architecture: 'architectures',
+  artifact: 'architectures',
+};
+
+/**
+ * The name a search row's kind wears inside its collection: the label that
+ * collection's `levels` gives the matching level, so Releases, Patches and
+ * Files read as themselves; the shared kind name for every other row.
+ *
+ * @param {Function} t - The translator
+ * @param {string} kind - The row kind
+ * @param {Object|null} collection - The row's collection, when the build mounts it
+ * @returns {string} The label
+ */
+export const levelLabel = (t, kind, collection) => {
+  const level = collection?.levels?.[LEVEL_OF_KIND[kind]];
+  return level ? t(level.labelKey) : kindLabel(t, kind);
+};
+
 const rowKey = row =>
   [row.kind, row.org, row.name, row.version, row.provider, row.architecture, row.matched].join(':');
 
@@ -106,7 +128,7 @@ const GroupHeading = ({ group }) => {
     <div className="navbar-search-results-group">
       <KindGlyph kind={group.kind} collection={group.collection} />
       {group.collection ? `${t(group.collection.labelKey)} · ` : ''}
-      {kindLabel(t, group.kind)}
+      {levelLabel(t, group.kind, group.collection)}
     </div>
   );
 };

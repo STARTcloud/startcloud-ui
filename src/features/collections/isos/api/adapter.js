@@ -126,6 +126,28 @@ const watches = {
       : api.isos.unwatch(item.organization.name, item.name),
 };
 
+/**
+ * One bulk call for one level of one scope: `POST …/bulk { action, names }`
+ * on the level's own route, the answer `{ processed, skipped, errors }`; an
+ * ISO has no provider level, so its architectures hang off the version.
+ *
+ * @param {string} level - `items`, `versions` or `architectures`
+ * @param {string} action - The action the level's `bulk` definition names
+ * @param {Array<string>} names - The picked rows' names
+ * @param {Object} scope - The levels above: `org`, `name`, `version`
+ * @returns {Promise<Object>} The bulk answer
+ */
+const bulk = (level, action, names, scope) => {
+  const body = { action, names };
+  if (level === 'items') {
+    return api.bulk.items(scope.org, body);
+  }
+  if (level === 'versions') {
+    return api.bulk.versions(scope.org, scope.name, body);
+  }
+  return api.bulk.architectures(scope.org, scope.name, scope.version, body);
+};
+
 export const isosAdapter = {
   listAll: () => api.isos.discover().then(data => withLogos(rows(data), 'Unknown', isoItem)),
   listOrg: org => api.isos.list(org).then(data => withLogos(rows(data), org, isoItem)),
@@ -134,5 +156,6 @@ export const isosAdapter = {
   getVersion,
   getProvider,
   getOrganization: fetchOrganization,
+  bulk,
   watches,
 };

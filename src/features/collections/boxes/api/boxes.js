@@ -46,7 +46,6 @@ export const api = {
     create: (organization, body) => client.post(`${org(organization)}/box`, body),
     update: (organization, name, body) => client.put(box(organization, name), body),
     remove: (organization, name) => client.delete(box(organization, name)),
-    removeAll: organization => client.delete(`${org(organization)}/box`),
     watch: (organization, name) => client.post(`${box(organization, name)}/watch`, {}),
     unwatch: (organization, name) => client.delete(`${box(organization, name)}/watch`),
     watches: () => client.get('/api/user/watches'),
@@ -93,6 +92,15 @@ export const api = {
         )
         .then(data => data.downloadUrl),
     upload: uploadBoxFile,
+  },
+  bulk: {
+    items: (organization, body) => client.post(`${org(organization)}/box/bulk`, body),
+    versions: (organization, name, body) =>
+      client.post(`${box(organization, name)}/version/bulk`, body),
+    providers: (organization, name, number, body) =>
+      client.post(`${version(organization, name, number)}/provider/bulk`, body),
+    architectures: (organization, name, number, providerName, body) =>
+      client.post(`${provider(organization, name, number, providerName)}/architecture/bulk`, body),
   },
   config: {
     hyperweaver: () => client.get('/api/config/hyperweaver', PUBLIC),

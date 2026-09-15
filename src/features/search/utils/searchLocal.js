@@ -23,6 +23,9 @@ const fileMatched = (file, needle) => {
   if (includes(file.name, needle)) {
     return 'name';
   }
+  if (includes(file.fileName, needle)) {
+    return 'fileName';
+  }
   return checksumMatches(file.checksum, needle) ? 'checksum' : '';
 };
 
@@ -46,6 +49,8 @@ const itemFields = item => [
   ['label', item.label],
   ['description', item.description],
   ['os', item.os?.label],
+  ['family', item.family],
+  ['vendor', item.vendor],
   ...Object.entries(item.metadata || {})
     .filter(([key]) => key !== 'password')
     .map(([, value]) => ['metadata', value]),

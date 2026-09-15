@@ -1,7 +1,28 @@
 const CHECKSUM_LENGTHS = { MD5: 32, SHA1: 40, SHA256: 64, SHA384: 96, SHA512: 128 };
 const HEX_RE = /^[a-fA-F0-9]+$/;
 
-export const CHECKSUM_TYPES = ['NULL', ...Object.keys(CHECKSUM_LENGTHS)];
+export const CHECKSUM_ALGORITHMS = Object.keys(CHECKSUM_LENGTHS);
+
+export const CHECKSUM_TYPES = ['NULL', ...CHECKSUM_ALGORITHMS];
+
+export const PATCH_KINDS = ['release', 'fixpack', 'interim-fix', 'hotfix'];
+
+export const FILE_KINDS = [
+  'installer',
+  'fixpack',
+  'hotfix',
+  'interim-fix',
+  'container-image',
+  'package',
+  'template',
+  'notes',
+  'tool',
+  'other',
+];
+
+export const FILE_PLATFORMS = ['linux', 'windows', 'macos', 'omnios', 'other', 'any'];
+
+export const FILE_ARCHITECTURES = ['x64', 'x86', 'arm64', 'other', 'any'];
 
 const checksumFailure = (value, values) => {
   const type = values.checksum_type;
@@ -100,7 +121,7 @@ export const ARCHITECTURE_SCHEMA = {
     checksum: {
       type: 'string',
       dependsOn: 'checksum_type',
-      showWhen: Object.keys(CHECKSUM_LENGTHS),
+      showWhen: CHECKSUM_ALGORITHMS,
       custom: checksumFailure,
     },
     file: { custom: fileFailure },
@@ -121,3 +142,91 @@ export const ISO_ARCHITECTURE_SCHEMA = {
 };
 
 export const ISO_ARCHITECTURE_LABELS = { name: 'boxes.architecture.name' };
+
+export const DOWNLOAD_SCHEMA = {
+  required: ['name'],
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+    is_public: { type: 'boolean' },
+    family: { type: 'string' },
+    vendor: { type: 'string' },
+    icon_url: { type: 'string' },
+    docs_url: { type: 'string' },
+    notes_url: { type: 'string' },
+  },
+};
+
+export const DOWNLOAD_LABELS = {
+  name: 'downloads.product.name',
+  description: 'downloads.product.description',
+  family: 'downloads.product.family',
+  vendor: 'downloads.product.vendor',
+  icon_url: 'downloads.product.iconUrl',
+  docs_url: 'downloads.product.docsUrl',
+  notes_url: 'downloads.product.notesUrl',
+};
+
+export const RELEASE_SCHEMA = {
+  required: ['version_number'],
+  properties: {
+    version_number: { type: 'string' },
+    description: { type: 'string' },
+    release_notes: { type: 'string' },
+  },
+};
+
+export const RELEASE_LABELS = {
+  version_number: 'downloads.release.number',
+  description: 'downloads.release.description',
+  release_notes: 'downloads.release.notes',
+};
+
+export const PATCH_SCHEMA = {
+  required: ['name'],
+  properties: {
+    name: { type: 'string' },
+    kind: { type: 'string', enum: PATCH_KINDS },
+    released_at: { type: 'string' },
+    notes_url: { type: 'string' },
+  },
+};
+
+export const PATCH_LABELS = {
+  name: 'downloads.patch.name',
+  kind: 'downloads.patch.kind',
+  released_at: 'downloads.patch.releasedAt',
+  notes_url: 'downloads.patch.notesUrl',
+};
+
+export const DOWNLOAD_FILE_SCHEMA = {
+  required: ['key', 'file_name'],
+  properties: {
+    key: { type: 'string' },
+    file_name: { type: 'string' },
+    kind: { type: 'string', enum: FILE_KINDS },
+    platform: { type: 'string', enum: FILE_PLATFORMS },
+    architecture: { type: 'string', enum: FILE_ARCHITECTURES },
+    language: { type: 'string' },
+    variant: { type: 'string' },
+    checksum_type: { type: 'string', enum: CHECKSUM_TYPES },
+    checksum: {
+      type: 'string',
+      dependsOn: 'checksum_type',
+      showWhen: CHECKSUM_ALGORITHMS,
+      custom: checksumFailure,
+    },
+  },
+};
+
+export const DOWNLOAD_FILE_LABELS = {
+  key: 'downloads.file.key',
+  file_name: 'downloads.file.fileName',
+  kind: 'downloads.file.kind',
+  platform: 'downloads.file.platform',
+  architecture: 'downloads.file.architecture',
+  language: 'downloads.file.language',
+  variant: 'downloads.file.variant',
+  checksum_type: 'downloads.file.checksumType',
+  checksum: 'downloads.file.checksum',
+};

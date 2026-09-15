@@ -26,7 +26,6 @@ export const api = {
     create: (organization, body) => client.post(`${org(organization)}/iso`, body),
     update: (organization, name, body) => client.put(iso(organization, name), body),
     remove: (organization, name) => client.delete(iso(organization, name)),
-    removeAll: organization => client.delete(`${org(organization)}/iso`),
     watch: (organization, name) => client.post(`${iso(organization, name)}/watch`, {}),
     unwatch: (organization, name) => client.delete(`${iso(organization, name)}/watch`),
     watches: () => client.get('/api/user/iso-watches'),
@@ -58,5 +57,12 @@ export const api = {
       }),
     remove: (organization, name, number, architectureName) =>
       client.delete(`${file(organization, name, number, architectureName)}/delete`),
+  },
+  bulk: {
+    items: (organization, body) => client.post(`${org(organization)}/iso/bulk`, body),
+    versions: (organization, name, body) =>
+      client.post(`${iso(organization, name)}/version/bulk`, body),
+    architectures: (organization, name, number, body) =>
+      client.post(`${version(organization, name, number)}/architecture/bulk`, body),
   },
 };

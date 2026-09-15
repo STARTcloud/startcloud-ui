@@ -1264,6 +1264,50 @@
     align-items: center;
     gap: 4px;
   }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+    padding: 4px 0 12px;
+  }
+  .form-grid .wide {
+    grid-column: 1 / -1;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .field label {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--heading);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .input .caret {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .field .hint {
+    font-size: 12px;
+    color: var(--muted);
+  }
   @media (max-width: 760px) {
     .spec {
       grid-template-columns: 1fr;
@@ -1539,7 +1583,17 @@
                   <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
           ></span>
         </div>
-        <div class="grid boxes">
+        <div
+          class="grid boxes"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
+              70px minmax(140px, 1.2fr) 90px 32px;
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
           ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
@@ -1550,7 +1604,7 @@
             ><span class="fold">▾</span><span class="mark row"></span
             ><span class="lnk">STARTcloud</span><span class="countb">4 boxes</span></span
           >
-          <span class="td odd"><span class="star">★</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
             ><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span
           ><span class="td odd"><span class="status info">Public</span></span
@@ -1574,7 +1628,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td"><span class="star">☆</span></span
+          <span class="td">☐</span><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span
             ><span class="lnk">STARTcloud/windows2022-server</span></span
@@ -1599,7 +1653,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td odd"><span class="star">☆</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span
           ><span class="td odd"><span class="status info">Public</span></span
@@ -1624,7 +1678,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td"><span class="star">★</span></span
+          <span class="td">☐</span><span class="td"><span class="star">★</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span
           ><span class="td"><span class="status secondary">Private</span></span
@@ -1650,7 +1704,7 @@
             ><span class="fold">▾</span><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard</span><span class="countb">2 boxes</span></span
           >
-          <span class="td odd"><span class="star">★</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
             ><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard/debian13-server</span></span
@@ -1675,7 +1729,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td"><span class="star">☆</span></span
+          <span class="td">☐</span><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard/opnsense-router</span></span
@@ -1703,7 +1757,7 @@
             ><span class="fold">▾</span><span class="mark row moon"></span
             ><span class="lnk">Moonshine</span><span class="countb">1 box</span></span
           >
-          <span class="td odd"><span class="star">☆</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row moon"></span
             ><span class="lnk">Moonshine/omnios-server</span></span
@@ -1744,7 +1798,17 @@
             >ISOs<span class="countb">3</span>
           </h3>
         </div>
-        <div class="grid isos">
+        <div
+          class="grid isos"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
+              70px minmax(120px, 1fr);
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
           ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
@@ -1754,7 +1818,7 @@
             ><span class="fold">▾</span><span class="mark row"></span
             ><span class="lnk">STARTcloud</span><span class="countb">2 ISOs</span></span
           >
-          <span class="td odd"><span class="star">☆</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
             ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
@@ -1763,8 +1827,8 @@
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
           ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
-          ><span class="td odd">1</span><span class="td odd">amd64</span>
-          <span class="td"><span class="star">☆</span></span
+          ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
@@ -1777,7 +1841,7 @@
             ><span class="fold">▾</span><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard</span><span class="countb">1 ISO</span></span
           >
-          <span class="td odd"><span class="star">☆</span></span
+          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard/OPNsense-26.1.6-dvd-amd64.iso</span></span
@@ -1837,8 +1901,9 @@
 
   <div class="state">
     <div class="state-label">
-      OrgPage — /STARTcloud: the org header row carries the one toggle; each collection heading row
-      carries its actions; headings are labels with counts
+      OrgPage — /STARTcloud: three boxes picked, the bulk pane in the heading row; the org header
+      row carries the one toggle; each collection heading row carries its actions; headings are
+      labels with counts
     </div>
     <div class="frame">
       <div class="navbar">
@@ -1958,20 +2023,33 @@
               <path d="M12 12l9-5"></path>
               <path d="M12 12v10"></path>
               <path d="M12 12L3 7"></path></svg
-            >Boxes<span class="countb">4</span>
+            >Boxes<span class="hcount"> · 3 selected</span>
           </h2>
           <span class="right"
-            ><span class="btn sm success">Add New</span
-            ><span class="btn sm danger">Remove All</span></span
+            ><span class="lnk">Clear selection</span><span class="btn sm">Make public</span
+            ><span class="btn sm">Make private</span><span class="btn sm">Publish</span
+            ><span class="btn sm">Unpublish</span><span class="btn sm danger">Delete</span
+            ><span class="btn sm success">Add New</span></span
           >
         </div>
-        <div class="grid boxes">
+        <div
+          class="grid boxes"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
+              70px minmax(140px, 1.2fr) 90px 32px;
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all indeterminate" title="Select all on this page"
+          /></span>
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
           ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
           ><span class="th">Latest release</span><span class="th">Versions</span
           ><span class="th">Providers</span><span class="th">Architectures</span
-          ><span class="th"></span> <span class="td odd"><span class="star">★</span></span
+          ><span class="th"></span> <span class="td odd">☑</span
+          ><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
             ><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span
           ><span class="td odd"><span class="status info">Public</span></span
@@ -1995,7 +2073,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td"><span class="star">☆</span></span
+          <span class="td">☑</span><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span
             ><span class="lnk">STARTcloud/windows2022-server</span></span
@@ -2020,7 +2098,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td odd"><span class="star">☆</span></span
+          <span class="td odd">☑</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span
           ><span class="td odd"><span class="status info">Public</span></span
@@ -2045,7 +2123,7 @@
                 <path d="M9 15l6-6 4 4-6 6z"></path>
                 <path d="M14 4l6 6"></path></svg></span
           ></span>
-          <span class="td"><span class="star">★</span></span
+          <span class="td">☐</span><span class="td"><span class="star">★</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span
           ><span class="td"><span class="status secondary">Private</span></span
@@ -2082,18 +2160,25 @@
               <circle cx="12" cy="12" r="2.5"></circle></svg
             >ISOs<span class="countb">2</span>
           </h2>
-          <span class="right"
-            ><span class="btn sm success">Add New</span
-            ><span class="btn sm danger">Remove All</span></span
-          >
+          <span class="right"><span class="btn sm success">Add New</span></span>
         </div>
-        <div class="grid isos">
+        <div
+          class="grid isos"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
+              70px minmax(120px, 1fr);
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
           ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
           ><span class="th">Latest release</span><span class="th">Versions</span
-          ><span class="th">Architectures</span>
-          <span class="td odd"><span class="star">☆</span></span
+          ><span class="th">Architectures</span> <span class="td odd">☐</span
+          ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
             ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
@@ -2102,8 +2187,8 @@
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
           ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
-          ><span class="td odd">1</span><span class="td odd">amd64</span>
-          <span class="td"><span class="star">☆</span></span
+          ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
@@ -2134,9 +2219,15 @@
       <div class="callout">
         <strong>The org header</strong> shows the display name with the slug beneath, as the org
         console does; crumbs and paths stay the slug. Add New still opens the create form under the
-        heading row at full width, and the same green Add New and red Remove All sit on the ISOs
-        row, where Add New opens the upload zone. The search here registers Collection, Visibility
-        and the boxes' groups, as on home.
+        heading row at full width, and Add New alone sits on the ISOs row, where it opens the upload
+        zone. The search here registers Collection, Visibility and the boxes' groups, as on home.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: bulk on every table.</strong> The select column is first, its header the
+        real select-all checkbox, the star after it; while rows are picked the heading reads the
+        count and its action pane opens with Clear selection and the collection's bulk actions
+        before Add New; Remove All is gone, it is the bulk Delete of the page now (decisions 137,
+        139, 142).
       </div>
     </div>
   </div>
@@ -2144,7 +2235,7 @@
   <div class="state">
     <div class="state-label">
       CollectionPage — /STARTcloud/isos: one collection, so no Collection group; the heading row
-      carries Add New, Remove All and the toggle; the upload zone expanded
+      carries Add New and the toggle; the upload zone expanded
     </div>
     <div class="frame">
       <div class="navbar">
@@ -2285,7 +2376,7 @@
             >ISOs<span class="countb">2</span>
           </h2>
           <span class="right"
-            ><span class="btn sm success">Add New</span><span class="btn sm danger">Remove All</span
+            ><span class="btn sm success">Add New</span
             ><span class="toggle"
               ><span class="btn on"
                 ><svg
@@ -2343,13 +2434,23 @@
             >Private</span
           >
         </div>
-        <div class="grid isos">
+        <div
+          class="grid isos"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
+              70px minmax(120px, 1fr);
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
           ><span class="th">Created</span><span class="th">Updated</span
           ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
           ><span class="th">Latest release</span><span class="th">Versions</span
-          ><span class="th">Architectures</span>
-          <span class="td odd"><span class="star">☆</span></span
+          ><span class="th">Architectures</span> <span class="td odd">☐</span
+          ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
             ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
@@ -2358,8 +2459,8 @@
           ><span class="td odd">12</span
           ><span class="td odd"><span class="status success">Published</span></span
           ><span class="td odd">Windows</span><span class="td odd">2 months ago</span
-          ><span class="td odd">1</span><span class="td odd">amd64</span>
-          <span class="td"><span class="star">☆</span></span
+          ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
@@ -2387,8 +2488,8 @@
       <div class="callout">
         <strong>On a single-collection page</strong> the heading row is the page's top row, so the
         toggle sits on it beside the actions; the upload zone is the Add New button opened on click
-        or hover, with the Public / Private switch and its progress bar, × or Escape to close, and
-        Remove All clears the organization's ISOs after a confirmation.
+        or hover, with the Public / Private switch and its progress bar, × or Escape to close; the
+        select column and its bulk pane in the heading row are now the page's Remove All.
       </div>
       <div class="callout">
         <strong><code>/isos</code></strong> is the same page across organizations: organization
@@ -2506,10 +2607,14 @@
           <h2>Versions <span class="countb">1</span></h2>
           <span class="btn sm success">Add Version</span>
         </div>
-        <div class="grid" style="grid-template-columns: 160px 110px 1fr 110px">
+        <div class="grid" style="grid-template-columns: 26px 160px 110px 1fr 110px">
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">Version</span><span class="th">Released</span
           ><span class="th">Artifacts</span><span class="th">Actions</span>
-          <span class="td first odd"><span class="lnk">0.1.271</span></span
+          <span class="td odd">☐</span
+          ><span class="td first odd"><span class="lnk">0.1.271</span></span
           ><span class="td odd">6/25/2026</span
           ><span class="td odd"><span class="status secondary">amd64</span></span
           ><span class="td odd"><span class="btn sm danger">Delete</span></span>
@@ -2736,25 +2841,30 @@
           <h2>Versions <span class="countb">3</span></h2>
           <span class="btn sm success">Add Version</span>
         </div>
-        <div class="grid" style="grid-template-columns: 160px 110px 1fr 1fr 110px">
+        <div class="grid" style="grid-template-columns: 26px 160px 110px 1fr 1fr 110px">
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
           <span class="th">Version</span><span class="th">Released</span
           ><span class="th">Details</span><span class="th">Providers</span
-          ><span class="th">Actions</span>
-          <span class="td first odd"><span class="lnk">1.2.3</span></span
+          ><span class="th">Actions</span> <span class="td odd">☐</span
+          ><span class="td first odd"><span class="lnk">1.2.3</span></span
           ><span class="td odd">8/29/2026</span
           ><span class="td odd">Kernel 5.14.0-503, cloud-init 24.1</span
           ><span class="td odd"
             ><span class="status secondary">virtualbox</span
             ><span class="status secondary">zone</span></span
           ><span class="td odd"><span class="btn sm danger">Delete</span></span>
-          <span class="td first"
+          <span class="td">☐</span
+          ><span class="td first"
             ><span class="lnk">1.2.2</span><span class="status danger">Deprecated</span></span
           ><span class="td">8/14/2026</span><span class="td">Rebuild with updated sudoers</span
           ><span class="td"
             ><span class="status secondary">virtualbox</span
             ><span class="status secondary">zone</span></span
           ><span class="td"><span class="btn sm danger">Delete</span></span>
-          <span class="td first odd"><span class="lnk">1.2.1</span></span
+          <span class="td odd">☐</span
+          ><span class="td first odd"><span class="lnk">1.2.1</span></span
           ><span class="td odd">7/2/2026</span><span class="td odd">First Alma 9.4 build</span
           ><span class="td odd"><span class="status secondary">virtualbox</span></span
           ><span class="td odd"><span class="btn sm danger">Delete</span></span>
@@ -2780,6 +2890,1095 @@
         collection's extras slot, facts and README from the shape, versions newest first with
         Released, Details, Providers and Artifacts columns shown only when a version carries them;
         the versions table keeps its Actions column because a version has row-level actions.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      CollectionPage — /STARTcloud/downloads: one collection, so no Collection group; the heading
+      row carries Add New and the toggle; the upload zone expanded
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >BoxVault</span
+        >
+        <div class="nav">
+          <span class="sep">›</span
+          ><span class="crumb"><span class="mark sm"></span>STARTcloud</span
+          ><span class="sep">›</span
+          ><span class="crumb"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads</span
+          >
+        </div>
+        <div class="cluster">
+          <span class="search"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path></svg
+            ><span class="ph">Search Downloads</span><span class="count">3 / 3</span
+            ><span class="tool on"
+              ><svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3"></path>
+                <path d="M12 19v3"></path>
+                <path d="M2 12h3"></path>
+                <path d="M19 12h3"></path>
+                <path d="M4.9 4.9l2.1 2.1"></path>
+                <path d="M17 17l2.1 2.1"></path>
+                <path d="M4.9 19.1l2.1-2.1"></path>
+                <path d="M17 7l2.1-2.1"></path></svg></span
+            ><span class="tool"
+              ><svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6L6 18"></path></svg></span></span
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path
+                d="M12 3v18a9 9 0 0 0 0-18z"
+                fill="currentColor"
+                stroke="none"
+              ></path></svg></span
+          ><span class="btn icon lang" title="Change language, English"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path></svg
+            ><span class="lang-code">EN</span></span
+          ><span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="filters">
+        <div class="group">
+          <span class="group-label">Visibility</span
+          ><span class="pills"
+            ><span class="pill">Public (2)</span><span class="pill">Private (1)</span></span
+          >
+        </div>
+        <div class="group">
+          <span class="group-label">Family</span
+          ><span class="pills"
+            ><span class="pill">Domino (2)</span><span class="pill">Sametime (1)</span></span
+          >
+        </div>
+        <div class="group">
+          <span class="group-label">Vendor</span
+          ><span class="pills"><span class="pill">HCL (3)</span></span>
+        </div>
+        <div class="group">
+          <span class="group-label">Platform</span
+          ><span class="pills"
+            ><span class="pill">linux (3)</span><span class="pill">windows (2)</span
+            ><span class="pill">any (1)</span></span
+          >
+        </div>
+        <div class="group">
+          <span class="group-label">Kind</span
+          ><span class="pills"
+            ><span class="pill">installer (3)</span><span class="pill">fixpack (2)</span
+            ><span class="pill">notes (1)</span></span
+          >
+        </div>
+        <div class="foot">
+          <span>0 filters active</span><span class="sp"></span
+          ><span class="lnk">Clear filters</span>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="rowh">
+          <h2>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads<span class="countb">3</span>
+          </h2>
+          <span class="right"
+            ><span class="btn sm success">Add New</span
+            ><span class="toggle"
+              ><span class="btn on"
+                ><svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path d="M4 6h16"></path>
+                  <path d="M4 12h16"></path>
+                  <path d="M4 18h16"></path></svg></span
+              ><span class="btn"
+                ><svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
+          ></span>
+        </div>
+        <div class="upload">
+          <span class="x">×</span
+          ><svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 3v12"></path>
+            <path d="M7 8l5-5 5 5"></path>
+            <path d="M5 21h14"></path></svg
+          ><span>Drop a file here or click to choose one</span
+          ><span class="switch"
+            ><span class="track"></span
+            ><svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
+            >Private</span
+          >
+        </div>
+        <div
+          class="grid"
+          style="
+            grid-template-columns:
+              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 90px
+              100px 70px minmax(120px, 1fr);
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
+          ><span class="th">Created</span><span class="th">Updated</span
+          ><span class="th">Downloads</span><span class="th">Status</span
+          ><span class="th">Family</span><span class="th">Vendor</span
+          ><span class="th">Latest release</span><span class="th">Releases</span
+          ><span class="th">Platforms</span> <span class="td odd">☐</span
+          ><span class="td odd"><span class="star">☆</span></span
+          ><span class="td first odd"
+            ><span class="mark row"></span><span class="lnk">STARTcloud/domino</span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">3/2/2025</span><span class="td odd">8/29/2026</span
+          ><span class="td odd">126</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Domino</span><span class="td odd">HCL</span
+          ><span class="td odd">2 months ago</span><span class="td odd">3</span
+          ><span class="td odd">linux, windows</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
+          ><span class="td first"
+            ><span class="mark row"></span><span class="lnk">STARTcloud/sametime</span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">1/15/2024</span><span class="td">3/2/2025</span
+          ><span class="td">42</span
+          ><span class="td"><span class="status success">Published</span></span
+          ><span class="td">Sametime</span><span class="td">HCL</span
+          ><span class="td">last year</span><span class="td">1</span><span class="td">linux</span>
+          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
+          ><span class="td first odd"
+            ><span class="mark row"></span><span class="lnk">STARTcloud/domino-designer</span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">9/2/2026</span><span class="td odd">9/2/2026</span
+          ><span class="td odd">0</span
+          ><span class="td odd"><span class="status warning">Pending</span></span
+          ><span class="td odd">Domino</span><span class="td odd">HCL</span
+          ><span class="td odd">—</span><span class="td odd">1</span
+          ><span class="td odd">windows</span>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">BoxVault © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>Downloads share the listing:</strong> the same shared columns first, then Status ·
+        Family · Vendor · Latest release · Releases · Platforms; rows carry no buttons and the star
+        is the only in-row control.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: Add New wraps the upload zone under the heading row as ISOs do,</strong>
+        the file and the Public / Private switch and nothing else drawn in it; the zone is relative
+        to the page it sits on, so here the route creates the product, the release and the patch the
+        file name names when they are absent, and a zone on a product, release or patch page uploads
+        into that product, release or patch. When the upload completes the new file's row appears
+        and Edit on it opens the form dialog with kind, platform, architecture, language and variant
+        prefilled from the file name for correction.
+      </div>
+      <div class="callout">
+        <strong>Family, Vendor, Platform and Kind narrow client-side</strong> over the rows the list
+        answered.
+      </div>
+      <div class="callout">
+        <strong>Counts are a member's view:</strong> <code>downloads</code> on a product and the
+        count in a file's Download button are answered only to a member of the organization and
+        hidden for everyone else, the Downloads column with them.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      CollectionPage — /STARTcloud/downloads in cards: the one toggle on cards, a product tile with
+      its icon
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >BoxVault</span
+        >
+        <div class="nav">
+          <span class="sep">›</span
+          ><span class="crumb"><span class="mark sm"></span>STARTcloud</span
+          ><span class="sep">›</span
+          ><span class="crumb"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads</span
+          >
+        </div>
+        <div class="cluster">
+          <span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path></svg></span
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path
+                d="M12 3v18a9 9 0 0 0 0-18z"
+                fill="currentColor"
+                stroke="none"
+              ></path></svg></span
+          ><span class="btn icon lang" title="Change language, English"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path></svg
+            ><span class="lang-code">EN</span></span
+          ><span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="rowh">
+          <h2>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads<span class="countb">3</span>
+          </h2>
+          <span class="right"
+            ><span class="btn sm success">Add New</span
+            ><span class="toggle"
+              ><span class="btn"
+                ><svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path d="M4 6h16"></path>
+                  <path d="M4 12h16"></path>
+                  <path d="M4 18h16"></path></svg></span
+              ><span class="btn on"
+                ><svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
+          ></span>
+        </div>
+        <div class="cardgrid">
+          <div class="icard">
+            <div class="head">
+              <span class="mark lg"></span>
+              <div><span class="t lnk">domino</span><small>STARTcloud · HCL</small></div>
+            </div>
+            <div class="chips">
+              <span class="status info">Public</span><span class="status success">Published</span
+              ><span class="status os">Domino</span>
+            </div>
+            <div class="subtitle">
+              Domino server and client installers, fix packs and interim fixes
+            </div>
+            <div class="subtitle">
+              <span class="lnk" title="Documentation">⌥ docs</span> ·
+              <span class="lnk" title="Release notes">⚙ notes</span>
+            </div>
+          </div>
+          <div class="icard">
+            <div class="head">
+              <span class="mark lg"></span>
+              <div><span class="t lnk">sametime</span><small>STARTcloud · HCL</small></div>
+            </div>
+            <div class="chips">
+              <span class="status secondary">Private</span
+              ><span class="status success">Published</span><span class="status os">Sametime</span>
+            </div>
+            <div class="subtitle">Sametime meetings and chat installers</div>
+            <div class="subtitle">
+              <span class="lnk" title="Documentation">⌥ docs</span> ·
+              <span class="lnk" title="Release notes">⚙ notes</span>
+            </div>
+          </div>
+          <div class="icard">
+            <div class="head">
+              <span class="mark lg"></span>
+              <div><span class="t lnk">domino-designer</span><small>STARTcloud · HCL</small></div>
+            </div>
+            <div class="chips">
+              <span class="status info">Public</span><span class="status warning">Pending</span
+              ><span class="status os">Domino</span>
+            </div>
+            <div class="subtitle">Domino Designer client installers</div>
+            <div class="subtitle">
+              <span class="lnk" title="Documentation">⌥ docs</span> ·
+              <span class="lnk" title="Release notes">⚙ notes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">BoxVault © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed">
+        <strong>Cards render the same rows as the table:</strong> the product icon from
+        <code>icon_url</code> (the vendor's mark when absent), the name and org, the chips
+        Published, Public and the family where the OS chip stands, the vendor as text, the
+        description and the link glyphs for docs and notes; the view is the page's one toggle,
+        stored per page.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      ItemPage for a download — /STARTcloud/downloads/domino: hero, actions, releases newest first
+      with a Patches count, the same component a box draws
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >BoxVault</span
+        >
+        <div class="nav">
+          <span class="sep">›</span
+          ><span class="crumb"><span class="mark sm"></span>STARTcloud</span
+          ><span class="sep">›</span
+          ><span class="crumb"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads</span
+          ><span class="sep">›</span><span class="crumb">domino</span>
+        </div>
+        <div class="cluster">
+          <span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path></svg></span
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path
+                d="M12 3v18a9 9 0 0 0 0-18z"
+                fill="currentColor"
+                stroke="none"
+              ></path></svg></span
+          ><span class="btn icon lang" title="Change language, English"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path></svg
+            ><span class="lang-code">EN</span></span
+          ><span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero">
+            <span class="mark lg"></span>
+            <div class="hero-text">
+              <div class="title">HCL Domino</div>
+              <div class="subtitle">STARTcloud / domino</div>
+              <div class="chips">
+                <span class="status success">Published</span><span class="status info">Public</span
+                ><span class="status os">Domino</span>
+              </div>
+              <div>Domino server and client installers, fix packs and interim fixes</div>
+              <div>HCL</div>
+              <div class="chips"><span class="lnk">Docs</span><span class="lnk">Notes</span></div>
+            </div>
+          </div>
+          <div class="actions">
+            <span class="btn">Make private</span><span class="btn warning">Unpublish</span
+            ><span class="btn">Rename</span><span class="btn danger">Delete</span
+            ><span class="btn dark">Back</span>
+          </div>
+        </div>
+        <div class="sect">
+          <h2>Releases <span class="countb">2</span></h2>
+          <span class="btn sm success">Add New</span>
+        </div>
+        <div class="upload">
+          <span class="x">×</span
+          ><svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 3v12"></path>
+            <path d="M7 8l5-5 5 5"></path>
+            <path d="M5 21h14"></path></svg
+          ><span>Drop a file here or click to choose one</span
+          ><span class="switch"
+            ><span class="track"></span
+            ><svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
+            >Private</span
+          >
+        </div>
+        <div class="grid" style="grid-template-columns: 26px 160px 110px 1fr 110px 110px">
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
+          <span class="th">Release</span><span class="th">Released</span
+          ><span class="th">Details</span><span class="th">Patches</span
+          ><span class="th">Actions</span> <span class="td odd">☐</span
+          ><span class="td first odd"><span class="lnk">14.0</span></span
+          ><span class="td odd">7/16/2026</span><span class="td odd">Domino 14.0 GA</span
+          ><span class="td odd">3</span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
+          <span class="td">☐</span><span class="td first"><span class="lnk">12.0.2</span></span
+          ><span class="td">3/2/2025</span><span class="td">12.0.2 with FP1 and FP2</span
+          ><span class="td">2</span
+          ><span class="td"><span class="btn sm danger">Delete</span></span>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">BoxVault © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed">
+        <strong>Same component, same shape.</strong> A product's releases are its versions, a
+        Patches count stands where Providers stands, the label and the columns come from the
+        collection's <code>levels</code> in the registry; no page branches on the collection key.
+      </div>
+      <div class="callout">
+        <strong>Slots:</strong> the item actions, Add New and the row actions are the same slots a
+        box fills.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: every add on a downloads page is the upload zone.</strong> Add New here
+        opens it under the heading row, and a file dropped on it becomes a release of domino, the
+        release and its first patch named from the file name and created when absent; the product is
+        already known from where the person stands. The product's icon is drawn before its title the
+        way a provisioner's is, from the record's <code>icon_url</code>, the vendor's mark when it
+        has none.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      VersionPage for a release — /STARTcloud/downloads/domino/14.0: the providers table is the
+      patches table; the upload zone expanded, a file dropped here becoming a patch of 14.0
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >BoxVault</span
+        >
+        <div class="nav">
+          <span class="sep">›</span
+          ><span class="crumb"><span class="mark sm"></span>STARTcloud</span
+          ><span class="sep">›</span
+          ><span class="crumb"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads</span
+          ><span class="sep">›</span><span class="crumb">domino</span><span class="sep">›</span
+          ><span class="crumb">14.0</span>
+        </div>
+        <div class="cluster">
+          <span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path></svg></span
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path
+                d="M12 3v18a9 9 0 0 0 0-18z"
+                fill="currentColor"
+                stroke="none"
+              ></path></svg></span
+          ><span class="btn icon lang" title="Change language, English"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path></svg
+            ><span class="lang-code">EN</span></span
+          ><span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero-text">
+            <div class="title">Release 14.0</div>
+          </div>
+          <div class="actions">
+            <span class="btn primary">Edit</span><span class="btn danger">Delete</span
+            ><span class="btn dark">Back</span>
+          </div>
+        </div>
+        <div class="meta">
+          <span>Description: <strong>Domino 14.0 GA</strong></span
+          ><span>Released: <strong>7/16/2026</strong></span>
+        </div>
+        <div class="sect">
+          <h2>Patches for release 14.0 <span class="countb">3</span></h2>
+          <span class="btn sm success">Add New</span>
+        </div>
+        <div class="upload">
+          <span class="x">×</span
+          ><svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 3v12"></path>
+            <path d="M7 8l5-5 5 5"></path>
+            <path d="M5 21h14"></path></svg
+          ><span>Drop a file here or click to choose one</span
+          ><span class="switch"
+            ><span class="track"></span
+            ><svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
+            >Private</span
+          >
+        </div>
+        <div class="grid" style="grid-template-columns: 26px 160px 140px 1fr 110px 110px">
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
+          <span class="th">Name</span><span class="th">Kind</span><span class="th">Released</span
+          ><span class="th">Files</span><span class="th">Actions</span> <span class="td odd">☐</span
+          ><span class="td first odd"><span class="lnk">14.0</span></span
+          ><span class="td odd"><span class="status secondary">release</span></span
+          ><span class="td odd">7/16/2026</span><span class="td odd">4</span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
+          <span class="td">☐</span><span class="td first"><span class="lnk">FP1</span></span
+          ><span class="td"><span class="status secondary">fixpack</span></span
+          ><span class="td">9/2/2026</span><span class="td">3</span
+          ><span class="td"><span class="btn sm danger">Delete</span></span>
+          <span class="td odd">☐</span><span class="td first odd"><span class="lnk">IF1</span></span
+          ><span class="td odd"><span class="status secondary">interim-fix</span></span
+          ><span class="td odd">9/10/2026</span><span class="td odd">1</span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">BoxVault © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>The release itself is the patch named <code>release</code>,</strong> drawn as the
+        release's own number, the fix packs and interim fixes beside it, the kind and the released
+        date from the shape.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: the zone is relative to the page.</strong> Add New here opens the same
+        upload zone, and a file dropped on it becomes a patch of 14.0, named by the file name and
+        created when absent, the product and the release already known from where the person stands;
+        there is no second button and no form before the drop, the record is edited afterwards.
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <div class="state-label">
+      ProviderPage for a patch — /STARTcloud/downloads/domino/14.0/FP1, reached by a file address:
+      the architectures table is the files table, the fifth crumb drawn, the file's Edit open inline
+      under the files heading row
+    </div>
+    <div class="frame">
+      <div class="navbar">
+        <span class="brand"
+          ><span class="brand-mark"
+            ><svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+              ></path></svg></span
+          >BoxVault</span
+        >
+        <div class="nav">
+          <span class="sep">›</span
+          ><span class="crumb"><span class="mark sm"></span>STARTcloud</span
+          ><span class="sep">›</span
+          ><span class="crumb"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 3v12"></path>
+              <path d="M7 10l5 5 5-5"></path>
+              <path d="M5 21h14"></path></svg
+            >Downloads</span
+          ><span class="sep">›</span><span class="crumb">domino</span><span class="sep">›</span
+          ><span class="crumb">14.0</span><span class="sep">›</span><span class="crumb">FP1</span
+          ><span class="sep">›</span><span class="crumb">linux-x64</span>
+        </div>
+        <div class="cluster">
+          <span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path></svg></span
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path
+                d="M12 3v18a9 9 0 0 0 0-18z"
+                fill="currentColor"
+                stroke="none"
+              ></path></svg></span
+          ><span class="btn icon lang" title="Change language, English"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path></svg
+            ><span class="lang-code">EN</span></span
+          ><span class="btn account"
+            ><span class="name">Mark Gilbert</span><span class="avatar"></span
+          ></span>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="page-head">
+          <div class="hero-text">
+            <div class="title">FP1</div>
+            <div class="subtitle">domino 14.0</div>
+          </div>
+          <div class="actions">
+            <span class="btn primary">Edit</span><span class="btn danger">Delete</span
+            ><span class="btn dark">Back</span>
+          </div>
+        </div>
+        <div class="sect">
+          <h2>Files for patch FP1 <span class="countb">3</span></h2>
+          <span class="right"
+            ><span class="btn sm success">Save</span><span class="btn sm">Cancel</span></span
+          >
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Key</label><span class="input">linux-x64</span>
+            <span class="hint">Letters, digits, dashes and periods.</span>
+          </div>
+          <div class="field">
+            <label>File name</label><span class="input">Domino_140FP1_Linux.tar</span>
+          </div>
+          <div class="field">
+            <label>Kind</label><span class="input">fixpack<span class="caret">▾</span></span>
+          </div>
+          <div class="field">
+            <label>Platform</label><span class="input">linux<span class="caret">▾</span></span>
+          </div>
+          <div class="field">
+            <label>Architecture</label><span class="input">x64<span class="caret">▾</span></span>
+          </div>
+          <div class="field">
+            <label>Language</label><span class="input">en</span>
+            <span class="hint">en, en-US, or any for every language.</span>
+          </div>
+          <div class="field"><label>Variant</label><span class="input"></span></div>
+          <div class="field">
+            <label>Checksum type</label
+            ><span class="input">SHA256<span class="caret">▾</span></span>
+          </div>
+          <div class="field wide">
+            <label>Checksum</label
+            ><span class="input sha"
+              >3a9f1c7e2b6d4f08a1c5e9b2d7f3a6c4e8b1d0f2a9c7e5b3d1f4a8c6e2b0d9f7c1d2</span
+            >
+          </div>
+        </div>
+        <div
+          class="grid"
+          style="
+            grid-template-columns:
+              26px 110px minmax(180px, 1fr) 90px 80px 80px 60px 90px 1fr 150px
+              110px;
+          "
+        >
+          <span class="th"
+            ><input type="checkbox" class="check-all" title="Select all on this page"
+          /></span>
+          <span class="th">Key</span><span class="th">File name</span><span class="th">Kind</span
+          ><span class="th">Platform</span><span class="th">Arch</span><span class="th">Lang</span
+          ><span class="th">Size</span><span class="th">Checksum</span
+          ><span class="th">Download</span><span class="th">Actions</span>
+          <span class="td odd">☐</span><span class="td first odd">linux-x64</span
+          ><span class="td odd">Domino_140FP1_Linux.tar</span><span class="td odd">fixpack</span
+          ><span class="td odd">linux</span><span class="td odd">x64</span
+          ><span class="td odd">en</span><span class="td odd">1.8 GB</span
+          ><span class="td odd"><span class="sha">3a9f…c1d2</span></span
+          ><span class="td odd"><span class="btn sm outline">Download (42)</span></span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
+          <span class="td">☐</span><span class="td first">windows-x64</span
+          ><span class="td">Domino_140FP1_Win.exe</span><span class="td">fixpack</span
+          ><span class="td">windows</span><span class="td">x64</span><span class="td">en</span
+          ><span class="td">1.6 GB</span><span class="td"><span class="sha">b71e…08aa</span></span
+          ><span class="td"><span class="btn sm outline">Download (17)</span></span
+          ><span class="td"><span class="btn sm danger">Delete</span></span>
+          <span class="td odd">☐</span><span class="td first odd">notes</span
+          ><span class="td odd">FP1_ReleaseNotes.pdf</span><span class="td odd">notes</span
+          ><span class="td odd">any</span><span class="td odd">any</span
+          ><span class="td odd">en</span><span class="td odd">2 MB</span
+          ><span class="td odd"><span class="sha">9c0d…44e1</span></span
+          ><span class="td odd"><span class="btn sm outline">Download (88)</span></span
+          ><span class="td odd"><span class="btn sm danger">Delete</span></span>
+        </div>
+      </div>
+      <div class="site-footer">
+        <span class="lnk">BoxVault © 2026 · v0.61.0</span
+        ><span class="c">Powered by <span class="m"></span>STARTcloud</span
+        ><span class="heart">♥</span>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout changed">
+        <strong>Changed: a file has an address one level further,</strong>
+        <code>/{org}/downloads/{product}/{release}/{patch}/{file}</code>, by key or by file name; a
+        browser at it lands on this page with the fifth crumb drawn, a program at it receives the
+        bytes.
+      </div>
+      <div class="callout">
+        <strong>The zone is relative to the page:</strong> Add New here opens the same upload zone
+        and the file goes into FP1 with nothing to name afterwards; on a release page it goes into
+        that release, on a product page into that product, the missing levels created by the route;
+        every add on a downloads page is this zone.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: Edit opens inline, the box slots' way:</strong> a bare form of labelled
+        fields under the heading row, Save and Cancel in the section's action row while it is open,
+        never a card and never a dialog; the fields are the <code>downloadFile</code>
+        members, prefilled from the file name's guess.
+      </div>
+      <div class="callout">
+        <strong>Download is the tokened link</strong> from <code>get-download-link</code>, never the
+        page address, because a browser click asks for a page.
+      </div>
+      <div class="callout">
+        <strong><code>any</code></strong> is the one word for not specific and does not apply; a
+        cell is never empty.
+      </div>
+      <div class="callout">
+        <strong>Counts are a member's view:</strong> <code>downloads</code> on a product and the
+        count in a file's Download button are answered only to a member of the organization and
+        hidden for everyone else, the Downloads column with them.
       </div>
     </div>
   </div>
@@ -3692,21 +4891,26 @@
         <span class="hc">Level</span><span class="hc">BoxVault (unchanged)</span
         ><span class="hc">Catalog</span><span class="hc">Crumb</span> <span class="c k">home</span
         ><span class="c">/</span><span class="c">/</span><span class="c">brand only</span>
-        <span class="c k">collection, all orgs</span><span class="c">/isos</span
+        <span class="c k">collection, all orgs</span><span class="c">/isos · /downloads</span
         ><span class="c">/</span><span class="c">› ISOs</span> <span class="c k">organization</span
         ><span class="c">/{org}</span><span class="c">/{org}</span
         ><span class="c">› STARTcloud</span> <span class="c k">collection, one org</span
-        ><span class="c">/{org}/isos</span><span class="c">/{org}</span
+        ><span class="c">/{org}/isos · /{org}/downloads</span><span class="c">/{org}</span
         ><span class="c">› STARTcloud › ISOs</span> <span class="c k">item</span
-        ><span class="c">/{org}/{box} · /{org}/isos/{iso}</span
+        ><span class="c">/{org}/{box} · /{org}/isos/{iso} · /{org}/downloads/{product}</span
         ><span class="c">/{org}/{provisioner}</span><span class="c">› … › alma9-server</span>
         <span class="c k">version</span
-        ><span class="c">/{org}/{box}/{version} · /{org}/isos/{iso}/{version}</span
+        ><span class="c"
+          >/{org}/{box}/{version} · /{org}/isos/{iso}/{version} ·
+          /{org}/downloads/{product}/{release}</span
         ><span class="c">/{org}/{provisioner}/{version}</span><span class="c">› … › 1.2.3</span>
         <span class="c k">provider</span
         ><span class="c"
-          >…/{version}/{provider} · /{org}/isos/{iso}/{version}/{arch}, one leaf page</span
-        ><span class="c">same</span><span class="c">› … › zone</span>
+          >…/{version}/{provider} · /{org}/isos/{iso}/{version}/{arch} ·
+          /{org}/downloads/{product}/{release}/{patch}, one leaf page</span
+        ><span class="c">same</span><span class="c">› … › zone</span> <span class="c k">file</span
+        ><span class="c">/{org}/downloads/{product}/{release}/{patch}/{file}, one leaf page</span
+        ><span class="c">n/a</span><span class="c">› … › FP1 › linux-x64</span>
       </div>
       <h2>Rules the picture keeps</h2>
       <div class="tbl" style="grid-template-columns: 150px 1fr">

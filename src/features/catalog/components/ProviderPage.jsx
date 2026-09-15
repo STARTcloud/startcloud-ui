@@ -1,102 +1,47 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { createdColumn, updatedColumn } from '../../../components/common/columns';
+import { architectureLevelMatches } from '../../../components/common/levelColumns';
 import PageHeader from '../../../components/common/PageHeader';
-import SubTable, { hasAny } from '../../../components/common/SubTable';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
-import ChecksumCell from './ChecksumCell';
+import BulkActions from './BulkActions';
 
-const architectureColumns = [
-  {
-    key: 'name',
-    labelKey: 'pages.table.name',
-    sortValue: architecture => architecture.name.toLowerCase(),
-    render: architecture => architecture.name,
-  },
-  { ...createdColumn, defaultHidden: false, when: hasAny(architecture => architecture.createdAt) },
-  { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
-  {
-    key: 'downloads',
-    labelKey: 'pages.table.downloads',
-    sortValue: architecture => architecture.downloadCount || 0,
-    when: hasAny(architecture => typeof architecture.downloadCount === 'number'),
-    render: architecture =>
-      typeof architecture.downloadCount === 'number' ? architecture.downloadCount : '',
-  },
-  {
-    key: 'defaultBox',
-    labelKey: 'pages.table.defaultBox',
-    sortValue: architecture => (architecture.defaultBox ? 0 : 1),
-    render: (architecture, ctx) => ctx.t(architecture.defaultBox ? 'yes' : 'no'),
-  },
-  {
-    key: 'size',
-    labelKey: 'pages.table.fileSize',
-    sortValue: architecture => architecture.fileSize || 0,
-    when: hasAny(architecture => architecture.fileSize),
-    render: (architecture, ctx) =>
-      architecture.fileSize ? ctx.formatFileSize(architecture.fileSize) : '',
-  },
-  {
-    key: 'checksum',
-    labelKey: 'pages.table.checksum',
-    sortValue: architecture => (architecture.checksum || '').toLowerCase(),
-    when: hasAny(architecture => architecture.checksum),
-    render: architecture =>
-      architecture.checksum ? (
-        <ChecksumCell
-          checksum={architecture.checksum}
-          checksumType={architecture.checksumType || ''}
-        />
-      ) : (
-        ''
-      ),
-  },
-  {
-    key: 'download',
-    labelKey: 'pages.table.download',
-    when: hasAny(architecture => architecture.downloadUrl),
-    render: (architecture, ctx) =>
-      architecture.downloadUrl ? (
-        <a
-          href={architecture.downloadUrl}
-          className="btn btn-sm btn-outline-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {ctx.t('pages.table.download')}
-        </a>
-      ) : null,
-  },
-];
+const rowIdOf = name => `architecture-${name}`;
 
-const architectureMatches = (architecture, needle) =>
-  [architecture.name, architecture.checksum].some(value =>
-    (value || '').toLowerCase().includes(needle)
-  );
-
-const ProviderPage = ({ collection, org, name, version, provider, context }) => {
+/**
+ * One provider of a version, and the leaf of a collection whose versions
+ * carry architectures directly: the header, then the architectures table,
+ * one file per row, with the picked-state pane in its heading; a route that
+ * names an architecture in its fifth part brings that row into view once,
+ * marking nothing.
+ */
+const ProviderPage = ({ collection, org, name, version, provider, context, architecture = '' }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const [nonce, setNonce] = useState(0);
   const [data, setData] = useState({ key: '', item: null, entry: null });
   const [editor, setEditor] = useState(null);
   const [form, setForm] = useState(null);
+  const scrolledFor = useRef('');
   const key = `${org}/${name}/${version}/${provider}/${nonce}`;
   const ready = data.key === key;
   const { item, entry } = data;
+  const level = collection.levels.architectures;
+  const architectureColumns = level.columns({ org, name, version, provider });
   const search = useDetailSearch({
     rows: ready && entry ? entry.architectures || [] : [],
-    matches: architectureMatches,
+    matches: architectureLevelMatches,
     placeholderKey: 'pages.search.architectures',
     columns: architectureColumns,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}_${provider}`,
   });
+  const selection = useSelection(search.rows, { keyOf: row => row.name, labelOf: row => row.name });
 
   useEffect(() => {
     let mounted = true;
@@ -124,6 +69,17 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
     document.title = `${provider} - ${name}`;
   }, [provider, name]);
 
+  useEffect(() => {
+    if (!ready || !architecture || scrolledFor.current === key) {
+      return;
+    }
+    const row = document.getElementById(rowIdOf(architecture));
+    if (row) {
+      scrolledFor.current = key;
+      row.scrollIntoView({ block: 'center' });
+    }
+  }, [ready, architecture, key]);
+
   const { ProviderActions, ArchitecturesActions, ArchitectureRowActions } = collection.slots;
   const ctx = {
     ...context,
@@ -150,6 +106,9 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
 
   const slotProps = { item, version, provider: entry, ctx };
   const actions = ProviderActions ? <ProviderActions {...slotProps} /> : null;
+  const manage = Boolean(item && collection.canManage && collection.canManage(item, context.user));
+  const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);
+  const names = search.rows.filter(row => selection.selected.has(row.name)).map(row => row.name);
 
   return (
     <div className="list row">
@@ -161,20 +120,35 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
         <PageHeader title={entry.name} subtitle={entry.description || ''} actions={actions} />
       )}
       <div className="list-table mt-2">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4>
-            {t(collection.hasProviders ? 'pages.provider.title' : 'pages.architecture.title', {
-              provider: entry.name,
-              architecture: entry.name,
-            })}
+        <div className="d-flex align-items-center gap-2 flex-wrap mb-3">
+          <h4 className="mb-0 me-auto d-flex align-items-center gap-2">
+            {t(level.labelKey)}
+            {names.length > 0 ? (
+              <span className="small text-muted">
+                · {t('pages.bulk.selected', { count: names.length })}
+              </span>
+            ) : null}
           </h4>
+          {bulkable ? (
+            <BulkActions
+              collection={collection}
+              level="architectures"
+              groups={[{ scope: { org, name, version, provider }, names }]}
+              onClear={selection.clear}
+              onDone={() => {
+                selection.clear();
+                ctx.reload();
+              }}
+            />
+          ) : null}
           {ArchitecturesActions ? <ArchitecturesActions {...slotProps} /> : null}
         </div>
         {form}
         <SubTable
           columns={architectureColumns}
           rows={search.rows}
-          rowKey={architecture => architecture.name}
+          rowKey={row => row.name}
+          rowId={row => rowIdOf(row.name)}
           RowActions={ArchitectureRowActions}
           actionsProps={slotProps}
           rowProp="architecture"
@@ -183,6 +157,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context }) => 
           hiddenColumns={search.hiddenColumns}
           ctx={ctx}
           emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+          selection={bulkable ? selection.subtable : null}
         />
       </div>
     </div>
@@ -196,6 +171,7 @@ ProviderPage.propTypes = {
   version: PropTypes.string.isRequired,
   provider: PropTypes.string.isRequired,
   context: pageContextShape.isRequired,
+  architecture: PropTypes.string,
 };
 
 export default ProviderPage;

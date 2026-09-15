@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
 import Markdown from 'react-markdown';
-import { Link } from 'react-router-dom';
 
+import { versionLevelMatches } from '../../../components/common/levelColumns';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
-import SubTable, { hasAny } from '../../../components/common/SubTable';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useSelection } from '../../../hooks/useSelection';
 import {
   collectionShape,
   detailSearchShape,
@@ -19,11 +20,9 @@ import {
   statusOf,
   visibilityOf,
 } from '../../../utils/itemShape';
-import { providerPath, versionPath } from '../../../utils/routes';
 
+import BulkActions from './BulkActions';
 import ItemFacts from './ItemFacts';
-
-const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
 const Readme = ({ readme }) => {
   const { t } = useTranslation();
@@ -212,120 +211,59 @@ ItemDetails.propTypes = {
   item: itemShape.isRequired,
 };
 
-const versionColumns = (org, name) => [
-  {
-    key: 'version',
-    labelKey: 'pages.table.version',
-    sortValue: version => [new Date(version.createdAt || 0).getTime(), version.version],
-    render: (version, ctx) => (
-      <>
-        <Link to={versionPath(ctx.collection, org, name, version.version)}>{version.version}</Link>
-        {version.deprecated ? (
-          <span className="badge bg-danger ms-2">{ctx.t('pages.status.deprecated')}</span>
-        ) : null}
-      </>
-    ),
-  },
-  {
-    key: 'released',
-    labelKey: 'pages.version.released',
-    sortValue: version => new Date(version.createdAt || 0).getTime(),
-    when: hasAny(version => version.createdAt),
-    render: version => localeDate(version.createdAt),
-  },
-  {
-    key: 'details',
-    labelKey: 'pages.table.details',
-    sortValue: version => (version.description || '').toLowerCase(),
-    when: hasAny(version => version.description),
-    render: version => version.description,
-  },
-  {
-    key: 'providers',
-    labelKey: 'pages.table.providers',
-    when: hasAny(version => (version.providers || []).length > 0),
-    render: (version, ctx) =>
-      (version.providers || []).map(provider => (
-        <Link
-          key={provider.name}
-          to={providerPath(ctx.collection, org, name, version.version, provider.name)}
-          className="badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1"
-        >
-          {provider.name}
-        </Link>
-      )),
-  },
-  {
-    key: 'artifacts',
-    labelKey: 'pages.version.artifacts',
-    when: hasAny(version => (version.artifacts || []).length > 0),
-    render: (version, ctx) =>
-      (version.artifacts || []).map(artifact => (
-        <Link
-          key={artifact.name}
-          to={versionPath(ctx.collection, org, name, version.version)}
-          className="badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1"
-        >
-          {artifact.name}
-        </Link>
-      )),
-  },
-];
-
-const versionMatches = (version, needle) =>
-  [
-    version.version,
-    version.description,
-    version.releaseNotes,
-    ...(version.providers || []).map(provider => provider.name),
-  ].some(value => (value || '').toLowerCase().includes(needle));
-
-const VersionsTable = ({ collection, item, columns, search, ctx }) => {
+const VersionsSection = ({ collection, item, columns, search, form, manage, org, ctx }) => {
   const { t } = useTranslation();
-  const { VersionRowActions } = collection.slots;
-  return (
-    <SubTable
-      columns={columns}
-      rows={search.rows}
-      rowKey={version => version.version}
-      RowActions={VersionRowActions}
-      actionsProps={{ item, ctx }}
-      rowProp="version"
-      sort={search.sort}
-      onSort={search.setSort}
-      hiddenColumns={search.hiddenColumns}
-      ctx={ctx}
-      emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
-    />
-  );
-};
-
-VersionsTable.propTypes = {
-  collection: collectionShape.isRequired,
-  item: PropTypes.object.isRequired,
-  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
-  search: detailSearchShape.isRequired,
-  ctx: PropTypes.object.isRequired,
-};
-
-const VersionsSection = ({ collection, item, columns, search, form, ctx }) => {
-  const { t } = useTranslation();
-  const { VersionsActions } = collection.slots;
+  const { VersionsActions, VersionRowActions } = collection.slots;
+  const level = collection.levels.versions;
+  const selection = useSelection(search.rows, {
+    keyOf: version => version.version,
+    labelOf: version => version.version,
+  });
+  const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);
+  const names = search.rows
+    .filter(version => selection.selected.has(version.version))
+    .map(version => version.version);
   return (
     <>
       <div className="list-table">
-        <div className="d-flex justify-content-between align-items-center">
-          <h4>{t('pages.item.versions')}</h4>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <h4 className="mb-0 me-auto d-flex align-items-center gap-2">
+            {t(level.labelKey)}
+            {names.length > 0 ? (
+              <span className="small text-muted">
+                · {t('pages.bulk.selected', { count: names.length })}
+              </span>
+            ) : null}
+          </h4>
+          {bulkable ? (
+            <BulkActions
+              collection={collection}
+              level="versions"
+              groups={[{ scope: { org, name: item.name }, names }]}
+              onClear={selection.clear}
+              onDone={() => {
+                selection.clear();
+                ctx.reload();
+              }}
+            />
+          ) : null}
           {VersionsActions ? <VersionsActions item={item} ctx={ctx} /> : null}
         </div>
       </div>
       {form}
-      <VersionsTable
-        collection={collection}
-        item={item}
+      <SubTable
         columns={columns}
-        search={search}
+        rows={search.rows}
+        rowKey={version => version.version}
+        RowActions={VersionRowActions}
+        actionsProps={{ item, ctx }}
+        rowProp="version"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
         ctx={ctx}
+        emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+        selection={bulkable ? selection.subtable : null}
       />
     </>
   );
@@ -337,6 +275,8 @@ VersionsSection.propTypes = {
   columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   search: detailSearchShape.isRequired,
   form: PropTypes.node,
+  manage: PropTypes.bool.isRequired,
+  org: PropTypes.string.isRequired,
   ctx: PropTypes.object.isRequired,
 };
 
@@ -352,10 +292,12 @@ const ItemPage = ({ collection, org, name, context }) => {
   const { item } = data;
   const signedIn = Boolean(context.user);
   const watch = useItemWatch({ collection, item: ready ? item : null, signedIn, notify });
-  const columns = versionColumns(org, name);
+  const columns = collection.levels.versions
+    ? collection.levels.versions.columns({ org, name })
+    : [];
   const search = useDetailSearch({
     rows: ready && item ? sortVersionsNewestFirst(item.versions || []) : [],
-    matches: versionMatches,
+    matches: versionLevelMatches,
     placeholderKey: 'pages.search.versions',
     columns,
     prefsKey: `${context.prefsPrefix}_${org}_${name}`,
@@ -430,6 +372,8 @@ const ItemPage = ({ collection, org, name, context }) => {
           columns={columns}
           search={search}
           form={form}
+          manage={Boolean(collection.canManage && collection.canManage(item, context.user))}
+          org={org}
           ctx={ctx}
         />
       ) : null}

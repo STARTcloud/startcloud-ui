@@ -1479,7 +1479,10 @@
     "boxesCount_other": "{{count}} boxes",
     "isos": "ISOs",
     "isosCount_one": "{{count}} ISO",
-    "isosCount_other": "{{count}} ISOs"
+    "isosCount_other": "{{count}} ISOs",
+    "downloads": "Downloads",
+    "downloadsCount_one": "{{count}} download",
+    "downloadsCount_other": "{{count}} downloads"
   },
   "vdi": {
     "sidebar": {
@@ -1742,6 +1745,10 @@
       "collection": "Collection",
       "provider": "Provider",
       "architecture": "Architecture",
+      "family": "Family",
+      "vendor": "Vendor",
+      "platform": "Platform",
+      "kind": "Kind",
       "perPage": "Per page",
       "columns": "Columns"
     },
@@ -1753,6 +1760,24 @@
     "toggle": "Show or hide",
     "addNew": "Add New",
     "removeAll": "Remove All",
+    "bulk": {
+      "selected": "{{count}} selected",
+      "clearSelection": "Clear selection",
+      "delete": "Delete",
+      "makePublic": "Make public",
+      "makePrivate": "Make private",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "deprecate": "Deprecate",
+      "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
+      "confirmTitle": "Confirm the bulk action",
+      "confirmBody": "{{action}} for {{count}} selected rows. Type \"{{keyword}}\" to confirm.",
+      "errors": {
+        "not_found": "no longer exists",
+        "not_allowed": "not yours to change",
+        "in_use": "still in use"
+      }
+    },
     "confirm": {
       "title": "Confirm Action",
       "message": "Please type \"{{keyword}}\" to confirm.",
@@ -1772,7 +1797,9 @@
       "repo": "Source repository",
       "homepage": "Homepage",
       "issues": "Report an issue",
-      "pipeline": "CI pipeline"
+      "pipeline": "CI pipeline",
+      "docs": "Documentation",
+      "notes": "Release notes"
     },
     "table": {
       "name": "Name",
@@ -1795,7 +1822,21 @@
       "defaultBox": "Default box",
       "fileSize": "File size",
       "checksumType": "Checksum type",
-      "tier": "Tier"
+      "tier": "Tier",
+      "family": "Family",
+      "vendor": "Vendor",
+      "release": "Release",
+      "releases": "Releases",
+      "patches": "Patches",
+      "files": "Files",
+      "platforms": "Platforms",
+      "platform": "Platform",
+      "architecture": "Architecture",
+      "kind": "Kind",
+      "language": "Language",
+      "variant": "Variant",
+      "fileName": "File name",
+      "key": "Key"
     },
     "status": {
       "published": "Published",
@@ -2037,6 +2078,99 @@
         "repository": "Repository",
         "issues": "Report an issue"
       }
+    }
+  },
+  "downloads": {
+    "search": "Search downloads",
+    "visibility": {
+      "public": "Public",
+      "private": "Private"
+    },
+    "upload": {
+      "drop": "Drop a file here or click to choose one",
+      "uploading": "Uploading… {{percent}}%",
+      "done": "The file was uploaded."
+    },
+    "actions": {
+      "makePublic": "Make public",
+      "makePrivate": "Make private",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "docs": "Docs",
+      "notes": "Notes"
+    },
+    "hints": {
+      "slug": "Letters, digits, dashes and periods.",
+      "identifier": "Letters, digits, dashes and periods.",
+      "language": "en, en-US, or any for every language."
+    },
+    "product": {
+      "name": "Product name",
+      "description": "Description",
+      "family": "Family",
+      "vendor": "Vendor",
+      "iconUrl": "Icon URL",
+      "docsUrl": "Documentation URL",
+      "notesUrl": "Release notes URL",
+      "visibility": "Visibility",
+      "updated": "The product was updated."
+    },
+    "release": {
+      "number": "Release",
+      "description": "Description",
+      "notes": "Release notes",
+      "updated": "The release was updated.",
+      "deleted": "The release was deleted."
+    },
+    "patch": {
+      "name": "Patch name",
+      "kind": "Kind",
+      "releasedAt": "Released",
+      "notesUrl": "Release notes URL",
+      "updated": "The patch was updated.",
+      "deleted": "The patch was deleted."
+    },
+    "file": {
+      "key": "Key",
+      "fileName": "File name",
+      "kind": "Kind",
+      "platform": "Platform",
+      "architecture": "Architecture",
+      "language": "Language",
+      "variant": "Variant",
+      "checksumType": "Checksum type",
+      "checksum": "Checksum",
+      "downloadWithCount": "Download ({{n}})",
+      "updated": "The file was updated.",
+      "deleted": "The file was deleted."
+    },
+    "kind": {
+      "release": "release",
+      "fixpack": "fix pack",
+      "interim-fix": "interim fix",
+      "hotfix": "hotfix",
+      "installer": "installer",
+      "container-image": "container image",
+      "package": "package",
+      "template": "template",
+      "notes": "notes",
+      "tool": "tool",
+      "other": "other"
+    },
+    "platform": {
+      "linux": "Linux",
+      "windows": "Windows",
+      "macos": "macOS",
+      "omnios": "OmniOS",
+      "other": "other",
+      "any": "any"
+    },
+    "architecture": {
+      "x64": "x64",
+      "x86": "x86",
+      "arm64": "arm64",
+      "other": "other",
+      "any": "any"
     }
   },
   "boxes": {

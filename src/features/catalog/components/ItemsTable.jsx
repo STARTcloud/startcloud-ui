@@ -4,6 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
 
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
+import {
+  RowCheckbox,
+  SelectAllCheckbox,
+  selectionShape,
+} from '../../../components/common/SelectCheckbox';
 import SortHeader from '../../../components/common/SortHeader';
 import { collectionShape, itemShape, sortShape } from '../../../utils/itemShape';
 
@@ -29,8 +34,13 @@ WatchStar.propTypes = {
   onToggle: PropTypes.func.isRequired,
 };
 
-const ItemRow = ({ item, columns, watches, ItemQuickActions, RowActions, ctx }) => (
+const ItemRow = ({ item, columns, selection, watches, ItemQuickActions, RowActions, ctx }) => (
   <tr>
+    {selection ? (
+      <td className="col-select">
+        <RowCheckbox selection={selection} row={item} />
+      </td>
+    ) : null}
     <td className="col-watch text-center align-middle">
       {watches ? (
         <WatchStar watched={watches.ids.has(item.id)} onToggle={() => watches.toggle(item)} />
@@ -57,6 +67,7 @@ const ItemRow = ({ item, columns, watches, ItemQuickActions, RowActions, ctx }) 
 ItemRow.propTypes = {
   item: itemShape.isRequired,
   columns: PropTypes.array.isRequired,
+  selection: selectionShape,
   watches: PropTypes.object,
   ItemQuickActions: PropTypes.elementType,
   RowActions: PropTypes.elementType,
@@ -74,14 +85,16 @@ const ItemsTable = ({
   watches,
   hiddenColumns,
   ctx,
+  selection = null,
 }) => {
   const { t } = useTranslation();
   const columns = collection.columns.filter(
     column => !hiddenColumns.has(column.key) && (!column.when || column.when(items))
   );
   const { ItemQuickActions, RowActions } = collection.slots;
-  const columnCount = columns.length + 1 + (ItemQuickActions ? 1 : 0) + (RowActions ? 1 : 0);
-  const rowProps = { columns, watches, ItemQuickActions, RowActions, ctx };
+  const columnCount =
+    columns.length + 1 + (selection ? 1 : 0) + (ItemQuickActions ? 1 : 0) + (RowActions ? 1 : 0);
+  const rowProps = { columns, selection, watches, ItemQuickActions, RowActions, ctx };
 
   const body = () => {
     if (items.length === 0) {
@@ -128,6 +141,11 @@ const ItemsTable = ({
     <Table striped className="table items-table">
       <thead>
         <tr>
+          {selection ? (
+            <th className="col-select">
+              <SelectAllCheckbox selection={selection} />
+            </th>
+          ) : null}
           <th className="col-watch text-center" title={t('pages.watch.filterWatched')}>
             {watches ? (
               <SortHeader column="watch" sort={sort} onSort={onSort}>
@@ -173,6 +191,7 @@ ItemsTable.propTypes = {
   }),
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,
   ctx: PropTypes.object.isRequired,
+  selection: selectionShape,
 };
 
 export default ItemsTable;

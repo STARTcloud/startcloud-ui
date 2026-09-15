@@ -2,25 +2,27 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
-import { Link } from 'react-router-dom';
 
-import { createdColumn, updatedColumn } from '../../../components/common/columns';
 import DeprecationBanner from '../../../components/common/DeprecationBanner';
+import {
+  architectureLevelMatches,
+  providerLevelMatches,
+} from '../../../components/common/levelColumns';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
-import SubTable, { hasAny } from '../../../components/common/SubTable';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useSelection } from '../../../hooks/useSelection';
 import {
   collectionShape,
   detailSearchShape,
   pageContextShape,
   versionShape,
 } from '../../../utils/itemShape';
-import { providerPath } from '../../../utils/routes';
 import { sortItems } from '../../../utils/sort';
 
-import ChecksumCell from './ChecksumCell';
+import BulkActions from './BulkActions';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -93,165 +95,69 @@ VersionSummary.propTypes = {
   slotProps: PropTypes.object.isRequired,
 };
 
-const providerColumns = (org, name, version) => [
-  {
-    key: 'name',
-    labelKey: 'pages.table.name',
-    sortValue: provider => provider.name.toLowerCase(),
-    render: (provider, ctx) => (
-      <Link to={providerPath(ctx.collection, org, name, version, provider.name)}>
-        {provider.name}
-      </Link>
-    ),
-  },
-  {
-    key: 'details',
-    labelKey: 'pages.table.details',
-    sortValue: provider => (provider.description || '').toLowerCase(),
-    when: hasAny(provider => provider.description),
-    render: provider => provider.description,
-  },
-  {
-    key: 'architectures',
-    labelKey: 'pages.table.architectures',
-    when: hasAny(provider => (provider.architectures || []).length > 0),
-    render: (provider, ctx) => (
-      <span className="d-inline-flex flex-wrap align-items-center gap-2">
-        {(provider.architectures || []).map(architecture => (
-          <span key={architecture.name} className="d-inline-flex align-items-center gap-1">
-            <span className="badge bg-secondary badge-xs">{architecture.name}</span>
-            {typeof architecture.downloadCount === 'number' ? (
-              <span className="small text-body-secondary">{architecture.downloadCount}</span>
-            ) : null}
-            {architecture.downloadUrl ? (
-              <a
-                href={architecture.downloadUrl}
-                className="btn btn-sm btn-outline-primary"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {ctx.t('pages.table.download')}
-              </a>
-            ) : null}
-          </span>
-        ))}
-      </span>
-    ),
-  },
-];
-
-const providerMatches = (provider, needle) =>
-  [
-    provider.name,
-    provider.description,
-    ...(provider.architectures || []).map(architecture => architecture.name),
-  ].some(value => (value || '').toLowerCase().includes(needle));
-
-const artifactColumnsFor = (org, name, version) => [
-  {
-    key: 'name',
-    labelKey: 'pages.table.name',
-    sortValue: artifact => artifact.name.toLowerCase(),
-    render: (artifact, ctx) =>
-      ctx.collection.hasProviders ? (
-        artifact.name
-      ) : (
-        <Link to={providerPath(ctx.collection, org, name, version, artifact.name)}>
-          {artifact.name}
-        </Link>
-      ),
-  },
-  { ...createdColumn, defaultHidden: false, when: hasAny(artifact => artifact.createdAt) },
-  { ...updatedColumn, defaultHidden: false, when: hasAny(artifact => artifact.updatedAt) },
-  {
-    key: 'downloads',
-    labelKey: 'pages.table.downloads',
-    sortValue: artifact => artifact.downloadCount || 0,
-    when: hasAny(artifact => typeof artifact.downloadCount === 'number'),
-    render: artifact => (typeof artifact.downloadCount === 'number' ? artifact.downloadCount : ''),
-  },
-  {
-    key: 'size',
-    labelKey: 'pages.table.fileSize',
-    sortValue: artifact => artifact.fileSize || 0,
-    when: hasAny(artifact => artifact.fileSize),
-    render: (artifact, ctx) => (artifact.fileSize ? ctx.formatFileSize(artifact.fileSize) : ''),
-  },
-  {
-    key: 'checksum',
-    labelKey: 'pages.table.checksum',
-    sortValue: artifact => (artifact.checksum || '').toLowerCase(),
-    when: hasAny(artifact => artifact.checksum),
-    render: artifact =>
-      artifact.checksum ? (
-        <ChecksumCell checksum={artifact.checksum} checksumType={artifact.checksumType || ''} />
-      ) : (
-        ''
-      ),
-  },
-  {
-    key: 'download',
-    labelKey: 'pages.table.download',
-    when: hasAny(artifact => artifact.downloadUrl),
-    render: (artifact, ctx) =>
-      artifact.downloadUrl ? (
-        <a
-          href={artifact.downloadUrl}
-          className="btn btn-sm btn-outline-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {ctx.t('pages.table.download')}
-        </a>
-      ) : null,
-  },
-];
-
-const artifactMatches = (artifact, needle) =>
-  [artifact.name, artifact.checksum].some(value => (value || '').toLowerCase().includes(needle));
-
-const ProvidersTable = ({ collection, columns, search, slotProps }) => {
+const LevelHeading = ({ label, picked, children }) => {
   const { t } = useTranslation();
-  const { ProviderRowActions } = collection.slots;
   return (
-    <SubTable
-      columns={columns}
-      rows={search.rows}
-      rowKey={provider => provider.name}
-      RowActions={ProviderRowActions}
-      actionsProps={slotProps}
-      rowProp="provider"
-      sort={search.sort}
-      onSort={search.setSort}
-      hiddenColumns={search.hiddenColumns}
-      ctx={slotProps.ctx}
-      emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
-    />
+    <div className="d-flex align-items-center gap-2 flex-wrap mb-3">
+      <h4 className="mb-0 me-auto d-flex align-items-center gap-2">
+        {label}
+        {picked > 0 ? (
+          <span className="small text-muted">· {t('pages.bulk.selected', { count: picked })}</span>
+        ) : null}
+      </h4>
+      {children}
+    </div>
   );
 };
 
-ProvidersTable.propTypes = {
-  collection: collectionShape.isRequired,
-  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
-  search: detailSearchShape.isRequired,
-  slotProps: PropTypes.object.isRequired,
+LevelHeading.propTypes = {
+  label: PropTypes.node.isRequired,
+  picked: PropTypes.number.isRequired,
+  children: PropTypes.node,
 };
 
-const ProvidersSection = ({ collection, columns, search, form, slotProps }) => {
+const ProvidersSection = ({ collection, columns, search, form, scope, manage, slotProps }) => {
   const { t } = useTranslation();
-  const { ProvidersActions } = collection.slots;
+  const { ProvidersActions, ProviderRowActions } = collection.slots;
+  const selection = useSelection(search.rows, {
+    keyOf: provider => provider.name,
+    labelOf: provider => provider.name,
+  });
+  const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);
+  const names = search.rows
+    .filter(provider => selection.selected.has(provider.name))
+    .map(provider => provider.name);
   return (
     <div className="list-table">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4>{t('pages.version.providersFor', { version: slotProps.version.version })}</h4>
+      <LevelHeading label={t(collection.levels.providers.labelKey)} picked={names.length}>
+        {bulkable ? (
+          <BulkActions
+            collection={collection}
+            level="providers"
+            groups={[{ scope, names }]}
+            onClear={selection.clear}
+            onDone={() => {
+              selection.clear();
+              slotProps.ctx.reload();
+            }}
+          />
+        ) : null}
         {ProvidersActions ? <ProvidersActions {...slotProps} /> : null}
-      </div>
+      </LevelHeading>
       {form}
-      <ProvidersTable
-        collection={collection}
+      <SubTable
         columns={columns}
-        search={search}
-        slotProps={slotProps}
+        rows={search.rows}
+        rowKey={provider => provider.name}
+        RowActions={ProviderRowActions}
+        actionsProps={slotProps}
+        rowProp="provider"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        ctx={slotProps.ctx}
+        emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+        selection={bulkable ? selection.subtable : null}
       />
     </div>
   );
@@ -262,18 +168,48 @@ ProvidersSection.propTypes = {
   columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   search: detailSearchShape.isRequired,
   form: PropTypes.node,
+  scope: PropTypes.object.isRequired,
+  manage: PropTypes.bool.isRequired,
   slotProps: PropTypes.object.isRequired,
 };
 
-const ArtifactsSection = ({ collection, columns, rows, search, form, slotProps }) => {
+const ArtifactsSection = ({
+  collection,
+  columns,
+  rows,
+  search,
+  form,
+  scope,
+  manage,
+  slotProps,
+}) => {
   const { t } = useTranslation();
   const { ArtifactsActions, ArtifactRowActions } = collection.slots;
+  const selection = useSelection(rows, {
+    keyOf: artifact => artifact.name,
+    labelOf: artifact => artifact.name,
+  });
+  const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);
+  const names = rows
+    .filter(artifact => selection.selected.has(artifact.name))
+    .map(artifact => artifact.name);
   return (
     <div className="list-table">
-      <div className="d-flex justify-content-between align-items-center flex-wrap mb-3">
-        <h4>{t('pages.version.artifacts')}</h4>
+      <LevelHeading label={t(collection.levels.architectures.labelKey)} picked={names.length}>
+        {bulkable ? (
+          <BulkActions
+            collection={collection}
+            level="architectures"
+            groups={[{ scope, names }]}
+            onClear={selection.clear}
+            onDone={() => {
+              selection.clear();
+              slotProps.ctx.reload();
+            }}
+          />
+        ) : null}
         {ArtifactsActions ? <ArtifactsActions {...slotProps} /> : null}
-      </div>
+      </LevelHeading>
       {form}
       <SubTable
         columns={columns}
@@ -287,6 +223,7 @@ const ArtifactsSection = ({ collection, columns, rows, search, form, slotProps }
         hiddenColumns={search.hiddenColumns}
         ctx={slotProps.ctx}
         emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+        selection={bulkable ? selection.subtable : null}
       />
     </div>
   );
@@ -298,6 +235,8 @@ ArtifactsSection.propTypes = {
   rows: PropTypes.array.isRequired,
   search: detailSearchShape.isRequired,
   form: PropTypes.node,
+  scope: PropTypes.object.isRequired,
+  manage: PropTypes.bool.isRequired,
   slotProps: PropTypes.object.isRequired,
 };
 
@@ -311,7 +250,7 @@ const detailRows = (collection, entry) => {
 const sideArtifacts = (artifacts, search, columns) => {
   const needle = search.query.trim().toLowerCase();
   const shown = search.filtering
-    ? artifacts.filter(artifact => artifactMatches(artifact, needle))
+    ? artifacts.filter(artifact => architectureLevelMatches(artifact, needle))
     : artifacts;
   return sortItems(shown, search.sort, columns);
 };
@@ -334,12 +273,13 @@ const VersionPage = ({ collection, org, name, version, context }) => {
   const key = `${org}/${name}/${version}/${nonce}`;
   const ready = data.key === key;
   const { item, entry } = data;
-  const columns = providerColumns(org, name, version);
-  const artifactColumns = artifactColumnsFor(org, name, version);
+  const scope = { org, name, version };
+  const columns = collection.levels.providers ? collection.levels.providers.columns(scope) : [];
+  const artifactColumns = collection.levels.architectures.columns(scope);
   const detail = collection.hasProviders
-    ? { matches: providerMatches, placeholderKey: 'pages.search.providers', columns }
+    ? { matches: providerLevelMatches, placeholderKey: 'pages.search.providers', columns }
     : {
-        matches: artifactMatches,
+        matches: architectureLevelMatches,
         placeholderKey: 'pages.search.artifacts',
         columns: artifactColumns,
       };
@@ -420,6 +360,8 @@ const VersionPage = ({ collection, org, name, version, context }) => {
           columns={artifactColumns}
           rows={sideArtifacts(artifacts, search, artifactColumns)}
           search={search}
+          scope={scope}
+          manage={false}
           slotProps={slotProps}
         />
       ) : null}
@@ -429,6 +371,8 @@ const VersionPage = ({ collection, org, name, version, context }) => {
           columns={columns}
           search={search}
           form={form}
+          scope={scope}
+          manage={manage}
           slotProps={slotProps}
         />
       ) : (
@@ -438,6 +382,8 @@ const VersionPage = ({ collection, org, name, version, context }) => {
           rows={search.rows}
           search={search}
           form={form}
+          scope={scope}
+          manage={manage}
           slotProps={slotProps}
         />
       )}
