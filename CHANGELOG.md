@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.15.0...v0.16.0) (2026-09-15)
+
+
+### Features
+
+* no file of the estate versioned by a hash in its name or its query, the pack generator writing one css file and nothing beside it, the download upload polling the address the last chunk names, guest and the profile routes in the mocks ([dd22e02](https://github.com/STARTcloud/startcloud-ui/commit/dd22e022f6e06e9a2c1080393c14c8af52986014))
+* the prominic brand pack, the asterisk as its mark and the wordmark for the small slot, listed as the fifth pack in the branding contract ([efbd3f6](https://github.com/STARTcloud/startcloud-ui/commit/efbd3f63acdc18d4c9f14ff81d2205e7a9f0be16))
+
 ## [0.15.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.14.0...v0.15.0) (2026-09-15)
 
 
