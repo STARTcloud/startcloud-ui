@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.16.0...v0.17.0) (2026-09-15)
+
+
+### Features
+
+* a download drop lands the bytes in a pending store and the placing form follows it under the heading row, no file versioned by a hash in its name or its query, the pack generator writing one css file, guest and the profile routes in the mocks, the mock issuer and its script gone ([05a6df3](https://github.com/STARTcloud/startcloud-ui/commit/05a6df3d52ccbd392ec0b96a5c1b632144adb069))
+* email templates as documents of the issuer, one card per kind with copies per site and language, the copy dialog with argument chips, the HTML body and its sandboxed preview, history and publish, the Messaging group beside Legal, decision 164 and its mock frame ([0d26032](https://github.com/STARTcloud/startcloud-ui/commit/0d26032c7920bada4c5c0f9b57e5fa4e0ace2916))
+
 ## [0.16.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.15.0...v0.16.0) (2026-09-15)
 
 
