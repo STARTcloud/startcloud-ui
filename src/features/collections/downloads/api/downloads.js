@@ -11,43 +11,49 @@ const patch = (organization, name, number, patchName) =>
 const file = (organization, name, number, patchName, key) =>
   `${patch(organization, name, number, patchName)}${encodePath('file', key)}`;
 
-const uploadTo = (base, { isPublic, file: picked, onUploadProgress }, info = null) =>
-  uploadChunked({
-    client,
-    path: `${base}/file/upload?is_public=${isPublic ? 'true' : 'false'}`,
-    file: picked,
-    onUploadProgress,
-    info,
-  });
+const pendingStore = organization => `${org(organization)}/download/pending`;
+const pendingUpload = organization => `${pendingStore(organization)}/upload`;
+const pendingItem = (organization, id) => `${pendingStore(organization)}${encodePath(id)}`;
 
-const fileInfo = (organization, name, number, patchName, key) => () =>
-  client.get(`${file(organization, name, number, patchName, key)}/info`);
-
-const createdAddress = answer => {
-  const address = answer?.details || answer || {};
-  const { product: name, release: number, patch: patchName, key } = address;
-  return name && number && patchName && key ? { name, number, patchName, key } : null;
+const pendingBody = answer => {
+  const body = answer?.id ? answer : answer?.details || {};
+  return body.id ? body : null;
 };
 
-const infoOfAnswer = organization => answer => {
-  const address = createdAddress(answer);
-  return address
-    ? fileInfo(organization, address.name, address.number, address.patchName, address.key)
-    : null;
+/**
+ * The two-step upload of one download file: the bytes through the chunked
+ * route into the organization's pending store, where nothing is validated
+ * but the bytes, the assembled size polled through the pending upload's own
+ * `info` route, and the answer of the last chunk, `{ id, file_name, size,
+ * guess }`, handed back so the placing form can draw the words the file name
+ * gave.
+ *
+ * @param {string} organization - The organization the file goes to
+ * @param {Object} options - `file`, `onUploadProgress`
+ * @returns {Promise<Object|null>} The pending upload, or null when the answer names none
+ */
+const uploadPending = (organization, { file: picked, onUploadProgress }) => {
+  let held = null;
+  const reader = answer => {
+    held = pendingBody(answer);
+    return held ? () => client.get(`${pendingItem(organization, held.id)}/info`) : null;
+  };
+  return uploadChunked({
+    client,
+    path: pendingUpload(organization),
+    file: picked,
+    onUploadProgress,
+    info: reader,
+  }).then(result => held || pendingBody(result));
 };
 
 /**
  * Every downloads call, one line each over the API client; every call
  * resolves to the response body and rejects with `ApiError`. Paths are built
  * from raw names through `encodePath`. A product owns releases, a release
- * owns patches and a patch owns files; a file is uploaded through the box's
- * chunked route relative to the level the person stands on, the route
- * creating the levels the file name names when they are absent, and the
- * assembly polled through the file's own `info` route: at the release and
- * patch levels the address is known before the send, and at the collection
- * and product levels it is read from the last chunk's answer (`product`,
- * `release`, `patch`, `key`), the answer standing for completion while it
- * names none.
+ * owns patches and a patch owns files; a person's file lands in two steps
+ * through `pending`, the bytes first and the placing form after them; the
+ * level upload routes are a program's and no page calls them.
  */
 export const api = {
   downloads: {
@@ -84,19 +90,10 @@ export const api = {
         .post(`${file(organization, name, number, patchName, key)}/get-download-link`, {})
         .then(data => data.downloadUrl),
   },
-  uploads: {
-    collection: (organization, options) =>
-      uploadTo(`${org(organization)}/download`, options, infoOfAnswer(organization)),
-    product: (organization, name, options) =>
-      uploadTo(product(organization, name), options, infoOfAnswer(organization)),
-    release: (organization, name, number, options) =>
-      uploadTo(release(organization, name, number), options, () =>
-        fileInfo(organization, name, number, 'release', options.file.name)
-      ),
-    patch: (organization, name, number, patchName, options) =>
-      uploadTo(patch(organization, name, number, patchName), options, () =>
-        fileInfo(organization, name, number, patchName, options.file.name)
-      ),
+  pending: {
+    upload: uploadPending,
+    place: (organization, id, body) => client.post(`${pendingItem(organization, id)}/place`, body),
+    discard: (organization, id) => client.delete(pendingItem(organization, id)),
   },
   bulk: {
     items: (organization, body) => client.post(`${org(organization)}/download/bulk`, body),

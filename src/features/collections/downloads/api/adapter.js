@@ -163,6 +163,7 @@ export const downloadsAdapter = {
   getVersion,
   getProvider,
   getOrganization: fetchOrganization,
+  pending: api.pending,
   bulk,
   watches,
 };

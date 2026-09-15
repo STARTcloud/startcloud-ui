@@ -17,6 +17,7 @@ export const TextField = ({
   hint = '',
   type = 'text',
   className = 'mb-2',
+  readOnly = false,
 }) => (
   <Field
     id={rules.idFor(name)}
@@ -34,6 +35,7 @@ export const TextField = ({
         value={draft[name] || ''}
         onChange={onChange}
         onBlur={() => rules.onBlur(name)}
+        readOnly={readOnly}
       />
     )}
   </Field>
@@ -47,6 +49,7 @@ TextField.propTypes = {
   hint: PropTypes.string,
   type: PropTypes.string,
   className: PropTypes.string,
+  readOnly: PropTypes.bool,
 };
 
 /**

@@ -17,6 +17,7 @@ import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
 import { TextAreaField, TextField, VisibilityRadios } from './fields';
+import { PlacePane } from './PlaceForm';
 
 const draftFrom = product => ({
   name: product.name ?? '',
@@ -41,13 +42,27 @@ const slotCtxShape = PropTypes.shape({
 export const DownloadListActions = ({ ctx }) => {
   const status = useStatus();
   const { user, org, notify, reload } = ctx;
-  const upload = useUpload({ notify, reload });
+  const upload = useUpload({ notify });
 
   if (!org || !user || !hasFeature(status, 'uploads') || !isOrgMember(user, org)) {
     return null;
   }
   if (isOrgGuest(user, org)) {
     return null;
+  }
+
+  if (upload.pending) {
+    return (
+      <PlacePane
+        org={org}
+        pending={upload.pending}
+        levels={{}}
+        isPublic={upload.isPublic}
+        notify={notify}
+        reload={reload}
+        onDone={upload.clear}
+      />
+    );
   }
 
   return (
@@ -58,7 +73,7 @@ export const DownloadListActions = ({ ctx }) => {
       error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
-      onFile={upload.upload(options => api.uploads.collection(org, options))}
+      onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );
 };
@@ -297,10 +312,24 @@ DownloadItemActions.propTypes = { item: itemShape.isRequired, ctx: slotCtxShape.
 export const DownloadVersionsActions = ({ item, ctx }) => {
   const status = useStatus();
   const { user, org, notify, reload } = ctx;
-  const upload = useUpload({ notify, reload });
+  const upload = useUpload({ notify });
 
   if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
+  }
+
+  if (upload.pending) {
+    return (
+      <PlacePane
+        org={org}
+        pending={upload.pending}
+        levels={{ product: item.name }}
+        isPublic={upload.isPublic}
+        notify={notify}
+        reload={reload}
+        onDone={upload.clear}
+      />
+    );
   }
 
   return (
@@ -311,7 +340,7 @@ export const DownloadVersionsActions = ({ item, ctx }) => {
       error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
-      onFile={upload.upload(options => api.uploads.product(org, item.name, options))}
+      onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );
 };

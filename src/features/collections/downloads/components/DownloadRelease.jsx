@@ -16,6 +16,7 @@ import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
 import { TextAreaField, TextField } from './fields';
+import { PlacePane } from './PlaceForm';
 
 const ctxShape = PropTypes.shape({
   user: PropTypes.object,
@@ -235,10 +236,24 @@ DownloadVersionRowActions.propTypes = slotShape;
 export const DownloadProvidersActions = ({ item, version, ctx }) => {
   const status = useStatus();
   const { user, org, notify, reload } = ctx;
-  const upload = useUpload({ notify, reload });
+  const upload = useUpload({ notify });
 
   if (!hasFeature(status, 'uploads') || !isOrgManager(user, org)) {
     return null;
+  }
+
+  if (upload.pending) {
+    return (
+      <PlacePane
+        org={org}
+        pending={upload.pending}
+        levels={{ product: item.name, release: version.version }}
+        isPublic={upload.isPublic}
+        notify={notify}
+        reload={reload}
+        onDone={upload.clear}
+      />
+    );
   }
 
   return (
@@ -249,9 +264,7 @@ export const DownloadProvidersActions = ({ item, version, ctx }) => {
       error={upload.error}
       isPublic={upload.isPublic}
       onVisibility={upload.setIsPublic}
-      onFile={upload.upload(options =>
-        api.uploads.release(org, item.name, version.version, options)
-      )}
+      onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );
 };

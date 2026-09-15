@@ -9,38 +9,40 @@ const UPLOAD_KEY = 'download-upload';
 
 /**
  * The upload state one downloads page holds: whether a file is going up, how
- * far it has gone, the visibility the new file is born with, and the runner
- * that sends a picked file through the call the page names and reloads the
- * page when it lands.
+ * far it has gone, the visibility the new file is born with, the runner that
+ * sends a picked file to the organization's pending store, and the pending
+ * upload the last chunk answered, which the placing form is drawn from.
  *
  * @param {Object} options - The page's side
  * @param {Function} options.notify - The chrome's notice function
- * @param {Function} options.reload - Reloads the page's data
- * @returns {Object} `uploading`, `progress`, `file`, `error`, `isPublic`, `setIsPublic`, `upload`
+ * @returns {Object} `uploading`, `progress`, `file`, `error`, `isPublic`,
+ * `setIsPublic`, `upload`, `pending`, `clear`
  */
-export const useUpload = ({ notify, reload }) => {
+export const useUpload = ({ notify }) => {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [picked, setPicked] = useState(null);
   const [failure, setFailure] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [pending, setPending] = useState(null);
 
   const upload = send => file => {
     setUploading(true);
     setProgress(0);
     setPicked(file);
     setFailure('');
+    setPending(null);
     notify('', '', { key: UPLOAD_KEY });
     send({
       file,
       isPublic,
       onUploadProgress: event => setProgress(event.progress ?? 0),
     })
-      .then(() => {
+      .then(answer => {
         setPicked(null);
         notify('success', t('downloads.upload.done'), { key: UPLOAD_KEY });
-        reload();
+        setPending(answer || null);
       })
       .catch(error => {
         log.file.error('Error uploading a download file', {
@@ -54,7 +56,17 @@ export const useUpload = ({ notify, reload }) => {
       .finally(() => setUploading(false));
   };
 
-  return { uploading, progress, file: picked, error: failure, isPublic, setIsPublic, upload };
+  return {
+    uploading,
+    progress,
+    file: picked,
+    error: failure,
+    isPublic,
+    setIsPublic,
+    upload,
+    pending,
+    clear: () => setPending(null),
+  };
 };
 
 /**

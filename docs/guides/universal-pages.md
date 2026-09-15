@@ -684,20 +684,30 @@ adds its own foldable section to an item page (the catalog's Quality).
   before a drop, because everything below a product is born from a file
   and the ISO already makes its tree from one drop. A product's icon is
   drawn before its title as a provisioner's is, from the record's
-  `icon_url`, the vendor's mark when it has none. The zone is relative to the page it sits on: a file
-  dropped on a patch page goes into that patch, on a release page into
-  that release, on a product page into that product, and on the downloads
-  heading into the product, release and patch the file name names, every
-  absent level created by the upload route (Hosting notes), through the
-  box slot's chunked upload; when the upload completes the new file's row
-  appears and Edit on it opens the file's form inline under the files
-  heading row as a box architecture's does, kind, platform, architecture,
-  language and variant prefilled from the file name for correction, the
-  product, release and patch edited the same way on their own pages
-  (`PUT …/download/{name}`, `…/release/{number}`, `…/patch/{name}`,
-  `…/file/{key}` with the validation contract's members), because a
-  person uploads where the file belongs and corrects it where they see it,
-  never on a form before the drop and never in a dialog.
+  `icon_url`, the vendor's mark when it has none. The drop lands the file
+  first and the form comes after it: the zone sends the bytes through the
+  box slot's chunked upload to the organization's pending store
+  (`POST …/download/pending/upload`, Hosting notes), where nothing is
+  validated but the bytes, and the answer names the pending upload and the
+  words the file name gave (product, release, patch, key, kind, platform,
+  architecture, language); when the send completes the zone gives way to
+  the placing form inline under the same heading row, the file's fields as
+  the file form draws them, prefilled from those words and from the page
+  the zone sits on (a patch page fills product, release and patch and
+  draws them read-only; a release page product and release; a product
+  page the product; the downloads heading nothing), the person corrects
+  what the name got wrong and presses Save, and `POST …/pending/{id}/place`
+  with the validation contract's `downloadFile` members plus `product`,
+  `release` and `patch` creates the absent levels, moves the file in and
+  answers its address, so the row appears where it belongs; Cancel discards
+  the pending upload. A pending upload nobody places is dropped by the
+  server after a day. Product, release, patch and file are edited
+  afterwards on their own pages (`PUT …/download/{name}`,
+  `…/release/{number}`, `…/patch/{name}`, `…/file/{key}`), inline as a box
+  architecture's edit is. Because a file name is a guess and a rule that
+  refuses the guess refuses the drop, the bytes go up first and the words
+  are asked where the person can see them, never on a form before the
+  drop and never in a dialog.
 - **AboutPage**: the app's About at `/about`, drawn from props only: a
   page header in the PageHeader shape with the brand, the title, two
   version chips, the app's from `status.version` through `useStatus()`,
@@ -1011,15 +1021,24 @@ the "How it fits" section of
   service account as Basic, Bearer or a `?token=` link otherwise); a
   handler in front of the SPA catch-all decides, the way the Vagrant
   handler does.
-- The upload route of a download file creates the product, the release and
-  the patch it names when they are absent, the caller holding what a create
-  needs: any member of the organization creates a product, its owner or an
-  admin or owner of the organization adds to it, no other member does. The
-  last chunk's answer names the address it created, `product`, `release`,
-  `patch` and `key`, so the zone can poll that file's `info` until the
-  assembly completes at every level it uploads from, because a zone on the
-  downloads heading or a product page has no address to poll until the route
-  has named it.
+- A download file is uploaded in two steps. `POST
+/api/organization/{org}/download/pending/upload` takes the box slot's
+  chunked upload (`x-chunk-index`, `x-total-chunks`, `x-file-name`,
+  `x-checksum`, `x-checksum-type`) into the organization's pending store,
+  validating nothing but the bytes, and its last chunk answers `{ id,
+file_name, size, guess: { product, release, patch, key, kind, platform,
+architecture, language } }`, the guess read from the file name and never
+  a rule; `GET …/download/pending/{id}/info` answers the assembled size
+  for the zone's assembly poll; `POST …/download/pending/{id}/place` takes
+  `product`, `release`, `patch` and the `downloadFile` form's members,
+  creates the product, release and patch when absent, moves the file in,
+  and answers the file's address, the caller holding what a create needs
+  (any member creates a product, an owner or admin adds to one); `DELETE
+…/download/pending/{id}` discards it, and the server drops a pending
+  upload nobody placed after a day. The level routes `POST
+…/download/{name}/…/file/upload` stay for a program that already knows
+  the address and names it in the path, because a script pushing a known
+  tree has nothing to be asked and a person dropping a file has.
 - A UI backend that serves more than one hostname stamps `index.html` per
   host as it serves it, by the branding contract's rule, a direct
   `/index.html` refused so the stamped page is the only one; BoxVault does

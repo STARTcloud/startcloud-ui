@@ -2105,6 +2105,16 @@
       "identifier": "Letras, dígitos, guiones y puntos.",
       "language": "en, en-US, o any para todos los idiomas."
     },
+    "place": {
+      "title": "Colocar el archivo",
+      "product": "Producto",
+      "release": "Lanzamiento",
+      "patch": "Parche",
+      "productHint": "Letras, dígitos, guiones y puntos; se crea si no existe.",
+      "releaseHint": "Letras, dígitos, guiones y puntos; se crea si no existe.",
+      "patchHint": "Letras, dígitos, guiones y puntos, o release para el lanzamiento mismo.",
+      "done": "El archivo se colocó."
+    },
     "product": {
       "name": "Nombre del producto",
       "description": "Descripción",

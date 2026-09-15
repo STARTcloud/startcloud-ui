@@ -2105,6 +2105,16 @@
       "identifier": "Letters, digits, dashes and periods.",
       "language": "en, en-US, or any for every language."
     },
+    "place": {
+      "title": "Place the file",
+      "product": "Product",
+      "release": "Release",
+      "patch": "Patch",
+      "productHint": "Letters, digits, dashes and periods; it is created when it does not exist.",
+      "releaseHint": "Letters, digits, dashes and periods; it is created when it does not exist.",
+      "patchHint": "Letters, digits, dashes and periods, or release for the release itself.",
+      "done": "The file was placed."
+    },
     "product": {
       "name": "Product name",
       "description": "Description",

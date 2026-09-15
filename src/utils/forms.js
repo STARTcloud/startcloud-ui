@@ -219,6 +219,16 @@ export const DOWNLOAD_FILE_SCHEMA = {
   },
 };
 
+export const PLACE_SCHEMA = {
+  required: ['product', 'release', 'patch', ...DOWNLOAD_FILE_SCHEMA.required],
+  properties: {
+    product: { $ref: '#/$defs/slug' },
+    release: { $ref: '#/$defs/identifier' },
+    patch: { $ref: '#/$defs/identifier' },
+    ...DOWNLOAD_FILE_SCHEMA.properties,
+  },
+};
+
 export const DOWNLOAD_FILE_LABELS = {
   key: 'downloads.file.key',
   file_name: 'downloads.file.fileName',
@@ -229,4 +239,11 @@ export const DOWNLOAD_FILE_LABELS = {
   variant: 'downloads.file.variant',
   checksum_type: 'downloads.file.checksumType',
   checksum: 'downloads.file.checksum',
+};
+
+export const PLACE_LABELS = {
+  product: 'downloads.place.product',
+  release: 'downloads.place.release',
+  patch: 'downloads.place.patch',
+  ...DOWNLOAD_FILE_LABELS,
 };
