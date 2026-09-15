@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.14.0...v0.15.0) (2026-09-15)
+
+
+### Features
+
+* downloads as a fourth collection on the shared pages, product to releases to patches to files with a file address, one add per page opening the upload zone relative to where it sits, inline edit forms, a select column and bulk pane on every table with Remove All gone, registry levels and bulk, the fifth route part, per-host status, format date and the download forms, the mock frames ([33c7dd5](https://github.com/STARTcloud/startcloud-ui/commit/33c7dd59c1d8b6fef763f2b319f24d4ee5bc9eec))
+* the terms and onboarding gate followed on the first refusal from any route, no gated call on the gate pages, the refusal never shipped as a client error, the pager as a section foot with a Per page group, row menus never clipped, the Elsewhere results foldable, maps inside dialogs as plain rows ([1f4557b](https://github.com/STARTcloud/startcloud-ui/commit/1f4557b8dfa58ec21ac8bcb79ba460dea03e88dc))
+
 ## [0.14.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.13.0...v0.14.0) (2026-09-14)
 
 
