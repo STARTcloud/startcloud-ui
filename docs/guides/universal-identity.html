@@ -3671,7 +3671,7 @@
               <div class="m-row">
                 <span class="mark"></span
                 ><span class="m-t"
-                  ><span class="l">Prominic</span><span class="h">Your role MEMBER</span></span
+                  ><span class="l">Prominic</span><span class="h">Your role GUEST</span></span
                 ><span class="m-act"
                   ><span class="btn sm">Make primary</span><span class="btn sm">Leave</span
                   ><span class="btn sm">View</span></span
@@ -3843,6 +3843,11 @@
         <code>https://</code> or a same-origin path, the chrome's badge updated through the same
         <code>onUnreadDelta</code> and the <code>unread-count</code> event. The navbar contract's
         "View all notifications" becomes an in-router link on the issuer.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees what a member
+        sees, published private items included, and never a write control; the Download button stays
+        (identity decision 163).
       </div>
     </div>
   </div>
@@ -4553,6 +4558,7 @@
                     <div class="a-wrap">
                       <select>
                         <option selected>Member</option>
+                        <option>Guest</option>
                         <option>Administrator</option>
                       </select>
                     </div>
@@ -4612,7 +4618,7 @@
                   ><span class="c"><span class="btn sm">Remove</span></span>
                   <span class="c k">sam@acme.example</span><span class="c">Sam Lee</span
                   ><span class="c"
-                    ><span class="a-badge">MEMBER</span>
+                    ><span class="a-badge">GUEST</span>
                     <span class="a-hint">managed by BoxVault</span></span
                   ><span class="c"></span>
                 </div>
@@ -4622,6 +4628,7 @@
                   <div class="a-wrap">
                     <select>
                       <option selected>MEMBER</option>
+                      <option>GUEST</option>
                       <option>ADMIN</option>
                     </select>
                   </div>
@@ -4672,6 +4679,15 @@
         invite code, Remove, Invite and the pending list need <code>can_manage</code>, the role
         select, the default role and Delete need <code>is_owner</code>. Every
         <code>logo_url</code> is drawn only with the <code>https:</code> scheme.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees what a member
+        sees, published private items included, and never a write control; the Download button stays
+        (identity decision 163).
+      </div>
+      <div class="callout">
+        <strong>Arrival on a row:</strong> a hash names the row, the page scrolls it into view and
+        moves focus to it, nothing painted (pages contract, Arrival on a row).
       </div>
       <div class="callout changed">
         <strong>Changed: fourteen form posts become one record.</strong>

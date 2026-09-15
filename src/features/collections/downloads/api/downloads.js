@@ -23,6 +23,19 @@ const uploadTo = (base, { isPublic, file: picked, onUploadProgress }, info = nul
 const fileInfo = (organization, name, number, patchName, key) => () =>
   client.get(`${file(organization, name, number, patchName, key)}/info`);
 
+const createdAddress = answer => {
+  const address = answer?.details || answer || {};
+  const { product: name, release: number, patch: patchName, key } = address;
+  return name && number && patchName && key ? { name, number, patchName, key } : null;
+};
+
+const infoOfAnswer = organization => answer => {
+  const address = createdAddress(answer);
+  return address
+    ? fileInfo(organization, address.name, address.number, address.patchName, address.key)
+    : null;
+};
+
 /**
  * Every downloads call, one line each over the API client; every call
  * resolves to the response body and rejects with `ApiError`. Paths are built
@@ -30,11 +43,11 @@ const fileInfo = (organization, name, number, patchName, key) => () =>
  * owns patches and a patch owns files; a file is uploaded through the box's
  * chunked route relative to the level the person stands on, the route
  * creating the levels the file name names when they are absent, and the
- * assembly polled through the file's own `info` route wherever the finished
- * file's address is known before the send (the release and patch levels,
- * whose patch and key the route derives as `release` and the file name);
- * the collection and product levels, whose product or release the route
- * reads out of the file name, take the last chunk's answer.
+ * assembly polled through the file's own `info` route: at the release and
+ * patch levels the address is known before the send, and at the collection
+ * and product levels it is read from the last chunk's answer (`product`,
+ * `release`, `patch`, `key`), the answer standing for completion while it
+ * names none.
  */
 export const api = {
   downloads: {
@@ -72,18 +85,16 @@ export const api = {
         .then(data => data.downloadUrl),
   },
   uploads: {
-    collection: (organization, options) => uploadTo(`${org(organization)}/download`, options),
-    product: (organization, name, options) => uploadTo(product(organization, name), options),
+    collection: (organization, options) =>
+      uploadTo(`${org(organization)}/download`, options, infoOfAnswer(organization)),
+    product: (organization, name, options) =>
+      uploadTo(product(organization, name), options, infoOfAnswer(organization)),
     release: (organization, name, number, options) =>
-      uploadTo(
-        release(organization, name, number),
-        options,
+      uploadTo(release(organization, name, number), options, () =>
         fileInfo(organization, name, number, 'release', options.file.name)
       ),
     patch: (organization, name, number, patchName, options) =>
-      uploadTo(
-        patch(organization, name, number, patchName),
-        options,
+      uploadTo(patch(organization, name, number, patchName), options, () =>
         fileInfo(organization, name, number, patchName, options.file.name)
       ),
   },

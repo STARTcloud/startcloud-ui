@@ -28,7 +28,7 @@ const uploadBoxFile = (file, options, onUploadProgress) => {
     file,
     checksum,
     checksum_type: checksumType,
-    info: () => fileInfo(organization, name, number, providerName, architectureName),
+    info: () => () => fileInfo(organization, name, number, providerName, architectureName),
     onUploadProgress,
   });
 };

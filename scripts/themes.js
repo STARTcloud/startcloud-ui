@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
@@ -291,17 +290,14 @@ const readSource = pack => {
 };
 
 const writePack = (pack, css) => {
-  const hash = createHash('sha256').update(css).digest('hex');
   fs.writeFileSync(path.join(THEMES_DIR, pack, `${pack}.css`), css);
-  fs.writeFileSync(path.join(THEMES_DIR, pack, `${pack}.hash`), hash);
-  return hash;
 };
 
 /**
  * Generate every pack stylesheet under public/themes: for each
  * public/themes/<pack>/<pack>.yaml, write <pack>.css in the branding
- * contract's generated shape and <pack>.hash holding the stylesheet's
- * SHA-256 hex and nothing else, the `?v=` every UI backend reads.
+ * contract's generated shape and nothing beside it, since no file of the
+ * estate is ever versioned by a hash, in its name or in its query.
  *
  * The YAML source carries `primary` (six-digit hex, required), `on_primary`
  * (hex, optional: when absent the generator takes `#ffffff` or `#000000`,
@@ -332,7 +328,7 @@ const writePack = (pack, css) => {
  * only until the opaque color reaches 3:1 against that variant's body
  * background, at the lowest alpha from 20% up whose color composited
  * over that background reaches 3:1, and prints both values beside the
- * hash.
+ * stylesheet's path.
  *
  * @returns {number} The exit code, 0 when every pack was written
  */
@@ -346,9 +342,9 @@ export const generateThemes = () => {
       return;
     }
     const rings = focusRingsOf(source);
-    const hash = writePack(pack, stylesheetOf(pack, source, rings));
+    writePack(pack, stylesheetOf(pack, source, rings));
     console.log(
-      `${pack}: public/themes/${pack}/${pack}.css ${hash.slice(0, 12)} light ${rings.light} dark ${rings.dark}`
+      `${pack}: public/themes/${pack}/${pack}.css light ${rings.light} dark ${rings.dark}`
     );
   });
   refused.forEach(line => console.error(`refused ${line}`));

@@ -237,7 +237,7 @@ changes in the same release.
 {
   "site_id": "moonshinedev",
   "theme_pack": "moonshinedev",
-  "theme_css": "https://auth.example.com/themes/moonshinedev/moonshinedev.css?v=a1b2c3",
+  "theme_css": "https://auth.example.com/themes/moonshinedev/moonshinedev.css",
   "company_name": "Moonshine.dev",
   "logos": {
     "mark": { "src": "https://…/mark.svg", "width": 512, "height": 512, "monochrome": true },
@@ -285,7 +285,7 @@ their own server; browser-direct is permitted, not assumed.
 **The shared UI never calls the branding endpoint.** A UI backend that
 wants a pack names it in its own `/api/status` as
 `brand.pack: { name, css }`, `name` the bare pack name for `data-brand`
-and `css` the stylesheet URL with its `?v=` hash, resolved by the UI
+and `css` the stylesheet URL, resolved by the UI
 backend's server from its local configuration or from the endpoint above;
 the shell stamps `data-brand` and appends the `<link>` from that member
 alone, and a payload without it stamps nothing. A UI backend that rewrites
@@ -352,6 +352,12 @@ New local signups seed `language` from the request locale.
 
 ## Packs
 
+**No file of the estate is ever versioned by a hash, in its name or in its
+query**, because a second identity for one file is a thing every backend
+must copy and keep in step and a stale one fails silently, while a fixed
+name behind an ETag fails never; a pack's files are files of the build
+like every other and are named once.
+
 A pack is **variables only — never rules.** Rules are app-shaped: precompiled
 Bootstrap bakes color into components, so `.btn-primary`, `.btn-outline-*`,
 `.form-check-input:checked`, `.nav-pills`, `.pagination` and friends must be
@@ -409,12 +415,9 @@ the pack's own risk.
 **Pack source is YAML; the CSS is generated.** The generator derives the
 `--bs-*-rgb` comma triples from the hex values, exactly as the Sass
 `rgb-list()` it replaces did — plain CSS cannot emit that format, so
-hand-maintained pairs would drift. Generation also yields the content hash
-used for versioning, written beside the stylesheet as
-`public/themes/<pack>/<pack>.hash`, the SHA-256 hex of `<pack>.css` and
-nothing else in the file; a UI backend reads that file for the `?v=` it
-answers in `theme_css` and `brand.pack.css`, so the hash is computed once
-where the CSS is made and never recomputed by a server that serves it.
+hand-maintained pairs would drift. The generator writes one file per pack,
+`public/themes/<pack>/<pack>.css`, and nothing beside it: no digest file,
+no second name, no version for a server to read.
 
 A **raw-CSS escape hatch** exists for anything exotic. Hand-written packs
 must invert the derivation to keep one source of truth:
@@ -625,22 +628,28 @@ nonce today and the published hash after the cutover.
 - **Branding response**: `Cache-Control: public, max-age=300`. Five minutes,
   so a re-brand propagates estate-wide inside that window while server-side
   consumers cache in-process on the same clock.
-- **Pack CSS and assets**: versioned via `?v=<hash>` with a long `max-age`.
-  The version is in the query string, not the filename. Consumers never
-  construct these URLs, so versioning costs them nothing. The files Vite
-  creates are never hashed: every entry, chunk, stylesheet and asset keeps
-  its fixed name (`assets/<name>.js`, `assets/<name>.css`), and no build
-  step, plugin, server or contract may add a content hash to a file name,
-  ever; caching is the server's job through `no-cache` and an ETag per
-  file. The pack's `?v=<hash>` query stays; a file name never carries one
-  (identity contract decision 132).
+- **Pack CSS and assets**: served like every other file of the build.
+  **No file of the estate is ever versioned by a hash, in its name or in
+  its query**, because a second identity for one file is a thing every
+  backend must copy and keep in step and a stale one fails silently, while
+  a fixed name behind an ETag fails never. Every entry, chunk, stylesheet
+  and asset Vite creates keeps its fixed name (`assets/<name>.js`,
+  `assets/<name>.css`), a pack's stylesheet, artwork and font files keep
+  theirs, and no build step, plugin, server or contract may add a content
+  hash to a file name or to a query string, ever; caching is the server's
+  job through `Cache-Control: no-cache` with an ETag per file, a
+  conditional request and the bytes only when they changed, never
+  `immutable`, `index.html` and `/` `no-store` (identity contract decision
+  132).
 - **A re-brand reaches reloads, not live sessions** — absent app-shell
   caching of the served HTML, which a service worker with a `fetch` handler
   would introduce.
 
-Revalidation was considered and rejected: any revalidating pack puts the
-theme host on the render path, which is what the standalone-first and
-bundled-fallback rules exist to forbid (RFC 9111).
+A conditional request per load is the price and it is paid everywhere: the
+pack revalidates the way `/assets/` and every other served file does, on
+the origin that serves the build, which is the app's own by the
+standalone-first and bundled-fallback rules, so nothing new is put on the
+render path (RFC 9111).
 
 ---
 

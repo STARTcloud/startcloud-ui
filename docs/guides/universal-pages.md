@@ -991,7 +991,8 @@ the "How it fits" section of
 - The files Vite creates are never hashed: every entry, chunk, stylesheet
   and asset keeps its fixed name (`assets/<name>.js`, `assets/<name>.css`),
   and no build step, plugin, server or contract may add a content hash to
-  a file name, ever; caching is the server's job through `no-cache` and an
+  a file name, ever, and no query string ever carries a version or a hash
+  either; caching is the server's job through `no-cache` and an
   ETag per file, so every UI backend serves every file of the build,
   `/assets/` included, `Cache-Control: no-cache` with an ETag, never
   `immutable`, and `index.html` and `/` `no-store` (identity contract
@@ -1013,7 +1014,12 @@ the "How it fits" section of
 - The upload route of a download file creates the product, the release and
   the patch it names when they are absent, the caller holding what a create
   needs: any member of the organization creates a product, its owner or an
-  admin or owner of the organization adds to it, no other member does.
+  admin or owner of the organization adds to it, no other member does. The
+  last chunk's answer names the address it created, `product`, `release`,
+  `patch` and `key`, so the zone can poll that file's `info` until the
+  assembly completes at every level it uploads from, because a zone on the
+  downloads heading or a product page has no address to poll until the route
+  has named it.
 - A UI backend that serves more than one hostname stamps `index.html` per
   host as it serves it, by the branding contract's rule, a direct
   `/index.html` refused so the stamped page is the only one; BoxVault does

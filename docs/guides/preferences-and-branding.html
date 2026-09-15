@@ -802,7 +802,7 @@
             <span class="k">"theme_pack"</span>: <span class="s">"switchboard"</span>,
             <span class="k">"theme_css"</span>:
             <span class="s"
-              >"https://auth.switchboard.global/themes/switchboard/switchboard.css?v=a1b2c3"</span
+              >"https://auth.switchboard.global/themes/switchboard/switchboard.css"</span
             >, <span class="k">"company_name"</span>: <span class="s">"SwitchBoard.cloud"</span>,
             <span class="k">"logos"</span>: { <span class="k">"small"</span>: {
             <span class="k">"src"</span>:
@@ -1026,15 +1026,17 @@
         files a developer writes, the stylesheet, the artwork and the font files, shipped with the
         build and served by the origin that serves it; the authorization server holds no pack and
         renders none, it names one per site through <code>theme_id</code> and answers
-        <code>theme_css</code> as that stylesheet's URL with its content hash as
-        <code>?v=</code> and a long <code>max-age</code>, the URL built from the site's configured
-        hostname and never the request's <code>Host</code>; the branding answer itself is
-        <code>public, max-age=300</code>. On the issuer a pack is same-origin unless the site lists
-        the host in <code>sites.&lt;id&gt;.ui.pack_origins</code>, each listed origin becoming that
-        site's <code>style-src</code> and <code>font-src</code> entry, because a stylesheet from a
-        host the issuer does not control runs on the sign-in page (RFC 9700 §4.2.4). The site marks
-        live under <code>public/brand/&lt;site&gt;/</code> in the same build, since the jar serves
-        no <code>/assets</code>.
+        <code>theme_css</code> as that stylesheet's URL, no query string and no version in it, the
+        URL built from the site's configured hostname and never the request's <code>Host</code>; the
+        pack is served <code>Cache-Control: no-cache</code> with an ETag like every other file of
+        the build, since no file of the estate is ever versioned by a hash, in its name or in its
+        query; the branding answer itself is <code>public, max-age=300</code>. On the issuer a pack
+        is same-origin unless the site lists the host in
+        <code>sites.&lt;id&gt;.ui.pack_origins</code>, each listed origin becoming that site's
+        <code>style-src</code> and <code>font-src</code> entry, because a stylesheet from a host the
+        issuer does not control runs on the sign-in page (RFC 9700 §4.2.4). The site marks live
+        under <code>public/brand/&lt;site&gt;/</code> in the same build, since the jar serves no
+        <code>/assets</code>.
       </div>
       <div class="callout">
         <strong>Per-instance SwitchBoard</strong> keeps the central site's pack and marks; only the

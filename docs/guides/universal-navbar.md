@@ -510,7 +510,8 @@ written in another language keeps the same order: `/api` and the protocol
 routes first, the SPA fallback last. The files Vite creates are never
 hashed: every entry, chunk, stylesheet and asset keeps its fixed name
 (`assets/<name>.js`, `assets/<name>.css`), and no build step, plugin,
-server or contract may add a content hash to a file name, ever; caching
+server or contract may add a content hash to a file name, ever, and no
+query string ever carries a version or a hash either; caching
 is the server's job through `no-cache` and an ETag per file. So nothing
 under the served folder is immutable: every UI backend serves every file
 in it, `/assets/` included, `Cache-Control: no-cache` with an ETag, a

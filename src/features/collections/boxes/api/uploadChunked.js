@@ -73,7 +73,7 @@ const sendFrom = async (options, index, uploaded) => {
   }
   if (index === totalChunks - 1) {
     reportProgress(onUploadProgress, file.size, end, 'assembling');
-    return null;
+    return { assembling: result };
   }
   reportProgress(onUploadProgress, file.size, end, 'uploading');
   return sendFrom(options, index + 1, end);
@@ -149,7 +149,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
  * @param {File} options.file - The file to send
  * @param {string} [options.checksum] - The declared checksum
  * @param {string} [options.checksum_type] - The checksum algorithm, `NULL` when none
- * @param {() => Promise<Object>} [options.info] - Reads the assembled file's info; absent where the route names the file itself, the last chunk's answer then standing for completion
+ * @param {(answer: Object) => ((() => Promise<Object>) | null)} [options.info] - Given the last chunk's answer, hands back the reader of the assembled file's info, or null where the answer names no address; absent, or answering null, the last chunk's answer stands for completion
  * @param {Function} [options.onUploadProgress] - Progress callback
  * @returns {Promise<Object>} The backend's completion result
  */
@@ -177,11 +177,12 @@ export const uploadChunked = async ({
   try {
     const options = { client, path, file, checksum, checksumType, totalChunks, onUploadProgress };
     const result = totalChunks > 0 ? await sendFrom(options, 0, 0) : null;
-    if (result) {
+    if (result && !result.assembling) {
       log.file.info('Upload completed successfully', { result });
       return result;
     }
-    if (!info) {
+    const read = info ? info(result?.assembling) : null;
+    if (!read) {
       reportProgress(onUploadProgress, file.size, file.size, 'complete', 'Upload complete');
       return {
         message: 'File upload completed',
@@ -197,7 +198,7 @@ export const uploadChunked = async ({
       'Assembling file chunks...'
     );
     return await pollAssembly({
-      info,
+      info: read,
       fileSize: file.size,
       onUploadProgress,
       startedAt: Date.now(),
