@@ -669,8 +669,11 @@ export const EMAIL_ARGUMENTS = [
 
 export const SITES_CONFIG = {
   sites: {
-    startcloud: { name: 'STARTcloud' },
-    prominic: { name: 'Prominic' },
-    moonshinedev: { name: 'Moonshine Dev' },
+    default_site: 'startcloud',
+    sites: {
+      startcloud: { name: 'STARTcloud' },
+      prominic: { name: 'Prominic' },
+      moonshinedev: { name: 'Moonshine Dev' },
+    },
   },
 };

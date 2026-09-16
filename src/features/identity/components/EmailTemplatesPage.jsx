@@ -56,7 +56,10 @@ const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 const argumentsOf = (list, kind) => list.find(entry => entry.kind === kind)?.arguments || [];
 
 const sitesOf = answer =>
-  Object.entries(answer?.sites || {}).map(([id, entry]) => ({ id, name: entry?.name || id }));
+  Object.entries(answer?.sites?.sites || {}).map(([id, entry]) => ({
+    id,
+    name: entry?.name || entry?.company_name || id,
+  }));
 
 const isDefaultCopy = copy => !copy.site && !copy.locale;
 
