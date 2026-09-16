@@ -464,14 +464,15 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
  * account", the policy links and Cancel while a request is parked. The
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
- * sent away.
+ * sent away, except on `?stepup`, where the session is live by design and
+ * the form is what the parked request is waiting for.
  */
 const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const signedIn = useSignedInRedirect(account, returnTo);
+  const signedIn = useSignedInRedirect(account, returnTo, !params.has('stepup'));
   const { methods: answer, loading } = useMethods();
   const [values, setValues] = useState({ username: '', password: '', remember: false });
   const [chosenMode, setChosenMode] = useState('');

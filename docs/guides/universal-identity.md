@@ -569,7 +569,13 @@ session contract's sign-in page) by the states the issuer has:
   session exists, and a person with a live session who lands on `/login`,
   `/registration`, `/passwordRecovery` or `/passwordReset` is sent to `/`
   or the consumed `intended_url`, because a crafted `/login?logout` above
-  a form is a phishing frame for someone still signed in. The
+  a form is a phishing frame for someone still signed in; `?stepup` is the
+  one exception, where the session is live by design and the page exists to
+  re-authenticate, so the form draws and the answer's `next` wins, because
+  `prompt=login` and a `max_age` past its bound oblige the issuer to
+  reauthenticate an already authenticated person or refuse with
+  `login_required` (OpenID Connect Core §3.1.2.1), and a page that sends
+  them home instead does neither and strands the parked request. The
   session-ended banner is the chrome's, raised on the bus; the page draws
   none of its own.
 - **Foot.** "New to {{app}}? Create an account" while
