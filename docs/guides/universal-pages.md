@@ -353,23 +353,32 @@ table above it; so the shared columns sit at the same x on every table of
 both apps however many columns follow or are hidden, and a resized column
 takes from the spacer alone:
 
-| Column      | Boxes                                                                                    | ISOs                                                                         | Provisioners                                 |
-| ----------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------- |
-| select      | checkbox, the header the select-all                                                      | checkbox, the header the select-all                                          | checkbox, the header the select-all          |
-| watch       | star signed in, blank signed out                                                         | star signed in, blank signed out                                             | star signed in, blank signed out             |
-| Name        | org logo + `org/name` link                                                               | org logo + `org/name` link                                                   | icon + label link, slug beside it            |
-| Visibility  | Public / Private                                                                         | Public / Private                                                             | Public / Private                             |
-| Created     | `createdAt`, hidden until shown                                                          | `createdAt`, hidden until shown                                              | none                                         |
-| Updated     | `updatedAt`, hidden until shown                                                          | `updatedAt`, hidden until shown                                              | none                                         |
-| Downloads   | sum of file `downloadCount`                                                              | sum of file `downloadCount`                                                  | health downloads                             |
-| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · OS · Latest release · Versions · Architectures (hidden until shown) | Tier · Latest release · Versions · Providers |
-| row actions | none                                                                                     | none                                                                         | none                                         |
+| Column      | Boxes                                                                                    | ISOs                                                                             | Provisioners                                 |
+| ----------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
+| select      | checkbox, the header the select-all                                                      | checkbox, the header the select-all                                              | checkbox, the header the select-all          |
+| watch       | star signed in, blank signed out                                                         | star signed in, blank signed out                                                 | star signed in, blank signed out             |
+| Name        | org logo + `org/name` link, the `org/` segment folded below 60rem of table width         | org logo + `org/name` link, the `org/` segment folded below 60rem of table width | icon + label link, slug beside it            |
+| Visibility  | Public / Private                                                                         | Public / Private                                                                 | Public / Private                             |
+| Created     | `createdAt`, hidden until shown                                                          | `createdAt`, hidden until shown                                                  | none                                         |
+| Updated     | `updatedAt`, hidden until shown                                                          | `updatedAt`, hidden until shown                                                  | none                                         |
+| Downloads   | sum of file `downloadCount`                                                              | sum of file `downloadCount`                                                      | health downloads                             |
+| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · OS · Latest release · Versions · Architectures (hidden until shown)     | Tier · Latest release · Versions · Providers |
+| row actions | none                                                                                     | none                                                                             | none                                         |
 
 Downloads draw the same shared columns, then Status · Family · Vendor ·
 Latest release · Releases · Platforms (hidden until shown), Downloads
 being the sum of its files' `downloadCount`.
 
-Rows carry no action buttons; an item's actions live on its page and the
+The Name cell draws the organization logo, then `org/name` as the link;
+below 60rem of table width the `org/` segment folds away and the item
+name stays, the logo still naming the organization and the cell's title
+carrying the full `org/name`, because the name a person came for is the
+last thing a narrow table may cut. The files table of a downloads patch
+draws one Name column, the file name it was uploaded with and, only when
+the key differs from it, the key as a small code beside it, the shape
+`labelColumn` gives the catalog's label and slug; no separate Key column,
+because the two read the same on almost every row and a header that says
+the same thing twice is noise. Rows carry no action buttons; an item's actions live on its page and the
 select checkbox and the watch star are the only in-row controls. One label key per column,
 `pages.table.*`, shared by every collection. Providers and Architectures
 draw one badge per name, alphabetical and case-insensitive, the same

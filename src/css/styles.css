@@ -1410,6 +1410,16 @@ button::-moz-focus-inner {
   position: relative;
 }
 
+.items-table-wrap {
+  container-type: inline-size;
+}
+
+@container (max-width: 60rem) {
+  .items-table .name-org {
+    display: none;
+  }
+}
+
 .items-table col.col-sized {
   width: var(--col-width);
 }

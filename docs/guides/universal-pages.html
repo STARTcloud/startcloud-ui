@@ -3939,35 +3939,35 @@
         <div
           class="grid"
           style="
-            grid-template-columns:
-              26px 110px minmax(180px, 1fr) 90px 80px 80px 60px 90px 1fr 150px
-              110px;
+            grid-template-columns: 26px minmax(260px, 1fr) 90px 80px 80px 60px 90px 1fr 150px 110px;
           "
         >
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
-          <span class="th">Key</span><span class="th">File name</span><span class="th">Kind</span
-          ><span class="th">Platform</span><span class="th">Arch</span><span class="th">Lang</span
-          ><span class="th">Size</span><span class="th">Checksum</span
-          ><span class="th">Download</span><span class="th">Actions</span>
-          <span class="td odd">☐</span><span class="td first odd">linux-x64</span
-          ><span class="td odd">Domino_140FP1_Linux.tar</span><span class="td odd">fixpack</span
-          ><span class="td odd">linux</span><span class="td odd">x64</span
-          ><span class="td odd">en</span><span class="td odd">1.8 GB</span
+          <span class="th">Name</span><span class="th">Kind</span><span class="th">Platform</span
+          ><span class="th">Arch</span><span class="th">Lang</span><span class="th">Size</span
+          ><span class="th">Checksum</span><span class="th">Download</span
+          ><span class="th">Actions</span> <span class="td odd">☐</span
+          ><span class="td first odd"
+            >Domino_140FP1_Linux.tar <span class="sha">linux-x64</span></span
+          ><span class="td odd">fixpack</span><span class="td odd">linux</span
+          ><span class="td odd">x64</span><span class="td odd">en</span
+          ><span class="td odd">1.8 GB</span
           ><span class="td odd"><span class="sha">3a9f…c1d2</span></span
           ><span class="td odd"><span class="btn sm outline">Download (42)</span></span
           ><span class="td odd"><span class="btn sm danger">Delete</span></span>
-          <span class="td">☐</span><span class="td first">windows-x64</span
-          ><span class="td">Domino_140FP1_Win.exe</span><span class="td">fixpack</span
-          ><span class="td">windows</span><span class="td">x64</span><span class="td">en</span
-          ><span class="td">1.6 GB</span><span class="td"><span class="sha">b71e…08aa</span></span
+          <span class="td">☐</span
+          ><span class="td first">Domino_140FP1_Win.exe <span class="sha">windows-x64</span></span
+          ><span class="td">fixpack</span><span class="td">windows</span><span class="td">x64</span
+          ><span class="td">en</span><span class="td">1.6 GB</span
+          ><span class="td"><span class="sha">b71e…08aa</span></span
           ><span class="td"><span class="btn sm outline">Download (17)</span></span
           ><span class="td"><span class="btn sm danger">Delete</span></span>
-          <span class="td odd">☐</span><span class="td first odd">notes</span
-          ><span class="td odd">FP1_ReleaseNotes.pdf</span><span class="td odd">notes</span
-          ><span class="td odd">any</span><span class="td odd">any</span
-          ><span class="td odd">en</span><span class="td odd">2 MB</span
+          <span class="td odd">☐</span><span class="td first odd">FP1_ReleaseNotes.pdf</span
+          ><span class="td odd">notes</span><span class="td odd">any</span
+          ><span class="td odd">any</span><span class="td odd">en</span
+          ><span class="td odd">2 MB</span
           ><span class="td odd"><span class="sha">9c0d…44e1</span></span
           ><span class="td odd"><span class="btn sm outline">Download (88)</span></span
           ><span class="td odd"><span class="btn sm danger">Delete</span></span>
@@ -4675,6 +4675,13 @@
         pixel width shown while dragging), a double-click resets it to the stylesheet's width, and
         the widths persist per page under <code>table_prefs_*</code> beside sort, hidden columns and
         per page; a hidden column keeps its width for when it returns.
+      </div>
+      <div class="callout changed">
+        <strong>Name folds its organization.</strong> The Name cell draws the organization logo,
+        then <code>org/name</code>; below 60rem of table width the <code>org/</code> segment folds
+        away and the item name stays, the logo still naming the organization and the cell's title
+        carrying the full text. A downloads patch's files table draws one Name column, the file name
+        with the key as a small code beside it only when the two differ; there is no Key column.
       </div>
     </div>
   </div>

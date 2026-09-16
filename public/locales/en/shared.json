@@ -202,7 +202,6 @@
   },
   "profile": {
     "pageTitle": "Profile",
-    "manageAtIdp": "Manage at identity provider",
     "noJobTitle": "No Job Title",
     "unknown": "Unknown",
     "tabs": {
@@ -1911,8 +1910,6 @@
       "kind": "Kind",
       "language": "Language",
       "variant": "Variant",
-      "fileName": "File name",
-      "key": "Key",
       "resize": "Resize column",
       "resizeHint": "Drag to resize, double-click to reset"
     },

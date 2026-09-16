@@ -14,6 +14,8 @@ import SectionCard, { foldsShape } from './SectionCard';
 const subsectionShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
+  action: PropTypes.object,
+  pointer: PropTypes.string,
   fields: PropTypes.arrayOf(configFieldShape).isRequired,
 });
 
@@ -227,17 +229,33 @@ SettingsBadge.propTypes = {
   config: PropTypes.object.isRequired,
 };
 
-const Subsection = ({ subsection, folds, foldId, ...drawing }) => (
-  <SectionCard
-    title={subsection.title}
-    badge={<SettingsBadge fields={subsection.fields} config={drawing.config} />}
-    className="mb-4"
-    folded={folds.folded(foldId)}
-    onFold={() => folds.toggle(foldId)}
-  >
-    <ConfigFields fields={subsection.fields} {...drawing} />
-  </SectionCard>
-);
+const Subsection = ({ subsection, folds, foldId, ...drawing }) => {
+  const action =
+    subsection.action && drawing.callAction ? (
+      <ConfigAction
+        action={subsection.action}
+        title={subsection.title}
+        values={valueAt(drawing.config, subsection.pointer)}
+        call={drawing.callAction}
+        guard={drawing.guard}
+        onRefused={error =>
+          drawing.rules.applyServerErrors(refusalOf(error, subsection.pointer, drawing.nameFor))
+        }
+      />
+    ) : null;
+  return (
+    <SectionCard
+      title={subsection.title}
+      badge={<SettingsBadge fields={subsection.fields} config={drawing.config} />}
+      actions={action}
+      className="mb-4"
+      folded={folds.folded(foldId)}
+      onFold={() => folds.toggle(foldId)}
+    >
+      <ConfigFields fields={subsection.fields} {...drawing} />
+    </SectionCard>
+  );
+};
 
 Subsection.propTypes = {
   ...drawingShape,
@@ -303,9 +321,12 @@ Section.propTypes = {
  * setting, a map's leaves per entry, their folds kept under `prefsKey`
  * (in memory alone without one) with `foldKey` before each section key
  * so a page drawing several files keeps their folds apart; a
- * property-level `action` beside its control and a section-level `action`
- * at the section head, each calling `callAction(route, method, body)`
- * through `guard` and painting a 422's pointers on the form; every map
+ * property-level `action` beside its control, a subsection-level `action`
+ * at the subsection head over the value of the object property that names
+ * it, and a section-level `action` at the section head, each calling
+ * `callAction(route, method, body)` through `guard` and painting a 422's
+ * pointers on the form; a section whose leaves all sit in subsections and
+ * which carries no action of its own draws no card of its own; every map
  * receives this component as `Sections` so its item dialog draws the
  * item schema's sections and subsections the way the page draws the file's;
  * `nested` (false at the page's own call) tells every map field below it

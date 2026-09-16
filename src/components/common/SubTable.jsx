@@ -491,37 +491,39 @@ const SubTable = ({
     ctx,
   };
   return (
-    <Table striped className="table items-table">
-      <ColumnGroup
-        drawn={drawn}
-        selection={selection}
-        watches={watches}
-        QuickActions={QuickActions}
-        RowActions={RowActions}
-        widths={widths}
-      />
-      <thead>
-        <HeaderRow
+    <div className="items-table-wrap">
+      <Table striped className="table items-table">
+        <ColumnGroup
           drawn={drawn}
           selection={selection}
           watches={watches}
           QuickActions={QuickActions}
           RowActions={RowActions}
-          sort={sort}
-          onSort={onSort}
-          onResize={onResize}
+          widths={widths}
         />
-      </thead>
-      <TableBody
-        rows={rows}
-        groups={groups}
-        collapsed={collapsed}
-        onToggleGroup={onToggleGroup}
-        countKey={countKey}
-        emptyText={emptyText}
-        rowProps={rowProps}
-      />
-    </Table>
+        <thead>
+          <HeaderRow
+            drawn={drawn}
+            selection={selection}
+            watches={watches}
+            QuickActions={QuickActions}
+            RowActions={RowActions}
+            sort={sort}
+            onSort={onSort}
+            onResize={onResize}
+          />
+        </thead>
+        <TableBody
+          rows={rows}
+          groups={groups}
+          collapsed={collapsed}
+          onToggleGroup={onToggleGroup}
+          countKey={countKey}
+          emptyText={emptyText}
+          rowProps={rowProps}
+        />
+      </Table>
+    </div>
   );
 };
 

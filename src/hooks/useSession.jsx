@@ -32,6 +32,7 @@ export const sessionStateShape = PropTypes.shape({
   refresh: PropTypes.func.isRequired,
   reload: PropTypes.func.isRequired,
   savePreferences: PropTypes.func.isRequired,
+  readDeferredFavorites: PropTypes.func.isRequired,
 });
 
 /**
@@ -40,7 +41,9 @@ export const sessionStateShape = PropTypes.shape({
  * claims, the favorites the user menu draws (read once per session
  * through `loadFavorites`, memoized like the claims, reset on sign-out and
  * on every reload, and never read while the current page is one of
- * `returnTo`'s auth paths, a provider's own pending-gate page included),
+ * `returnTo`'s auth paths, a provider's own pending-gate page included;
+ * an adoption on such a page defers the read, and `readDeferredFavorites`
+ * runs it once the app reports the page has left the auth paths),
  * the memberships in the chrome's organization shape,
  * the active organization resolved stored → primary → first and persisted
  * under the app's key, whether `load()` has confirmed the session, the
@@ -73,6 +76,7 @@ export const useSession = ({
   const onAdoptRef = useRef(onAdopt);
   const navigateRef = useRef(navigate);
   const favoritesPromise = useRef(null);
+  const favoritesDeferred = useRef(false);
   const [session, setSession] = useState(() => {
     const restored = provider.restore();
     if (onAdopt) {
@@ -115,10 +119,19 @@ export const useSession = ({
     favoritesPromise.current = pending;
     pending.then(list => {
       if (favoritesPromise.current === pending) {
+        favoritesDeferred.current = false;
         setFavorites(list);
       }
     });
   }, [loadFavorites]);
+
+  const readDeferredFavorites = useCallback(() => {
+    if (!favoritesDeferred.current || !session.user) {
+      return;
+    }
+    favoritesDeferred.current = false;
+    readFavorites();
+  }, [readFavorites, session.user]);
 
   const adopt = useCallback(
     next => {
@@ -134,10 +147,13 @@ export const useSession = ({
       if (next) {
         setEnded(null);
         provider.claims().then(setClaims);
-        if (!returnTo.onAuthPage(window.location.pathname)) {
+        if (returnTo.onAuthPage(window.location.pathname)) {
+          favoritesDeferred.current = true;
+        } else {
           readFavorites();
         }
       } else {
+        favoritesDeferred.current = false;
         setClaims(null);
         setFavorites([]);
       }
@@ -221,5 +237,6 @@ export const useSession = ({
     refresh,
     reload,
     savePreferences: provider.savePreferences,
+    readDeferredFavorites,
   };
 };

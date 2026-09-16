@@ -40,7 +40,7 @@ const ConfigHeading = ({ name, schema, config, ready, onUpdate }) => {
     ? t('configManager.schemaVersion', { version: versionOf(config, schema) })
     : undefined;
   const update = (
-    <button type="button" className="btn btn-link" onClick={onUpdate}>
+    <button type="button" className="btn btn-sm btn-primary" onClick={onUpdate}>
       {t('configManager.buttons.update')}
     </button>
   );

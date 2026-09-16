@@ -47,6 +47,12 @@ export const nameColumn = {
   render: (item, ctx) => {
     const orgName = item.organization.name;
     const text = `${orgName}/${item.name}`;
+    const label = (
+      <>
+        <span className="name-org">{orgName}/</span>
+        {item.name}
+      </>
+    );
     return (
       <>
         <OrgLogo
@@ -57,11 +63,17 @@ export const nameColumn = {
         />
         {itemIcon(item.icon)}
         {ctx.collection.itemRoute ? (
-          <Link to={itemPath(ctx.collection, orgName, item.name)} className="v-align-middle">
-            {text}
+          <Link
+            to={itemPath(ctx.collection, orgName, item.name)}
+            className="v-align-middle"
+            title={text}
+          >
+            {label}
           </Link>
         ) : (
-          <span className="v-align-middle">{text}</span>
+          <span className="v-align-middle" title={text}>
+            {label}
+          </span>
         )}
       </>
     );

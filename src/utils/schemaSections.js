@@ -89,11 +89,32 @@ const placeField = ({ sections, schema, sectionKey, subsection, field }) => {
       key: subsection.key,
       title: subsection.title || subsection.key,
       order: subsection.order,
+      action: subsection.action,
+      pointer: subsection.pointer,
       index: section.subsections.size,
       fields: [],
     });
   }
-  section.subsections.get(subsection.key).fields.push(field);
+  const placed = section.subsections.get(subsection.key);
+  if (!placed.action && subsection.action) {
+    placed.action = subsection.action;
+    placed.pointer = subsection.pointer;
+  }
+  placed.fields.push(field);
+};
+
+const subsectionOf = ({ property, pointer, subsection }) => {
+  if (!property.subsection) {
+    return subsection;
+  }
+  const grouped = property.type === 'object' && Boolean(property.properties);
+  return {
+    key: property.subsection,
+    title: property.title || '',
+    order: typeof property.order === 'number' ? property.order : null,
+    action: grouped && isSchema(property.action) ? property.action : null,
+    pointer: grouped ? pointer : '',
+  };
 };
 
 const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }) => {
@@ -104,13 +125,7 @@ const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }
     }
     const pointer = `${base}/${key}`;
     const section = property.section || sectionKey;
-    const own = property.subsection
-      ? {
-          key: property.subsection,
-          title: property.title || '',
-          order: typeof property.order === 'number' ? property.order : null,
-        }
-      : subsection;
+    const own = subsectionOf({ property, pointer, subsection });
     if (property.type === 'object' && property.properties) {
       walkProperties({
         sections,
@@ -142,7 +157,11 @@ const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }
  * declares one; a top-level property naming no `section` in the section
  * keyed `general`, titled `General`, drawn after every section in
  * `sections`; a subsection titled and ordered by the object property that
- * names it; fields by `order` ascending, a field without `order` after
+ * names it and carrying that object's `pointer` and the `action` declared
+ * on it (null when it declares none, the first declared one winning when
+ * several nested objects name the same subsection), so the config pages
+ * draw the action at the subsection's head over the object's own values;
+ * fields by `order` ascending, a field without `order` after
  * every ordered sibling in schema key order; every field through
  * `fieldOf`; a free subtree the schema does not describe is not drawn;
  * the root `schemaVersion` is never a field of any section, the page
@@ -150,7 +169,7 @@ const walkProperties = ({ sections, schema, node, base, sectionKey, subsection }
  * leaf it would be is not drawn.
  *
  * @param {Object} schema - The file's schema from `GET /api/config/<name>/schema`
- * @returns {Array<{ key: string, title: string, action: Object|null, fields: Array<Object>, subsections: Array<{ key: string, title: string, fields: Array<Object> }> }>}
+ * @returns {Array<{ key: string, title: string, action: Object|null, fields: Array<Object>, subsections: Array<{ key: string, title: string, action: Object|null, pointer: string, fields: Array<Object> }> }>}
  */
 export const schemaSections = schema => {
   const sections = new Map();
@@ -160,7 +179,7 @@ export const schemaSections = schema => {
     node: schema,
     base: '',
     sectionKey: GENERAL_KEY,
-    subsection: { key: '', title: '', order: null },
+    subsection: { key: '', title: '', order: null, action: null, pointer: '' },
   });
   return [...sections.values()].sort(bySection).map(section => ({
     key: section.key,
@@ -170,6 +189,8 @@ export const schemaSections = schema => {
     subsections: [...section.subsections.values()].sort(byOrder).map(subsection => ({
       key: subsection.key,
       title: subsection.title,
+      action: subsection.action,
+      pointer: subsection.pointer,
       fields: [...subsection.fields].sort(byOrder),
     })),
   }));

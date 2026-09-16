@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
 import AppShell from '../components/layout/AppShell';
@@ -75,7 +75,9 @@ const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeO
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
  * identity-provider one), the profile reload and
- * the terminate stream a backend session keeps, the ticket link, the
+ * the terminate stream a backend session keeps, the favorites read the
+ * session deferred while it was adopted on an auth path, run the first
+ * time the route leaves those paths, the ticket link, the
  * notification adapters (the inbox one handed to the shell's bell and to
  * the inbox route alike, its unread count in the notifications feature's
  * one context around them both), the sidebar entries the mounted
@@ -84,6 +86,7 @@ const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeO
 const App = ({ getSupportedLanguages }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
@@ -108,6 +111,7 @@ const App = ({ getSupportedLanguages }) => {
     reload,
     oidc,
     issuerUrl,
+    readDeferredFavorites,
   } = account;
   const {
     theme,
@@ -135,6 +139,11 @@ const App = ({ getSupportedLanguages }) => {
   });
   useAccountPreferences({ user, setThemePreference });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
+  useEffect(() => {
+    if (!returnTo.onAuthPage(location.pathname)) {
+      readDeferredFavorites();
+    }
+  }, [location.pathname, readDeferredFavorites]);
   const sidebar = useMemo(
     () => sidebarEntries({ status, account: { user, oidc, issuerUrl } }),
     [status, user, oidc, issuerUrl]

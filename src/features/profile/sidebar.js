@@ -31,15 +31,6 @@ const BACKEND_CHILDREN = ({ status, account }) => {
     labelKey: 'profile.tabs.organizations',
     to: '/profile/organizations',
   });
-  if (account?.oidc && account?.issuerUrl) {
-    children.push({
-      key: 'manageAtIdp',
-      icon: FaUser,
-      labelKey: 'profile.manageAtIdp',
-      to: `${account.issuerUrl}/user/profile`,
-      external: true,
-    });
-  }
   children.push({
     key: 'serviceAccounts',
     icon: FaKey,
@@ -115,8 +106,7 @@ const PROFILE_CHILDREN = [
  * on a `backend` host the same Account group over that host's own profile
  * routes, Profile at `/profile` with Security (`/profile/security`, while
  * the host advertises `local-accounts` and the session is not the identity
- * provider's), Organizations (`/profile/organizations`), the external
- * manage-at-the-provider row for an identity-provider session and Service
+ * provider's), Organizations (`/profile/organizations`) and Service
  * accounts (`/profile/service-accounts`) as its children, so one profile
  * shape serves both; nothing on any other host.
  *

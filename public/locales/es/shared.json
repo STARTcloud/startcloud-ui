@@ -202,7 +202,6 @@
   },
   "profile": {
     "pageTitle": "Perfil",
-    "manageAtIdp": "Administrar en el proveedor de identidad",
     "noJobTitle": "Sin Título de Trabajo",
     "unknown": "Desconocido",
     "tabs": {
@@ -1911,8 +1910,6 @@
       "kind": "Tipo",
       "language": "Idioma",
       "variant": "Variante",
-      "fileName": "Nombre del archivo",
-      "key": "Clave",
       "resize": "Cambiar el ancho de la columna",
       "resizeHint": "Arrastra para cambiar el ancho, doble clic para restablecer"
     },

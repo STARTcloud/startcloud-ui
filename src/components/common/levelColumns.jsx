@@ -307,7 +307,9 @@ const wordColumn = (key, labelKey, group) => ({
 
 /**
  * The columns the files table of a downloads patch draws, the level whose
- * row is one file: its key, the name it was uploaded with, its kind,
+ * row is one file: one Name column, the name it was uploaded with and, only
+ * when the key differs from it, the key as a small code beside it (the
+ * shape `labelColumn` gives the catalog's label and slug), its kind,
  * platform, architecture and language, the size, the checksum and the
  * tokened download with its count.
  *
@@ -316,16 +318,17 @@ const wordColumn = (key, labelKey, group) => ({
  */
 export const fileLevelColumns = () => [
   {
-    key: 'key',
-    labelKey: 'pages.table.key',
-    sortValue: file => file.name.toLowerCase(),
-    render: file => file.name,
-  },
-  {
-    key: 'fileName',
-    labelKey: 'pages.table.fileName',
-    sortValue: file => (file.fileName || '').toLowerCase(),
-    render: file => file.fileName || '',
+    key: 'name',
+    labelKey: 'pages.table.name',
+    sortValue: file => (file.fileName || file.name).toLowerCase(),
+    render: file => (
+      <>
+        {file.fileName || file.name}
+        {file.fileName && file.fileName !== file.name ? (
+          <code className="checksum ms-2">{file.name}</code>
+        ) : null}
+      </>
+    ),
   },
   wordColumn('kind', 'pages.table.kind', 'kind'),
   wordColumn('platform', 'pages.table.platform', 'platform'),
