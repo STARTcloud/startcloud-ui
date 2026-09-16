@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.1...v0.18.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* a step-up keeps the person on the sign-in page, the live session no longer sent home, so prompt=login and an expired max_age reauthenticate and the parked authorize request is followed ([e900265](https://github.com/STARTcloud/startcloud-ui/commit/e90026581a27336749646088f92a6f03773ddf54))
+
 ## [0.18.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.0...v0.18.1) (2026-09-16)
 
 
