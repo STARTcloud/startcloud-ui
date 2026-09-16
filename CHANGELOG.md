@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.4](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.3...v0.18.4) (2026-09-16)
+
+
+### Bug Fixes
+
+* every table column fixed on a colgroup with a trailing spacer taking the leftover width, so Boxes, ISOs and Downloads line up cell for cell whatever is hidden and a resized column moves the spacer alone ([8c835ef](https://github.com/STARTcloud/startcloud-ui/commit/8c835ef5cfdad3c43ff975e8dfa7af7b972b4d88))
+
 ## [0.18.3](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.2...v0.18.3) (2026-09-16)
 
 
