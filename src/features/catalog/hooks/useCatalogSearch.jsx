@@ -8,7 +8,7 @@ import {
   defaultMatches,
   filterGroupsOf,
 } from '../../../utils/itemShape';
-import { emptyFilters, readPrefs, toggleIn, writePrefs } from '../../../utils/prefs';
+import { emptyFilters, readPrefs, toggleIn, withWidth, writePrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
 
 const groupShown = (group, { signedIn, org, items }) =>
@@ -158,8 +158,10 @@ const columnsGroup = ({ collection, hidden, prefixed, setPrefs, t }) => ({
  * own groups follow them and, in list view, a Columns group per collection
  * that shows or hides that table's columns. Watched ids arrive as one Set per
  * collection key, because item ids only mean something inside their own
- * collection. Filters, sort, the one view, the hidden columns and the
- * collapsed groups persist per page under the app's prefs prefix.
+ * collection. Filters, sort, the one view, the hidden columns, the column
+ * widths (per collection, set through `setColumnWidth(collectionKey,
+ * column, pixels)`, null resetting one) and the collapsed groups persist
+ * per page under the app's prefs prefix.
  */
 export const useCatalogSearch = ({
   collections,
@@ -264,6 +266,15 @@ export const useCatalogSearch = ({
       },
     }));
 
+  const setColumnWidth = (collectionKey, column, pixels) =>
+    setPrefs(current => ({
+      ...current,
+      widths: {
+        ...current.widths,
+        [collectionKey]: withWidth(current.widths[collectionKey], column, pixels),
+      },
+    }));
+
   const setView = view => setPrefs(current => ({ ...current, view }));
 
   const toggleCollapsed = groupKey =>
@@ -283,5 +294,7 @@ export const useCatalogSearch = ({
     collapsed: prefs.collapsed,
     toggleCollapsed,
     hiddenColumns: prefs.hiddenColumns,
+    widths: prefs.widths,
+    setColumnWidth,
   };
 };

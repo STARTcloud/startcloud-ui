@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import FieldError from '../../../components/common/FieldError';
@@ -26,11 +26,16 @@ const scopeRows = (scopes, t) =>
   }));
 
 /**
- * `/oauth2/consent`: the client, the scopes as checked rows with `openid`
- * locked, the authorization details, Approve and Deny as one real form
- * post to the answer's `action` through `NativeForm`, Approve refusing
- * inline while no scope is checked, and "You are logged in as … Not you?
- * Sign out", which posts `/auth-cancel` and follows its `next`.
+ * `/oauth2/consent`: the client, the requested scopes not yet granted as
+ * checked rows with `openid` locked, the requested scopes already granted
+ * as read-only rows under "Already allowed" with a "Manage permissions"
+ * link to `/user/applications` where a granted scope is taken back, the
+ * authorization details, Approve and Deny as one real form post to the
+ * answer's `action` through `NativeForm`, Approve refusing inline only
+ * while `scopes` is non-empty and none of its rows is checked, so a
+ * consent whose scopes were granted once approves its details on the
+ * first click (decision 165), and "You are logged in as … Not you? Sign
+ * out", which posts `/auth-cancel` and follows its `next`.
  */
 const ConsentPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -87,7 +92,7 @@ const ConsentPage = ({ returnTo }) => {
       });
       return;
     }
-    if (checked.length === 0) {
+    if ((answer?.scopes || []).length > 0 && checked.length === 0) {
       event.preventDefault();
       setNoScope(true);
     }
@@ -99,6 +104,7 @@ const ConsentPage = ({ returnTo }) => {
       .catch(error => setProblem(report(error)));
 
   const scopes = answer ? scopeRows(answer.scopes, t) : [];
+  const granted = answer ? scopeRows(answer.granted_scopes, t) : [];
   const details = answer?.authorization_details || [];
 
   return (
@@ -119,10 +125,30 @@ const ConsentPage = ({ returnTo }) => {
           onSubmit={submit}
         >
           {answer.consent_text ? <p className="auth-note">{answer.consent_text}</p> : null}
-          <p className="auth-group">{t('consent.willBeAbleTo')}</p>
-          <ScopeList scopes={scopes} checked={checked} onToggle={toggle} locked={LOCKED} />
+          {scopes.length > 0 ? (
+            <>
+              <p className="auth-group">{t('consent.willBeAbleTo')}</p>
+              <ScopeList scopes={scopes} checked={checked} onToggle={toggle} locked={LOCKED} />
+            </>
+          ) : null}
           {noScope && checked.length === 0 ? (
             <FieldError id="consent-no-scope" message={t('consent.noScope')} />
+          ) : null}
+          {granted.length > 0 ? (
+            <>
+              <p className="auth-group">
+                {t('consent.alreadyAllowed')}{' '}
+                <Link to="/user/applications" className="auth-link">
+                  {t('consent.managePermissions')}
+                </Link>
+              </p>
+              <ScopeList
+                scopes={granted}
+                checked={granted.map(scope => scope.id)}
+                locked={granted.map(scope => scope.id)}
+                readOnly
+              />
+            </>
           ) : null}
           {details.length > 0 ? (
             <>

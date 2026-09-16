@@ -8,6 +8,7 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import SubTable from '../../../components/common/SubTable';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -15,10 +16,12 @@ import { useArrival } from '../../../hooks/useArrival';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { useTablePrefs } from '../../../hooks/useTablePrefs';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
 import { isOwner } from '../../../utils/membership';
 import { membershipsOf, organizationsShape } from '../../../utils/organizations';
+import { sortItems } from '../../../utils/sort';
 import { issuerOrganizationsShape } from '../api/issuer';
 
 import IssuerOrgConsole from './IssuerOrgConsole';
@@ -26,6 +29,38 @@ import IssuerOrgConsole from './IssuerOrgConsole';
 const NO_FILTERS = [];
 const clearNothing = () => undefined;
 const PREFS_KEY = 'table_prefs_org_console';
+const REQUESTS_PREFS_KEY = 'table_prefs_org_console_requests';
+const INVITATIONS_PREFS_KEY = 'table_prefs_org_console_invitations';
+
+const localeDate = value => new Date(value).toLocaleDateString();
+const localeTime = value => new Date(value).toLocaleString();
+
+const JOIN_REQUEST_COLUMNS = [
+  {
+    key: 'user',
+    labelKey: 'orgConsole.joinRequest.user',
+    sortValue: request => request.user.username.toLowerCase(),
+    render: request => <strong>{request.user.username}</strong>,
+  },
+  {
+    key: 'email',
+    labelKey: 'orgConsole.joinRequest.email',
+    sortValue: request => (request.user.email || '').toLowerCase(),
+    render: request => request.user.email,
+  },
+  {
+    key: 'message',
+    labelKey: 'orgConsole.joinRequest.message',
+    sortValue: request => (request.message || '').toLowerCase(),
+    render: (request, ctx) => request.message || ctx.t('orgConsole.joinRequest.noMessage'),
+  },
+  {
+    key: 'requested',
+    labelKey: 'orgConsole.joinRequest.requested',
+    sortValue: request => new Date(request.created_at || 0).getTime(),
+    render: request => localeDate(request.created_at),
+  },
+];
 
 export const ORG_CONSOLE_SEGMENTS = ['members', 'requests'];
 
@@ -355,66 +390,130 @@ InvitationLinkCell.propTypes = {
   orgIdpLink: PropTypes.string,
 };
 
-const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny, rowRef }) => {
-  const { t } = useTranslation();
+const INVITATION_COLUMNS = [
+  {
+    key: 'email',
+    labelKey: 'orgConsole.invitation.email',
+    sortValue: invitation => invitation.email.toLowerCase(),
+    render: invitation => invitation.email,
+  },
+  {
+    key: 'expires',
+    labelKey: 'orgConsole.invitation.expires',
+    sortValue: invitation => new Date(invitation.expires || 0).getTime(),
+    render: invitation => localeTime(invitation.expires),
+  },
+  {
+    key: 'accepted',
+    labelKey: 'orgConsole.invitation.accepted',
+    sortValue: invitation => (invitation.accepted ? 0 : 1),
+    render: (invitation, ctx) => (
+      <>
+        {invitation.accepted ? ctx.t('yes') : ctx.t('no')}
+        {invitation.accepted_at ? (
+          <small className="text-body-secondary d-block">
+            {localeTime(invitation.accepted_at)}
+          </small>
+        ) : null}
+      </>
+    ),
+  },
+  {
+    key: 'expired',
+    labelKey: 'orgConsole.invitation.expired',
+    sortValue: invitation => (invitation.expired ? 0 : 1),
+    render: (invitation, ctx) => (invitation.expired ? ctx.t('yes') : ctx.t('no')),
+  },
+  {
+    key: 'link',
+    labelKey: 'orgConsole.invitation.link',
+    render: (invitation, ctx) => (
+      <InvitationLinkCell invitation={invitation} orgIdpLink={ctx.orgIdpLink} />
+    ),
+  },
+];
 
+const JoinRequestActions = ({ request, onApprove, onDeny }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="btn-group" role="group">
+      <button
+        type="button"
+        className="btn btn-success btn-sm"
+        onClick={() => onApprove(request.id, 'member')}
+      >
+        {t('orgConsole.joinRequest.approveAsMember')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-warning btn-sm"
+        onClick={() => onApprove(request.id, 'admin')}
+      >
+        {t('orgConsole.joinRequest.approveAsAdmin')}
+      </button>
+      <button type="button" className="btn btn-danger btn-sm" onClick={() => onDeny(request.id)}>
+        {t('orgConsole.joinRequest.deny')}
+      </button>
+    </div>
+  );
+};
+
+JoinRequestActions.propTypes = {
+  request: PropTypes.object.isRequired,
+  onApprove: PropTypes.func.isRequired,
+  onDeny: PropTypes.func.isRequired,
+};
+
+const InvitationActions = ({ invitation, onDelete }) => {
+  const { t } = useTranslation();
+  return (
+    <button type="button" className="btn btn-danger btn-sm" onClick={() => onDelete(invitation)}>
+      {t('orgConsole.buttons.delete')}
+    </button>
+  );
+};
+
+InvitationActions.propTypes = {
+  invitation: PropTypes.object.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+const tablePrefsShape = PropTypes.shape({
+  sort: PropTypes.array.isRequired,
+  setSort: PropTypes.func.isRequired,
+  hiddenColumns: PropTypes.instanceOf(Set).isRequired,
+  widths: PropTypes.object.isRequired,
+  setColumnWidth: PropTypes.func.isRequired,
+});
+
+/**
+ * The Join requests tab's list: its `SectionHeading` and one `SubTable`
+ * over the requests left by the navbar query, sorted by the header stack
+ * of `prefs`, Approve as member, Approve as admin and Deny on every row,
+ * each row registered with `rowRef`, the arrival's ref, so a hash naming a
+ * request scrolls its row into view and focuses it.
+ */
+const JoinRequestsTab = ({ joinRequests, emptyText, prefs, onApprove, onDeny, rowRef }) => {
+  const { t } = useTranslation();
   return (
     <>
       <SectionHeading title={t('orgConsole.joinRequest.title')} count={joinRequests.length} />
-      {joinRequests.length === 0 ? (
-        <div className="alert alert-info">{emptyText}</div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t('orgConsole.joinRequest.user')}</th>
-                <th>{t('orgConsole.joinRequest.email')}</th>
-                <th>{t('orgConsole.joinRequest.message')}</th>
-                <th>{t('orgConsole.joinRequest.requested')}</th>
-                <th>{t('orgConsole.joinRequest.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {joinRequests.map(request => (
-                <tr key={request.id} ref={rowRef(request.id)} tabIndex={-1}>
-                  <td>
-                    <strong>{request.user.username}</strong>
-                  </td>
-                  <td>{request.user.email}</td>
-                  <td>{request.message || t('orgConsole.joinRequest.noMessage')}</td>
-                  <td>{new Date(request.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <div className="btn-group" role="group">
-                      <button
-                        type="button"
-                        className="btn btn-success btn-sm"
-                        onClick={() => onApprove(request.id, 'member')}
-                      >
-                        {t('orgConsole.joinRequest.approveAsMember')}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-warning btn-sm"
-                        onClick={() => onApprove(request.id, 'admin')}
-                      >
-                        {t('orgConsole.joinRequest.approveAsAdmin')}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => onDeny(request.id)}
-                      >
-                        {t('orgConsole.joinRequest.deny')}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <SubTable
+        columns={JOIN_REQUEST_COLUMNS}
+        rows={sortItems(joinRequests, prefs.sort, JOIN_REQUEST_COLUMNS)}
+        rowKey={request => request.id}
+        rowRef={rowRef}
+        RowActions={JoinRequestActions}
+        actionsProps={{ onApprove, onDeny }}
+        rowProp="request"
+        sort={prefs.sort}
+        onSort={prefs.setSort}
+        hiddenColumns={prefs.hiddenColumns}
+        widths={prefs.widths}
+        onResize={prefs.setColumnWidth}
+        ctx={{ t }}
+        emptyText={emptyText}
+      />
     </>
   );
 };
@@ -422,68 +521,42 @@ const JoinRequestsTab = ({ joinRequests, emptyText, onApprove, onDeny, rowRef })
 JoinRequestsTab.propTypes = {
   joinRequests: PropTypes.array.isRequired,
   emptyText: PropTypes.string.isRequired,
+  prefs: tablePrefsShape.isRequired,
   onApprove: PropTypes.func.isRequired,
   onDeny: PropTypes.func.isRequired,
   rowRef: PropTypes.func.isRequired,
 };
 
-const InvitationsTable = ({ invitations, emptyText, orgIdpLink, onDelete }) => {
+/**
+ * The active invitations as one `SubTable`, sorted by the header stack of
+ * `prefs`, the link cell drawing the invitation link, the provider link or
+ * the managed-by-provider note, and Delete on every row.
+ */
+const InvitationsTable = ({ invitations, emptyText, prefs, orgIdpLink, onDelete }) => {
   const { t } = useTranslation();
-
-  if (invitations.length === 0) {
-    return <div className="alert alert-info">{emptyText}</div>;
-  }
-
   return (
-    <div className="table-responsive">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>{t('orgConsole.invitation.email')}</th>
-            <th>{t('orgConsole.invitation.expires')}</th>
-            <th>{t('orgConsole.invitation.accepted')}</th>
-            <th>{t('orgConsole.invitation.expired')}</th>
-            <th>{t('orgConsole.invitation.link')}</th>
-            <th>{t('orgConsole.invitation.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invitations.map(invitation => (
-            <tr key={invitation.id}>
-              <td>{invitation.email}</td>
-              <td>{new Date(invitation.expires).toLocaleString()}</td>
-              <td>
-                {invitation.accepted ? t('yes') : t('no')}
-                {invitation.accepted_at && (
-                  <small className="text-body-secondary d-block">
-                    {new Date(invitation.accepted_at).toLocaleString()}
-                  </small>
-                )}
-              </td>
-              <td>{invitation.expired ? t('yes') : t('no')}</td>
-              <td>
-                <InvitationLinkCell invitation={invitation} orgIdpLink={orgIdpLink} />
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => onDelete(invitation)}
-                >
-                  {t('orgConsole.buttons.delete')}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <SubTable
+      columns={INVITATION_COLUMNS}
+      rows={sortItems(invitations, prefs.sort, INVITATION_COLUMNS)}
+      rowKey={invitation => invitation.id}
+      RowActions={InvitationActions}
+      actionsProps={{ onDelete }}
+      rowProp="invitation"
+      sort={prefs.sort}
+      onSort={prefs.setSort}
+      hiddenColumns={prefs.hiddenColumns}
+      widths={prefs.widths}
+      onResize={prefs.setColumnWidth}
+      ctx={{ t, orgIdpLink }}
+      emptyText={emptyText}
+    />
   );
 };
 
 InvitationsTable.propTypes = {
   invitations: PropTypes.array.isRequired,
   emptyText: PropTypes.string.isRequired,
+  prefs: tablePrefsShape.isRequired,
   orgIdpLink: PropTypes.string,
   onDelete: PropTypes.func.isRequired,
 };
@@ -498,7 +571,12 @@ InvitationsTable.propTypes = {
  * tabs number one, the record form and the invitation form each a
  * `SectionCard` whose fold is kept under `table_prefs_org_console`, the
  * members, the join requests and the active invitations glass lists under
- * a `SectionHeading` (the pages contract's frame rule), each tab's list
+ * a `SectionHeading` (the pages contract's frame rule), the two lists
+ * `SubTable`s whose sort and column widths persist under
+ * `table_prefs_org_console_requests` and
+ * `table_prefs_org_console_invitations`, a hash naming a join request
+ * scrolling its row into view and focusing it once through `useArrival`,
+ * each tab's list
  * searched from the navbar, every call through the app's `organizations`
  * adapter; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
@@ -533,6 +611,8 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const [orgDisplayName, setOrgDisplayName] = useState('');
   const [activeTab, setActiveTab] = useState(() => TAB_OF_SEGMENT[tab] || 'organization');
   const folds = useFolds(PREFS_KEY);
+  const requestPrefs = useTablePrefs(REQUESTS_PREFS_KEY, JOIN_REQUEST_COLUMNS);
+  const invitationPrefs = useTablePrefs(INVITATIONS_PREFS_KEY, INVITATION_COLUMNS);
   const memberArrival = useArrival(users);
   const requestArrival = useArrival(joinRequests);
   const current = session.restore();
@@ -1085,6 +1165,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
               <JoinRequestsTab
                 joinRequests={filteredJoinRequests}
                 emptyText={emptyTextFor(t, searchTerm, 'orgConsole.joinRequest.noRequests')}
+                prefs={requestPrefs}
                 onApprove={handleApproveJoinRequest}
                 onDeny={handleDenyJoinRequest}
                 rowRef={requestArrival.ref}
@@ -1169,6 +1250,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
               <InvitationsTable
                 invitations={filteredInvitations}
                 emptyText={emptyTextFor(t, searchTerm, 'orgConsole.invitation.noActive')}
+                prefs={invitationPrefs}
                 orgIdpLink={orgIdpLink}
                 onDelete={handleDeleteClick}
               />

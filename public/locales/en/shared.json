@@ -1087,11 +1087,13 @@
       "added": "The copy is added.",
       "deleted": "{{name}} is deleted.",
       "deleteTitle": "Delete the copy",
-      "deleteBody": "{{name}} loses this copy for good; its mail falls back to the next copy or the generic text. Type \"{{keyword}}\" to confirm.",
+      "deleteBody": "{{name}} loses this copy for good; its mail falls back to the next copy. Type \"{{keyword}}\" to confirm.",
       "editTitle": "Edit · {{name}}",
       "addCopy": "Add a copy",
       "addTitle": "Add a copy · {{name}}",
-      "noCopies": "No copies; sent from the generic text.",
+      "errors": {
+        "default_copy": "The default copy is the kind's generic text; edit it, it cannot be deleted."
+      },
       "arguments": "Arguments:",
       "insertArgument": "Insert {{name}}",
       "previewTitle": "Preview",
@@ -1112,10 +1114,11 @@
         "delete": "Delete",
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
-        "confirmBody": "{{count}} selected kinds lose every copy for good. Type \"{{keyword}}\" to confirm.",
+        "confirmBody": "{{count}} selected kinds lose every copy but the default for good. Type \"{{keyword}}\" to confirm.",
         "stepUpReason": "Deleting copies removes them for good.",
         "errors": {
-          "not_found": "no longer exists"
+          "not_found": "no longer exists",
+          "default_copy": "default copy, never deleted"
         }
       }
     },
@@ -1908,7 +1911,9 @@
       "language": "Language",
       "variant": "Variant",
       "fileName": "File name",
-      "key": "Key"
+      "key": "Key",
+      "resize": "Resize column",
+      "resizeHint": "Drag to resize, double-click to reset"
     },
     "status": {
       "published": "Published",

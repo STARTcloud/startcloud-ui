@@ -299,6 +299,8 @@ const SessionsPage = () => {
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
+          widths={search.widths}
+          onResize={search.setColumnWidth}
           ctx={{ t, language: i18n.language }}
           emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
           selection={selection.subtable}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { sortStackOf, toggleIn } from '../../../utils/prefs';
+import { sortStackOf, toggleIn, widthsOf, withWidth } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
 import { CACHE_KEYS, cacheKey } from '../utils/cacheLevel';
 import {
@@ -71,11 +71,12 @@ const readPrefs = (key, columns) => {
     filters: filtersOf(saved.filters),
     sort: sortStackOf(saved.sort),
     hiddenColumns: setOf(saved.hiddenColumns ?? defaultHidden(columns)),
+    widths: widthsOf(saved.widths),
     poolsCollapsed: Boolean(saved.poolsCollapsed),
   };
 };
 
-const writePrefs = (key, { filters, sort, hiddenColumns, poolsCollapsed }) => {
+const writePrefs = (key, { filters, sort, hiddenColumns, widths, poolsCollapsed }) => {
   const plain = {};
   TRISTATE.forEach(dimension => {
     plain[dimension] = {
@@ -88,7 +89,13 @@ const writePrefs = (key, { filters, sort, hiddenColumns, poolsCollapsed }) => {
   });
   localStorage.setItem(
     key,
-    JSON.stringify({ filters: plain, sort, hiddenColumns: [...hiddenColumns], poolsCollapsed })
+    JSON.stringify({
+      filters: plain,
+      sort,
+      hiddenColumns: [...hiddenColumns],
+      widths,
+      poolsCollapsed,
+    })
   );
 };
 
@@ -341,7 +348,8 @@ const filtering = (needle, filters) =>
  * and UDS user; the groups Status and Pool (tristate, a pill cycling
  * neutral → include → exclude), Session, Cache, Drives and Publication,
  * then Columns; the sort stack over the given columns with hostname as
- * the tiebreak; every choice and the pool fold persisted under `prefsKey`.
+ * the tiebreak; the column widths with their setter; every choice, the
+ * widths and the pool fold persisted under `prefsKey`.
  * A `pool` or `session` member of the route's query, the routes the
  * sidebar tree's pool and session-state nodes carry, is laid over the
  * saved filters as the Pool include or the Session filter while present.
@@ -351,7 +359,7 @@ const filtering = (needle, filters) =>
  * @param {number} options.now - The reference epoch in milliseconds
  * @param {Array<Object>} options.columns - The fleet table's columns
  * @param {string} options.prefsKey - The localStorage key
- * @returns {Object} `rows`, `total`, `filtering`, `sort`, `setSort`, `resetSort`, `hiddenColumns`, `filterState`, `cycleFilter`, `poolsCollapsed`, `togglePools`
+ * @returns {Object} `rows`, `total`, `filtering`, `sort`, `setSort`, `resetSort`, `hiddenColumns`, `widths`, `setColumnWidth`, `filterState`, `cycleFilter`, `poolsCollapsed`, `togglePools`
  */
 export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
   const { t } = useTranslation();
@@ -414,6 +422,9 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
       setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) })),
     resetSort: () => setPrefs(current => ({ ...current, sort: [] })),
     hiddenColumns: prefs.hiddenColumns,
+    widths: prefs.widths,
+    setColumnWidth: (column, pixels) =>
+      setPrefs(current => ({ ...current, widths: withWidth(current.widths, column, pixels) })),
     filterState,
     cycleFilter: (dimension, value) =>
       setPrefs(current => ({

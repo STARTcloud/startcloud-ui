@@ -625,6 +625,34 @@
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
     overflow: hidden;
+    position: relative;
+  }
+  .grid .th .rz {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    right: 0;
+    width: 5px;
+    border-right: 2px solid transparent;
+    cursor: col-resize;
+  }
+  .grid .th:hover .rz {
+    border-right-color: var(--border);
+  }
+  .grid .th .rz.on {
+    border-right-color: var(--primary);
+  }
+  .grid .th .rz-tip {
+    position: absolute;
+    top: -22px;
+    right: -18px;
+    font-size: 10px;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--primary);
+    color: #fff;
   }
   .grid .td {
     padding: 7px 8px;
@@ -4071,9 +4099,13 @@
             <span class="th"
               ><input type="checkbox" class="check-all" title="Select all on this page"
             /></span>
-            <span class="th">Email</span><span class="th">Status</span><span class="th">2FA</span
-            ><span class="th">Actions</span> <span class="td odd">☐</span
-            ><span class="td first odd">ada@startcloud.com</span
+            <span class="th"
+              >Email<span class="rz on" title="Drag to resize · double-click to reset"
+                ><span class="rz-tip">312px</span></span
+              ></span
+            ><span class="th">Status<span class="rz"></span></span
+            ><span class="th">2FA<span class="rz"></span></span><span class="th">Actions</span>
+            <span class="td odd">☐</span><span class="td first odd">ada@startcloud.com</span
             ><span class="td odd"><span class="status success">Active</span></span
             ><span class="td odd">Yes</span
             ><span class="td odd"
@@ -4640,6 +4672,14 @@
       <div class="callout">
         <strong>Arrival on a row:</strong> a hash names the row, the page scrolls it into view and
         moves focus to it, nothing painted (pages contract, Arrival on a row).
+      </div>
+      <div class="callout changed">
+        <strong>Every column resizes.</strong> One table component draws every table of the estate,
+        and each header cell but the select, star, quick-actions and Actions cells carries a handle
+        on its right edge: the handle shows on hover, a drag changes that column's width alone (the
+        pixel width shown while dragging), a double-click resets it to the stylesheet's width, and
+        the widths persist per page under <code>table_prefs_*</code> beside sort, hidden columns and
+        per page; a hidden column keeps its width for when it returns.
       </div>
     </div>
   </div>

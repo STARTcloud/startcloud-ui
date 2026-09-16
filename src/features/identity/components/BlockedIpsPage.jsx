@@ -8,15 +8,14 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useTablePrefs } from '../../../hooks/useTablePrefs';
 import { bruteForce, unblock, unblockAll, unblockBulk } from '../api/security';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { BRUTE_FORCE } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
 
-const NO_SORT = [];
-const NO_HIDDEN = new Set();
-const noSort = () => undefined;
+const PREFS_KEY = 'table_prefs_admin_blocked';
 
 const columns = [
   {
@@ -153,8 +152,9 @@ BulkActions.propTypes = {
  * confirm, the table's select column a real checkbox header, the
  * select-all for the page, the per-row Unblock behind its own confirm,
  * and the heading's action pane gaining, while rows are picked, "N
- * selected", Clear selection and Unblock beside Unblock all; the
- * sidebar's badge is the shell's, from the `admin` topic's
+ * selected", Clear selection and Unblock beside Unblock all; the table's
+ * sort, hidden columns and column widths under `table_prefs_admin_blocked`;
+ * the sidebar's badge is the shell's, from the `admin` topic's
  * `blocked-count`.
  */
 const BlockedIpsPage = () => {
@@ -165,6 +165,7 @@ const BlockedIpsPage = () => {
   const [unblockingAll, setUnblockingAll] = useState(false);
   const blockedRows = useMemo(() => data?.blocked || [], [data]);
   const selection = useSelection(blockedRows);
+  const prefs = useTablePrefs(PREFS_KEY, columns);
 
   useEffect(() => {
     document.title = t('admin.blocked.title');
@@ -243,9 +244,11 @@ const BlockedIpsPage = () => {
         RowActions={RowActions}
         actionsProps={{ onUnblock: setUnblocking }}
         rowProp="entry"
-        sort={NO_SORT}
-        onSort={noSort}
-        hiddenColumns={NO_HIDDEN}
+        sort={prefs.sort}
+        onSort={prefs.setSort}
+        hiddenColumns={prefs.hiddenColumns}
+        widths={prefs.widths}
+        onResize={prefs.setColumnWidth}
         ctx={{ t, language: i18n.language }}
         emptyText={t('pages.empty')}
         selection={selection.subtable}

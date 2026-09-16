@@ -219,13 +219,15 @@ VmDetail.propTypes = {
  * the stack, the hostname linking to the VM's page beside a fold that
  * opens the inline detail with its Overview, Metrics (while Grafana is
  * enabled), History and Stats tabs; rows dimmed as standby, no-session or
- * decommissioned.
+ * decommissioned; every column resized through `widths` and `onResize`.
  */
 const FleetTable = ({
   rows,
   sort,
   onSort,
   hiddenColumns,
+  widths,
+  onResize,
   expanded,
   onToggleExpanded,
   pools,
@@ -249,6 +251,8 @@ const FleetTable = ({
       sort={sort}
       onSort={onSort}
       hiddenColumns={hiddenColumns}
+      widths={widths}
+      onResize={onResize}
       ctx={ctx}
       emptyText={t(filtering ? 'pages.noMatches' : 'vdi.empty.title')}
     />
@@ -260,6 +264,8 @@ FleetTable.propTypes = {
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,
+  widths: PropTypes.objectOf(PropTypes.number).isRequired,
+  onResize: PropTypes.func.isRequired,
   expanded: PropTypes.instanceOf(Set).isRequired,
   onToggleExpanded: PropTypes.func.isRequired,
   pools: PropTypes.object.isRequired,

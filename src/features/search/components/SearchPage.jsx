@@ -109,6 +109,8 @@ const KindSection = ({ kind, rows, columns, search, collection, ctx }) => {
         sort={search.sort}
         onSort={search.setSort}
         hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
         ctx={ctx}
         emptyText={t('pages.noMatches')}
       />

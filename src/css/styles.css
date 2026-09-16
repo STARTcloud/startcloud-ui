@@ -1407,6 +1407,57 @@ button::-moz-focus-inner {
 
 .items-table th {
   white-space: nowrap;
+  position: relative;
+}
+
+.items-table th.col-sized {
+  width: var(--col-width);
+}
+
+.items-table th:has(.col-resize.dragging) {
+  overflow: visible;
+}
+
+.col-resize {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  right: 0;
+  width: 6px;
+  padding: 0;
+  border: 0;
+  border-right: 2px solid transparent;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.items-table th:hover .col-resize {
+  border-right-color: var(--bs-border-color);
+}
+
+.col-resize.dragging {
+  border-right-color: var(--bs-primary);
+}
+
+.col-resize:focus-visible {
+  outline: 0;
+  border-right-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.25rem var(--brand-focus-ring);
+}
+
+.col-resize-tip {
+  position: absolute;
+  top: -22px;
+  right: -18px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bs-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
 }
 
 .items-table .col-watch,

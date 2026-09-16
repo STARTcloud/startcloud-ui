@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { readDetailPrefs, toggleIn, writeDetailPrefs } from '../../../utils/prefs';
+import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
 
 const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
@@ -43,7 +43,8 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * published as `matched` with no `total`, since the server alone narrows
  * and a count over the page held would lie. Answers the page's rows in
  * the active sort order, the sort with its setter, the hidden column
- * keys and the page size with its setter, persisted under `prefsKey`.
+ * keys, the column widths with their setter and the page size with its
+ * setter, persisted under `prefsKey`.
  *
  * @param {Object} options
  * @param {string} options.query - The query the page holds
@@ -58,7 +59,7 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * @param {Array} options.rows - The rows the list answered
  * @param {Array} options.columns - The table's columns
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
- * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set, size: number, setSize: Function }} The search state
+ * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, size: number, setSize: Function }} The search state
  */
 export const useListSearch = ({
   query,
@@ -105,6 +106,9 @@ export const useListSearch = ({
   const setSort = (column, options) =>
     setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) }));
 
+  const setColumnWidth = (column, pixels) =>
+    setPrefs(current => ({ ...current, widths: withWidth(current.widths, column, pixels) }));
+
   const setSize = size => setPrefs(current => ({ ...current, size }));
 
   return {
@@ -112,6 +116,8 @@ export const useListSearch = ({
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
+    widths: prefs.widths,
+    setColumnWidth,
     size: prefs.size,
     setSize,
   };

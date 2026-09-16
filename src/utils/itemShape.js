@@ -130,6 +130,8 @@ export const detailSearchShape = PropTypes.shape({
   sort: sortShape.isRequired,
   setSort: PropTypes.func.isRequired,
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,
+  widths: PropTypes.objectOf(PropTypes.number).isRequired,
+  setColumnWidth: PropTypes.func.isRequired,
 });
 
 export const columnShape = PropTypes.shape({

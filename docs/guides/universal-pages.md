@@ -380,6 +380,22 @@ Columns group in the filter panel; the hidden set persists per page
 beside the filters, and a sort on a hidden column is dropped until the
 column returns.
 
+One table component, `SubTable`, draws every table of the estate: the
+collection listings with their watch star, quick actions and organization
+group rows, the detail pages, the admin lists, the fleet, the search page
+and the organization console's lists, so a table drawn with its own
+markup is a defect. Every column resizes: each header cell but the
+select, star, quick-actions and Actions cells carries a handle on its
+right edge, shown on hover; a drag changes that column's width alone and
+shows the pixel width while dragging; a double-click resets the column to
+the stylesheet's width; the widths persist per page under
+`table_prefs_*` as `widths`, a map of column key to pixels beside sort,
+hidden columns and per page, a hidden column keeping its width for when
+it returns, and the stylesheet's widths stand wherever the map names
+none. Why: a fixed width fits the common value and never the long one,
+and a person who widens Name once should find it wide tomorrow on the
+same page.
+
 ---
 
 ## Item shape

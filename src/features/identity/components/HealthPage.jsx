@@ -358,6 +358,8 @@ const HealthPage = ({ kind }) => {
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
+          widths={search.widths}
+          onResize={search.setColumnWidth}
           ctx={{ t, language: i18n.language }}
           emptyText={emptyText}
         />

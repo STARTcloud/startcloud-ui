@@ -191,6 +191,8 @@ const InsightTable = ({ tableKey, search }) => {
       sort={search.sort[tableKey]}
       onSort={(column, options) => search.setSort(tableKey, column, options)}
       hiddenColumns={search.hiddenColumns[tableKey]}
+      widths={search.widths[tableKey]}
+      onResize={(column, pixels) => search.setColumnWidth(tableKey, column, pixels)}
       ctx={{ t, language: i18n.language }}
       emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
     />
@@ -205,6 +207,8 @@ InsightTable.propTypes = {
     sort: PropTypes.object.isRequired,
     setSort: PropTypes.func.isRequired,
     hiddenColumns: PropTypes.object.isRequired,
+    widths: PropTypes.object.isRequired,
+    setColumnWidth: PropTypes.func.isRequired,
   }).isRequired,
 };
 

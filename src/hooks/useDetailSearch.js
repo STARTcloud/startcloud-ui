@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { readDetailPrefs, toggleIn, writeDetailPrefs } from '../utils/prefs';
+import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
 
 import { useClientFilters } from './useClientFilters';
@@ -25,12 +25,13 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * narrowing the rows client-side, and one Columns group last that shows
  * or hides the table's columns, and returns the rows the query and the
  * groups leave in the active sort order, the query itself, whether a
- * query or a group is active, the sort with its setter and the hidden
- * column keys. A sort on a hidden column is dropped until the column
- * returns; the sort is a stack, a Shift-click on a header adding to it.
- * The sort, the hidden columns and, on a page with the view toggle, the
- * view named in `views` persist together under `prefsKey`, one object per
- * key; Clear filters empties the groups and keeps the query. A page that
+ * query or a group is active, the sort with its setter, the hidden
+ * column keys and the column widths with their setter. A sort on a hidden
+ * column is dropped until the column returns; the sort is a stack, a
+ * Shift-click on a header adding to it; a hidden column keeps its width.
+ * The sort, the hidden columns, the widths and, on a page with the view
+ * toggle, the view named in `views` persist together under `prefsKey`,
+ * one object per key; Clear filters empties the groups and keeps the query. A page that
  * keeps the query elsewhere (the URL) hands it in as `bound`, with its own
  * placeholder, and the hook publishes that instead of its own state; a
  * page that keeps its groups' values in the URL hands its
@@ -46,7 +47,7 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - An externally held query
  * @param {Object|null} [options.url] - The URL narrowing holding the groups' values
  * @param {string[]|null} [options.views] - The views the page toggles between, the first the default
- * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, view: string, setView: Function }} The filtered, sorted rows and the search state
+ * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, view: string, setView: Function }} The filtered, sorted rows and the search state
  */
 export const useDetailSearch = ({
   rows,
@@ -91,6 +92,9 @@ export const useDetailSearch = ({
   const setSort = (column, options) =>
     setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) }));
 
+  const setColumnWidth = (column, pixels) =>
+    setPrefs(current => ({ ...current, widths: withWidth(current.widths, column, pixels) }));
+
   return {
     rows: sorted,
     query,
@@ -98,6 +102,8 @@ export const useDetailSearch = ({
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
+    widths: prefs.widths,
+    setColumnWidth,
     view: prefs.view || '',
     setView: view => setPrefs(current => ({ ...current, view })),
   };

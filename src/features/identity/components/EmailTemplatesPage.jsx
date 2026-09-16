@@ -58,8 +58,11 @@ const argumentsOf = (list, kind) => list.find(entry => entry.kind === kind)?.arg
 const sitesOf = answer =>
   Object.entries(answer?.sites || {}).map(([id, entry]) => ({ id, name: entry?.name || id }));
 
+const isDefaultCopy = copy => !copy.site && !copy.locale;
+
 const CopyRow = ({ copy, onPreview, onEdit, onHistory, onDelete }) => {
   const { t } = useTranslation();
+  const seeded = isDefaultCopy(copy);
   return (
     <li className="list-group-item d-flex flex-wrap align-items-center gap-2">
       <div className="d-flex flex-wrap align-items-center gap-2 flex-grow-1 min-width-0">
@@ -103,6 +106,8 @@ const CopyRow = ({ copy, onPreview, onEdit, onHistory, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-danger"
+          disabled={seeded}
+          title={seeded ? t('admin.emailTemplates.errors.default_copy') : undefined}
           onClick={() => onDelete(copy)}
         >
           {t('admin.emailTemplates.delete')}
@@ -159,24 +164,18 @@ const TemplateCard = ({
           </button>
         </div>
       </div>
-      {template.copies.length === 0 ? (
-        <div className="small text-muted mt-2 term-document-copies">
-          {t('admin.emailTemplates.noCopies')}
-        </div>
-      ) : (
-        <ul className="list-group list-group-flush mt-2 term-document-copies">
-          {template.copies.map(copy => (
-            <CopyRow
-              key={copy.id}
-              copy={copy}
-              onPreview={onPreviewCopy}
-              onEdit={onEditCopy}
-              onHistory={onHistoryCopy}
-              onDelete={onDeleteCopy}
-            />
-          ))}
-        </ul>
-      )}
+      <ul className="list-group list-group-flush mt-2 term-document-copies">
+        {template.copies.map(copy => (
+          <CopyRow
+            key={copy.id}
+            copy={copy}
+            onPreview={onPreviewCopy}
+            onEdit={onEditCopy}
+            onHistory={onHistoryCopy}
+            onDelete={onDeleteCopy}
+          />
+        ))}
+      </ul>
     </li>
   );
 };
@@ -319,8 +318,11 @@ EmailTemplatesBulkActions.propTypes = {
  * listed inside with their site ("Every site" for the default copy) and
  * language ("Every language" for the site's default) badges, version,
  * `r{{revision}}`, updated date and the per-copy actions Preview, Edit,
- * History and Delete, a kind with no copy saying it is sent from the
- * generic text; Add a copy on the card opening the copy dialog; History
+ * History and Delete, Delete disabled on the default copy (site and
+ * locale both empty), the seeded generic text that is edited and never
+ * deleted, a `409` `default_copy` from the route or a skipped id in the
+ * bulk answer painted by its own sentence; Add a copy on the card
+ * opening the copy dialog; History
  * opens a list dialog of the copy's versions and revisions, newest first,
  * each revision readable read-only; Edit draws the version read-only with
  * Save ("Save as a revision of {{version}}", a `PATCH`) and Publish (a
@@ -370,7 +372,13 @@ const EmailTemplatesPage = () => {
     document.title = t('admin.emailTemplates.title');
   }, [t]);
 
-  const fail = error => notify('danger', t(error.messageKey || 'errors.request'));
+  const fail = error =>
+    notify(
+      'danger',
+      error?.code === 'default_copy'
+        ? t('admin.emailTemplates.errors.default_copy')
+        : t(error.messageKey || 'errors.request')
+    );
 
   const confirmDelete = () => {
     deleteEmailTemplate(
@@ -395,7 +403,7 @@ const EmailTemplatesPage = () => {
   const pickedIds = [...selection.selected]
     .map(kind => shown.find(template => template.kind === kind))
     .filter(Boolean)
-    .flatMap(template => template.copies.map(copy => copy.id));
+    .flatMap(template => template.copies.filter(copy => !isDefaultCopy(copy)).map(copy => copy.id));
 
   const headingActions = selection.someSelected ? (
     <>

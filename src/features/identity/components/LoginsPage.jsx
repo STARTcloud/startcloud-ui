@@ -152,6 +152,8 @@ const LoginsPage = () => {
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
+          widths={search.widths}
+          onResize={search.setColumnWidth}
           ctx={{ t, language: i18n.language }}
           emptyText={
             Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')

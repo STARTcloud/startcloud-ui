@@ -1,3 +1,5 @@
+import { httpsUrl } from '../components/common/MethodList';
+
 import { createApiClient } from './apiClient';
 import { isPendingGate } from './gates';
 
@@ -67,10 +69,12 @@ const safeNext = (next, origin) => {
 
 /**
  * The memberships of the issuer's profile in the chrome's organization
- * shape: the uuid as the uuid, the roles list as it is, and the primary
- * flag.
+ * shape: the uuid as the uuid, the roles list as it is, the primary and
+ * personal flags, the stored logo when it is an `https:` URL and the
+ * organization's email hash, the switcher's logo chain being the logo,
+ * then the Gravatar behind the hash, then the app's mark.
  * @param {Object|null|undefined} user - The cached profile
- * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean }>}
+ * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string }>}
  */
 export const accountMemberships = user =>
   (Array.isArray(user?.organizations) ? user.organizations : []).map(org => ({
@@ -78,6 +82,9 @@ export const accountMemberships = user =>
     name: org.name,
     roles: Array.isArray(org.roles) ? org.roles.map(role => String(role).toUpperCase()) : [],
     primary: Boolean(org.primary),
+    personal: Boolean(org.personal),
+    logo: httpsUrl(org.logo_url),
+    emailHash: typeof org.email_hash === 'string' ? org.email_hash : '',
   }));
 
 /**

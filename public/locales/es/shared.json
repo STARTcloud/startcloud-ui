@@ -1087,11 +1087,13 @@
       "added": "La copia se ha añadido.",
       "deleted": "{{name}} se ha eliminado.",
       "deleteTitle": "Eliminar la copia",
-      "deleteBody": "{{name}} pierde esta copia para siempre; su correo pasa a la siguiente copia o al texto genérico. Escribe \"{{keyword}}\" para confirmar.",
+      "deleteBody": "{{name}} pierde esta copia para siempre; su correo pasa a la siguiente copia. Escribe \"{{keyword}}\" para confirmar.",
       "editTitle": "Editar · {{name}}",
       "addCopy": "Añadir una copia",
       "addTitle": "Añadir una copia · {{name}}",
-      "noCopies": "Sin copias; se envía desde el texto genérico.",
+      "errors": {
+        "default_copy": "La copia predeterminada es el texto genérico del tipo; edítala, no se puede eliminar."
+      },
       "arguments": "Argumentos:",
       "insertArgument": "Insertar {{name}}",
       "previewTitle": "Vista previa",
@@ -1112,10 +1114,11 @@
         "delete": "Eliminar",
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
-        "confirmBody": "{{count}} tipos seleccionados pierden todas sus copias para siempre. Escribe \"{{keyword}}\" para confirmar.",
+        "confirmBody": "{{count}} tipos seleccionados pierden todas sus copias salvo la predeterminada para siempre. Escribe \"{{keyword}}\" para confirmar.",
         "stepUpReason": "Eliminar copias las quita para siempre.",
         "errors": {
-          "not_found": "ya no existe"
+          "not_found": "ya no existe",
+          "default_copy": "copia predeterminada, nunca se elimina"
         }
       }
     },
@@ -1908,7 +1911,9 @@
       "language": "Idioma",
       "variant": "Variante",
       "fileName": "Nombre del archivo",
-      "key": "Clave"
+      "key": "Clave",
+      "resize": "Cambiar el ancho de la columna",
+      "resizeHint": "Arrastra para cambiar el ancho, doble clic para restablecer"
     },
     "status": {
       "published": "Publicado",

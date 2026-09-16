@@ -481,19 +481,29 @@ export const PLACEHOLDERS = [
   { name: 'date', scope: 'document', description: 'The acceptance date' },
 ];
 
+const seedCopy = (id, subject, body) => ({
+  id,
+  site: '',
+  locale: '',
+  version: '1.0',
+  revision: 1,
+  subject,
+  body,
+  created_by: 'seed',
+  updated_at: '2026-09-01T00:00:00Z',
+});
+
 export const EMAIL_TEMPLATES = [
   {
     kind: 'account_verification',
     copies: [
       {
-        id: 1,
-        site: '',
-        locale: '',
-        version: '1.0',
+        ...seedCopy(
+          1,
+          'Verify your {2} account',
+          '<p>Hello {0},</p>\n<p>Confirm your {2} account:</p>\n<p><a href="{1}">Verify</a></p>'
+        ),
         revision: 2,
-        subject: 'Verify your {2} account',
-        body: '<p>Hello {0},</p>\n<p>Confirm your {2} account:</p>\n<p><a href="{1}">Verify</a></p>',
-        created_by: 'mark@m4kr.net',
         updated_at: '2026-09-14T00:00:00Z',
       },
       {
@@ -509,12 +519,38 @@ export const EMAIL_TEMPLATES = [
       },
     ],
   },
-  { kind: 'password_reset', copies: [] },
-  { kind: 'magic_login', copies: [] },
-  { kind: 'onboarding_verification', copies: [] },
+  {
+    kind: 'password_reset',
+    copies: [
+      seedCopy(
+        4,
+        'Reset your password',
+        '<p>Hello {0},</p>\n<p><a href="{1}">Reset your password</a> within {2} minutes.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'magic_login',
+    copies: [
+      seedCopy(
+        5,
+        'Your sign-in link',
+        '<p>Hello {0},</p>\n<p><a href="{1}">Sign in</a> within {2} minutes.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'onboarding_verification',
+    copies: [seedCopy(6, 'Your verification code', '<p>Your code is <strong>{0}</strong>.</p>')],
+  },
   {
     kind: 'org_invite',
     copies: [
+      seedCopy(
+        7,
+        '{0} invited you to {1}',
+        '<p>{0} invited you to join {1}.</p>\n<p><a href="{2}">Accept the invitation</a> within {3} days.</p>'
+      ),
       {
         id: 3,
         site: 'startcloud',
@@ -528,10 +564,36 @@ export const EMAIL_TEMPLATES = [
       },
     ],
   },
-  { kind: 'email_change', copies: [] },
-  { kind: 'account_event', copies: [] },
-  { kind: 'ciba_approval', copies: [] },
-  { kind: 'admin_new_registration', copies: [] },
+  {
+    kind: 'email_change',
+    copies: [
+      seedCopy(8, 'Confirm your new email address', '<p>Your code is <strong>{0}</strong>.</p>'),
+    ],
+  },
+  {
+    kind: 'account_event',
+    copies: [seedCopy(9, '{0}', '<p>{1}</p>\n<p>Questions? Write to {2}.</p>')],
+  },
+  {
+    kind: 'ciba_approval',
+    copies: [
+      seedCopy(
+        10,
+        'Approve a sign-in from {0}',
+        '<p>{0} asks to sign in.</p>\n<p><a href="{1}">Approve</a></p>\n<p>{2}</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'admin_new_registration',
+    copies: [
+      seedCopy(
+        11,
+        'New registration: {0}',
+        '<p>{0} ({1}) registered at {2} from {3}, {4}.</p>\n<p><a href="{5}">Open the dashboard</a></p>'
+      ),
+    ],
+  },
 ];
 
 export const EMAIL_ARGUMENTS = [

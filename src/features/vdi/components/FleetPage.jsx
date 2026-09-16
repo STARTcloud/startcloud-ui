@@ -190,6 +190,8 @@ const FleetBody = ({ context, theme }) => {
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
+          widths={search.widths}
+          onResize={search.setColumnWidth}
           expanded={expanded}
           onToggleExpanded={toggleExpanded}
           pools={pools}

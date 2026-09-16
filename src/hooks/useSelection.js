@@ -13,8 +13,8 @@ const withToggled = (current, key) => {
 /**
  * The picked rows of one table or card grid: the set of picked keys, the
  * per-row and select-all toggles, whether the page is fully or partly
- * picked, a clear, and the `selection` prop `SubTable`, `ItemsTable` and
- * `ItemCards` draw their checkbox column or card checkbox from.
+ * picked, a clear, and the `selection` prop `SubTable` and `ItemCards`
+ * draw their checkbox column or card checkbox from.
  *
  * @param {Array} rows - The rows the page shows right now
  * @param {Object} [options] - How a row is keyed and labelled

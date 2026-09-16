@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { filterGroupOf, narrowRows } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { readPrefs, toggleIn, writePrefs } from '../../../utils/prefs';
+import { readPrefs, toggleIn, withWidth, writePrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
 
 const matches = (row, needle) =>
@@ -68,17 +68,17 @@ const clearedFilters = (tables, filters) =>
  * Columns group per table, every group prefixed by the table's title,
  * and answers each table's rows left by the query and its groups in its
  * sort order, whether a query or a group is active, the sort with its
- * setter and the hidden column keys; a table with no saved sort draws
- * its `defaultSort`. The picked filters, the sorts and the hidden columns
- * persist under `prefsKey`; Clear filters empties the groups and keeps
- * the query.
+ * setter, the hidden column keys and the column widths with their setter,
+ * each per table key; a table with no saved sort draws its `defaultSort`.
+ * The picked filters, the sorts, the hidden columns and the widths persist
+ * under `prefsKey`; Clear filters empties the groups and keeps the query.
  *
  * @param {Object} options
  * @param {Array} options.tables - `{ key, labelKey, columns, defaultSort, filterGroups, defaultView }` per table
  * @param {Object} options.rowsByTable - The rows of each table by its key
  * @param {string} options.placeholderKey - Translation key of the search placeholder
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
- * @returns {{ rows: Object, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Object }} The search state
+ * @returns {{ rows: Object, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Object, widths: Object, setColumnWidth: Function }} The search state
  */
 export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKey }) => {
   const { t } = useTranslation();
@@ -129,11 +129,22 @@ export const useInsightsSearch = ({ tables, rowsByTable, placeholderKey, prefsKe
       sort: { ...current.sort, [tableKey]: nextSort(current.sort[tableKey], column, options) },
     }));
 
+  const setColumnWidth = (tableKey, column, pixels) =>
+    setPrefs(current => ({
+      ...current,
+      widths: {
+        ...current.widths,
+        [tableKey]: withWidth(current.widths[tableKey], column, pixels),
+      },
+    }));
+
   return {
     rows,
     filtering: needle !== '' || anyActive(tables, prefs.filters),
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
+    widths: prefs.widths,
+    setColumnWidth,
   };
 };

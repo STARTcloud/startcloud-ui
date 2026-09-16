@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useSelection } from '../../../hooks/useSelection';
@@ -11,7 +12,6 @@ import { useCatalogSearch } from '../hooks/useCatalogSearch';
 
 import BulkActions from './BulkActions';
 import ItemCards from './ItemCards';
-import ItemsTable from './ItemsTable';
 
 const groupByOrganization = (collection, items) => {
   const groups = new Map();
@@ -118,13 +118,20 @@ const bulkGroupsOf = picked => {
   return [...byOrg.values()];
 };
 
+const itemKey = item => item.id;
+
+const NO_WATCH = { ids: NO_IDS, toggle: null };
+
 /**
  * One collection's section of a listing page: the heading row with the
  * count or the picked state as its muted text and the one action pane at
  * its right — the picked-state group first, then the collection's own list
  * actions, then the page's actions and the view toggle — and under it the
- * collection's one table or card grid, each row carrying its select
- * checkbox while the collection has bulk actions the viewer may run.
+ * collection's one `SubTable` (the watch column drawn star or blank, the
+ * collection's quick actions and row actions from its slots, one group per
+ * organization when the page spans them) or card grid, each row carrying
+ * its select checkbox while the collection has bulk actions the viewer may
+ * run.
  */
 const CollectionSection = ({
   collection,
@@ -137,9 +144,10 @@ const CollectionSection = ({
   ctx,
   actions = null,
 }) => {
-  const selection = useSelection(items, { keyOf: item => item.id, labelOf: item => item.name });
+  const { t } = useTranslation();
+  const selection = useSelection(items, { keyOf: itemKey, labelOf: item => item.name });
   const picked = items.filter(item => selection.selected.has(item.id));
-  const { ListActions } = collection.slots;
+  const { ListActions, ItemQuickActions, RowActions } = collection.slots;
   const shared = {
     collection,
     items,
@@ -147,6 +155,34 @@ const CollectionSection = ({
     selection: bulkable ? selection.subtable : null,
     ...common,
   };
+  const emptyText = ctx.filtering ? t('pages.noMatches') : t('pages.empty');
+  const list =
+    view === 'cards' ? (
+      <ItemCards {...shared} />
+    ) : (
+      <SubTable
+        columns={collection.columns}
+        rows={items}
+        rowKey={itemKey}
+        rowProp="item"
+        RowActions={RowActions}
+        actionsProps={{ ctx }}
+        QuickActions={ItemQuickActions}
+        selection={shared.selection}
+        watches={common.watches || NO_WATCH}
+        groups={common.groups}
+        collapsed={common.collapsed}
+        onToggleGroup={common.onToggleGroup}
+        countKey={collection.countKey}
+        sort={table.sort}
+        onSort={table.onSort}
+        hiddenColumns={table.hiddenColumns}
+        widths={table.widths}
+        onResize={table.onResize}
+        ctx={ctx}
+        emptyText={emptyText}
+      />
+    );
   return (
     <div className="mb-4">
       <CollectionHeading collection={collection} count={items.length} picked={picked.length}>
@@ -165,7 +201,7 @@ const CollectionSection = ({
         {ListActions ? <ListActions ctx={ctx} /> : null}
         {actions}
       </CollectionHeading>
-      {view === 'cards' ? <ItemCards {...shared} /> : <ItemsTable {...shared} {...table} />}
+      {list}
     </div>
   );
 };
@@ -250,6 +286,8 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
     collapsed,
     toggleCollapsed,
     hiddenColumns,
+    widths,
+    setColumnWidth,
   } = search;
 
   const toggle = <ViewToggle view={view} onChange={setView} />;
@@ -298,6 +336,8 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
           sort: sort[collection.key],
           onSort: (column, options) => setSort(collection.key, column, options),
           hiddenColumns: hiddenColumns[collection.key],
+          widths: widths[collection.key],
+          onResize: (column, pixels) => setColumnWidth(collection.key, column, pixels),
         }}
         actions={
           !header && index === 0 ? (

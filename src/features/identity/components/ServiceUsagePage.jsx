@@ -7,6 +7,7 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
 import { useCssVar } from '../../../hooks/useCssVar';
+import { useTablePrefs } from '../../../hooks/useTablePrefs';
 import { serviceUsage } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SERVICE_USAGE } from '../utils/examples';
@@ -14,9 +15,7 @@ import { SERVICE_USAGE } from '../utils/examples';
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 
-const NO_SORT = [];
-const NO_HIDDEN = new Set();
-const noSort = () => undefined;
+const PREFS_KEY = 'table_prefs_admin_service_usage';
 
 const percentOf = (part, whole) => (whole > 0 ? (part / whole) * 100 : 0);
 
@@ -89,12 +88,14 @@ const columns = [
 
 /**
  * Health › Service usage: the two usage stat cards, the usage table with
- * the percentage bar, first used and last activity per row, and the
- * definitions in an info fold on the page.
+ * the percentage bar, first used and last activity per row, its sort,
+ * hidden columns and column widths under `table_prefs_admin_service_usage`,
+ * and the definitions in an info fold on the page.
  */
 const ServiceUsagePage = () => {
   const { t, i18n } = useTranslation();
   const { data, loading } = useAdminRead({ read: serviceUsage, example: SERVICE_USAGE });
+  const prefs = useTablePrefs(PREFS_KEY, columns);
 
   useEffect(() => {
     document.title = t('admin.health.usage.title');
@@ -123,9 +124,11 @@ const ServiceUsagePage = () => {
         columns={columns}
         rows={data.items || []}
         rowKey={row => row.client_id}
-        sort={NO_SORT}
-        onSort={noSort}
-        hiddenColumns={NO_HIDDEN}
+        sort={prefs.sort}
+        onSort={prefs.setSort}
+        hiddenColumns={prefs.hiddenColumns}
+        widths={prefs.widths}
+        onResize={prefs.setColumnWidth}
         ctx={{ t, language: i18n.language, totalSessions: data.total_sessions }}
         emptyText={t('pages.empty')}
       />

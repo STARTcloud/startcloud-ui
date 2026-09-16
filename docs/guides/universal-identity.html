@@ -3099,6 +3099,15 @@
                 ></label
               >
             </div>
+            <p class="a-group">Already allowed: <span class="a-link">Manage permissions</span></p>
+            <div class="a-scopes">
+              <div class="a-scope">
+                <span
+                  ><span class="l">email</span
+                  ><span class="h">Access your email address</span></span
+                >
+              </div>
+            </div>
             <p class="a-group">This application also requests specific access:</p>
             <div class="a-scopes">
               <div class="a-scope">
@@ -5912,7 +5921,10 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                 ><span class="m-act"
                   ><span class="btn sm">Preview</span><span class="btn sm">Edit</span
                   ><span class="btn sm">History</span
-                  ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                  ><span
+                    class="btn sm"
+                    style="opacity: 0.45; cursor: not-allowed"
+                    title="The default copy is the kind's generic text; edit it, it cannot be deleted."
                     >Delete</span
                   ></span
                 >
@@ -5940,8 +5952,18 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                   ><span class="h">{0} name · {1} link · {2} expiry minutes</span></span
                 ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
               </div>
-              <div class="a-hint" style="padding-left: 22px">
-                No copies; sent from the generic text.
+              <div class="a-row" style="padding-left: 22px">
+                <span
+                  ><span class="a-badge">Every site</span>
+                  <span class="a-badge">Every language</span>
+                  <span class="a-hint">v1.0 r1 · seed · Sep 1, 2026</span></span
+                ><span class="m-act"
+                  ><span class="btn sm">Preview</span><span class="btn sm">Edit</span
+                  ><span class="btn sm">History</span
+                  ><span class="btn sm" style="opacity: 0.45; cursor: not-allowed"
+                    >Delete</span
+                  ></span
+                >
               </div>
             </div>
             <div class="tcard" style="flex-direction: column; align-items: stretch; gap: 8px">
@@ -6086,7 +6108,10 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
         <code>GET /api/admin/email-templates/arguments</code>, a row per copy naming its site
         ("Every site" for the default copy) and language ("Every language" for the site's default),
         <code>v{version} r{revision}</code> beside it, Preview, Edit, History and Delete per row and
-        Add a copy on the card; a kind with no copy says it is sent from the generic text.
+        Add a copy on the card; every kind carries its seeded default copy, the generic text, edited
+        like any copy and never deleted: its Delete is drawn disabled, a
+        <code>409 default_copy</code> from the route or a skipped id in the bulk answer is painted
+        by its own sentence, and the default copy's id is never sent in a bulk delete.
       </div>
       <div class="callout">
         <strong>The copy dialog</strong> is the terms copy dialog's shape: Site over the keys of the

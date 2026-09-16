@@ -416,6 +416,8 @@ const UsersPage = () => {
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
+          widths={search.widths}
+          onResize={search.setColumnWidth}
           ctx={ctx}
           emptyText={Object.keys(narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')}
           selection={selection.subtable}
