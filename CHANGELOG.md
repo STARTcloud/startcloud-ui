@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.17.0...v0.18.0) (2026-09-16)
+
+
+### Features
+
+* one table component draws every table of the estate with resizable columns kept per page, the consent page drawing the scopes already granted read-only and approving details alone, the default email template copy never deleted, the issuer's memberships carrying the org logo and email hash ([913d495](https://github.com/STARTcloud/startcloud-ui/commit/913d495b9fe79a7d568a17ec14cb1ff2fc8aaa3a))
+
 ## [0.17.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.16.0...v0.17.0) (2026-09-15)
 
 
