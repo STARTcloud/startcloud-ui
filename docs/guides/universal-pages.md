@@ -337,15 +337,21 @@ after it on every table, star or blank,
 so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
 the viewer can watch it sorts watched rows first. The table is
-fixed-layout and every short column carries a fixed width in the shared
+fixed-layout and every column carries a fixed width in the shared
 stylesheet (select, star and quick-actions cells 2.5rem, Name 28% with the text
 ellipsized, Visibility 6.3rem, Created and Updated 6.5rem, Status 6.8rem,
 Downloads, Versions and Releases 7.3rem, right-aligned with a wider right
 gutter, Latest release 9.3rem, OS 10rem, Tier 7rem, Family and Vendor
-9rem with the text ellipsized; header cells never wrap), so
-the shared columns sit at the same x on every table of both apps however
-many columns follow, and only the wide columns — Providers, Architectures,
-Platforms and the catalog's coverage — share the remainder:
+9rem with the text ellipsized, Providers, Architectures and Platforms
+16rem; header cells never wrap), the widths declared once on a `colgroup`
+with one `col` per cell, and a trailing unsized `col` with an empty header
+and body cell is the spacer that takes whatever width the fixed columns
+leave, because fixed layout hands the leftover width to every column when
+none is left unsized (CSS 2.1 §17.5.2.1) and a table whose only wide
+column is hidden would drift its checkbox, star and Name away from the
+table above it; so the shared columns sit at the same x on every table of
+both apps however many columns follow or are hidden, and a resized column
+takes from the spacer alone:
 
 | Column      | Boxes                                                                                    | ISOs                                                                         | Provisioners                                 |
 | ----------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------- |

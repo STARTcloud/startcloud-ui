@@ -148,10 +148,42 @@ ResizeHandle.propTypes = {
   onResize: PropTypes.func.isRequired,
 };
 
-const HeaderCell = ({ column, sort, onSort, width, onResize }) => {
+const SizedCol = ({ columnKey, width }) => {
+  const col = useRef(null);
+  useCssVar(col, '--col-width', width ? `${width}px` : null);
+  return <col ref={col} className={width ? `col-${columnKey} col-sized` : `col-${columnKey}`} />;
+};
+
+SizedCol.propTypes = {
+  columnKey: PropTypes.string.isRequired,
+  width: PropTypes.number,
+};
+
+const ColumnGroup = ({ drawn, selection, watches, QuickActions, RowActions, widths }) => (
+  <colgroup>
+    {selection ? <col className="col-select" /> : null}
+    {watches ? <col className="col-watch" /> : null}
+    {drawn.map(column => (
+      <SizedCol key={column.key} columnKey={column.key} width={widths[column.key] || null} />
+    ))}
+    {QuickActions ? <col className="col-quick" /> : null}
+    {RowActions ? <col className="col-actions" /> : null}
+    <col className="col-spacer" />
+  </colgroup>
+);
+
+ColumnGroup.propTypes = {
+  drawn: PropTypes.array.isRequired,
+  selection: selectionShape,
+  watches: watchesShape,
+  QuickActions: PropTypes.elementType,
+  RowActions: PropTypes.elementType,
+  widths: PropTypes.objectOf(PropTypes.number).isRequired,
+};
+
+const HeaderCell = ({ column, sort, onSort, onResize }) => {
   const { t } = useTranslation();
   const cell = useRef(null);
-  useCssVar(cell, '--col-width', width ? `${width}px` : null);
   const label = column.sortValue ? (
     <SortHeader column={column.key} sort={sort} onSort={onSort}>
       {t(column.labelKey)}
@@ -160,7 +192,7 @@ const HeaderCell = ({ column, sort, onSort, width, onResize }) => {
     t(column.labelKey)
   );
   return (
-    <th ref={cell} className={width ? `col-${column.key} col-sized` : `col-${column.key}`}>
+    <th ref={cell} className={`col-${column.key}`}>
       {label}
       {onResize ? <ResizeHandle columnKey={column.key} cell={cell} onResize={onResize} /> : null}
     </th>
@@ -175,7 +207,6 @@ HeaderCell.propTypes = {
   }).isRequired,
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
-  width: PropTypes.number,
   onResize: PropTypes.func,
 };
 
@@ -187,7 +218,6 @@ const HeaderRow = ({
   RowActions,
   sort,
   onSort,
-  widths,
   onResize,
 }) => {
   const { t } = useTranslation();
@@ -205,12 +235,12 @@ const HeaderRow = ({
           column={column}
           sort={sort}
           onSort={onSort}
-          width={widths[column.key] || null}
           onResize={onResize}
         />
       ))}
       {QuickActions ? <th className="col-quick" aria-label={t('pages.table.actions')} /> : null}
       {RowActions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
+      <th className="col-spacer" aria-hidden="true" />
     </tr>
   );
 };
@@ -223,7 +253,6 @@ HeaderRow.propTypes = {
   RowActions: PropTypes.elementType,
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
-  widths: PropTypes.objectOf(PropTypes.number).isRequired,
   onResize: PropTypes.func,
 };
 
@@ -286,6 +315,7 @@ const BodyRow = ({
             <RowActions {...actionsProps} {...own} />
           </td>
         ) : null}
+        <td className="col-spacer" />
       </tr>
       {expanded ? (
         <tr className="detail-row">
@@ -403,7 +433,11 @@ TableBody.propTypes = {
  * nudge it by 16px, a double-click, Enter or Home
  * call `onResize(key, null)` to reset; `widths` (column key to pixels)
  * sets each column's width over the stylesheet's, a hidden column keeping
- * its entry.
+ * its entry. The widths live on a `colgroup`, one `col` per cell carrying
+ * the cell's `col-<key>` class and, when stored, the width, and a trailing
+ * unsized `col` with an empty header and body cell is the spacer that takes
+ * whatever width the fixed columns leave, so the shared columns sit at one
+ * x on every table whatever is hidden and a drag moves the spacer alone.
  */
 const SubTable = ({
   columns,
@@ -437,7 +471,7 @@ const SubTable = ({
     column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
   );
   const columnCount =
-    drawn.length + [selection, watches, QuickActions, RowActions].filter(Boolean).length;
+    drawn.length + [selection, watches, QuickActions, RowActions].filter(Boolean).length + 1;
   const rowProps = {
     drawn,
     rowKey,
@@ -458,6 +492,14 @@ const SubTable = ({
   };
   return (
     <Table striped className="table items-table">
+      <ColumnGroup
+        drawn={drawn}
+        selection={selection}
+        watches={watches}
+        QuickActions={QuickActions}
+        RowActions={RowActions}
+        widths={widths}
+      />
       <thead>
         <HeaderRow
           drawn={drawn}
@@ -467,7 +509,6 @@ const SubTable = ({
           RowActions={RowActions}
           sort={sort}
           onSort={onSort}
-          widths={widths}
           onResize={onResize}
         />
       </thead>

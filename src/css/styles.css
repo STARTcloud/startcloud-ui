@@ -1410,8 +1410,18 @@ button::-moz-focus-inner {
   position: relative;
 }
 
-.items-table th.col-sized {
+.items-table col.col-sized {
   width: var(--col-width);
+}
+
+.items-table .col-spacer {
+  padding: 0;
+}
+
+.items-table .col-providers,
+.items-table .col-architectures,
+.items-table .col-platforms {
+  width: 16rem;
 }
 
 .items-table th:has(.col-resize.dragging) {
