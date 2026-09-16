@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.3](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.2...v0.18.3) (2026-09-16)
+
+
+### Bug Fixes
+
+* the placing form refuses a blank level, key or file name before sending, its selects sit at the text fields' width, and no checksum draws as None instead of NULL on the download and box forms ([3668ed2](https://github.com/STARTcloud/startcloud-ui/commit/3668ed2a0b01db814bf51b8b0ce3cd2c6604b34f))
+
 ## [0.18.2](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.1...v0.18.2) (2026-09-16)
 
 
