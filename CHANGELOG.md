@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.0...v0.18.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* the email template site picker reads the site map where it lives, under the sites key of the sites file, labelled by the site's name or company name, the offline example nested the same way ([a2282bf](https://github.com/STARTcloud/startcloud-ui/commit/a2282bf0e32b21db5867581b5e71256814093042))
+
 ## [0.18.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.17.0...v0.18.0) (2026-09-16)
 
 
