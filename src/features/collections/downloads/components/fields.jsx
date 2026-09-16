@@ -88,14 +88,22 @@ TextAreaField.propTypes = {
  * One labelled select of a downloads form over a closed list, each value
  * drawn as its own word.
  */
-export const SelectField = ({ name, options, draft, rules, onChange, group = '' }) => {
+export const SelectField = ({
+  name,
+  options,
+  draft,
+  rules,
+  onChange,
+  group = '',
+  className = 'mb-2',
+}) => {
   const { t } = useTranslation();
   return (
     <Field
       id={rules.idFor(name)}
       label={rules.labelFor(name)}
       error={rules.errors[name] || ''}
-      className="mb-2"
+      className={className}
     >
       {aria => (
         <select
@@ -124,6 +132,7 @@ SelectField.propTypes = {
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   group: PropTypes.string,
+  className: PropTypes.string,
 };
 
 /**

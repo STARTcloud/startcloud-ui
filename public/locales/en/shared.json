@@ -1897,6 +1897,7 @@
       "defaultBox": "Default box",
       "fileSize": "File size",
       "checksumType": "Checksum type",
+      "noChecksum": "None",
       "tier": "Tier",
       "family": "Family",
       "vendor": "Vendor",
@@ -2230,6 +2231,9 @@
       "downloadWithCount": "Download ({{n}})",
       "updated": "The file was updated.",
       "deleted": "The file was deleted."
+    },
+    "checksum": {
+      "NULL": "None"
     },
     "kind": {
       "release": "release",

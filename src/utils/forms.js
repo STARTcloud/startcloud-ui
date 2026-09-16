@@ -202,8 +202,8 @@ export const PATCH_LABELS = {
 export const DOWNLOAD_FILE_SCHEMA = {
   required: ['key', 'file_name'],
   properties: {
-    key: { type: 'string' },
-    file_name: { type: 'string' },
+    key: { type: 'string', minLength: 1 },
+    file_name: { type: 'string', minLength: 1 },
     kind: { type: 'string', enum: FILE_KINDS },
     platform: { type: 'string', enum: FILE_PLATFORMS },
     architecture: { type: 'string', enum: FILE_ARCHITECTURES },
@@ -222,9 +222,9 @@ export const DOWNLOAD_FILE_SCHEMA = {
 export const PLACE_SCHEMA = {
   required: ['product', 'release', 'patch', ...DOWNLOAD_FILE_SCHEMA.required],
   properties: {
-    product: { $ref: '#/$defs/slug' },
-    release: { $ref: '#/$defs/identifier' },
-    patch: { $ref: '#/$defs/identifier' },
+    product: { $ref: '#/$defs/slug', minLength: 1 },
+    release: { $ref: '#/$defs/identifier', minLength: 1 },
+    patch: { $ref: '#/$defs/identifier', minLength: 1 },
     ...DOWNLOAD_FILE_SCHEMA.properties,
   },
 };

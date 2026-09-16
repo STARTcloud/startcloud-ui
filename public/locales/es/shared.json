@@ -1897,6 +1897,7 @@
       "defaultBox": "Box predeterminada",
       "fileSize": "Tamaño de archivo",
       "checksumType": "Tipo de checksum",
+      "noChecksum": "Ninguna",
       "tier": "Nivel",
       "family": "Familia",
       "vendor": "Fabricante",
@@ -2230,6 +2231,9 @@
       "downloadWithCount": "Descargar ({{n}})",
       "updated": "El archivo se actualizó.",
       "deleted": "El archivo se eliminó."
+    },
+    "checksum": {
+      "NULL": "Ninguna"
     },
     "kind": {
       "release": "lanzamiento",

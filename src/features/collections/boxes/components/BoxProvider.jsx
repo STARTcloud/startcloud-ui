@@ -313,7 +313,7 @@ const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmi
             >
               {CHECKSUM_TYPES.map(type => (
                 <option key={type} value={type}>
-                  {type}
+                  {type === 'NULL' ? t('boxes.architecture.noChecksum') : type}
                 </option>
               ))}
             </select>

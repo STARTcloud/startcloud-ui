@@ -133,6 +133,7 @@ const PlaceForm = ({ draft, rules, fixed, onChange, onSubmit }) => {
           draft={draft}
           rules={rules}
           onChange={onChange}
+          className={NARROW}
         />
         <SelectField
           name="platform"
@@ -141,6 +142,7 @@ const PlaceForm = ({ draft, rules, fixed, onChange, onSubmit }) => {
           draft={draft}
           rules={rules}
           onChange={onChange}
+          className={NARROW}
         />
         <SelectField
           name="architecture"
@@ -149,6 +151,7 @@ const PlaceForm = ({ draft, rules, fixed, onChange, onSubmit }) => {
           draft={draft}
           rules={rules}
           onChange={onChange}
+          className={NARROW}
         />
         <TextField
           name="language"
@@ -167,13 +170,21 @@ const PlaceForm = ({ draft, rules, fixed, onChange, onSubmit }) => {
         />
         <SelectField
           name="checksum_type"
+          group="checksum"
           options={CHECKSUM_TYPES}
           draft={draft}
           rules={rules}
           onChange={onChange}
+          className={NARROW}
         />
         {isVisible(PLACE_SCHEMA.properties.checksum, [draft]) ? (
-          <TextField name="checksum" draft={draft} rules={rules} onChange={onChange} />
+          <TextField
+            name="checksum"
+            draft={draft}
+            rules={rules}
+            onChange={onChange}
+            className={NARROW}
+          />
         ) : null}
       </form>
     </div>
