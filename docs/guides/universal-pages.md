@@ -338,32 +338,33 @@ so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
 the viewer can watch it sorts watched rows first. The table is
 fixed-layout and every column declares a `kind`, the content its cells
-draw, and takes its width from that kind alone (`columnKinds`): `name`
-(text with an optional icon or logo and a muted code beside it, wide,
-ellipsized), `text` (a plain string, medium, ellipsized), `badge` (one
-status badge, narrow), `badges` (a list of small badges, wide), `date` (a
-locale date, narrow), `relative` (a relative time, medium), `count` (a
-right-aligned integer with a wider right gutter, narrow), `size`
-(formatted bytes, narrow), `checksum` (the `ChecksumCell`, medium), `link`
-(a link cell, the version and release names, medium), `action` (a button
-such as Download, medium) and `word` (a closed-list word, narrow); the four
-width classes are `col-w-narrow` 6.5rem, `col-w-medium` 10rem,
-`col-w-wide` 16rem and `col-w-flex`, declared once in the shared
-stylesheet beside the fixed select, star and quick-actions cells at 2.5rem
-and Actions at 11rem, so no column carries a width of its own and Name is
-wide, never a percentage; a column without a `kind` is a defect; a width
-the viewer dragged overrides the kind's; header cells never wrap. The
-columns come in one order on every table: select, watch, Name,
+draw, and takes its width and its look from that kind alone
+(`columnKinds`): `name` (text with an optional icon or logo and a muted
+code beside it, flex, ellipsized), `text` (a plain string, flex,
+ellipsized), `badge` (one status badge, narrow), `badges` (a list of
+small badges, flex), `date` (a locale date, narrow), `relative` (a
+relative time, medium), `count` (a right-aligned integer with a wider
+right gutter, narrow), `size` (formatted bytes, narrow), `checksum` (the
+`ChecksumCell`, flex, ellipsized), `link` (a link cell, the version and
+release names, medium) and `word` (a closed-list word, narrow); the
+widths are `col-w-narrow` 6.5rem and `col-w-medium` 10rem, declared once
+in the shared stylesheet beside the fixed select, star and quick-actions
+cells at 2.5rem and Actions at 11rem, and `col-w-flex`, no width, the
+flex columns sharing whatever room the fixed ones leave (CSS 2.1
+§17.5.2.1), so a wide table fills its width and a narrow one shrinks the
+text that can shrink; every cell also carries `col-k-<kind>` and its
+content sits in one `.cell` block, so the stylesheet styles a kind's
+cells and never a column's key; no column carries a width of its own; a
+column without a `kind` is a defect; a width the viewer dragged overrides
+the kind's and takes its room from the flex columns; header cells never
+wrap. The columns come in one order on every table: select, watch, Name,
 Visibility, Created, Updated, Downloads, Status, then the collection's
-own, then the wide badge lists, then Actions. The widths are declared on a `colgroup`
-with one `col` per cell, and a trailing unsized `col` with an empty header
-and body cell is the spacer that takes whatever width the fixed columns
-leave, because fixed layout hands the leftover width to every column when
-none is left unsized (CSS 2.1 §17.5.2.1) and a table whose only wide
-column is hidden would drift its checkbox, star and Name away from the
-table above it; so the shared columns sit at the same x on every table of
-both apps however many columns follow or are hidden, and a resized column
-takes from the spacer alone:
+own, then the badge lists, then Actions. The widths are declared on a
+`colgroup` with one `col` per cell, and a table drawing no unsized flex
+column gains a trailing unsized spacer `col` with an empty header and
+body cell, because fixed layout hands the leftover width to every column
+when none is left unsized; so the fixed leading cells sit at the same x
+on every table of both apps and the flex columns take the rest:
 
 | Column      | Boxes                                                                                    | ISOs                                                                             | Provisioners                                 |
 | ----------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -382,10 +383,18 @@ Latest release · Releases · Platforms (hidden until shown), Downloads
 being the sum of its files' `downloadCount`.
 
 The Name cell draws the organization logo, then `org/name` as the link;
-below 60rem of table width the `org/` segment folds away and the item
-name stays, the logo still naming the organization and the cell's title
-carrying the full `org/name`, because the name a person came for is the
-last thing a narrow table may cut. The files table of a downloads patch
+below 14rem of the cell's own width the `org/` segment folds away and the
+item name stays, the logo still naming the organization and the cell's
+title carrying the full `org/name`, because the name a person came for
+is the last thing a narrow cell may cut, and the cell is what shrinks,
+not the table. A table whose rows are files draws the Download as the
+first control of the Actions column, the one shared `DownloadAction`
+handed to the table as `LeadActions` for every viewer the row is shown
+to, before the host's own row actions, which draw by the viewer's
+permission; a file's count is its Downloads column and a provider's
+Downloads is the sum of its files', and a provider row's Architectures
+column is badges alone, because a cell that holds a badge, a number and
+a button holds three columns. The files table of a downloads patch
 draws one Name column, the file name it was uploaded with and, only when
 the key differs from it, the key as a small code beside it, the shape
 `labelColumn` gives the catalog's label and slug; no separate Key column,
@@ -412,8 +421,9 @@ collection listings with their watch star, quick actions and organization
 group rows, the detail pages, the admin lists, the fleet, the search page
 and the organization console's lists, so a table drawn with its own
 markup is a defect. Every column resizes: each header cell but the
-select, star, quick-actions and Actions cells carries a handle on its
-right edge, shown on hover; a drag changes that column's width alone and
+select, star, quick-actions and Actions cells carries a handle straddling
+its right edge, 11px wide so a pointer finds it, its 3px bar shown on
+hover; a drag changes that column's width alone and
 shows the pixel width while dragging; a double-click resets the column to
 its kind's width; the widths persist per page under
 `table_prefs_*` as `widths`, a map of column key to pixels beside sort,
@@ -797,10 +807,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   already carry that identity in the chrome there (decision 143), then the
   one section the route names under it; a section draws only while the
   `account` adapter carries its calls, the one list `sectionsFor(account)`
-  answers: Profile always (the identity provider's details, phone and
-  address form while the adapter carries `details`, `address` and
-  `phone`, the display-name form over `details` alone otherwise),
-  Security while the adapter carries any of `password`, `email`, `tfa`,
+  answers: Profile always (one details form on every host, its fields the
+  identity provider's narrowed to what the host's `/api/rules` `profile`
+  and `displayName` forms name, the address block while the adapter
+  carries `address`, the mobile through a code while `phone` carries
+  `send` and `verify` and as one field saved with the form while it
+  carries `set`), Security while the adapter carries any of `password`, `email`, `tfa`,
   `passkeys`, `backupCodes`, `linked` and `deletion`, each of its cards
   drawn only for the member it acts through, then Preferences, Favorites,
   Sessions, Organizations and Service accounts while it carries
@@ -856,9 +868,11 @@ adds its own foldable section to an item page (the catalog's Quality).
   re-reads the record through `account.profile`, calls `session.reload()`
   and emits `login` on the bus. BoxVault's adapter is built by the router
   in the issuer's member names: for a local account `readWrite`, `profile`
-  from the session's reload, `details` over the change-name call,
-  `password`, `email` (its `request` the change, no `verify`) and
-  `deletion` while the host advertises `local-accounts`; for an
+  from the session's reload, `details` routing the display name to the
+  change-name call and the name parts to `PATCH /api/user`, `address` and
+  `phone.set` over the same patch, `password`, `email` (its `request` the
+  change, no `verify`) and `deletion` while the host advertises
+  `local-accounts`; for an
   identity-provider session `readOnly`, `profile` the session's reload
   merged with the provider's standard claims through the session's
   memoized `claims()`, `manageUrl` the provider's `/user/profile`, and no

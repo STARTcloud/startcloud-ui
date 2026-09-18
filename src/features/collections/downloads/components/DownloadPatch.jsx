@@ -413,12 +413,12 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
   if (editing) {
     return (
       <>
-        <button type="button" className="btn btn-sm btn-success me-2" onClick={save}>
+        <button type="button" className="btn btn-sm btn-success" onClick={save}>
           {t('boxes.buttons.save')}
         </button>
         <button
           type="button"
-          className="btn btn-sm btn-secondary"
+          className="btn btn-sm btn-outline-secondary"
           onClick={() => {
             setEditing(false);
             setDraft(draftFrom(architecture));
@@ -435,12 +435,16 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
     <>
       <button
         type="button"
-        className="btn btn-sm btn-primary me-2"
+        className="btn btn-sm btn-outline-secondary"
         onClick={() => setEditing(true)}
       >
         {t('boxes.buttons.edit')}
       </button>
-      <button type="button" className="btn btn-sm btn-danger" onClick={() => setShowDelete(true)}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        onClick={() => setShowDelete(true)}
+      >
         {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal

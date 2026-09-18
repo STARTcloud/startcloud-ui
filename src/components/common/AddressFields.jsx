@@ -152,9 +152,11 @@ const useCountries = () => {
  * The postal address block every address form draws: line 1 (with the
  * Google Places autocomplete while `placesKey` is given, its placeholder
  * drawn only then), line 2, the country select from the shared country
- * list, the state with the suggestions for the picked country, the city
- * and the postal code; `value` is the identity contract's address record
- * and `onChange` receives the whole record after every edit.
+ * list (a record carrying the country's name and no code, a host that
+ * stores the name alone, selects by that name), the state with the
+ * suggestions for the picked country, the city and the postal code;
+ * `value` is the identity contract's address record and `onChange`
+ * receives the whole record after every edit.
  */
 const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', placesKey = '' }) => {
   const { t } = useTranslation();
@@ -172,10 +174,17 @@ const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', pl
 
   const set = (name, fieldValue) => onChange({ ...address, [name]: fieldValue, formatted: '' });
 
-  const setCountry = code => {
-    const country = countries.find(entry => entry.code === code)?.label || '';
-    onChange({ ...address, country_code: code, country, formatted: '' });
+  const setCountry = picked => {
+    const entry = countries.find(country => country.code === picked || country.label === picked);
+    onChange({
+      ...address,
+      country_code: entry ? entry.code : picked,
+      country: entry ? entry.label : picked,
+      formatted: '',
+    });
   };
+
+  const storedCountry = address.country_code || address.country || '';
 
   const text = (name, autoComplete, extra = {}) => (
     <Field
@@ -201,7 +210,12 @@ const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', pl
     </Field>
   );
 
-  const knownCountry = countries.some(entry => entry.code === address.country_code);
+  const knownCountry = countries.some(
+    entry => entry.code === storedCountry || entry.label === storedCountry
+  );
+  const selectedCountry = knownCountry
+    ? countries.find(entry => entry.code === storedCountry || entry.label === storedCountry).code
+    : storedCountry;
 
   return (
     <div className="row">
@@ -224,15 +238,13 @@ const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', pl
               {...aria}
               className="form-select"
               autoComplete="country"
-              value={address.country_code || ''}
+              value={selectedCountry}
               onChange={event => setCountry(event.target.value)}
               onBlur={() => rules?.onBlur?.('country_code')}
             >
               <option value="">{t('profile.address.countryNone')}</option>
-              {address.country_code && !knownCountry ? (
-                <option value={address.country_code}>
-                  {address.country || address.country_code}
-                </option>
+              {storedCountry && !knownCountry ? (
+                <option value={storedCountry}>{address.country || storedCountry}</option>
               ) : null}
               {countries.map(entry => (
                 <option key={entry.code} value={entry.code}>

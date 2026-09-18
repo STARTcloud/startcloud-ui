@@ -5,6 +5,7 @@ import Markdown from 'react-markdown';
 
 import DeprecationBanner from '../../../components/common/DeprecationBanner';
 import {
+  DownloadAction,
   architectureLevelMatches,
   providerLevelMatches,
 } from '../../../components/common/levelColumns';
@@ -217,9 +218,10 @@ const ArtifactsSection = ({
         columns={columns}
         rows={rows}
         rowKey={artifact => artifact.name}
+        LeadActions={DownloadAction}
         RowActions={ArtifactRowActions}
         actionsProps={slotProps}
-        rowProp="artifact"
+        rowProp="architecture"
         sort={search.sort}
         onSort={search.setSort}
         hiddenColumns={search.hiddenColumns}

@@ -11,6 +11,7 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { rules as hostRules } from '../../../lib/runtime';
 
 import ManageLink from './ManageLink';
 
@@ -18,6 +19,7 @@ const SALUTATIONS = ['Mr', 'Mrs', 'Ms', 'Mx', 'Dr', 'Prof'];
 const GENDERS = ['male', 'female'];
 const CUSTOM = 'custom';
 const DETAIL_FIELDS = [
+  'name',
   'given_name',
   'family_name',
   'middle_name',
@@ -28,6 +30,7 @@ const DETAIL_FIELDS = [
 ];
 const DETAILS_SCHEMA = {
   properties: {
+    name: { type: 'string' },
     given_name: { type: 'string' },
     family_name: { type: 'string' },
     middle_name: { type: 'string' },
@@ -38,6 +41,7 @@ const DETAILS_SCHEMA = {
   },
 };
 const DETAILS_LABELS = {
+  name: 'profile.fields.displayName',
   given_name: 'profile.details.givenName',
   family_name: 'profile.details.familyName',
   middle_name: 'profile.details.middleName',
@@ -45,6 +49,37 @@ const DETAILS_LABELS = {
   gender: 'profile.details.gender.label',
   website: 'profile.details.website',
   birthdate: 'profile.details.birthdate',
+};
+const DETAIL_FORMS = ['profile', 'displayName'];
+
+/**
+ * The detail fields the host stores, read from the forms its `/api/rules`
+ * lists (the validation contract's rule that the host's entry applies to
+ * the fields the page declares): every field the host's `profile` or
+ * `displayName` form names, and every field but the display name on a
+ * host that lists neither, the identity provider, whose record carries
+ * them all and whose name is derived.
+ *
+ * @returns {string[]} The fields the form draws, in the page's order
+ */
+const hostDetailFields = () => {
+  const listed = DETAIL_FORMS.filter(form => hostRules?.forms?.[form]?.properties);
+  if (listed.length === 0) {
+    return DETAIL_FIELDS.filter(field => field !== 'name');
+  }
+  return DETAIL_FIELDS.filter(field =>
+    listed.some(form => Object.hasOwn(hostRules.forms[form].properties, field))
+  );
+};
+
+const CHOICES = { salutation: SALUTATIONS, gender: GENDERS };
+const INPUTS = {
+  name: ['text', 'name'],
+  given_name: ['text', 'given-name'],
+  family_name: ['text', 'family-name'],
+  middle_name: ['text', 'additional-name'],
+  website: ['url', 'url'],
+  birthdate: ['date', 'bday'],
 };
 const ADDRESS_FIELDS = ['line1', 'line2', 'country', 'state', 'city', 'postal_code'];
 const ADDRESS_LABELS = {
@@ -56,8 +91,10 @@ const ADDRESS_LABELS = {
   postal_code: 'postalCode',
 };
 
-const detailsOf = profile =>
-  Object.fromEntries(DETAIL_FIELDS.map(field => [field, profile?.[field] || '']));
+const detailsOf = (profile, fields) =>
+  Object.fromEntries(fields.map(field => [field, profile?.[field] || '']));
+
+const mobileOf = profile => profile?.mobile_number?.masked || profile?.mobile_number?.value || '';
 
 const changedOf = (values, profile) =>
   Object.fromEntries(
@@ -211,76 +248,12 @@ PhoneChange.propTypes = {
   onDone: PropTypes.func.isRequired,
 };
 
-const addressOf = profile => ({ ...EMPTY_ADDRESS, ...(profile?.address || {}) });
-
-const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
-const NAME_LABELS = { name: 'profile.fields.displayName' };
-
-const DisplayNameForm = ({ account, profile, onSaved }) => {
-  const { t } = useTranslation();
-  const notify = useNotify();
-  const [values, setValues] = useState(() => ({ name: profile.name || '' }));
-  const rules = useFormRules({
-    formKey: 'displayName',
-    schema: NAME_SCHEMA,
-    values,
-    labels: NAME_LABELS,
-    idPrefix: 'profile-details',
-  });
-
-  const save = async event => {
-    event.preventDefault();
-    if (!rules.validateAll()) {
-      return;
-    }
-    try {
-      await account.details({ name: values.name });
-      notify('success', t('profile.messages.nameChanged'));
-      await onSaved();
-    } catch (error) {
-      if (!rules.applyServerErrors(error)) {
-        notify('danger', t(errorKeys(error)));
-      }
-    }
-  };
-
-  return (
-    <div className="tab-pane fade show active">
-      <form onSubmit={save} noValidate className="mb-4">
-        <div className="col-md-4">
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('name')}
-            label={t('profile.fields.displayName')}
-            hint={t('profile.fields.displayNameHint')}
-            error={rules.errors.name || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={values.name}
-                onChange={event => setValues({ name: event.target.value })}
-                onBlur={() => rules.onBlur('name')}
-                placeholder={profile.username || ''}
-              />
-            )}
-          </Field>
-          <button type="submit" className="btn btn-primary">
-            {t('profile.buttons.save')}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-};
-
-DisplayNameForm.propTypes = {
-  account: PropTypes.shape({ details: PropTypes.func.isRequired }).isRequired,
-  profile: PropTypes.shape({ name: PropTypes.string, username: PropTypes.string }).isRequired,
-  onSaved: PropTypes.func.isRequired,
-};
+const addressOf = profile => ({
+  ...EMPTY_ADDRESS,
+  ...Object.fromEntries(
+    Object.entries(profile?.address || {}).filter(([, value]) => value !== null)
+  ),
+});
 
 const ReadOnlyField = ({ id, label, value }) => (
   <Field id={id} label={label}>
@@ -313,7 +286,6 @@ const readOnlyValue = (field, value, t) =>
 const ReadOnlyDetails = ({ account, profile }) => {
   const { t } = useTranslation();
   const address = addressOf(profile);
-  const mobile = profile.mobile_number || null;
   return (
     <div className="tab-pane fade show active">
       <SectionHeading
@@ -321,7 +293,7 @@ const ReadOnlyDetails = ({ account, profile }) => {
         actions={<ManageLink account={account} />}
       />
       <div className="row">
-        {DETAIL_FIELDS.map(field => (
+        {DETAIL_FIELDS.filter(field => field !== 'name').map(field => (
           <div key={field} className="col-md-6">
             <ReadOnlyField
               id={`profile-details-${field}`}
@@ -341,7 +313,7 @@ const ReadOnlyDetails = ({ account, profile }) => {
           <ReadOnlyField
             id="profile-details-mobile"
             label={t('profile.details.mobile')}
-            value={mobile?.masked || mobile?.number || t('profile.details.noMobile')}
+            value={mobileOf(profile) || t('profile.details.noMobile')}
           />
         </div>
       </div>
@@ -366,18 +338,98 @@ ReadOnlyDetails.propTypes = {
   profile: PropTypes.object.isRequired,
 };
 
+const VerifiedPhone = ({ account, profile, guard, onSaved }) => {
+  const { t } = useTranslation();
+  const [changing, setChanging] = useState(false);
+  const mobile = profile.mobile_number || null;
+  return (
+    <>
+      <h5>{t('profile.details.mobile')}</h5>
+      <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
+        <span className="badge bg-secondary">
+          {mobileOf(profile) || t('profile.details.noMobile')}
+        </span>
+        {mobile?.verified ? (
+          <span className="badge bg-success">{t('profile.details.verified')}</span>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => setChanging(previous => !previous)}
+        >
+          {t('profile.details.change')}
+        </button>
+      </div>
+      {changing ? (
+        <PhoneChange
+          account={account}
+          guard={guard}
+          onDone={async () => {
+            setChanging(false);
+            await onSaved();
+          }}
+        />
+      ) : null}
+    </>
+  );
+};
+
+VerifiedPhone.propTypes = {
+  account: PropTypes.object.isRequired,
+  profile: PropTypes.shape({ mobile_number: PropTypes.object }).isRequired,
+  guard: PropTypes.func.isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
+const EmailField = ({ email, onChangeEmail }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="mb-3">
+      <label className="form-label" htmlFor="profile-details-email">
+        {t('profile.details.email')}
+      </label>
+      <div className="d-flex gap-2">
+        <input
+          id="profile-details-email"
+          type="email"
+          className="form-control"
+          value={email}
+          readOnly
+        />
+        {onChangeEmail ? (
+          <button
+            type="button"
+            className="btn btn-outline-secondary text-nowrap"
+            onClick={onChangeEmail}
+          >
+            {t('profile.details.change')}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+EmailField.propTypes = {
+  email: PropTypes.string.isRequired,
+  onChangeEmail: PropTypes.func,
+};
+
 const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [values, setValues] = useState(() => detailsOf(profile));
+  const [fields] = useState(hostDetailFields);
+  const [values, setValues] = useState(() => detailsOf(profile, fields));
   const [address, setAddress] = useState(() => addressOf(profile));
-  const [changingPhone, setChangingPhone] = useState(false);
+  const [mobile, setMobile] = useState(() => mobileOf(profile));
   const rules = useFormRules({
+    formKey: 'profile',
     schema: DETAILS_SCHEMA,
     values,
     labels: DETAILS_LABELS,
     idPrefix: 'profile-details',
   });
+  const plainPhone = Boolean(account.phone?.set);
 
   const set = (field, value) => setValues(previous => ({ ...previous, [field]: value }));
 
@@ -388,7 +440,12 @@ const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmai
     }
     try {
       await account.details(changedOf(values, profile));
-      await account.address(address);
+      if (account.address) {
+        await account.address(address);
+      }
+      if (plainPhone && mobile !== mobileOf(profile)) {
+        await account.phone.set(mobile);
+      }
       notify('success', t('profile.details.saved'));
       await onSaved();
     } catch (error) {
@@ -409,122 +466,92 @@ const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmai
     }
   };
 
-  const textField = (field, type = 'text', autoComplete = undefined) => (
-    <Field
-      id={rules.idFor(field)}
-      label={t(DETAILS_LABELS[field])}
-      error={rules.errors[field] || ''}
-    >
-      {aria => (
-        <input
-          {...aria}
-          type={type}
-          className="form-control"
-          autoComplete={autoComplete}
-          value={values[field]}
-          onChange={event => set(field, event.target.value)}
-          onBlur={() => rules.onBlur(field)}
-        />
-      )}
-    </Field>
-  );
+  const textField = field => {
+    const [type, autoComplete] = INPUTS[field];
+    return (
+      <Field
+        id={rules.idFor(field)}
+        label={t(DETAILS_LABELS[field])}
+        hint={field === 'name' ? t('profile.fields.displayNameHint') : ''}
+        error={rules.errors[field] || ''}
+      >
+        {aria => (
+          <input
+            {...aria}
+            type={type}
+            className="form-control"
+            autoComplete={autoComplete}
+            value={values[field]}
+            onChange={event => set(field, event.target.value)}
+            onBlur={() => rules.onBlur(field)}
+            placeholder={field === 'name' ? profile.username || '' : undefined}
+          />
+        )}
+      </Field>
+    );
+  };
 
-  const mobile = profile.mobile_number || null;
+  const choiceField = field => (
+    <ChoiceField
+      field={field}
+      value={values[field]}
+      options={CHOICES[field]}
+      labelOf={option =>
+        field === 'salutation'
+          ? t(`profile.details.salutation.${option.toLowerCase()}`)
+          : t(`profile.details.gender.${option}`)
+      }
+      rules={rules}
+      onChange={value => set(field, value)}
+    />
+  );
 
   return (
     <div className="tab-pane fade show active">
       <form onSubmit={save} noValidate className="mb-4">
         <FormErrorSummary errors={rules.summary} />
         <div className="row">
-          <div className="col-md-6">{textField('given_name', 'text', 'given-name')}</div>
-          <div className="col-md-6">{textField('family_name', 'text', 'family-name')}</div>
-          <div className="col-md-6">
-            <ChoiceField
-              field="salutation"
-              value={values.salutation}
-              options={SALUTATIONS}
-              labelOf={option => t(`profile.details.salutation.${option.toLowerCase()}`)}
-              rules={rules}
-              onChange={value => set('salutation', value)}
-            />
-          </div>
-          <div className="col-md-6">{textField('middle_name', 'text', 'additional-name')}</div>
-          <div className="col-md-6">
-            <ChoiceField
-              field="gender"
-              value={values.gender}
-              options={GENDERS}
-              labelOf={option => t(`profile.details.gender.${option}`)}
-              rules={rules}
-              onChange={value => set('gender', value)}
-            />
-          </div>
-          <div className="col-md-6">{textField('website', 'url', 'url')}</div>
-          <div className="col-md-6">{textField('birthdate', 'date', 'bday')}</div>
-          <div className="col-md-6">
-            <div className="mb-3">
-              <label className="form-label" htmlFor="profile-details-email">
-                {t('profile.details.email')}
-              </label>
-              <div className="d-flex gap-2">
-                <input
-                  id="profile-details-email"
-                  type="email"
-                  className="form-control"
-                  value={profile.email || ''}
-                  readOnly
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary text-nowrap"
-                  onClick={onChangeEmail}
-                >
-                  {t('profile.details.change')}
-                </button>
-              </div>
+          {fields.map(field => (
+            <div key={field} className="col-md-6">
+              {CHOICES[field] ? choiceField(field) : textField(field)}
             </div>
+          ))}
+          <div className="col-md-6">
+            <EmailField email={profile.email || ''} onChangeEmail={onChangeEmail} />
           </div>
-        </div>
-        <h5>{t('profile.details.mobile')}</h5>
-        <div className="d-flex align-items-center flex-wrap gap-2 mb-3">
-          <span className="badge bg-secondary">
-            {mobile?.masked || t('profile.details.noMobile')}
-          </span>
-          {mobile?.verified ? (
-            <span className="badge bg-success">{t('profile.details.verified')}</span>
+          {plainPhone ? (
+            <div className="col-md-6">
+              <Field id="profile-details-mobile" label={t('profile.details.mobile')}>
+                {aria => (
+                  <PhoneInput id={aria.id} aria={aria} value={mobile} onChange={setMobile} />
+                )}
+              </Field>
+            </div>
           ) : null}
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            onClick={() => setChangingPhone(previous => !previous)}
-          >
-            {t('profile.details.change')}
-          </button>
         </div>
-        {changingPhone ? (
-          <PhoneChange
-            account={account}
-            guard={guard}
-            onDone={async () => {
-              setChangingPhone(false);
-              await onSaved();
-            }}
-          />
+        {account.phone?.send ? (
+          <VerifiedPhone account={account} profile={profile} guard={guard} onSaved={onSaved} />
         ) : null}
-        <h5>{t('profile.address.title')}</h5>
-        <AddressFields
-          value={address}
-          onChange={setAddress}
-          idPrefix="profile-address"
-          placesKey={placesKey}
-        />
+        {account.address ? (
+          <>
+            <h5>{t('profile.address.title')}</h5>
+            <AddressFields
+              value={address}
+              onChange={setAddress}
+              idPrefix="profile-address"
+              placesKey={placesKey}
+            />
+          </>
+        ) : null}
         <div className="d-flex gap-2">
           <button type="submit" className="btn btn-primary">
             {t('profile.buttons.save')}
           </button>
-          <button type="button" className="btn btn-outline-secondary" onClick={clearAddress}>
-            {t('profile.address.clear')}
-          </button>
+          {account.address ? (
+            <button type="button" className="btn btn-outline-secondary" onClick={clearAddress}>
+              {t('profile.address.clear')}
+            </button>
+          ) : null}
         </div>
       </form>
     </div>
@@ -534,32 +561,38 @@ const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmai
 DetailsForm.propTypes = {
   account: PropTypes.shape({
     details: PropTypes.func.isRequired,
-    address: PropTypes.func.isRequired,
-    phone: PropTypes.object.isRequired,
+    address: PropTypes.func,
+    phone: PropTypes.shape({
+      send: PropTypes.func,
+      verify: PropTypes.func,
+      set: PropTypes.func,
+    }),
   }).isRequired,
   profile: PropTypes.object.isRequired,
   guard: PropTypes.func.isRequired,
   placesKey: PropTypes.string.isRequired,
   onSaved: PropTypes.func.isRequired,
-  onChangeEmail: PropTypes.func.isRequired,
+  onChangeEmail: PropTypes.func,
 };
 
 /**
- * The Profile section, one field list on every host, the identity
- * provider's (OpenID Connect Core 1.0 §5.1, the `profile`, `email`,
- * `phone` and `address` scopes): while the adapter is `readOnly` the
- * record belongs to an identity provider and every field draws as a
- * `readonly` input, the salutation and gender as their labels, the
- * address as its parts, under a `SectionHeading` whose action is the
- * Manage at identity provider link; while the adapter carries `address`
- * and `phone`, the seven details of `PATCH /api/user`, the read-only
- * email with a Change link to the Security section's email card, the
- * masked mobile with Change opening the phone entry and the code, and
- * the address block over `PUT /api/user/address`, one Save writing the
- * details and the address together and Clear address emptying the
- * address at once; on a UI backend whose adapter carries `details`
- * alone, the display-name form over that one call; the page remounts it
- * with every re-read of the record.
+ * The Profile section, one form on every host, its field list the
+ * identity provider's (OpenID Connect Core 1.0 §5.1, the `profile`,
+ * `email`, `phone` and `address` scopes) narrowed to what the host
+ * stores by the forms its `/api/rules` lists (`hostDetailFields`): while
+ * the adapter is `readOnly` the record belongs to an identity provider
+ * and every field draws as a `readonly` input, the salutation and gender
+ * as their labels, the address as its parts, under a `SectionHeading`
+ * whose action is the Manage at identity provider link; otherwise the
+ * details over `account.details`, the read-only email with a Change link
+ * to the Security section's email card while the page offers one, the
+ * mobile as the masked number with Change opening the phone entry and
+ * the code while the adapter's `phone` carries `send` and `verify`, or as
+ * one phone field saved with the form while it carries `set`, the
+ * address block over `account.address` while the adapter carries it,
+ * one Save writing the details, the address and the number together and
+ * Clear address emptying the address at once; the page remounts it with
+ * every re-read of the record.
  */
 const IssuerDetailsTab = ({
   account,
@@ -573,9 +606,6 @@ const IssuerDetailsTab = ({
   if (readOnly) {
     return <ReadOnlyDetails account={account} profile={profile} />;
   }
-  if (!account.address || !account.phone) {
-    return <DisplayNameForm account={account} profile={profile} onSaved={onSaved} />;
-  }
   return (
     <DetailsForm
       account={account}
@@ -583,7 +613,7 @@ const IssuerDetailsTab = ({
       guard={guard}
       placesKey={placesKey}
       onSaved={onSaved}
-      onChangeEmail={onChangeEmail}
+      onChangeEmail={account.email ? onChangeEmail : null}
     />
   );
 };
@@ -593,6 +623,7 @@ IssuerDetailsTab.propTypes = {
     details: PropTypes.func,
     address: PropTypes.func,
     phone: PropTypes.object,
+    email: PropTypes.object,
   }).isRequired,
   profile: PropTypes.object.isRequired,
   guard: PropTypes.func.isRequired,

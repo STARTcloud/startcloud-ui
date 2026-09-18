@@ -497,7 +497,7 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
 
 IsoArtifactsActions.propTypes = slotShape;
 
-export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
+export const IsoArtifactRowActions = ({ item, version, architecture, ctx }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const { user, org, reload, notify } = ctx;
@@ -509,14 +509,14 @@ export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
 
   const remove = () => {
     api.files
-      .remove(org, item.name, version.version, artifact.name)
+      .remove(org, item.name, version.version, architecture.name)
       .then(() => {
         notify('success', t('boxes.iso.file.deleted'));
         reload();
       })
       .catch(error => {
         log.component.error('Error deleting ISO file', {
-          architectureName: artifact.name,
+          architectureName: architecture.name,
           error: error.message,
         });
         notify('danger', t(error.messageKey || 'errors.request'));
@@ -525,7 +525,7 @@ export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
 
   return (
     <>
-      <button type="button" className="btn btn-danger me-2" onClick={() => setShow(true)}>
+      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />
@@ -533,4 +533,4 @@ export const IsoArtifactRowActions = ({ item, version, artifact, ctx }) => {
   );
 };
 
-IsoArtifactRowActions.propTypes = { ...slotShape, artifact: architectureShape.isRequired };
+IsoArtifactRowActions.propTypes = { ...slotShape, architecture: architectureShape.isRequired };

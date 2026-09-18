@@ -388,7 +388,6 @@
       "requestCanceled": "Join request canceled successfully",
       "serviceAccountCreated": "Service account created successfully!",
       "serviceAccountsDeleted": "Selected service accounts deleted successfully!",
-      "nameChanged": "Display name saved.",
       "emailNotVerified": "Your email is not verified."
     },
     "errors": {
@@ -2159,7 +2158,6 @@
       "variant": "Variant",
       "checksumType": "Checksum type",
       "checksum": "Checksum",
-      "downloadWithCount": "Download ({{n}})",
       "updated": "The file was updated.",
       "deleted": "The file was deleted."
     },

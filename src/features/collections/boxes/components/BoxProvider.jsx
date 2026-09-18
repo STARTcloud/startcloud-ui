@@ -531,7 +531,7 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
 
   return (
     <>
-      <button type="button" className="btn btn-danger me-2" onClick={() => setShow(true)}>
+      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}
       </button>
       <ConfirmModal show={show} handleClose={() => setShow(false)} handleConfirm={remove} />

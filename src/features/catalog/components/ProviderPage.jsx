@@ -2,7 +2,10 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { architectureLevelMatches } from '../../../components/common/levelColumns';
+import {
+  DownloadAction,
+  architectureLevelMatches,
+} from '../../../components/common/levelColumns';
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -149,6 +152,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
           rows={search.rows}
           rowKey={row => row.name}
           rowId={row => rowIdOf(row.name)}
+          LeadActions={DownloadAction}
           RowActions={ArchitectureRowActions}
           actionsProps={slotProps}
           rowProp="architecture"

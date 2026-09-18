@@ -46,6 +46,7 @@ export {
   changePassword,
   leaveOrganization,
   myRequests,
+  patchProfile,
   removeAccount,
   resendVerification,
   serviceAccounts,

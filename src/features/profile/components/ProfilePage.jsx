@@ -30,10 +30,12 @@ import SessionsTab from './SessionsTab';
  * in its heading; `stepUp` arms the step-up window where the host has
  * one; every other member is one group of calls the page draws a section
  * for and draws nothing without, the identity provider carrying
- * `details`, `address`, `phone`, `email`, `password`, `tfa`, `passkeys`,
+ * `details`, `address`, `phone` (`{ send, verify }`, the number changed
+ * through a code), `email`, `password`, `tfa`, `passkeys`,
  * `backupCodes`, `linked`, `sessions`, `favorites`, `preferences` and
  * `deletion`, and a UI backend with accounts of its own carrying
- * `details`, `password`, `email`, `deletion`, `verification` (the emailed
+ * `details`, `address`, `phone` (`{ set }`, the number written plainly),
+ * `password`, `email`, `deletion`, `verification` (the emailed
  * verification link's consume and its resend), `organizations` and
  * `serviceAccounts`.
  */

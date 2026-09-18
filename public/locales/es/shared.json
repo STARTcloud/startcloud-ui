@@ -388,7 +388,6 @@
       "requestCanceled": "Solicitud de unión cancelada exitosamente",
       "serviceAccountCreated": "¡Cuenta de servicio creada exitosamente!",
       "serviceAccountsDeleted": "¡Cuentas de servicio seleccionadas eliminadas exitosamente!",
-      "nameChanged": "Nombre visible guardado.",
       "emailNotVerified": "Tu correo electrónico no está verificado."
     },
     "errors": {
@@ -2159,7 +2158,6 @@
       "variant": "Variante",
       "checksumType": "Tipo de checksum",
       "checksum": "Suma de comprobación",
-      "downloadWithCount": "Descargar ({{n}})",
       "updated": "El archivo se actualizó.",
       "deleted": "El archivo se eliminó."
     },

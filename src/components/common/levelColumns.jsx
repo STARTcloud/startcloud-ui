@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 import { listWord } from '../../utils/closedLists';
@@ -9,10 +10,30 @@ import { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
-const downloadButton = (url, ctx) =>
-  url ? (
+const nameBadges = names =>
+  names.length > 0 ? (
+    <span className="d-inline-flex flex-wrap gap-1">
+      {names.map(name => (
+        <span key={name} className="badge bg-secondary badge-xs">
+          {name}
+        </span>
+      ))}
+    </span>
+  ) : (
+    ''
+  );
+
+/**
+ * The one download action of every table whose row is a file: the
+ * `SubTable`'s `LeadActions` on the architectures and files tables, a
+ * Download button in the Actions column while the row carries a
+ * `downloadUrl`, drawn for every viewer the row is shown to because a
+ * download is a read the row already granted.
+ */
+export const DownloadAction = ({ architecture, ctx }) =>
+  architecture.downloadUrl ? (
     <a
-      href={url}
+      href={architecture.downloadUrl}
       className="btn btn-sm btn-outline-primary"
       target="_blank"
       rel="noopener noreferrer"
@@ -20,6 +41,39 @@ const downloadButton = (url, ctx) =>
       {ctx.t('pages.table.download')}
     </a>
   ) : null;
+
+DownloadAction.propTypes = {
+  architecture: PropTypes.shape({ downloadUrl: PropTypes.string }).isRequired,
+  ctx: PropTypes.shape({ t: PropTypes.func.isRequired }).isRequired,
+};
+
+const downloadsColumn = {
+  key: 'downloads',
+  kind: 'count',
+  labelKey: 'pages.table.downloads',
+  sortValue: row => row.downloadCount || 0,
+  when: hasAny(row => typeof row.downloadCount === 'number'),
+  render: row => (typeof row.downloadCount === 'number' ? row.downloadCount : ''),
+};
+
+const sizeColumn = {
+  key: 'size',
+  kind: 'size',
+  labelKey: 'pages.table.fileSize',
+  sortValue: row => row.fileSize || 0,
+  when: hasAny(row => row.fileSize),
+  render: (row, ctx) => (row.fileSize ? ctx.formatFileSize(row.fileSize) : ''),
+};
+
+const checksumColumn = {
+  key: 'checksum',
+  kind: 'checksum',
+  labelKey: 'pages.table.checksum',
+  sortValue: row => (row.checksum || '').toLowerCase(),
+  when: hasAny(row => row.checksum),
+  render: row =>
+    row.checksum ? <ChecksumCell checksum={row.checksum} checksumType={row.checksumType || ''} /> : '',
+};
 
 /**
  * The columns the versions table of an item page draws, one level below the
@@ -95,10 +149,18 @@ export const versionLevelColumns = ({ org, name }) => [
   },
 ];
 
+const providerDownloads = provider =>
+  (provider.architectures || []).reduce(
+    (sum, architecture) =>
+      typeof architecture.downloadCount === 'number' ? sum + architecture.downloadCount : sum,
+    0
+  );
+
 /**
  * The columns the providers table of a version page draws: the provider
- * linking to its own page, its details, and one badge per architecture with
- * that architecture's count and download.
+ * linking to its own page, its details, the downloads of its files summed
+ * and one badge per architecture, each file's own count and download
+ * living on the provider's page where the file is a row.
  *
  * @param {{org: string, name: string, version: string}} scope - The version the providers belong to
  * @returns {Array<Object>} The columns
@@ -124,23 +186,24 @@ export const providerLevelColumns = ({ org, name, version }) => [
     render: provider => provider.description,
   },
   {
+    key: 'downloads',
+    kind: 'count',
+    labelKey: 'pages.table.downloads',
+    sortValue: providerDownloads,
+    when: hasAny(provider =>
+      (provider.architectures || []).some(
+        architecture => typeof architecture.downloadCount === 'number'
+      )
+    ),
+    render: providerDownloads,
+  },
+  {
     key: 'architectures',
     kind: 'badges',
     labelKey: 'pages.table.architectures',
     when: hasAny(provider => (provider.architectures || []).length > 0),
-    render: (provider, ctx) => (
-      <span className="d-inline-flex flex-wrap align-items-center gap-2">
-        {(provider.architectures || []).map(architecture => (
-          <span key={architecture.name} className="d-inline-flex align-items-center gap-1">
-            <span className="badge bg-secondary badge-xs">{architecture.name}</span>
-            {typeof architecture.downloadCount === 'number' ? (
-              <span className="small text-body-secondary">{architecture.downloadCount}</span>
-            ) : null}
-            {downloadButton(architecture.downloadUrl, ctx)}
-          </span>
-        ))}
-      </span>
-    ),
+    render: provider =>
+      nameBadges((provider.architectures || []).map(architecture => architecture.name)),
   },
 ];
 
@@ -149,7 +212,8 @@ export const providerLevelColumns = ({ org, name, version }) => [
  * file: the name, a link to its own page on a collection whose versions
  * carry architectures directly and only while the page is not already that
  * one, then the dates, the count, the default flag where a row carries one,
- * the size, the checksum and the download.
+ * the size and the checksum; the download is the table's `DownloadAction`
+ * in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The level above, `provider` empty on a version page
  * @returns {Array<Object>} The columns
@@ -171,15 +235,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   },
   { ...createdColumn, defaultHidden: false, when: hasAny(architecture => architecture.createdAt) },
   { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
-  {
-    key: 'downloads',
-    kind: 'count',
-    labelKey: 'pages.table.downloads',
-    sortValue: architecture => architecture.downloadCount || 0,
-    when: hasAny(architecture => typeof architecture.downloadCount === 'number'),
-    render: architecture =>
-      typeof architecture.downloadCount === 'number' ? architecture.downloadCount : '',
-  },
+  downloadsColumn,
   {
     key: 'defaultBox',
     kind: 'word',
@@ -188,38 +244,8 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
     when: hasAny(architecture => typeof architecture.defaultBox === 'boolean'),
     render: (architecture, ctx) => ctx.t(architecture.defaultBox ? 'yes' : 'no'),
   },
-  {
-    key: 'size',
-    kind: 'size',
-    labelKey: 'pages.table.fileSize',
-    sortValue: architecture => architecture.fileSize || 0,
-    when: hasAny(architecture => architecture.fileSize),
-    render: (architecture, ctx) =>
-      architecture.fileSize ? ctx.formatFileSize(architecture.fileSize) : '',
-  },
-  {
-    key: 'checksum',
-    kind: 'checksum',
-    labelKey: 'pages.table.checksum',
-    sortValue: architecture => (architecture.checksum || '').toLowerCase(),
-    when: hasAny(architecture => architecture.checksum),
-    render: architecture =>
-      architecture.checksum ? (
-        <ChecksumCell
-          checksum={architecture.checksum}
-          checksumType={architecture.checksumType || ''}
-        />
-      ) : (
-        ''
-      ),
-  },
-  {
-    key: 'download',
-    kind: 'action',
-    labelKey: 'pages.table.download',
-    when: hasAny(architecture => architecture.downloadUrl),
-    render: (architecture, ctx) => downloadButton(architecture.downloadUrl, ctx),
-  },
+  sizeColumn,
+  checksumColumn,
 ];
 
 const countCell = entries => (entries || []).length;
@@ -333,8 +359,9 @@ const wordColumn = (key, labelKey, group) => ({
  * row is one file: one Name column, the name it was uploaded with and, only
  * when the key differs from it, the key as a small code beside it (the
  * shape `labelColumn` gives the catalog's label and slug), its kind,
- * platform, architecture and language, the size, the checksum and the
- * tokened download with its count.
+ * platform, architecture and language, the downloads, the size and the
+ * checksum; the tokened download is the table's `DownloadAction` in the
+ * Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The patch the files belong to
  * @returns {Array<Object>} The columns
@@ -372,52 +399,9 @@ export const fileLevelColumns = () => [
     sortValue: file => (file.variant || '').toLowerCase(),
     render: file => file.variant || '',
   },
-  {
-    key: 'size',
-    kind: 'size',
-    labelKey: 'pages.table.fileSize',
-    sortValue: file => file.fileSize || 0,
-    when: hasAny(file => file.fileSize),
-    render: (file, ctx) => (file.fileSize ? ctx.formatFileSize(file.fileSize) : ''),
-  },
-  {
-    key: 'checksum',
-    kind: 'checksum',
-    labelKey: 'pages.table.checksum',
-    sortValue: file => (file.checksum || '').toLowerCase(),
-    when: hasAny(file => file.checksum),
-    render: file =>
-      file.checksum ? (
-        <ChecksumCell checksum={file.checksum} checksumType={file.checksumType || ''} />
-      ) : (
-        ''
-      ),
-  },
-  {
-    key: 'download',
-    kind: 'action',
-    labelKey: 'pages.table.download',
-    when: hasAny(file => file.downloadUrl),
-    render: (file, ctx) => {
-      if (!file.downloadUrl) {
-        return null;
-      }
-      const label =
-        typeof file.downloadCount === 'number'
-          ? ctx.t('downloads.file.downloadWithCount', { n: file.downloadCount })
-          : ctx.t('pages.table.download');
-      return (
-        <a
-          href={file.downloadUrl}
-          className="btn btn-sm btn-outline-primary"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {label}
-        </a>
-      );
-    },
-  },
+  downloadsColumn,
+  sizeColumn,
+  checksumColumn,
 ];
 
 /**

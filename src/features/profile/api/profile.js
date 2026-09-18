@@ -20,6 +20,8 @@ export const changeEmail = (userId, newEmail) =>
 
 export const changeName = (userId, name) => client.put(`${user(userId)}/change-name`, { name });
 
+export const patchProfile = body => client.patch('/api/user', body);
+
 export const leaveOrganization = organization =>
   client.post(encodePath('api', 'user', 'leave', organization), {});
 

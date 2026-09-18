@@ -7,7 +7,7 @@ import { FaRegStar, FaStar } from 'react-icons/fa6';
 import { useCssVar } from '../../hooks/useCssVar';
 import { sortShape } from '../../utils/itemShape';
 
-import { KIND_NAMES, widthClass } from './columnKinds';
+import { KIND_NAMES, isFlexKind, kindClasses } from './columnKinds';
 import GroupHeading, { groupShape } from './GroupHeading';
 import { RowCheckbox, SelectAllCheckbox, selectionShape } from './SelectCheckbox';
 import SortHeader from './SortHeader';
@@ -32,10 +32,13 @@ export const watchesShape = PropTypes.shape({
  */
 export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
 
-const columnClass = column => `col-${column.key} ${widthClass(column.kind)}`;
+const columnClass = column => `col-${column.key} ${kindClasses(column.kind)}`;
 
 const cellClass = column =>
   column.className ? `${columnClass(column)} ${column.className}` : columnClass(column);
+
+const needsSpacer = (drawn, widths) =>
+  !drawn.some(column => isFlexKind(column.kind) && !widths[column.key]);
 
 const WatchStar = ({ watched, onToggle }) => {
   const { t } = useTranslation();
@@ -166,7 +169,7 @@ SizedCol.propTypes = {
   width: PropTypes.number,
 };
 
-const ColumnGroup = ({ drawn, selection, watches, QuickActions, RowActions, widths }) => (
+const ColumnGroup = ({ drawn, selection, watches, QuickActions, actions, widths, spacer }) => (
   <colgroup>
     {selection ? <col className="col-select" /> : null}
     {watches ? <col className="col-watch" /> : null}
@@ -174,8 +177,8 @@ const ColumnGroup = ({ drawn, selection, watches, QuickActions, RowActions, widt
       <SizedCol key={column.key} column={column} width={widths[column.key] || null} />
     ))}
     {QuickActions ? <col className="col-quick" /> : null}
-    {RowActions ? <col className="col-actions" /> : null}
-    <col className="col-spacer" />
+    {actions ? <col className="col-actions" /> : null}
+    {spacer ? <col className="col-spacer" /> : null}
   </colgroup>
 );
 
@@ -184,8 +187,9 @@ ColumnGroup.propTypes = {
   selection: selectionShape,
   watches: watchesShape,
   QuickActions: PropTypes.elementType,
-  RowActions: PropTypes.elementType,
+  actions: PropTypes.bool.isRequired,
   widths: PropTypes.objectOf(PropTypes.number).isRequired,
+  spacer: PropTypes.bool.isRequired,
 };
 
 const HeaderCell = ({ column, sort, onSort, onResize }) => {
@@ -223,7 +227,8 @@ const HeaderRow = ({
   selection,
   watches,
   QuickActions,
-  RowActions,
+  actions,
+  spacer,
   sort,
   onSort,
   onResize,
@@ -247,8 +252,8 @@ const HeaderRow = ({
         />
       ))}
       {QuickActions ? <th className="col-quick" aria-label={t('pages.table.actions')} /> : null}
-      {RowActions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
-      <th className="col-spacer" aria-hidden="true" />
+      {actions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
+      {spacer ? <th className="col-spacer" aria-hidden="true" /> : null}
     </tr>
   );
 };
@@ -258,10 +263,28 @@ HeaderRow.propTypes = {
   selection: selectionShape,
   watches: watchesShape,
   QuickActions: PropTypes.elementType,
-  RowActions: PropTypes.elementType,
+  actions: PropTypes.bool.isRequired,
+  spacer: PropTypes.bool.isRequired,
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
   onResize: PropTypes.func,
+};
+
+const ActionsCell = ({ LeadActions, RowActions, actionsProps, own, ctx }) => (
+  <td className="col-actions">
+    <span className="d-inline-flex align-items-center flex-wrap gap-1">
+      {LeadActions ? <LeadActions {...own} ctx={ctx} /> : null}
+      {RowActions ? <RowActions {...actionsProps} {...own} /> : null}
+    </span>
+  </td>
+);
+
+ActionsCell.propTypes = {
+  LeadActions: PropTypes.elementType,
+  RowActions: PropTypes.elementType,
+  actionsProps: PropTypes.object.isRequired,
+  own: PropTypes.object.isRequired,
+  ctx: PropTypes.object.isRequired,
 };
 
 const BodyRow = ({
@@ -275,8 +298,10 @@ const BodyRow = ({
   selection,
   watches,
   QuickActions,
+  LeadActions,
   RowActions,
   actionsProps,
+  spacer,
   Detail,
   detailProps,
   expandedKeys,
@@ -310,7 +335,7 @@ const BodyRow = ({
         ) : null}
         {drawn.map(column => (
           <td key={column.key} className={cellClass(column)}>
-            {column.render(row, ctx)}
+            <div className="cell">{column.render(row, ctx)}</div>
           </td>
         ))}
         {QuickActions ? (
@@ -318,12 +343,16 @@ const BodyRow = ({
             <QuickActions {...own} ctx={ctx} />
           </td>
         ) : null}
-        {RowActions ? (
-          <td className="col-actions">
-            <RowActions {...actionsProps} {...own} />
-          </td>
+        {LeadActions || RowActions ? (
+          <ActionsCell
+            LeadActions={LeadActions}
+            RowActions={RowActions}
+            actionsProps={actionsProps}
+            own={own}
+            ctx={ctx}
+          />
         ) : null}
-        <td className="col-spacer" />
+        {spacer ? <td className="col-spacer" /> : null}
       </tr>
       {expanded ? (
         <tr className="detail-row">
@@ -347,8 +376,10 @@ BodyRow.propTypes = {
   selection: selectionShape,
   watches: watchesShape,
   QuickActions: PropTypes.elementType,
+  LeadActions: PropTypes.elementType,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object.isRequired,
+  spacer: PropTypes.bool.isRequired,
   Detail: PropTypes.elementType,
   detailProps: PropTypes.object.isRequired,
   expandedKeys: PropTypes.instanceOf(Set),
@@ -415,10 +446,15 @@ TableBody.propTypes = {
  * and the organization console's lists. Draws the given columns in order,
  * each only when it is not in `hiddenColumns` and its `when` is absent or
  * true for the rows, a sort header for each column carrying a `sortValue`,
- * one `td.col-<key>` per column, every `col`, `th` and `td` also carrying
- * the width class of the column's `kind` (`columnKinds`, `col-w-narrow`,
- * `col-w-medium` or `col-w-wide`) so the width comes from the kind alone
- * and a column without a `kind` is a defect, a leading select column when `selection`
+ * one `td.col-<key>` per column, its content in one `.cell` block the
+ * stylesheet styles by the column's kind, every `col`, `th` and `td` also
+ * carrying the width and kind classes of that `kind` (`columnKinds`,
+ * `col-w-narrow`, `col-w-medium` or `col-w-flex` and `col-k-<kind>`) so
+ * the width and the look come from the kind alone, never from a column
+ * key, and a column without a `kind` is a defect; the `flex` kinds share
+ * the room the fixed columns leave, a trailing unsized spacer column
+ * taking that room only on a table drawing no unsized flex column; a
+ * leading select column when `selection`
  * is given (a real checkbox header, checked, unchecked or indeterminate,
  * the select-all for the page, and one row checkbox per cell), the watch
  * column after it when `watches` is given (a star header sorting by
@@ -426,8 +462,11 @@ TableBody.propTypes = {
  * star alone and blank cells otherwise, so a listing keeps its shape
  * signed out), a quick-actions cell before the actions column when
  * `QuickActions` is given (rendered with `ctx` plus the row under
- * `rowProp`), an actions column when `RowActions` is given (rendered with
- * `actionsProps` plus the row under `rowProp`), the class `rowClass`
+ * `rowProp`), an actions column when `LeadActions` or `RowActions` is
+ * given, `LeadActions` the actions every viewer of the row gets (a
+ * download), rendered with `ctx` plus the row under `rowProp` and drawn
+ * first, `RowActions` the host's own, rendered with
+ * `actionsProps` plus the row under `rowProp`, the class `rowClass`
  * answers on each row, one full-width detail row under every row whose key
  * is in `expandedKeys` (rendering `Detail` with `detailProps` plus the row
  * under `rowProp`), one `tbody` per group with a `GroupHeading` row when
@@ -445,10 +484,9 @@ TableBody.propTypes = {
  * call `onResize(key, null)` to reset; `widths` (column key to pixels)
  * sets each column's width over the kind's, a hidden column keeping
  * its entry. The widths live on a `colgroup`, one `col` per cell carrying
- * the cell's `col-<key>` and width classes and, when stored, the width, and a trailing
- * unsized `col` with an empty header and body cell is the spacer that takes
- * whatever width the fixed columns leave, so the shared columns sit at one
- * x on every table whatever is hidden and a drag moves the spacer alone.
+ * the cell's `col-<key>`, width and kind classes and, when stored, the
+ * width, so the fixed leading cells sit at one x on every table and a
+ * drag takes room from the flex columns alone.
  */
 const SubTable = ({
   columns,
@@ -456,6 +494,7 @@ const SubTable = ({
   rowKey,
   rowId = null,
   rowRef = null,
+  LeadActions = null,
   RowActions = null,
   actionsProps = {},
   QuickActions = null,
@@ -481,8 +520,11 @@ const SubTable = ({
   const drawn = columns.filter(
     column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
   );
+  const actions = Boolean(LeadActions || RowActions);
+  const spacer = needsSpacer(drawn, widths);
   const columnCount =
-    drawn.length + [selection, watches, QuickActions, RowActions].filter(Boolean).length + 1;
+    drawn.length +
+    [selection, watches, QuickActions, actions, spacer].filter(Boolean).length;
   const rowProps = {
     drawn,
     rowKey,
@@ -493,8 +535,10 @@ const SubTable = ({
     selection,
     watches,
     QuickActions,
+    LeadActions,
     RowActions,
     actionsProps,
+    spacer,
     Detail,
     detailProps,
     expandedKeys,
@@ -509,8 +553,9 @@ const SubTable = ({
           selection={selection}
           watches={watches}
           QuickActions={QuickActions}
-          RowActions={RowActions}
+          actions={actions}
           widths={widths}
+          spacer={spacer}
         />
         <thead>
           <HeaderRow
@@ -518,7 +563,8 @@ const SubTable = ({
             selection={selection}
             watches={watches}
             QuickActions={QuickActions}
-            RowActions={RowActions}
+            actions={actions}
+            spacer={spacer}
             sort={sort}
             onSort={onSort}
             onResize={onResize}
@@ -555,6 +601,7 @@ SubTable.propTypes = {
   rowKey: PropTypes.func.isRequired,
   rowId: PropTypes.func,
   rowRef: PropTypes.func,
+  LeadActions: PropTypes.elementType,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
   QuickActions: PropTypes.elementType,

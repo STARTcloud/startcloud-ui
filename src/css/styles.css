@@ -1410,14 +1410,28 @@ button::-moz-focus-inner {
   position: relative;
 }
 
-.items-table-wrap {
+.items-table td .cell {
   container-type: inline-size;
+  min-width: 0;
 }
 
-@container (max-width: 60rem) {
-  .items-table .name-org {
+.items-table .col-k-name .cell,
+.items-table .col-k-text .cell,
+.items-table .col-k-checksum .cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container (max-width: 14rem) {
+  .name-org {
     display: none;
   }
+}
+
+.items-table .col-k-count {
+  text-align: right;
+  padding-right: 1.25rem;
 }
 
 .items-table col.col-sized {
@@ -1436,39 +1450,50 @@ button::-moz-focus-inner {
   width: 10rem;
 }
 
-.items-table .col-w-wide {
-  width: 16rem;
-}
-
 .items-table th:has(.col-resize.dragging) {
   overflow: visible;
 }
 
 .col-resize {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  right: 0;
-  width: 6px;
+  top: 0;
+  bottom: 0;
+  right: -5px;
+  width: 11px;
   padding: 0;
   border: 0;
-  border-right: 2px solid transparent;
   background: transparent;
   cursor: col-resize;
   touch-action: none;
+  z-index: 1;
 }
 
-.items-table th:hover .col-resize {
-  border-right-color: var(--bs-border-color);
+.col-resize::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: 3px;
+  border-radius: 2px;
+  background: transparent;
 }
 
-.col-resize.dragging {
-  border-right-color: var(--bs-primary);
+.items-table th:hover .col-resize::after {
+  background: var(--bs-border-color);
+}
+
+.col-resize:hover::after,
+.col-resize.dragging::after {
+  background: var(--bs-primary);
 }
 
 .col-resize:focus-visible {
   outline: 0;
-  border-right-color: var(--bs-primary);
+}
+
+.col-resize:focus-visible::after {
+  background: var(--bs-primary);
   box-shadow: 0 0 0 0.25rem var(--brand-focus-ring);
 }
 
@@ -1490,29 +1515,6 @@ button::-moz-focus-inner {
 .items-table .col-quick,
 .items-table .col-select {
   width: 2.5rem;
-}
-
-.items-table .col-name,
-.items-table .col-label,
-.items-table .col-os,
-.items-table .col-family,
-.items-table .col-vendor,
-.items-table .col-details,
-.items-table .col-language,
-.items-table .col-variant,
-.items-table .col-checksum {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.items-table .col-downloads,
-.items-table .col-versions,
-.items-table .col-releases,
-.items-table .col-patches,
-.items-table .col-files {
-  text-align: right;
-  padding-right: 1.25rem;
 }
 
 .items-table .col-actions {

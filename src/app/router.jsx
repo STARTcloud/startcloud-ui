@@ -123,6 +123,7 @@ import {
   issuerAccount,
   leaveOrganization,
   myRequests,
+  patchProfile,
   placesKey,
   removeAccount,
   resendVerification,
@@ -222,6 +223,38 @@ const backendProfile = oidc => async () => {
   return { ...user, ...profileOfClaims(claims) };
 };
 
+const ADDRESS_MEMBERS = ['line1', 'city', 'state', 'postal_code', 'country', 'formatted'];
+
+const addressBody = record =>
+  Object.fromEntries(ADDRESS_MEMBERS.map(member => [member, record?.[member] || null]));
+
+const localDetails = userId => async body => {
+  const { name, ...members } = body;
+  if (name !== undefined) {
+    await changeName(userId, name || '');
+  }
+  if (Object.keys(members).length > 0) {
+    await patchProfile(members);
+  }
+};
+
+/**
+ * The writes of a local account's own record on a `backend` host, in the
+ * identity provider's member names: `details` routes the display name to
+ * the change-name call and every other member to `PATCH /api/user`, the
+ * JSON Merge Patch over the host's SCIM core attributes, `address` writes
+ * the address block's six stored members through the same patch, and
+ * `phone` is the plain `set` of the number, the host verifying no code.
+ *
+ * @param {number} userId - The stored user's id
+ * @returns {Object} The `details`, `address` and `phone` members
+ */
+const localRecordMembers = userId => ({
+  details: localDetails(userId),
+  address: record => patchProfile({ address: addressBody(record) }),
+  phone: { set: number => patchProfile({ mobile_number: number || null }) },
+});
+
 const localAccountMembers = userId => ({
   password: body => changePassword(userId, body.password),
   email: { request: newEmail => changeEmail(userId, newEmail) },
@@ -237,9 +270,10 @@ const localAccountMembers = userId => ({
  * standard claims through the session's memoized `claims()`, and
  * `manageUrl` is the provider's profile page, so the page draws the same
  * sections read-only with the Manage at identity provider link; for a
- * local account the record is `readWrite`, the display name through
- * `details`, the password, email and deletion members while the host
- * advertises `local-accounts`; on both the verification link and its
+ * local account the record is `readWrite`, the name parts and the display
+ * name through `details`, the address and the mobile number through
+ * `address` and `phone.set`, the password, email and deletion members
+ * while the host advertises `local-accounts`; on both the verification link and its
  * resend under `verification`, the memberships and join requests under
  * `organizations` (Make primary only for a local session) and the
  * service accounts under `serviceAccounts`.
@@ -257,7 +291,7 @@ const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
     profile: backendProfile(oidc),
     mutability: oidc ? 'readOnly' : 'readWrite',
     ...(oidc && issuerUrl ? { manageUrl: `${issuerUrl}/user/profile` } : {}),
-    ...(oidc ? {} : { details: body => changeName(userId, body.name) }),
+    ...(oidc ? {} : localRecordMembers(userId)),
     ...(localAccounts && !oidc ? localAccountMembers(userId) : {}),
     verification: { verify: verifyMail, resend: resendVerification },
     organizations: {
