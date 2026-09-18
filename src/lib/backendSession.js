@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+import { createApiClient } from './apiClient';
 import { decodeJwt } from './jwt';
 
 const REFRESH_AFTER_MS = 240000;
@@ -39,7 +40,10 @@ const failure = (message, messageKey) => {
  * backend's logout route for signing out everywhere. A session it restores
  * or completes is `{ user, organizations, oidc, issuerUrl }`, the user
  * being the stored profile. The API client drives `headers`, `retryAuth`,
- * `adoptResponse` and `endSession`.
+ * `adoptResponse` and `endSession`, and the provider's own reads of the
+ * profile, the claims, the preferences write and the trusted issuers go
+ * through its own instance of that client, so a JWT the backend rotates
+ * in an `x-refreshed-token` header on any of them is adopted.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The backend origin
@@ -121,10 +125,15 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     }
   };
 
+  const client = createApiClient({
+    baseUrl,
+    session: { headers, retryAuth, adoptResponse, endSession },
+  });
+
   const trustedIssuers = () => {
-    issuersPromise ||= axios
-      .get(`${api}/auth/oidc/issuers`)
-      .then(({ data }) => data.issuers || [])
+    issuersPromise ||= client
+      .get('/api/auth/oidc/issuers', { auth: false })
+      .then(data => data.issuers || [])
       .catch(() => []);
     return issuersPromise;
   };
@@ -159,10 +168,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (!user) {
       return null;
     }
-    const profile = await axios
-      .get(`${api}/user`, { headers: await headers() })
-      .then(({ data }) => data)
-      .catch(() => null);
+    const profile = await client.get('/api/user').catch(() => null);
     if (profile) {
       store({
         ...user,
@@ -227,10 +233,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   };
 
   const claims = () => {
-    claimsPromise ||= headers()
-      .then(requestHeaders => axios.get(`${api}/userinfo/claims`, { headers: requestHeaders }))
-      .then(({ data }) => data)
-      .catch(() => null);
+    claimsPromise ||= client.get('/api/userinfo/claims').catch(() => null);
     return claimsPromise;
   };
 
@@ -238,8 +241,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (!current()) {
       return;
     }
-    const saved = await axios
-      .patch(`${api}/user/preferences`, patch, { headers: await headers() })
+    const saved = await client
+      .patch('/api/user/preferences', patch)
       .then(() => true)
       .catch(() => false);
     const user = current();

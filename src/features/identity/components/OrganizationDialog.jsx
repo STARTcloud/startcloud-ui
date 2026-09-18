@@ -12,7 +12,6 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { NON_BLANK } from '../../../utils/validation';
-import { updateOrganization } from '../api/accounts';
 
 export const ACCESS_MODES = ['invite', 'request', 'private'];
 export const DEFAULT_ROLES = ['MEMBER', 'ADMIN', 'GUEST'];
@@ -75,6 +74,8 @@ export const adminOrganizationShape = PropTypes.shape({
   customer_id: PropTypes.string,
   created_at: PropTypes.string,
   member_count: PropTypes.number,
+  managed: PropTypes.bool,
+  suspended: PropTypes.bool,
   email: PropTypes.string,
   website_url: PropTypes.string,
   logo_url: PropTypes.string,
@@ -180,11 +181,11 @@ SelectField.propTypes = {
  * default role and customer id, prefilled from the list row, the first
  * field focused on open, validated through `useFormRules` against the
  * issuer's `organization` form, the `422` painted by pointer and the
- * `409 unique` on the name; one `PATCH /api/admin/organizations/{id}` with
- * the changed fields and the address on Save, an empty customer id
- * clearing it.
+ * `409 unique` on the name; one `save(patch)` through the adapter's
+ * `update` with the changed fields, the access mode, the default role and
+ * the address on Save, an empty customer id clearing it.
  */
-const OrganizationDialog = ({ org, onClose, onSaved }) => {
+const OrganizationDialog = ({ org, save, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const formRef = useRef(null);
@@ -204,13 +205,18 @@ const OrganizationDialog = ({ org, onClose, onSaved }) => {
 
   const focusFirst = () => formRef.current?.querySelector(FIRST_FIELD)?.focus();
 
-  const save = event => {
+  const submit = event => {
     event.preventDefault();
     if (!rules.validateAll()) {
       return;
     }
     setBusy(true);
-    updateOrganization(org.id, { ...changedFields(form, org), address })
+    save({
+      ...changedFields(form, org),
+      access_mode: form.access_mode,
+      default_role: form.default_role,
+      address,
+    })
       .then(() => {
         notify('success', t('admin.organizations.saved'));
         onSaved();
@@ -228,7 +234,7 @@ const OrganizationDialog = ({ org, onClose, onSaved }) => {
 
   return (
     <Modal show onHide={onClose} onEntered={focusFirst} dialogClassName="form-modal" scrollable>
-      <form ref={formRef} onSubmit={save} noValidate>
+      <form ref={formRef} onSubmit={submit} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">
             {t('admin.organizations.edit.title', { org: org.name })}
@@ -317,6 +323,7 @@ const OrganizationDialog = ({ org, onClose, onSaved }) => {
 
 OrganizationDialog.propTypes = {
   org: adminOrganizationShape.isRequired,
+  save: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };

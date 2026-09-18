@@ -64,7 +64,8 @@ export const inAppPath = link => {
  * to the icon when it fails to load, a label with its badges, a subline
  * and the trailing actions; the icon image never sends a referrer; an
  * optional leading checkbox while `selectable`, the row's cell of a
- * list's select column.
+ * list's select column; `rowRef` is `useArrival`'s ref for the row, the
+ * row then taking focus so the arrival rule's scroll and focus land on it.
  */
 export const MethodRow = ({
   icon = null,
@@ -78,12 +79,17 @@ export const MethodRow = ({
   selected = false,
   onToggle = null,
   selectLabel = undefined,
+  rowRef = null,
 }) => {
   const [failed, setFailed] = useState('');
   const image = httpsUrl(iconUrl);
   const showImage = image && failed !== image;
   return (
-    <li className={`list-group-item d-flex align-items-center gap-3 ${className}`}>
+    <li
+      ref={rowRef || undefined}
+      tabIndex={rowRef ? -1 : undefined}
+      className={`list-group-item d-flex align-items-center gap-3 ${className}`}
+    >
       {selectable ? (
         <input
           type="checkbox"
@@ -139,6 +145,7 @@ MethodRow.propTypes = {
   selected: PropTypes.bool,
   onToggle: PropTypes.func,
   selectLabel: PropTypes.string,
+  rowRef: PropTypes.func,
 };
 
 export const selectAllShape = PropTypes.shape({

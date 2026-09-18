@@ -1,4 +1,4 @@
-import { FaBuilding, FaGear, FaHardDrive } from 'react-icons/fa6';
+import { FaBuilding, FaGear, FaHardDrive, FaUsers } from 'react-icons/fa6';
 
 import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
@@ -12,9 +12,11 @@ const isAdmin = account =>
 /**
  * The shared admin feature's sidebar export: on every host that
  * advertises `admin`, for a `ROLE_ADMIN` account, one Admin group with
- * Organizations and users at `/admin`, Configuration at `/admin/config`
- * and System at `/admin/system`, each drawn only while the app's `admin`
- * adapter carries `organizationsWithUsers`, `config` or `storage`; the
+ * Users at `/admin/users` and Organizations at `/admin/organizations`
+ * (the identity feature's two pages over the app's `users` and
+ * `organizations` adapters), Configuration at `/admin/config` and System
+ * at `/admin/system`, each drawn only while the app's `admin` adapter
+ * carries `users`, `organizations`, `config` or `storage`; the
  * Configuration entry is the plain row while `status.config` names one
  * file and the configuration tree of identity contract decision 122, one
  * Configuration node with one child per file over the shared
@@ -35,13 +37,20 @@ export const sidebar = (status, account, admin) => {
   }
   const configTree = admin.config && configNamesOf(status).length > 1;
   const items = [];
-  if (admin.organizationsWithUsers) {
+  if (admin.users) {
+    items.push({
+      key: 'users',
+      icon: FaUsers,
+      labelKey: 'admin.users.title',
+      to: '/admin/users',
+    });
+  }
+  if (admin.organizations) {
     items.push({
       key: 'organizations',
       icon: FaBuilding,
-      labelKey: 'admin.tabs.orgsAndUsers',
-      to: '/admin',
-      end: true,
+      labelKey: 'admin.organizations.all',
+      to: '/admin/organizations',
     });
   }
   if (admin.config && !configTree) {

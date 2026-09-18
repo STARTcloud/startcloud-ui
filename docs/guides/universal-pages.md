@@ -337,13 +337,25 @@ after it on every table, star or blank,
 so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
 the viewer can watch it sorts watched rows first. The table is
-fixed-layout and every column carries a fixed width in the shared
-stylesheet (select, star and quick-actions cells 2.5rem, Name 28% with the text
-ellipsized, Visibility 6.3rem, Created and Updated 6.5rem, Status 6.8rem,
-Downloads, Versions and Releases 7.3rem, right-aligned with a wider right
-gutter, Latest release 9.3rem, OS 10rem, Tier 7rem, Family and Vendor
-9rem with the text ellipsized, Providers, Architectures and Platforms
-16rem; header cells never wrap), the widths declared once on a `colgroup`
+fixed-layout and every column declares a `kind`, the content its cells
+draw, and takes its width from that kind alone (`columnKinds`): `name`
+(text with an optional icon or logo and a muted code beside it, wide,
+ellipsized), `text` (a plain string, medium, ellipsized), `badge` (one
+status badge, narrow), `badges` (a list of small badges, wide), `date` (a
+locale date, narrow), `relative` (a relative time, medium), `count` (a
+right-aligned integer with a wider right gutter, narrow), `size`
+(formatted bytes, narrow), `checksum` (the `ChecksumCell`, medium), `link`
+(a link cell, the version and release names, medium), `action` (a button
+such as Download, medium) and `word` (a closed-list word, narrow); the four
+width classes are `col-w-narrow` 6.5rem, `col-w-medium` 10rem,
+`col-w-wide` 16rem and `col-w-flex`, declared once in the shared
+stylesheet beside the fixed select, star and quick-actions cells at 2.5rem
+and Actions at 11rem, so no column carries a width of its own and Name is
+wide, never a percentage; a column without a `kind` is a defect; a width
+the viewer dragged overrides the kind's; header cells never wrap. The
+columns come in one order on every table: select, watch, Name,
+Visibility, Created, Updated, Downloads, Status, then the collection's
+own, then the wide badge lists, then Actions. The widths are declared on a `colgroup`
 with one `col` per cell, and a trailing unsized `col` with an empty header
 and body cell is the spacer that takes whatever width the fixed columns
 leave, because fixed layout hands the leftover width to every column when
@@ -403,7 +415,7 @@ markup is a defect. Every column resizes: each header cell but the
 select, star, quick-actions and Actions cells carries a handle on its
 right edge, shown on hover; a drag changes that column's width alone and
 shows the pixel width while dragging; a double-click resets the column to
-the stylesheet's width; the widths persist per page under
+its kind's width; the widths persist per page under
 `table_prefs_*` as `widths`, a map of column key to pixels beside sort,
 hidden columns and per page, a hidden column keeping its width for when
 it returns, and the stylesheet's widths stand wherever the map names
@@ -760,42 +772,61 @@ adds its own foldable section to an item page (the catalog's Quality).
   them only when it has accounts of its own, and the catalog carries them
   unrouted.
 - **ProfilePage**: the account's own page for an app with accounts of its
-  own, `ProfilePage({ session, events, returnTo, account, activeOrgUuid, user, loaded })`:
+  own, one page and one shape on every UI backend, the identity provider
+  and BoxVault alike,
+  `ProfilePage({ session, events, returnTo, account, basePath, activeOrgUuid, admin, user, loaded })`:
   `user` and `loaded` are the session state's adopted user and whether
   `load()` has answered; the page draws nothing until `loaded`, then the
   profile for `user`, and sends a visitor to sign in only once `loaded`
   says there is none, because the cached account is a paint hint and
-  never a session. Its sections are sidebar rows and routes on every UI
-  backend with accounts of its own, the identity provider and BoxVault
-  alike, one profile shape: the profile feature's `sidebar(status,
-account)` answers the Account group with Profile and its children, the
-  issuer's `/user/profile` with `/user/profile/security`,
-  `/user/profile/preferences`, `/user/profile/favorites` and
-  `/user/profile/sessions`, a `backend` UI backend's `/profile` with
-  `/profile/security`, `/profile/organizations` and
-  `/profile/service-accounts`, each row gated by the adapter's calls and
-  the UI backend's tokens the way the sections were; the router mounts
-  one route per row, each drawing its section under the page heading, the
-  crumbs Account › Profile › Security from the row and its child, and no
-  page draws a tab strip, because one profile shape means one navigation
-  and the column is it. The avatar card draws on the Profile route alone,
-  gone on the page's other sections since the header's own avatar and
-  name already carry that identity in the chrome there (decision 143);
-  the sections are
-  Profile (display name, the Gravatar facts, the verification notice),
-  Organizations
-  (memberships with make-primary for local sessions and leave, pending join
-  requests), Security (password, email, delete account through
-  `session.signOutEverywhere`) and Service accounts (create in the chosen
-  organization, the active one by default, the one-time token, the keys
-  grouped per organization, select and delete); `account` is
-  `{ gravatarProfile, changePassword, changeEmail, changeName, remove,
-verifyMail, resendVerification, organizations, leave, setPrimary,
-requests, cancelRequest, serviceAccounts: { list, organizations, create,
-remove } }`, and an edit that the session must reflect calls
-  `session.reload()` and emits `login` on the bus. Its keys are
-  `profile.*` in `shared.json`; the catalog carries it unrouted, its
-  profile being the identity provider's.
+  never a session. The page is the identity provider's shape: the avatar
+  card from the session's display fields on the Profile route alone, gone
+  on the page's other sections since the header's own avatar and name
+  already carry that identity in the chrome there (decision 143), then the
+  one section the route names under it; a section draws only while the
+  `account` adapter carries its calls, the one list `sectionsFor(account)`
+  answers: Profile always (the identity provider's details, phone and
+  address form while the adapter carries `details`, `address` and
+  `phone`, the display-name form over `details` alone otherwise),
+  Security while the adapter carries any of `password`, `email`, `tfa`,
+  `passkeys`, `backupCodes`, `linked` and `deletion`, each of its cards
+  drawn only for the member it acts through, then Preferences, Favorites,
+  Sessions, Organizations and Service accounts while it carries
+  `preferences`, `favorites`, `sessions`, `organizations` and
+  `serviceAccounts`; `organizations` is
+  `{ list, leave, setPrimary?, requests, cancelRequest }`, the memberships
+  and the pending join requests as glass lists under a `SectionHeading`,
+  Make primary drawn while `setPrimary` is carried, and `serviceAccounts`
+  is `{ list, organizations, create, remove }`, the create form in a
+  `SectionCard`, the one-time token notice, then the keys as a glass list
+  with a select column, the organization badge and Delete per row, the
+  heading's action pane reading "N selected", Clear selection and Delete
+  behind the confirm while rows are picked; the identity provider's
+  adapter carries neither of the two and BoxVault's carries both, so the
+  two sections draw on BoxVault alone the way Favorites and Sessions draw
+  on the issuer alone. The sections are sidebar rows and routes: the
+  profile feature's `sidebar(status, account, integrations, profile)`
+  answers the Account group with Profile and its `children` built from the
+  same `sectionsFor` over the host's `profile` adapter and the host's
+  profile path, the issuer's `/user/profile` with
+  `/user/profile/<section>` and a `backend` UI backend's `/profile` with
+  `/profile/<section>`, the segments `security`, `preferences`,
+  `favorites`, `sessions`, `organizations` and `service-accounts` of
+  `PROFILE_ROUTE_SECTIONS`, so the column never lists a section the page
+  cannot draw; the router mounts the page at `basePath` and
+  `basePath/:section`, the crumbs Account › Profile › Security from the
+  row and its child, and no page draws a tab strip, because one profile
+  shape means one navigation and the column is it. The step-up guard
+  wraps every sensitive call while the adapter carries `stepUp` and runs
+  the call plainly otherwise; an edit that the session must reflect
+  re-reads the record through `account.profile`, calls `session.reload()`
+  and emits `login` on the bus. BoxVault's adapter is built by the router
+  in the issuer's member names: `profile` from the session's reload,
+  `details` over the change-name call, `password`, `email` (its `request`
+  the change, no `verify`) and `deletion` while the host advertises
+  `local-accounts` and the session is not the identity provider's, and
+  the two sections above. Its keys are `profile.*` in `shared.json`; the
+  catalog carries it unrouted, its profile being the identity provider's.
 - **OrgConsolePage** and **DiscoveryPage**: the organization pages of an
   app with organizations of its own, over one `organizations` adapter
   (`get, update, accessMode, users, memberRole, removeMember, invite,
@@ -834,12 +865,15 @@ joinIntentKey })` lists the organizations open to discovery with their
   both unrouted.
 - **AdminPage**: the admin page of an app with accounts and configuration
   of its own, `AdminPage({ session, returnTo, allowed, admin,
-activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
+updateCommand, page })`: the update notice (`UpdateNotice`, the
   app's own `updateCommand` with a copy button) while the adapter carries
-  `updateStatus` and it reports one, then Organizations and users
-  (`AdminOrganizations`: every organization with its `UserCard` members,
-  searched from the navbar, edit in a react-bootstrap `Modal`, rename,
-  suspend, resume, delete), Configuration (`AdminConfig`: one file per
+  `updateStatus` and it reports one, then the page the route names, the
+  Users and All organizations pages of a host with accounts of its own
+  being the identity feature's own `UsersPage` and `OrganizationsPage`,
+  drawn by the router at `/admin/users` and `/admin/organizations` over
+  the adapter's `users` and `organizations` (the identity contract's
+  group 5 fixes their adapter shapes), the bare `/admin` redirecting to
+  the organizations, Configuration (`AdminConfig`: one file per
   route, `/admin/config/<name>` the file of that name in `status.config`
   and `/admin/config` the first, drawn under the page heading with no
   tab strip, the configuration page's heading being the file's root
@@ -854,22 +888,22 @@ activeOrgKey, updateCommand })`: the update notice (`UpdateNotice`, the
   evaluator, the `OidcProviders` block inside auth with its add-or-edit
   `Modal`, update, restart, SSL upload on upload fields, the SMTP test on
   mail) and System (`AdminStorage`, one bar per
-  storage path); `admin` is `{ organizationsWithUsers, organization,
-updateOrganization, accessMode, suspendOrganization, resumeOrganization,
-removeOrganization, removeMember, removeUser, suspendUser, resumeUser,
-gravatarProfile, config: { get, update, restart, testSmtp, uploadSsl },
-storage, updateStatus }`, `allowed` the app's global-admin flag; a
-  visitor is sent to sign in and a non-admin home. With the sidebar of
-  the navbar contract those three are the admin feature's sidebar entries
-  at `/admin`, `/admin/config` with `/admin/config/<name>` and
-  `/admin/system`, one page each, on
+  storage path); `admin` is `{ users: { list, suspend, resume, remove },
+organizations: { list, update, remove, suspend, resume }, config: { get,
+schema, update, restartStatus, restart, action }, storage, updateStatus }`,
+  each member present only where the host answers it, `allowed` the
+  app's global-admin flag; a visitor is sent to sign in and a non-admin
+  home. With the sidebar of the navbar contract those are the admin
+  feature's sidebar entries, Users at `/admin/users` and Organizations at
+  `/admin/organizations` while the adapter carries `users` and
+  `organizations`, Configuration at `/admin/config` with
+  `/admin/config/<name>` and System at `/admin/system`, one page each, on
   every UI backend that advertises `admin`, the Configuration page on a
   `cookie` UI backend too, behind the identity feature's Configuration
   entry, over an adapter carrying `config` alone while `status.config`
   names a file, and the tab strip goes. Its keys are `admin.*`,
-  `orgUserManager.*`, `configManager.*`, `configField.*` and `oidc.*` in
-  `shared.json`; every glyph is `react-icons/fa6`; the catalog carries it
-  unrouted.
+  `configManager.*`, `configField.*` and `oidc.*` in `shared.json`;
+  every glyph is `react-icons/fa6`; the catalog carries it unrouted.
 - **Arrival on a row**: every page that lists things takes an arrival in
   its URL the way the configuration editor does, a hash naming the row:
   `/profile/service-accounts#<id>`, `/admin/config/<file>#<key>` (the
@@ -1103,7 +1137,7 @@ One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcl
 | `src/features/search/`                                        | `SearchPage.jsx`, `useAppSearch` (the UI backend's `/api/search` behind the `search` token, else the client-side walk of the mounted collections)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `src/features/about/`                                         | `AboutPage.jsx` and `AboutRoute.jsx`, keyed by `status.role` over `about.boxvault.*` and `about.catalog.*`; the version chips `about.version.app` and `about.version.ui` draw on every role, the `auth-server` role among them, and that role's own `about.auth-server.*` keys are the UI's to add                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `src/features/auth/`                                          | `LoginPage.jsx`, `RegisterPage.jsx`, `InvitePage.jsx`, `CallbackPage.jsx`, `ProviderButtons.jsx` and the `api/` calls of the session contract's account pages                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `src/features/profile/`, `organizations/`, `admin/`, `setup/` | `ProfilePage.jsx`; `OrgConsolePage.jsx` and `DiscoveryPage.jsx`; `AdminPage.jsx`, `AdminOrganizations.jsx` (drawn only when the adapter carries `organizationsWithUsers`), `AdminConfig.jsx` (one file per route, `/admin/config/<name>` a child node of the Configuration tree per name in `status.config`, `["app"]` when absent), `AdminStorage.jsx` (only when the adapter carries `storage`), `OidcProviders.jsx` and `UpdateNotice.jsx` (the update command from `status.role`); `SetupPage.jsx`; each with its `api/` calls                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `src/features/profile/`, `organizations/`, `admin/`, `setup/` | `ProfilePage.jsx` with its section tabs (`IssuerDetailsTab.jsx`, `security/`, `PreferencesTab.jsx`, `FavoritesTab.jsx`, `SessionsTab.jsx`, `OrganizationsTab.jsx`, `ServiceAccountsTab.jsx`); `OrgConsolePage.jsx` and `DiscoveryPage.jsx`; `AdminPage.jsx`, `utils/accounts.js` (the row shaping of a `backend` host's users and organizations for the identity feature's pages), `AdminConfig.jsx` (one file per route, `/admin/config/<name>` a child node of the Configuration tree per name in `status.config`, `["app"]` when absent), `AdminStorage.jsx` (only when the adapter carries `storage`), `OidcProviders.jsx` and `UpdateNotice.jsx` (the update command from `status.role`); `SetupPage.jsx`; each with its `api/` calls                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/features/vdi/`                                           | The fleet pages: `FleetPage.jsx`, `StatusCards.jsx`, `PoolCards.jsx`, `FleetTable.jsx`, `DriveBadges.jsx`, `CacheBadge.jsx`, `SessionBadge.jsx`, `LastSeen.jsx`, `IconsCell.jsx`, `ExportButtons.jsx`, `VmPage.jsx`, `VmOverview.jsx`, `VmHistory.jsx`, `VmStats.jsx`, `VmMetrics.jsx`; the hooks `useFleet.js`, `useFleetSearch.js`, `useVmHistory.js`; `api/fleet.js`; `utils/vmStatus.js`, `cacheLevel.js`, `eventTypes.js`, `exportRows.js`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `src/lib/sse.js`, `src/hooks/useEventStream.js`               | The shared event-stream client and the hook a page subscribes to named events with, per the [Universal Events Contract](universal-events/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/components/common/`                                      | `PageHeader.jsx`, `SectionCard.jsx` and `SectionHeading.jsx` (the card a form draws in and the heading line a list draws over, each with the section's one action pane at its right, the Pages section's frame rule), `StatusChips.jsx`, `DeprecationBanner.jsx`, `GroupHeading.jsx`, `ConfirmModal.jsx` (the type-to-confirm modal every destructive action opens, its keys under `pages.confirm.*`; every dialog of the estate takes one of two metrics: a dialog that carries a form, one field or many (the config editor's map item dialogs, the terms create, edit and copy dialogs, the users' roles, primary organization, customer id and rate-limits dialogs, the profile's security dialogs, the step-up dialog, the organization edit, convert and join-request dialogs), is a form dialog, `form-modal`, Bootstrap's `modal-xl` width, 1140px capped to the viewport, its body scrolling inside the dialog, its fields grouped under the schema's sections and subsections with a heading each where a schema describes them, foldable subsections included, two columns where the page draws two, the `description` hint under each control, the first field focused on open and the primary action in the footer, because a form the page draws wide and grouped must not collapse into a narrow flat column the moment it opens in a dialog; a dialog that carries a list or a choice (the notifications, language and organization switcher modals, every confirm, the disable two-factor dialog) is a list dialog, `list-modal`, 720px, because a list reads in one column and a wider confirm spreads one question across the screen), `ConfigField.jsx`, `UserCard.jsx`, `columns.jsx` (the shared listing columns), `SubTable.jsx` and `SortHeader.jsx` (the one table behind every detail and admin list), `AuthShell.jsx` and `ProblemAlert.jsx` (the auth column and its problem alert every sign-in, onboarding and interstitial page draws in), `SearchResults.jsx` (the list under the navbar panel) |
@@ -1115,7 +1149,7 @@ included), `src/css/fonts.css` (the auth pages' IBM Plex Sans and Source
 Serif 4 faces beside Open Sans and Montserrat, the font files under
 `public/fonts/`), the pre-paint script, the i18n setup, and the `pages.*`,
 `profile.*`, `orgConsole.*`, `discovery.*`, `inviteAccept.*`, `admin.*`,
-`orgUserManager.*`, `configManager.*`, `configField.*`, `oidc.*`,
+`configManager.*`, `configField.*`, `oidc.*`,
 `setup.*`, `boxes.*`, `isos.*`, `provisioners.*`, `rebuild.*`, `tiers.*`,
 `rules.*`, `health.*` and `vdi.*` keys of `shared.json` and the whole
 `auth` namespace. Every feature under `src/features/` has one shape:

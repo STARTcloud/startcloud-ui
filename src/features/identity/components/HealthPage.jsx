@@ -197,6 +197,7 @@ CardGrid.propTypes = {
 const columnsFor = file => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'admin.health.clients.table.name',
     sortValue: row => row.client_name.toLowerCase(),
     render: row => (
@@ -211,12 +212,14 @@ const columnsFor = file => [
   },
   {
     key: 'check',
+    kind: 'text',
     labelKey: 'admin.health.clients.check',
     sortValue: row => row.check || '',
     render: (row, ctx) => (row.check ? ctx.t(`admin.health.clients.checkOf.${row.check}`) : '—'),
   },
   {
     key: 'endpoint',
+    kind: 'text',
     labelKey: 'admin.health.clients.endpoint',
     className: 'text-break',
     sortValue: row => row.endpoint || '',
@@ -224,12 +227,14 @@ const columnsFor = file => [
   },
   {
     key: 'status',
+    kind: 'badge',
     labelKey: 'admin.health.clients.table.status',
     sortValue: row => STATE_ORDER[stateOf(row)],
     render: row => <StatusBadge probe={row} />,
   },
   {
     key: 'response_time_ms',
+    kind: 'count',
     labelKey: 'admin.health.clients.table.responseTime',
     className: 'text-end',
     sortValue: row => (typeof row.response_time_ms === 'number' ? row.response_time_ms : -1),
@@ -237,12 +242,14 @@ const columnsFor = file => [
   },
   {
     key: 'last_checked',
+    kind: 'date',
     labelKey: 'admin.health.clients.table.lastChecked',
     sortValue: row => new Date(row.last_checked || 0).getTime(),
     render: row => <DateCell value={row.last_checked} />,
   },
   {
     key: 'reason',
+    kind: 'text',
     labelKey: 'admin.health.clients.reason',
     className: 'text-break',
     sortValue: row => reasonOf(row).toLowerCase(),

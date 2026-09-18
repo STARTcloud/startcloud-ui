@@ -1428,9 +1428,15 @@ button::-moz-focus-inner {
   padding: 0;
 }
 
-.items-table .col-providers,
-.items-table .col-architectures,
-.items-table .col-platforms {
+.items-table .col-w-narrow {
+  width: 6.5rem;
+}
+
+.items-table .col-w-medium {
+  width: 10rem;
+}
+
+.items-table .col-w-wide {
   width: 16rem;
 }
 
@@ -1487,73 +1493,26 @@ button::-moz-focus-inner {
 }
 
 .items-table .col-name,
-.items-table .col-label {
-  width: 28%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.items-table .col-visibility {
-  width: 6.3rem;
-}
-
-.items-table .col-created,
-.items-table .col-updated {
-  width: 6.5rem;
-}
-
-.items-table .col-status {
-  width: 6.8rem;
-}
-
-.items-table .col-downloads,
-.items-table .col-versions,
-.items-table .col-releases {
-  width: 7.3rem;
-  text-align: right;
-  padding-right: 1.25rem;
-}
-
+.items-table .col-label,
+.items-table .col-os,
 .items-table .col-family,
-.items-table .col-vendor {
-  width: 9rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.items-table .col-released {
-  width: 9.3rem;
-}
-
-.items-table .col-os {
-  width: 14rem;
-  white-space: nowrap;
-}
-
-.items-table .col-size,
-.items-table .col-tier {
-  width: 7rem;
-}
-
+.items-table .col-vendor,
+.items-table .col-details,
+.items-table .col-language,
+.items-table .col-variant,
 .items-table .col-checksum {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.items-table .col-hostname {
-  width: 18%;
-}
-
-.items-table .col-icons,
-.items-table .col-cycle {
-  width: 6rem;
-}
-
-.items-table .col-seen {
-  width: 10rem;
+.items-table .col-downloads,
+.items-table .col-versions,
+.items-table .col-releases,
+.items-table .col-patches,
+.items-table .col-files {
+  text-align: right;
+  padding-right: 1.25rem;
 }
 
 .items-table .col-actions {

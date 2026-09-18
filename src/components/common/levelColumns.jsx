@@ -33,6 +33,7 @@ const downloadButton = (url, ctx) =>
 export const versionLevelColumns = ({ org, name }) => [
   {
     key: 'version',
+    kind: 'link',
     labelKey: 'pages.table.version',
     sortValue: version => [new Date(version.createdAt || 0).getTime(), version.version],
     render: (version, ctx) => (
@@ -46,6 +47,7 @@ export const versionLevelColumns = ({ org, name }) => [
   },
   {
     key: 'released',
+    kind: 'date',
     labelKey: 'pages.version.released',
     sortValue: version => new Date(version.createdAt || 0).getTime(),
     when: hasAny(version => version.createdAt),
@@ -53,6 +55,7 @@ export const versionLevelColumns = ({ org, name }) => [
   },
   {
     key: 'details',
+    kind: 'text',
     labelKey: 'pages.table.details',
     sortValue: version => (version.description || '').toLowerCase(),
     when: hasAny(version => version.description),
@@ -60,6 +63,7 @@ export const versionLevelColumns = ({ org, name }) => [
   },
   {
     key: 'providers',
+    kind: 'badges',
     labelKey: 'pages.table.providers',
     when: hasAny(version => (version.providers || []).length > 0),
     render: (version, ctx) =>
@@ -75,6 +79,7 @@ export const versionLevelColumns = ({ org, name }) => [
   },
   {
     key: 'artifacts',
+    kind: 'badges',
     labelKey: 'pages.version.artifacts',
     when: hasAny(version => (version.artifacts || []).length > 0),
     render: (version, ctx) =>
@@ -101,6 +106,7 @@ export const versionLevelColumns = ({ org, name }) => [
 export const providerLevelColumns = ({ org, name, version }) => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'pages.table.name',
     sortValue: provider => provider.name.toLowerCase(),
     render: (provider, ctx) => (
@@ -111,6 +117,7 @@ export const providerLevelColumns = ({ org, name, version }) => [
   },
   {
     key: 'details',
+    kind: 'text',
     labelKey: 'pages.table.details',
     sortValue: provider => (provider.description || '').toLowerCase(),
     when: hasAny(provider => provider.description),
@@ -118,6 +125,7 @@ export const providerLevelColumns = ({ org, name, version }) => [
   },
   {
     key: 'architectures',
+    kind: 'badges',
     labelKey: 'pages.table.architectures',
     when: hasAny(provider => (provider.architectures || []).length > 0),
     render: (provider, ctx) => (
@@ -149,6 +157,7 @@ export const providerLevelColumns = ({ org, name, version }) => [
 export const architectureLevelColumns = ({ org, name, version, provider = '' }) => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'pages.table.name',
     sortValue: architecture => architecture.name.toLowerCase(),
     render: (architecture, ctx) =>
@@ -164,6 +173,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
   {
     key: 'downloads',
+    kind: 'count',
     labelKey: 'pages.table.downloads',
     sortValue: architecture => architecture.downloadCount || 0,
     when: hasAny(architecture => typeof architecture.downloadCount === 'number'),
@@ -172,6 +182,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   },
   {
     key: 'defaultBox',
+    kind: 'word',
     labelKey: 'pages.table.defaultBox',
     sortValue: architecture => (architecture.defaultBox ? 0 : 1),
     when: hasAny(architecture => typeof architecture.defaultBox === 'boolean'),
@@ -179,6 +190,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   },
   {
     key: 'size',
+    kind: 'size',
     labelKey: 'pages.table.fileSize',
     sortValue: architecture => architecture.fileSize || 0,
     when: hasAny(architecture => architecture.fileSize),
@@ -187,6 +199,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   },
   {
     key: 'checksum',
+    kind: 'checksum',
     labelKey: 'pages.table.checksum',
     sortValue: architecture => (architecture.checksum || '').toLowerCase(),
     when: hasAny(architecture => architecture.checksum),
@@ -202,6 +215,7 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
   },
   {
     key: 'download',
+    kind: 'action',
     labelKey: 'pages.table.download',
     when: hasAny(architecture => architecture.downloadUrl),
     render: (architecture, ctx) => downloadButton(architecture.downloadUrl, ctx),
@@ -221,6 +235,7 @@ const countCell = entries => (entries || []).length;
 export const releaseLevelColumns = ({ org, name }) => [
   {
     key: 'version',
+    kind: 'link',
     labelKey: 'pages.table.release',
     sortValue: release => [new Date(release.createdAt || 0).getTime(), release.version],
     render: (release, ctx) => (
@@ -234,6 +249,7 @@ export const releaseLevelColumns = ({ org, name }) => [
   },
   {
     key: 'released',
+    kind: 'date',
     labelKey: 'pages.version.released',
     sortValue: release => new Date(release.createdAt || 0).getTime(),
     when: hasAny(release => release.createdAt),
@@ -241,6 +257,7 @@ export const releaseLevelColumns = ({ org, name }) => [
   },
   {
     key: 'details',
+    kind: 'text',
     labelKey: 'pages.table.details',
     sortValue: release => (release.description || '').toLowerCase(),
     when: hasAny(release => release.description),
@@ -248,6 +265,7 @@ export const releaseLevelColumns = ({ org, name }) => [
   },
   {
     key: 'patches',
+    kind: 'count',
     labelKey: 'pages.table.patches',
     sortValue: release => countCell(release.providers),
     render: release => countCell(release.providers),
@@ -265,6 +283,7 @@ export const releaseLevelColumns = ({ org, name }) => [
 export const patchLevelColumns = ({ org, name, version }) => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'pages.table.name',
     sortValue: patch => patch.name.toLowerCase(),
     render: (patch, ctx) => (
@@ -273,6 +292,7 @@ export const patchLevelColumns = ({ org, name, version }) => [
   },
   {
     key: 'kind',
+    kind: 'badge',
     labelKey: 'pages.table.kind',
     sortValue: patch => (patch.kind || '').toLowerCase(),
     when: hasAny(patch => patch.kind),
@@ -285,6 +305,7 @@ export const patchLevelColumns = ({ org, name, version }) => [
   },
   {
     key: 'released',
+    kind: 'date',
     labelKey: 'pages.version.released',
     sortValue: patch => new Date(patch.releasedAt || 0).getTime(),
     when: hasAny(patch => patch.releasedAt),
@@ -292,6 +313,7 @@ export const patchLevelColumns = ({ org, name, version }) => [
   },
   {
     key: 'files',
+    kind: 'count',
     labelKey: 'pages.table.files',
     sortValue: patch => countCell(patch.architectures),
     render: patch => countCell(patch.architectures),
@@ -300,6 +322,7 @@ export const patchLevelColumns = ({ org, name, version }) => [
 
 const wordColumn = (key, labelKey, group) => ({
   key,
+  kind: 'word',
   labelKey,
   sortValue: file => (file[group] || '').toLowerCase(),
   render: (file, ctx) => listWord(ctx.t, group, file[group]),
@@ -319,6 +342,7 @@ const wordColumn = (key, labelKey, group) => ({
 export const fileLevelColumns = () => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'pages.table.name',
     sortValue: file => (file.fileName || file.name).toLowerCase(),
     render: file => (
@@ -335,12 +359,14 @@ export const fileLevelColumns = () => [
   wordColumn('architecture', 'pages.table.architecture', 'architecture'),
   {
     key: 'language',
+    kind: 'text',
     labelKey: 'pages.table.language',
     sortValue: file => (file.language || '').toLowerCase(),
     render: file => file.language || '',
   },
   {
     key: 'variant',
+    kind: 'text',
     labelKey: 'pages.table.variant',
     defaultHidden: true,
     sortValue: file => (file.variant || '').toLowerCase(),
@@ -348,6 +374,7 @@ export const fileLevelColumns = () => [
   },
   {
     key: 'size',
+    kind: 'size',
     labelKey: 'pages.table.fileSize',
     sortValue: file => file.fileSize || 0,
     when: hasAny(file => file.fileSize),
@@ -355,6 +382,7 @@ export const fileLevelColumns = () => [
   },
   {
     key: 'checksum',
+    kind: 'checksum',
     labelKey: 'pages.table.checksum',
     sortValue: file => (file.checksum || '').toLowerCase(),
     when: hasAny(file => file.checksum),
@@ -367,6 +395,7 @@ export const fileLevelColumns = () => [
   },
   {
     key: 'download',
+    kind: 'action',
     labelKey: 'pages.table.download',
     when: hasAny(file => file.downloadUrl),
     render: (file, ctx) => {

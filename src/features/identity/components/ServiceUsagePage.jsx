@@ -32,6 +32,7 @@ UsageBar.propTypes = {
 const columns = [
   {
     key: 'client',
+    kind: 'name',
     labelKey: 'admin.health.usage.service',
     render: row => (
       <span>
@@ -43,24 +44,28 @@ const columns = [
   },
   {
     key: 'active_sessions',
+    kind: 'count',
     labelKey: 'admin.health.usage.active',
     className: 'text-end',
     render: row => <span className="badge bg-secondary">{row.active_sessions}</span>,
   },
   {
     key: 'total_authorizations',
+    kind: 'count',
     labelKey: 'admin.health.usage.authorizations',
     className: 'text-end',
     render: row => row.total_authorizations,
   },
   {
     key: 'unique_users',
+    kind: 'count',
     labelKey: 'admin.health.usage.users',
     className: 'text-end',
     render: row => row.unique_users,
   },
   {
     key: 'usage',
+    kind: 'text',
     labelKey: 'admin.health.usage.share',
     render: (row, ctx) => {
       const percent = percentOf(row.active_sessions, ctx.totalSessions);
@@ -76,11 +81,13 @@ const columns = [
   },
   {
     key: 'first_used_at',
+    kind: 'date',
     labelKey: 'admin.health.usage.firstUsed',
     render: row => <DateCell value={row.first_used_at} />,
   },
   {
     key: 'last_used_at',
+    kind: 'date',
     labelKey: 'admin.health.usage.lastUsed',
     render: row => <DateCell value={row.last_used_at} />,
   },

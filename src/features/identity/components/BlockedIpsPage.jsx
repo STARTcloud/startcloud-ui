@@ -20,11 +20,13 @@ const PREFS_KEY = 'table_prefs_admin_blocked';
 const columns = [
   {
     key: 'ip',
+    kind: 'text',
     labelKey: 'admin.blocked.table.ip',
     render: row => <code>{row.ip}</code>,
   },
   {
     key: 'attempts',
+    kind: 'count',
     labelKey: 'admin.blocked.table.attempts',
     className: 'text-end',
     render: row => <span className="badge bg-danger">{row.attempts}</span>,

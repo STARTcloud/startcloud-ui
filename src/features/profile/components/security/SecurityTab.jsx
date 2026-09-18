@@ -19,13 +19,14 @@ const passwordMinLength = () =>
   Number(rules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
 
 /**
- * The Security section of the identity contract at `/user/profile/security`:
- * the password, email, two-factor, passkeys, linked accounts (while the
- * adapter carries `linked`), recovery and delete-account cards stacked
- * full width in the contract's order, each a `SectionCard` whose fold is
- * kept under `table_prefs_profile_security`, each over the `account`
- * adapter and the step-up guard; `focusEmail` scrolls the email card into
- * view when the Profile section's Change link opened it.
+ * The Security section of the profile page: the password, email,
+ * two-factor, passkeys, linked accounts, recovery and delete-account cards
+ * stacked full width in the identity contract's order, each drawn only
+ * while the `account` adapter carries its calls (`password`, `email`,
+ * `tfa`, `passkeys`, `linked`, `backupCodes`, `deletion`), each a
+ * `SectionCard` whose fold is kept under `table_prefs_profile_security`,
+ * each over the adapter and the step-up guard; `focusEmail` scrolls the
+ * email card into view when the Profile section's Change link opened it.
  */
 const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }) => {
   const emailRef = useRef(null);
@@ -39,29 +40,37 @@ const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }
 
   return (
     <div className="tab-pane fade show active">
-      <PasswordSection
-        account={account}
-        hasPassword={Boolean(profile.has_local_auth)}
-        minLength={passwordMinLength()}
-        guard={guard}
-        onSaved={onSaved}
-        folds={folds}
-      />
-      <EmailSection
-        account={account}
-        guard={guard}
-        onSaved={onSaved}
-        sectionRef={emailRef}
-        folds={folds}
-      />
-      <TfaSection
-        account={account}
-        profile={profile}
-        guard={guard}
-        onSaved={onSaved}
-        folds={folds}
-      />
-      <PasskeysSection account={account} guard={guard} onSaved={onSaved} folds={folds} />
+      {account.password ? (
+        <PasswordSection
+          account={account}
+          hasPassword={Boolean(profile.has_local_auth)}
+          minLength={passwordMinLength()}
+          guard={guard}
+          onSaved={onSaved}
+          folds={folds}
+        />
+      ) : null}
+      {account.email ? (
+        <EmailSection
+          account={account}
+          guard={guard}
+          onSaved={onSaved}
+          sectionRef={emailRef}
+          folds={folds}
+        />
+      ) : null}
+      {account.tfa ? (
+        <TfaSection
+          account={account}
+          profile={profile}
+          guard={guard}
+          onSaved={onSaved}
+          folds={folds}
+        />
+      ) : null}
+      {account.passkeys ? (
+        <PasskeysSection account={account} guard={guard} onSaved={onSaved} folds={folds} />
+      ) : null}
       {account.linked ? (
         <LinkedAccountsSection
           account={account}
@@ -71,14 +80,18 @@ const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }
           folds={folds}
         />
       ) : null}
-      <RecoverySection account={account} guard={guard} folds={folds} />
-      <DeleteAccountSection
-        account={account}
-        email={profile.email || ''}
-        guard={guard}
-        onDeleted={onDeleted}
-        folds={folds}
-      />
+      {account.backupCodes ? (
+        <RecoverySection account={account} guard={guard} folds={folds} />
+      ) : null}
+      {account.deletion ? (
+        <DeleteAccountSection
+          account={account}
+          email={profile.email || ''}
+          guard={guard}
+          onDeleted={onDeleted}
+          folds={folds}
+        />
+      ) : null}
     </div>
   );
 };

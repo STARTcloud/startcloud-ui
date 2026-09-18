@@ -16,7 +16,10 @@ const LABELS = { new_email: 'profile.security.email.new' };
 /**
  * The email section of the Security tab: the new address and Send code
  * over `POST /api/user/email/request`, stepped up, then the code over
- * `POST /api/user/email/verify`.
+ * `POST /api/user/email/verify` while the adapter carries `verify`; on a
+ * host whose adapter carries `request` alone the button reads Change
+ * email, the request is the change and the record is re-read once it
+ * answers.
  */
 const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
   const { t } = useTranslation();
@@ -31,6 +34,7 @@ const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
     labels: LABELS,
     idPrefix: 'profile-email',
   });
+  const withCode = typeof account.email.verify === 'function';
 
   const request = async event => {
     event.preventDefault();
@@ -42,6 +46,13 @@ const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
         () => account.email.request(values.new_email),
         t('profile.security.email.reason')
       );
+      if (!withCode) {
+        setValues({ new_email: '' });
+        rules.reset();
+        notify('success', t('profile.security.email.changed'));
+        await onSaved();
+        return;
+      }
       setSent(true);
       setCode('');
       notify('success', t('profile.security.email.sent'));
@@ -93,7 +104,9 @@ const EmailSection = ({ account, guard, onSaved, sectionRef, folds }) => {
                 onBlur={() => rules.onBlur('new_email')}
               />
               <button type="submit" className="btn btn-outline-primary text-nowrap">
-                {t('profile.security.email.send')}
+                {withCode
+                  ? t('profile.security.email.send')
+                  : t('profile.security.changeEmail.button')}
               </button>
             </div>
           )}
@@ -126,7 +139,7 @@ EmailSection.propTypes = {
   account: PropTypes.shape({
     email: PropTypes.shape({
       request: PropTypes.func.isRequired,
-      verify: PropTypes.func.isRequired,
+      verify: PropTypes.func,
     }).isRequired,
   }).isRequired,
   guard: PropTypes.func.isRequired,

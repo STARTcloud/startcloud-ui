@@ -7,7 +7,6 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { bulk } from '../api/accounts';
 
 import { adminUserShape, BulkPrimaryOrgDialog, CustomerIdDialog } from './UsersDialogs';
 
@@ -25,11 +24,12 @@ const CONFIRM_ACTIONS = [
  * The Users page's bulk actions, drawn in the section heading's action pane
  * while rows are selected: Enable, Suspend, Add role, Remove role, Set
  * customer id, Set primary organization, Revoke sessions, Unlock and
- * Delete; the confirm-gated actions behind the shared confirm, Delete and
- * Revoke sessions stepped up, Unlock direct, and the result line naming
- * processed, skipped and each error's code translated (decision 146).
+ * Delete over the adapter's `bulk`; the confirm-gated actions behind the
+ * shared confirm, Delete and Revoke sessions stepped up, Unlock direct,
+ * and the result line naming processed, skipped and each error's code
+ * translated (decision 146).
  */
-const BulkBar = ({ selected, users, catalog, onDone }) => {
+const BulkBar = ({ bulk, selected, users, catalog, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
@@ -162,6 +162,7 @@ const BulkBar = ({ selected, users, catalog, onDone }) => {
 };
 
 BulkBar.propTypes = {
+  bulk: PropTypes.func.isRequired,
   selected: PropTypes.array.isRequired,
   users: PropTypes.arrayOf(adminUserShape).isRequired,
   catalog: PropTypes.arrayOf(PropTypes.string).isRequired,

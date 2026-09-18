@@ -1,6 +1,8 @@
 import { encodePath } from '../../../lib/apiClient';
 import { client } from '../../../lib/runtime';
 
+import { exportUrl } from './activity';
+
 const user = userId => encodePath('api', 'admin', 'users', userId);
 
 const organization = organizationId => encodePath('api', 'admin', 'organizations', organizationId);
@@ -39,3 +41,37 @@ export const updateOrganization = (organizationId, patch) =>
 export const deleteOrganization = organizationId => client.delete(organization(organizationId));
 
 export const organizationsBulk = body => client.post('/api/admin/organizations/bulk', body);
+
+/**
+ * The identity provider's own `users` adapter of the shared Users page:
+ * the paged list, the role catalog, the record patch, the whole-set roles
+ * write, suspend and resume as `enabled` patches, the stepped-up delete,
+ * the bulk route, the rate-limit gates and the export URL of the panel's
+ * action; the page draws an action or a column only while the adapter
+ * carries its call.
+ */
+export const issuerUsers = {
+  list: users,
+  roles,
+  update: updateUser,
+  setRoles,
+  suspend: userId => updateUser(userId, { enabled: false }),
+  resume: userId => updateUser(userId, { enabled: true }),
+  remove: deleteUser,
+  bulk,
+  rateLimit: { read: rateLimit, unlockSignIn, unlockMethod, ban, unban },
+  exportUrl: params => exportUrl('users', params),
+};
+
+/**
+ * The identity provider's own `organizations` adapter of the shared All
+ * organizations page: the list with every editable field riding it, the
+ * record patch, the delete and the bulk route; suspend and resume are the
+ * bulk route's on the issuer, so the adapter carries no per-row pair.
+ */
+export const issuerOrganizations = {
+  list: organizations,
+  update: updateOrganization,
+  remove: deleteOrganization,
+  bulk: organizationsBulk,
+};

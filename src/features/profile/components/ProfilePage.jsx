@@ -1,1344 +1,467 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
-import ConfirmModal from '../../../components/common/ConfirmModal';
-import Field from '../../../components/common/Field';
-import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import SectionCard from '../../../components/common/SectionCard';
-import SectionHeading from '../../../components/common/SectionHeading';
+import { useStepUp } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useArrival } from '../../../hooks/useArrival';
-import { useFolds } from '../../../hooks/useFolds';
-import { useFormRules } from '../../../hooks/useFormRules';
-import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { isPendingGate } from '../../../lib/gates';
 import { log } from '../../../lib/logger';
-import { rules } from '../../../lib/runtime';
 import { returnToShape } from '../../../utils/auth';
+import { userDisplayName, userSecondaryLine } from '../../../utils/identity';
 
-import IssuerProfilePage, { issuerAccountShape } from './IssuerProfilePage';
+import FavoritesTab from './FavoritesTab';
+import IssuerDetailsTab from './IssuerDetailsTab';
+import OrganizationsTab from './OrganizationsTab';
+import PreferencesTab from './PreferencesTab';
+import SecurityTab from './security/SecurityTab';
+import ServiceAccountsTab from './ServiceAccountsTab';
+import SessionsTab from './SessionsTab';
 
 /**
- * The app's side of the shared profile page: the calls behind the display
- * name, password, email, verification, memberships, join requests and
- * service accounts of the signed-in account.
+ * The `account` adapter of the profile page, one shape for every host:
+ * `profile` reads the current record; `stepUp` arms the step-up window
+ * where the host has one; every other member is one group of calls the
+ * page draws a section for and draws nothing without, the identity
+ * provider carrying `details`, `address`, `phone`, `email`, `password`,
+ * `tfa`, `passkeys`, `backupCodes`, `linked`, `sessions`, `favorites`,
+ * `preferences` and `deletion`, and a UI backend with accounts of its own
+ * carrying `details`, `password`, `email`, `deletion`, `verification`
+ * (the emailed verification link's consume and its resend),
+ * `organizations` and `serviceAccounts`.
  */
 export const accountShape = PropTypes.shape({
-  gravatarProfile: PropTypes.func.isRequired,
-  changePassword: PropTypes.func.isRequired,
-  changeEmail: PropTypes.func.isRequired,
-  changeName: PropTypes.func.isRequired,
-  remove: PropTypes.func.isRequired,
-  verifyMail: PropTypes.func.isRequired,
-  resendVerification: PropTypes.func.isRequired,
-  organizations: PropTypes.func.isRequired,
-  leave: PropTypes.func.isRequired,
-  setPrimary: PropTypes.func.isRequired,
-  requests: PropTypes.func.isRequired,
-  cancelRequest: PropTypes.func.isRequired,
+  profile: PropTypes.func.isRequired,
+  stepUp: PropTypes.func,
+  verification: PropTypes.shape({
+    verify: PropTypes.func.isRequired,
+    resend: PropTypes.func.isRequired,
+  }),
+  details: PropTypes.func,
+  address: PropTypes.func,
+  places: PropTypes.func,
+  phone: PropTypes.object,
+  email: PropTypes.object,
+  password: PropTypes.func,
+  tfa: PropTypes.object,
+  passkeys: PropTypes.object,
+  backupCodes: PropTypes.object,
+  linked: PropTypes.object,
+  sessions: PropTypes.object,
+  favorites: PropTypes.object,
+  preferences: PropTypes.func,
+  deletion: PropTypes.func,
+  organizations: PropTypes.shape({
+    list: PropTypes.func.isRequired,
+    leave: PropTypes.func.isRequired,
+    setPrimary: PropTypes.func,
+    requests: PropTypes.func.isRequired,
+    cancelRequest: PropTypes.func.isRequired,
+  }),
   serviceAccounts: PropTypes.shape({
     list: PropTypes.func.isRequired,
     organizations: PropTypes.func.isRequired,
     create: PropTypes.func.isRequired,
     remove: PropTypes.func.isRequired,
-  }).isRequired,
+  }),
 });
 
-const isAbort = error => error?.name?.includes('Cancel') || error?.name?.includes('Abort');
-
-const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
-
-const NO_FILTERS = [];
-const clearNothing = () => undefined;
-const PREFS_KEY = 'table_prefs_profile';
-
-export const PROFILE_SECTIONS = ['profile', 'security', 'organizations', 'serviceAccounts'];
+const SECURITY_MEMBERS = [
+  'password',
+  'email',
+  'tfa',
+  'passkeys',
+  'backupCodes',
+  'linked',
+  'deletion',
+];
 
 /**
- * The profile sections of a `backend` UI backend by their route segment,
- * the sidebar's Account rows and the router reading the one table.
+ * The profile sections by their route segment, the sidebar's Account rows
+ * and the router reading the one table.
  */
 export const PROFILE_ROUTE_SECTIONS = {
   '': 'profile',
   security: 'security',
+  preferences: 'preferences',
+  favorites: 'favorites',
+  sessions: 'sessions',
   organizations: 'organizations',
   'service-accounts': 'serviceAccounts',
 };
 
-const SEARCH_PLACEHOLDER_KEYS = {
-  organizations: 'profile.search.organizations',
-  serviceAccounts: 'profile.search.serviceAccounts',
-};
+const SEGMENTS = Object.fromEntries(
+  Object.entries(PROFILE_ROUTE_SECTIONS).map(([segment, section]) => [section, segment])
+);
 
-const includesTerm = (term, ...fields) =>
-  !term || fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
-
-const PageSearch = ({ query, onQueryChange, placeholder, matched, total }) => {
-  useNavbarSearchBinding({
-    query,
-    onQueryChange,
-    placeholder,
-    matched,
-    total,
-    groups: NO_FILTERS,
-    onClearFilters: clearNothing,
-  });
-  return null;
-};
-
-PageSearch.propTypes = {
-  query: PropTypes.string.isRequired,
-  onQueryChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string.isRequired,
-  matched: PropTypes.number.isRequired,
-  total: PropTypes.number.isRequired,
-};
-
-const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
-const NAME_LABELS = { name: 'profile.fields.displayName' };
-const PASSWORD_SCHEMA = {
-  required: ['password', 'confirmPassword'],
-  properties: {
-    password: { type: 'string' },
-    confirmPassword: { type: 'string', equals: 'password' },
-  },
-};
-const PASSWORD_LABELS = {
-  password: 'profile.security.changePassword.newPasswordPlaceholder',
-  confirmPassword: 'profile.security.changePassword.confirmPasswordPlaceholder',
-};
-const EMAIL_SCHEMA = {
-  required: ['new_email'],
-  properties: { new_email: { type: 'string' } },
-};
-const EMAIL_LABELS = { new_email: 'profile.security.changeEmail.newEmailPlaceholder' };
-const SERVICE_ACCOUNT_SCHEMA = {
-  required: ['organization_id', 'description'],
-  properties: {
-    organization_id: { type: 'string' },
-    description: { type: 'string' },
-    expiration_days: { type: 'integer' },
-    role: { type: 'string' },
-  },
-};
-const SERVICE_ACCOUNT_LABELS = {
-  organization_id: 'profile.serviceAccounts.organization',
-  description: 'profile.serviceAccounts.descriptionPlaceholder',
-  expiration_days: 'profile.serviceAccounts.expires',
-  role: 'profile.serviceAccounts.role',
-};
-const EMPTY_PASSWORD = { password: '', confirmPassword: '' };
-const EMPTY_EMAIL = { new_email: '' };
-const EXPIRATIONS = [30, 60, 90, 365];
-const SERVICE_ACCOUNT_ROLES = ['member', 'admin', 'owner'];
-const DEFAULT_MIN_LENGTH = 15;
-
-const passwordMinLength = () =>
-  Number(rules?.forms?.password?.properties?.password?.minLength) || DEFAULT_MIN_LENGTH;
-
-const nameOf = user => user?.name || '';
-
-const groupByOrganization = (accounts, unknownLabel) => {
-  const groups = new Map();
-  accounts.forEach(entry => {
-    const name = entry.organization?.name || unknownLabel;
-    if (!groups.has(name)) {
-      groups.set(name, { name, accounts: [] });
+/**
+ * The sections the profile page draws for an `account` adapter, in the
+ * order the sidebar lists them: Profile always, Security while the
+ * adapter carries any security call, then Preferences, Favorites,
+ * Sessions, Organizations and Service accounts while it carries theirs.
+ *
+ * @param {Object} account - The `account` adapter
+ * @returns {string[]} The section keys
+ */
+export const sectionsFor = account => {
+  const sections = ['profile'];
+  if (SECURITY_MEMBERS.some(member => account[member])) {
+    sections.push('security');
+  }
+  ['preferences', 'favorites', 'sessions', 'organizations', 'serviceAccounts'].forEach(section => {
+    if (account[section]) {
+      sections.push(section);
     }
-    groups.get(name).accounts.push(entry);
   });
-  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return sections;
 };
 
 /**
- * The profile page every estate app with accounts of its own draws the same
- * way as the identity provider's, one section per route and the sidebar's
- * Account rows the one navigation: the avatar card as the page heading on
- * `/profile` alone, the
- * verification notice, then the route's own section on the page's ground
- * under the pages contract's frame rule, every fold kept under
- * `table_prefs_profile`:
- * Profile (the display name form and the Gravatar facts in one
- * `SectionCard`), Organizations (the memberships with make primary and
- * leave, and the pending join requests, two glass lists under a
- * `SectionHeading`), Security (the password, email and delete-account
- * forms as three `SectionCard`s, only while the host advertises
- * `local-accounts` and the account is not signed in through the identity
- * provider, whose accounts get a link to manage themselves at the provider
- * instead) and Service accounts (the create form in a `SectionCard`, the
- * one-time token notice, then the keys grouped per organization as a glass
- * list under a `SectionHeading` carrying select all and delete selected),
- * the Organizations and Service accounts lists searched from the navbar,
- * every call through the app's `account` adapter and the session's own
- * `reload` and `signOutEverywhere`; `admin` is the app's global-admin
- * flag, the one that offers the superadmin role on a new service account;
- * `user`, `loaded` and `oidc` are the session state's, the page drawing
- * nothing until `loaded` and sending a visitor to sign in only once
- * `loaded` says there is no session, because the cached account is a paint
- * hint.
+ * The route of one profile section under the host's profile path,
+ * `/user/profile` on the identity provider and `/profile` on a UI backend
+ * with accounts of its own.
+ *
+ * @param {string} basePath - The host's profile path
+ * @param {string} section - A section key
+ * @returns {string} The route
  */
-const BackendProfilePage = ({
-  session,
-  events,
-  returnTo,
-  account,
-  activeOrgUuid,
-  localAccounts,
-  admin,
-  user,
-  loaded,
-  oidc,
-  section,
-}) => {
+export const sectionPath = (basePath, section) =>
+  section === 'profile' ? basePath : `${basePath}/${SEGMENTS[section]}`;
+
+const plainGuard = call => call();
+
+const noStepUp = () => Promise.reject(new Error('step-up is not offered on this host'));
+
+const ActiveSection = ({ active, account, profile, version, session, guard, placesKey, page }) => {
+  if (active === 'security') {
+    return (
+      <SecurityTab
+        account={account}
+        profile={profile}
+        guard={guard}
+        focusEmail={page.focusEmail}
+        onSaved={page.refresh}
+        onDeleted={page.signedOut}
+      />
+    );
+  }
+  if (active === 'preferences') {
+    return (
+      <PreferencesTab
+        key={version}
+        account={account}
+        profile={profile}
+        session={session}
+        onSaved={page.refresh}
+      />
+    );
+  }
+  if (active === 'favorites') {
+    return <FavoritesTab account={account} />;
+  }
+  if (active === 'sessions') {
+    return <SessionsTab account={account} guard={guard} onSignedOut={page.signedOut} />;
+  }
+  if (active === 'organizations') {
+    return <OrganizationsTab account={account} onSaved={page.refresh} />;
+  }
+  if (active === 'serviceAccounts') {
+    return (
+      <ServiceAccountsTab account={account} activeOrgUuid={page.activeOrgUuid} admin={page.admin} />
+    );
+  }
+  return (
+    <IssuerDetailsTab
+      key={version}
+      account={account}
+      profile={profile}
+      guard={guard}
+      placesKey={placesKey}
+      onSaved={page.refresh}
+      onChangeEmail={page.openEmailChange}
+    />
+  );
+};
+
+ActiveSection.propTypes = {
+  active: PropTypes.string.isRequired,
+  account: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired,
+  version: PropTypes.number.isRequired,
+  session: PropTypes.object.isRequired,
+  guard: PropTypes.func.isRequired,
+  placesKey: PropTypes.string.isRequired,
+  page: PropTypes.shape({
+    focusEmail: PropTypes.bool.isRequired,
+    activeOrgUuid: PropTypes.string.isRequired,
+    admin: PropTypes.bool.isRequired,
+    refresh: PropTypes.func.isRequired,
+    signedOut: PropTypes.func.isRequired,
+    openEmailChange: PropTypes.func.isRequired,
+  }).isRequired,
+};
+
+const VerificationNotice = ({ verification, onResent }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const folds = useFolds(PREFS_KEY);
-  useEffect(() => {
-    document.title = t('profile.pageTitle');
-  }, [t]);
-
-  const currentUser = loaded ? user : null;
-  const currentName = nameOf(currentUser);
-  const showSecurity = localAccounts && !oidc;
-  const activeTab = section;
-  const [gravatarProfile, setGravatarProfile] = useState({});
-  const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD);
-  const [emailForm, setEmailForm] = useState(EMPTY_EMAIL);
-  const [nameForm, setNameForm] = useState(() => ({ name: currentName }));
-  const [seededName, setSeededName] = useState(currentName);
-  if (seededName !== currentName) {
-    setSeededName(currentName);
-    setNameForm({ name: currentName });
-  }
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchedTab, setSearchedTab] = useState(activeTab);
-  if (searchedTab !== activeTab) {
-    setSearchedTab(activeTab);
-    setSearchTerm('');
-  }
-  const [serviceAccounts, setServiceAccounts] = useState([]);
-  const [serviceAccountOrgs, setServiceAccountOrgs] = useState([]);
-  const [serviceAccountForm, setServiceAccountForm] = useState(() => ({
-    organization_id: '',
-    description: '',
-    expiration_days: 30,
-    role: 'member',
-  }));
-  const [newServiceAccountToken, setNewServiceAccountToken] = useState(null);
-  const nameRules = useFormRules({
-    formKey: 'displayName',
-    schema: NAME_SCHEMA,
-    values: nameForm,
-    labels: NAME_LABELS,
-  });
-  const passwordRules = useFormRules({
-    formKey: 'password',
-    schema: PASSWORD_SCHEMA,
-    values: passwordForm,
-    labels: PASSWORD_LABELS,
-  });
-  const emailRules = useFormRules({
-    formKey: 'email',
-    schema: EMAIL_SCHEMA,
-    values: emailForm,
-    labels: EMAIL_LABELS,
-  });
-  const serviceAccountRules = useFormRules({
-    formKey: 'serviceAccount',
-    schema: SERVICE_ACCOUNT_SCHEMA,
-    values: serviceAccountForm,
-    labels: SERVICE_ACCOUNT_LABELS,
-  });
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
-  const serviceAccountArrival = useArrival(serviceAccounts);
-  const [userOrganizations, setUserOrganizations] = useState([]);
-  const [joinRequests, setJoinRequests] = useState([]);
-  const [organizationsLoading, setOrganizationsLoading] = useState(false);
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const handleLeaveOrganization = async orgName => {
+  const resend = async () => {
     try {
-      await account.leave(orgName);
-      notify('success', t('profile.messages.leftOrganization', { orgName }));
-      setUserOrganizations((await account.organizations()) || []);
+      const data = await verification.resend();
+      notify('success', data?.message || '');
+      await onResent();
     } catch (error) {
-      log.api.error('Error leaving organization', {
-        orgName,
-        error: error.message,
-      });
       notify('danger', t(error.messageKey || 'errors.request'));
     }
   };
-
-  const handleCancelJoinRequest = async requestId => {
-    try {
-      await account.cancelRequest(requestId);
-      notify('success', t('profile.messages.requestCanceled'));
-      setJoinRequests((await account.requests()) || []);
-    } catch (error) {
-      log.api.error('Error canceling join request', {
-        requestId,
-        error: error.message,
-      });
-      notify('danger', t(error.messageKey || 'errors.request'));
-    }
-  };
-
-  const resetPasswordRules = passwordRules.reset;
-  const resetEmailRules = emailRules.reset;
-  const resetServiceAccountRules = serviceAccountRules.reset;
-
-  const resetFormStates = useCallback(() => {
-    setPasswordForm(EMPTY_PASSWORD);
-    setEmailForm(EMPTY_EMAIL);
-    resetPasswordRules();
-    resetEmailRules();
-  }, [resetPasswordRules, resetEmailRules]);
-
-  const resetServiceAccountStates = useCallback(() => {
-    setNewServiceAccountToken(null);
-    setServiceAccountForm(previous => ({
-      ...previous,
-      description: '',
-      expiration_days: 30,
-      role: 'member',
-    }));
-    resetServiceAccountRules();
-  }, [resetServiceAccountRules]);
-
-  const resetRef = useRef({});
-  useEffect(() => {
-    resetRef.current = { form: resetFormStates, service: resetServiceAccountStates };
-  });
-
-  useEffect(() => {
-    const reset = resetRef.current;
-    if (activeTab === 'serviceAccounts') {
-      reset.service();
-    } else {
-      reset.form();
-    }
-  }, [activeTab]);
-
-  const handleDeleteAccount = async () => {
-    try {
-      await account.remove(currentUser.id);
-      await session.signOutEverywhere();
-    } catch (error) {
-      log.auth.error('Error deleting account', {
-        userId: currentUser.id,
-        error: error.message,
-      });
-      notify('danger', t(error.messageKey || 'errors.request'));
-    }
-  };
-
-  const openDeleteModal = () => setShowDeleteModal(true);
-  const closeDeleteModal = () => setShowDeleteModal(false);
-
-  const refreshUserData = useCallback(
-    () =>
-      session.reload().then(next => {
-        if (next) {
-          events.emit('login');
-        }
-      }),
-    [events, session]
-  );
-
-  const handleSetPrimaryOrganization = async orgName => {
-    try {
-      await account.setPrimary(orgName);
-      notify('success', t('profile.messages.primaryOrganizationSet', { orgName }));
-      setUserOrganizations((await account.organizations()) || []);
-      refreshUserData();
-    } catch (error) {
-      log.api.error('Error setting primary organization', {
-        orgName,
-        error: error.message,
-      });
-      notify('danger', t(error.messageKey || 'errors.request'));
-    }
-  };
-
-  const checkEmailVerification = useCallback(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const token = searchParams.get('token');
-
-    if (token) {
-      account
-        .verifyMail(token)
-        .then(data => {
-          notify('success', data.message);
-          refreshUserData();
-        })
-        .catch(error => {
-          notify('danger', t(error.messageKey || 'errors.request'));
-        })
-        .finally(() => {
-          navigate('/profile', { replace: true });
-        });
-    }
-  }, [account, location.search, navigate, notify, refreshUserData, t]);
-
-  useEffect(() => {
-    checkEmailVerification();
-  }, [checkEmailVerification]);
-
-  const loadGravatarProfile = useCallback(
-    async (emailHash, signal) => {
-      try {
-        const profile = await account.gravatarProfile(emailHash, signal);
-        if (profile) {
-          setGravatarProfile(profile);
-        }
-      } catch (error) {
-        if (!isAbort(error)) {
-          log.api.error('Error loading Gravatar profile', {
-            emailHash,
-            error: error.message,
-          });
-        }
-      }
-    },
-    [account]
-  );
-
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-
-    const loadUserData = async () => {
-      if (currentUser) {
-        const { emailHash } = currentUser;
-        if (emailHash && mounted) {
-          await loadGravatarProfile(emailHash, controller.signal);
-        }
-      } else if (loaded) {
-        navigate(returnTo.signInTo('/profile'));
-      }
-    };
-
-    loadUserData();
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [currentUser, loaded, navigate, loadGravatarProfile, returnTo]);
-
-  useEffect(() => {
-    let mounted = true;
-    const controller = new AbortController();
-
-    const loadData = async () => {
-      if (activeTab === 'serviceAccounts') {
-        try {
-          const [accounts, orgs] = await Promise.all([
-            account.serviceAccounts.list(controller.signal),
-            account.serviceAccounts.organizations(),
-          ]);
-          if (mounted) {
-            setServiceAccounts(accounts);
-            setServiceAccountOrgs(orgs || []);
-            const active = (orgs || []).find(org => org.name === activeOrgUuid);
-            setServiceAccountForm(previous => ({
-              ...previous,
-              organization_id: active ? String(active.id) : '',
-            }));
-          }
-        } catch (error) {
-          if (mounted && !isAbort(error)) {
-            log.api.error('Error loading service accounts', {
-              error: error.message,
-            });
-          }
-        }
-      } else if (activeTab === 'organizations') {
-        setOrganizationsLoading(true);
-        try {
-          const [organizations, requests] = await Promise.all([
-            account.organizations(),
-            account.requests(),
-          ]);
-          if (mounted) {
-            setUserOrganizations(organizations || []);
-            setJoinRequests(requests || []);
-          }
-        } catch (error) {
-          if (mounted && !isAbort(error)) {
-            log.api.error('Error loading organizations', {
-              error: error.message,
-            });
-          }
-        } finally {
-          if (mounted) {
-            setOrganizationsLoading(false);
-          }
-        }
-      }
-    };
-
-    if (activeTab === 'serviceAccounts' || activeTab === 'organizations') {
-      loadData();
-    }
-
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
-  }, [account, activeTab, activeOrgUuid]);
-
-  const loadServiceAccounts = async signal => {
-    try {
-      setServiceAccounts(await account.serviceAccounts.list(signal));
-    } catch (error) {
-      if (!isAbort(error)) {
-        log.api.error('Error loading service accounts', {
-          error: error.message,
-        });
-      }
-    }
-  };
-
-  const handleCreateServiceAccount = async e => {
-    e.preventDefault();
-    if (!serviceAccountRules.validateAll()) {
-      return;
-    }
-    const controller = new AbortController();
-    try {
-      const targetOrg = serviceAccountOrgs.find(
-        org => String(org.id) === serviceAccountForm.organization_id
-      );
-
-      if (!targetOrg) {
-        notify('danger', t('profile.errors.activeOrgNotFound'));
-        return;
-      }
-
-      const created = await account.serviceAccounts.create(
-        serviceAccountForm.description,
-        serviceAccountForm.expiration_days,
-        targetOrg.id,
-        serviceAccountForm.role
-      );
-      await loadServiceAccounts(controller.signal);
-      resetServiceAccountStates();
-      setNewServiceAccountToken(created?.token || null);
-      notify('success', t('profile.messages.serviceAccountCreated'));
-    } catch (error) {
-      if (!isAbort(error) && !serviceAccountRules.applyServerErrors(error)) {
-        log.api.error('Error creating service account', {
-          error: error.message,
-        });
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const handleDeleteServiceAccount = async id => {
-    const controller = new AbortController();
-    try {
-      await account.serviceAccounts.remove(id);
-      await loadServiceAccounts(controller.signal);
-    } catch (error) {
-      if (!isAbort(error)) {
-        log.api.error('Error deleting service account', {
-          serviceAccountId: id,
-          error: error.message,
-        });
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const selectedAccounts = serviceAccounts.filter(entry => selectedIds.has(entry.id));
-  const allServiceAccountsSelected =
-    serviceAccounts.length > 0 && selectedAccounts.length === serviceAccounts.length;
-
-  const selectServiceAccount = (id, checked) => {
-    setSelectedIds(previous => {
-      const next = new Set(previous);
-      if (checked) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-      return next;
-    });
-  };
-
-  const selectAllServiceAccounts = checked => {
-    setSelectedIds(new Set(checked ? serviceAccounts.map(entry => entry.id) : []));
-  };
-
-  const handleDeleteSelectedServiceAccounts = async () => {
-    const ids = selectedAccounts.map(entry => entry.id);
-    const controller = new AbortController();
-    try {
-      await Promise.all(ids.map(id => account.serviceAccounts.remove(id)));
-      notify('success', t('profile.messages.serviceAccountsDeleted'));
-    } catch (error) {
-      log.api.error('Error deleting service accounts', {
-        serviceAccountIds: ids,
-        error: error.message,
-      });
-      notify('danger', t(error.messageKey || 'errors.request'));
-    }
-    setSelectedIds(new Set());
-    await loadServiceAccounts(controller.signal);
-    controller.abort();
-  };
-
-  const openDeleteSelectedModal = () => setShowDeleteSelectedModal(true);
-  const closeDeleteSelectedModal = () => setShowDeleteSelectedModal(false);
-
-  const handleResendVerificationMail = async () => {
-    const controller = new AbortController();
-    try {
-      const data = await account.resendVerification(controller.signal);
-      notify('success', data.message);
-      await refreshUserData();
-    } catch (error) {
-      if (!isAbort(error)) {
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const handlePasswordChange = async e => {
-    e.preventDefault();
-    if (!passwordRules.validateAll()) {
-      return;
-    }
-    const controller = new AbortController();
-    try {
-      await account.changePassword(currentUser.id, passwordForm.password, controller.signal);
-      notify('success', t('profile.messages.passwordChanged'));
-    } catch (error) {
-      if (!isAbort(error) && !passwordRules.applyServerErrors(error)) {
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const handleEmailChange = async e => {
-    e.preventDefault();
-    if (!emailRules.validateAll()) {
-      return;
-    }
-    const controller = new AbortController();
-    try {
-      await account.changeEmail(currentUser.id, emailForm.new_email, controller.signal);
-      notify('success', t('profile.messages.emailChanged'));
-      await refreshUserData();
-    } catch (error) {
-      if (!isAbort(error) && !emailRules.applyServerErrors(error)) {
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const handleDisplayNameChange = async e => {
-    e.preventDefault();
-    if (!nameRules.validateAll()) {
-      return;
-    }
-    const controller = new AbortController();
-    try {
-      await account.changeName(currentUser.id, nameForm.name, controller.signal);
-      notify('success', t('profile.messages.nameChanged'));
-      await refreshUserData();
-    } catch (error) {
-      if (!isAbort(error) && !nameRules.applyServerErrors(error)) {
-        notify('danger', t(error.messageKey || 'errors.request'));
-      }
-    }
-    controller.abort();
-  };
-
-  const renderProfileTab = () => (
-    <div className="tab-pane fade show active">
-      <SectionCard
-        title={t('profile.tabs.profile')}
-        className="mb-0"
-        folded={folds.folded('profile')}
-        onFold={() => folds.toggle('profile')}
-      >
-        <form onSubmit={handleDisplayNameChange} className="mb-4" noValidate>
-          <div className="col-md-4">
-            <FormErrorSummary errors={nameRules.summary} />
-            <Field
-              id={nameRules.idFor('name')}
-              label={<strong>{t('profile.fields.displayName')}</strong>}
-              hint={t('profile.fields.displayNameHint')}
-              error={nameRules.errors.name || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="text"
-                  className="form-control"
-                  value={nameForm.name}
-                  onChange={event => setNameForm({ name: event.target.value })}
-                  onBlur={() => nameRules.onBlur('name')}
-                  placeholder={currentUser.username}
-                />
-              )}
-            </Field>
-            <button className="btn btn-primary" type="submit">
-              {t('profile.buttons.save')}
-            </button>
-          </div>
-        </form>
-        <p>
-          <strong>{t('profile.fields.fullName')}:</strong> {gravatarProfile.first_name}{' '}
-          {gravatarProfile.last_name}
-        </p>
-        <p>
-          <strong>{t('profile.fields.location')}:</strong>{' '}
-          {gravatarProfile.location || t('profile.noLocation')}
-        </p>
-        <p>
-          <strong>{t('profile.fields.email')}:</strong> {currentUser.email}
-        </p>
-        <p>
-          <strong>{t('profile.fields.organization')}:</strong> {currentUser.organization}
-        </p>
-        <p>
-          <strong>{t('profile.fields.roles')}:</strong>{' '}
-          {currentUser.roles ? currentUser.roles.join(', ') : t('profile.noRoles')}
-        </p>
-        <p>
-          <strong>{t('profile.fields.profileUrl')}:</strong>{' '}
-          <a href={gravatarProfile.profile_url} target="_blank" rel="noopener noreferrer">
-            {gravatarProfile.profile_url}
-          </a>
-        </p>
-        <p>
-          <strong>{t('profile.fields.verifiedAccounts')}:</strong>{' '}
-          {gravatarProfile.number_verified_accounts}
-        </p>
-        <p>
-          <strong>{t('profile.fields.registrationDate')}:</strong>{' '}
-          {new Date(gravatarProfile.registration_date).toLocaleDateString()}
-        </p>
-        <p>
-          <strong>{t('profile.fields.emailHash')}:</strong> {currentUser.emailHash}
-        </p>
-        <p className="mb-0">
-          <strong>{t('profile.fields.userId')}:</strong> {currentUser.id}
-        </p>
-        {currentUser.accessToken ? (
-          <p className="mt-3 mb-0">
-            <strong>{t('profile.fields.accessToken')}:</strong>{' '}
-            {currentUser.accessToken.substring(0, 20)}...
-          </p>
-        ) : null}
-      </SectionCard>
-    </div>
-  );
-
-  const renderSecurityTab = () => (
-    <div className="tab-pane fade show active">
-      <SectionCard
-        title={t('profile.security.changePassword.title')}
-        folded={folds.folded('password')}
-        onFold={() => folds.toggle('password')}
-      >
-        <form onSubmit={handlePasswordChange} noValidate>
-          <div className="col-md-3">
-            <FormErrorSummary errors={passwordRules.summary} />
-            <Field
-              id={passwordRules.idFor('password')}
-              label={t('profile.security.changePassword.newPasswordPlaceholder')}
-              hint={t('profile.security.password.hint', { count: passwordMinLength() })}
-              error={passwordRules.errors.password || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="password"
-                  className="form-control"
-                  autoComplete="new-password"
-                  value={passwordForm.password}
-                  onChange={e => setPasswordForm({ ...passwordForm, password: e.target.value })}
-                  onBlur={() => passwordRules.onBlur('password')}
-                />
-              )}
-            </Field>
-            <Field
-              id={passwordRules.idFor('confirmPassword')}
-              label={t('profile.security.changePassword.confirmPasswordPlaceholder')}
-              error={passwordRules.errors.confirmPassword || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="password"
-                  className="form-control"
-                  autoComplete="new-password"
-                  value={passwordForm.confirmPassword}
-                  onChange={e =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-                  }
-                  onBlur={() => passwordRules.onBlur('confirmPassword')}
-                />
-              )}
-            </Field>
-          </div>
-          <button className="btn btn-primary" type="submit">
-            {t('profile.security.changePassword.button')}
-          </button>
-        </form>
-      </SectionCard>
-      <SectionCard
-        title={t('profile.security.changeEmail.title')}
-        folded={folds.folded('email')}
-        onFold={() => folds.toggle('email')}
-      >
-        <form onSubmit={handleEmailChange} noValidate>
-          <div className="col-md-3">
-            <FormErrorSummary errors={emailRules.summary} />
-            <Field
-              id={emailRules.idFor('new_email')}
-              label={t('profile.security.changeEmail.newEmailPlaceholder')}
-              error={emailRules.errors.new_email || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="email"
-                  className="form-control"
-                  autoComplete="email"
-                  value={emailForm.new_email}
-                  onChange={e => setEmailForm({ new_email: e.target.value })}
-                  onBlur={() => emailRules.onBlur('new_email')}
-                />
-              )}
-            </Field>
-          </div>
-          <button className="btn btn-primary" type="submit">
-            {t('profile.security.changeEmail.button')}
-          </button>
-        </form>
-      </SectionCard>
-      <SectionCard
-        title={t('profile.security.deleteAccount.title')}
-        tone="danger"
-        className="mb-0"
-        folded={folds.folded('delete')}
-        onFold={() => folds.toggle('delete')}
-      >
-        <p>{t('profile.security.deleteAccount.warning')}</p>
-        <button type="button" className="btn btn-danger" onClick={openDeleteModal}>
-          {t('profile.security.deleteAccount.button')}
-        </button>
-      </SectionCard>
-    </div>
-  );
-
-  const term = searchTerm.toLowerCase();
-  const filteredOrganizations = userOrganizations.filter(org =>
-    includesTerm(
-      term,
-      org.name || org.organization?.name,
-      org.description || org.organization?.description
-    )
-  );
-  const filteredJoinRequests = joinRequests.filter(request =>
-    includesTerm(term, request.organization.name)
-  );
-  const filteredServiceAccounts = serviceAccounts.filter(entry =>
-    includesTerm(term, entry.username, entry.description, entry.organization?.name)
-  );
-  const searchCounts = {
-    organizations: {
-      matched: filteredOrganizations.length + filteredJoinRequests.length,
-      total: userOrganizations.length + joinRequests.length,
-    },
-    serviceAccounts: {
-      matched: filteredServiceAccounts.length,
-      total: serviceAccounts.length,
-    },
-  }[activeTab];
-  const emptyOrganizationsText = searchTerm
-    ? t('pages.noMatches')
-    : t('profile.organizations.noOrgs');
-
-  const renderOrganizationsTab = () => (
-    <div className="tab-pane fade show active">
-      {organizationsLoading ? (
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">{t('loading')}</span>
-          </div>
-        </div>
-      ) : (
-        <>
-          <SectionHeading
-            title={t('profile.organizations.belongToTitle')}
-            count={userOrganizations.length}
-          />
-          {filteredOrganizations.length === 0 ? (
-            <div className="alert alert-info">{emptyOrganizationsText}</div>
-          ) : (
-            <ul className="list-group mb-4">
-              {filteredOrganizations.map(org => {
-                const orgName = org.name || org.organization?.name;
-                const orgDesc = org.description || org.organization?.description;
-                const isPrimary = !!org.isPrimary;
-                const orgId = org.id || org.organization?.id;
-
-                return (
-                  <li key={orgId} className="list-group-item">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="d-flex align-items-center">
-                          <div>
-                            <strong>{orgName}</strong>
-                            {isPrimary && (
-                              <span className="badge bg-primary ms-2">
-                                {t('profile.organizations.primary')}
-                              </span>
-                            )}
-                            <br />
-                            {orgDesc && <small className="text-muted">{orgDesc}</small>}
-                            <br />
-                            <small className="text-muted">
-                              {t('profile.organizations.joined')}:{' '}
-                              {new Date(org.joinedAt).toLocaleDateString()}
-                            </small>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <span className={`badge ${ROLE_CLASSES[org.role] || 'bg-secondary'} me-3`}>
-                          {t(`roles.${org.role}`)}
-                        </span>
-                        {!isPrimary && !oidc && (
-                          <button
-                            type="button"
-                            className="btn btn-outline-primary btn-sm me-2"
-                            onClick={() => handleSetPrimaryOrganization(orgName)}
-                          >
-                            {t('profile.organizations.makePrimary')}
-                          </button>
-                        )}
-                        {userOrganizations.length > 1 && (
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleLeaveOrganization(orgName)}
-                          >
-                            {t('profile.buttons.leave')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {joinRequests.length > 0 && (
-            <>
-              <SectionHeading
-                title={t('profile.organizations.pendingRequestsTitle')}
-                count={joinRequests.length}
-              />
-              {filteredJoinRequests.length === 0 ? (
-                <div className="alert alert-info mb-0">{t('pages.noMatches')}</div>
-              ) : (
-                <ul className="list-group">
-                  {filteredJoinRequests.map(request => (
-                    <li key={request.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>{request.organization.name}</strong>
-                          <br />
-                          {request.organization.description && (
-                            <small className="text-muted">{request.organization.description}</small>
-                          )}
-                          <br />
-                          <small className="text-muted">
-                            {t('profile.organizations.requested')}:{' '}
-                            {new Date(request.created_at).toLocaleDateString()}
-                          </small>
-                        </div>
-                        <div>
-                          <span className="badge bg-warning me-3">{t('pages.status.pending')}</span>
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => handleCancelJoinRequest(request.id)}
-                          >
-                            {t('profile.buttons.cancel')}
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-
-  const serviceAccountListActions = (
-    <>
-      <div className="form-check">
-        <input
-          type="checkbox"
-          className="form-check-input"
-          id="selectAllServiceAccounts"
-          checked={allServiceAccountsSelected}
-          onChange={event => selectAllServiceAccounts(event.target.checked)}
-        />
-        <label className="form-check-label" htmlFor="selectAllServiceAccounts">
-          {t('profile.serviceAccounts.selectAll')}
-        </label>
-      </div>
-      <button
-        type="button"
-        className="btn btn-danger btn-sm"
-        disabled={selectedAccounts.length === 0}
-        onClick={openDeleteSelectedModal}
-      >
-        {t('profile.serviceAccounts.deleteSelected', { count: selectedAccounts.length })}
-      </button>
-    </>
-  );
-
-  const renderServiceAccountsTab = () => (
-    <div className="tab-pane fade show active">
-      <SectionCard
-        title={t('profile.serviceAccounts.createTitle')}
-        folded={folds.folded('serviceAccount')}
-        onFold={() => folds.toggle('serviceAccount')}
-      >
-        <form onSubmit={handleCreateServiceAccount} noValidate>
-          <div className="col-md-3">
-            <FormErrorSummary errors={serviceAccountRules.summary} />
-            <Field
-              id={serviceAccountRules.idFor('organization_id')}
-              label={t('profile.serviceAccounts.organization')}
-              error={serviceAccountRules.errors.organization_id || ''}
-            >
-              {aria => (
-                <select
-                  {...aria}
-                  className="form-select"
-                  value={serviceAccountForm.organization_id}
-                  onChange={e =>
-                    setServiceAccountForm({
-                      ...serviceAccountForm,
-                      organization_id: e.target.value,
-                    })
-                  }
-                  onBlur={() => serviceAccountRules.onBlur('organization_id')}
-                >
-                  {serviceAccountOrgs.map(org => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              id={serviceAccountRules.idFor('description')}
-              label={t('profile.serviceAccounts.descriptionPlaceholder')}
-              error={serviceAccountRules.errors.description || ''}
-            >
-              {aria => (
-                <input
-                  {...aria}
-                  type="text"
-                  className="form-control"
-                  value={serviceAccountForm.description}
-                  onChange={e =>
-                    setServiceAccountForm({ ...serviceAccountForm, description: e.target.value })
-                  }
-                  onBlur={() => serviceAccountRules.onBlur('description')}
-                />
-              )}
-            </Field>
-            <Field
-              id={serviceAccountRules.idFor('expiration_days')}
-              label={t('profile.serviceAccounts.expires')}
-              error={serviceAccountRules.errors.expiration_days || ''}
-            >
-              {aria => (
-                <select
-                  {...aria}
-                  className="form-select"
-                  value={serviceAccountForm.expiration_days}
-                  onChange={e =>
-                    setServiceAccountForm({
-                      ...serviceAccountForm,
-                      expiration_days: Number(e.target.value),
-                    })
-                  }
-                  onBlur={() => serviceAccountRules.onBlur('expiration_days')}
-                >
-                  {EXPIRATIONS.map(days => (
-                    <option key={days} value={days}>
-                      {t(`profile.serviceAccounts.expiration.${days}`)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <Field
-              id={serviceAccountRules.idFor('role')}
-              label={t('profile.serviceAccounts.role')}
-              error={serviceAccountRules.errors.role || ''}
-            >
-              {aria => (
-                <select
-                  {...aria}
-                  className="form-select"
-                  value={serviceAccountForm.role}
-                  onChange={e =>
-                    setServiceAccountForm({ ...serviceAccountForm, role: e.target.value })
-                  }
-                  onBlur={() => serviceAccountRules.onBlur('role')}
-                >
-                  {SERVICE_ACCOUNT_ROLES.map(role => (
-                    <option key={role} value={role}>
-                      {t(`roles.${role}`)}
-                    </option>
-                  ))}
-                  {admin && <option value="superadmin">{t('roles.superadmin')}</option>}
-                </select>
-              )}
-            </Field>
-          </div>
-          <button className="btn btn-primary" type="submit">
-            {t('profile.serviceAccounts.createButton')}
-          </button>
-        </form>
-      </SectionCard>
-      {newServiceAccountToken && (
-        <div className="alert alert-warning" role="alert">
-          <strong>{t('profile.serviceAccounts.token')}:</strong>{' '}
-          <code>{newServiceAccountToken}</code>
-          <br />
-          <small>{t('profile.serviceAccounts.tokenShownOnce')}</small>
-        </div>
-      )}
-      <SectionHeading
-        title={t('profile.serviceAccounts.title')}
-        count={serviceAccounts.length}
-        actions={serviceAccountListActions}
-      />
-      {serviceAccounts.length > 0 && filteredServiceAccounts.length === 0 && (
-        <div className="alert alert-info">{t('pages.noMatches')}</div>
-      )}
-      {groupByOrganization(filteredServiceAccounts, t('profile.unknown')).map(group => (
-        <div key={group.name} className="mb-3">
-          <div className="d-flex align-items-center gap-2 mb-2">
-            <h6 className="mb-0">{group.name}</h6>
-            <span className="badge bg-secondary bg-opacity-50">{group.accounts.length}</span>
-          </div>
-          <ul className="list-group">
-            {group.accounts.map(entry => (
-              <li
-                key={entry.id}
-                className="list-group-item"
-                ref={serviceAccountArrival.ref(entry.id)}
-                tabIndex={-1}
-              >
-                <div className="d-flex justify-content-between align-items-center">
-                  <input
-                    type="checkbox"
-                    className="form-check-input me-3"
-                    checked={selectedIds.has(entry.id)}
-                    onChange={event => selectServiceAccount(entry.id, event.target.checked)}
-                    aria-label={entry.username}
-                  />
-                  <div className="flex-grow-1">
-                    <strong>{entry.username}</strong> - {entry.description}
-                    <br />
-                    <small>
-                      {t('profile.serviceAccounts.expires')}:{' '}
-                      {new Date(entry.expiresAt).toLocaleDateString()}
-                    </small>
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeleteServiceAccount(entry.id)}
-                    >
-                      {t('profile.buttons.delete')}
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="list row">
-      {currentUser && (
-        <>
-          {activeTab === 'profile' ? (
-            <div className="card mt-2 mb-3">
-              <div className="card-body text-center">
-                <Avatar
-                  picture={currentUser.avatarUrl || gravatarProfile.avatar_url || ''}
-                  size={100}
-                />
-                <h3 className="mt-3">{gravatarProfile.display_name || currentUser.username}</h3>
-                <p className="text-muted mb-0">
-                  {gravatarProfile.job_title || t('profile.noJobTitle')}
-                </p>
-              </div>
-            </div>
-          ) : null}
-          {!currentUser.verified && (
-            <div className="alert alert-warning" role="alert">
-              {t('profile.messages.emailNotVerified')}
-              <button type="button" className="btn btn-link" onClick={handleResendVerificationMail}>
-                {t('profile.buttons.resendVerification')}
-              </button>
-            </div>
-          )}
-          {searchCounts && (
-            <PageSearch
-              query={searchTerm}
-              onQueryChange={setSearchTerm}
-              placeholder={t(SEARCH_PLACEHOLDER_KEYS[activeTab])}
-              matched={searchCounts.matched}
-              total={searchCounts.total}
-            />
-          )}
-          <div className="mt-3">
-            {activeTab === 'profile' && renderProfileTab()}
-            {activeTab === 'organizations' && renderOrganizationsTab()}
-            {activeTab === 'security' && showSecurity && renderSecurityTab()}
-            {activeTab === 'serviceAccounts' && renderServiceAccountsTab()}
-          </div>
-        </>
-      )}
-      <ConfirmModal
-        show={showDeleteModal}
-        handleClose={closeDeleteModal}
-        handleConfirm={handleDeleteAccount}
-        title={t('profile.deleteModal.title')}
-        message={t('profile.deleteModal.message')}
-      />
-      <ConfirmModal
-        show={showDeleteSelectedModal}
-        handleClose={closeDeleteSelectedModal}
-        handleConfirm={handleDeleteSelectedServiceAccounts}
-        title={t('profile.serviceAccounts.deleteSelectedModal.title')}
-        message={t('profile.serviceAccounts.deleteSelectedModal.message')}
-      />
+    <div className="alert alert-warning" role="alert">
+      {t('profile.messages.emailNotVerified')}
+      <button type="button" className="btn btn-link" onClick={resend}>
+        {t('profile.buttons.resendVerification')}
+      </button>
     </div>
   );
 };
 
-BackendProfilePage.propTypes = {
-  session: PropTypes.object.isRequired,
-  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
-  returnTo: returnToShape.isRequired,
-  account: accountShape.isRequired,
-  activeOrgUuid: PropTypes.string.isRequired,
-  localAccounts: PropTypes.bool.isRequired,
-  admin: PropTypes.bool.isRequired,
-  user: PropTypes.object,
-  loaded: PropTypes.bool.isRequired,
-  oidc: PropTypes.bool.isRequired,
-  section: PropTypes.oneOf(PROFILE_SECTIONS).isRequired,
+VerificationNotice.propTypes = {
+  verification: PropTypes.shape({ resend: PropTypes.func.isRequired }).isRequired,
+  onResent: PropTypes.func.isRequired,
+};
+
+const useVerificationLink = ({ verification, basePath, refresh }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const verify = verification?.verify || null;
+
+  useEffect(() => {
+    if (!token || !verify) {
+      return;
+    }
+    verify(token)
+      .then(data => {
+        notify('success', data?.message || '');
+        return refresh();
+      })
+      .catch(error => {
+        notify('danger', t(error.messageKey || 'errors.request'));
+      })
+      .finally(() => {
+        navigate(basePath, { replace: true });
+      });
+  }, [basePath, navigate, notify, refresh, t, token, verify]);
+};
+
+const AvatarCard = ({ user }) => (
+  <div className="card mb-3">
+    <div className="card-body text-center">
+      <Avatar picture={user.picture || user.avatarUrl || ''} size={100} />
+      <h3 className="mt-3">{userDisplayName(user)}</h3>
+      <p className="text-muted mb-0">{userSecondaryLine(user)}</p>
+    </div>
+  </div>
+);
+
+AvatarCard.propTypes = {
+  user: PropTypes.object.isRequired,
+};
+
+const useProfileRecord = ({ account, session, events, signedIn }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [record, setRecord] = useState({ profile: null, version: 0 });
+
+  const loadProfile = useCallback(
+    () =>
+      account
+        .profile()
+        .then(next => setRecord(previous => ({ profile: next, version: previous.version + 1 })))
+        .catch(error => {
+          if (isPendingGate(error)) {
+            return;
+          }
+          log.api.error('Error loading profile', { error: error.message });
+          notify('danger', t(error.messageKey || 'errors.request'));
+        }),
+    [account, notify, t]
+  );
+
+  useEffect(() => {
+    if (signedIn) {
+      loadProfile();
+    }
+  }, [loadProfile, signedIn]);
+
+  const refresh = useCallback(async () => {
+    await loadProfile();
+    const next = await session.reload();
+    if (next) {
+      events.emit('login');
+    }
+  }, [events, loadProfile, session]);
+
+  return { ...record, refresh };
+};
+
+const usePlacesKey = places => {
+  const [key, setKey] = useState('');
+  useEffect(() => {
+    if (!places) {
+      return undefined;
+    }
+    let mounted = true;
+    places()
+      .then(data => {
+        if (mounted && typeof data?.key === 'string') {
+          setKey(data.key);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      mounted = false;
+    };
+  }, [places]);
+  return key;
 };
 
 /**
- * The shared profile page: the identity provider's sections while the
- * `account` adapter carries `profile` and `stepUp` (the issuer's
- * adapter), else the page every app with accounts of its own draws, one
- * section per route either way; `section` is the route's own, the router
- * mapping `/profile`, `/profile/security`, `/profile/organizations` and
- * `/profile/service-accounts` onto it; `user` and `loaded` are the
- * session state's adopted user and whether `load()` has answered, and
- * neither page draws before `loaded`.
+ * The one profile page of every UI backend with accounts of its own, the
+ * identity provider and a `backend` host alike: the avatar card from the
+ * session's display fields as the page heading, drawn on the profile
+ * route alone (decision 143), then the one section the route names under
+ * it on the page's ground, the pages contract's frame, the sidebar's child
+ * rows being the one navigation and no tab strip drawn (decision 109); a
+ * section is drawn only while the `account` adapter carries its calls
+ * (`sectionsFor`), an unknown section drawing Profile, and the route
+ * segment maps through `PROFILE_ROUTE_SECTIONS` under `basePath`
+ * (`/user/profile` on the issuer, `/profile` on a UI backend); a
+ * `#section` hash the estate still links is replaced by the section's
+ * route; the record is read once through `account.profile` and re-read,
+ * with the session, after every change the session must reflect; while
+ * the adapter carries `verification` and the record's `email_verified` is
+ * false the unverified notice with its Resend link draws above the
+ * section, and a `?token=` in the URL is consumed through
+ * `verification.verify`, the outcome notified, the record refreshed and
+ * the URL replaced with the bare profile path; every
+ * stepped-up call passes through the one step-up dialog while the adapter
+ * carries `stepUp`, and runs plainly otherwise; `admin` is the app's
+ * global-admin flag and `activeOrgUuid` the switcher's organization, both
+ * read by the Service accounts section; `user` and `loaded` are the
+ * session state's, the page drawing nothing until `loaded` and sending a
+ * visitor to sign in only once `loaded` says there is no session, because
+ * the cached account is a paint hint.
  */
 const ProfilePage = ({
   session,
   events,
   returnTo,
   account,
+  basePath,
   activeOrgUuid,
-  localAccounts,
   admin,
   user = null,
   loaded,
-  oidc,
-  section = 'profile',
 }) => {
-  if (account.profile && account.stepUp) {
-    return (
-      <IssuerProfilePage
-        session={session}
-        events={events}
-        returnTo={returnTo}
-        account={account}
-        user={user}
-        loaded={loaded}
-      />
-    );
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { section = '' } = useParams();
+  const sections = useMemo(() => sectionsFor(account), [account]);
+  const signedIn = loaded && Boolean(user);
+  const { profile, version, refresh } = useProfileRecord({ account, session, events, signedIn });
+  const placesKey = usePlacesKey(account.places || null);
+  const stepUp = useStepUp({
+    stepUp: account.stepUp || noStepUp,
+    hasPassword: Boolean(profile?.has_local_auth),
+  });
+  const guard = account.stepUp ? stepUp.guard : plainGuard;
+  const routed = PROFILE_ROUTE_SECTIONS[section] || '';
+  const active = sections.includes(routed) ? routed : 'profile';
+  const focusEmail = Boolean(location.state?.focusEmail);
+  const hashSection = location.hash.replace(/^#/, '');
+
+  useEffect(() => {
+    document.title = t('profile.pageTitle');
+  }, [t]);
+
+  useEffect(() => {
+    if (loaded && !user) {
+      navigate(returnTo.signInTo(basePath));
+    }
+  }, [basePath, loaded, navigate, returnTo, user]);
+
+  useEffect(() => {
+    if (hashSection && sections.includes(hashSection)) {
+      navigate(sectionPath(basePath, hashSection), { replace: true });
+    }
+  }, [basePath, hashSection, navigate, sections]);
+
+  useVerificationLink({ verification: account.verification || null, basePath, refresh });
+
+  const openEmailChange = () => {
+    navigate(sectionPath(basePath, 'security'), { state: { focusEmail: true } });
+  };
+
+  const signedOut = next => {
+    session.endSession();
+    navigate(next, { replace: true });
+  };
+
+  if (!signedIn) {
+    return null;
   }
+
   return (
-    <BackendProfilePage
-      session={session}
-      events={events}
-      returnTo={returnTo}
-      account={account}
-      activeOrgUuid={activeOrgUuid}
-      localAccounts={localAccounts}
-      admin={admin}
-      user={user}
-      loaded={loaded}
-      oidc={oidc}
-      section={section}
-    />
+    <div className="list">
+      {active === 'profile' ? <AvatarCard user={user} /> : null}
+      {account.verification && profile?.email_verified === false ? (
+        <VerificationNotice verification={account.verification} onResent={refresh} />
+      ) : null}
+      <div className="tab-content">
+        {profile === null ? (
+          <p>{t('loading')}</p>
+        ) : (
+          <ActiveSection
+            active={active}
+            account={account}
+            profile={profile}
+            version={version}
+            session={session}
+            guard={guard}
+            placesKey={placesKey}
+            page={{
+              focusEmail,
+              activeOrgUuid,
+              admin,
+              refresh,
+              signedOut,
+              openEmailChange,
+            }}
+          />
+        )}
+      </div>
+      {account.stepUp ? stepUp.dialog : null}
+    </div>
   );
 };
 
 ProfilePage.propTypes = {
-  session: PropTypes.object.isRequired,
+  session: PropTypes.shape({
+    reload: PropTypes.func.isRequired,
+    endSession: PropTypes.func.isRequired,
+    savePreferences: PropTypes.func.isRequired,
+  }).isRequired,
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   returnTo: returnToShape.isRequired,
-  account: PropTypes.oneOfType([accountShape, issuerAccountShape]).isRequired,
+  account: accountShape.isRequired,
+  basePath: PropTypes.string.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
-  localAccounts: PropTypes.bool.isRequired,
   admin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   loaded: PropTypes.bool.isRequired,
-  oidc: PropTypes.bool.isRequired,
-  section: PropTypes.oneOf(PROFILE_SECTIONS),
 };
 
 export default ProfilePage;

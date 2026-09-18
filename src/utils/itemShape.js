@@ -136,6 +136,7 @@ export const detailSearchShape = PropTypes.shape({
 
 export const columnShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
+  kind: PropTypes.string.isRequired,
   labelKey: PropTypes.string,
   sortValue: PropTypes.func,
   render: PropTypes.func.isRequired,

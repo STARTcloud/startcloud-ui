@@ -42,6 +42,7 @@ const nameBadges = names =>
 
 export const nameColumn = {
   key: 'name',
+  kind: 'name',
   labelKey: 'pages.table.name',
   sortValue: item => item.name.toLowerCase(),
   render: (item, ctx) => {
@@ -82,6 +83,7 @@ export const nameColumn = {
 
 export const labelColumn = {
   key: 'label',
+  kind: 'name',
   labelKey: 'pages.table.name',
   sortValue: item => (item.label || item.name).toLowerCase(),
   render: (item, ctx) => (
@@ -102,6 +104,7 @@ export const labelColumn = {
 
 export const osColumn = {
   key: 'os',
+  kind: 'text',
   labelKey: 'pages.table.os',
   sortValue: item => (item.os?.label || '').toLowerCase(),
   render: item => {
@@ -123,6 +126,7 @@ export const osColumn = {
 
 export const statusColumn = {
   key: 'status',
+  kind: 'badge',
   labelKey: 'pages.table.status',
   sortValue: item => (item.published ? 0 : 1),
   render: (item, ctx) => (
@@ -134,6 +138,7 @@ export const statusColumn = {
 
 export const visibilityColumn = {
   key: 'visibility',
+  kind: 'badge',
   labelKey: 'pages.table.visibility',
   sortValue: item => (item.isPublic ? 0 : 1),
   render: (item, ctx) => (
@@ -145,6 +150,7 @@ export const visibilityColumn = {
 
 export const createdColumn = {
   key: 'created',
+  kind: 'date',
   labelKey: 'pages.table.created',
   defaultHidden: true,
   sortValue: item => new Date(item.createdAt || 0).getTime(),
@@ -153,6 +159,7 @@ export const createdColumn = {
 
 export const updatedColumn = {
   key: 'updated',
+  kind: 'date',
   labelKey: 'pages.table.updated',
   defaultHidden: true,
   sortValue: item => new Date(item.updatedAt || 0).getTime(),
@@ -161,6 +168,7 @@ export const updatedColumn = {
 
 export const releasedColumn = {
   key: 'released',
+  kind: 'relative',
   labelKey: 'pages.table.released',
   sortValue: item => latestReleaseTime(item) || 0,
   render: (item, ctx) => {
@@ -171,6 +179,7 @@ export const releasedColumn = {
 
 export const downloadsColumn = {
   key: 'downloads',
+  kind: 'count',
   labelKey: 'pages.table.downloads',
   sortValue: item => item.downloads || 0,
   render: item => (typeof item.downloads === 'number' ? item.downloads : ''),
@@ -178,6 +187,7 @@ export const downloadsColumn = {
 
 export const versionsColumn = {
   key: 'versions',
+  kind: 'count',
   labelKey: 'pages.table.versions',
   sortValue: item => (item.versions || []).length,
   render: item => (item.versions || []).length,
@@ -185,6 +195,7 @@ export const versionsColumn = {
 
 export const providersColumn = {
   key: 'providers',
+  kind: 'badges',
   labelKey: 'pages.table.providers',
   sortValue: item => namesKey(providerNames(item)),
   render: item => nameBadges(providerNames(item)),
@@ -192,6 +203,7 @@ export const providersColumn = {
 
 export const familyColumn = {
   key: 'family',
+  kind: 'text',
   labelKey: 'pages.table.family',
   sortValue: item => (item.family || '').toLowerCase(),
   render: item => item.family || '',
@@ -199,6 +211,7 @@ export const familyColumn = {
 
 export const vendorColumn = {
   key: 'vendor',
+  kind: 'text',
   labelKey: 'pages.table.vendor',
   sortValue: item => (item.vendor || '').toLowerCase(),
   render: item => item.vendor || '',
@@ -206,6 +219,7 @@ export const vendorColumn = {
 
 export const releasesColumn = {
   key: 'releases',
+  kind: 'count',
   labelKey: 'pages.table.releases',
   sortValue: item => (item.versions || []).length,
   render: item => (item.versions || []).length,
@@ -213,6 +227,7 @@ export const releasesColumn = {
 
 export const platformsColumn = {
   key: 'platforms',
+  kind: 'badges',
   labelKey: 'pages.table.platforms',
   defaultHidden: true,
   sortValue: item => namesKey(platformNames(item)),
@@ -221,6 +236,7 @@ export const platformsColumn = {
 
 export const architecturesColumn = {
   key: 'architectures',
+  kind: 'badges',
   labelKey: 'pages.table.architectures',
   defaultHidden: true,
   sortValue: item => namesKey(architectureNames(item)),

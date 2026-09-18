@@ -4,7 +4,6 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import { useNotify } from '../../../contexts/NoticeContext';
-import { ban, rateLimit, unban, unlockMethod, unlockSignIn } from '../api/accounts';
 import { RATE_LIMIT } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';
@@ -25,19 +24,20 @@ Row.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-const useRateLimit = user => {
+const useRateLimit = (rateLimit, user) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [state, setState] = useState(null);
 
   const load = useCallback(() => {
-    rateLimit(user.id)
+    rateLimit
+      .read(user.id)
       .then(setState)
       .catch(error => {
         notify('danger', t(error.messageKey || 'errors.request'));
         setState(error.status === 404 ? RATE_LIMIT : null);
       });
-  }, [notify, t, user.id]);
+  }, [notify, rateLimit, t, user.id]);
 
   useEffect(() => {
     load();
@@ -87,14 +87,14 @@ Gates.propTypes = {
 
 /**
  * The Rate limits dialog of a Users row: the sign-in gate, each
- * second-factor method's state and the ban flag from the rate-limit
- * read, with Unlock sign-in, Unlock a method, Ban and Unban over the four
- * rate-limit routes, the dialog re-reading after each; mounted per user.
+ * second-factor method's state and the ban flag from the adapter's
+ * `rateLimit.read`, with Unlock sign-in, Unlock a method, Ban and Unban
+ * over its four calls, the dialog re-reading after each; mounted per user.
  */
-const RateLimitsDialog = ({ user, onClose }) => {
+const RateLimitsDialog = ({ rateLimit, user, onClose }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const { state, load } = useRateLimit(user);
+  const { state, load } = useRateLimit(rateLimit, user);
   const [method, setMethod] = useState(METHODS[0]);
   const [busy, setBusy] = useState(false);
 
@@ -138,7 +138,7 @@ const RateLimitsDialog = ({ user, onClose }) => {
             type="button"
             className="btn btn-sm btn-outline-primary"
             disabled={busy || !state}
-            onClick={() => act(() => unlockMethod(user.id, method))}
+            onClick={() => act(() => rateLimit.unlockMethod(user.id, method))}
           >
             {t('admin.users.rateLimits.unlock')}
           </button>
@@ -149,7 +149,7 @@ const RateLimitsDialog = ({ user, onClose }) => {
           type="button"
           className="btn btn-outline-primary"
           disabled={busy || !state}
-          onClick={() => act(() => unlockSignIn(user.id))}
+          onClick={() => act(() => rateLimit.unlockSignIn(user.id))}
         >
           {t('admin.users.rateLimits.unlockSignIn')}
         </button>
@@ -158,7 +158,7 @@ const RateLimitsDialog = ({ user, onClose }) => {
             type="button"
             className="btn btn-outline-secondary"
             disabled={busy}
-            onClick={() => act(() => unban(user.id))}
+            onClick={() => act(() => rateLimit.unban(user.id))}
           >
             {t('admin.users.rateLimits.unban')}
           </button>
@@ -167,7 +167,7 @@ const RateLimitsDialog = ({ user, onClose }) => {
             type="button"
             className="btn btn-outline-danger"
             disabled={busy || !state}
-            onClick={() => act(() => ban(user.id))}
+            onClick={() => act(() => rateLimit.ban(user.id))}
           >
             {t('admin.users.rateLimits.ban')}
           </button>
@@ -181,6 +181,13 @@ const RateLimitsDialog = ({ user, onClose }) => {
 };
 
 RateLimitsDialog.propTypes = {
+  rateLimit: PropTypes.shape({
+    read: PropTypes.func.isRequired,
+    unlockSignIn: PropTypes.func.isRequired,
+    unlockMethod: PropTypes.func.isRequired,
+    ban: PropTypes.func.isRequired,
+    unban: PropTypes.func.isRequired,
+  }).isRequired,
   user: adminUserShape.isRequired,
   onClose: PropTypes.func.isRequired,
 };

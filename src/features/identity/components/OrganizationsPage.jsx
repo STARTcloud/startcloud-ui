@@ -6,12 +6,12 @@ import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
-import SubTable from '../../../components/common/SubTable';
+import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useSelection } from '../../../hooks/useSelection';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
-import { deleteOrganization, organizations, organizationsBulk } from '../api/accounts';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { ORGANIZATIONS } from '../utils/examples';
 
@@ -26,7 +26,18 @@ import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
 
-const deletable = org => !org.personal || (org.member_count || 0) === 0;
+export const organizationsAdapterShape = PropTypes.shape({
+  list: PropTypes.func.isRequired,
+  update: PropTypes.func.isRequired,
+  remove: PropTypes.func.isRequired,
+  suspend: PropTypes.func,
+  resume: PropTypes.func,
+  bulk: PropTypes.func,
+});
+
+const deletable = org => !org.managed && (!org.personal || (org.member_count || 0) === 0);
+
+const carries = field => rows => rows.some(row => field in row);
 
 const matches = (row, needle) =>
   [row.name, row.uuid || '', row.invite_code || '', row.customer_id || ''].some(text =>
@@ -51,11 +62,19 @@ const columnsFor = () => [
     key: 'name',
     labelKey: 'admin.organizations.table.name',
     sortValue: row => row.name.toLowerCase(),
-    render: row => <strong title={row.uuid || undefined}>{row.name}</strong>,
+    render: (row, ctx) => (
+      <span className="d-inline-flex align-items-center gap-2">
+        <strong title={row.uuid || undefined}>{row.name}</strong>
+        {row.managed ? (
+          <span className="badge bg-info">{ctx.t('admin.organizations.managed')}</span>
+        ) : null}
+      </span>
+    ),
   },
   {
     key: 'type',
     labelKey: 'admin.organizations.table.type',
+    when: carries('personal'),
     sortValue: row => (row.personal ? 1 : 0),
     render: (row, ctx) => (
       <span className={`badge ${row.personal ? 'bg-secondary' : 'bg-primary'}`}>
@@ -64,13 +83,28 @@ const columnsFor = () => [
     ),
   },
   {
+    key: 'suspended',
+    labelKey: 'admin.organizations.table.status',
+    when: carries('suspended'),
+    sortValue: row => (row.suspended ? 1 : 0),
+    render: (row, ctx) => (
+      <span className={`badge ${row.suspended ? 'bg-warning text-dark' : 'bg-success'}`}>
+        {row.suspended
+          ? ctx.t('admin.organizations.suspended')
+          : ctx.t('admin.organizations.active')}
+      </span>
+    ),
+  },
+  {
     key: 'invite_code',
     labelKey: 'admin.organizations.table.inviteCode',
+    when: hasAny(row => row.invite_code),
     render: row => (row.invite_code ? <code>{row.invite_code}</code> : '—'),
   },
   {
     key: 'customer_id',
     labelKey: 'admin.organizations.table.customerId',
+    when: carries('customer_id'),
     sortValue: row => row.customer_id || '',
     render: (row, ctx) =>
       row.customer_id ? (
@@ -89,22 +123,34 @@ const columnsFor = () => [
   {
     key: 'created_at',
     labelKey: 'admin.organizations.table.created',
+    when: hasAny(row => row.created_at),
     sortValue: row => new Date(row.created_at || 0).getTime(),
     render: row => <DateCell value={row.created_at} />,
   },
 ];
 
-const RowActions = ({ org, onEdit, onDelete }) => {
+const RowActions = ({ org, adapter, onEdit, onToggle, onDelete }) => {
   const { t } = useTranslation();
   return (
     <div className="d-flex gap-1 text-nowrap">
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary"
-        onClick={() => onEdit(org)}
-      >
-        {t('admin.buttons.edit')}
-      </button>
+      {org.managed ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => onEdit(org)}
+        >
+          {t('admin.buttons.edit')}
+        </button>
+      )}
+      {adapter.suspend && adapter.resume ? (
+        <button
+          type="button"
+          className={`btn btn-sm ${org.suspended ? 'btn-outline-success' : 'btn-outline-warning'}`}
+          onClick={() => onToggle(org)}
+        >
+          {org.suspended ? t('admin.buttons.resume') : t('admin.buttons.suspend')}
+        </button>
+      ) : null}
       {deletable(org) ? (
         <button
           type="button"
@@ -120,42 +166,10 @@ const RowActions = ({ org, onEdit, onDelete }) => {
 
 RowActions.propTypes = {
   org: adminOrganizationShape.isRequired,
+  adapter: organizationsAdapterShape.isRequired,
   onEdit: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-};
-
-const useSelection = rows => {
-  const [selected, setSelected] = useState(() => new Set());
-  const toggle = id =>
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
-  const someSelected = selected.size > 0;
-  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
-  const clear = () => setSelected(new Set());
-  return {
-    selected,
-    toggle,
-    toggleAll,
-    allSelected,
-    someSelected,
-    clear,
-    subtable: {
-      allSelected,
-      someSelected,
-      onToggleAll: toggleAll,
-      isSelected: row => selected.has(row.id),
-      onToggleRow: row => toggle(row.id),
-      labelOf: row => row.name,
-    },
-  };
 };
 
 const CONFIRM_ACTIONS = ['suspend', 'resume', 'delete', 'regenerate_invite_code'];
@@ -227,13 +241,14 @@ SelectDialog.propTypes = {
 
 /**
  * The Organizations page's bulk actions, drawn in the section heading's
- * action pane while rows are selected: Set customer id, Set access mode,
- * Set default role and Regenerate invite code beside Suspend, Resume and
- * Delete, the delete action stepped up, a personal organization skipped
- * with `personal`, and the result line naming processed, skipped and each
- * error's code translated (identity contract decisions 139, 147).
+ * action pane while rows are selected and the adapter carries `bulk`: Set
+ * customer id, Set access mode, Set default role and Regenerate invite
+ * code beside Suspend, Resume and Delete, the delete action stepped up, a
+ * personal organization skipped with `personal`, and the result line
+ * naming processed, skipped and each error's code translated (identity
+ * contract decisions 139, 147).
  */
-const BulkActions = ({ selected, onDone }) => {
+const BulkActions = ({ bulk, selected, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
@@ -245,7 +260,7 @@ const BulkActions = ({ selected, onDone }) => {
   const run = (action, extra = {}) => {
     setBusy(true);
     return guard(
-      () => organizationsBulk({ action, organization_ids: selected, ...extra }),
+      () => bulk({ action, organization_ids: selected, ...extra }),
       t('admin.organizations.bulk.stepUpReason')
     )
       .then(answer => {
@@ -345,35 +360,42 @@ const BulkActions = ({ selected, onDone }) => {
 };
 
 BulkActions.propTypes = {
+  bulk: PropTypes.func.isRequired,
   selected: PropTypes.array.isRequired,
   onDone: PropTypes.func.isRequired,
 };
 
 /**
- * Accounts › All organizations: the navbar search bound for a query over
- * the rows, mirrored in the URL as `search` through `useUrlNarrowing`,
- * the Type `select` group (Personal or Team) narrowing the rows
- * client-side, its value in the URL as `type`, and the Columns group
- * under `table_prefs_admin_organizations`, a `SectionHeading` carrying the
- * count as muted text after the title, the table's select column a real
- * checkbox header, the select-all for the page, checked, unchecked or
- * indeterminate, the table (name with the uuid in its tooltip, Personal or
- * Team, invite code, customer id, members, created), Edit opening the
- * `OrganizationDialog` over the whole record prefilled from the row and
- * re-reading the list once saved, Delete behind the confirm for a team or
- * an empty personal organization, the service's refusal drawn as a card,
- * and the heading's action pane gaining, while rows are picked, "N
- * selected", Clear selection and the bulk actions (Suspend, Resume,
- * Delete), the delete stepped up (identity contract decision 139).
+ * Accounts › All organizations over the `adapter` the host hands in: the
+ * navbar search bound for a query over the rows, mirrored in the URL as
+ * `search` through `useUrlNarrowing`, the Type `select` group (Personal
+ * or Team) narrowing the rows client-side, its value in the URL as
+ * `type`, and the Columns group under `table_prefs_admin_organizations`,
+ * a `SectionHeading` carrying the count as muted text after the title,
+ * the table's select column a real checkbox header while the adapter
+ * carries `bulk`, the table (name with the uuid in its tooltip, then, each
+ * while the rows carry it, Personal or Team, the suspended state, the
+ * invite code, the customer id, the created time, and the members), Edit
+ * opening the `OrganizationDialog` over the whole record prefilled from
+ * the row and saving through `update`, Suspend or Resume per row while
+ * the adapter carries `suspend` and `resume`, Delete behind the confirm
+ * over `remove` for a team or an empty personal organization, a row the
+ * identity provider manages (`managed`) badged so and drawing Suspend or
+ * Resume alone, never Edit, Delete or the select column, the
+ * service's refusal drawn as a card, and the heading's action pane
+ * gaining, while rows are picked and the adapter carries `bulk`, "N
+ * selected", Clear selection and the bulk actions, the delete stepped up
+ * (identity contract decision 139).
  */
-const OrganizationsPage = () => {
+const OrganizationsPage = ({ adapter }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
-  const { data, loading, reload } = useAdminRead({ read: organizations, example: ORGANIZATIONS });
+  const { data, loading, reload } = useAdminRead({ read: adapter.list, example: ORGANIZATIONS });
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-  const selection = useSelection(rows);
+  const selectable = useMemo(() => rows.filter(row => !row.managed), [rows]);
+  const selection = useSelection(selectable, { labelOf: row => row.name });
   const columns = useMemo(() => columnsFor(), []);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
   const search = useDetailSearch({
@@ -395,34 +417,50 @@ const OrganizationsPage = () => {
     document.title = t('admin.organizations.all');
   }, [t]);
 
+  const fail = error => notify('danger', t(error.messageKey || 'errors.request'));
+
   const confirmDelete = () => {
-    deleteOrganization(deleting.id)
+    adapter
+      .remove(deleting.id)
       .then(() => {
         notify('success', t('admin.organizations.deleted'));
         reload();
       })
-      .catch(error => notify('danger', t(error.messageKey || 'errors.request')));
+      .catch(fail);
+  };
+
+  const toggle = org => {
+    (org.suspended ? adapter.resume(org.id) : adapter.suspend(org.id))
+      .then(() => {
+        notify('success', t('admin.organizations.saved'));
+        reload();
+      })
+      .catch(fail);
   };
 
   if (loading && !data) {
     return <AdminLoading />;
   }
 
-  const headingActions = selection.someSelected ? (
-    <>
-      <strong>{t('admin.organizations.bulk.selected', { count: selection.selected.size })}</strong>
-      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
-        {t('admin.organizations.bulk.clearSelection')}
-      </button>
-      <BulkActions
-        selected={[...selection.selected]}
-        onDone={() => {
-          selection.clear();
-          reload();
-        }}
-      />
-    </>
-  ) : null;
+  const headingActions =
+    selection.someSelected && adapter.bulk ? (
+      <>
+        <strong>
+          {t('admin.organizations.bulk.selected', { count: selection.selected.size })}
+        </strong>
+        <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+          {t('admin.organizations.bulk.clearSelection')}
+        </button>
+        <BulkActions
+          bulk={adapter.bulk}
+          selected={[...selection.selected]}
+          onDone={() => {
+            selection.clear();
+            reload();
+          }}
+        />
+      </>
+    ) : null;
 
   return (
     <div>
@@ -436,7 +474,7 @@ const OrganizationsPage = () => {
         rows={search.rows}
         rowKey={row => row.id}
         RowActions={RowActions}
-        actionsProps={{ onEdit: setEditing, onDelete: setDeleting }}
+        actionsProps={{ adapter, onEdit: setEditing, onToggle: toggle, onDelete: setDeleting }}
         rowProp="org"
         sort={search.sort}
         onSort={search.setSort}
@@ -445,10 +483,15 @@ const OrganizationsPage = () => {
         onResize={search.setColumnWidth}
         ctx={{ t, language: i18n.language }}
         emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
-        selection={selection.subtable}
+        selection={adapter.bulk ? selection.subtable : null}
       />
       {editing ? (
-        <OrganizationDialog org={editing} onClose={() => setEditing(null)} onSaved={reload} />
+        <OrganizationDialog
+          org={editing}
+          save={patch => adapter.update(editing.id, patch)}
+          onClose={() => setEditing(null)}
+          onSaved={reload}
+        />
       ) : null}
       <ConfirmModal
         show={Boolean(deleting)}
@@ -462,6 +505,10 @@ const OrganizationsPage = () => {
       />
     </div>
   );
+};
+
+OrganizationsPage.propTypes = {
+  adapter: organizationsAdapterShape.isRequired,
 };
 
 export default OrganizationsPage;

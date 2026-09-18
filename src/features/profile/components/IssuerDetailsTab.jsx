@@ -201,16 +201,76 @@ PhoneChange.propTypes = {
 
 const addressOf = profile => ({ ...EMPTY_ADDRESS, ...(profile?.address || {}) });
 
-/**
- * The Profile tab in its identity-provider form: the seven details of
- * `PATCH /api/user`, the read-only email with a Change link to the
- * Security tab's email section, the masked mobile with Change opening the
- * phone entry and the code, and the address block over
- * `PUT /api/user/address`, one Save writing the details and the address
- * together and Clear address emptying the address at once; the page
- * remounts it with every re-read of the record.
- */
-const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
+const NAME_SCHEMA = { properties: { name: { type: 'string' } } };
+const NAME_LABELS = { name: 'profile.fields.displayName' };
+
+const DisplayNameForm = ({ account, profile, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [values, setValues] = useState(() => ({ name: profile.name || '' }));
+  const rules = useFormRules({
+    formKey: 'displayName',
+    schema: NAME_SCHEMA,
+    values,
+    labels: NAME_LABELS,
+    idPrefix: 'profile-details',
+  });
+
+  const save = async event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    try {
+      await account.details({ name: values.name });
+      notify('success', t('profile.messages.nameChanged'));
+      await onSaved();
+    } catch (error) {
+      if (!rules.applyServerErrors(error)) {
+        notify('danger', t(errorKeys(error)));
+      }
+    }
+  };
+
+  return (
+    <div className="tab-pane fade show active">
+      <form onSubmit={save} noValidate className="mb-4">
+        <div className="col-md-4">
+          <FormErrorSummary errors={rules.summary} />
+          <Field
+            id={rules.idFor('name')}
+            label={t('profile.fields.displayName')}
+            hint={t('profile.fields.displayNameHint')}
+            error={rules.errors.name || ''}
+          >
+            {aria => (
+              <input
+                {...aria}
+                type="text"
+                className="form-control"
+                value={values.name}
+                onChange={event => setValues({ name: event.target.value })}
+                onBlur={() => rules.onBlur('name')}
+                placeholder={profile.username || ''}
+              />
+            )}
+          </Field>
+          <button type="submit" className="btn btn-primary">
+            {t('profile.buttons.save')}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+DisplayNameForm.propTypes = {
+  account: PropTypes.shape({ details: PropTypes.func.isRequired }).isRequired,
+  profile: PropTypes.shape({ name: PropTypes.string, username: PropTypes.string }).isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
+const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [values, setValues] = useState(() => detailsOf(profile));
@@ -375,11 +435,51 @@ const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChang
   );
 };
 
-IssuerDetailsTab.propTypes = {
+DetailsForm.propTypes = {
   account: PropTypes.shape({
     details: PropTypes.func.isRequired,
     address: PropTypes.func.isRequired,
     phone: PropTypes.object.isRequired,
+  }).isRequired,
+  profile: PropTypes.object.isRequired,
+  guard: PropTypes.func.isRequired,
+  placesKey: PropTypes.string.isRequired,
+  onSaved: PropTypes.func.isRequired,
+  onChangeEmail: PropTypes.func.isRequired,
+};
+
+/**
+ * The Profile section: in its identity-provider form, while the adapter
+ * carries `address` and `phone`, the seven details of `PATCH /api/user`,
+ * the read-only email with a Change link to the Security section's email
+ * card, the masked mobile with Change opening the phone entry and the
+ * code, and the address block over `PUT /api/user/address`, one Save
+ * writing the details and the address together and Clear address
+ * emptying the address at once; on a UI backend whose adapter carries
+ * `details` alone, the display-name form over that one call; the page
+ * remounts it with every re-read of the record.
+ */
+const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
+  if (!account.address || !account.phone) {
+    return <DisplayNameForm account={account} profile={profile} onSaved={onSaved} />;
+  }
+  return (
+    <DetailsForm
+      account={account}
+      profile={profile}
+      guard={guard}
+      placesKey={placesKey}
+      onSaved={onSaved}
+      onChangeEmail={onChangeEmail}
+    />
+  );
+};
+
+IssuerDetailsTab.propTypes = {
+  account: PropTypes.shape({
+    details: PropTypes.func.isRequired,
+    address: PropTypes.func,
+    phone: PropTypes.object,
   }).isRequired,
   profile: PropTypes.object.isRequired,
   guard: PropTypes.func.isRequired,

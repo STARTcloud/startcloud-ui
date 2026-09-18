@@ -21,18 +21,21 @@ const rowKey = row => `${row.timestamp}:${row.username}:${row.ip_address}`;
 const columns = [
   {
     key: 'timestamp',
+    kind: 'date',
     labelKey: 'admin.activity.time',
     sortValue: row => new Date(row.timestamp || 0).getTime(),
     render: row => <DateCell value={row.timestamp} />,
   },
   {
     key: 'username',
+    kind: 'name',
     labelKey: 'admin.activity.username',
     sortValue: row => row.username.toLowerCase(),
     render: row => <strong>{row.username}</strong>,
   },
   {
     key: 'success',
+    kind: 'badge',
     labelKey: 'admin.activity.logins.result',
     sortValue: row => (row.success ? 0 : 1),
     render: (row, ctx) => (
@@ -45,22 +48,26 @@ const columns = [
   },
   {
     key: 'failure_reason',
+    kind: 'text',
     labelKey: 'admin.activity.logins.reason',
     render: row => row.failure_reason || '',
   },
   {
     key: 'ip_address',
+    kind: 'text',
     labelKey: 'admin.activity.address',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'location',
+    kind: 'text',
     labelKey: 'admin.activity.location',
     sortValue: row => `${row.country || ''} ${row.city || ''}`.toLowerCase(),
     render: row => [row.city, row.country].filter(Boolean).join(', '),
   },
   {
     key: 'user_agent',
+    kind: 'text',
     labelKey: 'admin.activity.device',
     defaultHidden: true,
     render: row => row.user_agent || '',

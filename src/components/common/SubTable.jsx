@@ -7,6 +7,7 @@ import { FaRegStar, FaStar } from 'react-icons/fa6';
 import { useCssVar } from '../../hooks/useCssVar';
 import { sortShape } from '../../utils/itemShape';
 
+import { KIND_NAMES, widthClass } from './columnKinds';
 import GroupHeading, { groupShape } from './GroupHeading';
 import { RowCheckbox, SelectAllCheckbox, selectionShape } from './SelectCheckbox';
 import SortHeader from './SortHeader';
@@ -31,8 +32,10 @@ export const watchesShape = PropTypes.shape({
  */
 export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
 
+const columnClass = column => `col-${column.key} ${widthClass(column.kind)}`;
+
 const cellClass = column =>
-  column.className ? `col-${column.key} ${column.className}` : `col-${column.key}`;
+  column.className ? `${columnClass(column)} ${column.className}` : columnClass(column);
 
 const WatchStar = ({ watched, onToggle }) => {
   const { t } = useTranslation();
@@ -148,14 +151,18 @@ ResizeHandle.propTypes = {
   onResize: PropTypes.func.isRequired,
 };
 
-const SizedCol = ({ columnKey, width }) => {
+const SizedCol = ({ column, width }) => {
   const col = useRef(null);
   useCssVar(col, '--col-width', width ? `${width}px` : null);
-  return <col ref={col} className={width ? `col-${columnKey} col-sized` : `col-${columnKey}`} />;
+  const base = columnClass(column);
+  return <col ref={col} className={width ? `${base} col-sized` : base} />;
 };
 
 SizedCol.propTypes = {
-  columnKey: PropTypes.string.isRequired,
+  column: PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    kind: PropTypes.oneOf(KIND_NAMES).isRequired,
+  }).isRequired,
   width: PropTypes.number,
 };
 
@@ -164,7 +171,7 @@ const ColumnGroup = ({ drawn, selection, watches, QuickActions, RowActions, widt
     {selection ? <col className="col-select" /> : null}
     {watches ? <col className="col-watch" /> : null}
     {drawn.map(column => (
-      <SizedCol key={column.key} columnKey={column.key} width={widths[column.key] || null} />
+      <SizedCol key={column.key} column={column} width={widths[column.key] || null} />
     ))}
     {QuickActions ? <col className="col-quick" /> : null}
     {RowActions ? <col className="col-actions" /> : null}
@@ -192,7 +199,7 @@ const HeaderCell = ({ column, sort, onSort, onResize }) => {
     t(column.labelKey)
   );
   return (
-    <th ref={cell} className={`col-${column.key}`}>
+    <th ref={cell} className={columnClass(column)}>
       {label}
       {onResize ? <ResizeHandle columnKey={column.key} cell={cell} onResize={onResize} /> : null}
     </th>
@@ -202,6 +209,7 @@ const HeaderCell = ({ column, sort, onSort, onResize }) => {
 HeaderCell.propTypes = {
   column: PropTypes.shape({
     key: PropTypes.string.isRequired,
+    kind: PropTypes.oneOf(KIND_NAMES).isRequired,
     labelKey: PropTypes.string.isRequired,
     sortValue: PropTypes.func,
   }).isRequired,
@@ -407,7 +415,10 @@ TableBody.propTypes = {
  * and the organization console's lists. Draws the given columns in order,
  * each only when it is not in `hiddenColumns` and its `when` is absent or
  * true for the rows, a sort header for each column carrying a `sortValue`,
- * one `td.col-<key>` per column, a leading select column when `selection`
+ * one `td.col-<key>` per column, every `col`, `th` and `td` also carrying
+ * the width class of the column's `kind` (`columnKinds`, `col-w-narrow`,
+ * `col-w-medium` or `col-w-wide`) so the width comes from the kind alone
+ * and a column without a `kind` is a defect, a leading select column when `selection`
  * is given (a real checkbox header, checked, unchecked or indeterminate,
  * the select-all for the page, and one row checkbox per cell), the watch
  * column after it when `watches` is given (a star header sorting by
@@ -432,9 +443,9 @@ TableBody.propTypes = {
  * drag calls `onResize(key, pixels)` and shows the width, Left and Right
  * nudge it by 16px, a double-click, Enter or Home
  * call `onResize(key, null)` to reset; `widths` (column key to pixels)
- * sets each column's width over the stylesheet's, a hidden column keeping
+ * sets each column's width over the kind's, a hidden column keeping
  * its entry. The widths live on a `colgroup`, one `col` per cell carrying
- * the cell's `col-<key>` class and, when stored, the width, and a trailing
+ * the cell's `col-<key>` and width classes and, when stored, the width, and a trailing
  * unsized `col` with an empty header and body cell is the spacer that takes
  * whatever width the fixed columns leave, so the shared columns sit at one
  * x on every table whatever is hidden and a drag moves the spacer alone.
@@ -531,6 +542,7 @@ SubTable.propTypes = {
   columns: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.string.isRequired,
+      kind: PropTypes.oneOf(KIND_NAMES).isRequired,
       labelKey: PropTypes.string.isRequired,
       render: PropTypes.func.isRequired,
       sortValue: PropTypes.func,

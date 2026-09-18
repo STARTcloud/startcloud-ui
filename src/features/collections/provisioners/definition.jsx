@@ -318,6 +318,7 @@ CardExtras.propTypes = {
 
 const tierColumn = {
   key: 'tier',
+  kind: 'badge',
   labelKey: 'pages.table.tier',
   sortValue: item => TIER_ORDER.indexOf(item.extras.tier),
   render: item => <TierBadge item={item} />,
@@ -325,6 +326,7 @@ const tierColumn = {
 
 const coverageColumn = {
   key: 'providers',
+  kind: 'badges',
   labelKey: 'pages.table.providers',
   sortValue: item => Object.keys(item.extras.coverage.counts).sort().join(' ').toLowerCase(),
   render: item =>

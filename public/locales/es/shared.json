@@ -202,10 +202,7 @@
   },
   "profile": {
     "pageTitle": "Perfil",
-    "noJobTitle": "Sin Título de Trabajo",
-    "unknown": "Desconocido",
     "tabs": {
-      "profile": "Perfil",
       "organizations": "Organizaciones",
       "security": "Seguridad",
       "serviceAccounts": "Cuentas de Servicio",
@@ -218,38 +215,12 @@
       "serviceAccounts": "Buscar cuentas de servicio"
     },
     "fields": {
-      "fullName": "Nombre Completo",
       "displayName": "Nombre visible",
-      "displayNameHint": "Se muestra en la aplicación en lugar de tu nombre de usuario. Déjalo vacío para usar tu nombre de usuario. Las cuentas gestionadas por un proveedor de identidad se sobrescriben en la siguiente sincronización del proveedor.",
-      "location": "Ubicación",
-      "email": "Correo",
-      "organization": "Organización",
-      "roles": "Roles",
-      "profileUrl": "URL de Perfil",
-      "verifiedAccounts": "Cuentas Verificadas",
-      "registrationDate": "Fecha de Registro",
-      "emailHash": "Hash de Correo",
-      "userId": "ID de Usuario",
-      "accessToken": "Token de Acceso"
+      "displayNameHint": "Se muestra en la aplicación en lugar de tu nombre de usuario. Déjalo vacío para usar tu nombre de usuario. Las cuentas gestionadas por un proveedor de identidad se sobrescriben en la siguiente sincronización del proveedor."
     },
-    "noLocation": "Sin Ubicación",
-    "noRoles": "Sin roles asignados",
     "security": {
-      "changePassword": {
-        "title": "Cambiar Contraseña",
-        "newPasswordPlaceholder": "Nueva Contraseña",
-        "confirmPasswordPlaceholder": "Confirmar Contraseña",
-        "button": "Cambiar Contraseña"
-      },
       "changeEmail": {
-        "title": "Cambiar Correo",
-        "newEmailPlaceholder": "Nuevo Correo",
         "button": "Cambiar Correo"
-      },
-      "deleteAccount": {
-        "title": "Eliminar Cuenta",
-        "warning": "Advertencia: Esta acción no se puede deshacer.",
-        "button": "Eliminar Mi Cuenta"
       },
       "password": {
         "title": "Contraseña",
@@ -372,7 +343,6 @@
       }
     },
     "organizations": {
-      "title": "Mis Organizaciones",
       "belongToTitle": "Organizaciones a las que Perteneces",
       "noOrgs": "Aún no perteneces a ninguna organización.",
       "primary": "Principal",
@@ -397,16 +367,15 @@
       "expires": "Expira",
       "token": "Token",
       "tokenShownOnce": "Copia este token ahora — se muestra solo una vez y no se puede recuperar después.",
-      "selectAll": "Seleccionar todas",
-      "deleteSelected": "Eliminar seleccionadas ({{count}})",
+      "bulk": {
+        "selected": "{{count}} seleccionadas",
+        "clearSelection": "Limpiar selección",
+        "delete": "Eliminar"
+      },
       "deleteSelectedModal": {
         "title": "Eliminar Cuentas de Servicio",
         "message": "¿Estás seguro de que quieres eliminar las cuentas de servicio seleccionadas? Esta acción no se puede deshacer."
       }
-    },
-    "deleteModal": {
-      "title": "Eliminar Cuenta",
-      "message": "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer."
     },
     "messages": {
       "leftOrganization": "Has dejado exitosamente la organización {{orgName}}",
@@ -414,8 +383,6 @@
       "requestCanceled": "Solicitud de unión cancelada exitosamente",
       "serviceAccountCreated": "¡Cuenta de servicio creada exitosamente!",
       "serviceAccountsDeleted": "¡Cuentas de servicio seleccionadas eliminadas exitosamente!",
-      "passwordChanged": "¡Contraseña cambiada exitosamente!",
-      "emailChanged": "¡Correo electrónico cambiado exitosamente!",
       "nameChanged": "Nombre visible guardado.",
       "emailNotVerified": "Tu correo electrónico no está verificado."
     },
@@ -578,7 +545,6 @@
     "pageTitle": "Admin",
     "title": "Panel de Administración",
     "tabs": {
-      "orgsAndUsers": "Organizaciones y Usuarios",
       "configManagement": "Gestión de Configuración",
       "system": "Sistema"
     },
@@ -720,6 +686,7 @@
       "table": {
         "name": "Nombre",
         "type": "Tipo",
+        "status": "Estado",
         "inviteCode": "Código de invitación",
         "customerId": "ID de cliente",
         "members": "Miembros",
@@ -727,6 +694,9 @@
       },
       "personal": "Personal",
       "team": "Equipo",
+      "active": "Activa",
+      "suspended": "Suspendida",
+      "managed": "Gestionada por el proveedor de identidad",
       "search": "Buscar organizaciones",
       "edit": {
         "title": "Editar {{org}}",
@@ -1128,7 +1098,6 @@
       "save": "Guardar",
       "cancel": "Cancelar",
       "edit": "Editar",
-      "rename": "Renombrar",
       "resume": "Reanudar",
       "suspend": "Suspender",
       "delete": "Eliminar",
@@ -1151,34 +1120,6 @@
       "title": "Actualización Disponible",
       "message": "Una nueva versión (v{{latestVersion}}) está disponible. Actualmente estás ejecutando v{{currentVersion}}.",
       "instructions": "Para actualizar, ejecuta el siguiente comando en tu servidor:"
-    }
-  },
-  "orgUserManager": {
-    "searchPlaceholder": "Buscar organizaciones por nombre o código...",
-    "totalBoxes": "Boxes Totales: {{count}}",
-    "ssoManaged": "Gestionada por SSO",
-    "ssoManagedHint": "Esta organización está gestionada por tu proveedor de identidad. La membresía, los roles, el renombrado y la eliminación se gestionan allí y se sincronizan automáticamente.",
-    "rename": {
-      "name": "Nuevo nombre",
-      "success": "¡Organización renombrada exitosamente!"
-    },
-    "editModal": {
-      "title": "Editar Organización: {{orgName}}",
-      "orgCode": "Código de Organización",
-      "orgCodeHint": "Identificador hexadecimal de 6 caracteres (0-9, A-F)",
-      "orgEmail": "Correo de Organización",
-      "orgEmailHint": "Usado para contacto de organización y Gravatar",
-      "description": "Descripción",
-      "accessMode": "Modo de Acceso",
-      "accessModes": {
-        "private": "Privado (No listado)",
-        "inviteOnly": "Solo Invitación (Listado)",
-        "requestToJoin": "Solicitud para Unirse (Listado)"
-      },
-      "accessModeHint": "Controla la visibilidad de la organización y métodos de unión",
-      "defaultRole": "Rol Predeterminado",
-      "defaultRoleHint": "Rol predeterminado para nuevos miembros",
-      "updateSuccess": "¡Organización actualizada exitosamente!"
     }
   },
   "configManager": {

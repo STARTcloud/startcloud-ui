@@ -24,18 +24,21 @@ const matchesAny = () => true;
 const columnsFor = appSearch => [
   {
     key: 'title',
+    kind: 'link',
     labelKey: 'search.columns.title',
     sortValue: row => row.title.toLowerCase(),
     render: row => <Link to={searchRowPath(row, appSearch)}>{row.title}</Link>,
   },
   {
     key: 'where',
+    kind: 'text',
     labelKey: 'search.columns.where',
     sortValue: row => row.subtitle.toLowerCase(),
     render: row => row.subtitle,
   },
   {
     key: 'matched',
+    kind: 'badge',
     labelKey: 'search.columns.matched',
     sortValue: row => row.matched,
     render: (row, ctx) => (

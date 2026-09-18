@@ -605,10 +605,10 @@
     width: 100%;
   }
   .grid.boxes {
-    grid-template-columns: 28px 260px 84px 88px 88px 80px 92px 110px 100px 70px 180px 90px 32px;
+    grid-template-columns: 28px 28px 256px 104px 104px 104px 104px 104px 160px 160px 104px 256px 256px 32px;
   }
   .grid.isos {
-    grid-template-columns: 28px 260px 84px 88px 88px 80px 92px 110px 100px 70px 180px;
+    grid-template-columns: 28px 28px 256px 104px 104px 104px 104px 104px 160px 160px 104px 256px;
   }
   .grid .th {
     font-size: 11px;
@@ -1614,14 +1614,7 @@
                   <rect x="14" y="14" width="7" height="7"></rect></svg></span></span
           ></span>
         </div>
-        <div
-          class="grid boxes"
-          style="
-            grid-template-columns:
-              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
-              70px minmax(140px, 1.2fr) 90px 32px;
-          "
-        >
+        <div class="grid boxes">
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
@@ -1829,14 +1822,7 @@
             >ISOs<span class="countb">3</span>
           </h3>
         </div>
-        <div
-          class="grid isos"
-          style="
-            grid-template-columns:
-              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
-              70px minmax(120px, 1fr);
-          "
-        >
+        <div class="grid isos">
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
@@ -2063,14 +2049,7 @@
             ><span class="btn sm success">Add New</span></span
           >
         </div>
-        <div
-          class="grid boxes"
-          style="
-            grid-template-columns:
-              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
-              70px minmax(140px, 1.2fr) 90px 32px;
-          "
-        >
+        <div class="grid boxes">
           <span class="th"
             ><input type="checkbox" class="check-all indeterminate" title="Select all on this page"
           /></span>
@@ -2193,14 +2172,7 @@
           </h2>
           <span class="right"><span class="btn sm success">Add New</span></span>
         </div>
-        <div
-          class="grid isos"
-          style="
-            grid-template-columns:
-              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
-              70px minmax(120px, 1fr);
-          "
-        >
+        <div class="grid isos">
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
@@ -2465,14 +2437,7 @@
             >Private</span
           >
         </div>
-        <div
-          class="grid isos"
-          style="
-            grid-template-columns:
-              26px 28px minmax(220px, 2fr) 84px 88px 88px 80px 92px 110px 100px
-              70px minmax(120px, 1fr);
-          "
-        >
+        <div class="grid isos">
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
@@ -4674,7 +4639,10 @@
         on its right edge: the handle shows on hover, a drag changes that column's width alone (the
         pixel width shown while dragging), a double-click resets it to the stylesheet's width, and
         the widths persist per page under <code>table_prefs_*</code> beside sort, hidden columns and
-        per page; a hidden column keeps its width for when it returns.
+        per page; a hidden column keeps its width for when it returns. Every column declares a
+        <code>kind</code> from one vocabulary (name, text, badge, badges, date, relative, count,
+        size, checksum, link, action, word) and takes its width from it, narrow 6.5rem, medium 10rem
+        or wide 16rem, a dragged width winning over the kind's.
       </div>
       <div class="callout changed">
         <strong>Name folds its organization.</strong> The Name cell draws the organization logo,

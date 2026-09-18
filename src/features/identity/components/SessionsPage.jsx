@@ -39,6 +39,7 @@ const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 const columns = [
   {
     key: 'user',
+    kind: 'name',
     labelKey: 'admin.activity.sessions.user',
     sortValue: row => (row.full_name || '').toLowerCase(),
     render: row => (
@@ -51,12 +52,14 @@ const columns = [
   },
   {
     key: 'ip_address',
+    kind: 'text',
     labelKey: 'admin.activity.address',
     sortValue: row => row.ip_address || '',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'device',
+    kind: 'text',
     labelKey: 'admin.activity.device',
     sortValue: row => (row.user_agent || '').toLowerCase(),
     render: row => (
@@ -69,12 +72,14 @@ const columns = [
   },
   {
     key: 'authorized_at',
+    kind: 'date',
     labelKey: 'admin.activity.sessions.authorized',
     sortValue: row => new Date(row.authorized_at || 0).getTime(),
     render: row => <DateCell value={row.authorized_at} />,
   },
   {
     key: 'last_accessed_at',
+    kind: 'date',
     labelKey: 'admin.activity.sessions.lastActive',
     sortValue: row => new Date(row.last_accessed_at || 0).getTime(),
     render: row => <DateCell value={row.last_accessed_at} />,

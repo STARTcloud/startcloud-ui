@@ -13,128 +13,77 @@ import {
 
 import { authMethod, hasFeature } from '../../utils/capabilities';
 
+import { sectionPath, sectionsFor } from './components/ProfilePage';
 import { useIntegrationsTree } from './hooks/useIntegrationsTree';
 
-const BACKEND_CHILDREN = ({ status, account }) => {
-  const children = [];
-  if (hasFeature(status, 'local-accounts') && !account?.oidc) {
-    children.push({
-      key: 'security',
-      icon: FaShieldHalved,
-      labelKey: 'profile.tabs.security',
-      to: '/profile/security',
-    });
-  }
-  children.push({
-    key: 'organizations',
-    icon: FaBuilding,
-    labelKey: 'profile.tabs.organizations',
-    to: '/profile/organizations',
-  });
-  children.push({
-    key: 'serviceAccounts',
-    icon: FaKey,
-    labelKey: 'profile.tabs.serviceAccounts',
-    to: '/profile/service-accounts',
-  });
-  return children;
+const SECTION_ICONS = {
+  security: FaShieldHalved,
+  preferences: FaSliders,
+  favorites: FaStar,
+  sessions: FaDesktop,
+  organizations: FaBuilding,
+  serviceAccounts: FaKey,
 };
 
-const backendSidebar = (status, account) => [
+const profileRow = (basePath, profile) => ({
+  key: 'profile',
+  icon: FaUser,
+  labelKey: 'account.sidebar.profile',
+  to: basePath,
+  end: true,
+  children: sectionsFor(profile)
+    .filter(section => section !== 'profile')
+    .map(section => ({
+      key: section,
+      icon: SECTION_ICONS[section],
+      labelKey: `profile.tabs.${section}`,
+      to: sectionPath(basePath, section),
+    })),
+});
+
+const group = (items, tree) => [
   {
     key: 'account',
     labelKey: 'account.sidebar.title',
-    sections: [
-      {
-        key: 'account',
-        labelKey: 'account.sidebar.title',
-        items: [
-          {
-            key: 'profile',
-            icon: FaUser,
-            labelKey: 'account.sidebar.profile',
-            to: '/profile',
-            end: true,
-            children: BACKEND_CHILDREN({ status, account }),
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const PROFILE_CHILDREN = [
-  {
-    key: 'security',
-    icon: FaShieldHalved,
-    labelKey: 'profile.tabs.security',
-    to: '/user/profile/security',
-  },
-  {
-    key: 'preferences',
-    icon: FaSliders,
-    labelKey: 'profile.tabs.preferences',
-    to: '/user/profile/preferences',
-  },
-  {
-    key: 'favorites',
-    icon: FaStar,
-    labelKey: 'profile.tabs.favorites',
-    to: '/user/profile/favorites',
-  },
-  {
-    key: 'sessions',
-    icon: FaDesktop,
-    labelKey: 'profile.tabs.sessions',
-    to: '/user/profile/sessions',
+    sections: [{ key: 'account', labelKey: 'account.sidebar.title', items }],
+    ...(tree ? { tree } : {}),
   },
 ];
 
 /**
  * The profile feature's sidebar export of the identity contract: for every
- * signed-in person on a `cookie` host one Account group with Profile,
- * Organizations while the host advertises `org-console`, Applications
- * always, Terms and policies while `policies`, Inbox while `inbox` (the
- * row carrying the `unread` badge the shell resolves) and, while the host
- * advertises `integrations`, the group's `tree` of decision 68 answering
- * the Integrations entry only once `GET /api/user/integrations`, read once
+ * signed-in person one Account group whose Profile row is the profile page
+ * itself, active on its exact path alone, carrying `children` built from
+ * `sectionsFor` over the host's `profile` adapter and the host's profile
+ * path (`/user/profile` on a `cookie` host, `/profile` on a `backend`
+ * host), so the column never lists a section the page cannot draw
+ * (decision 109); on a `cookie` host the group also carries Organizations
+ * while the host advertises `org-console`, Applications always, Terms and
+ * policies while `policies`, Inbox while `inbox` (the row carrying the
+ * `unread` badge the shell resolves) and, while the host advertises
+ * `integrations`, the group's `tree` of decision 68 answering the
+ * Integrations entry only once `GET /api/user/integrations`, read once
  * when the tree mounts through the integrations adapter the router hands
- * in, has answered `services`; the Profile row is the profile page itself
- * (`/user/profile`, active on its exact path alone) and carries
- * `children`, exactly Security, Preferences, Favorites and Sessions under
- * `/user/profile`, each a deep link into the one page (decision 109);
- * on a `backend` host the same Account group over that host's own profile
- * routes, Profile at `/profile` with Security (`/profile/security`, while
- * the host advertises `local-accounts` and the session is not the identity
- * provider's), Organizations (`/profile/organizations`) and Service
- * accounts (`/profile/service-accounts`) as its children, so one profile
- * shape serves both; nothing on any other host.
+ * in, has answered `services`; nothing on any other host.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
  * @param {{ list: Function }} integrations - The integrations adapter
+ * @param {Object} profile - The host's `account` adapter of the profile page
  * @returns {Array} The sidebar groups
  */
-export const sidebar = (status, account, integrations) => {
+export const sidebar = (status, account, integrations, profile) => {
   if (!account?.user) {
     return [];
   }
-  if (authMethod(status) === 'backend') {
-    return backendSidebar(status, account);
+  const method = authMethod(status);
+  if (method === 'backend') {
+    return group([profileRow('/profile', profile)]);
   }
-  if (authMethod(status) !== 'cookie') {
+  if (method !== 'cookie') {
     return [];
   }
-  const items = [
-    {
-      key: 'profile',
-      icon: FaUser,
-      labelKey: 'account.sidebar.profile',
-      to: '/user/profile',
-      end: true,
-      children: PROFILE_CHILDREN,
-    },
-  ];
+  const items = [profileRow('/user/profile', profile)];
   if (hasFeature(status, 'org-console')) {
     items.push({
       key: 'organizations',
@@ -167,12 +116,5 @@ export const sidebar = (status, account, integrations) => {
     });
   }
   const useTree = () => useIntegrationsTree(integrations);
-  return [
-    {
-      key: 'account',
-      labelKey: 'account.sidebar.title',
-      sections: [{ key: 'account', labelKey: 'account.sidebar.title', items }],
-      ...(hasFeature(status, 'integrations') ? { tree: useTree } : {}),
-    },
-  ];
+  return group(items, hasFeature(status, 'integrations') ? useTree : null);
 };

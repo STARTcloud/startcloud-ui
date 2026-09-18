@@ -120,54 +120,62 @@ UserCell.propTypes = {
 export const fleetColumns = [
   {
     key: 'hostname',
+    kind: 'name',
     labelKey: 'vdi.table.hostname',
     sortValue: vm => vm.hostname.toLowerCase(),
     render: (vm, ctx) => <HostnameCell vm={vm} ctx={ctx} />,
   },
   {
     key: 'pool',
+    kind: 'text',
     labelKey: 'vdi.table.pool',
     sortValue: vm => [vm.uds?.pool_name || NO_POOL, cacheSortKey(vm.uds)],
     render: vm => <PoolCell vm={vm} />,
   },
   {
     key: 'user',
+    kind: 'text',
     labelKey: 'vdi.table.user',
     sortValue: vm => (vm.user?.username || '').toLowerCase(),
     render: vm => <UserCell vm={vm} />,
   },
   {
     key: 'session',
+    kind: 'badge',
     labelKey: 'vdi.table.session',
     sortValue: sessionKey,
     render: vm => <SessionBadge vm={vm} />,
   },
   {
-    key: 'drives',
-    labelKey: 'vdi.table.drives',
-    sortValue: vm => {
-      const drives = vm.drives || [];
-      return drives.filter(drive => drive.status !== 'healthy').length * 1000 - drives.length;
-    },
-    render: vm => <DriveBadges drives={vm.drives || []} />,
-  },
-  {
     key: 'icons',
+    kind: 'count',
     labelKey: 'vdi.table.icons',
     sortValue: vm => vm.desktop?.icon_count || 0,
     render: vm => <IconsCell vm={vm} />,
   },
   {
     key: 'seen',
+    kind: 'relative',
     labelKey: 'vdi.table.seen',
     sortValue: seenKey,
     render: (vm, ctx) => <LastSeen vm={vm} now={ctx.now} />,
   },
   {
     key: 'cycle',
+    kind: 'text',
     labelKey: 'vdi.table.cycle',
     sortValue: vm => vm.timings_ms?.total_cycle || 0,
     render: vm => (vm.timings_ms?.total_cycle ? `${vm.timings_ms.total_cycle}ms` : '—'),
+  },
+  {
+    key: 'drives',
+    kind: 'badges',
+    labelKey: 'vdi.table.drives',
+    sortValue: vm => {
+      const drives = vm.drives || [];
+      return drives.filter(drive => drive.status !== 'healthy').length * 1000 - drives.length;
+    },
+    render: vm => <DriveBadges drives={vm.drives || []} />,
   },
 ];
 
@@ -215,7 +223,8 @@ VmDetail.propTypes = {
 
 /**
  * The fleet table: one row per VM over the hostname, pool, user, session,
- * drives, icons, last-seen and cycle columns, every header sorting into
+ * icons, last-seen and cycle columns and the drives badge list last, the
+ * pages contract's one column order, every header sorting into
  * the stack, the hostname linking to the VM's page beside a fold that
  * opens the inline detail with its Overview, Metrics (while Grafana is
  * enabled), History and Stats tabs; rows dimmed as standby, no-session or

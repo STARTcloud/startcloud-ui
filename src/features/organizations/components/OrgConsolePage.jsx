@@ -38,24 +38,28 @@ const localeTime = value => new Date(value).toLocaleString();
 const JOIN_REQUEST_COLUMNS = [
   {
     key: 'user',
+    kind: 'name',
     labelKey: 'orgConsole.joinRequest.user',
     sortValue: request => request.user.username.toLowerCase(),
     render: request => <strong>{request.user.username}</strong>,
   },
   {
     key: 'email',
+    kind: 'text',
     labelKey: 'orgConsole.joinRequest.email',
     sortValue: request => (request.user.email || '').toLowerCase(),
     render: request => request.user.email,
   },
   {
     key: 'message',
+    kind: 'text',
     labelKey: 'orgConsole.joinRequest.message',
     sortValue: request => (request.message || '').toLowerCase(),
     render: (request, ctx) => request.message || ctx.t('orgConsole.joinRequest.noMessage'),
   },
   {
     key: 'requested',
+    kind: 'date',
     labelKey: 'orgConsole.joinRequest.requested',
     sortValue: request => new Date(request.created_at || 0).getTime(),
     render: request => localeDate(request.created_at),
@@ -393,18 +397,21 @@ InvitationLinkCell.propTypes = {
 const INVITATION_COLUMNS = [
   {
     key: 'email',
+    kind: 'name',
     labelKey: 'orgConsole.invitation.email',
     sortValue: invitation => invitation.email.toLowerCase(),
     render: invitation => invitation.email,
   },
   {
     key: 'expires',
+    kind: 'date',
     labelKey: 'orgConsole.invitation.expires',
     sortValue: invitation => new Date(invitation.expires || 0).getTime(),
     render: invitation => localeTime(invitation.expires),
   },
   {
     key: 'accepted',
+    kind: 'word',
     labelKey: 'orgConsole.invitation.accepted',
     sortValue: invitation => (invitation.accepted ? 0 : 1),
     render: (invitation, ctx) => (
@@ -420,12 +427,14 @@ const INVITATION_COLUMNS = [
   },
   {
     key: 'expired',
+    kind: 'word',
     labelKey: 'orgConsole.invitation.expired',
     sortValue: invitation => (invitation.expired ? 0 : 1),
     render: (invitation, ctx) => (invitation.expired ? ctx.t('yes') : ctx.t('no')),
   },
   {
     key: 'link',
+    kind: 'link',
     labelKey: 'orgConsole.invitation.link',
     render: (invitation, ctx) => (
       <InvitationLinkCell invitation={invitation} orgIdpLink={ctx.orgIdpLink} />

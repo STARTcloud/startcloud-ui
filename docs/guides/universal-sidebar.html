@@ -1332,10 +1332,11 @@
       </div>
       <div class="callout">
         <strong>BoxVault's entries.</strong> The shared admin feature exports on every UI backend
-        that advertises `admin`, each entry only while the adapter carries `organizationsWithUsers`,
-        `config` or `storage`, so BoxVault's admin page splits into Organizations and users,
-        Configuration and System rows; its box and ISO pages export nothing, and on the issuer,
-        whose adapter carries none of the three, the shared feature exports nothing.
+        that advertises `admin`, each entry only while the adapter carries `users`, `organizations`,
+        `config` or `storage`, so BoxVault's admin page splits into Users, Organizations,
+        Configuration and System rows, the first two the identity feature's pages over BoxVault's
+        own adapters; its box and ISO pages export nothing, and on the issuer, whose adapter carries
+        none of the four, the shared feature exports nothing.
       </div>
       <div class="callout">
         <strong>When the sidebar shows.</strong> On every page once a feature exported entries,
@@ -1390,7 +1391,9 @@
         <span class="c k">Pages, AdminPage</span
         ><span class="c">Organizations and users, Configuration, System as tabs of one page</span
         ><span class="c"
-          >the same three as sidebar entries and pages on every `admin` UI backend</span
+          >Users, Organizations, Configuration and System as sidebar entries and pages on every
+          `admin` UI backend, the first two the identity feature's pages over the host's
+          adapters</span
         >
         <span class="c k">Navbar, the swap</span
         ><span class="c">the cluster's account slot is always the user menu</span
@@ -1500,13 +1503,14 @@
         role: 'boxvault',
         features: ['admin', 'org-console', 'uploads', 'watches'],
         title: 'Admin',
-        active: 'orgusers',
+        active: 'boxorgs',
         homeTitle: 'Home',
         sections: [
           {
             label: 'Admin',
             items: [
-              { key: 'orgusers', icon: '🏢', label: 'Organizations and users', to: '/admin' },
+              { key: 'boxusers', icon: '👥', label: 'Users', to: '/admin/users' },
+              { key: 'boxorgs', icon: '🏢', label: 'Organizations', to: '/admin/organizations' },
               { key: 'boxconfig', icon: '⚙', label: 'Configuration', to: '/admin/config' },
               { key: 'boxsystem', icon: '▤', label: 'System', to: '/admin/system' },
             ],

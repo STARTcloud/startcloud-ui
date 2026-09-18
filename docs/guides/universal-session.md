@@ -45,11 +45,40 @@ whose write-through the provider carries.
   synchronously, so a signed-in user never sees the signed-out cluster
   flash; the provider then loads, refreshing a token or resolving the
   issuer, and the state updates once.
+- **The issuer decides whether a signed-in person is still signed in.**
+  A session that came from the identity provider lives exactly as long as
+  the provider says: a refresh the token endpoint refuses with
+  `invalid_grant` (RFC 6749 §5.2, the grant "invalid, expired, revoked")
+  is terminal, the client discards its tokens and the session ends (RFC
+  9700 §4.14); a new refresh token in a refresh answer replaces the old
+  one at once (RFC 6749 §6, the client "MUST discard the old refresh
+  token"); a `401` `invalid_token` from a resource means obtain a fresh
+  token once and retry, never retry with the refused one (RFC 6750
+  §3.1); a back-channel logout at the relying party clears that session
+  (OpenID Connect Back-Channel Logout 1.0 §2.7). No app token, cache or
+  keep-alive of this layer outlives a refresh answered `invalid_grant`.
+  A refresh answered any other error code of RFC 6749 §5.2
+  (`invalid_request`, `invalid_client`, `unauthorized_client`,
+  `unsupported_grant_type`, `invalid_scope`) names a fault in the
+  client's own request, not a dead grant: the tokens in hand stay and
+  the session stays until the access token expires and a resource `401`
+  cannot be cleared by one fresh token (RFC 6750 §3.1). A refresh that
+  never got an answer (the network, a `5xx`, RFC 9110 §15.6) leaves the
+  session as it is until the next attempt, because a session ended on a
+  timeout is a person signed out for nothing.
+- **The spec supersedes this contract.** Where a clause of this contract
+  and a specification it cites disagree, the specification wins and the
+  clause changes; the specifications are RFC 6749, RFC 6750, RFC 7009,
+  RFC 9449, RFC 9700, RFC 9110, OpenID Connect Core 1.0, Back-Channel
+  Logout 1.0, Front-Channel Logout 1.0, RP-Initiated Logout 1.0 and
+  Session Management 1.0, and a clause that names a rule names the
+  section it comes from, because a contract that only restates a
+  specification has nothing of its own to defend against it.
 - **A session ends on the bus.** Whatever decides the session is gone — a
-  refresh that fails, a `401`, a server-sent terminate — calls
-  `events.endSession()` and nothing else. The hook clears the state and
-  keeps the page; the chrome raises the session-ended banner with the page
-  to return to.
+  refresh the provider refused, a `401` the client could not clear with
+  one fresh token, a server-sent terminate — calls `events.endSession()`
+  and nothing else. The hook clears the state and keeps the page; the
+  chrome raises the session-ended banner with the page to return to.
 - **The return path is a same-origin path and never an auth page.** Every
   sign-in remembers where it started, the callback consumes it once, and a
   path from a query string is taken only when it starts with one `/`.
@@ -131,15 +160,15 @@ own screens call it and nothing else touches its storage.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`, `issuerUrl`        | `'idp'`, the configured issuer                                                                                                                                                                                                                   | `'backend'`, empty (resolved per session)                                                                                                                                            |
 | `restore()`              | the access token's claims from `localStorage`, synchronously                                                                                                                                                                                     | the stored profile from `localStorage`, synchronously                                                                                                                                |
-| `load()`                 | the same after refreshing a token within a minute of expiry; a failed refresh ends the session                                                                                                                                                   | the same plus `issuerUrl`: the `iss` of the ID token embedded in the backend's JWT, when it is `https://` and one of `/api/auth/oidc/issuers`                                        |
+| `load()`                 | the same after refreshing a token within a minute of expiry; a refresh answered `invalid_grant` ends the session, any other failure keeps the token in hand                                                                                      | the same plus `issuerUrl`: the `iss` of the ID token embedded in the backend's JWT, when it is `https://` and one of `/api/auth/oidc/issuers`                                        |
 | `reload()`               | `load()`                                                                                                                                                                                                                                         | `GET /api/user` merged over the stored profile, then `load()`                                                                                                                        |
 | `begin(opts)`            | PKCE S256 authorization request to the discovered authorization endpoint; `opts` unused                                                                                                                                                          | `{ method, silent }` → `/api/auth/oidc/<method>`, `?prompt=none` when silent; also `login(username, password, stayLoggedIn)` → `/api/auth/signin` for the app's own form             |
 | `complete()`             | reads `code` and `state` from the callback URL, checks the state, exchanges the code with the verifier and a DPoP proof, stores the tokens, applies the account's `preferences.theme` and `preferences.language` to local storage, emits `login` | reads `code` from the callback URL, exchanges it at `/api/auth/oidc/exchange`, reads `/api/user` with the token, stores the profile with the token and its `provider`, emits `login` |
 | `headers(method, url)`   | `Authorization: DPoP <token>` plus a `DPoP` proof bound to the method, the URL and the token, or `Bearer` when the token was issued as one; `{}` while signed out                                                                                | `{ 'x-access-token': <jwt> }`, the JWT refreshed first four minutes after the last refresh while the session was kept; `{}` while signed out                                         |
-| `retryAuth()`            | the refresh grant; `true` when it succeeded, else the session ends on the bus and `false`                                                                                                                                                        | `POST /api/auth/refresh-token` while the session was kept (`stayLoggedIn`); `true` when a new JWT came back                                                                          |
+| `retryAuth()`            | the refresh grant; `true` when it succeeded, `false` otherwise, the session ending on the bus only when the answer was `invalid_grant`                                                                                                           | `POST /api/auth/refresh-token` while the session was kept (`stayLoggedIn`); `true` when a new JWT came back                                                                          |
 | `adoptResponse(headers)` | n/a                                                                                                                                                                                                                                              | stores an `x-refreshed-token` response header as the session's JWT                                                                                                                   |
 | `endSession()`           | drops the tokens and ends the session on the bus                                                                                                                                                                                                 | drops the stored profile and ends the session on the bus                                                                                                                             |
-| `refresh()`              | the refresh grant, then `load()`; failure ends the session                                                                                                                                                                                       | `POST /api/auth/refresh-token`, then `load()`; `null` on failure                                                                                                                     |
+| `refresh()`              | the refresh grant, then `load()`; `invalid_grant` ends the session, any other failure answers the restored session                                                                                                                               | `POST /api/auth/refresh-token`, then `load()`; `null` on failure                                                                                                                     |
 | `claims()`               | memoized `/userinfo` with the session's headers                                                                                                                                                                                                  | memoized `GET /api/userinfo/claims`                                                                                                                                                  |
 | `savePreferences(patch)` | `PATCH {issuer}/api/user/preferences` with a proof for that URL, through the dev proxy when one answers same-origin                                                                                                                              | `PATCH /api/user/preferences`, then `preferredTheme` and `preferredLanguage` updated in the stored profile                                                                           |
 | `signOut()`              | drops the tokens and the DPoP key                                                                                                                                                                                                                | drops the stored profile                                                                                                                                                             |
@@ -175,8 +204,12 @@ is the public-SPA shape of the
   `.token_type`, `.expires_at`; the user is the access token's claims and
   the memberships its `organizations` claim;
 - the refresh grant a minute before expiry on every `load()` and every
-  `headers()`; a refresh that fails clears the tokens and ends the session
-  on the bus.
+  `headers()`, one refresh in flight at a time, every concurrent caller
+  awaiting the same request, because the catalog is a public client whose
+  refresh tokens rotate (RFC 9700 §2.2.2, §4.14.2) and a second
+  presentation of the same token is a replay the issuer revokes the grant
+  for; a refresh answered `invalid_grant` clears the tokens and ends the
+  session on the bus, and any other failure keeps them.
 
 ### Backend session provider
 
@@ -192,7 +225,11 @@ served the page:
   (`stayLoggedIn`) before answering it, `adoptResponse()` stores an
   `x-refreshed-token` header, `retryAuth()` refreshes once while the
   session was kept, and `endSession()` ends it on the bus; the API client
-  calls all four, so a request that bypasses the client carries nothing;
+  calls all four, so a request that bypasses the client carries nothing,
+  and the provider's own reads of the profile, the claims, the trusted
+  issuers and its preferences write go through an instance of that client
+  built over itself, so a JWT rotated in a response header on any of
+  them is adopted;
 - memberships come from the profile's `organizations`, mapped to the chrome
   shape by the exported `profileMemberships` with the name as the uuid,
   because local organizations have none; an app's own permission rules

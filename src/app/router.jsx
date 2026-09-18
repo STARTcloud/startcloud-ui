@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
 
@@ -18,11 +19,15 @@ import { AboutRoute } from '../features/about';
 import {
   AdminPage,
   adminConfig,
+  organizationBodyOf,
+  organizationRowOf,
+  pageOf,
   resumeUser,
   sidebar as adminSidebar,
   storage,
   suspendUser,
   updateStatus,
+  usersOf,
 } from '../features/admin';
 import { ApplicationsPage, issuerApplications } from '../features/applications';
 import {
@@ -42,9 +47,7 @@ import {
   methods,
   register,
   removeInvitation,
-  resendVerification,
   validateInvitation,
-  verifyMail,
 } from '../features/auth';
 import {
   CollectionPage,
@@ -60,6 +63,8 @@ import { ErrorPage } from '../features/errors';
 import {
   IDENTITY_ADMIN_PAGES,
   IdentityAdminPage,
+  issuerOrganizations as issuerAdminOrganizations,
+  issuerUsers,
   sidebar as identitySidebar,
 } from '../features/identity';
 import { IntegrationsPage, issuerIntegrations } from '../features/integrations';
@@ -110,7 +115,6 @@ import {
 } from '../features/organizations';
 import { PolicyPage } from '../features/policies';
 import {
-  PROFILE_ROUTE_SECTIONS,
   ProfilePage,
   cancelRequest,
   changeEmail,
@@ -121,10 +125,12 @@ import {
   myRequests,
   placesKey,
   removeAccount,
+  resendVerification,
   serviceAccounts,
   setPrimaryOrganization,
   sidebar as profileSidebar,
   stepUp,
+  verifyMail,
 } from '../features/profile';
 import { SearchPage } from '../features/search';
 import { SetupPage, setupApi } from '../features/setup';
@@ -148,20 +154,62 @@ const authAdapter = {
   silentSsoKey: SILENT_SSO_KEY,
 };
 
-const accountAdapter = {
-  gravatarProfile,
-  changePassword,
-  changeEmail,
-  changeName,
-  remove: removeAccount,
-  verifyMail,
-  resendVerification,
-  organizations: userOrganizations,
-  leave: leaveOrganization,
-  setPrimary: setPrimaryOrganization,
-  requests: myRequests,
-  cancelRequest,
-  serviceAccounts,
+const backendProfileOf = (user, oidc) =>
+  user ? { ...user, has_local_auth: !oidc, email_verified: Boolean(user.verified) } : null;
+
+const backendProfile = oidc => () =>
+  session.reload().then(state => backendProfileOf(state?.user || null, oidc));
+
+const localAccountMembers = userId => ({
+  password: body => changePassword(userId, body.password),
+  email: { request: newEmail => changeEmail(userId, newEmail) },
+  deletion: () => removeAccount(userId),
+});
+
+/**
+ * The profile page's `account` adapter of a `backend` host, in the
+ * identity provider's member names: the record from the session's own
+ * reload with `has_local_auth` (a local session) and `email_verified`
+ * (the stored `verified`) beside it, the display name through `details`,
+ * the password, email and deletion members while the host advertises
+ * `local-accounts` and the session is not the identity provider's, the
+ * verification link and its resend under `verification`, the memberships
+ * and join requests under `organizations` (Make primary only for a local
+ * session) and the service accounts under `serviceAccounts`.
+ *
+ * @param {Object} options - The session's side
+ * @param {Object|null} options.user - The stored user
+ * @param {boolean} options.oidc - Whether the session is the identity provider's
+ * @param {boolean} options.localAccounts - Whether the host advertises `local-accounts`
+ * @returns {Object} The adapter
+ */
+const backendAccountFor = ({ user, oidc, localAccounts }) => {
+  const userId = user?.id;
+  return {
+    profile: backendProfile(oidc),
+    details: body => changeName(userId, body.name),
+    ...(localAccounts && !oidc ? localAccountMembers(userId) : {}),
+    verification: { verify: verifyMail, resend: resendVerification },
+    organizations: {
+      list: userOrganizations,
+      leave: leaveOrganization,
+      ...(oidc ? {} : { setPrimary: setPrimaryOrganization }),
+      requests: myRequests,
+      cancelRequest,
+    },
+    serviceAccounts,
+  };
+};
+
+const profileAccountFor = ({ status, account }) => {
+  if (authMethod(status) === 'cookie') {
+    return issuerAccount;
+  }
+  return backendAccountFor({
+    user: account.user,
+    oidc: account.oidc,
+    localAccounts: hasFeature(status, 'local-accounts'),
+  });
 };
 
 const organizationsAdapter = {
@@ -182,21 +230,61 @@ const organizationsAdapter = {
   gravatarProfile,
 };
 
+const backendUsers = {
+  list: params => organizationsWithUsers().then(rows => pageOf(usersOf(rows), params)),
+  suspend: suspendUser,
+  resume: resumeUser,
+  remove: removeAccount,
+};
+
+const renameActiveOrganization = async (name, next) => {
+  if (session.restore()?.user?.organization === name) {
+    localStorage.setItem(ACTIVE_ORG_KEY, next);
+    await session.refresh();
+  }
+};
+
+/**
+ * The All organizations page's adapter of a `backend` host: the
+ * organizations-with-users rows each joined with its record, one `update`
+ * carrying the record write, the access-mode write while the patch names
+ * a door, and the active organization's rename stored under the app's key
+ * with the session refreshed; the suspend, resume and delete calls by
+ * name, the row's id.
+ */
+const backendOrganizations = {
+  list: () =>
+    organizationsWithUsers().then(rows =>
+      Promise.all(
+        rows.map(org => getOrganization(org.name).then(details => organizationRowOf(org, details)))
+      )
+    ),
+  update: async (name, patch) => {
+    await updateOrganization(name, organizationBodyOf(name, patch));
+    const next = patch.name || name;
+    if (patch.access_mode) {
+      await setAccessMode(
+        next,
+        patch.access_mode,
+        String(patch.default_role || 'member').toLowerCase()
+      );
+    }
+    if (next !== name) {
+      await renameActiveOrganization(name, next);
+    }
+  },
+  remove: removeOrganization,
+  suspend: suspendOrganization,
+  resume: resumeOrganization,
+};
+
 const backendAdminMembers = {
-  organizationsWithUsers,
-  organization: getOrganization,
-  updateOrganization,
-  accessMode: setAccessMode,
-  suspendOrganization,
-  resumeOrganization,
-  removeOrganization,
-  removeMember,
-  removeUser: removeAccount,
-  suspendUser,
-  resumeUser,
-  gravatarProfile,
+  users: backendUsers,
+  organizations: backendOrganizations,
   storage,
 };
+
+const issuerAdminAdapters = { users: issuerUsers, organizations: issuerAdminOrganizations };
 
 const hasConfigFiles = status => Array.isArray(status?.config) && status.config.length > 0;
 
@@ -209,7 +297,7 @@ const adminAdapterFor = status => {
   };
 };
 
-const firstAdminPage = admin => (admin.organizationsWithUsers ? 'organizations' : 'config');
+const ACCOUNT_PAGES = ['users', 'organizations'];
 
 const PAGE_TITLES = {
   '/about': 'navbar.about',
@@ -314,7 +402,8 @@ export const routeTitleKey = pathname => {
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
  * in the order the column draws them: the profile feature's Account
  * group (handed the integrations adapter its Integrations entry reads
- * once), the identity feature's operator group while the host's first
+ * once and the host's profile adapter its Profile children are built
+ * from), the identity feature's operator group while the host's first
  * `auth` token is `cookie` (its Configuration row reaching the shared
  * configuration page in place of the shared admin feature's entries), the
  * vdi feature's Fleet group while the host advertises `fleet`, and on
@@ -330,7 +419,7 @@ export const sidebarEntries = ({ status, account }) => {
   const cookie = authMethod(status) === 'cookie';
   const admin = adminAdapterFor(status);
   return [
-    ...profileSidebar(status, account, issuerIntegrations),
+    ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
     ...(cookie ? [] : adminSidebar(status, account, admin)),
@@ -347,7 +436,7 @@ Stub.propTypes = {
   token: PropTypes.string.isRequired,
 };
 
-const AdminRoute = ({ globalAdmin, user = null, page = '' }) => {
+const AdminRoute = ({ globalAdmin, user = null, page = 'config' }) => {
   const status = useStatus();
   const admin = adminAdapterFor(status);
   if (!hasFeature(status, 'admin')) {
@@ -360,9 +449,8 @@ const AdminRoute = ({ globalAdmin, user = null, page = '' }) => {
         returnTo={returnTo}
         allowed={globalAdmin}
         admin={admin}
-        activeOrgKey={ACTIVE_ORG_KEY}
         updateCommand={UPDATE_COMMAND(status.role)}
-        page={page || firstAdminPage(admin)}
+        page={page}
       />
     </GuardProvider>
   );
@@ -372,6 +460,20 @@ AdminRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   page: PropTypes.string,
+};
+
+const AdminHomeRoute = ({ globalAdmin, user = null }) => {
+  const status = useStatus();
+  const admin = adminAdapterFor(status);
+  if (hasFeature(status, 'admin') && admin.organizations) {
+    return <Navigate to="/admin/organizations" replace />;
+  }
+  return <AdminRoute globalAdmin={globalAdmin} user={user} />;
+};
+
+AdminHomeRoute.propTypes = {
+  globalAdmin: PropTypes.bool.isRequired,
+  user: PropTypes.object,
 };
 
 const ConfigRedirect = ({ globalAdmin, user = null }) => {
@@ -390,6 +492,8 @@ ConfigRedirect.propTypes = {
 
 const IdentityAdminRoute = ({ globalAdmin, user, page }) => {
   const status = useStatus();
+  const cookie = authMethod(status) === 'cookie';
+  const admin = adminAdapterFor(status);
   if (!hasFeature(status, 'admin')) {
     return <Stub titleKey={titleOf('/admin')} token="admin" />;
   }
@@ -404,6 +508,9 @@ const IdentityAdminRoute = ({ globalAdmin, user, page }) => {
       stepUp={stepUp}
       user={user}
       page={page}
+      adapters={
+        cookie ? issuerAdminAdapters : { users: admin.users, organizations: admin.organizations }
+      }
     />
   );
 };
@@ -696,36 +803,38 @@ const interstitialRoutes = ({ status, cookie }) => {
   ]);
 };
 
-const issuerProfile = ({ account, status, globalAdmin }) => (
+const issuerProfile = ({ account, globalAdmin }) => (
   <ProfilePage
     session={session}
     events={events}
     returnTo={returnTo}
     account={issuerAccount}
+    basePath="/user/profile"
     activeOrgUuid={account.activeOrgUuid}
-    localAccounts={hasFeature(status, 'local-accounts')}
     admin={globalAdmin}
     user={account.user}
     loaded={account.loaded}
-    oidc={account.oidc}
   />
 );
 
 const BackendProfileRoute = ({ account, status, globalAdmin }) => {
-  const { section = '' } = useParams();
+  const { user, oidc } = account;
+  const localAccounts = hasFeature(status, 'local-accounts');
+  const adapter = useMemo(
+    () => backendAccountFor({ user, oidc, localAccounts }),
+    [user, oidc, localAccounts]
+  );
   return (
     <ProfilePage
       session={session}
       events={events}
       returnTo={returnTo}
-      account={accountAdapter}
+      account={adapter}
+      basePath="/profile"
       activeOrgUuid={account.activeOrgUuid}
-      localAccounts={hasFeature(status, 'local-accounts')}
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
-      oidc={account.oidc}
-      section={PROFILE_ROUTE_SECTIONS[section] || 'profile'}
     />
   );
 };
@@ -779,7 +888,7 @@ const signedInRoutes = ({
   theme,
   ticketUrl,
 }) => {
-  const profile = issuerProfile({ account, status, globalAdmin });
+  const profile = issuerProfile({ account, globalAdmin });
   const notFound = <ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} notFound />;
   return gatedRoutes([
     { path: '/user/profile/:section?', open: cookie, element: profile, token: 'cookie' },
@@ -843,13 +952,13 @@ const signedInRoutes = ({
   ]);
 };
 
-const identityAdminRoutes = ({ cookie, globalAdmin, user }) =>
+const identityAdminRoutes = ({ cookie, accounts, globalAdmin, user }) =>
   IDENTITY_ADMIN_PAGES.map(page => (
     <Route
       key={`/admin/${page}`}
       path={`/admin/${page}`}
       element={gated(
-        cookie,
+        cookie || (accounts && ACCOUNT_PAGES.includes(page)),
         <IdentityAdminRoute globalAdmin={globalAdmin} user={user} page={page} />,
         titleOf('/admin'),
         'cookie'
@@ -889,7 +998,7 @@ const homeElementFor = ({
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
     }
-    return issuerProfile({ account, status, globalAdmin });
+    return issuerProfile({ account, globalAdmin });
   }
   if (fleet) {
     return <FleetPage context={context} theme={theme} />;
@@ -926,7 +1035,10 @@ const homeElementFor = ({
  * adopted session alone sends a signed-in person off a sign-in page or
  * draws the profile; on a `cookie` host
  * `/error` and every unknown route draw the identity contract's ErrorPage,
- * every other host sending an unknown route home.
+ * every other host sending an unknown route home; on a `backend` host the
+ * identity feature's Users and All organizations pages answer
+ * `/admin/users` and `/admin/organizations` over the host's own accounts
+ * and the bare `/admin` redirects to the organizations.
  */
 const AppRoutes = ({
   account,
@@ -1067,12 +1179,7 @@ const AppRoutes = ({
             backend ? (
               <BackendProfileRoute account={account} status={status} globalAdmin={globalAdmin} />
             ) : (
-              gated(
-                cookie,
-                issuerProfile({ account, status, globalAdmin }),
-                titleOf('/profile'),
-                'backend'
-              )
+              gated(cookie, issuerProfile({ account, globalAdmin }), titleOf('/profile'), 'backend')
             )
           }
         />
@@ -1092,11 +1199,11 @@ const AppRoutes = ({
           cookie ? (
             <IdentityAdminRoute globalAdmin={globalAdmin} user={account.user} page="dashboard" />
           ) : (
-            <AdminRoute globalAdmin={globalAdmin} user={account.user} />
+            <AdminHomeRoute globalAdmin={globalAdmin} user={account.user} />
           )
         }
       />
-      {identityAdminRoutes({ cookie, globalAdmin, user: account.user })}
+      {identityAdminRoutes({ cookie, accounts: backend, globalAdmin, user: account.user })}
       {sharedAdminRoutes({ globalAdmin, user: account.user })}
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })

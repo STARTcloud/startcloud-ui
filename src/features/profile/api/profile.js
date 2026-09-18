@@ -1,18 +1,24 @@
 import { encodePath } from '../../../lib/apiClient';
 import { client } from '../../../lib/runtime';
 
+const PUBLIC = { auth: false };
+
 const user = userId => encodePath('api', 'users', userId);
 
 export const removeAccount = userId => client.delete(user(userId));
 
-export const changePassword = (userId, password, signal) =>
-  client.put(`${user(userId)}/change-password`, { password }, { signal });
+export const resendVerification = () => client.post('/api/auth/resend-verification', {});
 
-export const changeEmail = (userId, newEmail, signal) =>
-  client.put(`${user(userId)}/change-email`, { new_email: newEmail }, { signal });
+export const verifyMail = token =>
+  client.get(encodePath('api', 'auth', 'verify-mail', token), PUBLIC);
 
-export const changeName = (userId, name, signal) =>
-  client.put(`${user(userId)}/change-name`, { name }, { signal });
+export const changePassword = (userId, password) =>
+  client.put(`${user(userId)}/change-password`, { password });
+
+export const changeEmail = (userId, newEmail) =>
+  client.put(`${user(userId)}/change-email`, { new_email: newEmail });
+
+export const changeName = (userId, name) => client.put(`${user(userId)}/change-name`, { name });
 
 export const leaveOrganization = organization =>
   client.post(encodePath('api', 'user', 'leave', organization), {});
@@ -34,6 +40,6 @@ export const serviceAccounts = {
       role,
     }),
   organizations: () => client.get('/api/service-accounts/organizations'),
-  list: signal => client.get('/api/service-accounts/', { signal }),
+  list: () => client.get('/api/service-accounts/'),
   remove: id => client.delete(encodePath('api', 'service-accounts', id)),
 };

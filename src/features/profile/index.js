@@ -47,13 +47,15 @@ export {
   leaveOrganization,
   myRequests,
   removeAccount,
+  resendVerification,
   serviceAccounts,
   setPrimaryOrganization,
+  verifyMail,
 } from './api/profile';
-export { issuerAccountShape } from './components/IssuerProfilePage';
 export {
   PROFILE_ROUTE_SECTIONS,
   default as ProfilePage,
   accountShape,
+  sectionsFor,
 } from './components/ProfilePage';
 export { sidebar } from './sidebar';

@@ -44,6 +44,8 @@ const submitForm = (action, fields) => {
   form.submit();
 };
 
+const isDeadGrant = error => error?.code === 'invalid_grant';
+
 const keyedFailure = (message, messageKey) => {
   const error = new Error(message);
   error.messageKey = messageKey;
@@ -78,7 +80,7 @@ const tokenFailure = requestError => {
  * @param {string} options.clientId - The registered public client id
  * @param {string} options.scopes - Space-separated scopes to request
  * @param {string} options.storagePrefix - Prefix of every localStorage key and of the DPoP database
- * @param {Object} options.events - The bus from `createSessionEvents`; `login` is emitted after the exchange and `sessionEnded` when a refresh fails
+ * @param {Object} options.events - The bus from `createSessionEvents`; `login` is emitted after the exchange and `sessionEnded` when the token endpoint answers a refresh with `invalid_grant`
  * @param {string} [options.apiBase] - Origin the preferences write is sent to, empty when a dev proxy answers same-origin
  * @param {string} [options.redirectPath] - The registered callback path on this origin
  * @returns {Object} The session provider `useSession` and the callback page drive
@@ -105,6 +107,7 @@ export const createBrowserOidc = ({
   const dpop = createDpop({ storagePrefix });
   const redirectUri = `${window.location.origin}${redirectPath}`;
   let claimsPromise = null;
+  let refreshPromise = null;
 
   const discover = async () => {
     const cached = sessionStorage.getItem(STORE.discovery);
@@ -157,7 +160,7 @@ export const createBrowserOidc = ({
     }
   };
 
-  const refreshTokens = async () => {
+  const runRefresh = async () => {
     const refreshToken = localStorage.getItem(STORE.refresh);
     if (!refreshToken) {
       throw new Error('no refresh token');
@@ -168,6 +171,13 @@ export const createBrowserOidc = ({
       client_id: clientId,
     });
     storeTokens(tokens);
+  };
+
+  const refreshTokens = () => {
+    refreshPromise ||= runRefresh().finally(() => {
+      refreshPromise = null;
+    });
+    return refreshPromise;
   };
 
   const endSession = () => {
@@ -187,9 +197,12 @@ export const createBrowserOidc = ({
     try {
       await refreshTokens();
       return localStorage.getItem(STORE.access);
-    } catch {
-      endSession();
-      return null;
+    } catch (error) {
+      if (isDeadGrant(error)) {
+        endSession();
+        return null;
+      }
+      return token;
     }
   };
 
@@ -284,9 +297,12 @@ export const createBrowserOidc = ({
   const refresh = async () => {
     try {
       await refreshTokens();
-    } catch {
-      endSession();
-      return null;
+    } catch (error) {
+      if (isDeadGrant(error)) {
+        endSession();
+        return null;
+      }
+      return restore();
     }
     claimsPromise = null;
     return load();
@@ -295,8 +311,10 @@ export const createBrowserOidc = ({
   const retryAuth = async () => {
     try {
       await refreshTokens();
-    } catch {
-      endSession();
+    } catch (error) {
+      if (isDeadGrant(error)) {
+        endSession();
+      }
       return false;
     }
     claimsPromise = null;

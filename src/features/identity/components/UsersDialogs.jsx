@@ -7,7 +7,6 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
-import { roles as readRoles, setRoles, updateUser } from '../api/accounts';
 import { ROLES } from '../utils/examples';
 
 export const adminUserShape = PropTypes.shape({
@@ -33,16 +32,21 @@ const CUSTOMER_ID_SCHEMA = { properties: { customer_id: { $ref: '#/$defs/orgCode
 const CUSTOMER_ID_LABELS = { customer_id: 'admin.users.customerId.label' };
 
 /**
- * The catalog of roles from `GET /api/admin/roles`, read once per
- * mount; the contract's example while the route answers 404.
+ * The catalog of roles from the adapter's `roles` read, once per mount;
+ * the contract's example while the route answers 404, and empty while the
+ * adapter carries no read.
  *
+ * @param {Function|undefined} read - The adapter's `roles`
  * @returns {string[]} The role names
  */
-export const useRoleCatalog = () => {
+export const useRoleCatalog = read => {
   const [catalog, setCatalog] = useState([]);
   useEffect(() => {
+    if (!read) {
+      return undefined;
+    }
     let mounted = true;
-    readRoles()
+    read()
       .then(list => {
         if (mounted) {
           setCatalog(Array.isArray(list) ? list : []);
@@ -56,7 +60,7 @@ export const useRoleCatalog = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [read]);
   return catalog;
 };
 
@@ -82,9 +86,10 @@ DialogFooter.propTypes = {
 
 /**
  * The Roles dialog of a Users row: one checkbox per role of the
- * catalog, saved in one `PUT` with the whole set; mounted per user.
+ * catalog, saved in one `save(roles)` with the whole set; mounted per
+ * user.
  */
-export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
+export const RolesDialog = ({ user, catalog, save, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [chosen, setChosen] = useState(() => new Set(user.roles));
@@ -101,10 +106,10 @@ export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
       return next;
     });
 
-  const save = event => {
+  const submit = event => {
     event.preventDefault();
     setBusy(true);
-    setRoles(user.id, [...chosen])
+    save([...chosen])
       .then(() => {
         notify('success', t('admin.users.roles.saved'));
         onSaved();
@@ -118,7 +123,7 @@ export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
 
   return (
     <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={save} noValidate>
+      <form onSubmit={submit} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('admin.users.roles.title', { user: user.username })}</Modal.Title>
         </Modal.Header>
@@ -147,16 +152,17 @@ export const RolesDialog = ({ user, catalog, onClose, onSaved }) => {
 RolesDialog.propTypes = {
   user: adminUserShape.isRequired,
   catalog: PropTypes.arrayOf(PropTypes.string).isRequired,
+  save: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
 
 /**
  * The Set primary organization dialog of a Users row: a select over the
- * user's memberships and a confirm, one `PATCH` with the uuid; never a
- * click on a badge; mounted per user.
+ * user's memberships and a confirm, one `save(uuid)`; never a click on a
+ * badge; mounted per user.
  */
-export const PrimaryOrgDialog = ({ user, onClose, onSaved }) => {
+export const PrimaryOrgDialog = ({ user, save, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [uuid, setUuid] = useState(
@@ -164,10 +170,10 @@ export const PrimaryOrgDialog = ({ user, onClose, onSaved }) => {
   );
   const [busy, setBusy] = useState(false);
 
-  const save = event => {
+  const submit = event => {
     event.preventDefault();
     setBusy(true);
-    updateUser(user.id, { primary_organization: uuid })
+    save(uuid)
       .then(() => {
         notify('success', t('admin.users.primaryOrg.saved'));
         onSaved();
@@ -179,7 +185,7 @@ export const PrimaryOrgDialog = ({ user, onClose, onSaved }) => {
 
   return (
     <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={save} noValidate>
+      <form onSubmit={submit} noValidate>
         <Modal.Header closeButton>
           <Modal.Title as="h5">{t('admin.users.primaryOrg.title')}</Modal.Title>
         </Modal.Header>
@@ -213,6 +219,7 @@ export const PrimaryOrgDialog = ({ user, onClose, onSaved }) => {
 
 PrimaryOrgDialog.propTypes = {
   user: adminUserShape.isRequired,
+  save: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };

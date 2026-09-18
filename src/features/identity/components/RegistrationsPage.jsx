@@ -27,35 +27,41 @@ const YesNo = (value, ctx) => (
 const columns = [
   {
     key: 'timestamp',
+    kind: 'date',
     labelKey: 'admin.activity.time',
     sortValue: row => new Date(row.timestamp || 0).getTime(),
     render: row => <DateCell value={row.timestamp} />,
   },
   {
     key: 'username',
+    kind: 'name',
     labelKey: 'admin.activity.username',
     sortValue: row => row.username.toLowerCase(),
     render: row => <strong>{row.username}</strong>,
   },
   {
     key: 'email_verified',
+    kind: 'badge',
     labelKey: 'admin.activity.registrations.emailVerified',
     sortValue: row => (row.email_verified ? 0 : 1),
     render: (row, ctx) => YesNo(row.email_verified, ctx),
   },
   {
     key: 'phone_verified',
+    kind: 'badge',
     labelKey: 'admin.activity.registrations.phoneVerified',
     sortValue: row => (row.phone_verified ? 0 : 1),
     render: (row, ctx) => YesNo(row.phone_verified, ctx),
   },
   {
     key: 'ip_address',
+    kind: 'text',
     labelKey: 'admin.activity.address',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'location',
+    kind: 'text',
     labelKey: 'admin.activity.location',
     sortValue: row => `${row.country || ''} ${row.city || ''}`.toLowerCase(),
     render: row => [row.city, row.country].filter(Boolean).join(', '),

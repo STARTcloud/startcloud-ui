@@ -74,12 +74,14 @@ const labelOf = key => `admin.health.insights.columns.${key}`;
 
 const text = key => ({
   key,
+  kind: 'text',
   labelKey: labelOf(key),
   sortValue: row => String(row[key] ?? '').toLowerCase(),
   render: row => row[key] ?? '',
 });
 const number = key => ({
   key,
+  kind: 'count',
   labelKey: labelOf(key),
   className: 'text-end',
   sortValue: row => row[key] ?? 0,
@@ -87,12 +89,14 @@ const number = key => ({
 });
 const date = key => ({
   key,
+  kind: 'date',
   labelKey: labelOf(key),
   sortValue: row => new Date(row[key] || 0).getTime(),
   render: row => <DateCell value={row[key]} />,
 });
 const yesNo = key => ({
   key,
+  kind: 'word',
   labelKey: labelOf(key),
   sortValue: row => (row[key] ? 0 : 1),
   render: (row, ctx) => (row[key] ? ctx.t('yes') : ctx.t('no')),
