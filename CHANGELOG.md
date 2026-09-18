@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.4...v0.19.0) (2026-09-18)
+
+
+### Features
+
+* one profile page on every host in the issuer's shape with organizations and service accounts as adapter sections, the identity users and organizations pages over an adapter drawn by BoxVault, every table column declaring a kind that fixes its width and place, the session and identity contracts deferring to the specs they cite, a catalog refresh in flight once and ended only by invalid_grant, and the backend provider's own reads through the shared client ([247c97b](https://github.com/STARTcloud/startcloud-ui/commit/247c97ba9b0437b37a50458c3cdc677b04e3db87))
+
+
+### Bug Fixes
+
+* the manage-at-provider sidebar row gone, Update as a button, favorites read once the page leaves the auth paths, the Name cell folding its organization below 60rem, one Name column on the files table, a config action on a subsection drawn at its head and no empty section card ([488902d](https://github.com/STARTcloud/startcloud-ui/commit/488902dac98d80c9e841966b34b6505d12eab1c5))
+
 ## [0.18.4](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.3...v0.18.4) (2026-09-16)
 
 
