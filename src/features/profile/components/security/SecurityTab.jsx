@@ -26,7 +26,10 @@ const passwordMinLength = () =>
  * `tfa`, `passkeys`, `linked`, `backupCodes`, `deletion`), each a
  * `SectionCard` whose fold is kept under `table_prefs_profile_security`,
  * each over the adapter and the step-up guard; `focusEmail` scrolls the
- * email card into view when the Profile section's Change link opened it.
+ * email card into view when the Profile section's Change link opened it;
+ * a `readOnly` adapter carries no security call, so the section is not
+ * drawn and the Manage at identity provider link of the Profile section
+ * is the way to the provider's own.
  */
 const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }) => {
   const emailRef = useRef(null);

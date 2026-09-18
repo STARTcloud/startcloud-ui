@@ -7,9 +7,12 @@ import CodeInput from '../../../components/common/CodeInput';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PhoneInput from '../../../components/common/PhoneInput';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
+
+import ManageLink from './ManageLink';
 
 const SALUTATIONS = ['Mr', 'Mrs', 'Ms', 'Mx', 'Dr', 'Prof'];
 const GENDERS = ['male', 'female'];
@@ -42,6 +45,15 @@ const DETAILS_LABELS = {
   gender: 'profile.details.gender.label',
   website: 'profile.details.website',
   birthdate: 'profile.details.birthdate',
+};
+const ADDRESS_FIELDS = ['line1', 'line2', 'country', 'state', 'city', 'postal_code'];
+const ADDRESS_LABELS = {
+  line1: 'line1',
+  line2: 'line2',
+  country: 'country',
+  state: 'state',
+  city: 'city',
+  postal_code: 'postalCode',
 };
 
 const detailsOf = profile =>
@@ -270,6 +282,90 @@ DisplayNameForm.propTypes = {
   onSaved: PropTypes.func.isRequired,
 };
 
+const ReadOnlyField = ({ id, label, value }) => (
+  <Field id={id} label={label}>
+    {aria => <input {...aria} type="text" className="form-control" value={value} readOnly />}
+  </Field>
+);
+
+ReadOnlyField.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  value: PropTypes.string.isRequired,
+};
+
+const choiceLabel = (field, value, t) => {
+  if (!value) {
+    return t(`profile.details.${field}.none`);
+  }
+  const options = field === 'salutation' ? SALUTATIONS : GENDERS;
+  if (!options.includes(value)) {
+    return value.trim();
+  }
+  return field === 'salutation'
+    ? t(`profile.details.salutation.${value.toLowerCase()}`)
+    : t(`profile.details.gender.${value}`);
+};
+
+const readOnlyValue = (field, value, t) =>
+  field === 'salutation' || field === 'gender' ? choiceLabel(field, value, t) : value;
+
+const ReadOnlyDetails = ({ account, profile }) => {
+  const { t } = useTranslation();
+  const address = addressOf(profile);
+  const mobile = profile.mobile_number || null;
+  return (
+    <div className="tab-pane fade show active">
+      <SectionHeading
+        title={t('profile.details.title')}
+        actions={<ManageLink account={account} />}
+      />
+      <div className="row">
+        {DETAIL_FIELDS.map(field => (
+          <div key={field} className="col-md-6">
+            <ReadOnlyField
+              id={`profile-details-${field}`}
+              label={t(DETAILS_LABELS[field])}
+              value={readOnlyValue(field, profile[field] || '', t)}
+            />
+          </div>
+        ))}
+        <div className="col-md-6">
+          <ReadOnlyField
+            id="profile-details-email"
+            label={t('profile.details.email')}
+            value={profile.email || ''}
+          />
+        </div>
+        <div className="col-md-6">
+          <ReadOnlyField
+            id="profile-details-mobile"
+            label={t('profile.details.mobile')}
+            value={mobile?.masked || mobile?.number || t('profile.details.noMobile')}
+          />
+        </div>
+      </div>
+      <h5>{t('profile.address.title')}</h5>
+      <div className="row">
+        {ADDRESS_FIELDS.map(field => (
+          <div key={field} className={field === 'line1' ? 'col-12' : 'col-md-6'}>
+            <ReadOnlyField
+              id={`profile-address-${field}`}
+              label={t(`profile.address.${ADDRESS_LABELS[field]}`)}
+              value={address[field] || ''}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+ReadOnlyDetails.propTypes = {
+  account: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired,
+};
+
 const DetailsForm = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -449,17 +545,34 @@ DetailsForm.propTypes = {
 };
 
 /**
- * The Profile section: in its identity-provider form, while the adapter
- * carries `address` and `phone`, the seven details of `PATCH /api/user`,
- * the read-only email with a Change link to the Security section's email
- * card, the masked mobile with Change opening the phone entry and the
- * code, and the address block over `PUT /api/user/address`, one Save
- * writing the details and the address together and Clear address
- * emptying the address at once; on a UI backend whose adapter carries
- * `details` alone, the display-name form over that one call; the page
- * remounts it with every re-read of the record.
+ * The Profile section, one field list on every host, the identity
+ * provider's (OpenID Connect Core 1.0 §5.1, the `profile`, `email`,
+ * `phone` and `address` scopes): while the adapter is `readOnly` the
+ * record belongs to an identity provider and every field draws as a
+ * `readonly` input, the salutation and gender as their labels, the
+ * address as its parts, under a `SectionHeading` whose action is the
+ * Manage at identity provider link; while the adapter carries `address`
+ * and `phone`, the seven details of `PATCH /api/user`, the read-only
+ * email with a Change link to the Security section's email card, the
+ * masked mobile with Change opening the phone entry and the code, and
+ * the address block over `PUT /api/user/address`, one Save writing the
+ * details and the address together and Clear address emptying the
+ * address at once; on a UI backend whose adapter carries `details`
+ * alone, the display-name form over that one call; the page remounts it
+ * with every re-read of the record.
  */
-const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChangeEmail }) => {
+const IssuerDetailsTab = ({
+  account,
+  profile,
+  guard,
+  placesKey,
+  readOnly,
+  onSaved,
+  onChangeEmail,
+}) => {
+  if (readOnly) {
+    return <ReadOnlyDetails account={account} profile={profile} />;
+  }
   if (!account.address || !account.phone) {
     return <DisplayNameForm account={account} profile={profile} onSaved={onSaved} />;
   }
@@ -477,13 +590,14 @@ const IssuerDetailsTab = ({ account, profile, guard, placesKey, onSaved, onChang
 
 IssuerDetailsTab.propTypes = {
   account: PropTypes.shape({
-    details: PropTypes.func.isRequired,
+    details: PropTypes.func,
     address: PropTypes.func,
     phone: PropTypes.object,
   }).isRequired,
   profile: PropTypes.object.isRequired,
   guard: PropTypes.func.isRequired,
   placesKey: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool.isRequired,
   onSaved: PropTypes.func.isRequired,
   onChangeEmail: PropTypes.func.isRequired,
 };

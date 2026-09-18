@@ -179,18 +179,21 @@ RowActions.propTypes = {
 const columnsFor = () => [
   {
     key: 'username',
+    kind: 'name',
     labelKey: 'admin.users.table.email',
     sortValue: row => row.username.toLowerCase(),
     render: row => <strong>{row.username}</strong>,
   },
   {
     key: 'full_name',
+    kind: 'text',
     labelKey: 'admin.users.table.name',
     sortValue: row => (row.full_name || '').toLowerCase(),
     render: row => row.full_name || '',
   },
   {
     key: 'customer_id',
+    kind: 'badge',
     labelKey: 'admin.users.table.customerId',
     when: carries('customer_id'),
     sortValue: row => row.customer_id || '',
@@ -203,6 +206,7 @@ const columnsFor = () => [
   },
   {
     key: 'enabled',
+    kind: 'badge',
     labelKey: 'admin.users.table.status',
     sortValue: row => (row.enabled ? 0 : 1),
     render: (row, ctx) => (
@@ -213,6 +217,7 @@ const columnsFor = () => [
   },
   {
     key: 'roles',
+    kind: 'badges',
     labelKey: 'admin.users.table.roles',
     render: row => (
       <span className="d-flex flex-wrap gap-1">
@@ -226,6 +231,7 @@ const columnsFor = () => [
   },
   {
     key: 'organizations',
+    kind: 'badges',
     labelKey: 'admin.users.table.organizations',
     render: (row, ctx) => (
       <span className="d-flex flex-wrap gap-1">
@@ -243,6 +249,7 @@ const columnsFor = () => [
   },
   {
     key: 'using_2fa',
+    kind: 'badge',
     labelKey: 'admin.users.table.tfa',
     when: carries('using_2fa'),
     render: (row, ctx) => (

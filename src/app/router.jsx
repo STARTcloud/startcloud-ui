@@ -157,8 +157,70 @@ const authAdapter = {
 const backendProfileOf = (user, oidc) =>
   user ? { ...user, has_local_auth: !oidc, email_verified: Boolean(user.verified) } : null;
 
-const backendProfile = oidc => () =>
-  session.reload().then(state => backendProfileOf(state?.user || null, oidc));
+const ADDRESS_CLAIMS = {
+  street_address: 'line1',
+  locality: 'city',
+  region: 'state',
+  postal_code: 'postal_code',
+  country: 'country',
+  formatted: 'formatted',
+};
+
+const addressOfClaims = address =>
+  address && typeof address === 'object'
+    ? Object.fromEntries(
+        Object.entries(ADDRESS_CLAIMS)
+          .filter(([claim]) => typeof address[claim] === 'string')
+          .map(([claim, field]) => [field, address[claim]])
+      )
+    : null;
+
+/**
+ * The identity provider's record in the profile page's field names, from
+ * the standard claims of OpenID Connect Core 1.0 §5.1 the host's claims
+ * route answers: the names, website, gender and birthdate as they are,
+ * `phone_number` as the masked mobile, `address` mapped from the §5.1.1
+ * members to the address block's, `zoneinfo` and `locale` as the
+ * preferences' time zone and language.
+ *
+ * @param {Object|null} claims - The claims the session answered
+ * @returns {Object} The record fields the claims carry
+ */
+const profileOfClaims = claims => {
+  if (!claims) {
+    return {};
+  }
+  const address = addressOfClaims(claims.address);
+  const phone = claims.phone_number
+    ? { masked: claims.phone_number, verified: Boolean(claims.phone_number_verified) }
+    : null;
+  return {
+    ...(claims.name ? { name: claims.name } : {}),
+    ...(claims.email ? { email: claims.email } : {}),
+    given_name: claims.given_name || '',
+    family_name: claims.family_name || '',
+    middle_name: claims.middle_name || '',
+    website: claims.website || '',
+    gender: claims.gender || '',
+    birthdate: claims.birthdate || '',
+    ...(phone ? { mobile_number: phone } : {}),
+    ...(address ? { address } : {}),
+    preferences: {
+      ...(claims.zoneinfo ? { timezone: claims.zoneinfo } : {}),
+      ...(claims.locale ? { language: claims.locale } : {}),
+    },
+  };
+};
+
+const backendProfile = oidc => async () => {
+  const state = await session.reload();
+  const user = backendProfileOf(state?.user || null, oidc);
+  if (!user || !oidc) {
+    return user;
+  }
+  const claims = await session.claims();
+  return { ...user, ...profileOfClaims(claims) };
+};
 
 const localAccountMembers = userId => ({
   password: body => changePassword(userId, body.password),
@@ -170,24 +232,32 @@ const localAccountMembers = userId => ({
  * The profile page's `account` adapter of a `backend` host, in the
  * identity provider's member names: the record from the session's own
  * reload with `has_local_auth` (a local session) and `email_verified`
- * (the stored `verified`) beside it, the display name through `details`,
- * the password, email and deletion members while the host advertises
- * `local-accounts` and the session is not the identity provider's, the
- * verification link and its resend under `verification`, the memberships
- * and join requests under `organizations` (Make primary only for a local
- * session) and the service accounts under `serviceAccounts`.
+ * (the stored `verified`) beside it; for an identity provider's session
+ * the record is `readOnly` (RFC 7643 §2.2), merged with the provider's
+ * standard claims through the session's memoized `claims()`, and
+ * `manageUrl` is the provider's profile page, so the page draws the same
+ * sections read-only with the Manage at identity provider link; for a
+ * local account the record is `readWrite`, the display name through
+ * `details`, the password, email and deletion members while the host
+ * advertises `local-accounts`; on both the verification link and its
+ * resend under `verification`, the memberships and join requests under
+ * `organizations` (Make primary only for a local session) and the
+ * service accounts under `serviceAccounts`.
  *
  * @param {Object} options - The session's side
  * @param {Object|null} options.user - The stored user
  * @param {boolean} options.oidc - Whether the session is the identity provider's
+ * @param {string} options.issuerUrl - The identity provider behind the session, empty for a local one
  * @param {boolean} options.localAccounts - Whether the host advertises `local-accounts`
  * @returns {Object} The adapter
  */
-const backendAccountFor = ({ user, oidc, localAccounts }) => {
+const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
   const userId = user?.id;
   return {
     profile: backendProfile(oidc),
-    details: body => changeName(userId, body.name),
+    mutability: oidc ? 'readOnly' : 'readWrite',
+    ...(oidc && issuerUrl ? { manageUrl: `${issuerUrl}/user/profile` } : {}),
+    ...(oidc ? {} : { details: body => changeName(userId, body.name) }),
     ...(localAccounts && !oidc ? localAccountMembers(userId) : {}),
     verification: { verify: verifyMail, resend: resendVerification },
     organizations: {
@@ -208,6 +278,7 @@ const profileAccountFor = ({ status, account }) => {
   return backendAccountFor({
     user: account.user,
     oidc: account.oidc,
+    issuerUrl: account.issuerUrl,
     localAccounts: hasFeature(status, 'local-accounts'),
   });
 };
@@ -818,11 +889,11 @@ const issuerProfile = ({ account, globalAdmin }) => (
 );
 
 const BackendProfileRoute = ({ account, status, globalAdmin }) => {
-  const { user, oidc } = account;
+  const { user, oidc, issuerUrl } = account;
   const localAccounts = hasFeature(status, 'local-accounts');
   const adapter = useMemo(
-    () => backendAccountFor({ user, oidc, localAccounts }),
-    [user, oidc, localAccounts]
+    () => backendAccountFor({ user, oidc, issuerUrl, localAccounts }),
+    [user, oidc, issuerUrl, localAccounts]
   );
   return (
     <ProfilePage
@@ -1094,7 +1165,10 @@ const AppRoutes = ({
           )
         }
       />
-      <Route path="/about" element={<AboutRoute theme={theme} oidc={oidc} />} />
+      <Route
+        path="/about"
+        element={<AboutRoute theme={theme} oidc={oidc} clientId={account.clientId} />}
+      />
       <Route path="/search" element={<SearchPage context={context} />} />
       <Route
         path="/organizations/discover"

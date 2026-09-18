@@ -94,8 +94,9 @@ export const accountMemberships = user =>
  * fields of the profile cached under `storageKey`, `GET /api/user` as the
  * one confirmation of a session, the form-encoded `POST /login` answering
  * `next`, and `POST /user/logout` for both sign-outs. A session it
- * restores or loads is `{ user, organizations, oidc, issuerUrl }`, the
- * user being the cached display fields and `oidc` always false. The API
+ * restores or loads is `{ user, organizations, oidc, issuerUrl, clientId }`,
+ * the user being the cached display fields, `oidc` always false and
+ * `clientId` empty, the issuer being no client of itself. The API
  * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`,
  * and its `onError` is the one place every request's failure passes
  * through: a `403` `onboarding_required` or `terms_required` (`isPendingGate`
@@ -175,7 +176,13 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     if (!user) {
       return null;
     }
-    return { user, organizations: accountMemberships(user), oidc: false, issuerUrl: baseUrl };
+    return {
+      user,
+      organizations: accountMemberships(user),
+      oidc: false,
+      issuerUrl: baseUrl,
+      clientId: '',
+    };
   };
 
   const restore = () => sessionOf(current());

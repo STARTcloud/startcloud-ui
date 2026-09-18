@@ -202,6 +202,7 @@
   },
   "profile": {
     "pageTitle": "Perfil",
+    "manageAtProvider": "Gestionar en el proveedor de identidad",
     "tabs": {
       "organizations": "Organizaciones",
       "security": "Seguridad",
@@ -365,6 +366,10 @@
       "organization": "Organización",
       "role": "Rol",
       "expires": "Expira",
+      "username": "Nombre de usuario",
+      "description": "Descripción",
+      "count_one": "{{count}} cuenta de servicio",
+      "count_other": "{{count}} cuentas de servicio",
       "token": "Token",
       "tokenShownOnce": "Copia este token ahora — se muestra solo una vez y no se puede recuperar después.",
       "bulk": {
@@ -397,6 +402,7 @@
       "delete": "Eliminar"
     },
     "details": {
+      "title": "Perfil",
       "givenName": "Nombre",
       "familyName": "Apellido",
       "middleName": "Segundo nombre",
@@ -1931,7 +1937,13 @@
       "runningVersion": "Versión {{version}} en ejecución",
       "addedToFavorites": "¡{{app}} añadido a favoritos!",
       "removedFromFavorites": "{{app}} eliminado de favoritos",
-      "failedToUpdateFavorites": "Error al actualizar favoritos"
+      "failedToUpdateFavorites": "Error al actualizar favoritos",
+      "links": {
+        "docs": "Documentación",
+        "repository": "Repositorio",
+        "changelog": "Registro de cambios",
+        "contact": "Escribir a soporte"
+      }
     }
   },
   "about": {
@@ -1964,29 +1976,19 @@
         }
       },
       "docs": {
-        "intro": "Lee cómo funcionan el inicio de sesión, los segundos factores y las organizaciones.",
-        "guide": "Ayuda"
+        "intro": "Lee cómo funcionan el inicio de sesión, los segundos factores y las organizaciones."
       },
       "support": {
-        "intro": "Lee qué cambió en cada versión o escribe a soporte.",
-        "changelog": "Registro de cambios",
-        "contact": "Escribir a soporte"
+        "intro": "Lee qué cambió en cada versión o escribe a soporte."
       }
     },
     "boxvault": {
-      "documentation": {
-        "description": "Aprende cómo usar BoxVault e integrarlo con tu flujo de trabajo.",
-        "fullDocs": "Documentación Completa",
-        "apiExplorer": "Explorador API (Swagger UI)",
-        "gettingStarted": "Guía de Inicio"
+      "docs": {
+        "intro": "Aprende cómo usar BoxVault e integrarlo con tu flujo de trabajo."
       },
       "support": {
-        "description": "Apoya el proyecto y mantente conectado con la comunidad.",
-        "patreon": "Apoyar en Patreon",
-        "githubProfile": "Perfil de GitHub",
-        "repository": "Repositorio del Proyecto"
+        "intro": "Apoya el proyecto y mantente conectado con la comunidad."
       },
-      "title": "BoxVault",
       "description": "BoxVault es una solución autoalojada diseñada para almacenar y gestionar plantillas de Máquinas Virtuales.",
       "goal": "Proporcionar una plataforma robusta y fácil de usar para gestionar Boxes Vagrant.",
       "features": {
@@ -2044,19 +2046,13 @@
         }
       },
       "docs": {
-        "intro": "Aprende cómo se construye el catálogo, cómo publicar un provisioner y cómo consumirlo.",
-        "docs": "Documentación",
-        "api": "Referencia de la API",
-        "gettingStarted": "Primeros pasos"
+        "intro": "Aprende cómo se construye el catálogo, cómo publicar un provisioner y cómo consumirlo."
       },
       "support": {
-        "intro": "El catálogo es de código abierto; se agradecen incidencias y contribuciones.",
-        "repository": "Repositorio",
-        "issues": "Informar de un problema",
-        "contact": "Contactar con STARTcloud"
+        "intro": "El catálogo es de código abierto; se agradecen incidencias y contribuciones."
       }
     },
-    "vdi": {
+    "vdi-health": {
       "description": "El VDI Health Monitor vigila una flota de escritorios virtuales Windows: unidades de red asignadas, iconos del escritorio, sesiones de usuario, identidad de la VM y pools UDS, informados por dos agentes en cada VM.",
       "goal": "Una página en vivo que le dice a un administrador qué escritorios están rotos, obsoletos o inactivos antes de que llame un usuario.",
       "features": {
@@ -2086,13 +2082,10 @@
         }
       },
       "docs": {
-        "intro": "Lee cómo se despliegan los agentes y qué registra el servidor.",
-        "guide": "Guía"
+        "intro": "Lee cómo se despliegan los agentes y qué registra el servidor."
       },
       "support": {
-        "intro": "El monitor se mantiene de forma privada; informa de problemas en su repositorio.",
-        "repository": "Repositorio",
-        "issues": "Informar de un problema"
+        "intro": "El monitor se mantiene de forma privada; informa de problemas en su repositorio."
       }
     }
   },

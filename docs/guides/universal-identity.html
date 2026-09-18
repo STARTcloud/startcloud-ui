@@ -4293,7 +4293,13 @@
         <code>CodeInput</code>, <code>AddressFields</code> with the Places autocomplete while the
         session-gated <code>GET /api/config/places</code> answers a key, its placeholder drawn only
         then, and "Clear address" never a bare Clear. Save is <code>PATCH /api/user</code> and
-        <code>PUT /api/user/address</code>.
+        <code>PUT /api/user/address</code>. On a UI backend whose session is an identity provider's
+        (BoxVault signed in through the issuer) the adapter is <code>readOnly</code> (decision 166):
+        the same fields draw as <code>readonly</code> inputs, the salutation and gender as their
+        labels, the address as its parts from the standard claims of OpenID Connect Core 1.0 §5.1,
+        no Save, and one "Manage at identity provider" link in the section heading opens the
+        issuer's own profile; a local BoxVault account draws the same page editable over the host's
+        own writes.
       </div>
       <div class="callout">
         <strong>Preferences tab</strong> is the same card at <code>#preferences</code>: language and

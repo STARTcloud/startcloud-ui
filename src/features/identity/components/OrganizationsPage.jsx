@@ -60,6 +60,7 @@ const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 const columnsFor = () => [
   {
     key: 'name',
+    kind: 'name',
     labelKey: 'admin.organizations.table.name',
     sortValue: row => row.name.toLowerCase(),
     render: (row, ctx) => (
@@ -73,6 +74,7 @@ const columnsFor = () => [
   },
   {
     key: 'type',
+    kind: 'badge',
     labelKey: 'admin.organizations.table.type',
     when: carries('personal'),
     sortValue: row => (row.personal ? 1 : 0),
@@ -84,6 +86,7 @@ const columnsFor = () => [
   },
   {
     key: 'suspended',
+    kind: 'badge',
     labelKey: 'admin.organizations.table.status',
     when: carries('suspended'),
     sortValue: row => (row.suspended ? 1 : 0),
@@ -97,12 +100,14 @@ const columnsFor = () => [
   },
   {
     key: 'invite_code',
+    kind: 'text',
     labelKey: 'admin.organizations.table.inviteCode',
     when: hasAny(row => row.invite_code),
     render: row => (row.invite_code ? <code>{row.invite_code}</code> : '—'),
   },
   {
     key: 'customer_id',
+    kind: 'badge',
     labelKey: 'admin.organizations.table.customerId',
     when: carries('customer_id'),
     sortValue: row => row.customer_id || '',
@@ -115,6 +120,7 @@ const columnsFor = () => [
   },
   {
     key: 'member_count',
+    kind: 'count',
     labelKey: 'admin.organizations.table.members',
     className: 'text-end',
     sortValue: row => row.member_count || 0,
@@ -122,6 +128,7 @@ const columnsFor = () => [
   },
   {
     key: 'created_at',
+    kind: 'date',
     labelKey: 'admin.organizations.table.created',
     when: hasAny(row => row.created_at),
     sortValue: row => new Date(row.created_at || 0).getTime(),

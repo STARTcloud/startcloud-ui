@@ -110,6 +110,7 @@ export const placesKey = () => client.get('/api/config/places');
  */
 export const issuerAccount = {
   profile,
+  mutability: 'readWrite',
   stepUp,
   details: updateDetails,
   address: updateAddress,

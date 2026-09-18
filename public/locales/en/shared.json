@@ -202,6 +202,7 @@
   },
   "profile": {
     "pageTitle": "Profile",
+    "manageAtProvider": "Manage at identity provider",
     "tabs": {
       "organizations": "Organizations",
       "security": "Security",
@@ -365,6 +366,10 @@
       "organization": "Organization",
       "role": "Role",
       "expires": "Expires",
+      "username": "Username",
+      "description": "Description",
+      "count_one": "{{count}} service account",
+      "count_other": "{{count}} service accounts",
       "token": "Token",
       "tokenShownOnce": "Copy this token now — it is shown only once and cannot be retrieved later.",
       "bulk": {
@@ -397,6 +402,7 @@
       "delete": "Delete"
     },
     "details": {
+      "title": "Profile",
       "givenName": "First name",
       "familyName": "Last name",
       "middleName": "Middle name",
@@ -1931,7 +1937,13 @@
       "runningVersion": "Running version {{version}}",
       "addedToFavorites": "Added {{app}} to favorites!",
       "removedFromFavorites": "Removed {{app}} from favorites",
-      "failedToUpdateFavorites": "Failed to update favorites"
+      "failedToUpdateFavorites": "Failed to update favorites",
+      "links": {
+        "docs": "Documentation",
+        "repository": "Repository",
+        "changelog": "Changelog",
+        "contact": "Email support"
+      }
     }
   },
   "about": {
@@ -1964,29 +1976,19 @@
         }
       },
       "docs": {
-        "intro": "Read how sign-in, second factors and organizations work.",
-        "guide": "Help"
+        "intro": "Read how sign-in, second factors and organizations work."
       },
       "support": {
-        "intro": "Read what changed in each release or write to support.",
-        "changelog": "Changelog",
-        "contact": "Email support"
+        "intro": "Read what changed in each release or write to support."
       }
     },
     "boxvault": {
-      "documentation": {
-        "description": "Learn how to use BoxVault and integrate it with your workflow.",
-        "fullDocs": "Full Documentation",
-        "apiExplorer": "API Explorer (Swagger UI)",
-        "gettingStarted": "Getting Started Guide"
+      "docs": {
+        "intro": "Learn how to use BoxVault and integrate it with your workflow."
       },
       "support": {
-        "description": "Support the project and stay connected with the community.",
-        "patreon": "Support on Patreon",
-        "githubProfile": "GitHub Profile",
-        "repository": "Project Repository"
+        "intro": "Support the project and stay connected with the community."
       },
-      "title": "BoxVault",
       "description": "BoxVault is a self-hosted solution designed to store and manage Virtual Machine templates.",
       "goal": "To provide a robust and easy-to-use platform for managing Vagrant boxes.",
       "features": {
@@ -2044,19 +2046,13 @@
         }
       },
       "docs": {
-        "intro": "Learn how the catalog is built, how to publish a provisioner and how to consume it.",
-        "docs": "Documentation",
-        "api": "API reference",
-        "gettingStarted": "Getting started"
+        "intro": "Learn how the catalog is built, how to publish a provisioner and how to consume it."
       },
       "support": {
-        "intro": "The catalog is open source; issues and contributions are welcome.",
-        "repository": "Repository",
-        "issues": "Report an issue",
-        "contact": "Contact STARTcloud"
+        "intro": "The catalog is open source; issues and contributions are welcome."
       }
     },
-    "vdi": {
+    "vdi-health": {
       "description": "The VDI Health Monitor watches a fleet of Windows virtual desktops: mapped network drives, desktop icons, user sessions, VM identity and UDS pools, reported by two agents on every VM.",
       "goal": "One live page that tells an administrator which desktops are broken, stale or idle before a user calls.",
       "features": {
@@ -2086,13 +2082,10 @@
         }
       },
       "docs": {
-        "intro": "Read how the agents are deployed and what the server records.",
-        "guide": "Guide"
+        "intro": "Read how the agents are deployed and what the server records."
       },
       "support": {
-        "intro": "The monitor is maintained privately; report issues in its repository.",
-        "repository": "Repository",
-        "issues": "Report an issue"
+        "intro": "The monitor is maintained privately; report issues in its repository."
       }
     }
   },

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { base64url, createDpop } from './dpop';
-import { decodeJwt } from './jwt';
+import { audienceOf, decodeJwt } from './jwt';
 
 const PREFERENCES_PATH = '/api/user/preferences';
 const THEME_VALUES = ['auto', 'light', 'dark'];
@@ -72,8 +72,9 @@ const tokenFailure = requestError => {
  * app's prefix, the refresh grant a minute before expiry, the provider's
  * userinfo as the claims, and the end-session form POST for signing out
  * everywhere. A session it restores or completes is
- * `{ user, organizations, oidc, issuerUrl }`, the user being the access
- * token's claims.
+ * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being
+ * the access token's claims and `clientId` the ID token's `aud`, the
+ * configured client id until an ID token is held.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.issuer - The identity provider's issuer URL
@@ -211,7 +212,13 @@ export const createBrowserOidc = ({
     if (!user) {
       return null;
     }
-    return { user, organizations: user.organizations || [], oidc: true, issuerUrl: issuer };
+    return {
+      user,
+      organizations: user.organizations || [],
+      oidc: true,
+      issuerUrl: issuer,
+      clientId: audienceOf(decodeJwt(localStorage.getItem(STORE.id))) || clientId,
+    };
   };
 
   const restore = () => sessionOf(localStorage.getItem(STORE.access));

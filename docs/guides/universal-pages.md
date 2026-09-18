@@ -758,12 +758,24 @@ adds its own foldable section to an item page (the catalog's Quality).
   `package.json` version injected at build time, drawn under the keys
   `about.version.app` and `about.version.ui`, the description, the goal as a quote and, when the app
   passes one, the favorite toggle as the header's action; then Start here
-  (the documentation links as a list, the getting-started guide first)
+  (the documentation links as a list)
   beside What you can do here (features as a check grid), How it fits
   together (components as headed cards) and Help and community (support
-  links as a footer strip). Every link on the page appears once; BoxVault
-  feeds it its backend's public content and its favorite toggle, the
-  catalog its own locale text.
+  links as a footer strip). Every link on the page appears once. The
+  route feeds it from the status payload and the locale alone, nothing
+  of any app in code: the title is `status.brand.name`; the description,
+  goal, features, components and the two intros are the
+  `about.<role>.*` keys of `shared.json`, `features` an object of one
+  sentence per key and `components` an object of `{ title, ...details }`
+  per part, read as objects so a role adds a line by adding a key; Start
+  here is `links.docs`; Help and community is `brand.repo`,
+  `brand.changelog` and `links.contact`, each drawn only while set, their
+  labels the shared `pages.about.links.*`; the favorite toggle is drawn
+  while the UI backend advertises `favorites`, the session is the
+  identity provider's and names its `clientId`; a role with no
+  `about.<role>.description` key draws the not-available stub and no
+  About row. Because a URL or a name written into the page is a fork per
+  app, and the one build serves every app.
 - **LoginPage**, **RegisterPage** and **InvitePage**: the account pages of
   the [Universal Session Contract](universal-session/), drawn from the
   provider, the return-path helper and the app's `auth` adapter inside
@@ -793,18 +805,40 @@ adds its own foldable section to an item page (the catalog's Quality).
   drawn only for the member it acts through, then Preferences, Favorites,
   Sessions, Organizations and Service accounts while it carries
   `preferences`, `favorites`, `sessions`, `organizations` and
-  `serviceAccounts`; `organizations` is
+  `serviceAccounts`. The adapter carries one word beside its calls,
+  `mutability`, the SCIM word for the record as a whole (RFC 7643 §2.2):
+  `readWrite` where the host owns the account, the issuer and a local
+  BoxVault account, and `readOnly` where an identity provider does, an
+  identity-provider session on BoxVault; a `readOnly` adapter names
+  `manageUrl`, the provider's own profile page, and the page draws the
+  same sections with the same fields, every input `readonly` and never
+  `disabled` (the field stays focusable, selectable and announced, WCAG
+  2.2 SC 4.1.2), a select or the address drawn as its text, no Save, and
+  one "Manage at identity provider" link in each section's heading, the
+  Profile fields being the standard claims of OpenID Connect Core 1.0
+  §5.1 by scope (`profile`, `email`, `phone`, `address`, the §5.1.1
+  address members mapped onto the address block's) that the host's
+  claims route answers, and Preferences the language, theme, time zone
+  and region of the record; a Security card whose read the host lacks is
+  absent, as any section the adapter does not carry is, because a client
+  never writes an attribute whose mutability is `readOnly` (RFC 7644
+  §3.5.2), a person must still see what the provider holds about them,
+  and a form the host cannot save is a promise the page cannot keep.
+  `organizations` is
   `{ list, leave, setPrimary?, requests, cancelRequest }`, the memberships
   and the pending join requests as glass lists under a `SectionHeading`,
   Make primary drawn while `setPrimary` is carried, and `serviceAccounts`
   is `{ list, organizations, create, remove }`, the create form in a
-  `SectionCard`, the one-time token notice, then the keys as a glass list
-  with a select column, the organization badge and Delete per row, the
-  heading's action pane reading "N selected", Clear selection and Delete
-  behind the confirm while rows are picked; the identity provider's
-  adapter carries neither of the two and BoxVault's carries both, so the
-  two sections draw on BoxVault alone the way Favorites and Sessions draw
-  on the issuer alone. The sections are sidebar rows and routes: the
+  `SectionCard`, the one-time token notice, then the keys in the one
+  `SubTable`, one organization group row per organization the way the
+  listings group theirs, the select column a real checkbox header, the
+  username, description, role and expiry columns and Delete in the
+  Actions column, the heading's action pane reading "N selected", Clear
+  selection and Delete behind the confirm while rows are picked; the
+  identity provider's adapter carries neither of the two and BoxVault's
+  carries both, so the two sections draw on BoxVault alone the way
+  Favorites and Sessions draw on the issuer alone. The sections are
+  sidebar rows and routes: the
   profile feature's `sidebar(status, account, integrations, profile)`
   answers the Account group with Profile and its `children` built from the
   same `sectionsFor` over the host's `profile` adapter and the host's
@@ -821,12 +855,16 @@ adds its own foldable section to an item page (the catalog's Quality).
   the call plainly otherwise; an edit that the session must reflect
   re-reads the record through `account.profile`, calls `session.reload()`
   and emits `login` on the bus. BoxVault's adapter is built by the router
-  in the issuer's member names: `profile` from the session's reload,
-  `details` over the change-name call, `password`, `email` (its `request`
-  the change, no `verify`) and `deletion` while the host advertises
-  `local-accounts` and the session is not the identity provider's, and
-  the two sections above. Its keys are `profile.*` in `shared.json`; the
-  catalog carries it unrouted, its profile being the identity provider's.
+  in the issuer's member names: for a local account `readWrite`, `profile`
+  from the session's reload, `details` over the change-name call,
+  `password`, `email` (its `request` the change, no `verify`) and
+  `deletion` while the host advertises `local-accounts`; for an
+  identity-provider session `readOnly`, `profile` the session's reload
+  merged with the provider's standard claims through the session's
+  memoized `claims()`, `manageUrl` the provider's `/user/profile`, and no
+  write; on both the two sections above. Its keys are `profile.*` in
+  `shared.json`; the catalog carries it unrouted, its profile being the
+  identity provider's.
 - **OrgConsolePage** and **DiscoveryPage**: the organization pages of an
   app with organizations of its own, over one `organizations` adapter
   (`get, update, accessMode, users, memberRole, removeMember, invite,

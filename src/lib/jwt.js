@@ -12,3 +12,18 @@ export const decodeJwt = token => {
     return null;
   }
 };
+
+/**
+ * The client an ID token was issued to: its `aud` claim, a string or the
+ * first member of an array (OpenID Connect Core 1.0 §2), empty when the
+ * claims carry none.
+ * @param {Object|null} claims - The decoded ID token
+ * @returns {string} The client id
+ */
+export const audienceOf = claims => {
+  const aud = claims?.aud;
+  if (typeof aud === 'string') {
+    return aud;
+  }
+  return Array.isArray(aud) && typeof aud[0] === 'string' ? aud[0] : '';
+};

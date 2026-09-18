@@ -13,6 +13,7 @@ import { userDisplayName, userSecondaryLine } from '../../../utils/identity';
 
 import FavoritesTab from './FavoritesTab';
 import IssuerDetailsTab from './IssuerDetailsTab';
+import { isReadOnly } from './ManageLink';
 import OrganizationsTab from './OrganizationsTab';
 import PreferencesTab from './PreferencesTab';
 import SecurityTab from './security/SecurityTab';
@@ -21,18 +22,25 @@ import SessionsTab from './SessionsTab';
 
 /**
  * The `account` adapter of the profile page, one shape for every host:
- * `profile` reads the current record; `stepUp` arms the step-up window
- * where the host has one; every other member is one group of calls the
- * page draws a section for and draws nothing without, the identity
- * provider carrying `details`, `address`, `phone`, `email`, `password`,
- * `tfa`, `passkeys`, `backupCodes`, `linked`, `sessions`, `favorites`,
- * `preferences` and `deletion`, and a UI backend with accounts of its own
- * carrying `details`, `password`, `email`, `deletion`, `verification`
- * (the emailed verification link's consume and its resend),
- * `organizations` and `serviceAccounts`.
+ * `profile` reads the current record; `mutability` is the SCIM word for
+ * the record as a whole (RFC 7643 §2.2), `readWrite` where the host owns
+ * the account and `readOnly` where an identity provider does, in which
+ * case `manageUrl` is that provider's profile page and every section
+ * draws its fields read-only with one Manage at identity provider link
+ * in its heading; `stepUp` arms the step-up window where the host has
+ * one; every other member is one group of calls the page draws a section
+ * for and draws nothing without, the identity provider carrying
+ * `details`, `address`, `phone`, `email`, `password`, `tfa`, `passkeys`,
+ * `backupCodes`, `linked`, `sessions`, `favorites`, `preferences` and
+ * `deletion`, and a UI backend with accounts of its own carrying
+ * `details`, `password`, `email`, `deletion`, `verification` (the emailed
+ * verification link's consume and its resend), `organizations` and
+ * `serviceAccounts`.
  */
 export const accountShape = PropTypes.shape({
   profile: PropTypes.func.isRequired,
+  mutability: PropTypes.oneOf(['readWrite', 'readOnly']).isRequired,
+  manageUrl: PropTypes.string,
   stepUp: PropTypes.func,
   verification: PropTypes.shape({
     verify: PropTypes.func.isRequired,
@@ -99,7 +107,9 @@ const SEGMENTS = Object.fromEntries(
  * The sections the profile page draws for an `account` adapter, in the
  * order the sidebar lists them: Profile always, Security while the
  * adapter carries any security call, then Preferences, Favorites,
- * Sessions, Organizations and Service accounts while it carries theirs.
+ * Sessions, Organizations and Service accounts while it carries theirs;
+ * a `readOnly` adapter draws Preferences whenever the record carries
+ * `preferences`, because the read is the profile itself.
  *
  * @param {Object} account - The `account` adapter
  * @returns {string[]} The section keys
@@ -110,7 +120,7 @@ export const sectionsFor = account => {
     sections.push('security');
   }
   ['preferences', 'favorites', 'sessions', 'organizations', 'serviceAccounts'].forEach(section => {
-    if (account[section]) {
+    if (account[section] || (section === 'preferences' && isReadOnly(account))) {
       sections.push(section);
     }
   });
@@ -134,6 +144,7 @@ const plainGuard = call => call();
 const noStepUp = () => Promise.reject(new Error('step-up is not offered on this host'));
 
 const ActiveSection = ({ active, account, profile, version, session, guard, placesKey, page }) => {
+  const readOnly = isReadOnly(account);
   if (active === 'security') {
     return (
       <SecurityTab
@@ -153,6 +164,7 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
         account={account}
         profile={profile}
         session={session}
+        readOnly={readOnly}
         onSaved={page.refresh}
       />
     );
@@ -178,6 +190,7 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
       profile={profile}
       guard={guard}
       placesKey={placesKey}
+      readOnly={readOnly}
       onSaved={page.refresh}
       onChangeEmail={page.openEmailChange}
     />
@@ -338,6 +351,10 @@ const usePlacesKey = places => {
  * (`sectionsFor`), an unknown section drawing Profile, and the route
  * segment maps through `PROFILE_ROUTE_SECTIONS` under `basePath`
  * (`/user/profile` on the issuer, `/profile` on a UI backend); a
+ * `readOnly` adapter, the record an identity provider owns, draws the
+ * same sections with every field read-only and the Manage at identity
+ * provider link in each section's heading (RFC 7644 §3.5.2: a client
+ * never writes a `readOnly` attribute); a
  * `#section` hash the estate still links is replaced by the section's
  * route; the record is read once through `account.profile` and re-read,
  * with the session, after every change the session must reflect; while

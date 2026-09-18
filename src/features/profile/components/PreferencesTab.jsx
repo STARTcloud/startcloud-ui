@@ -12,6 +12,8 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { useTheme } from '../../../hooks/useTheme';
 import { loadCountries } from '../../../lib/countries';
 
+import ManageLink from './ManageLink';
+
 const PREFS_KEY = 'table_prefs_profile_preferences';
 const THEMES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
@@ -87,32 +89,70 @@ SelectField.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-/**
- * The Preferences section of the identity contract at
- * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
- * fold is kept under `table_prefs_profile_preferences`: language,
- * theme, time zone and region on one row, language and theme as selects
- * that write through on change, the same values the chrome's controls
- * write through the shared `useTheme` and the shared `i18n`; the time
- * zone from the `Intl` list with the detected zone preselected while none
- * is set; region as a select of the two-letter country list plus `EU`,
- * `EEA` and `UK`, the legal region the terms and policy variants resolve
- * to, blank clearing it; on the next row the sign-in approval channel
- * (SMS disabled with a hint while no verified number exists, the stored
- * value kept selected) and the approval PIN as one input with its own Set
- * and Clear buttons beside it, "A PIN is set" drawn as muted text above the
- * field while one is stored; time zone, region, channel and PIN saved together by
- * one Save preferences through `PATCH /api/user/preferences`, the time
- * zone and the region in the patch only when they differ from the stored
- * value, so a detected preselection is never written, while the rules
- * evaluate the zone and region the selects hold; the page remounts it
- * with every re-read of the record.
- */
-const PreferencesTab = ({ account, profile, session, onSaved }) => {
+const ReadOnlyField = ({ id, label, value }) => (
+  <Field id={id} label={label}>
+    {aria => <input {...aria} type="text" className="form-control" value={value} readOnly />}
+  </Field>
+);
+
+ReadOnlyField.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  value: PropTypes.string.isRequired,
+};
+
+const ReadOnlyPreferences = ({ account, profile, folds }) => {
+  const { t, i18n } = useTranslation();
+  const { preference: themePreference } = useTheme();
+  const preferences = profile.preferences || {};
+  const fields = [
+    ['language', t('profile.preferences.language'), languageName(i18n.language)],
+    [
+      'theme',
+      t('profile.preferences.theme.label'),
+      t(`profile.preferences.theme.${themePreference}`),
+    ],
+    ['timezone', t('profile.preferences.timezone'), preferences.timezone || detectedZone()],
+    [
+      'region',
+      t('profile.preferences.region'),
+      preferences.region || t('profile.preferences.regionNotSet'),
+    ],
+  ];
+  return (
+    <div className="tab-pane fade show active">
+      <SectionCard
+        title={t('profile.preferences.title')}
+        className="mb-0"
+        actions={<ManageLink account={account} />}
+        folded={folds.folded('preferences')}
+        onFold={() => folds.toggle('preferences')}
+      >
+        <div className="row">
+          {fields.map(([key, label, value]) => (
+            <div key={key} className="col-md-3">
+              <ReadOnlyField id={`profile-preferences-${key}`} label={label} value={value} />
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+};
+
+ReadOnlyPreferences.propTypes = {
+  account: PropTypes.object.isRequired,
+  profile: PropTypes.shape({ preferences: PropTypes.object }).isRequired,
+  folds: PropTypes.shape({
+    folded: PropTypes.func.isRequired,
+    toggle: PropTypes.func.isRequired,
+  }).isRequired,
+};
+
+const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const { preference: themePreference, setPreference: setThemePreference } = useTheme();
-  const folds = useFolds(PREFS_KEY);
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
   const [settings, setSettings] = useState(() => settingsOf(preferences));
@@ -365,13 +405,69 @@ const PreferencesTab = ({ account, profile, session, onSaved }) => {
   );
 };
 
-PreferencesTab.propTypes = {
+EditablePreferences.propTypes = {
   account: PropTypes.shape({ preferences: PropTypes.func.isRequired }).isRequired,
   profile: PropTypes.shape({
     preferences: PropTypes.object,
     mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
   }).isRequired,
   session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }).isRequired,
+  folds: PropTypes.shape({
+    folded: PropTypes.func.isRequired,
+    toggle: PropTypes.func.isRequired,
+  }).isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
+/**
+ * The Preferences section of the identity contract at
+ * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
+ * fold is kept under `table_prefs_profile_preferences`: language,
+ * theme, time zone and region on one row, language and theme as selects
+ * that write through on change, the same values the chrome's controls
+ * write through the shared `useTheme` and the shared `i18n`; the time
+ * zone from the `Intl` list with the detected zone preselected while none
+ * is set; region as a select of the two-letter country list plus `EU`,
+ * `EEA` and `UK`, the legal region the terms and policy variants resolve
+ * to, blank clearing it; on the next row the sign-in approval channel
+ * (SMS disabled with a hint while no verified number exists, the stored
+ * value kept selected) and the approval PIN as one input with its own Set
+ * and Clear buttons beside it, "A PIN is set" drawn as muted text above the
+ * field while one is stored; time zone, region, channel and PIN saved together by
+ * one Save preferences through `PATCH /api/user/preferences`, the time
+ * zone and the region in the patch only when they differ from the stored
+ * value, so a detected preselection is never written, while the rules
+ * evaluate the zone and region the selects hold; the page remounts it
+ * with every re-read of the record. While `readOnly`, the record an
+ * identity provider owns, the language, theme, time zone and region draw
+ * as `readonly` fields in the same card with the Manage at identity
+ * provider link as its action, the approval channel and PIN being the
+ * issuer's own and not drawn.
+ */
+const PreferencesTab = ({ account, profile, session, readOnly, onSaved }) => {
+  const folds = useFolds(PREFS_KEY);
+  if (readOnly) {
+    return <ReadOnlyPreferences account={account} profile={profile} folds={folds} />;
+  }
+  return (
+    <EditablePreferences
+      account={account}
+      profile={profile}
+      session={session}
+      folds={folds}
+      onSaved={onSaved}
+    />
+  );
+};
+
+PreferencesTab.propTypes = {
+  account: PropTypes.shape({ preferences: PropTypes.func }).isRequired,
+  profile: PropTypes.shape({
+    preferences: PropTypes.object,
+    mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
+  }).isRequired,
+  session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }).isRequired,
+  readOnly: PropTypes.bool.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
 

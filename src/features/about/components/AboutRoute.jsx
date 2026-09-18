@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaBook, FaBug, FaCode, FaEnvelope, FaGithub, FaHeart, FaServer } from 'react-icons/fa6';
+import { FaBook, FaCode, FaEnvelope, FaListCheck } from 'react-icons/fa6';
 
 import BrandLogo from '../../../components/common/BrandLogo';
+import { httpsUrl } from '../../../components/common/MethodList';
 import NotAvailableStub from '../../../components/common/NotAvailableStub';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -14,6 +15,7 @@ import { getFavorites, saveFavorites } from '../api/about';
 import AboutPage from './AboutPage';
 
 const FAVORITE_KEY = 'favorite';
+const SAFE_PATH = /^\/(?![/\\])/;
 
 const toBody = list =>
   list.map((entry, index) => ({
@@ -22,172 +24,74 @@ const toBody = list =>
     order: index,
   }));
 
-const BOXVAULT_FEATURES = [
-  'authentication',
-  'boxManagement',
-  'versionControl',
-  'organizationSupport',
-  'apiDocumentation',
-  'secureStorage',
-];
-const BOXVAULT_COMPONENTS = [
-  { key: 'backend', details: ['nodejs', 'auth', 'endpoints', 'database'] },
-  { key: 'frontend', details: ['react', 'interface', 'features'] },
-];
+const linkHref = value =>
+  typeof value === 'string' && SAFE_PATH.test(value) ? value : httpsUrl(value);
 
-const CATALOG_FEATURES = ['catalogs', 'tiers', 'artifacts', 'watches', 'deploy'];
-const CATALOG_COMPONENTS = [
-  { key: 'data', details: ['releases', 'validation', 'tiers'] },
-  { key: 'web', details: ['pages', 'signIn', 'shared'] },
-  { key: 'worker', details: ['gate', 'push', 'config'] },
-];
+const mailto = value =>
+  typeof value === 'string' && value !== '' ? `mailto:${value.replace(/^mailto:/, '')}` : '';
 
-const VDI_FEATURES = ['drives', 'icons', 'sessions', 'identity', 'pools', 'agents'];
-const VDI_COMPONENTS = [
-  { key: 'agents', details: ['user', 'startup'] },
-  { key: 'server', details: ['api', 'events', 'storage'] },
-  { key: 'ui', details: ['shared', 'fleet'] },
-];
+const textsOf = value =>
+  value && typeof value === 'object' ? Object.values(value).filter(v => typeof v === 'string') : [];
 
-const AUTH_SERVER_FEATURES = [
-  'signIn',
-  'tfa',
-  'passkeys',
-  'organizations',
-  'integrations',
-  'admin',
-];
-const AUTH_SERVER_COMPONENTS = [
-  { key: 'server', details: ['spring', 'protocols', 'sessions'] },
-  { key: 'ui', details: ['shared', 'pages'] },
-];
-
-const componentsOf = (t, prefix, components) =>
-  components.map(component => ({
-    title: t(`${prefix}.${component.key}.title`),
-    details: component.details.map(detail => t(`${prefix}.${component.key}.${detail}`)),
-  }));
-
-const PROFILES = {
-  boxvault: {
-    docs: () => [
-      { key: 'gettingStarted', href: '/docs/guides/', Icon: FaServer },
-      { key: 'fullDocs', href: '/docs', Icon: FaBook },
-      { key: 'apiExplorer', href: '/api-docs', Icon: FaCode },
-    ],
-    docsLabel: key => `about.boxvault.documentation.${key}`,
-    docsIntro: 'about.boxvault.documentation.description',
-    support: () => [
-      { key: 'patreon', href: 'https://www.patreon.com/Philotic', Icon: FaHeart },
-      { key: 'githubProfile', href: 'https://github.com/makr91', Icon: FaGithub },
-      { key: 'repository', href: 'https://github.com/makr91/BoxVault', Icon: FaCode },
-    ],
-    supportLabel: key => `about.boxvault.support.${key}`,
-    supportIntro: 'about.boxvault.support.description',
-    content: t => ({
-      title: t('about.boxvault.title'),
-      description: t('about.boxvault.description'),
-      goal: t('about.boxvault.goal'),
-      features: BOXVAULT_FEATURES.map(key => t(`about.boxvault.features.${key}`)),
-      components: componentsOf(t, 'about.boxvault.components', BOXVAULT_COMPONENTS),
-    }),
-  },
-  catalog: {
-    docs: () => [
-      { key: 'gettingStarted', href: '/docs/guides/getting-started/', Icon: FaServer },
-      { key: 'docs', href: '/docs/', Icon: FaBook },
-      { key: 'api', href: '/docs/api/', Icon: FaCode },
-    ],
-    docsLabel: key => `about.catalog.docs.${key}`,
-    docsIntro: 'about.catalog.docs.intro',
-    support: status => [
-      { key: 'repository', href: status.brand.repo, Icon: FaGithub },
-      { key: 'issues', href: `${status.brand.repo}/issues/new`, Icon: FaBug },
-      { key: 'contact', href: status.links.contact, Icon: FaEnvelope },
-    ],
-    supportLabel: key => `about.catalog.support.${key}`,
-    supportIntro: 'about.catalog.support.intro',
-    content: t => ({
-      title: t('provisioners.app.title'),
-      description: t('about.catalog.description'),
-      goal: t('about.catalog.goal'),
-      features: CATALOG_FEATURES.map(key => t(`about.catalog.features.${key}`)),
-      components: componentsOf(t, 'about.catalog.components', CATALOG_COMPONENTS),
-    }),
-  },
-  'vdi-health': {
-    docs: status => [{ key: 'guide', href: status.links.docs || '/docs', Icon: FaBook }],
-    docsLabel: key => `about.vdi.docs.${key}`,
-    docsIntro: 'about.vdi.docs.intro',
-    support: status => [
-      { key: 'repository', href: status.brand.repo, Icon: FaGithub },
-      { key: 'issues', href: `${status.brand.repo}/issues/new`, Icon: FaBug },
-    ],
-    supportLabel: key => `about.vdi.support.${key}`,
-    supportIntro: 'about.vdi.support.intro',
-    content: (t, status) => ({
-      title: status.brand.name,
-      description: t('about.vdi.description'),
-      goal: t('about.vdi.goal'),
-      features: VDI_FEATURES.map(key => t(`about.vdi.features.${key}`)),
-      components: componentsOf(t, 'about.vdi.components', VDI_COMPONENTS),
-    }),
-  },
-  'auth-server': {
-    docs: status =>
-      status.links.docs ? [{ key: 'guide', href: status.links.docs, Icon: FaBook }] : [],
-    docsLabel: key => `about.auth-server.docs.${key}`,
-    docsIntro: 'about.auth-server.docs.intro',
-    support: status =>
-      [
-        status.brand.changelog
-          ? { key: 'changelog', href: status.brand.changelog, Icon: FaGithub }
-          : null,
-        status.links.contact
-          ? { key: 'contact', href: status.links.contact, Icon: FaEnvelope }
-          : null,
-      ].filter(Boolean),
-    supportLabel: key => `about.auth-server.support.${key}`,
-    supportIntro: 'about.auth-server.support.intro',
-    content: (t, status) => ({
-      title: status.brand.name,
-      description: t('about.auth-server.description'),
-      goal: t('about.auth-server.goal'),
-      features: AUTH_SERVER_FEATURES.map(key => t(`about.auth-server.features.${key}`)),
-      components: componentsOf(t, 'about.auth-server.components', AUTH_SERVER_COMPONENTS),
-    }),
-  },
-};
+const componentsOf = value =>
+  value && typeof value === 'object'
+    ? Object.values(value)
+        .filter(component => component && typeof component === 'object' && component.title)
+        .map(component => ({
+          title: component.title,
+          details: Object.entries(component)
+            .filter(([key, detail]) => key !== 'title' && typeof detail === 'string')
+            .map(([, detail]) => detail),
+        }))
+    : [];
 
 /**
- * Whether the host's role has an About profile, so the chrome draws an
- * About link only where `/about` answers a page.
+ * Whether the host's role has About text, so the chrome draws an About
+ * link only where `/about` answers a page: the locale carries
+ * `about.<role>.description`.
  *
  * @param {Object} status - The payload from `probeStatus`
- * @returns {boolean} True when `about.<role>.*` keys exist for `status.role`
+ * @param {Object} i18n - The i18next instance
+ * @returns {boolean} True when the role's About keys exist
  */
-export const hasAbout = status => Boolean(PROFILES[status.role]);
+export const hasAbout = (status, i18n) => i18n.exists(`about.${status.role}.description`);
 
-/**
- * The About route: the shared `AboutPage` fed by the host's status, the
- * UI build's own version from `__APP_VERSION__` and the locale strings of
- * the host's role, plus the favorite toggle over `GET`
- * and `PUT /api/user/favorites` through the hub client, the whole ordered
- * list written back in `snake_case`, when the host advertises `favorites`
- * and the viewer signed in through the provider; a role with no
- * `about.<role>.*` keys answers `NotAvailableStub`.
- */
-const AboutRoute = ({ theme, oidc }) => {
+const docsOf = ({ status, t }) => {
+  const docs = linkHref(status.links?.docs);
+  return docs
+    ? [{ key: 'docs', href: docs, label: t('pages.about.links.docs'), Icon: FaBook }]
+    : [];
+};
+
+const supportOf = ({ status, t }) =>
+  [
+    { key: 'repository', href: httpsUrl(status.brand?.repo), Icon: FaCode },
+    { key: 'changelog', href: httpsUrl(status.brand?.changelog), Icon: FaListCheck },
+    { key: 'contact', href: mailto(status.links?.contact), Icon: FaEnvelope },
+  ]
+    .filter(link => link.href)
+    .map(link => ({ ...link, label: t(`pages.about.links.${link.key}`) }));
+
+const contentOf = ({ status, t }) => {
+  const prefix = `about.${status.role}`;
+  return {
+    title: status.brand.name,
+    description: t(`${prefix}.description`),
+    goal: t(`${prefix}.goal`),
+    features: textsOf(t(`${prefix}.features`, { returnObjects: true })),
+    components: componentsOf(t(`${prefix}.components`, { returnObjects: true })),
+    docsIntro: t(`${prefix}.docs.intro`),
+    supportIntro: t(`${prefix}.support.intro`),
+  };
+};
+
+const useFavorite = ({ enabled, clientId, appName }) => {
   const { t } = useTranslation();
-  const status = useStatus();
   const notify = useNotify();
-  const profile = PROFILES[status.role];
   const [favorited, setFavorited] = useState(false);
-  const favorites = hasFeature(status, 'favorites') && oidc;
-  const clientId = status.role;
 
   useEffect(() => {
-    if (!favorites) {
+    if (!enabled) {
       return;
     }
     const loadFavorites = async () => {
@@ -195,44 +99,65 @@ const AboutRoute = ({ theme, oidc }) => {
         const current = (await getFavorites()) || [];
         setFavorited(current.some(entry => entry.client_id === clientId));
       } catch (error) {
-        log.api.error('Error loading favorites', {
-          error: error.message,
-        });
+        log.api.error('Error loading favorites', { error: error.message });
       }
     };
     loadFavorites();
-  }, [clientId, favorites]);
+  }, [clientId, enabled]);
 
-  const handleToggleFavorite = async () => {
+  const toggle = async () => {
     try {
       const current = (await getFavorites()) || [];
       const next = favorited
         ? current.filter(entry => entry.client_id !== clientId)
         : [...current, { client_id: clientId, custom_label: null }];
+      await saveFavorites(toBody(next));
+      setFavorited(!favorited);
       notify(
         'success',
         t(favorited ? 'pages.about.removedFromFavorites' : 'pages.about.addedToFavorites', {
-          app: status.brand.name,
+          app: appName,
         }),
         { key: FAVORITE_KEY }
       );
-
-      await saveFavorites(toBody(next));
-      setFavorited(!favorited);
     } catch (error) {
-      log.component.error('Error toggling favorite', {
-        clientId,
-        error: error.message,
-      });
+      log.component.error('Error toggling favorite', { clientId, error: error.message });
       notify('danger', t('pages.about.failedToUpdateFavorites'), { key: FAVORITE_KEY });
     }
   };
 
-  if (!profile) {
+  return enabled ? { active: favorited, onToggle: toggle } : null;
+};
+
+/**
+ * The About route: the shared `AboutPage` fed by the host's status and
+ * the locale alone, nothing of any app in code: the title is
+ * `status.brand.name`, the description, goal, features, components and
+ * the two intros are the `about.<role>.*` keys read as objects, Start
+ * here is `links.docs`, Help and community is `brand.repo`,
+ * `brand.changelog` and `links.contact`, each drawn only while set, and
+ * the UI build's own version comes from `__APP_VERSION__`; the favorite
+ * toggle over `GET` and `PUT /api/user/favorites` through the hub client
+ * is drawn while the host advertises `favorites`, the viewer signed in
+ * through the provider and the session names its `clientId`, the ID
+ * token's `aud`, which is the id the favorites list carries and the one
+ * the whole ordered list is written back with in `snake_case`; a role
+ * with no `about.<role>.*` keys answers `NotAvailableStub`.
+ */
+const AboutRoute = ({ theme, oidc, clientId }) => {
+  const { t, i18n } = useTranslation();
+  const status = useStatus();
+  const favorite = useFavorite({
+    enabled: hasFeature(status, 'favorites') && oidc && clientId !== '',
+    clientId,
+    appName: status.brand.name,
+  });
+
+  if (!hasAbout(status, i18n)) {
     return <NotAvailableStub title={t('navbar.about')} tokenLabel="about" />;
   }
 
-  const content = profile.content(t, status);
+  const content = contentOf({ status, t });
 
   return (
     <AboutPage
@@ -244,13 +169,11 @@ const AboutRoute = ({ theme, oidc }) => {
       goal={content.goal}
       features={content.features}
       components={content.components}
-      docs={profile.docs(status).map(doc => ({ ...doc, label: t(profile.docsLabel(doc.key)) }))}
-      docsIntro={t(profile.docsIntro)}
-      support={profile
-        .support(status)
-        .map(link => ({ ...link, label: t(profile.supportLabel(link.key)) }))}
-      supportIntro={t(profile.supportIntro)}
-      favorite={favorites ? { active: favorited, onToggle: handleToggleFavorite } : null}
+      docs={docsOf({ status, t })}
+      docsIntro={content.docsIntro}
+      support={supportOf({ status, t })}
+      supportIntro={content.supportIntro}
+      favorite={favorite}
     />
   );
 };
@@ -258,6 +181,7 @@ const AboutRoute = ({ theme, oidc }) => {
 AboutRoute.propTypes = {
   theme: PropTypes.string.isRequired,
   oidc: PropTypes.bool.isRequired,
+  clientId: PropTypes.string.isRequired,
 };
 
 export default AboutRoute;

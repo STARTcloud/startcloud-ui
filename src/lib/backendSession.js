@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { createApiClient } from './apiClient';
-import { decodeJwt } from './jwt';
+import { audienceOf, decodeJwt } from './jwt';
 
 const REFRESH_AFTER_MS = 240000;
 const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
@@ -9,6 +9,8 @@ const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 const normalizeUrl = url => url.replace(/\/+$/, '');
 
 const isOidc = user => Boolean(user?.provider?.startsWith('oidc-'));
+
+const idTokenOf = user => (isOidc(user) ? decodeJwt(decodeJwt(user.accessToken)?.id_token) : null);
 
 /**
  * The memberships of a backend profile in the chrome's organization shape:
@@ -38,8 +40,9 @@ const failure = (message, messageKey) => {
  * through the refresh endpoint while the session is kept, the profile,
  * claims and preferences read and written through the backend, and the
  * backend's logout route for signing out everywhere. A session it restores
- * or completes is `{ user, organizations, oidc, issuerUrl }`, the user
- * being the stored profile. The API client drives `headers`, `retryAuth`,
+ * or completes is `{ user, organizations, oidc, issuerUrl, clientId }`,
+ * the user being the stored profile and `clientId` the `aud` of the ID
+ * token the backend embeds in its JWT, empty for a local session. The API client drives `headers`, `retryAuth`,
  * `adoptResponse` and `endSession`, and the provider's own reads of the
  * profile, the claims, the preferences write and the trusted issuers go
  * through its own instance of that client, so a JWT the backend rotates
@@ -139,10 +142,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   };
 
   const issuerOf = async user => {
-    if (!isOidc(user)) {
-      return '';
-    }
-    const issuer = decodeJwt(decodeJwt(user.accessToken)?.id_token)?.iss || '';
+    const issuer = idTokenOf(user)?.iss || '';
     if (!issuer.startsWith('https://')) {
       return '';
     }
@@ -153,7 +153,13 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   const restore = () => {
     const user = current();
     return user
-      ? { user, organizations: profileMemberships(user), oidc: isOidc(user), issuerUrl: '' }
+      ? {
+          user,
+          organizations: profileMemberships(user),
+          oidc: isOidc(user),
+          issuerUrl: '',
+          clientId: audienceOf(idTokenOf(user)),
+        }
       : null;
   };
 

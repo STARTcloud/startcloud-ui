@@ -59,9 +59,17 @@ const notificationsFor = ({ status, cookie, claims, user, notifications }) => {
   return hasFeature(status, 'notifications') && scoped ? notifications : null;
 };
 
-const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid }) => ({
+const shellFlags = ({
+  status,
+  i18n,
+  backend,
+  cookie,
+  globalAdmin,
+  memberships,
+  activeOrgUuid,
+}) => ({
   loadOrganizations: backend ? loadOrganizations : null,
-  showAbout: hasAbout(status),
+  showAbout: hasAbout(status, i18n),
   showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
   showOrgConsole:
     hasFeature(status, 'org-console') && isManager(memberships, activeOrgUuid, globalAdmin),
@@ -84,7 +92,7 @@ const shellFlags = ({ status, backend, cookie, globalAdmin, memberships, activeO
  * features export, and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const status = useStatus();
@@ -154,7 +162,15 @@ const App = ({ getSupportedLanguages }) => {
   }
 
   const globalAdmin = isGlobalAdmin(user);
-  const flags = shellFlags({ status, backend, cookie, globalAdmin, memberships, activeOrgUuid });
+  const flags = shellFlags({
+    status,
+    i18n,
+    backend,
+    cookie,
+    globalAdmin,
+    memberships,
+    activeOrgUuid,
+  });
   const inbox = notificationsFor({ status, cookie, claims, user, notifications });
 
   const handleSignOut = () => {

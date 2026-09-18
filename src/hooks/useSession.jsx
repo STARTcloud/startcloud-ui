@@ -6,7 +6,7 @@ import { organizationShape } from '../components/layout/OrgSwitcherModal';
 import { useNotify } from '../contexts/NoticeContext';
 import { currentPath } from '../lib/returnTo';
 
-const EMPTY = { user: null, organizations: [], oidc: false, issuerUrl: '' };
+const EMPTY = { user: null, organizations: [], oidc: false, issuerUrl: '', clientId: '' };
 
 const resolveActiveOrg = (organizations, stored) => {
   if (stored && organizations.some(org => org.uuid === stored)) {
@@ -22,6 +22,7 @@ export const sessionStateShape = PropTypes.shape({
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
   oidc: PropTypes.bool.isRequired,
   issuerUrl: PropTypes.string.isRequired,
+  clientId: PropTypes.string.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
   loaded: PropTypes.bool.isRequired,
   pickOrg: PropTypes.func.isRequired,

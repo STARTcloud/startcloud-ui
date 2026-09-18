@@ -3834,6 +3834,22 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      and a page that refuses an approve the server would accept stalls
      every second authorization of a client with `require-consent` and a
      detail, the FAPI 2 conformance run among them.
+166. The profile page's `account` adapter carries `mutability`, the SCIM
+     word for the record (RFC 7643 §2.2): `readWrite` on the issuer and on
+     a UI backend's own local account, `readOnly` on a UI backend whose
+     session is an identity provider's, which also names `manageUrl`, the
+     provider's `/user/profile`; a `readOnly` adapter draws the same
+     sections with the same fields, every input `readonly` and never
+     `disabled`, no Save, and one "Manage at identity provider" link in
+     each section's heading, the Profile fields the standard claims of
+     OpenID Connect Core 1.0 §5.1 the UI backend's `/api/userinfo/claims`
+     answers and the Preferences the record's language, theme, time zone
+     and region; a section or card whose read the UI backend lacks is
+     absent, as every section the adapter does not carry is; because a
+     client never writes an attribute whose mutability is `readOnly` (RFC
+     7644 §3.5.2), a person on any app of the estate must still see what
+     the provider holds about them and where to change it, and the one
+     page drawn on every UI backend is what convergence means.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

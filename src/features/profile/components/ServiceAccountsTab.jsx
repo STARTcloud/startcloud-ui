@@ -1,19 +1,18 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaKey } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import MethodList, { MethodRow } from '../../../components/common/MethodList';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useArrival } from '../../../hooks/useArrival';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
-import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { useSelection } from '../../../hooks/useSelection';
 import { log } from '../../../lib/logger';
 
@@ -43,12 +42,62 @@ const emptyForm = organizationId => ({
   role: 'member',
 });
 
-const includesTerm = (term, ...fields) =>
-  !term || fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
-
 const dateOf = (value, language) => {
   const time = new Date(value);
   return Number.isNaN(time.getTime()) ? '' : time.toLocaleDateString(language);
+};
+
+const matches = (row, needle) =>
+  [row.username, row.description || '', row.organization?.name || ''].some(text =>
+    text.toLowerCase().includes(needle)
+  );
+
+const COLUMNS = [
+  {
+    key: 'username',
+    kind: 'name',
+    labelKey: 'profile.serviceAccounts.username',
+    sortValue: row => row.username.toLowerCase(),
+    render: row => <strong>{row.username}</strong>,
+  },
+  {
+    key: 'description',
+    kind: 'text',
+    labelKey: 'profile.serviceAccounts.description',
+    sortValue: row => (row.description || '').toLowerCase(),
+    render: row => row.description || '',
+  },
+  {
+    key: 'role',
+    kind: 'badge',
+    labelKey: 'profile.serviceAccounts.role',
+    sortValue: row => row.role || '',
+    render: (row, ctx) =>
+      row.role ? <span className="badge bg-secondary">{ctx.t(`roles.${row.role}`)}</span> : '',
+  },
+  {
+    key: 'expiresAt',
+    kind: 'date',
+    labelKey: 'profile.serviceAccounts.expires',
+    sortValue: row => new Date(row.expiresAt || 0).getTime(),
+    render: (row, ctx) => dateOf(row.expiresAt, ctx.language),
+  },
+];
+
+const groupsOf = rows => {
+  const groups = new Map();
+  rows.forEach(row => {
+    const name = row.organization?.name || '';
+    if (!groups.has(name)) {
+      groups.set(name, {
+        key: name,
+        organization: { name, logo: row.organization?.logo || '' },
+        items: [],
+      });
+    }
+    groups.get(name).items.push(row);
+  });
+  return [...groups.values()].sort((a, b) => a.key.localeCompare(b.key));
 };
 
 const SelectField = ({ name, rules, value, onChange, children }) => {
@@ -155,34 +204,18 @@ CreateForm.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-const AccountSubline = ({ entry }) => {
-  const { t, i18n } = useTranslation();
-  return (
-    <>
-      {entry.description ? <span className="d-block">{entry.description}</span> : null}
-      <span className="d-block">
-        {t('profile.serviceAccounts.expires')}: {dateOf(entry.expiresAt, i18n.language)}
-      </span>
-    </>
-  );
-};
-
-AccountSubline.propTypes = {
-  entry: PropTypes.shape({ description: PropTypes.string, expiresAt: PropTypes.string }).isRequired,
-};
-
-const DeleteButton = ({ entry, onClick }) => {
+const RowActions = ({ entry, onDelete }) => {
   const { t } = useTranslation();
   return (
-    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onClick(entry)}>
+    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onDelete(entry)}>
       {t('profile.buttons.delete')}
     </button>
   );
 };
 
-DeleteButton.propTypes = {
+RowActions.propTypes = {
   entry: PropTypes.object.isRequired,
-  onClick: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 /**
@@ -190,15 +223,18 @@ DeleteButton.propTypes = {
  * service accounts of its own: the create form in a `SectionCard` (the
  * organization, the active one preselected, the description, the expiry
  * and the role, the superadmin role offered to a global admin alone), the
- * one-time token notice after a create, then the keys as `MethodRow`s
- * under a `SectionHeading`, a select column with a real select-all
- * checkbox, the organization badge, the description and the expiry, Delete
- * per row, and while rows are picked the heading's action pane reading "N
- * selected", Clear selection and Delete behind the confirm; the list is
- * searched from the navbar and a `#<id>` in the URL lands on that row.
+ * one-time token notice after a create, then the keys in the one
+ * `SubTable` of the pages contract, one organization group row per
+ * organization the way the listings group their rows, the select column a
+ * real checkbox header, the username, description, role and expiry
+ * columns, Delete in the Actions column, and while rows are picked the
+ * heading's action pane reading "N selected", Clear selection and Delete
+ * behind the confirm; the navbar search narrows the rows and the Columns
+ * group shows or hides them under `table_prefs_profile`, and a `#<id>` in
+ * the URL lands on that row.
  */
 const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const notify = useNotify();
   const folds = useFolds(PREFS_KEY);
   const { serviceAccounts } = account;
@@ -207,7 +243,7 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
   const [form, setForm] = useState(() => emptyForm(''));
   const [token, setToken] = useState('');
   const [confirming, setConfirming] = useState(false);
-  const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState({});
   const selection = useSelection(rows, { labelOf: row => row.username });
   const arrival = useArrival(rows);
   const rules = useFormRules({
@@ -216,6 +252,15 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
     values: form,
     labels: LABELS,
   });
+  const search = useDetailSearch({
+    rows,
+    matches,
+    placeholderKey: 'profile.search.serviceAccounts',
+    columns: COLUMNS,
+    prefsKey: PREFS_KEY,
+    filterGroups: [],
+  });
+  const groups = useMemo(() => groupsOf(search.rows), [search.rows]);
 
   const fail = (message, error) => {
     log.api.error(message, { error: error.message });
@@ -309,21 +354,6 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
     await loadRows();
   };
 
-  const term = query.trim().toLowerCase();
-  const shown = rows.filter(entry =>
-    includesTerm(term, entry.username, entry.description, entry.organization?.name)
-  );
-
-  useNavbarSearchBinding({
-    query,
-    onQueryChange: setQuery,
-    placeholder: t('profile.search.serviceAccounts'),
-    matched: shown.length,
-    total: rows.length,
-    groups: [],
-    onClearFilters: () => setQuery(''),
-  });
-
   const headingActions = selection.someSelected ? (
     <>
       <strong>
@@ -370,35 +400,27 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
         count={rows.length}
         actions={headingActions}
       />
-      <MethodList
-        empty={term ? t('pages.noMatches') : t('pages.empty')}
-        selectAll={{
-          checked: selection.allSelected,
-          indeterminate: selection.someSelected,
-          onToggle: selection.toggleAll,
-          label: t('pages.selectColumn'),
-        }}
-      >
-        {shown.map(entry => (
-          <MethodRow
-            key={entry.id}
-            rowRef={arrival.ref(entry.id)}
-            icon={<FaKey aria-hidden />}
-            label={entry.username}
-            badges={
-              entry.organization?.name ? (
-                <span className="badge bg-secondary">{entry.organization.name}</span>
-              ) : null
-            }
-            subline={<AccountSubline entry={entry} />}
-            actions={<DeleteButton entry={entry} onClick={remove} />}
-            selectable
-            selected={selection.selected.has(entry.id)}
-            onToggle={() => selection.toggle(entry.id)}
-            selectLabel={entry.username}
-          />
-        ))}
-      </MethodList>
+      <SubTable
+        columns={COLUMNS}
+        rows={search.rows}
+        rowKey={row => row.id}
+        rowRef={arrival.ref}
+        RowActions={RowActions}
+        actionsProps={{ onDelete: remove }}
+        rowProp="entry"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
+        ctx={{ t, language: i18n.language }}
+        emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
+        selection={selection.subtable}
+        groups={groups}
+        collapsed={collapsed}
+        onToggleGroup={key => setCollapsed(current => ({ ...current, [key]: !current[key] }))}
+        countKey="profile.serviceAccounts.count"
+      />
       <ConfirmModal
         show={confirming}
         handleClose={() => setConfirming(false)}
