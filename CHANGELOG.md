@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.19.0...v0.20.0) (2026-09-18)
+
+
+### Features
+
+* every column styled by its kind, the flex kinds sharing the table's width, the Name cell folding its organization by its own width, Download the first action of every file row, provider rows badges with a summed count, one details form on every host drawn from the host's rules with the mobile as a field or through a code, and the local BoxVault account writing its name parts, address and number ([3a2633a](https://github.com/STARTcloud/startcloud-ui/commit/3a2633a7c2fc2739563cf2ae915dfa7e4819bc90))
+* one profile page on every host, the record's mutability on the adapter, the identity provider's fields read-only with a Manage at identity provider link on an issuer session, the service accounts in the one table grouped by organization, and a kind on every identity table column ([0bec172](https://github.com/STARTcloud/startcloud-ui/commit/0bec172552fb9d5176dc81e0b23925847cd96637))
+
+
+### Bug Fixes
+
+* linting and formatting mistakes missed ([00141cc](https://github.com/STARTcloud/startcloud-ui/commit/00141cc78f8e67dc1f46d0d69ec94244e88c54e6))
+
 ## [0.19.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.18.4...v0.19.0) (2026-09-18)
 
 
