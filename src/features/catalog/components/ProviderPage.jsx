@@ -2,10 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  DownloadAction,
-  architectureLevelMatches,
-} from '../../../components/common/levelColumns';
+import { DownloadAction, architectureLevelMatches } from '../../../components/common/levelColumns';
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';

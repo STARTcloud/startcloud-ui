@@ -72,7 +72,11 @@ const checksumColumn = {
   sortValue: row => (row.checksum || '').toLowerCase(),
   when: hasAny(row => row.checksum),
   render: row =>
-    row.checksum ? <ChecksumCell checksum={row.checksum} checksumType={row.checksumType || ''} /> : '',
+    row.checksum ? (
+      <ChecksumCell checksum={row.checksum} checksumType={row.checksumType || ''} />
+    ) : (
+      ''
+    ),
 };
 
 /**

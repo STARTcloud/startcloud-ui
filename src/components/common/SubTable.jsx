@@ -40,6 +40,36 @@ const cellClass = column =>
 const needsSpacer = (drawn, widths) =>
   !drawn.some(column => isFlexKind(column.kind) && !widths[column.key]);
 
+/**
+ * The shape one render of the table takes from its props: the columns
+ * drawn (not hidden, and their `when` true for the rows), whether an
+ * Actions column draws, whether the spacer column draws, and the count of
+ * cells a full-width row spans.
+ *
+ * @param {Object} props - The table's `columns`, `rows`, `hiddenColumns`, `widths`, `selection`, `watches`, `QuickActions`, `LeadActions` and `RowActions`
+ * @returns {{ drawn: Array, actions: boolean, spacer: boolean, columnCount: number }} The shape
+ */
+const shapeOf = ({
+  columns,
+  rows,
+  hiddenColumns,
+  widths,
+  selection,
+  watches,
+  QuickActions,
+  LeadActions,
+  RowActions,
+}) => {
+  const drawn = columns.filter(
+    column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
+  );
+  const actions = Boolean(LeadActions || RowActions);
+  const spacer = needsSpacer(drawn, widths);
+  const columnCount =
+    drawn.length + [selection, watches, QuickActions, actions, spacer].filter(Boolean).length;
+  return { drawn, actions, spacer, columnCount };
+};
+
 const WatchStar = ({ watched, onToggle }) => {
   const { t } = useTranslation();
   const label = watched ? t('pages.watch.unwatch') : t('pages.watch.watch');
@@ -517,14 +547,17 @@ const SubTable = ({
   onToggleGroup = null,
   countKey = '',
 }) => {
-  const drawn = columns.filter(
-    column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
-  );
-  const actions = Boolean(LeadActions || RowActions);
-  const spacer = needsSpacer(drawn, widths);
-  const columnCount =
-    drawn.length +
-    [selection, watches, QuickActions, actions, spacer].filter(Boolean).length;
+  const { drawn, actions, spacer, columnCount } = shapeOf({
+    columns,
+    rows,
+    hiddenColumns,
+    widths,
+    selection,
+    watches,
+    QuickActions,
+    LeadActions,
+    RowActions,
+  });
   const rowProps = {
     drawn,
     rowKey,
