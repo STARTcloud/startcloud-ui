@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.22.0...v0.23.0) (2026-09-19)
+
+
+### Features
+
+* the status payload read in snake_case only, logo_url, client_id, storage_prefix and the ticket members, the contracts and README following ([a18bb3a](https://github.com/STARTcloud/startcloud-ui/commit/a18bb3a1fb1dff45db3f126f8d30f82124b57d48))
+
 ## [0.22.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.21.0...v0.22.0) (2026-09-19)
 
 
