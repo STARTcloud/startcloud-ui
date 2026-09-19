@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { gravatarProfile } from '../utils/gravatar';
 
 const gravatarHashOf = (backend, user) =>
-  backend && user && !user.avatarUrl ? user.emailHash : '';
+  backend && user && !user.avatar_url ? user.email_hash : '';
 
 /**
  * The signed-in account's avatar: the stored avatar of a backend profile,
@@ -41,8 +41,8 @@ export const useAccountAvatar = ({ backend, cookie = false, user, claims }) => {
     return '';
   }
   if (backend) {
-    const fetched = gravatar && gravatar.emailHash === user.emailHash ? gravatar.url : '';
-    return user.avatarUrl || fetched;
+    const fetched = gravatar && gravatar.emailHash === user.email_hash ? gravatar.url : '';
+    return user.avatar_url || fetched;
   }
   if (cookie) {
     return user.picture || '';

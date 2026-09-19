@@ -50,7 +50,7 @@ export const api = {
     downloadLink: (organization, name, number, architectureName) =>
       client
         .post(`${file(organization, name, number, architectureName)}/get-download-link`, {})
-        .then(data => data.downloadUrl),
+        .then(data => data.download_url),
     download: (organization, name, number, architectureName) =>
       client.get(`${file(organization, name, number, architectureName)}/download`, {
         responseType: 'blob',

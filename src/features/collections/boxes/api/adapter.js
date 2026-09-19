@@ -10,7 +10,7 @@ const { origin } = window.location;
 
 const rows = data => (Array.isArray(data) ? data : []);
 
-const fileDownloads = files => sumCounts((files || []).map(file => file.downloadCount));
+const fileDownloads = files => sumCounts((files || []).map(file => file.download_count));
 
 const architectureSummary = architecture => ({
   name: architecture.name,
@@ -25,8 +25,8 @@ const providerSummary = provider => {
   return {
     name: provider.name,
     description: provider.description || '',
-    createdAt: provider.createdAt || null,
-    updatedAt: provider.updatedAt || null,
+    createdAt: provider.created_at || null,
+    updatedAt: provider.updated_at || null,
     downloads: architectureDownloads(architectures),
     architectures,
   };
@@ -35,9 +35,9 @@ const providerSummary = provider => {
 const versionSummary = version => {
   const providers = (version.providers || []).map(providerSummary);
   return {
-    version: version.versionNumber,
-    createdAt: version.createdAt || null,
-    updatedAt: version.updatedAt || null,
+    version: version.version_number,
+    createdAt: version.created_at || null,
+    updatedAt: version.updated_at || null,
     downloads: sumCounts(providers.map(provider => provider.downloads)),
     description: version.description || '',
     releaseNotes: readReleaseNotes(version),
@@ -61,16 +61,16 @@ const boxItem = (box, orgName, logo) => ({
   organization: { name: orgName, logo: logo || '' },
   name: box.name,
   label: box.name,
-  description: box.shortDescription || box.description || '',
+  description: box.short_description || box.description || '',
   icon: '',
   artwork: box.artwork ? `${origin}/api/organization/${orgName}/box/${box.name}/artwork` : '',
-  isPublic: Boolean(box.isPublic),
-  guestAccess: Boolean(box.guestAccess),
+  isPublic: Boolean(box.is_public),
+  guestAccess: Boolean(box.guest_access),
   published: Boolean(box.published),
-  createdAt: box.createdAt || null,
-  updatedAt: box.updatedAt || null,
+  createdAt: box.created_at || null,
+  updatedAt: box.updated_at || null,
   latestReleaseAt: latestReleaseOf((box.versions || []).map(versionSummary)),
-  downloads: countOf(box.downloadCount),
+  downloads: countOf(box.download_count),
   os: {
     label: getOsDisplayName(box.metadata),
     iconUrl: getDistroIconUrl(box.metadata?.distro) || '',
@@ -78,11 +78,11 @@ const boxItem = (box, orgName, logo) => ({
   metadata: box.metadata || null,
   readme: box.readme || null,
   links: {
-    repo: box.githubRepo ? `https://github.com/${box.githubRepo}` : '',
-    pipeline: box.cicdUrl || '',
+    repo: box.github_repo ? `https://github.com/${box.github_repo}` : '',
+    pipeline: box.cicd_url || '',
     badge:
-      box.githubRepo && box.workflowFile
-        ? `https://github.com/${box.githubRepo}/actions/workflows/${box.workflowFile}/badge.svg`
+      box.github_repo && box.workflow_file
+        ? `https://github.com/${box.github_repo}/actions/workflows/${box.workflow_file}/badge.svg`
         : '',
   },
   extras: { raw: box },
@@ -111,7 +111,7 @@ const getItem = async (org, name) => {
   const versions = await Promise.all(
     rows(versionRows).map(async version => ({
       ...versionSummary(version),
-      providers: await providersOf(org, name, version.versionNumber),
+      providers: await providersOf(org, name, version.version_number),
     }))
   );
   return { ...item, versions };
@@ -135,13 +135,13 @@ const getVersion = async (org, name, version) => {
       return {
         name: provider.name,
         description: provider.description || '',
-        createdAt: provider.createdAt || null,
-        updatedAt: provider.updatedAt || null,
+        createdAt: provider.created_at || null,
+        updatedAt: provider.updated_at || null,
         downloads: architectureDownloads(summaries),
         architectures: await Promise.all(
           architectures.map(async (architecture, index) => ({
             name: architecture.name,
-            defaultBox: Boolean(architecture.defaultBox),
+            defaultBox: Boolean(architecture.default_box),
             downloadUrl: await downloadLink(org, name, version, provider.name, architecture.name),
             downloadCount: summaries[index].downloadCount,
           }))
@@ -161,15 +161,15 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
     ]);
     return {
       name: architecture.name,
-      defaultBox: Boolean(architecture.defaultBox),
-      fileName: info.fileName || '',
-      fileSize: info.fileSize || 0,
+      defaultBox: Boolean(architecture.default_box),
+      fileName: info.file_name || '',
+      fileSize: info.file_size || 0,
       checksum: info.checksum || '',
-      checksumType: info.checksumType || '',
+      checksumType: info.checksum_type || '',
       downloadUrl: url,
-      downloadCount: countOf(info.downloadCount),
-      createdAt: info.createdAt || null,
-      updatedAt: info.updatedAt || null,
+      downloadCount: countOf(info.download_count),
+      createdAt: info.created_at || null,
+      updatedAt: info.updated_at || null,
     };
   } catch (error) {
     log.api.error('Error fetching file info', {
@@ -178,7 +178,7 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
     });
     return {
       name: architecture.name,
-      defaultBox: Boolean(architecture.defaultBox),
+      defaultBox: Boolean(architecture.default_box),
       fileName: '',
       fileSize: 0,
       checksum: '',
@@ -237,7 +237,7 @@ export const deleteVersionCascade = (org, name, version) =>
     .then(() => api.versions.remove(org, name, version));
 
 const watches = {
-  list: () => api.boxes.watches().then(data => new Set(rows(data).map(entry => entry.boxId))),
+  list: () => api.boxes.watches().then(data => new Set(rows(data).map(entry => entry.box_id))),
   toggle: (item, next) =>
     next
       ? api.boxes.watch(item.organization.name, item.name)

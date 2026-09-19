@@ -10,12 +10,13 @@ const normalizeUrl = url => url.replace(/\/+$/, '');
 
 const isOidc = user => Boolean(user?.provider?.startsWith('oidc-'));
 
-const idTokenOf = user => (isOidc(user) ? decodeJwt(decodeJwt(user.accessToken)?.id_token) : null);
+const idTokenOf = user => (isOidc(user) ? decodeJwt(decodeJwt(user.access_token)?.id_token) : null);
 
 /**
  * The memberships of a backend profile in the chrome's organization shape:
  * the name as the uuid, because local organizations have none, the role
- * upper-cased into the roles list, and the primary flag.
+ * upper-cased into the roles list, and the row's `is_primary` as the
+ * primary flag.
  * @param {Object|null|undefined} user - The stored profile
  * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean }>}
  */
@@ -24,7 +25,7 @@ export const profileMemberships = user =>
     uuid: org.name,
     name: org.name,
     roles: org.role ? [String(org.role).toUpperCase()] : [],
-    primary: Boolean(org.isPrimary),
+    primary: Boolean(org.is_primary),
   }));
 
 const failure = (message, messageKey) => {
@@ -36,13 +37,16 @@ const failure = (message, messageKey) => {
 /**
  * The app's own backend as the session: username and password or a
  * provider redirect through the backend's OIDC routes, the backend's JWT
- * stored under `storageKey` and sent as `x-access-token`, refreshed
- * through the refresh endpoint while the session is kept, the profile,
- * claims and preferences read and written through the backend, and the
- * backend's logout route for signing out everywhere. A session it restores
- * or completes is `{ user, organizations, oidc, issuerUrl, clientId }`,
- * the user being the stored profile and `clientId` the `aud` of the ID
- * token the backend embeds in its JWT, empty for a local session. The API client drives `headers`, `retryAuth`,
+ * (`access_token` of the sign-in answer) stored under `storageKey` and
+ * sent as `x-access-token`, refreshed through the refresh endpoint while
+ * `stay_logged_in` is kept, the profile, claims and preferences
+ * (`preferred_theme`, `preferred_language`) read and written through the
+ * backend, and the backend's logout route for signing out everywhere. A
+ * session it restores or completes is
+ * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being the
+ * stored profile, the sign-in answer in the backend's snake_case wire
+ * names, and `clientId` the `aud` of the ID token the backend embeds in
+ * its JWT, empty for a local session. The API client drives `headers`, `retryAuth`,
  * `adoptResponse` and `endSession`, and the provider's own reads of the
  * profile, the claims, the preferences write and the trusted issuers go
  * through its own instance of that client, so a JWT the backend rotates
@@ -70,7 +74,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
 
   const authHeader = () => {
     const user = current();
-    return user?.accessToken ? { 'x-access-token': user.accessToken } : {};
+    return user?.access_token ? { 'x-access-token': user.access_token } : {};
   };
 
   const endSession = () => {
@@ -86,17 +90,17 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     try {
       const { data } = await axios.post(
         `${api}/auth/refresh-token`,
-        { stay_logged_in: user.stayLoggedIn },
+        { stay_logged_in: user.stay_logged_in },
         { headers: authHeader() }
       );
-      if (!data.accessToken) {
+      if (!data.access_token) {
         return null;
       }
       const next = {
         ...user,
         ...data,
         tokenRefreshTime: Date.now(),
-        stayLoggedIn: data.stayLoggedIn,
+        stay_logged_in: data.stay_logged_in,
       };
       store(next);
       return next;
@@ -107,7 +111,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
 
   const refreshIfNeeded = () => {
     const user = current();
-    if (!user?.stayLoggedIn || Date.now() - user.tokenRefreshTime < REFRESH_AFTER_MS) {
+    if (!user?.stay_logged_in || Date.now() - user.tokenRefreshTime < REFRESH_AFTER_MS) {
       return Promise.resolve(null);
     }
     return refreshToken();
@@ -118,13 +122,13 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     return authHeader();
   };
 
-  const retryAuth = async () => Boolean(current()?.stayLoggedIn && (await refreshToken()));
+  const retryAuth = async () => Boolean(current()?.stay_logged_in && (await refreshToken()));
 
   const adoptResponse = responseHeaders => {
     const refreshed = responseHeaders?.['x-refreshed-token'];
     const user = refreshed ? current() : null;
     if (user) {
-      store({ ...user, accessToken: refreshed, tokenRefreshTime: Date.now() });
+      store({ ...user, access_token: refreshed, tokenRefreshTime: Date.now() });
     }
   };
 
@@ -179,7 +183,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       store({
         ...user,
         ...profile,
-        stayLoggedIn: user.stayLoggedIn,
+        stay_logged_in: user.stay_logged_in,
         tokenRefreshTime: user.tokenRefreshTime,
       });
     }
@@ -201,8 +205,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       password,
       stay_logged_in: stayLoggedIn,
     });
-    if (data.accessToken) {
-      store({ ...data, stayLoggedIn, tokenRefreshTime: Date.now() });
+    if (data.access_token) {
+      store({ ...data, stay_logged_in: stayLoggedIn, tokenRefreshTime: Date.now() });
       events.emit('login');
     }
     return data;
@@ -230,7 +234,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       .catch(() => null);
     store({
       ...(profile || {}),
-      accessToken: token,
+      access_token: token,
       tokenRefreshTime: Date.now(),
       provider: decodeJwt(token)?.provider || null,
     });
@@ -255,8 +259,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (saved && user) {
       store({
         ...user,
-        ...(patch.theme ? { preferredTheme: patch.theme } : {}),
-        ...(patch.language ? { preferredLanguage: patch.language } : {}),
+        ...(patch.theme ? { preferred_theme: patch.theme } : {}),
+        ...(patch.language ? { preferred_language: patch.language } : {}),
       });
     }
   };

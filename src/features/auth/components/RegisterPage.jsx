@@ -348,7 +348,7 @@ const BackendRegisterPage = ({ session, returnTo, auth }) => {
         setInvitationToken(token);
         try {
           const invitation = await auth.validateInvitation(token);
-          setOrganizationName(invitation.organizationName);
+          setOrganizationName(invitation.organization_name);
         } catch (error) {
           log.auth.error('Invalid or expired token', {
             token,

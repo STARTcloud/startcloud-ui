@@ -53,7 +53,7 @@ const directoryRow = row => ({
   description: row.description || '',
   logo: httpsUrl(row.logo_url),
   access_mode: row.access_mode,
-  memberCount: row.member_count,
+  member_count: row.member_count,
 });
 
 /**
@@ -63,7 +63,8 @@ const directoryRow = row => ({
  * `id`, sends its request to the organization under `name` (the uuid on
  * the issuer, the segment `/api/organization/{org}` takes), draws
  * `display_name` as the title, the logo only with the `https:` scheme,
- * and the count as `memberCount`.
+ * and the count as `member_count`, the name the app's own directory
+ * answers.
  *
  * @returns {Promise<Array<Object>>} The discoverable organizations
  */

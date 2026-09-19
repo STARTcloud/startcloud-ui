@@ -229,7 +229,7 @@ const extractOrgDetailsState = orgDetails => ({
       : '',
   displayName: orgDetails.display_name || '',
   email: orgDetails.email || '',
-  emailHash: orgDetails.emailHash || '',
+  emailHash: orgDetails.email_hash || '',
   description: orgDetails.description || '',
   accessMode: orgDetails.access_mode || 'private',
   defaultRole: orgDetails.default_role || 'member',
@@ -769,7 +769,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
       .memberRole(org, userId, newRole)
       .then(() => {
         setUsers(prevUsers =>
-          prevUsers.map(user => (user.id === userId ? { ...user, orgRole: newRole } : user))
+          prevUsers.map(user => (user.id === userId ? { ...user, org_role: newRole } : user))
         );
         notify('success', t('orgConsole.messages.operationSuccessful'));
       })
@@ -800,10 +800,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
         invite_role: inviteRole,
       });
       const invitationDetails = `${t('orgConsole.invitation.sent')}
-        ${t('orgConsole.invitation.token')}: ${sent.invitationToken}
-        ${t('orgConsole.invitation.expires')}: ${new Date(sent.invitationTokenExpires).toLocaleString()}
-        ${t('orgConsole.invitation.orgId')}: ${sent.organizationId}
-        ${t('orgConsole.invitation.link')}: ${sent.invitationLink}`;
+        ${t('orgConsole.invitation.token')}: ${sent.invitation_token}
+        ${t('orgConsole.invitation.expires')}: ${new Date(sent.invitation_token_expires).toLocaleString()}
+        ${t('orgConsole.invitation.orgId')}: ${sent.organization_id}
+        ${t('orgConsole.invitation.link')}: ${sent.invitation_link}`;
       notify('success', <pre className="mb-0 small">{invitationDetails}</pre>, { sticky: true });
       setInviteForm(previous => ({ ...previous, email: '' }));
       inviteRules.reset();
@@ -1133,7 +1133,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                       key={user.id}
                       user={user}
                       currentUser={currentUser}
-                      orgRole={user.orgRole}
+                      orgRole={user.org_role}
                       rowRef={memberArrival.ref(user.id)}
                       gravatarProfile={organizations.gravatarProfile}
                       onChangeRole={

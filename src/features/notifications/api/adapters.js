@@ -62,7 +62,7 @@ export const createPushAdapter = ({ status, client }) => {
   const push = createPush({
     storageKey: PUSH_ENABLED_KEY,
     serviceWorkerUrl: `/notification-sw.js?app=${encodeURIComponent(status.brand.name)}`,
-    getVapidKey: () => client.get(paths.vapidKey, PUBLIC).then(data => data.publicKey),
+    getVapidKey: () => client.get(paths.vapidKey, PUBLIC).then(data => data.public_key),
     createSubscription: subscription => client.post(paths.subscriptions, subscription),
     deleteSubscription: endpoint =>
       client.delete(paths.subscriptions, paths.unsubscribeOptions(endpoint)),

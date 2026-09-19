@@ -14,19 +14,19 @@ const latestReleaseOf = versions =>
 
 const fileArtifact = entry => ({
   name: entry.key,
-  fileName: entry.fileName || '',
-  fileSize: entry.fileSize || 0,
+  fileName: entry.file_name || '',
+  fileSize: entry.file_size || 0,
   checksum: entry.checksum || '',
-  checksumType: entry.checksumType || '',
+  checksumType: entry.checksum_type || '',
   downloadUrl: '',
-  downloadCount: countOf(entry.downloadCount),
+  downloadCount: countOf(entry.download_count),
   kind: entry.kind || '',
   platform: entry.platform || '',
   architecture: entry.architecture || '',
   language: entry.language || '',
   variant: entry.variant || '',
-  createdAt: entry.createdAt || null,
-  updatedAt: entry.updatedAt || null,
+  createdAt: entry.created_at || null,
+  updatedAt: entry.updated_at || null,
 });
 
 const patchSummary = entry => {
@@ -35,10 +35,10 @@ const patchSummary = entry => {
     name: entry.name,
     description: entry.description || '',
     kind: entry.kind || null,
-    releasedAt: entry.releasedAt || null,
-    notesUrl: entry.notesUrl || null,
-    createdAt: entry.createdAt || null,
-    updatedAt: entry.updatedAt || null,
+    releasedAt: entry.released_at || null,
+    notesUrl: entry.notes_url || null,
+    createdAt: entry.created_at || null,
+    updatedAt: entry.updated_at || null,
     downloads: sumCounts(architectures.map(architecture => architecture.downloadCount)),
     architectures,
     extras: { raw: entry },
@@ -48,14 +48,14 @@ const patchSummary = entry => {
 const releaseSummary = entry => {
   const providers = rows(entry.patches).map(patchSummary);
   return {
-    version: entry.versionNumber,
-    createdAt: entry.createdAt || null,
-    updatedAt: entry.updatedAt || null,
+    version: entry.version_number,
+    createdAt: entry.created_at || null,
+    updatedAt: entry.updated_at || null,
     downloads: sumCounts(providers.map(provider => provider.downloads)),
     description: entry.description || '',
-    releaseNotes: entry.releaseNotes ?? null,
+    releaseNotes: entry.release_notes ?? null,
     deprecated: Boolean(entry.deprecated),
-    deprecationReason: entry.deprecationReason ?? null,
+    deprecationReason: entry.deprecation_reason ?? null,
     providers,
     artifacts: [],
     extras: { raw: entry },
@@ -70,21 +70,21 @@ const downloadItem = (entry, orgName, logo) => {
     name: entry.name,
     label: entry.name,
     description: entry.description || '',
-    icon: entry.iconUrl || '',
+    icon: entry.icon_url || '',
     artwork: '',
-    isPublic: Boolean(entry.isPublic),
-    guestAccess: Boolean(entry.guestAccess),
+    isPublic: Boolean(entry.is_public),
+    guestAccess: Boolean(entry.guest_access),
     published: Boolean(entry.published),
-    createdAt: entry.createdAt || null,
-    updatedAt: entry.updatedAt || null,
+    createdAt: entry.created_at || null,
+    updatedAt: entry.updated_at || null,
     latestReleaseAt: latestReleaseOf(versions),
-    downloads: countOf(entry.downloadCount),
+    downloads: countOf(entry.download_count),
     os: { label: entry.family || '', iconUrl: '' },
     family: entry.family || '',
     vendor: entry.vendor || '',
     metadata: null,
     readme: null,
-    links: { docs: entry.docsUrl || '', notes: entry.notesUrl || '' },
+    links: { docs: entry.docs_url || '', notes: entry.notes_url || '' },
     extras: { raw: entry },
     versions,
   };
@@ -116,7 +116,7 @@ const getProvider = async (org, name, version, patch) => {
 
 const watches = {
   list: () =>
-    api.downloads.watches().then(data => new Set(rows(data).map(entry => entry.downloadId))),
+    api.downloads.watches().then(data => new Set(rows(data).map(entry => entry.download_id))),
   toggle: (item, next) =>
     next
       ? api.downloads.watch(item.organization.name, item.name)

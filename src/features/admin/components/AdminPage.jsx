@@ -52,7 +52,7 @@ const AdminPage = ({ session, returnTo, allowed, admin, updateCommand, page }) =
     admin
       .updateStatus()
       .then(status => {
-        if (status.isAptManaged && status.updateAvailable) {
+        if (status.is_apt_managed && status.update_available) {
           setUpdateInfo(status);
         }
       })

@@ -67,7 +67,7 @@ const sendFrom = async (options, index, uploaded) => {
   const { file, totalChunks, onUploadProgress } = options;
   const result = await sendChunk(options, index, uploaded);
   const end = Math.min((index + 1) * CHUNK_SIZE, file.size);
-  if (result.details.isComplete) {
+  if (result.details.is_complete) {
     reportProgress(onUploadProgress, file.size, file.size, 'complete');
     return result;
   }
@@ -90,7 +90,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
     delay: `${delay}ms`,
   });
   const assembledSize = await info()
-    .then(data => data?.fileSize)
+    .then(data => data?.file_size)
     .catch(error => {
       log.file.warn('Assembly check failed', { error: error.message });
       return undefined;
@@ -115,7 +115,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
     reportProgress(onUploadProgress, fileSize, fileSize, 'complete', 'Upload complete');
     return {
       message: 'File upload completed',
-      details: { isComplete: true, status: 'complete', fileSize: assembledSize },
+      details: { is_complete: true, status: 'complete', file_size: assembledSize },
     };
   }
   const nextDelay = Math.min(delay * 1.5, ASSEMBLY_MAX_DELAY_MS);
@@ -151,7 +151,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
  * @param {string} [options.checksum_type] - The checksum algorithm, `NULL` when none
  * @param {(answer: Object) => ((() => Promise<Object>) | null)} [options.info] - Given the last chunk's answer, hands back the reader of the assembled file's info, or null where the answer names no address; absent, or answering null, the last chunk's answer stands for completion
  * @param {Function} [options.onUploadProgress] - Progress callback
- * @returns {Promise<Object>} The backend's completion result
+ * @returns {Promise<Object>} The completion result in the wire's shape, `{ message, details: { is_complete, status, file_size } }`, the last chunk's own answer or one built here after assembly
  */
 export const uploadChunked = async ({
   client,
@@ -186,7 +186,7 @@ export const uploadChunked = async ({
       reportProgress(onUploadProgress, file.size, file.size, 'complete', 'Upload complete');
       return {
         message: 'File upload completed',
-        details: { isComplete: true, status: 'complete', fileSize: file.size },
+        details: { is_complete: true, status: 'complete', file_size: file.size },
       };
     }
     log.file.info('All chunks uploaded, starting assembly phase');

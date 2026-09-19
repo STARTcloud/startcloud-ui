@@ -53,13 +53,13 @@ export const isOrgOwner = (user, organizationName) =>
  *
  * @param {object|null} user
  * @param {string} organizationName
- * @param {object|null} box - must include `userId` (the owner).
+ * @param {object|null} box - the raw box row, its `user_id` the owner.
  */
 export const canManageBox = (user, organizationName, box) => {
   if (!user || isGuest(profileMemberships(user), organizationName)) {
     return false;
   }
-  if (box && box.userId === user.id) {
+  if (box && box.user_id === user.id) {
     return true;
   }
   return isManager(profileMemberships(user), organizationName);

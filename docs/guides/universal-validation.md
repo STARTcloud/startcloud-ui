@@ -161,11 +161,11 @@ auth, with one JSON Schema 2020-12 document:
   keys are JSON Schema's own layer and keep its camelCase (`minLength`,
   `dependentRequired`, `orgCode`, `serviceAccount`). Every request body
   member and every configuration key is the estate's API layer and is
-  `snake_case`, the case three of the five backends (the VDI Health
-  Monitor, zoneweaver-agent, hyperweaver-agent) and every configuration
-  file already use; BoxVault and hyperweaver-server, camelCase with
-  snake_case exceptions today, converge on it in their rounds, the shared
-  UI's adapters with them.
+  `snake_case`, and so is every answer member, the case four of the five
+  backends (the VDI Health Monitor, zoneweaver-agent, hyperweaver-agent,
+  BoxVault) and every configuration file use; hyperweaver-server,
+  camelCase with snake_case exceptions today, converges on it in its
+  round, the shared UI's adapters with it.
 - The password rule carries the UI backend's own minimum, so the form enforces the
   policy the route enforces; the default is 15 (NIST SP 800-63B rev 4
   §3.1.1.2).
@@ -209,10 +209,9 @@ body (RFC 6901).
 | `bulkVersion`                                                    | `POST …/box/{name}/version/bulk`, `POST …/iso/{name}/version/bulk`, `POST …/download/{name}/release/bulk`                                                                         | `action` (`enum` `delete`, `deprecate`, required), `names` (`array`, `minItems 1`, required), `deprecation_reason` (`maxLength 512`, required while `action` is `deprecate`, the `version` form's `if`/`then` shape with `action` in place of `deprecated`); the same answer as `bulkItem`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `bulkLeaf`                                                       | `POST …/provider/bulk`, `POST …/architecture/bulk`, `POST …/iso/{name}/version/{number}/architecture/bulk`, `POST …/patch/bulk`, `POST …/file/bulk`                               | `action` (`enum` `delete`, required), `names` (`array`, `minItems 1`, required; on the downloads file level a key or a file name); the ISO leaf is the architecture, as the pages contract routes it, so its bulk sits at `architecture/bulk` with `names` the architectures; the same answer as `bulkItem`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
-The members are the target; BoxVault reads most of them in camelCase today
-(`versionNumber`, `isPublic`, `newPassword`) and the shared UI sends what
-BoxVault reads, so the rename lands in the BoxVault round on both sides at
-once, route and adapter, one release.
+The members are the wire, request and answer alike; the shared UI's
+adapters read BoxVault's answers under these names and map them to the
+UI's own item shape.
 
 The OIDC provider dialog is not a form of this document: its item is the
 `additionalProperties` schema of `/auth/oidc/providers` in the auth

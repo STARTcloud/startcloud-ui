@@ -6,7 +6,7 @@ const roleNamesOf = user =>
 const membershipOf = (org, member) => ({
   uuid: org.name,
   name: org.name,
-  role: member.orgRole ? String(member.orgRole).toUpperCase() : undefined,
+  role: member.org_role ? String(member.org_role).toUpperCase() : undefined,
   primary: false,
 });
 

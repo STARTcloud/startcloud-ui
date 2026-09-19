@@ -17,27 +17,27 @@ const latestReleaseOf = versions =>
 
 const fileArtifact = file => ({
   name: file.architecture,
-  fileName: file.fileName || '',
-  fileSize: file.fileSize || 0,
+  fileName: file.file_name || '',
+  fileSize: file.file_size || 0,
   checksum: file.checksum || '',
-  checksumType: file.checksumType || '',
+  checksumType: file.checksum_type || '',
   downloadUrl: '',
-  downloadCount: countOf(file.downloadCount),
-  createdAt: file.createdAt || null,
-  updatedAt: file.updatedAt || null,
+  downloadCount: countOf(file.download_count),
+  createdAt: file.created_at || null,
+  updatedAt: file.updated_at || null,
 });
 
 const versionSummary = version => {
   const artifacts = (version.files || []).map(fileArtifact);
   return {
-    version: version.versionNumber,
-    createdAt: version.createdAt || null,
-    updatedAt: version.updatedAt || null,
+    version: version.version_number,
+    createdAt: version.created_at || null,
+    updatedAt: version.updated_at || null,
     downloads: sumCounts(artifacts.map(artifact => artifact.downloadCount)),
     description: version.description || '',
-    releaseNotes: version.releaseNotes ?? null,
+    releaseNotes: version.release_notes ?? null,
     deprecated: Boolean(version.deprecated),
-    deprecationReason: version.deprecationReason ?? null,
+    deprecationReason: version.deprecation_reason ?? null,
     providers: [],
     artifacts,
     extras: { raw: version },
@@ -54,11 +54,11 @@ const isoItem = (iso, orgName, logo) => {
     description: iso.description || '',
     icon: '',
     artwork: '',
-    isPublic: Boolean(iso.isPublic),
-    guestAccess: Boolean(iso.guestAccess),
+    isPublic: Boolean(iso.is_public),
+    guestAccess: Boolean(iso.guest_access),
     published: Boolean(iso.published),
-    createdAt: iso.createdAt || null,
-    updatedAt: iso.updatedAt || null,
+    createdAt: iso.created_at || null,
+    updatedAt: iso.updated_at || null,
     latestReleaseAt: latestReleaseOf(versions),
     downloads: sumDownloads(versions),
     os: {
@@ -121,7 +121,7 @@ export const deleteVersionCascade = (org, name, version) =>
     .then(() => api.versions.remove(org, name, version));
 
 const watches = {
-  list: () => api.isos.watches().then(data => new Set(rows(data).map(entry => entry.isoId))),
+  list: () => api.isos.watches().then(data => new Set(rows(data).map(entry => entry.iso_id))),
   toggle: (item, next) =>
     next
       ? api.isos.watch(item.organization.name, item.name)

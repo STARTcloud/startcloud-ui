@@ -88,7 +88,7 @@ export const api = {
     downloadLink: (organization, name, number, patchName, key) =>
       client
         .post(`${file(organization, name, number, patchName, key)}/get-download-link`, {})
-        .then(data => data.downloadUrl),
+        .then(data => data.download_url),
   },
   pending: {
     upload: uploadPending,

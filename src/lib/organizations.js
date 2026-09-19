@@ -18,7 +18,7 @@ export const organizationLogo = async organization => {
   if (logo) {
     return logo;
   }
-  const emailHash = organization.emailHash || organization.organization?.emailHash;
+  const emailHash = organization.email_hash || organization.organization?.email_hash;
   if (!emailHash) {
     return '';
   }
@@ -47,10 +47,10 @@ export const loadOrganizations = async () => {
         name,
         description: membership.description || membership.organization?.description || '',
         roles: membership.role ? [String(membership.role).toUpperCase()] : [],
-        primary: Boolean(membership.isPrimary),
+        primary: Boolean(membership.is_primary),
         personal: Boolean(membership.personal),
         logo: await organizationLogo(membership),
-        emailHash: membership.emailHash || membership.organization?.emailHash || '',
+        emailHash: membership.email_hash || membership.organization?.email_hash || '',
       };
     })
   );

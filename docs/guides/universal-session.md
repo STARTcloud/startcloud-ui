@@ -366,7 +366,7 @@ cluster's Sign in carries that page, and dismissing the banner keeps it.
 - On sign-in the account value overwrites local storage, as the preferences
   contract requires: the browser provider applies `preferences.theme` and
   `preferences.language` from `/userinfo` in `complete()`; BoxVault applies
-  `preferredTheme` and `preferredLanguage` from the profile whenever the
+  `preferred_theme` and `preferred_language` from the profile whenever the
   session is adopted.
 - `claims()` is memoized per session and reset by a sign-out or a reload,
   so the user menu, the favorites and the ticket URL read one fetch.

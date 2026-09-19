@@ -87,8 +87,8 @@ const COLUMNS = [
     key: 'expiresAt',
     kind: 'date',
     labelKey: 'profile.serviceAccounts.expires',
-    sortValue: row => new Date(row.expiresAt || 0).getTime(),
-    render: (row, ctx) => dateOf(row.expiresAt, ctx.language),
+    sortValue: row => new Date(row.expires_at || 0).getTime(),
+    render: (row, ctx) => dateOf(row.expires_at, ctx.language),
   },
 ];
 

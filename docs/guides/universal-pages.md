@@ -101,7 +101,7 @@ against the apps as they were before it.
   [Universal Identity Contract](universal-identity/), sees the public
   items, the published private items its organization marked for guests
   and its own uploads, never a download count (`downloads` on an item and
-  `downloadCount` on a file, which BoxVault answers `null` to a guest,
+  `download_count` on a file, which BoxVault answers `null` to a guest,
   draw as nothing) and never a write control: every Add New, upload zone,
   edit, delete, select column and bulk pane and org-console management
   control is absent for a guest as it is for a signed-out visitor, the
@@ -526,7 +526,7 @@ architecture {
   draws it as it draws a box, hero, actions, facts and the versions table,
   each architecture reaching the shared leaf page at
   `/{org}/isos/{iso}/{version}/{arch}`, and the ISO's `downloads` sums its
-  files' `downloadCount`, incremented by the ISO download controller.
+  files' `download_count`, incremented by the ISO download controller.
   Nothing is half baked here: every ISO page, route and slot is wired as
   far as the box shape carries it.
 - A catalog artifact maps to an `architecture` with `downloadUrl`,

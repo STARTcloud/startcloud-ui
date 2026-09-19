@@ -12,8 +12,8 @@ import { useTranslation } from 'react-i18next';
  */
 export const useAccountPreferences = ({ user, setThemePreference }) => {
   const { i18n } = useTranslation();
-  const preferredTheme = user?.preferredTheme || '';
-  const preferredLanguage = user?.preferredLanguage || '';
+  const preferredTheme = user?.preferred_theme || '';
+  const preferredLanguage = user?.preferred_language || '';
 
   useEffect(() => {
     if (preferredTheme) {

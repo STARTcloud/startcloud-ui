@@ -98,8 +98,8 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
       );
     }
 
-    const orgName = invitation.organizationName;
-    const roleLabel = t(`roles.${invitation.invitedRole || 'member'}`);
+    const orgName = invitation.organization_name;
+    const roleLabel = t(`roles.${invitation.invited_role || 'member'}`);
 
     if (!currentUser) {
       return (

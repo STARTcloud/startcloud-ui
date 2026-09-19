@@ -127,8 +127,8 @@ const UserCard = ({
 
   useEffect(() => {
     let mounted = true;
-    if (!user.avatar_url && user.emailHash) {
-      gravatarProfile(user.emailHash).then(profile => {
+    if (!user.avatar_url && user.email_hash) {
+      gravatarProfile(user.email_hash).then(profile => {
         if (mounted && profile?.avatar_url) {
           setGravatarUrl(`${profile.avatar_url}?s=50`);
         }
@@ -137,7 +137,7 @@ const UserCard = ({
     return () => {
       mounted = false;
     };
-  }, [gravatarProfile, user.avatar_url, user.emailHash]);
+  }, [gravatarProfile, user.avatar_url, user.email_hash]);
 
   const avatarUrl = user.avatar_url || gravatarUrl;
   const globalIsAdmin = roleNamesOf(user).includes('admin');
@@ -228,7 +228,7 @@ const UserCard = ({
 
           <div className="d-flex align-items-center text-muted small">
             <FaBox className="me-2" />
-            {t('orgConsole.users.boxes')}: <strong>{user.totalBoxes || 0}</strong>
+            {t('orgConsole.users.boxes')}: <strong>{user.total_boxes || 0}</strong>
           </div>
         </div>
 

@@ -90,7 +90,7 @@ export const api = {
           `${architecture(organization, name, number, providerName, architectureName)}/file/get-download-link`,
           {}
         )
-        .then(data => data.downloadUrl),
+        .then(data => data.download_url),
     upload: uploadBoxFile,
   },
   bulk: {

@@ -96,12 +96,12 @@ const BoxCounts = ({ org }) => {
       <span>
         <FaBox className="me-1" />
         <Link to={`/${org.name}`} className="text-decoration-none">
-          {org.publicBoxCount} {t('discovery.public')}
+          {org.public_box_count} {t('discovery.public')}
         </Link>
       </span>
-      {org.totalBoxCount > org.publicBoxCount && (
+      {org.total_box_count > org.public_box_count && (
         <span className="text-muted">
-          {org.totalBoxCount - org.publicBoxCount} {t('discovery.private')}
+          {org.total_box_count - org.public_box_count} {t('discovery.private')}
         </span>
       )}
     </div>
@@ -111,8 +111,8 @@ const BoxCounts = ({ org }) => {
 BoxCounts.propTypes = {
   org: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    publicBoxCount: PropTypes.number.isRequired,
-    totalBoxCount: PropTypes.number,
+    public_box_count: PropTypes.number.isRequired,
+    total_box_count: PropTypes.number,
   }).isRequired,
 };
 
@@ -137,9 +137,9 @@ const OrgCard = ({ org, gravatarUrl, orgMark, onRequest }) => {
           <div className="d-flex justify-content-between text-muted small">
             <span>
               <FaUsers className="me-1" />
-              {org.memberCount} {t('discovery.members')}
+              {org.member_count} {t('discovery.members')}
             </span>
-            {typeof org.publicBoxCount === 'number' ? <BoxCounts org={org} /> : null}
+            {typeof org.public_box_count === 'number' ? <BoxCounts org={org} /> : null}
           </div>
         </div>
         <div className="card-footer">
@@ -160,7 +160,7 @@ OrgCard.propTypes = {
 /**
  * The public page that lists the organizations open to discovery, each
  * with its logo (stored, else Gravatar through `organizations.gravatarProfile`
- * for a row carrying `emailHash`, else the app's mark), its `access_mode`
+ * for a row carrying `email_hash`, else the app's mark), its `access_mode`
  * (`invite`, `request` or `private`), the member count, the box counts
  * while the row carries them, and the join dialog on a `request`
  * organization, sent through `organizations.join` under the row's `name`;
@@ -191,9 +191,9 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
     async orgList => {
       const results = await Promise.all(
         orgList
-          .filter(org => org.emailHash)
+          .filter(org => org.email_hash)
           .map(async org => {
-            const profile = await organizations.gravatarProfile(org.emailHash);
+            const profile = await organizations.gravatarProfile(org.email_hash);
             return { name: org.name, url: profile?.avatar_url };
           })
       );

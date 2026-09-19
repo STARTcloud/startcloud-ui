@@ -28,8 +28,8 @@ const UpdateNotice = ({ updateInfo, command }) => {
       </h4>
       <p>
         {t('admin.update.message', {
-          latestVersion: updateInfo.latestVersion,
-          currentVersion: updateInfo.currentVersion,
+          latestVersion: updateInfo.latest_version,
+          currentVersion: updateInfo.current_version,
         })}
       </p>
       <hr />
@@ -51,8 +51,8 @@ const UpdateNotice = ({ updateInfo, command }) => {
 
 UpdateNotice.propTypes = {
   updateInfo: PropTypes.shape({
-    latestVersion: PropTypes.string,
-    currentVersion: PropTypes.string,
+    latest_version: PropTypes.string,
+    current_version: PropTypes.string,
   }).isRequired,
   command: PropTypes.string.isRequired,
 };

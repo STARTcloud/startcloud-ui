@@ -23,13 +23,13 @@ import { PlacePane } from './PlaceForm';
 const draftFrom = product => ({
   name: product.name ?? '',
   description: product.description ?? '',
-  is_public: product.isPublic ?? false,
-  guest_access: product.guestAccess ?? false,
+  is_public: product.is_public ?? false,
+  guest_access: product.guest_access ?? false,
   family: product.family ?? '',
   vendor: product.vendor ?? '',
-  icon_url: product.iconUrl ?? '',
-  docs_url: product.docsUrl ?? '',
-  notes_url: product.notesUrl ?? '',
+  icon_url: product.icon_url ?? '',
+  docs_url: product.docs_url ?? '',
+  notes_url: product.notes_url ?? '',
 });
 
 const slotCtxShape = PropTypes.shape({

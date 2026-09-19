@@ -48,7 +48,7 @@ const MembershipBadges = ({ org }) => {
   const { t } = useTranslation();
   return (
     <>
-      {org.isPrimary ? (
+      {org.is_primary ? (
         <span className="badge bg-primary">{t('profile.organizations.primary')}</span>
       ) : null}
       {org.role ? (
@@ -61,7 +61,7 @@ const MembershipBadges = ({ org }) => {
 };
 
 MembershipBadges.propTypes = {
-  org: PropTypes.shape({ isPrimary: PropTypes.bool, role: PropTypes.string }).isRequired,
+  org: PropTypes.shape({ is_primary: PropTypes.bool, role: PropTypes.string }).isRequired,
 };
 
 const MembershipSubline = ({ org }) => {
@@ -71,21 +71,21 @@ const MembershipSubline = ({ org }) => {
     <>
       {description ? <span className="d-block">{description}</span> : null}
       <span className="d-block">
-        {t('profile.organizations.joined')}: {dateOf(org.joinedAt, i18n.language)}
+        {t('profile.organizations.joined')}: {dateOf(org.joined_at, i18n.language)}
       </span>
     </>
   );
 };
 
 MembershipSubline.propTypes = {
-  org: PropTypes.shape({ joinedAt: PropTypes.string }).isRequired,
+  org: PropTypes.shape({ joined_at: PropTypes.string }).isRequired,
 };
 
 const MembershipActions = ({ org, canSetPrimary, canLeave, onSetPrimary, onLeave }) => {
   const { t } = useTranslation();
   return (
     <>
-      {canSetPrimary && !org.isPrimary ? (
+      {canSetPrimary && !org.is_primary ? (
         <button
           type="button"
           className="btn btn-sm btn-outline-primary"
@@ -108,7 +108,7 @@ const MembershipActions = ({ org, canSetPrimary, canLeave, onSetPrimary, onLeave
 };
 
 MembershipActions.propTypes = {
-  org: PropTypes.shape({ isPrimary: PropTypes.bool }).isRequired,
+  org: PropTypes.shape({ is_primary: PropTypes.bool }).isRequired,
   canSetPrimary: PropTypes.bool.isRequired,
   canLeave: PropTypes.bool.isRequired,
   onSetPrimary: PropTypes.func.isRequired,

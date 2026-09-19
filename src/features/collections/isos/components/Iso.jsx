@@ -365,10 +365,10 @@ export const IsoItemActions = ({ item, ctx }) => {
         <button
           type="button"
           className="btn btn-outline-secondary me-2"
-          onClick={() => update({ is_public: !iso.isPublic }, 'Error updating ISO visibility')}
+          onClick={() => update({ is_public: !iso.is_public }, 'Error updating ISO visibility')}
         >
-          {iso.isPublic ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
-          {t(iso.isPublic ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
+          {iso.is_public ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
+          {t(iso.is_public ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
         </button>
         <button
           type="button"

@@ -305,7 +305,7 @@ const useVerificationLink = ({ verification, basePath, refresh }) => {
 const AvatarCard = ({ user }) => (
   <div className="card mb-3">
     <div className="card-body text-center">
-      <Avatar picture={user.picture || user.avatarUrl || ''} size={100} />
+      <Avatar picture={user.picture || user.avatar_url || ''} size={100} />
       <h3 className="mt-3">{userDisplayName(user)}</h3>
       <p className="text-muted mb-0">{userSecondaryLine(user)}</p>
     </div>

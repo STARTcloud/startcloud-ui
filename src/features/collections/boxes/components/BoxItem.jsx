@@ -319,11 +319,11 @@ BoxCicdBar.propTypes = {
 const draftFrom = box => ({
   name: box.name ?? '',
   description: box.description ?? '',
-  is_public: box.isPublic ?? false,
-  guest_access: box.guestAccess ?? false,
-  github_repo: box.githubRepo ?? '',
-  workflow_file: box.workflowFile ?? '',
-  cicd_url: box.cicdUrl ?? '',
+  is_public: box.is_public ?? false,
+  guest_access: box.guest_access ?? false,
+  github_repo: box.github_repo ?? '',
+  workflow_file: box.workflow_file ?? '',
+  cicd_url: box.cicd_url ?? '',
 });
 
 const OptionalLabel = ({ text }) => {
