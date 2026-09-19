@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.21.0...v0.22.0) (2026-09-19)
+
+
+### Features
+
+* the sidebar column and the search surface each behind a feature token, the Home row and client-side search gone, the Mail Test on every provider card through a map item action, the About page drawing the host's community links, every collection listing at its own root with separate preferences and a remount on collection change ([20fb121](https://github.com/STARTcloud/startcloud-ui/commit/20fb12165104d52bffbe41d27d9e4e9cb723d3b9))
+
 ## [0.21.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.20.0...v0.21.0) (2026-09-19)
 
 
