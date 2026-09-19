@@ -55,7 +55,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
      "version": "0.77.0",
      "brand": {
        "name": "BoxVault",
-       "logoUrl": "/brand/boxvault.svg",
+       "logo_url": "/brand/boxvault.svg",
        "repo": "https://github.com/Makr91/BoxVault"
      },
      "auth": ["backend"],
@@ -83,15 +83,15 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
    | Field             | Meaning                                                                                                                                                                                                                                                   |
    | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
    | `role`, `version` | Your app name and released version; the version is the footer's and the About page's                                                                                                                                                                      |
-   | `brand`           | `name`, `logoUrl` (a path you serve, or one of `public/brand/`) and `repo`                                                                                                                                                                                |
+   | `brand`           | `name`, `logo_url` (a path you serve, or one of `public/brand/`) and `repo`                                                                                                                                                                               |
    | `auth`            | `["backend"]` for your own session routes (`/api/auth/*`, `/api/user`, `/api/userinfo/claims`, `/api/user/preferences`), `["idp"]` for the browser as the OIDC public client, or `[]` for no session at all (everyone sees everything, no Sign in button) |
-   | `idp`             | With `idp` only: `issuer`, `clientId`, `scopes`, `storagePrefix`                                                                                                                                                                                          |
+   | `idp`             | With `idp` only: `issuer`, `client_id`, `scopes`, `storage_prefix`                                                                                                                                                                                        |
    | `collections`     | The collections to mount, in order; the order sets mount order only, each definition carries its own route segment: `boxes`, `isos`, `provisioners`; `[]` on a host without collections                                                                   |
    | `config`          | The configuration file names the admin page draws one tab each for, served at `/api/config/<name>`; absent means `["app"]`                                                                                                                                |
    | `events`          | With the `events` token only: `{ path, topics }`, the one event stream the runtime opens per tab and every topic the host streams                                                                                                                         |
    | `features`        | The gate; absence hides the surface, no array at all renders everything                                                                                                                                                                                   |
    | `links`           | `docs` and `contact`                                                                                                                                                                                                                                      |
-   | `ticket`          | `{ baseUrl, reqType, fallbackCustomerId }`, or `null` when you serve them at `/api/config/ticket`                                                                                                                                                         |
+   | `ticket`          | `{ base_url, req_type, fallback_customer_id }`, or `null` when you serve them at `/api/config/ticket`                                                                                                                                                     |
 
 3. Implement the `/api/*` routes behind the tokens you advertise; the `api/` folders under `src/features/<name>/` and `src/features/collections/<key>/` are the whole list, one call per line.
 4. Carry `dependency-bump.yml` so each UI release opens a `bump/startcloud-ui` pull request against your pin, for a human to merge.
@@ -118,7 +118,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
 
 The routes `/login`, `/register`, `/profile`, `/invite/:token` and `/auth/callback` exist only for `backend`; `/callback/` only for `idp`. A deep link to a route the host lacks renders a not-available page naming the missing token. `/search?q=` exists on every host.
 
-The VDI Health Monitor answers `role: "vdi-health"` with `brand.logoUrl: "/brand/vdi-health.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
+The VDI Health Monitor answers `role: "vdi-health"` with `brand.logo_url: "/brand/vdi-health.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
 
 ## Layout
 

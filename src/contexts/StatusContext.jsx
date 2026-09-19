@@ -20,7 +20,7 @@ export const statusShape = PropTypes.shape({
   version: PropTypes.string.isRequired,
   brand: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    logoUrl: PropTypes.string.isRequired,
+    logo_url: PropTypes.string.isRequired,
     repo: PropTypes.string,
     changelog: PropTypes.string,
     theme: PropTypes.oneOf(['light', 'dark']),
@@ -37,9 +37,9 @@ export const statusShape = PropTypes.shape({
   }),
   idp: PropTypes.shape({
     issuer: PropTypes.string.isRequired,
-    clientId: PropTypes.string.isRequired,
+    client_id: PropTypes.string.isRequired,
     scopes: PropTypes.string.isRequired,
-    storagePrefix: PropTypes.string.isRequired,
+    storage_prefix: PropTypes.string.isRequired,
   }),
   collections: PropTypes.arrayOf(PropTypes.string),
   config: PropTypes.arrayOf(PropTypes.string),
@@ -59,9 +59,9 @@ export const statusShape = PropTypes.shape({
     ),
   }),
   ticket: PropTypes.shape({
-    baseUrl: PropTypes.string.isRequired,
-    reqType: PropTypes.string.isRequired,
-    fallbackCustomerId: PropTypes.string.isRequired,
+    base_url: PropTypes.string.isRequired,
+    req_type: PropTypes.string.isRequired,
+    fallback_customer_id: PropTypes.string.isRequired,
   }),
 });
 

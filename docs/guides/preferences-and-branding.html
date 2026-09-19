@@ -719,7 +719,7 @@
     <div class="callouts">
       <div class="callout">
         <strong>STARTcloud</strong> is <code>theme_id: light</code>, so no pack: stock Bootstrap,
-        the chrome's own primary, the STARTcloud mark from <code>brand.logoUrl</code>, Source Serif
+        the chrome's own primary, the STARTcloud mark from <code>brand.logo_url</code>, Source Serif
         4 for the auth headline because that is the shared auth column's face.
       </div>
       <div class="callout">
@@ -758,7 +758,7 @@
             { <span class="k">"role"</span>: <span class="s">"auth-server"</span>,
             <span class="k">"version"</span>: <span class="s">"1.9.1"</span>,
             <span class="k">"brand"</span>: { <span class="k">"name"</span>:
-            <span class="s">"SwitchBoard.cloud"</span>, <span class="k">"logoUrl"</span>:
+            <span class="s">"SwitchBoard.cloud"</span>, <span class="k">"logo_url"</span>:
             <span class="s">"/brand/switchboard/icon.png"</span>, <span class="k">"theme"</span>:
             <span class="s">"light"</span>
             },
@@ -775,10 +775,10 @@
             <span class="k">"links"</span>: { <span class="k">"docs"</span>:
             <span class="s">""</span>, <span class="k">"contact"</span>:
             <span class="s">""</span> }, <span class="k">"ticket"</span>: {
-            <span class="k">"baseUrl"</span>:
+            <span class="k">"base_url"</span>:
             <span class="s">"https://xd.prominic.net/app/apprequest.nsf/router?openagent"</span>,
-            <span class="k">"reqType"</span>: <span class="s">"sso"</span>,
-            <span class="k">"fallbackCustomerId"</span>: <span class="s">"A55DF0"</span> },
+            <span class="k">"req_type"</span>: <span class="s">"sso"</span>,
+            <span class="k">"fallback_customer_id"</span>: <span class="s">"A55DF0"</span> },
             <span class="k">"events"</span>: { <span class="k">"path"</span>:
             <span class="s">"/api/events"</span>, <span class="k">"topics"</span>: [<span class="s"
               >"notifications"</span
@@ -787,13 +787,13 @@
           <h2>the same on dev-auth.startcloud.com</h2>
           <div class="payload">
             { …, <span class="k">"brand"</span>: { <span class="k">"name"</span>:
-            <span class="s">"STARTcloud"</span>, <span class="k">"logoUrl"</span>:
+            <span class="s">"STARTcloud"</span>, <span class="k">"logo_url"</span>:
             <span class="s">"/brand/startcloud/icon.png"</span>, <span class="k">"changelog"</span>:
             <span class="s"
               >"https://github.com/STARTcloud/authorization-server-private/releases"</span
             >, <span class="k">"theme"</span>: <span class="s">"light"</span> },
             <span class="k">"features"</span>: [ …, <span class="s">"footer"</span> ],
-            <span class="k">"ticket"</span>: { …, <span class="k">"fallbackCustomerId"</span>:
+            <span class="k">"ticket"</span>: { …, <span class="k">"fallback_customer_id"</span>:
             <span class="s">"A55DF1"</span> } }
           </div>
           <h2>GET /api/public/site/branding · the same site</h2>
@@ -878,7 +878,7 @@
             >
             <span class="c k">mark</span
             ><span class="c"
-              ><code>brand.logoUrl</code> from status is the chrome's mark, the org mark and the
+              ><code>brand.logo_url</code> from status is the chrome's mark, the org mark and the
               favicon, as on every UI backend; the branding endpoint's slots feed relying apps, not
               the issuer's own chrome</span
             >

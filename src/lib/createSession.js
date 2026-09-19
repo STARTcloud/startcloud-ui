@@ -55,7 +55,10 @@ export const createSession = (status, events) => {
   if (method === 'idp') {
     return {
       session: createBrowserOidc({
-        ...status.idp,
+        issuer: status.idp.issuer,
+        clientId: status.idp.client_id,
+        scopes: status.idp.scopes,
+        storagePrefix: status.idp.storage_prefix,
         events,
         apiBase: import.meta.env.DEV ? '' : status.idp.issuer,
       }),

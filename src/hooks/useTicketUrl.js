@@ -9,7 +9,7 @@ const firstValue = (...values) => values.find(value => !!value) || '';
 
 const servesTicketConfig = status => !status.ticket;
 
-const appOf = status => (status.idp ? status.idp.clientId : status.role);
+const appOf = status => (status.idp ? status.idp.client_id : status.role);
 
 const ticketOf = ({ status, ticketConfig }) => {
   if (servesTicketConfig(status)) {
@@ -17,9 +17,9 @@ const ticketOf = ({ status, ticketConfig }) => {
       return null;
     }
     return {
-      baseUrl: ticketConfig.base_url || '',
-      reqType: firstValue(ticketConfig.req_type, 'sso'),
-      fallbackCustomerId: ticketConfig.fallback_customer_id || '',
+      base_url: ticketConfig.base_url || '',
+      req_type: firstValue(ticketConfig.req_type, 'sso'),
+      fallback_customer_id: ticketConfig.fallback_customer_id || '',
       context: ticketConfig.context || '',
     };
   }
@@ -32,16 +32,16 @@ const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
   }
   if (!user) {
     return ticketUrl({
-      baseUrl: ticket.baseUrl,
-      reqType: ticket.reqType,
-      customerId: ticket.fallbackCustomerId,
+      baseUrl: ticket.base_url,
+      reqType: ticket.req_type,
+      customerId: ticket.fallback_customer_id,
       context: ticket.context,
     });
   }
   return ticketUrl({
-    baseUrl: ticket.baseUrl,
-    reqType: ticket.reqType,
-    customerId: firstValue(activeOrgCode, claims?.customer_id, ticket.fallbackCustomerId),
+    baseUrl: ticket.base_url,
+    reqType: ticket.req_type,
+    customerId: firstValue(activeOrgCode, claims?.customer_id, ticket.fallback_customer_id),
     user: firstValue(claims?.name, userDisplayName(user)),
     email: firstValue(claims?.email, user?.email),
     context: ticket.context,
