@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.23.0...v0.24.0) (2026-09-19)
+
+
+### Features
+
+* every BoxVault answer read in snake_case only, the adapters, the upload chain, the backend session and its stored profile, the profile, org console, discovery, admin and notification readers following, the UI's own item shape unchanged ([bb66046](https://github.com/STARTcloud/startcloud-ui/commit/bb660466bf7967ff5678581139f40c763cb49e53))
+
 ## [0.23.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.22.0...v0.23.0) (2026-09-19)
 
 
