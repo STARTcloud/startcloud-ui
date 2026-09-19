@@ -280,7 +280,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     org,
     signedIn,
     watchedIds: watches.ids,
-    prefsKey: `${context.prefsPrefix}_${org || 'home'}`,
+    prefsKey: `${context.prefsPrefix}_${collections.map(c => c.key).join('+')}_${org || 'home'}`,
   });
   const {
     visible,

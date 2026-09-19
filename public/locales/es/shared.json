@@ -1432,7 +1432,6 @@
     "showAll": "Mostrar los {{count}} resultados",
     "noHits": "No se encontró nada.",
     "loading": "Buscando…",
-    "unavailable": "La búsqueda no está disponible en este host.",
     "results_one": "{{count}} resultado",
     "results_other": "{{count}} resultados",
     "page": {
@@ -1771,7 +1770,6 @@
     "selectColumn": "Seleccionar todo en esta página",
     "sidebar": {
       "title": "Catálogo",
-      "home": "Inicio",
       "browse": "Explorar"
     },
     "search": {

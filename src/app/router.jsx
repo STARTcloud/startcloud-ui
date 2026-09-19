@@ -146,6 +146,7 @@ import { events, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
 import { gravatarProfile } from '../utils/gravatar';
 import { isMember } from '../utils/membership';
+import { collectionPath } from '../utils/routes';
 
 const authAdapter = {
   methods,
@@ -543,10 +544,14 @@ export const routeTitleKey = pathname => {
 
 /**
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
- * in the order the column draws them: the catalog feature's Catalog group
+ * in the order the column draws them, behind one gate: nothing at all
+ * unless the host lists the `sidebar` feature token (a host listing no
+ * `features` array draws the column, `hasFeature` answering true there),
+ * so the badges, the crumbs and the header's brand slot all follow from
+ * the empty list; below that gate the catalog feature's Catalog group
  * while the host mounts a collection, for every visitor (handed the
  * session's account and the mounted collection definitions its Browse
- * tree walks, no status because it branches on nothing the host
+ * tree walks, no status because it branches on nothing else the host
  * advertises), the profile feature's Account
  * group (handed the integrations adapter its Integrations entry reads
  * once and the host's profile adapter its Profile children are built
@@ -564,6 +569,9 @@ export const routeTitleKey = pathname => {
  * @returns {Array} The sidebar groups `AppShell` takes as `sidebar`
  */
 export const sidebarEntries = ({ status, account, collections }) => {
+  if (!hasFeature(status, 'sidebar')) {
+    return [];
+  }
   const cookie = authMethod(status) === 'cookie';
   const admin = adminAdapterFor(status);
   return [
@@ -766,19 +774,19 @@ ProviderRoute.propTypes = {
 
 const collectionRoutes = ({ collection, collections, organizations, context }) => {
   const base = collection.segment ? `/:org/${collection.segment}` : '/:org';
-  const routes = [];
+  const root = collectionPath(collection, '');
+  const routes = [
+    <Route
+      key={root}
+      path={root}
+      element={<CollectionPage collection={collection} org="" member={false} context={context} />}
+    />,
+  ];
   if (collection.segment) {
     const orgCollectionElement = (
       <OrgCollectionRoute collection={collection} organizations={organizations} context={context} />
     );
-    routes.push(
-      <Route
-        key={`/${collection.segment}`}
-        path={`/${collection.segment}`}
-        element={<CollectionPage collection={collection} org="" member={false} context={context} />}
-      />,
-      <Route key={base} path={base} element={orgCollectionElement} />
-    );
+    routes.push(<Route key={base} path={base} element={orgCollectionElement} />);
   } else {
     routes.push(
       <Route
@@ -1150,7 +1158,9 @@ const homeElementFor = ({ cookie, fleet, account, collections, context, theme, g
  * to sign in with `/` as the return path), the setup page at `/setup` while the host
  * advertises `setup`, every other route sent there until setup is complete
  * and the page drawing its complete state after, each feature route gated by
- * its feature token or by the host's first `auth` token, and the identity
+ * its feature token or by the host's first `auth` token (the search page
+ * at `/search` behind `search`, the token the navbar's box answers to),
+ * and the identity
  * contract's five groups behind the `cookie` token and their feature
  * tokens, a route the host lacks rendering `NotAvailableStub` instead
  * (`/user/integrations` drawing the ErrorPage's 404 while the issuer's
@@ -1228,7 +1238,16 @@ const AppRoutes = ({
         path="/about"
         element={<AboutRoute theme={theme} oidc={oidc} clientId={account.clientId} />}
       />
-      <Route path="/search" element={<SearchPage context={context} />} />
+      <Route
+        path="/search"
+        element={
+          hasFeature(status, 'search') ? (
+            <SearchPage context={context} />
+          ) : (
+            <Stub titleKey={titleOf('/search')} token="search" />
+          )
+        }
+      />
       <Route
         path="/organizations/discover"
         element={

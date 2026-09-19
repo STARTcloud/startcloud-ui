@@ -6,7 +6,7 @@ import { formRulesShape } from '../../hooks/useFormRules';
 import { valueAt } from '../../utils/schemaSections';
 import { isVisible, scopesFor } from '../../utils/validation';
 
-import ConfigAction from './ConfigAction';
+import ConfigAction, { refusalOf } from './ConfigAction';
 import ConfigField, { configFieldShape } from './ConfigField';
 import ConfigMap from './ConfigMap';
 import SectionCard, { foldsShape } from './SectionCard';
@@ -112,13 +112,6 @@ const wideField = field => field.type === 'array' || field.type === 'object';
 
 const parentOf = pointer => pointer.split('/').slice(0, -1).join('/');
 
-const refusalOf = (error, base, nameFor) => ({
-  fieldErrors: (error?.fieldErrors || []).map(entry => ({
-    ...entry,
-    pointer: `/${nameFor(`${base}${String(entry.pointer || '')}`)}`,
-  })),
-});
-
 const sectionValues = (section, config) => {
   const keys = new Set(
     [...section.fields, ...section.subsections.flatMap(subsection => subsection.fields)].map(
@@ -189,6 +182,8 @@ const ConfigFields = ({
               onChange={value => onChange(field.pointer, value)}
               rules={rules}
               nameFor={nameFor}
+              callAction={callAction}
+              guard={guard}
               Sections={Sections}
               nested={nested}
             />
@@ -323,9 +318,11 @@ Section.propTypes = {
  * so a page drawing several files keeps their folds apart; a
  * property-level `action` beside its control, a subsection-level `action`
  * at the subsection head over the value of the object property that names
- * it, and a section-level `action` at the section head, each calling
- * `callAction(route, method, body)` through `guard` and painting a 422's
- * pointers on the form; a section whose leaves all sit in subsections and
+ * it, a section-level `action` at the section head, and an item-level
+ * `action` on a map's item schema on every entry of that map through
+ * `ConfigMap`, each calling `callAction(route, method, body)` through
+ * `guard` and painting a 422's pointers on the form; a section whose
+ * leaves all sit in subsections and
  * which carries no action of its own draws no card of its own; every map
  * receives this component as `Sections` so its item dialog draws the
  * item schema's sections and subsections the way the page draws the file's;

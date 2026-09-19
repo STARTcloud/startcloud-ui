@@ -1432,7 +1432,6 @@
     "showAll": "Show all {{count}} results",
     "noHits": "Nothing found.",
     "loading": "Searching…",
-    "unavailable": "Search is not available on this host.",
     "results_one": "{{count}} result",
     "results_other": "{{count}} results",
     "page": {
@@ -1771,7 +1770,6 @@
     "selectColumn": "Select all on this page",
     "sidebar": {
       "title": "Catalog",
-      "home": "Home",
       "browse": "Browse"
     },
     "search": {

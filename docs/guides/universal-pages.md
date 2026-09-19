@@ -139,7 +139,7 @@ follows.
 | Level                | BoxVault (unchanged paths)                                                                                                | Catalog                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | home                 | `/`                                                                                                                       | `/`                                         |
-| collection, all orgs | `/isos`, `/downloads` (boxes have no page of their own; the Collection filter narrows home)                               | `/` is provisioners                         |
+| collection, all orgs | `/boxes`, `/isos`, `/downloads`, the root of each its segment                                                             | `/provisioners`, the root its key           |
 | organization         | `/{org}`                                                                                                                  | `/{org}`                                    |
 | collection, one org  | `/{org}/isos`, `/{org}/downloads`                                                                                         | `/{org}`                                    |
 | item                 | `/{org}/{box}`, `/{org}/isos/{iso}`, `/{org}/downloads/{product}`                                                         | `/{org}/{provisioner}`                      |
@@ -152,6 +152,15 @@ versions and architectures reached the way a box's are, the architecture
 drawn by the shared leaf page (`ProviderPage`) a box provider draws, one
 component both call; the Vagrant handler keys on the `Vagrant/` user agent
 before any of them.
+
+Every mounted collection has an all-organizations listing of its own at
+`/<root>`, the root being its route segment or, without one, its key
+(`collectionRoot` in `src/utils/routes.js`), drawn by the collection page
+with no organization exactly as `/<org>/<segment>` is drawn with one, the
+rows grouped by organization; `/` stays the listing of every collection
+together. The root joins the reserved first segments, so no organization
+may take that name, and the route parser answers the collection alone on
+it.
 
 `/downloads`, `/{org}/downloads`, `/{org}/downloads/{product}`,
 `/{org}/downloads/{product}/{release}` and
@@ -188,8 +197,9 @@ registration, complete-onboarding, qrcode, provider-registration, public,
 oauth2, activate, activated, ciba, connect, continue,
 link-account-consent, link-account, user, org, notifications,
 error` of the
-[Universal Identity Contract](universal-identity/), plus the segment of
-every mounted collection (`isos`, `downloads`). `api` is reserved on every UI backend, the `/api/status`
+[Universal Identity Contract](universal-identity/), plus the root of
+every mounted collection, its segment or, without one, its key (`boxes`,
+`isos`, `downloads`, `provisioners`). `api` is reserved on every UI backend, the `/api/status`
 probe answering before any page renders. The build's own folders are
 reserved on every UI backend too: `assets` (Vite's bundle folder),
 `brand`, `locales`, `fonts` and `themes` (the folders under `public/`),
@@ -269,7 +279,13 @@ adapter, registers the search binding, and renders:
   There is no Private / Public level: the Visibility column and the
   Visibility pill tell public, guests and private apart. Folds persist per page with the
   filters, the sort, the view and the hidden columns under
-  `table_prefs_<org or home>`.
+  `table_prefs_<the keys of the collections the page lists joined by +>_<org or home>`
+  (`table_prefs_boxes+isos_home`, `table_prefs_isos_home`,
+  `table_prefs_boxes+isos_STARTcloud`), so the home page, each
+  collection's listing and each organization's pages hold separate
+  preferences; a listing remounts its search state whenever the
+  collection it lists or the organization changes, the page keyed by
+  both.
 - **Every collection is always drawn.** Every collection gets its heading
   row and count; one with nothing to show draws the shared `EmptyState`
   placard in place of its table or card grid, titled `pages.empty` over
@@ -721,8 +737,10 @@ adds its own foldable section to an item page (the catalog's Quality).
   with the toggle on its right, then `Listing` flat: one heading row with
   actions and one table per collection.
 - **CollectionPage**: `Listing` over one collection, grouped across
-  organizations, flat on one; the heading row carries the actions and the
-  toggle.
+  organizations at the collection's own root, `/<segment>` or `/<key>`,
+  flat on one at `/<org>/<segment>`; the heading row carries the actions
+  and the toggle; the listing is keyed by the collection and the
+  organization, so a change of either remounts it.
 - **ItemPage**: PageHeader (its action row opens with the bare Deploy
   glyph link, `DeployGlyph`, for the newest non-deprecated version
   whenever the viewer is signed in, entitled to Hyperweaver and
@@ -820,7 +838,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   per part, read as objects so a role adds a line by adding a key; Start
   here is `links.docs`; Help and community is `brand.repo`,
   `brand.changelog` and `links.contact`, each drawn only while set, their
-  labels the shared `pages.about.links.*`; the favorite toggle is drawn
+  labels the shared `pages.about.links.*`, then every `links.community`
+  entry in the host's order, each a button with the host's own `label`
+  drawn as it is and one generic outbound-link glyph, opening in a new
+  tab, an entry dropped while its `url` is not `https:` or its `label` or
+  `url` is not a string and nothing drawn while the member is not a list;
+  the favorite toggle is drawn
   while the UI backend advertises `favorites`, the session is the
   identity provider's and names its `clientId`; a role with no
   `about.<role>.description` key draws the not-available stub and no
@@ -1035,13 +1058,14 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   upload fields, and Submit all, which writes every file and sends the
   visitor to register. Its keys are `setup.*` in `shared.json`, the
   validation messages under `validation.*`; the catalog carries it unrouted.
-- **SearchPage**: `/search?q=` on every UI backend, the full form of the
-  navbar contract's app-wide list: the query read from and written to the
-  URL and bound to the navbar box, one `SubTable` per result kind (Title,
-  Where, Matched) with header sort and Columns pills under
-  `table_prefs_search`, fifty rows per kind, the count line, every title
-  a deep link in the universal route shape; a UI backend with nothing to search
-  says so on the page. Its keys are `search.*` in `shared.json`.
+- **SearchPage**: `/search?q=` on a UI backend that lists `search`, the
+  full form of the navbar contract's app-wide list over the host's
+  `GET /api/search`: the query read from and written to the URL and bound
+  to the navbar box, one `SubTable` per result kind (Title, Where,
+  Matched) with header sort and Columns pills under `table_prefs_search`,
+  fifty rows per kind, the count line, every title a deep link in the
+  universal route shape; without the token the route is the
+  not-available stub. Its keys are `search.*` in `shared.json`.
 - **Fleet pages**: the pages of a UI backend that advertises `fleet` (the VDI
   Health Monitor, `collections: []`), in `src/features/vdi/`, fed by
   `GET /api/vdi/fleet`, `/api/vdi/pools`, `/api/vdi/vms/{id}`, its
@@ -1144,10 +1168,12 @@ token and adapter checks, a section `{ key, labelKey?, items }` and a row
 another contract, `end` marking a row active on its exact path alone, and
 `badge` the name of a count the shell resolves from the event hub or a
 count route the feature names, never a number the export computes. The
-catalog feature exports `sidebar(account, collections)`, branching on
-nothing the host advertises: on any host mounting a collection, for every
-visitor, one Catalog group with a Home row at `/` (exact match) and the
-Browse tree of `useCatalogTree`, one node per mounted collection folding
+catalog feature exports `sidebar(account, collections)`: on a host that
+lists `sidebar` and mounts a collection, for every visitor, one Catalog
+group holding the Browse tree of `useCatalogTree` alone, the column's
+brand link being the way home, one node per mounted collection routing
+to that collection's own all-organizations listing, `/<segment>` or
+`/<key>`, never to the home page, open on that route, and folding
 to its organizations, their items and, on a versioned collection, the
 versions newest first, each level loaded through the collection's
 adapter on expand and listing what the adapter answers the visitor,
@@ -1156,7 +1182,8 @@ against `reservedSegments(collections)`, so a deep link opens the path
 down to the item the crumbs read. The router hands the concatenation of
 every mounted feature's answer to `AppShell` in the order catalog,
 profile, identity (on a `cookie` host), vdi, then the shared admin
-feature (on every other host). A feature with no sidebar of its own exports nothing. The
+feature (on every other host), the empty list while the host does not
+list `sidebar`. A feature with no sidebar of its own exports nothing. The
 reserved first segments are unchanged: a sidebar entry never adds a
 route, it points at one. A route a sidebar row matches draws the root
 crumb, then `<group> › <row>`, as its crumbs, and a route a child row
@@ -1248,7 +1275,7 @@ One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcl
 | `src/features/collections/provisioners/`                      | `definition`, `api/adapter.js` (the membership merge over `/api/catalog` and `/api/private/{uuid}/catalog`), `api/provisioners.js`, `components/deploy.jsx`, `components/RebuildItem.jsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `src/features/collections/boxes/`, `isos/`                    | `definition`, `api/adapter.js`, `api/boxes.js` and `api/isos.js`, `api/uploadChunked.js`, `components/deploy.jsx`, `utils/versionFields.js`, `assets/distro-icons/`, and the slots for create, edit, publish, add version, add provider, add architecture, ISO upload and ISO actions in `components/BoxList.jsx`, `components/BoxItem.jsx`, `components/BoxVersion.jsx`, `components/BoxProvider.jsx`, `components/Iso.jsx` and `components/IsoVersion.jsx`; BoxVault's ISO read routes share the box routes' token rule and field names (`isPublic`, `published`, `fileName`, `downloadCount`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `src/features/deploy/`                                        | `DeployControls.jsx` (`createDeployControls` answering `DeployGlyph`, `deployColumn` and `CardGlyph` for a collection's `components/deploy.jsx`) and `HyperweaverGlyph.jsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `src/features/search/`                                        | `SearchPage.jsx`, `useAppSearch` (the UI backend's `/api/search` behind the `search` token, else the client-side walk of the mounted collections)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `src/features/search/`                                        | `SearchPage.jsx`, `useAppSearch` (the UI backend's `GET /api/search`, reached with the navbar box and `/search` only while the host lists `search`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `src/features/about/`                                         | `AboutPage.jsx` and `AboutRoute.jsx`, keyed by `status.role` over `about.boxvault.*` and `about.catalog.*`; the version chips `about.version.app` and `about.version.ui` draw on every role, the `auth-server` role among them, and that role's own `about.auth-server.*` keys are the UI's to add                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `src/features/auth/`                                          | `LoginPage.jsx`, `RegisterPage.jsx`, `InvitePage.jsx`, `CallbackPage.jsx`, `ProviderButtons.jsx` and the `api/` calls of the session contract's account pages                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `src/features/profile/`, `organizations/`, `admin/`, `setup/` | `ProfilePage.jsx` with its section tabs (`IssuerDetailsTab.jsx`, `security/`, `PreferencesTab.jsx`, `FavoritesTab.jsx`, `SessionsTab.jsx`, `OrganizationsTab.jsx`, `ServiceAccountsTab.jsx`); `OrgConsolePage.jsx` and `DiscoveryPage.jsx`; `AdminPage.jsx`, `utils/accounts.js` (the row shaping of a `backend` host's users and organizations for the identity feature's `UsersPage.jsx`, `UserPage.jsx` and `UserActions.jsx`), `AdminConfig.jsx` (one file per route, `/admin/config/<name>` a child node of the Configuration tree per name in `status.config`, `["app"]` when absent), `AdminStorage.jsx` (only when the adapter carries `storage`), `OidcProviders.jsx` and `UpdateNotice.jsx` (the update command from `status.role`); `SetupPage.jsx`; each with its `api/` calls                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -1288,6 +1315,31 @@ backend they are on.
 
 ---
 
+## Decisions
+
+Settled before code, in the order they were raised:
+
+1. The About page's Help and community draws `brand.repo`,
+   `brand.changelog` and `links.contact` each only while set, then every
+   `links.community` entry in the host's order, each a button with the
+   host's own `label` and one generic outbound-link glyph, in a new tab.
+   Because a URL or a name written into the page is a fork per app, and
+   the one build serves every app.
+2. Every mounted collection has an all-organizations listing of its own at
+   `/<root>`, the root its route segment or, without one, its key, drawn
+   by the collection page with no organization exactly as
+   `/<org>/<segment>` is, `/` staying the listing of every collection
+   together; the root joins the reserved first segments; a listing's
+   preferences are stored under
+   `table_prefs_<the keys of the collections the page lists joined by +>_<org or home>`,
+   and a listing remounts its search state whenever the collection it
+   lists or the organization changes. Because one prefs object shared by
+   three pages was overwritten by whichever wrote last, and one component
+   instance carried over a collection change crashed on the missing
+   collection's state.
+
+---
+
 ## Conformance checklist
 
 | Line                                                                                                                                                              | Catalog                                                                        | BoxVault                                                                                                                              | VDI Health                                                                                                       |
@@ -1312,7 +1364,7 @@ backend they are on.
 | Profile routed by the `backend` or `cookie` auth token                                                                                                            | ✓ `NotAvailableStub`                                                           | ✓ `/profile`                                                                                                                          | ✓ `NotAvailableStub`                                                                                             |
 | Organization console and discovery routed by `org-console` and `discover`                                                                                         | ✓ `NotAvailableStub`                                                           | ✓ `/org-console`, `/organizations/discover`                                                                                           | ✓ `NotAvailableStub`                                                                                             |
 | Admin routed by `admin`                                                                                                                                           | ✓ `NotAvailableStub`                                                           | ✓ `/admin`                                                                                                                            | ✓ `/admin` under `idp`: Configuration from `status.config` and the update notice, no Organizations or System tab |
-| Search page at `/search?q=`, `search` reserved                                                                                                                    | ✓ client-side rows                                                             | ✓ `GET /api/search` rows                                                                                                              | ✓ says nothing to search                                                                                         |
+| Search page at `/search?q=`, `search` reserved                                                                                                                    | to come — the `search` token and `GET /api/search`                             | ✓ `GET /api/search` rows                                                                                                              | ✓ the not-available stub, no `search` token                                                                      |
 | Setup and its gate by `setup`                                                                                                                                     | ✓ no gate                                                                      | ✓ `/setup`                                                                                                                            | ✓ no gate                                                                                                        |
 | Deep links load (SPA fallback)                                                                                                                                    | ✓ Worker answers Pages 404s with `index.html`                                  | ✓ catch-all over `backend/ui`                                                                                                         | ✓ `index.html` after every `/api` route                                                                          |
 | Serves the pinned UI release and answers `GET /api/status`                                                                                                        | ✓ `startcloudUiVersion` in the root `package.json`, the Worker's `/api/status` | ✓ `startcloudUiVersion` in `backend/package.json`, `status.routes.js` in both server modes                                            | ✓ `[tool.startcloud] ui_version` in `pyproject.toml`, `routes/status.py`                                         |

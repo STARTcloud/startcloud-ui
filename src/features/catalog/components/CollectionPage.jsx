@@ -14,7 +14,7 @@ const CollectionPage = ({ collection, org, member, context }) => {
 
   return (
     <Listing
-      key={org}
+      key={`${collection.key}:${org}`}
       collections={collections}
       org={org}
       member={member}

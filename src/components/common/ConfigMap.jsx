@@ -7,6 +7,7 @@ import { FaPlus, FaTrash } from 'react-icons/fa6';
 import { formRulesShape, useFormRules } from '../../hooks/useFormRules';
 import { fieldOf, schemaSections, setValueAt, valueAt } from '../../utils/schemaSections';
 
+import ConfigAction, { refusalOf } from './ConfigAction';
 import ConfigField from './ConfigField';
 import Field from './Field';
 import FormErrorSummary from './FormErrorSummary';
@@ -87,6 +88,22 @@ const mapShape = {
   onChange: PropTypes.func.isRequired,
   rules: formRulesShape.isRequired,
   nameFor: PropTypes.func.isRequired,
+  callAction: PropTypes.func,
+  guard: PropTypes.func,
+};
+
+const entryShape = {
+  pointer: PropTypes.string.isRequired,
+  entryKey: PropTypes.string.isRequired,
+  entryName: PropTypes.string.isRequired,
+  entry: PropTypes.object.isRequired,
+  item: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  nameFor: PropTypes.func.isRequired,
+  callAction: PropTypes.func,
+  guard: PropTypes.func,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 const configMapShape = {
@@ -151,7 +168,50 @@ KeyField.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const EntryCard = ({ entryKey, entryName, entry, item, rules, onChange, onEdit, onDelete }) => {
+const EntryAction = ({ pointer, entryKey, entry, item, rules, nameFor, callAction, guard }) => {
+  if (!isSchema(item.action) || !callAction) {
+    return null;
+  }
+  const base = `${pointer}/${entryKey}`;
+  return (
+    <ConfigAction
+      action={item.action}
+      title={entryKey}
+      pointer={base}
+      values={entry}
+      call={callAction}
+      guard={guard}
+      onRefused={error => rules.applyServerErrors(refusalOf(error, base, nameFor))}
+      className=""
+    />
+  );
+};
+
+EntryAction.propTypes = {
+  pointer: PropTypes.string.isRequired,
+  entryKey: PropTypes.string.isRequired,
+  entry: PropTypes.object.isRequired,
+  item: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  nameFor: PropTypes.func.isRequired,
+  callAction: PropTypes.func,
+  guard: PropTypes.func,
+};
+
+const EntryCard = ({
+  pointer,
+  entryKey,
+  entryName,
+  entry,
+  item,
+  rules,
+  nameFor,
+  callAction = null,
+  guard,
+  onChange,
+  onEdit,
+  onDelete,
+}) => {
   const { t } = useTranslation();
   const fields = cardFields(item, '');
   const inline = fields.map(field => `${entryName}${field.pointer}`);
@@ -184,6 +244,16 @@ const EntryCard = ({ entryKey, entryName, entry, item, rules, onChange, onEdit, 
           ))}
         </div>
         <div className="card-footer d-flex justify-content-end gap-2">
+          <EntryAction
+            pointer={pointer}
+            entryKey={entryKey}
+            entry={entry}
+            item={item}
+            rules={rules}
+            nameFor={nameFor}
+            callAction={callAction}
+            guard={guard}
+          />
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onEdit}>
             {t('configManager.map.edit')}
           </button>
@@ -198,14 +268,8 @@ const EntryCard = ({ entryKey, entryName, entry, item, rules, onChange, onEdit, 
 };
 
 EntryCard.propTypes = {
-  entryKey: PropTypes.string.isRequired,
-  entryName: PropTypes.string.isRequired,
-  entry: PropTypes.object.isRequired,
-  item: PropTypes.object.isRequired,
-  rules: formRulesShape.isRequired,
+  ...entryShape,
   onChange: PropTypes.func.isRequired,
-  onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
 };
 
 const summaryValues = (item, entry) =>
@@ -213,7 +277,19 @@ const summaryValues = (item, entry) =>
     .map(field => valueAt(entry, field.pointer))
     .filter(value => value !== undefined && value !== null && value !== '');
 
-const EntryRow = ({ entryKey, entryName, entry, item, rules, onEdit, onDelete }) => {
+const EntryRow = ({
+  pointer,
+  entryKey,
+  entryName,
+  entry,
+  item,
+  rules,
+  nameFor,
+  callAction = null,
+  guard,
+  onEdit,
+  onDelete,
+}) => {
   const { t } = useTranslation();
   const fields = cardFields(item, '');
   const inline = fields.map(field => `${entryName}${field.pointer}`);
@@ -232,6 +308,16 @@ const EntryRow = ({ entryKey, entryName, entry, item, rules, onEdit, onDelete })
     ) : null;
   const actions = (
     <>
+      <EntryAction
+        pointer={pointer}
+        entryKey={entryKey}
+        entry={entry}
+        item={item}
+        rules={rules}
+        nameFor={nameFor}
+        callAction={callAction}
+        guard={guard}
+      />
       <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onEdit}>
         {t('configManager.map.edit')}
       </button>
@@ -244,15 +330,7 @@ const EntryRow = ({ entryKey, entryName, entry, item, rules, onEdit, onDelete })
   return <MethodRow label={entryKey} subline={subline} actions={actions} />;
 };
 
-EntryRow.propTypes = {
-  entryKey: PropTypes.string.isRequired,
-  entryName: PropTypes.string.isRequired,
-  entry: PropTypes.object.isRequired,
-  item: PropTypes.object.isRequired,
-  rules: formRulesShape.isRequired,
-  onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-};
+EntryRow.propTypes = entryShape;
 
 const ObjectMap = ({
   pointer,
@@ -263,6 +341,8 @@ const ObjectMap = ({
   onChange,
   rules,
   nameFor,
+  callAction = null,
+  guard,
   Sections,
   nested = false,
 }) => {
@@ -366,11 +446,15 @@ const ObjectMap = ({
               {Object.entries(entries).map(([key, entry]) => (
                 <EntryRow
                   key={key}
+                  pointer={pointer}
                   entryKey={key}
                   entryName={`${name}/${key}`}
                   entry={entriesOf(entry)}
                   item={item}
                   rules={rules}
+                  nameFor={nameFor}
+                  callAction={callAction}
+                  guard={guard}
                   onEdit={() => openEdit(key)}
                   onDelete={() => onChange(without(entries, key))}
                 />
@@ -395,11 +479,15 @@ const ObjectMap = ({
                 {Object.entries(entries).map(([key, entry]) => (
                   <EntryCard
                     key={key}
+                    pointer={pointer}
                     entryKey={key}
                     entryName={`${name}/${key}`}
                     entry={entriesOf(entry)}
                     item={item}
                     rules={rules}
+                    nameFor={nameFor}
+                    callAction={callAction}
+                    guard={guard}
                     onChange={next => onChange({ ...entries, [key]: next })}
                     onEdit={() => openEdit(key)}
                     onDelete={() => onChange(without(entries, key))}
@@ -442,6 +530,8 @@ const ObjectMap = ({
               config={form}
               rules={dialog}
               nameFor={nameOf}
+              callAction={callAction}
+              guard={guard}
               nested
               onChange={(fieldPointer, next) =>
                 setForm(previous => setValueAt(previous, fieldPointer, next))
@@ -619,11 +709,18 @@ ScalarMap.propTypes = mapShape;
  * as its action) over one row per entry straight on the ground, the row's
  * key, its `order` 1 or 2 values as muted text where the item schema
  * carries them, and Edit and Delete at the row's right (config contract
- * decision 90); a scalar item draws as key and value rows with Add and
- * Remove; an item that is itself a map draws this component nested per
- * entry; Add, Delete and Remove change the form alone through `onChange`
- * with the whole map, which reaches the backend in the next Update's
- * merge patch.
+ * decision 90); an `action` declared on the item schema draws through
+ * `ConfigAction` on every card's footer before Edit and Delete, and first
+ * among a list row's actions, titled by the entry's key, calling
+ * `callAction(route, method, body)` through `guard` with `body: form` the
+ * entry's own current values, unsaved, and a 422 painted under the
+ * entry's pointers, drawn only while `callAction` is given; `callAction`
+ * and `guard` reach the item dialog's `Sections` too, so a subsection or
+ * leaf action inside the dialog sends the dialog form's values; a scalar
+ * item draws as key and value rows with Add and Remove; an item that is
+ * itself a map draws this component nested per entry; Add, Delete and
+ * Remove change the form alone through `onChange` with the whole map,
+ * which reaches the backend in the next Update's merge patch.
  */
 const ConfigMap = ({
   pointer,
@@ -634,6 +731,8 @@ const ConfigMap = ({
   onChange,
   rules,
   nameFor,
+  callAction = null,
+  guard,
   Sections,
   nested = false,
 }) => {
@@ -665,6 +764,8 @@ const ConfigMap = ({
         onChange={onChange}
         rules={rules}
         nameFor={nameFor}
+        callAction={callAction}
+        guard={guard}
         Sections={Sections}
         nested={nested}
       />
@@ -728,6 +829,8 @@ const ConfigMap = ({
               onChange={next => onChange({ ...entries, [key]: next })}
               rules={rules}
               nameFor={nameFor}
+              callAction={callAction}
+              guard={guard}
               Sections={Sections}
               nested={nested}
             />

@@ -58,7 +58,7 @@ const kindsOf = rows => [
 
 const usePageResults = ({ appSearch, query }) => {
   const [answered, setAnswered] = useState(EMPTY_APP_RESULTS);
-  const active = appSearch.available && query.length >= MIN_QUERY;
+  const active = query.length >= MIN_QUERY;
 
   useEffect(() => {
     if (!active) {
@@ -167,11 +167,12 @@ PageBody.propTypes = {
 };
 
 /**
- * The app-wide search page at `/search?q=`: the query lives in the URL
- * through `useUrlNarrowing` and the navbar box is bound to it, so typing
- * there refines the page; the
- * results come from the host's own search or the local walk, one table per
- * kind with the header sort and the Columns pills the detail pages use.
+ * The app-wide search page at `/search?q=`, mounted only while the host
+ * lists the `search` feature token: the query lives in the URL through
+ * `useUrlNarrowing` and the navbar box is bound to it, so typing there
+ * refines the page; the results come from the host's own search, one
+ * table per kind with the header sort and the Columns pills the detail
+ * pages use.
  */
 const SearchPage = ({ context }) => {
   const { t, i18n } = useTranslation();
@@ -200,15 +201,6 @@ const SearchPage = ({ context }) => {
 
   const ctx = { ...context, t, language: i18n.language };
   const total = data.results.length + sumOf(data.truncated);
-
-  if (!appSearch.available) {
-    return (
-      <div className="list row">
-        <PageHeader title={t('search.page.title')} />
-        <div>{t('search.unavailable')}</div>
-      </div>
-    );
-  }
 
   return (
     <div className="list row">

@@ -9,7 +9,6 @@ export const EMPTY_APP_RESULTS = { query: '', results: [], truncated: {}, loadin
 
 export const appSearchShape = PropTypes.shape({
   search: PropTypes.func.isRequired,
-  available: PropTypes.bool.isRequired,
   collections: PropTypes.array.isRequired,
   role: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,

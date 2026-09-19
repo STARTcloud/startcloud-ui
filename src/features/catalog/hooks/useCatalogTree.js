@@ -66,7 +66,9 @@ const organizationNodes = ({ collection, items, routeOf }) =>
 /**
  * The catalog feature's sidebar tree in decision 68's hook shape: one root
  * node per mounted collection, labelled by the collection's `labelKey` and
- * routing to its own listing, whose children are one node per organization
+ * routing to its own all-organizations listing (`collectionPath` with no
+ * organization, the collection's segment or, without one, its key), whose
+ * children are one node per organization
  * from the adapter's `listAll` (grouped by `organization.name` the way the
  * listing groups its rows, sorted case-insensitively), each routing to the
  * organization's listing and folding out one node per item (the label or

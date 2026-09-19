@@ -17,6 +17,7 @@ import {
   useNavbarSearch,
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
+import { hasFeature } from '../../utils/capabilities';
 import { readElsewhereFold, writeElsewhereFold } from '../../utils/prefs';
 import DateRange from '../common/DateRange';
 import SearchResults from '../common/SearchResults';
@@ -269,25 +270,28 @@ AppSection.propTypes = {
 };
 
 /**
- * The band under the navbar: the page's filter groups while the gear is on,
- * a `toggle` or `select` group as one row of pills and a `date-range` group
- * as the shared `DateRange` with its presets, the page's registered action
- * at the foot beside Clear filters, and the app-wide results for the query
- * in the box, headed "Elsewhere in the app" beside a page binding and "In
- * the app" without one, that heading a fold button (kept in local storage)
- * so the results can be put away while the filter band stays open.
+ * The band under the navbar, drawn only while the host lists the `search`
+ * feature token, the same gate as the box: the page's filter groups while
+ * the gear is on, a `toggle` or `select` group as one row of pills and a
+ * `date-range` group as the shared `DateRange` with its presets, the
+ * page's registered action at the foot beside Clear filters, and the
+ * app-wide results for the query in the box, headed "Elsewhere in the
+ * app" beside a page binding and "In the app" without one, that heading a
+ * fold button (kept in local storage) so the results can be put away while
+ * the filter band stays open.
  */
 export const NavbarSearchPanel = () => {
+  const status = useStatus();
   const context = useContext(NavbarSearchContext);
   const binding = useNavbarSearch(context?.store);
 
-  if (!context) {
+  if (!context || !hasFeature(status, 'search')) {
     return null;
   }
 
   const filters = context.panelOpen && hasPanel(binding);
   const query = (binding ? binding.query : context.appQuery).trim();
-  const app = context.expanded && context.appSearch.available && query.length > 0;
+  const app = context.expanded && query.length > 0;
 
   if (!filters && !app) {
     return null;

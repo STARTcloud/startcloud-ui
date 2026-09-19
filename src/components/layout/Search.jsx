@@ -12,6 +12,7 @@ import {
   useNavbarSearch,
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
+import { hasFeature } from '../../utils/capabilities';
 
 const HOVER_DWELL_MS = 400;
 const DEBOUNCE_MS = 250;
@@ -155,8 +156,7 @@ const useAppResults = ({ context, expanded, query }) => {
   const setAppResults = context?.setAppResults;
   const needle = query.trim();
 
-  const active =
-    Boolean(setAppResults && expanded && appSearch?.available) && needle.length >= MIN_QUERY;
+  const active = Boolean(setAppResults && expanded) && needle.length >= MIN_QUERY;
 
   useEffect(() => {
     if (!active) {
@@ -190,11 +190,13 @@ const useAppResults = ({ context, expanded, query }) => {
 };
 
 /**
- * The navbar search module: the icon, then on click or hover the box. With
- * a page binding the box drives the page's search and filters and, from two
- * characters on, the app-wide search too; with none it drives only the
- * app-wide search under the brand's placeholder. The app-wide answer lands
- * in the context for the panel to draw.
+ * The navbar search module, drawn only while the host lists the `search`
+ * feature token (a host without it draws no icon and no box, a page's
+ * binding then published to nobody): the icon, then on click or hover the
+ * box. With a page binding the box drives the page's search and filters
+ * and, from two characters on, the app-wide search too; with none it
+ * drives only the app-wide search under the brand's placeholder. The
+ * app-wide answer lands in the context for the panel to draw.
  */
 export const NavbarSearchControl = () => {
   const { t } = useTranslation();
@@ -208,7 +210,7 @@ export const NavbarSearchControl = () => {
   useEffect(() => () => clearTimeout(dwell.current), []);
   useAppResults({ context, expanded, query });
 
-  if (!context || (!binding && !context.appSearch.available)) {
+  if (!context || !hasFeature(status, 'search')) {
     return null;
   }
 

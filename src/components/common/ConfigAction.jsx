@@ -18,6 +18,24 @@ export const actionShape = PropTypes.shape({
 
 const unguarded = call => call();
 
+/**
+ * A refused action's 422 rewritten for `rules.applyServerErrors`: every
+ * field error's pointer prefixed with `base` (the pointer of the object
+ * whose values the action sent) and passed through `nameFor`, so the
+ * error lands on the form control that names it.
+ *
+ * @param {Object} error - The refusal, its `fieldErrors` the server's
+ * @param {string} base - The pointer the sent values sit under
+ * @param {Function} nameFor - The form's pointer-to-name function
+ * @returns {{fieldErrors: Array<Object>}}
+ */
+export const refusalOf = (error, base, nameFor) => ({
+  fieldErrors: (error?.fieldErrors || []).map(entry => ({
+    ...entry,
+    pointer: `/${nameFor(`${base}${String(entry.pointer || '')}`)}`,
+  })),
+});
+
 const bodyOf = ({ action, values, file, pointer }) => {
   if (action.body === 'file') {
     const form = new FormData();
@@ -39,7 +57,9 @@ const bodyOf = ({ action, values, file, pointer }) => {
  * `guard`, so a `403 step_up_required` opens the step-up dialog and
  * retries the same call unchanged; a 422 is handed to `onRefused` to paint
  * on the form and any other refusal is one danger card; the server's
- * `message` is never drawn.
+ * `message` is never drawn; `className` is the spacing class of the test
+ * and run buttons, `mt-1` beside a field control and empty when the
+ * button sits in a card footer or a list row's actions.
  */
 const ConfigAction = ({
   action,
@@ -49,6 +69,7 @@ const ConfigAction = ({
   values = null,
   guard = unguarded,
   onRefused = null,
+  className = 'mt-1',
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -108,14 +129,11 @@ const ConfigAction = ({
     );
   }
 
+  const buttonClass = `btn btn-outline-primary btn-sm${className ? ` ${className}` : ''}`;
+
   if (action.kind === 'test') {
     return (
-      <button
-        type="button"
-        className="btn btn-outline-primary btn-sm mt-1"
-        disabled={busy}
-        onClick={test}
-      >
+      <button type="button" className={buttonClass} disabled={busy} onClick={test}>
         {t('configManager.actions.test')}
       </button>
     );
@@ -125,7 +143,7 @@ const ConfigAction = ({
     <>
       <button
         type="button"
-        className="btn btn-outline-primary btn-sm mt-1"
+        className={buttonClass}
         disabled={busy}
         onClick={() => setConfirming(true)}
       >
@@ -153,6 +171,7 @@ ConfigAction.propTypes = {
   values: PropTypes.any,
   guard: PropTypes.func,
   onRefused: PropTypes.func,
+  className: PropTypes.string,
 };
 
 export default ConfigAction;

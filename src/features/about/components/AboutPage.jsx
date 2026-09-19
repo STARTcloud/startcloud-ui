@@ -237,7 +237,7 @@ SupportStrip.propTypes = {
  * @param {Array<{title: string, details: string[]}>} props.components - The parts the app is made of, one headed card each
  * @param {Array<{key: string, href: string, label: string, Icon: Function}>} props.docs - The documentation links, the getting-started guide first
  * @param {string} props.docsIntro - The sentence above the documentation links
- * @param {Array<{key: string, href: string, label: string, Icon: Function}>} props.support - The help and community links
+ * @param {Array<{key: string, href: string, label: string, Icon: Function}>} props.support - The help and community links: repo, changelog, contact, then the host's community links
  * @param {string} props.supportIntro - The sentence beside the support links
  * @param {{active: boolean, onToggle: Function}|null} [props.favorite] - The identity-provider favorite toggle, or null when the session has none
  * @returns {import('react').ReactElement} The page

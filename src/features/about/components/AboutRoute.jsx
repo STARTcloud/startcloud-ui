@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaBook, FaCode, FaEnvelope, FaListCheck } from 'react-icons/fa6';
+import { FaArrowUpRightFromSquare, FaBook, FaCode, FaEnvelope, FaListCheck } from 'react-icons/fa6';
 
 import BrandLogo from '../../../components/common/BrandLogo';
 import { httpsUrl } from '../../../components/common/MethodList';
@@ -63,14 +63,28 @@ const docsOf = ({ status, t }) => {
     : [];
 };
 
-const supportOf = ({ status, t }) =>
-  [
+const communityOf = value =>
+  Array.isArray(value)
+    ? value
+        .map((entry, index) => ({
+          key: `community-${index}`,
+          href: httpsUrl(entry?.url),
+          label: typeof entry?.label === 'string' ? entry.label : '',
+          Icon: FaArrowUpRightFromSquare,
+        }))
+        .filter(link => link.href && link.label)
+    : [];
+
+const supportOf = ({ status, t }) => [
+  ...[
     { key: 'repository', href: httpsUrl(status.brand?.repo), Icon: FaCode },
     { key: 'changelog', href: httpsUrl(status.brand?.changelog), Icon: FaListCheck },
     { key: 'contact', href: mailto(status.links?.contact), Icon: FaEnvelope },
   ]
     .filter(link => link.href)
-    .map(link => ({ ...link, label: t(`pages.about.links.${link.key}`) }));
+    .map(link => ({ ...link, label: t(`pages.about.links.${link.key}`) })),
+  ...communityOf(status.links?.community),
+];
 
 const contentOf = ({ status, t }) => {
   const prefix = `about.${status.role}`;
@@ -135,8 +149,10 @@ const useFavorite = ({ enabled, clientId, appName }) => {
  * `status.brand.name`, the description, goal, features, components and
  * the two intros are the `about.<role>.*` keys read as objects, Start
  * here is `links.docs`, Help and community is `brand.repo`,
- * `brand.changelog` and `links.contact`, each drawn only while set, and
- * the UI build's own version comes from `__APP_VERSION__`; the favorite
+ * `brand.changelog` and `links.contact`, each drawn only while set, then
+ * every `links.community` entry the host lists, its own `label` as the
+ * text and its `url` drawn only while `https:`, a malformed member drawing
+ * nothing, and the UI build's own version comes from `__APP_VERSION__`; the favorite
  * toggle over `GET` and `PUT /api/user/favorites` through the hub client
  * is drawn while the host advertises `favorites`, the viewer signed in
  * through the provider and the session names its `clientId`, the ID

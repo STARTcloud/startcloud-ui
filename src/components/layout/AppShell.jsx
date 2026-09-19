@@ -356,7 +356,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
 
 /**
  * The whole chrome around the routes, described by the host's status: the
- * sidebar first when the mounted features exported entries for it, then
+ * sidebar first while the host lists `sidebar` and a mounted feature
+ * exported entries for it (the gate on `sidebarEntries`, the shell only
+ * reading whether the list is empty), then
  * the header with the brand from `status.brand` (in the sidebar's top
  * while one draws, one link to `/`), the route crumbs (opened with the root crumb, the
  * product name linking to `/`, while the sidebar draws; `<group> › <row>`
@@ -386,13 +388,15 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * its Preferences row an in-router link to `/user/profile/preferences`,
  * the one destination drawn in both the column and the menu; while the
  * host advertises `discover` the cluster carries Discover, an in-router
- * link to the discovery page, a text link while signed out and a compass
- * icon after the search control while signed in; while signed out the
+ * link to the discovery page drawn as the compass cluster button in both
+ * states, after the search control while signed in; while signed out the
  * left of the bar holds the brand alone and the cluster is Discover, the
  * ticket icon (the ticket link the app supplies, built from the fallback
  * customer id alone, in a new tab, drawn only while there is a ticket
  * system), language, theme and Sign in, with no search icon because
- * app-wide search needs a session. The app supplies
+ * app-wide search needs a session; signed in, the search icon, its box
+ * and the panel under the bar draw only while the host lists `search`,
+ * a host without the token drawing none of them. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's

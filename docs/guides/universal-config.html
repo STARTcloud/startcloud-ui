@@ -971,8 +971,9 @@
   <div class="state">
     <div class="state-label">
       Maps — every additionalProperties field through one generic map component: cards with Add and
-      Delete for an item with properties, key and value rows with Add and Remove for a scalar item,
-      the key dialog validated against propertyNames and unique
+      Delete for an item with properties, Test on every card from an action on the item schema, key
+      and value rows with Add and Remove for a scalar item, the key dialog validated against
+      propertyNames and unique
     </div>
     <div class="frame">
       <div class="demo">
@@ -990,7 +991,8 @@
                     <span class="hint"><strong>Issuer:</strong> https://github.com</span>
                     <span class="hint"><strong>Client ID:</strong> Iv1.8a2c…</span>
                     <div class="actions" style="justify-content: flex-end">
-                      <span class="btn sm">Edit</span><span class="btn sm">Delete</span>
+                      <span class="btn sm">Test</span><span class="btn sm">Edit</span
+                      ><span class="btn sm">Delete</span>
                     </div>
                   </div>
                 </div>
@@ -1000,7 +1002,8 @@
                     <span class="hint"><strong>Issuer:</strong> https://accounts.google.com</span>
                     <span class="hint"><strong>Client ID:</strong> 4102…</span>
                     <div class="actions" style="justify-content: flex-end">
-                      <span class="btn sm">Edit</span><span class="btn sm">Delete</span>
+                      <span class="btn sm">Test</span><span class="btn sm">Edit</span
+                      ><span class="btn sm">Delete</span>
                     </div>
                   </div>
                 </div>
@@ -1108,6 +1111,13 @@
         cards, one per key, each showing the key and every item property carrying
         <code>order</code> 1 or 2, the dialog the rest; a scalar item draws as key and value rows
         with Add and Remove.
+      </div>
+      <div class="callout">
+        <strong>An action on the item schema</strong> draws on every entry: the providers map's item
+        carries <code>action: { kind: test, route, method: POST, body: form }</code>, so Test sits
+        on each card's footer before Edit and Delete, first among a list row's actions, sends that
+        entry's own unsaved value, and a 422 paints under the entry's pointers; one Test over the
+        whole map would test none of them.
       </div>
       <div class="callout">
         <strong>The key:</strong> the dialog validates it against the map's

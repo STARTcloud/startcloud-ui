@@ -1,7 +1,29 @@
+/**
+ * The first segment of a collection's own all-organizations listing: its
+ * route segment, or its key for a collection mounted without one.
+ *
+ * @param {Object} collection - The collection definition
+ * @returns {string} The root segment
+ */
+export const collectionRoot = collection => collection.segment || collection.key;
+
+/**
+ * The path of a collection's listing: under an organization `/<org>` plus
+ * the collection's segment when it has one, and with no organization the
+ * collection's own root `/<segment>`, or `/<key>` for a segment-less
+ * collection, so every collection has an all-organizations listing of its
+ * own apart from the home page.
+ *
+ * @param {Object} collection - The collection definition
+ * @param {string} org - The organization, empty for every organization
+ * @returns {string} The path
+ */
 export const collectionPath = (collection, org) => {
-  const base = org ? `/${org}` : '';
+  if (!org) {
+    return `/${collectionRoot(collection)}`;
+  }
   const segment = collection.segment ? `/${collection.segment}` : '';
-  return `${base}${segment}` || '/';
+  return `/${org}${segment}`;
 };
 
 export const itemPath = (collection, org, name) =>
@@ -66,15 +88,16 @@ export const UNIVERSAL_ROUTES = [
 
 /**
  * The first segments no organization may own: every app page plus the
- * route segment of every mounted collection, the one list the shell's
- * crumbs and the catalog tree both parse routes against.
+ * root of every mounted collection (its segment, or its key when it has
+ * none), the one list the shell's crumbs and the catalog tree both parse
+ * routes against.
  *
  * @param {Array<Object>} collections - The host's mounted collection definitions
  * @returns {Array<string>} The reserved first segments
  */
 export const reservedSegments = collections => [
   ...UNIVERSAL_ROUTES,
-  ...collections.map(collection => collection.segment).filter(Boolean),
+  ...collections.map(collectionRoot),
 ];
 
 const emptyRoute = {
@@ -89,7 +112,9 @@ const emptyRoute = {
 /**
  * Reads the current path as the shared page levels. Returns null on a
  * reserved first segment (an app page that is not an organization), the
- * empty route on the home page, and otherwise the organization, the
+ * empty route on the home page, the collection alone on a collection's
+ * own root (its segment, or its key for a segment-less collection), and
+ * otherwise the organization, the
  * collection (the implicit one when the route carries no segment for it),
  * the item, the version, the provider and, for a collection whose leaf is a
  * file, the architecture, read from the fifth part alone and ignored by
@@ -101,7 +126,7 @@ export const parseRoute = (pathname, { reserved, collections }) => {
     return emptyRoute;
   }
   const [first, ...rest] = segments;
-  const topCollection = collections.find(entry => entry.segment && entry.segment === first);
+  const topCollection = collections.find(entry => collectionRoot(entry) === first);
   if (topCollection) {
     return { ...emptyRoute, collection: topCollection };
   }

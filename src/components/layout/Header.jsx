@@ -55,22 +55,6 @@ Brand.propTypes = {
 
 const CLUSTER_BUTTON = 'btn btn-link nav-link cluster-btn';
 
-const DiscoverLink = ({ to, LinkComponent }) => {
-  const { t } = useTranslation();
-  return (
-    <li className="nav-item">
-      <LinkComponent to={to} className="nav-link">
-        {t('navbar.discover')}
-      </LinkComponent>
-    </li>
-  );
-};
-
-DiscoverLink.propTypes = {
-  to: PropTypes.string.isRequired,
-  LinkComponent: PropTypes.elementType.isRequired,
-};
-
 const DiscoverButton = ({ to, LinkComponent }) => {
   const { t } = useTranslation();
   return (
@@ -193,7 +177,7 @@ const Header = ({
           </ul>
         ) : (
           <ul className="nav nav-pills ms-auto align-items-center">
-            {discoverTo ? <DiscoverLink to={discoverTo} LinkComponent={LinkComponent} /> : null}
+            {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
             {ticketUrl ? <TicketButton href={ticketUrl} /> : null}
             <LanguageButton languages={language.languages} onPick={language.onPick} />
             <ThemeButton theme={theme} />

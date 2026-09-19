@@ -51,6 +51,12 @@ export const statusShape = PropTypes.shape({
   links: PropTypes.shape({
     docs: PropTypes.string.isRequired,
     contact: PropTypes.string.isRequired,
+    community: PropTypes.arrayOf(
+      PropTypes.shape({
+        label: PropTypes.string.isRequired,
+        url: PropTypes.string.isRequired,
+      })
+    ),
   }),
   ticket: PropTypes.shape({
     baseUrl: PropTypes.string.isRequired,
