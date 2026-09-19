@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.20.0...v0.21.0) (2026-09-19)
+
+
+### Features
+
+* guest access as one three-value visibility control, chip, filter and bulk verbs with counts kept null for a guest, the service-account role from the host's rules and its section gone for a guest-only account, downloads defaulting to cards, the Name cell the item name alone, a catalog sidebar tree that opens to the route, the inbox on the shared table with the list hook shared, one empty-state placard everywhere, Discover and one ticket icon in the navbar with Sign in hidden on every auth path, a user record page over a single read with the crumb named by the page, the deploy glyph as a column after Name and bare in the strip, org logos on the profile memberships, one global-admin predicate, and the contracts and mocks rewritten to match ([6fe4e53](https://github.com/STARTcloud/startcloud-ui/commit/6fe4e5379a3c218e52cbf6ab8b646a337e0cbe50))
+
 ## [0.20.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.19.0...v0.20.0) (2026-09-18)
 
 
