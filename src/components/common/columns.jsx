@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom';
 
 import {
+  VISIBILITY_GROUP,
   architectureNames,
   latestReleaseTime,
   platformNames,
   providerNames,
+  visibilityOf,
 } from '../../utils/itemShape';
 import { formatRelativeTime } from '../../utils/relativeTime';
 import { itemPath } from '../../utils/routes';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
+
+import { VisibilityBadge } from './StatusChips';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -48,12 +52,6 @@ export const nameColumn = {
   render: (item, ctx) => {
     const orgName = item.organization.name;
     const text = `${orgName}/${item.name}`;
-    const label = (
-      <>
-        <span className="name-org">{orgName}/</span>
-        {item.name}
-      </>
-    );
     return (
       <>
         <OrgLogo
@@ -69,11 +67,11 @@ export const nameColumn = {
             className="v-align-middle"
             title={text}
           >
-            {label}
+            {item.name}
           </Link>
         ) : (
           <span className="v-align-middle" title={text}>
-            {label}
+            {item.name}
           </span>
         )}
       </>
@@ -140,12 +138,8 @@ export const visibilityColumn = {
   key: 'visibility',
   kind: 'badge',
   labelKey: 'pages.table.visibility',
-  sortValue: item => (item.isPublic ? 0 : 1),
-  render: (item, ctx) => (
-    <span className={`badge ${item.isPublic ? 'bg-info' : 'bg-secondary'}`}>
-      {ctx.t(item.isPublic ? 'pages.status.public' : 'pages.status.private')}
-    </span>
-  ),
+  sortValue: item => VISIBILITY_GROUP.order.indexOf(visibilityOf(item)),
+  render: item => <VisibilityBadge visibility={visibilityOf(item)} />,
 };
 
 export const createdColumn = {

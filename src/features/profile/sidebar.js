@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fa6';
 
 import { authMethod, hasFeature } from '../../utils/capabilities';
+import { isGlobalAdmin } from '../../utils/permissions';
 
 import { sectionPath, sectionsFor } from './components/ProfilePage';
 import { useIntegrationsTree } from './hooks/useIntegrationsTree';
@@ -25,13 +26,13 @@ const SECTION_ICONS = {
   serviceAccounts: FaKey,
 };
 
-const profileRow = (basePath, profile) => ({
+const profileRow = (basePath, profile, account) => ({
   key: 'profile',
   icon: FaUser,
   labelKey: 'account.sidebar.profile',
   to: basePath,
   end: true,
-  children: sectionsFor(profile)
+  children: sectionsFor(profile, account.organizations, isGlobalAdmin(account.user))
     .filter(section => section !== 'profile')
     .map(section => ({
       key: section,
@@ -54,7 +55,8 @@ const group = (items, tree) => [
  * The profile feature's sidebar export of the identity contract: for every
  * signed-in person one Account group whose Profile row is the profile page
  * itself, active on its exact path alone, carrying `children` built from
- * `sectionsFor` over the host's `profile` adapter and the host's profile
+ * `sectionsFor` over the host's `profile` adapter, the account's
+ * `organizations` and its global-admin role, and the host's profile
  * path (`/user/profile` on a `cookie` host, `/profile` on a `backend`
  * host), so the column never lists a section the page cannot draw
  * (decision 109); on a `cookie` host the group also carries Organizations
@@ -78,12 +80,12 @@ export const sidebar = (status, account, integrations, profile) => {
   }
   const method = authMethod(status);
   if (method === 'backend') {
-    return group([profileRow('/profile', profile)]);
+    return group([profileRow('/profile', profile, account)]);
   }
   if (method !== 'cookie') {
     return [];
   }
-  const items = [profileRow('/user/profile', profile)];
+  const items = [profileRow('/user/profile', profile, account)];
   if (hasFeature(status, 'org-console')) {
     items.push({
       key: 'organizations',

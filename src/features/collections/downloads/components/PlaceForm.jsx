@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import { visibilityShape } from '../../../../components/common/VisibilityPicker';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import {
@@ -211,13 +212,13 @@ PlaceForm.propTypes = {
  * @param {string} props.org - The organization the file went to
  * @param {Object} props.pending - The pending upload the last chunk answered
  * @param {Object} props.levels - The levels the page fixes
- * @param {boolean} props.isPublic - The visibility picked on the zone
+ * @param {{is_public: boolean, guest_access: boolean}} props.visibility - The visibility picked on the zone
  * @param {Function} props.notify - The chrome's notice function
  * @param {Function} props.reload - Reloads the page's data
  * @param {Function} props.onDone - Clears the pending upload the zone holds
  * @returns {React.ReactNode} The pane
  */
-export const PlacePane = ({ org, pending, levels, isPublic, notify, reload, onDone }) => {
+export const PlacePane = ({ org, pending, levels, visibility, notify, reload, onDone }) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(() => draftFrom(pending, levels));
   const rules = useFormRules({
@@ -238,7 +239,7 @@ export const PlacePane = ({ org, pending, levels, isPublic, notify, reload, onDo
       return;
     }
     api.pending
-      .place(org, pending.id, { ...draft, is_public: isPublic })
+      .place(org, pending.id, { ...draft, ...visibility })
       .then(() => {
         notify('success', t('downloads.place.done'));
         onDone();
@@ -298,7 +299,7 @@ PlacePane.propTypes = {
   org: PropTypes.string.isRequired,
   pending: pendingShape.isRequired,
   levels: levelsShape.isRequired,
-  isPublic: PropTypes.bool.isRequired,
+  visibility: visibilityShape.isRequired,
   notify: PropTypes.func.isRequired,
   reload: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,

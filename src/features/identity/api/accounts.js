@@ -11,6 +11,8 @@ const rateLimitOf = userId => encodePath('api', 'admin', 'rate-limit', userId);
 
 export const users = params => client.get('/api/admin/users', { params });
 
+export const getUser = userId => client.get(user(userId));
+
 export const roles = () => client.get('/api/admin/roles');
 
 export const updateUser = (userId, patch) => client.patch(user(userId), patch);
@@ -43,15 +45,16 @@ export const deleteOrganization = organizationId => client.delete(organization(o
 export const organizationsBulk = body => client.post('/api/admin/organizations/bulk', body);
 
 /**
- * The identity provider's own `users` adapter of the shared Users page:
- * the paged list, the role catalog, the record patch, the whole-set roles
- * write, suspend and resume as `enabled` patches, the stepped-up delete,
- * the bulk route, the rate-limit gates and the export URL of the panel's
- * action; the page draws an action or a column only while the adapter
- * carries its call.
+ * The identity provider's own `users` adapter of the shared Users page
+ * and the user record page: the paged list, the single record by id, the
+ * role catalog, the record patch, the whole-set roles write, suspend and
+ * resume as `enabled` patches, the stepped-up delete, the bulk route, the
+ * rate-limit gates and the export URL of the panel's action; the page
+ * draws an action or a column only while the adapter carries its call.
  */
 export const issuerUsers = {
   list: users,
+  get: getUser,
   roles,
   update: updateUser,
   setRoles,

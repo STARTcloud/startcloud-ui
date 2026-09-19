@@ -5,3 +5,4 @@ export { default as OrgPage } from './components/OrgPage';
 export { default as ProviderPage } from './components/ProviderPage';
 export { default as VersionPage } from './components/VersionPage';
 export { collectionShape, pageContextShape } from '../../utils/itemShape';
+export { sidebar } from './sidebar';

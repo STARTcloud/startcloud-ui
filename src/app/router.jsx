@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, matchPath, useParams } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
 import NotAvailableStub from '../components/common/NotAvailableStub';
@@ -58,6 +58,7 @@ import {
   VersionPage,
   collectionShape,
   pageContextShape,
+  sidebar as catalogSidebar,
 } from '../features/catalog';
 import { ErrorPage } from '../features/errors';
 import {
@@ -335,8 +336,27 @@ const organizationsAdapter = {
   gravatarProfile,
 };
 
+const notFoundError = () =>
+  Object.assign(new Error('Not found'), { status: 404, messageKey: 'errors.notFound' });
+
+/**
+ * The Users page's adapter of a `backend` host over the
+ * organizations-with-users answer: the paged list and the single record
+ * by id read from the same rows, a missing id failing as a 404 the way
+ * the client's own not-found does; the suspend, resume and delete calls
+ * by id.
+ */
 const backendUsers = {
   list: params => organizationsWithUsers().then(rows => pageOf(usersOf(rows), params)),
+  get: async id => {
+    const row = usersOf(await organizationsWithUsers()).find(
+      user => String(user.id) === String(id)
+    );
+    if (!row) {
+      throw notFoundError();
+    }
+    return row;
+  },
   suspend: suspendUser,
   resume: resumeUser,
   remove: removeAccount,
@@ -427,6 +447,7 @@ const PAGE_TITLES = {
   '/org-console/:tab': 'orgConsole.pageTitle',
   '/notifications': 'inbox.title',
   '/admin': 'admin.pageTitle',
+  '/admin/users/:id': 'admin.users.title',
   '/admin/terms': 'admin.terms.title',
   '/admin/email-templates': 'admin.emailTemplates.title',
   '/setup': 'setup.title',
@@ -463,19 +484,36 @@ const CRUMB_PARENTS = {
     parent: '/user/organizations',
     name: ({ activeOrganization }) => activeOrganization?.name || '',
   },
+  '/admin/users/:id': {
+    parent: '/admin/users',
+    name: ({ pageName, t }) => pageName || t('admin.users.placeholder'),
+  },
 };
 
 /**
  * The sidebar row a page living at its own path descends from, for the
  * crumbs of the pages contract's Breadcrumb section: the row's path as
- * `parent` and `name`, the page's own name resolved from what the shell
- * holds (the organization console's is the active membership's name);
- * null for a route no row parents.
+ * `parent` and `name`, a resolver called with `{ activeOrganization,
+ * pageName, params, t }`, the page's own name resolved from what the
+ * shell holds (`activeOrganization`, the organization console's name
+ * being the active membership's), the name the page set through
+ * `usePageName` (`pageName`, a user record's being its username, the
+ * translated placeholder "User" standing in while the record has not
+ * loaded), the route's own parameters (`params`) and the translator
+ * (`t`); null for a route no row parents.
  *
  * @param {string} pathname - The current path
  * @returns {{ parent: string, name: Function }|null} The parent row and the name resolver
  */
-export const routeCrumbParent = pathname => CRUMB_PARENTS[pathname] || null;
+export const routeCrumbParent = pathname => {
+  for (const [path, entry] of Object.entries(CRUMB_PARENTS)) {
+    const match = matchPath(path, pathname);
+    if (match) {
+      return { parent: entry.parent, name: held => entry.name({ ...held, params: match.params }) };
+    }
+  }
+  return null;
+};
 
 const titleOf = path => PAGE_TITLES[path];
 
@@ -505,7 +543,11 @@ export const routeTitleKey = pathname => {
 
 /**
  * Every mounted feature's `sidebar(status, account)` answer, concatenated
- * in the order the column draws them: the profile feature's Account
+ * in the order the column draws them: the catalog feature's Catalog group
+ * while the host mounts a collection, for every visitor (handed the
+ * session's account and the mounted collection definitions its Browse
+ * tree walks, no status because it branches on nothing the host
+ * advertises), the profile feature's Account
  * group (handed the integrations adapter its Integrations entry reads
  * once and the host's profile adapter its Profile children are built
  * from), the identity feature's operator group while the host's first
@@ -518,12 +560,14 @@ export const routeTitleKey = pathname => {
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
  * @param {Object} options.account - The session state from `useSession`
+ * @param {Array<Object>} options.collections - The host's mounted collection definitions
  * @returns {Array} The sidebar groups `AppShell` takes as `sidebar`
  */
-export const sidebarEntries = ({ status, account }) => {
+export const sidebarEntries = ({ status, account, collections }) => {
   const cookie = authMethod(status) === 'cookie';
   const admin = adminAdapterFor(status);
   return [
+    ...catalogSidebar(account, collections),
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
@@ -624,15 +668,6 @@ IdentityAdminRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   page: PropTypes.string.isRequired,
-};
-
-const DiscoverLink = () => {
-  const { t } = useTranslation();
-  return (
-    <Link to="/organizations/discover" className="btn btn-sm btn-outline-primary">
-      {t('discovery.discoverButton')}
-    </Link>
-  );
 };
 
 const OrgRoute = ({ collections, organizations, context }) => {
@@ -916,6 +951,7 @@ const issuerProfile = ({ account, globalAdmin }) => (
     account={issuerAccount}
     basePath="/user/profile"
     activeOrgUuid={account.activeOrgUuid}
+    organizations={account.organizations}
     admin={globalAdmin}
     user={account.user}
     loaded={account.loaded}
@@ -937,6 +973,7 @@ const BackendProfileRoute = ({ account, status, globalAdmin }) => {
       account={adapter}
       basePath="/profile"
       activeOrgUuid={account.activeOrgUuid}
+      organizations={account.organizations}
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
@@ -1058,12 +1095,15 @@ const signedInRoutes = ({
 };
 
 const identityAdminRoutes = ({ cookie, accounts, globalAdmin, user }) =>
-  IDENTITY_ADMIN_PAGES.map(page => (
+  [
+    ...IDENTITY_ADMIN_PAGES.map(page => ({ path: `/admin/${page}`, page, list: page })),
+    { path: '/admin/users/:id', page: 'user', list: 'users' },
+  ].map(({ path, page, list }) => (
     <Route
-      key={`/admin/${page}`}
-      path={`/admin/${page}`}
+      key={path}
+      path={path}
       element={gated(
-        cookie || (accounts && ACCOUNT_PAGES.includes(page)),
+        cookie || (accounts && ACCOUNT_PAGES.includes(list)),
         <IdentityAdminRoute globalAdmin={globalAdmin} user={user} page={page} />,
         titleOf('/admin'),
         'cookie'
@@ -1089,16 +1129,7 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
   )),
 ];
 
-const homeElementFor = ({
-  status,
-  cookie,
-  fleet,
-  account,
-  collections,
-  context,
-  theme,
-  globalAdmin,
-}) => {
+const homeElementFor = ({ cookie, fleet, account, collections, context, theme, globalAdmin }) => {
   if (cookie) {
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
@@ -1108,13 +1139,7 @@ const homeElementFor = ({
   if (fleet) {
     return <FleetPage context={context} theme={theme} />;
   }
-  return (
-    <HomePage
-      collections={collections}
-      context={context}
-      actions={hasFeature(status, 'discover') ? <DiscoverLink /> : null}
-    />
-  );
+  return <HomePage collections={collections} context={context} />;
 };
 
 /**
@@ -1143,7 +1168,8 @@ const homeElementFor = ({
  * every other host sending an unknown route home; on a `backend` host the
  * identity feature's Users and All organizations pages answer
  * `/admin/users` and `/admin/organizations` over the host's own accounts
- * and the bare `/admin` redirects to the organizations.
+ * and the bare `/admin` redirects to the organizations; one account's
+ * record page answers `/admin/users/:id` wherever the Users page does.
  */
 const AppRoutes = ({
   account,
@@ -1175,7 +1201,6 @@ const AppRoutes = ({
   }
 
   const homeElement = homeElementFor({
-    status,
     cookie,
     fleet,
     account,

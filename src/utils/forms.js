@@ -52,6 +52,7 @@ export const BOX_SCHEMA = {
     name: { type: 'string' },
     description: { type: 'string' },
     is_public: { type: 'boolean' },
+    guest_access: { type: 'boolean' },
   },
 };
 
@@ -63,6 +64,7 @@ export const BOX_EDIT_SCHEMA = {
     name: { type: 'string' },
     description: { type: 'string' },
     is_public: { type: 'boolean' },
+    guest_access: { type: 'boolean' },
     github_repo: { type: 'string' },
     workflow_file: { type: 'string' },
     cicd_url: { type: 'string' },
@@ -149,6 +151,7 @@ export const DOWNLOAD_SCHEMA = {
     name: { type: 'string' },
     description: { type: 'string' },
     is_public: { type: 'boolean' },
+    guest_access: { type: 'boolean' },
     family: { type: 'string' },
     vendor: { type: 'string' },
     icon_url: { type: 'string' },
@@ -225,6 +228,8 @@ export const PLACE_SCHEMA = {
     product: { $ref: '#/$defs/slug', minLength: 1 },
     release: { $ref: '#/$defs/identifier', minLength: 1 },
     patch: { $ref: '#/$defs/identifier', minLength: 1 },
+    is_public: { type: 'boolean' },
+    guest_access: { type: 'boolean' },
     ...DOWNLOAD_FILE_SCHEMA.properties,
   },
 };

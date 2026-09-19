@@ -1,31 +1,49 @@
+import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import InboxList, { extractEntries, linkOf } from '../../../components/common/InboxList';
+import {
+  NotificationGlyph,
+  absoluteTime,
+  extractEntries,
+  linkOf,
+  notificationShape,
+} from '../../../components/common/InboxList';
 import { inAppPath } from '../../../components/common/MethodList';
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
+import SubTable from '../../../components/common/SubTable';
 import { notificationsAdapterShape } from '../../../components/layout/NotificationsModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useUnread } from '../../../contexts/UnreadContext';
-import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { useListSearch } from '../../../hooks/useListSearch';
+import { useSelection } from '../../../hooks/useSelection';
+import { formatRelativeTime } from '../../../utils/relativeTime';
 
-const PAGE_SIZES = [25, 50, 100, 250];
-const DEFAULT_SIZE = 25;
+const PREFS_KEY = 'table_prefs_inbox';
+const NO_GROUPS = [];
 
-const perPageGroup = ({ size, setSize, t }) => ({
-  key: 'size',
-  label: t('pages.filter.perPage'),
-  entries: Object.fromEntries(PAGE_SIZES.map(value => [String(value), null])),
-  activeSet: new Set([String(size)]),
-  activeClass: 'bg-secondary',
-  columns: true,
-  labelFor: value => value,
-  onToggle: value => setSize(Number(value)),
-});
+const FILTER_GROUPS = [
+  {
+    key: 'read',
+    labelKey: 'inbox.filter.status',
+    values: row => [row.readAt ? 'read' : 'unread'],
+    order: ['unread', 'read'],
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`inbox.filter.${value}`),
+  },
+  {
+    key: 'type',
+    labelKey: 'inbox.filter.type',
+    values: row => (row.type ? [row.type] : []),
+    activeClass: 'bg-secondary',
+    labelFor: (value, t) => t(`inbox.type.${value}`, { defaultValue: value }),
+  },
+];
 
 const matches = (entry, needle) =>
   [entry.title, entry.body].some(text =>
@@ -39,6 +57,8 @@ const totalPagesOf = data => Math.max(0, Number(data?.total_pages) || 0);
 const totalOf = data => Math.max(0, Number(data?.total) || 0);
 
 const readNow = () => new Date().toISOString();
+
+const keepServerFilters = () => undefined;
 
 const runBulk = async (rows, call) => {
   const settled = await Promise.allSettled(rows.map(row => call(row)));
@@ -54,67 +74,298 @@ const runBulk = async (rows, call) => {
   return { succeeded, processed: succeeded.length, skipped: errors.length, errors };
 };
 
-const useSelection = rows => {
-  const [selected, setSelected] = useState(() => new Set());
-  const toggle = entry =>
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(entry.id)) {
-        next.delete(entry.id);
-      } else {
-        next.add(entry.id);
-      }
-      return next;
-    });
-  const allSelected = rows.length > 0 && rows.every(row => selected.has(row.id));
-  const indeterminate = selected.size > 0 && !allSelected;
-  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(row => row.id)));
-  const clear = () => setSelected(new Set());
-  return { selected, toggle, toggleAll, allSelected, indeterminate, clear };
+const TitleCell = ({ entry, onSelect }) => {
+  const unread = !entry.readAt;
+  const weight = unread ? ' fw-semibold' : '';
+  return (
+    <span className="d-inline-flex align-items-start gap-2">
+      <NotificationGlyph entry={entry} />
+      {linkOf(entry) ? (
+        <button
+          type="button"
+          className={`btn btn-link p-0 text-start${weight}`}
+          onClick={() => onSelect(entry)}
+        >
+          {entry.title}
+          <FaArrowUpRightFromSquare className="ms-1 small text-body-secondary" aria-hidden />
+        </button>
+      ) : (
+        <span className={weight.trim()}>{entry.title}</span>
+      )}
+      {unread ? <span className="notification-item-dot flex-shrink-0" /> : null}
+    </span>
+  );
+};
+
+TitleCell.propTypes = {
+  entry: notificationShape.isRequired,
+  onSelect: PropTypes.func.isRequired,
+};
+
+const columns = [
+  {
+    key: 'title',
+    kind: 'name',
+    labelKey: 'inbox.columns.title',
+    sortValue: row => (row.title || '').toLowerCase(),
+    render: (row, ctx) => <TitleCell entry={row} onSelect={ctx.onSelect} />,
+  },
+  {
+    key: 'body',
+    kind: 'text',
+    labelKey: 'inbox.columns.body',
+    sortValue: row => (row.body || '').toLowerCase(),
+    render: row => row.body || '',
+  },
+  {
+    key: 'time',
+    kind: 'relative',
+    labelKey: 'inbox.columns.time',
+    sortValue: row => new Date(row.createdAt || 0).getTime(),
+    render: (row, ctx) => (
+      <span title={absoluteTime(row.createdAt, ctx.language)}>
+        {formatRelativeTime(row.createdAt, ctx.language)}
+      </span>
+    ),
+  },
+  {
+    key: 'type',
+    kind: 'badge',
+    labelKey: 'inbox.columns.type',
+    defaultHidden: true,
+    sortValue: row => row.type || '',
+    render: (row, ctx) =>
+      row.type ? (
+        <span className="badge bg-secondary">
+          {ctx.t(`inbox.type.${row.type}`, { defaultValue: row.type })}
+        </span>
+      ) : (
+        ''
+      ),
+  },
+];
+
+const RowActions = ({ entry, onMarkRead, onSelect, onDismiss }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {entry.readAt ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => onMarkRead(entry)}
+        >
+          {t('inbox.markRead')}
+        </button>
+      )}
+      {linkOf(entry) ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => onSelect(entry)}
+        >
+          {t('inbox.viewDetails')}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        onClick={() => onDismiss(entry)}
+      >
+        {t('inbox.delete')}
+      </button>
+    </>
+  );
+};
+
+RowActions.propTypes = {
+  entry: notificationShape.isRequired,
+  onMarkRead: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onDismiss: PropTypes.func.isRequired,
 };
 
 /**
- * The full inbox at `/notifications`: the modal's rows in a full-width
- * list, twenty-five per page by default over the hub's paged shape, the
- * navbar panel's Per page group (25, 50, 100, 250) resetting the page to 0
- * on a change, the pager as the section's foot, a
- * `SectionHeading` whose title carries the count as muted text and whose
- * action pane reads, while rows are picked, "N selected", Clear
- * selection, Mark as read, Mark as unread and Delete, then Mark all as
- * read and Delete all (`DELETE /api/notifications`, behind a confirm),
- * each bulk action one existing per-row call per picked row (Mark as
- * unread `POST /api/notifications/{id}/unread`, decision 151) counted
- * into a result line under the heading naming processed, skipped and
- * each error's code, clearing on the next bulk action; a select column
- * whose header cell is a real checkbox, the select-all for the page,
- * indeterminate when some but not all rows are picked, at the list's
- * head, the row checkboxes its cells; the per-row Mark as read and
- * Delete, and View details following a row's `navigate` when it is an
- * `https:` URL or a same-origin path; every change to the unread count
- * goes through the notifications feature's one context; the navbar
- * search is bound with a query over the loaded rows by title and body
- * (identity contract decision 142).
+ * The inbox page's bulk actions over the picked rows: Mark as read and
+ * Mark as unread at once, Delete behind the shared confirm, each one
+ * existing per-row call per picked row counted into a result line, the
+ * unread count adjusted by the rows whose state actually changed.
+ *
+ * @param {Object} options
+ * @param {Object} options.notifications - The notifications adapter
+ * @param {Array} options.picked - The picked rows
+ * @param {Function} options.adjustUnread - The unread context's adjust
+ * @param {Function} options.setEntries - The page's rows setter
+ * @param {Function} options.clearSelection - Empties the selection
+ * @param {Function} options.load - Re-reads the page
+ * @returns {{ bulkResult: Object|null, showBulkDelete: boolean, setShowBulkDelete: Function, bulkMarkRead: Function, bulkMarkUnread: Function, bulkDelete: Function }} The bulk state
+ */
+const useBulkActions = ({
+  notifications,
+  picked,
+  adjustUnread,
+  setEntries,
+  clearSelection,
+  load,
+}) => {
+  const [bulkResult, setBulkResult] = useState(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+
+  const bulkMarkRead = async () => {
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.markRead(entry.id)
+    );
+    const newlyRead = succeeded.filter(entry => !entry.readAt);
+    if (newlyRead.length > 0) {
+      adjustUnread(-newlyRead.length);
+      const ids = new Set(newlyRead.map(entry => entry.id));
+      setEntries(previous =>
+        previous.map(item => (ids.has(item.id) ? { ...item, readAt: readNow() } : item))
+      );
+    }
+    setBulkResult({ processed, skipped, errors });
+    clearSelection();
+  };
+
+  const bulkMarkUnread = async () => {
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.markUnread(entry.id)
+    );
+    const newlyUnread = succeeded.filter(entry => entry.readAt);
+    if (newlyUnread.length > 0) {
+      adjustUnread(newlyUnread.length);
+      const ids = new Set(newlyUnread.map(entry => entry.id));
+      setEntries(previous =>
+        previous.map(item => (ids.has(item.id) ? { ...item, readAt: null } : item))
+      );
+    }
+    setBulkResult({ processed, skipped, errors });
+    clearSelection();
+  };
+
+  const bulkDelete = async () => {
+    setBulkResult(null);
+    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
+      notifications.remove(entry.id)
+    );
+    const unreadDeleted = succeeded.filter(entry => !entry.readAt).length;
+    if (unreadDeleted > 0) {
+      adjustUnread(-unreadDeleted);
+    }
+    setBulkResult({ processed, skipped, errors });
+    clearSelection();
+    setShowBulkDelete(false);
+    await load();
+  };
+
+  return {
+    bulkResult,
+    showBulkDelete,
+    setShowBulkDelete,
+    bulkMarkRead,
+    bulkMarkUnread,
+    bulkDelete,
+  };
+};
+
+const BulkPane = ({ count, onClear, onMarkRead, onMarkUnread, onDelete }) => {
+  const { t } = useTranslation();
+  if (count === 0) {
+    return null;
+  }
+  return (
+    <>
+      <strong>{t('inbox.bulk.selected', { count })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={onClear}>
+        {t('inbox.bulk.clearSelection')}
+      </button>
+      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onMarkRead}>
+        {t('inbox.bulk.markRead')}
+      </button>
+      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onMarkUnread}>
+        {t('inbox.bulk.markUnread')}
+      </button>
+      <button type="button" className="btn btn-sm btn-outline-danger" onClick={onDelete}>
+        {t('inbox.bulk.delete')}
+      </button>
+    </>
+  );
+};
+
+BulkPane.propTypes = {
+  count: PropTypes.number.isRequired,
+  onClear: PropTypes.func.isRequired,
+  onMarkRead: PropTypes.func.isRequired,
+  onMarkUnread: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+/**
+ * The full inbox at `/notifications`, the one table of the estate over
+ * the hub's paged shape: the navbar search bound with a query over the
+ * loaded rows by title and body, the Status (`unread`, `read`) and Type
+ * groups narrowing the loaded rows client-side, the Per page group (25,
+ * 50, 100, 250) resetting the page to 0 on a change and the Columns
+ * group, the sort, the hidden columns, the widths and the size under
+ * `table_prefs_inbox`; a `SectionHeading` carrying the total as muted
+ * text after the title, its action pane reading, while rows are picked,
+ * "N selected", Clear selection, Mark as read, Mark as unread and Delete,
+ * then always Mark all as read and Delete all (`DELETE
+ * /api/notifications`, behind a confirm), each bulk action one existing
+ * per-row call per picked row (Mark as unread `POST
+ * /api/notifications/{id}/unread`, decision 151) counted into a result
+ * line under the heading naming processed, skipped and each error's
+ * code, clearing on the next bulk action; the table's select column a
+ * real checkbox header, the select-all for the page, indeterminate when
+ * some but not all rows are picked, the Title column the type icon
+ * colored by severity, the title bold while unread and a link with the
+ * open-in glyph while the row's `navigate` is an `https:` URL or a
+ * same-origin path, and the unread dot, the Body column, the Time column
+ * the relative time with the absolute time in its tooltip, the Type
+ * column a badge hidden by default; the row actions Mark as read while
+ * unread, View details while the row carries a followable link, and
+ * Delete; the pager as the section's foot; every change to the unread
+ * count goes through the notifications feature's one context (identity
+ * contract decision 142).
  */
 const InboxPage = ({ notifications }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
   const { adjust: adjustUnread } = useUnread();
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(DEFAULT_SIZE);
   const [entries, setEntries] = useState([]);
   const [query, setQuery] = useState('');
   const [paging, setPaging] = useState({ totalPages: 0, total: 0 });
   const [loadFailed, setLoadFailed] = useState(false);
   const [showDeleteAll, setShowDeleteAll] = useState(false);
-  const [showBulkDelete, setShowBulkDelete] = useState(false);
-  const [bulkResult, setBulkResult] = useState(null);
-  const selection = useSelection(entries);
-  const labels = {
-    markRead: t('inbox.markRead'),
-    dismiss: t('inbox.delete'),
-    viewDetails: t('inbox.viewDetails'),
-  };
+  const selection = useSelection(entries, { labelOf: row => row.title });
+
+  const needle = query.trim().toLowerCase();
+  const searched = useMemo(
+    () => (needle ? entries.filter(entry => matches(entry, needle)) : entries),
+    [entries, needle]
+  );
+  const search = useListSearch({
+    query,
+    onQueryChange: setQuery,
+    placeholderKey: 'inbox.search',
+    groups: NO_GROUPS,
+    clientGroups: FILTER_GROUPS,
+    onClearFilters: keepServerFilters,
+    action: null,
+    rows: searched,
+    columns,
+    prefsKey: PREFS_KEY,
+  });
+
+  const [pagedForSize, setPagedForSize] = useState(search.size);
+  if (pagedForSize !== search.size) {
+    setPagedForSize(search.size);
+    setPage(0);
+  }
 
   useEffect(() => {
     document.title = t('inbox.title');
@@ -123,14 +374,14 @@ const InboxPage = ({ notifications }) => {
   const load = useCallback(
     () =>
       notifications
-        .list({ page, size })
+        .list({ page, size: search.size })
         .then(data => {
           setLoadFailed(false);
           setEntries(extractEntries(data));
           setPaging({ totalPages: totalPagesOf(data), total: totalOf(data) });
         })
         .catch(() => setLoadFailed(true)),
-    [notifications, page, size]
+    [notifications, page, search.size]
   );
 
   useEffect(() => {
@@ -206,104 +457,26 @@ const InboxPage = ({ notifications }) => {
     [entries, selection.selected]
   );
 
-  const bulkMarkRead = async () => {
-    setBulkResult(null);
-    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
-      notifications.markRead(entry.id)
-    );
-    const newlyRead = succeeded.filter(entry => !entry.readAt);
-    if (newlyRead.length > 0) {
-      adjustUnread(-newlyRead.length);
-      const ids = new Set(newlyRead.map(entry => entry.id));
-      setEntries(previous =>
-        previous.map(item => (ids.has(item.id) ? { ...item, readAt: readNow() } : item))
-      );
-    }
-    setBulkResult({ processed, skipped, errors });
-    selection.clear();
-  };
-
-  const bulkMarkUnread = async () => {
-    setBulkResult(null);
-    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
-      notifications.markUnread(entry.id)
-    );
-    const newlyUnread = succeeded.filter(entry => entry.readAt);
-    if (newlyUnread.length > 0) {
-      adjustUnread(newlyUnread.length);
-      const ids = new Set(newlyUnread.map(entry => entry.id));
-      setEntries(previous =>
-        previous.map(item => (ids.has(item.id) ? { ...item, readAt: null } : item))
-      );
-    }
-    setBulkResult({ processed, skipped, errors });
-    selection.clear();
-  };
-
-  const bulkDelete = async () => {
-    setBulkResult(null);
-    const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
-      notifications.remove(entry.id)
-    );
-    const unreadDeleted = succeeded.filter(entry => !entry.readAt).length;
-    if (unreadDeleted > 0) {
-      adjustUnread(-unreadDeleted);
-    }
-    setBulkResult({ processed, skipped, errors });
-    selection.clear();
-    setShowBulkDelete(false);
-    await load();
-  };
-
-  const needle = query.trim().toLowerCase();
-  const shown = needle ? entries.filter(entry => matches(entry, needle)) : entries;
-
-  useNavbarSearchBinding({
-    query,
-    onQueryChange: setQuery,
-    placeholder: t('inbox.search'),
-    matched: shown.length,
-    total: entries.length,
-    groups: [
-      perPageGroup({
-        size,
-        setSize: next => {
-          setSize(next);
-          setPage(0);
-        },
-        t,
-      }),
-    ],
-    onClearFilters: () => setQuery(''),
+  const bulk = useBulkActions({
+    notifications,
+    picked,
+    adjustUnread,
+    setEntries,
+    clearSelection: selection.clear,
+    load,
   });
 
+  const resultLine = resultLineOf(t, 'inbox.bulk', bulk.bulkResult);
+
   const headingActions = (
-    <div className="d-flex align-items-center flex-wrap gap-2">
-      {picked.length > 0 ? (
-        <>
-          <strong>{t('inbox.bulk.selected', { count: picked.length })}</strong>
-          <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
-            {t('inbox.bulk.clearSelection')}
-          </button>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={bulkMarkRead}>
-            {t('inbox.bulk.markRead')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            onClick={bulkMarkUnread}
-          >
-            {t('inbox.bulk.markUnread')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-danger"
-            onClick={() => setShowBulkDelete(true)}
-          >
-            {t('inbox.bulk.delete')}
-          </button>
-        </>
-      ) : null}
+    <>
+      <BulkPane
+        count={picked.length}
+        onClear={selection.clear}
+        onMarkRead={bulk.bulkMarkRead}
+        onMarkUnread={bulk.bulkMarkUnread}
+        onDelete={() => bulk.setShowBulkDelete(true)}
+      />
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
@@ -320,42 +493,38 @@ const InboxPage = ({ notifications }) => {
       >
         {t('inbox.deleteAll')}
       </button>
-    </div>
+    </>
   );
 
   return (
-    <div className="list page-column">
+    <div className="page-column">
       <SectionHeading title={t('inbox.title')} count={paging.total} actions={headingActions} />
-      {resultLineOf(t, 'inbox.bulk', bulkResult) ? (
+      {resultLine ? (
         <p className="small text-muted" role="status">
-          {resultLineOf(t, 'inbox.bulk', bulkResult)}
+          {resultLine}
         </p>
       ) : null}
-      <div className="border rounded">
-        {loadFailed ? <p className="small text-danger m-3">{t('inbox.loadError')}</p> : null}
-        {!loadFailed && shown.length === 0 ? (
-          <p className="small text-body-secondary m-3">
-            {needle ? t('pages.noMatches') : t('inbox.empty')}
-          </p>
-        ) : null}
-        <InboxList
-          entries={shown}
-          onSelect={select}
-          onMarkRead={markRead}
-          onDismiss={dismiss}
-          labels={labels}
-          selectable
-          selected={selection.selected}
-          onToggleSelect={selection.toggle}
-          allSelected={selection.allSelected}
-          indeterminate={selection.indeterminate}
-          onToggleSelectAll={selection.toggleAll}
-        />
-      </div>
+      {loadFailed ? <p className="small text-danger">{t('inbox.loadError')}</p> : null}
+      <SubTable
+        columns={columns}
+        rows={search.rows}
+        rowKey={row => row.id}
+        RowActions={RowActions}
+        actionsProps={{ onMarkRead: markRead, onSelect: select, onDismiss: dismiss }}
+        rowProp="entry"
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
+        ctx={{ t, language: i18n.language, onSelect: select }}
+        emptyText={entries.length > 0 ? t('pages.noMatches') : t('inbox.empty')}
+        selection={selection.subtable}
+      />
       <Pager
         page={page}
         totalPages={paging.totalPages}
-        size={size}
+        size={search.size}
         total={paging.total}
         onChange={setPage}
       />
@@ -367,9 +536,9 @@ const InboxPage = ({ notifications }) => {
         message={t('inbox.deleteAllBody', { keyword: t('pages.confirm.keyword') })}
       />
       <ConfirmModal
-        show={showBulkDelete}
-        handleClose={() => setShowBulkDelete(false)}
-        handleConfirm={bulkDelete}
+        show={bulk.showBulkDelete}
+        handleClose={() => bulk.setShowBulkDelete(false)}
+        handleConfirm={bulk.bulkDelete}
         title={t('inbox.bulk.delete')}
         message={t('inbox.bulk.deleteBody', { keyword: t('pages.confirm.keyword') })}
       />

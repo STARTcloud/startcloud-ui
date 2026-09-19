@@ -1,11 +1,12 @@
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
 import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
+import { countOf, sumCounts } from '../../../../utils/itemShape';
 
 import { api } from './isos';
 
 const rows = data => (Array.isArray(data) ? data : []);
 
-const sumDownloads = entries => entries.reduce((sum, entry) => sum + (entry.downloads || 0), 0);
+const sumDownloads = entries => sumCounts(entries.map(entry => entry.downloads));
 
 const latestReleaseOf = versions =>
   versions
@@ -21,7 +22,7 @@ const fileArtifact = file => ({
   checksum: file.checksum || '',
   checksumType: file.checksumType || '',
   downloadUrl: '',
-  downloadCount: file.downloadCount || 0,
+  downloadCount: countOf(file.downloadCount),
   createdAt: file.createdAt || null,
   updatedAt: file.updatedAt || null,
 });
@@ -32,7 +33,7 @@ const versionSummary = version => {
     version: version.versionNumber,
     createdAt: version.createdAt || null,
     updatedAt: version.updatedAt || null,
-    downloads: artifacts.reduce((sum, artifact) => sum + artifact.downloadCount, 0),
+    downloads: sumCounts(artifacts.map(artifact => artifact.downloadCount)),
     description: version.description || '',
     releaseNotes: version.releaseNotes ?? null,
     deprecated: Boolean(version.deprecated),
@@ -54,6 +55,7 @@ const isoItem = (iso, orgName, logo) => {
     icon: '',
     artwork: '',
     isPublic: Boolean(iso.isPublic),
+    guestAccess: Boolean(iso.guestAccess),
     published: Boolean(iso.published),
     createdAt: iso.createdAt || null,
     updatedAt: iso.updatedAt || null,

@@ -8,6 +8,7 @@ import { useCssVar } from '../../hooks/useCssVar';
 import { sortShape } from '../../utils/itemShape';
 
 import { KIND_NAMES, isFlexKind, kindClasses } from './columnKinds';
+import EmptyState from './EmptyState';
 import GroupHeading, { groupShape } from './GroupHeading';
 import { RowCheckbox, SelectAllCheckbox, selectionShape } from './SelectCheckbox';
 import SortHeader from './SortHeader';
@@ -28,9 +29,11 @@ export const watchesShape = PropTypes.shape({
  * Builds a column `when` that is true when any row satisfies `pick`.
  *
  * @param {Function} pick Reads the value a column needs from one row
- * @returns {Function} `when(rows)` for a SubTable column
+ * @returns {Function} `when(rows, ctx)` for a SubTable column
  */
 export const hasAny = pick => rows => rows.some(row => Boolean(pick(row)));
+
+const hasGroups = groups => Boolean(groups && groups.length > 0);
 
 const columnClass = column => `col-${column.key} ${kindClasses(column.kind)}`;
 
@@ -42,11 +45,11 @@ const needsSpacer = (drawn, widths) =>
 
 /**
  * The shape one render of the table takes from its props: the columns
- * drawn (not hidden, and their `when` true for the rows), whether an
- * Actions column draws, whether the spacer column draws, and the count of
- * cells a full-width row spans.
+ * drawn (not hidden, and their `when` true for the rows and `ctx`), whether
+ * an Actions column draws, whether the spacer column draws, and the count
+ * of cells a full-width row spans.
  *
- * @param {Object} props - The table's `columns`, `rows`, `hiddenColumns`, `widths`, `selection`, `watches`, `QuickActions`, `LeadActions` and `RowActions`
+ * @param {Object} props - The table's `columns`, `rows`, `hiddenColumns`, `widths`, `selection`, `watches`, `LeadActions`, `RowActions` and `ctx`
  * @returns {{ drawn: Array, actions: boolean, spacer: boolean, columnCount: number }} The shape
  */
 const shapeOf = ({
@@ -56,17 +59,16 @@ const shapeOf = ({
   widths,
   selection,
   watches,
-  QuickActions,
   LeadActions,
   RowActions,
+  ctx,
 }) => {
   const drawn = columns.filter(
-    column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows))
+    column => !hiddenColumns.has(column.key) && (!column.when || column.when(rows, ctx))
   );
   const actions = Boolean(LeadActions || RowActions);
   const spacer = needsSpacer(drawn, widths);
-  const columnCount =
-    drawn.length + [selection, watches, QuickActions, actions, spacer].filter(Boolean).length;
+  const columnCount = drawn.length + [selection, watches, actions, spacer].filter(Boolean).length;
   return { drawn, actions, spacer, columnCount };
 };
 
@@ -199,14 +201,13 @@ SizedCol.propTypes = {
   width: PropTypes.number,
 };
 
-const ColumnGroup = ({ drawn, selection, watches, QuickActions, actions, widths, spacer }) => (
+const ColumnGroup = ({ drawn, selection, watches, actions, widths, spacer }) => (
   <colgroup>
     {selection ? <col className="col-select" /> : null}
     {watches ? <col className="col-watch" /> : null}
     {drawn.map(column => (
       <SizedCol key={column.key} column={column} width={widths[column.key] || null} />
     ))}
-    {QuickActions ? <col className="col-quick" /> : null}
     {actions ? <col className="col-actions" /> : null}
     {spacer ? <col className="col-spacer" /> : null}
   </colgroup>
@@ -216,7 +217,6 @@ ColumnGroup.propTypes = {
   drawn: PropTypes.array.isRequired,
   selection: selectionShape,
   watches: watchesShape,
-  QuickActions: PropTypes.elementType,
   actions: PropTypes.bool.isRequired,
   widths: PropTypes.objectOf(PropTypes.number).isRequired,
   spacer: PropTypes.bool.isRequired,
@@ -252,17 +252,7 @@ HeaderCell.propTypes = {
   onResize: PropTypes.func,
 };
 
-const HeaderRow = ({
-  drawn,
-  selection,
-  watches,
-  QuickActions,
-  actions,
-  spacer,
-  sort,
-  onSort,
-  onResize,
-}) => {
+const HeaderRow = ({ drawn, selection, watches, actions, spacer, sort, onSort, onResize }) => {
   const { t } = useTranslation();
   return (
     <tr>
@@ -281,7 +271,6 @@ const HeaderRow = ({
           onResize={onResize}
         />
       ))}
-      {QuickActions ? <th className="col-quick" aria-label={t('pages.table.actions')} /> : null}
       {actions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
       {spacer ? <th className="col-spacer" aria-hidden="true" /> : null}
     </tr>
@@ -292,7 +281,6 @@ HeaderRow.propTypes = {
   drawn: PropTypes.array.isRequired,
   selection: selectionShape,
   watches: watchesShape,
-  QuickActions: PropTypes.elementType,
   actions: PropTypes.bool.isRequired,
   spacer: PropTypes.bool.isRequired,
   sort: sortShape.isRequired,
@@ -327,7 +315,6 @@ const BodyRow = ({
   rowClass,
   selection,
   watches,
-  QuickActions,
   LeadActions,
   RowActions,
   actionsProps,
@@ -368,11 +355,6 @@ const BodyRow = ({
             <div className="cell">{column.render(row, ctx)}</div>
           </td>
         ))}
-        {QuickActions ? (
-          <td className="col-quick text-center align-middle">
-            <QuickActions {...own} ctx={ctx} />
-          </td>
-        ) : null}
         {LeadActions || RowActions ? (
           <ActionsCell
             LeadActions={LeadActions}
@@ -405,7 +387,6 @@ BodyRow.propTypes = {
   rowClass: PropTypes.func,
   selection: selectionShape,
   watches: watchesShape,
-  QuickActions: PropTypes.elementType,
   LeadActions: PropTypes.elementType,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object.isRequired,
@@ -417,20 +398,29 @@ BodyRow.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+const GroupRows = ({ group, emptyText, rowProps }) => {
+  const { rowKey, columnCount } = rowProps;
+  if (group.items.length === 0) {
+    return (
+      <tr className="empty-row">
+        <td colSpan={columnCount}>
+          <EmptyState title={emptyText} className="empty-state-sm" />
+        </td>
+      </tr>
+    );
+  }
+  return group.items.map(row => <BodyRow key={rowKey(row)} row={row} {...rowProps} />);
+};
+
+GroupRows.propTypes = {
+  group: groupShape.isRequired,
+  emptyText: PropTypes.node.isRequired,
+  rowProps: PropTypes.object.isRequired,
+};
+
 const TableBody = ({ rows, groups, collapsed, onToggleGroup, countKey, emptyText, rowProps }) => {
   const { t } = useTranslation();
   const { rowKey, columnCount, ctx } = rowProps;
-  if (rows.length === 0) {
-    return (
-      <tbody>
-        <tr>
-          <td colSpan={columnCount} className="text-center">
-            {emptyText}
-          </td>
-        </tr>
-      </tbody>
-    );
-  }
   if (!groups) {
     return (
       <tbody>
@@ -453,9 +443,9 @@ const TableBody = ({ rows, groups, collapsed, onToggleGroup, countKey, emptyText
           />
         </td>
       </tr>
-      {collapsed[group.key]
-        ? null
-        : group.items.map(row => <BodyRow key={rowKey(row)} row={row} {...rowProps} />)}
+      {collapsed[group.key] ? null : (
+        <GroupRows group={group} emptyText={emptyText} rowProps={rowProps} />
+      )}
     </tbody>
   ));
 };
@@ -475,7 +465,9 @@ TableBody.propTypes = {
  * and provider detail pages, the admin lists, the fleet, the search page
  * and the organization console's lists. Draws the given columns in order,
  * each only when it is not in `hiddenColumns` and its `when` is absent or
- * true for the rows, a sort header for each column carrying a `sortValue`,
+ * true for the rows and `ctx` (so a column can read the viewer and the
+ * host from `ctx` as well as the rows), a sort header for each column
+ * carrying a `sortValue`,
  * one `td.col-<key>` per column, its content in one `.cell` block the
  * stylesheet styles by the column's kind, every `col`, `th` and `td` also
  * carrying the width and kind classes of that `kind` (`columnKinds`,
@@ -490,9 +482,7 @@ TableBody.propTypes = {
  * column after it when `watches` is given (a star header sorting by
  * `watch` and one star per row while `watches.toggle` is set, the header
  * star alone and blank cells otherwise, so a listing keeps its shape
- * signed out), a quick-actions cell before the actions column when
- * `QuickActions` is given (rendered with `ctx` plus the row under
- * `rowProp`), an actions column when `LeadActions` or `RowActions` is
+ * signed out), an actions column when `LeadActions` or `RowActions` is
  * given, `LeadActions` the actions every viewer of the row gets (a
  * download), rendered with `ctx` plus the row under `rowProp` and drawn
  * first, `RowActions` the host's own, rendered with
@@ -501,8 +491,12 @@ TableBody.propTypes = {
  * is in `expandedKeys` (rendering `Detail` with `detailProps` plus the row
  * under `rowProp`), one `tbody` per group with a `GroupHeading` row when
  * `groups` is given (`collapsed[group.key]` folding it through
- * `onToggleGroup`, the count from `countKey`), and one full-width
- * `emptyText` row when there are no rows. `rowId`, where given, is the DOM
+ * `onToggleGroup`, the count from `countKey`), a group with no items
+ * keeping its heading over one full-width compact `EmptyState` row titled
+ * `emptyText`, and, when there are no rows and no groups, the `EmptyState`
+ * placard titled `emptyText` with `emptyBody` under it drawn inside the
+ * wrap in place of the whole table, no column group and no header, so an
+ * empty collection reads as a placard and not as a headed blank. `rowId`, where given, is the DOM
  * id each row carries, so a page can bring one row into view; `rowRef`,
  * where given, is `useArrival`'s `ref`, called with each row's key, and
  * every row then takes focus (`tabIndex` -1) so the arrival rule's scroll
@@ -518,7 +512,18 @@ TableBody.propTypes = {
  * width, so the fixed leading cells sit at one x on every table and a
  * drag takes room from the flex columns alone.
  */
-const SubTable = ({
+const SubTable = ({ emptyBody = null, ...table }) => {
+  if (table.rows.length === 0 && !hasGroups(table.groups)) {
+    return (
+      <div className="items-table-wrap">
+        <EmptyState title={table.emptyText} body={emptyBody} />
+      </div>
+    );
+  }
+  return <FullTable {...table} />;
+};
+
+const FullTable = ({
   columns,
   rows,
   rowKey,
@@ -527,7 +532,6 @@ const SubTable = ({
   LeadActions = null,
   RowActions = null,
   actionsProps = {},
-  QuickActions = null,
   rowProp = 'row',
   rowClass = null,
   Detail = null,
@@ -554,9 +558,9 @@ const SubTable = ({
     widths,
     selection,
     watches,
-    QuickActions,
     LeadActions,
     RowActions,
+    ctx,
   });
   const rowProps = {
     drawn,
@@ -567,7 +571,6 @@ const SubTable = ({
     rowClass,
     selection,
     watches,
-    QuickActions,
     LeadActions,
     RowActions,
     actionsProps,
@@ -585,7 +588,6 @@ const SubTable = ({
           drawn={drawn}
           selection={selection}
           watches={watches}
-          QuickActions={QuickActions}
           actions={actions}
           widths={widths}
           spacer={spacer}
@@ -595,7 +597,6 @@ const SubTable = ({
             drawn={drawn}
             selection={selection}
             watches={watches}
-            QuickActions={QuickActions}
             actions={actions}
             spacer={spacer}
             sort={sort}
@@ -617,7 +618,7 @@ const SubTable = ({
   );
 };
 
-SubTable.propTypes = {
+const tableShape = {
   columns: PropTypes.arrayOf(
     PropTypes.shape({
       key: PropTypes.string.isRequired,
@@ -637,7 +638,6 @@ SubTable.propTypes = {
   LeadActions: PropTypes.elementType,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
-  QuickActions: PropTypes.elementType,
   rowProp: PropTypes.string,
   rowClass: PropTypes.func,
   Detail: PropTypes.elementType,
@@ -657,5 +657,9 @@ SubTable.propTypes = {
   onToggleGroup: PropTypes.func,
   countKey: PropTypes.string,
 };
+
+FullTable.propTypes = tableShape;
+
+SubTable.propTypes = { ...tableShape, emptyBody: PropTypes.node };
 
 export default SubTable;

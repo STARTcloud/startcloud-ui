@@ -23,11 +23,7 @@ export const hasHyperweaverEntitlement = user =>
 const hrefFor = ({ hyperweaverUrl, item, version }) =>
   `${hyperweaverUrl}/?create=machine&box=${encodeURIComponent(`${item.organization.name}/${item.name}`)}&box_version=${encodeURIComponent(version)}&box_arch=amd64&box_url=${encodeURIComponent(window.location.origin)}`;
 
-export const {
-  DeployButton,
-  DeployGlyph,
-  ItemQuickActions: BoxQuickActions,
-} = createDeployControls({
+export const { DeployGlyph, deployColumn, CardGlyph } = createDeployControls({
   fetchHyperweaverUrl,
   canDeploy: hasHyperweaverEntitlement,
   hrefFor,

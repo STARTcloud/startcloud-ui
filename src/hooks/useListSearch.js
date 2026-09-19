@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useClientFilters } from '../../../hooks/useClientFilters';
-import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../../../utils/prefs';
-import { nextSort, sortItems } from '../../../utils/sort';
+import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../utils/prefs';
+import { nextSort, sortItems } from '../utils/sort';
+
+import { useClientFilters } from './useClientFilters';
+import { useNavbarSearchBinding } from './useSearchBinding';
 
 const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
   key: 'columns',
@@ -32,19 +33,20 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
 });
 
 /**
- * Registers the navbar binding of an admin page whose rows are a paged
- * list the issuer answers: the query and its setter the page holds, the
- * page's filter groups (`toggle`, `select` or `date-range`, each sent as
- * the list's parameters by the page), then one group per enumerable
- * column the list names no parameter for (`clientGroups`), narrowing the
- * rows the list answered client-side, followed by the Per page group (25,
- * 50, 100, 250; not a filter) and the Columns group, the
- * page's one action drawn at the panel's foot, and the answer's `total`
- * published as `matched` with no `total`, since the server alone narrows
- * and a count over the page held would lie. Answers the page's rows in
- * the active sort order, the sort with its setter, the hidden column
- * keys, the column widths with their setter and the page size with its
- * setter, persisted under `prefsKey`.
+ * Registers the navbar binding of a page whose rows are a paged list the
+ * server answers: the query and its setter the page holds, the page's
+ * filter groups (`toggle`, `select` or `date-range`, each sent as the
+ * list's parameters by the page), then one group per enumerable column
+ * the list names no parameter for (`clientGroups`), narrowing the rows
+ * the list answered client-side, followed by the Per page group (25, 50,
+ * 100, 250; not a filter) and the Columns group, the page's one action
+ * drawn at the panel's foot, and `matched` published with no `total`,
+ * since a count over the page held would lie: the answer's `total` where
+ * the server alone narrows, or, when the page hands none in, the count
+ * of the rows the client-side groups leave, the rows on screen. Answers
+ * the page's rows in the active sort order, the sort with its setter, the
+ * hidden column keys, the column widths with their setter and the page
+ * size with its setter, persisted under `prefsKey`.
  *
  * @param {Object} options
  * @param {string} options.query - The query the page holds
@@ -54,8 +56,8 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * @param {Array} [options.clientGroups] - The client-side group specs of `useClientFilters`
  * @param {Object|null} [options.url] - The URL narrowing holding the client-side groups' values
  * @param {Function} options.onClearFilters - Empties every group, keeping the query
- * @param {{ key: string, labelKey: string, icon?: Function, onRun: Function }} options.action - The panel's action
- * @param {number} options.matched - The paged answer's `total`
+ * @param {{ key: string, labelKey: string, icon?: Function, onRun: Function }|null} options.action - The panel's action
+ * @param {number|null} [options.matched] - The paged answer's `total`; the client-narrowed row count when absent
  * @param {Array} options.rows - The rows the list answered
  * @param {Array} options.columns - The table's columns
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
@@ -70,7 +72,7 @@ export const useListSearch = ({
   url = null,
   onClearFilters,
   action,
-  matched,
+  matched = null,
   rows,
   columns,
   prefsKey,
@@ -89,7 +91,7 @@ export const useListSearch = ({
     query,
     onQueryChange,
     placeholder: t(placeholderKey),
-    matched,
+    matched: matched === null ? filters.rows.length : matched,
     groups: [
       ...groups,
       ...filters.groups,

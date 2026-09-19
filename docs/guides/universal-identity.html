@@ -1741,10 +1741,11 @@
         expired-link message never sits above a password form.
       </div>
       <div class="callout">
-        <strong>The cluster on an auth page.</strong> Theme and the language globe only: the Sign in
-        button is hidden on the issuer's sign-in pages (decision 4), and the session-ended banner
-        carries its own Sign in there. A signed-in person who lands on <code>/login</code> is sent
-        to <code>/</code> or the consumed <code>intended_url</code>; <code>?logout</code> and
+        <strong>The cluster on an auth page.</strong> Discover while the site advertises it, the
+        ticket icon while a ticket system exists, the language globe and the theme button: the Sign
+        in button is hidden on every auth path of every host (decision 4), and the session-ended
+        banner carries its own Sign in there. A signed-in person who lands on <code>/login</code> is
+        sent to <code>/</code> or the consumed <code>intended_url</code>; <code>?logout</code> and
         <code>?reset=complete</code> draw only with no session.
       </div>
     </div>
@@ -1758,23 +1759,9 @@
     <div class="frame">
       <div class="navbar">
         <span class="brand"><span class="brand-mark">S</span>STARTcloud</span>
-        <div class="nav"><span class="util">Docs</span><span class="util">Contact</span></div>
+        <div class="nav"></div>
         <div class="cluster">
-          <span class="btn icon"
-            ><svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="12" r="9"></circle>
-              <path
-                d="M12 3v18a9 9 0 0 0 0-18z"
-                fill="currentColor"
-                stroke="none"
-              ></path></svg></span
+          <span class="util">Discover</span><span class="btn icon" title="Help">🎫</span
           ><span class="btn icon lang" title="Change language, English"
             ><svg
               viewBox="0 0 24 24"
@@ -1789,7 +1776,18 @@
               <path d="M12 3a14 14 0 0 1 0 18"></path>
               <path d="M12 3a14 14 0 0 0 0 18"></path></svg
             ><span class="code">EN</span></span
-          >
+          ><span class="btn icon"
+            ><svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"></path></svg
+          ></span>
         </div>
       </div>
       <div class="auth-page">
@@ -3622,8 +3620,9 @@
       <div class="callout changed">
         <strong>Changed: shared pieces.</strong> <code>AddressFields</code>,
         <code>StepUpDialog</code>, <code>MethodList</code>, <code>SortableList</code>,
-        <code>Pager</code> in <code>components/common</code>; <code>InboxList</code> shared by the
-        modal and the page.
+        <code>Pager</code> in <code>components/common</code>; <code>InboxList</code> for the modal,
+        the page drawing the one shared <code>SubTable</code> and sharing the module's glyph and
+        time helpers.
       </div>
     </div>
   </div>
@@ -3766,7 +3765,7 @@
         <div class="auth-page" style="align-items: stretch; text-align: left">
           <div style="display: flex; flex-direction: column; gap: 12px">
             <div class="a-row">
-              <h2 style="font-size: 18px">Inbox</h2>
+              <h2 style="font-size: 18px">Inbox <span class="a-hint">· 3</span></h2>
               <span class="a-row" style="gap: 6px"
                 ><span class="btn sm">Mark all as read</span
                 ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
@@ -3774,40 +3773,44 @@
                 ></span
               >
             </div>
-            <div class="m-list">
-              <div class="m-row">
-                <span class="m-ic" style="color: var(--danger)">🛡</span
-                ><span class="m-t"
-                  ><span class="l" style="font-weight: 700">Password changed</span
-                  ><span class="h"
-                    >Your password was changed. If this wasn't you, secure your account now.</span
-                  ><span class="h" title="2026-09-06 13:50 UTC">12 minutes ago</span></span
-                ><span class="m-act"
-                  ><span class="a-dot"></span
-                  ><span class="btn sm" title="Mark as read" aria-label="Mark as read">✓</span
-                  ><span class="btn sm" title="Delete" aria-label="Delete">×</span></span
-                >
-              </div>
-              <div class="m-row">
-                <span class="m-ic">🔑</span
-                ><span class="m-t"
-                  ><span class="l">Conductor connected</span
-                  ><span class="h">Conductor was granted openid, profile, organizations.</span
-                  ><span class="h" title="2026-09-05 09:12 UTC">yesterday</span></span
-                ><span class="m-act"
-                  ><span class="btn sm" title="Delete" aria-label="Delete">×</span></span
-                >
-              </div>
-              <div class="m-row">
-                <span class="m-ic">📦</span
-                ><span class="m-t"
-                  ><span class="l">Box published <span class="a-hint">↗</span></span
-                  ><span class="h">acme/base 1.2.0 is live</span
-                  ><span class="h" title="2026-09-03 17:40 UTC">3 days ago</span></span
-                ><span class="m-act"
-                  ><span class="btn sm" title="Delete" aria-label="Delete">×</span></span
-                >
-              </div>
+            <div class="tbl" style="grid-template-columns: 24px 1.2fr 1.6fr 90px 150px">
+              <span class="hc"><input type="checkbox" aria-label="Select all on this page" /></span
+              ><span class="hc">Title</span><span class="hc">Body</span><span class="hc">Time</span
+              ><span class="hc"></span>
+              <span class="c"><input type="checkbox" aria-label="Select Password changed" /></span
+              ><span class="c k"
+                ><span style="color: var(--danger)">🛡</span> Password changed
+                <span class="a-dot" style="display: inline-block"></span></span
+              ><span class="c"
+                >Your password was changed. If this wasn't you, secure your account now.</span
+              ><span class="c" title="2026-09-06 13:50 UTC">12 minutes ago</span
+              ><span class="c"
+                ><span class="btn sm">Mark as read</span
+                ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                  >Delete</span
+                ></span
+              >
+              <span class="c"
+                ><input type="checkbox" aria-label="Select Conductor connected" /></span
+              ><span class="c" style="font-weight: 400">🔑 Conductor connected</span
+              ><span class="c">Conductor was granted openid, profile, organizations.</span
+              ><span class="c" title="2026-09-05 09:12 UTC">yesterday</span
+              ><span class="c"
+                ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                  >Delete</span
+                ></span
+              >
+              <span class="c"><input type="checkbox" aria-label="Select Box published" /></span
+              ><span class="c" style="font-weight: 400"
+                >📦 Box published <span class="a-hint">↗</span></span
+              ><span class="c">acme/base 1.2.0 is live</span
+              ><span class="c" title="2026-09-03 17:40 UTC">3 days ago</span
+              ><span class="c"
+                ><span class="btn sm">View details</span
+                ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
+                  >Delete</span
+                ></span
+              >
             </div>
             <div class="a-row" style="justify-content: center; gap: 6px">
               <span class="btn sm">‹</span><span class="btn sm primary">1</span
@@ -3845,18 +3848,23 @@
         <code>referrerpolicy="no-referrer"</code>.
       </div>
       <div class="callout">
-        <strong>The inbox page</strong>, the sidebar's Inbox row, is the modal's rows and adapter on
-        a page: the same <code>InboxList</code>, twenty-five per page with <code>Pager</code>, the
-        row controls labeled "Mark as read" and "Delete", every relative time carrying the absolute
-        time in its tooltip, "View details" following <code>navigate</code> when it is
-        <code>https://</code> or a same-origin path, the chrome's badge updated through the same
-        <code>onUnreadDelta</code> and the <code>unread-count</code> event. The navbar contract's
-        "View all notifications" becomes an in-router link on the issuer.
+        <strong>The inbox page</strong>, the sidebar's Inbox row, is the one shared table over the
+        modal's adapter: a <code>SubTable</code> with Title (the type icon, the title bold while
+        unread with the open-in glyph while it links, the unread dot), Body, Time (the absolute time
+        in its tooltip) and a Type badge hidden by default, a select column whose header is the real
+        select-all checkbox, the row actions Mark as read, View details and Delete as labeled
+        outline buttons, "View details" following <code>navigate</code> when it is
+        <code>https://</code> or a same-origin path, the Status and Type groups, Per page and
+        Columns in the navbar panel under <code>table_prefs_inbox</code>, the pager as the section's
+        foot, and the chrome's badge updated through the notifications context and the
+        <code>unread-count</code> event. The navbar contract's "View all notifications" becomes an
+        in-router link on the issuer.
       </div>
       <div class="callout changed">
-        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees what a member
-        sees, published private items included, and never a write control; the Download button stays
-        (identity decision 163).
+        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees the public
+        items, the published private items its organization marked for guests and its own uploads,
+        never a download count and never a write control; the Download button stays (identity
+        decision 163).
       </div>
     </div>
   </div>
@@ -4702,9 +4710,10 @@
         <code>logo_url</code> is drawn only with the <code>https:</code> scheme.
       </div>
       <div class="callout changed">
-        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees what a member
-        sees, published private items included, and never a write control; the Download button stays
-        (identity decision 163).
+        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees the public
+        items, the published private items its organization marked for guests and its own uploads,
+        never a download count and never a write control; the Download button stays (identity
+        decision 163).
       </div>
       <div class="callout">
         <strong>Arrival on a row:</strong> a hash names the row, the page scrolls it into view and
@@ -5225,14 +5234,15 @@
     <div class="callouts">
       <div class="callout">
         <strong>The admin surface is the sidebar.</strong> The identity feature's operator export
-        answers Overview, Accounts, Activity, Health, Security, Content and System through
-        <code>sidebar(status, account)</code>, mounted by the <code>cookie</code> token and never a
-        role branch inside the shared admin feature; the shell draws the column on every page of the
-        issuer, the brand at its top per the navbar contract's Sidebar section, the header row
-        opening with the root crumb, the product name linking to <code>/</code>, then the crumbs;
-        one page per row, the row's route the deep link (decision 17); no page draws a tab strip of
-        the same names, since one navigation on screen twice is one too many; the chrome's user menu
-        carries no Admin row on the issuer.
+        answers Overview, Accounts, Activity, Health, Security, Legal, Messaging and System through
+        <code>sidebar(status, account, admin)</code>, for an account
+        <code>isGlobalAdmin</code> answers true for, mounted by the <code>cookie</code> token and
+        never a role branch inside the shared admin feature; the shell draws the column on every
+        page of the issuer, the brand at its top per the navbar contract's Sidebar section, the
+        header row opening with the root crumb, the product name linking to <code>/</code>, then the
+        crumbs; one page per row, the row's route the deep link (decision 17); no page draws a tab
+        strip of the same names, since one navigation on screen twice is one too many; the chrome's
+        user menu carries no Admin row on the issuer.
       </div>
       <div class="callout">
         <strong>Filters are on the page.</strong> The Users page draws its search field, a Status

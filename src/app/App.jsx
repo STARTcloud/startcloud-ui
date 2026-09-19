@@ -7,6 +7,7 @@ import BrandLogo from '../components/common/BrandLogo';
 import AppShell from '../components/layout/AppShell';
 import { brandLogoUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
+import { CrumbProvider } from '../contexts/CrumbContext';
 import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { useStatus } from '../contexts/StatusContext';
 import { UnreadProvider } from '../contexts/UnreadContext';
@@ -39,11 +40,9 @@ import { client, events, fetchHealth, hubClient, returnTo, session } from '../li
 import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
 import { isManager } from '../utils/membership';
+import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
-
-const isGlobalAdmin = user =>
-  Boolean(user?.roles?.includes('ROLE_ADMIN') || user?.authorities?.includes('ROLE_ADMIN'));
 
 const persistTheme = preference => session.savePreferences({ theme: preference });
 
@@ -89,7 +88,8 @@ const shellFlags = ({
  * notification adapters (the inbox one handed to the shell's bell and to
  * the inbox route alike, its unread count in the notifications feature's
  * one context around them both), the sidebar entries the mounted
- * features export, and the shell around the routes.
+ * features export, the crumb context a page names its own crumb through,
+ * and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t, i18n } = useTranslation();
@@ -153,8 +153,13 @@ const App = ({ getSupportedLanguages }) => {
     }
   }, [location.pathname, readDeferredFavorites]);
   const sidebar = useMemo(
-    () => sidebarEntries({ status, account: { user, oidc, issuerUrl } }),
-    [status, user, oidc, issuerUrl]
+    () =>
+      sidebarEntries({
+        status,
+        account: { user, oidc, issuerUrl, organizations: memberships },
+        collections,
+      }),
+    [status, user, oidc, issuerUrl, memberships, collections]
   );
 
   if (setupComplete === null) {
@@ -192,36 +197,38 @@ const App = ({ getSupportedLanguages }) => {
   return (
     <UnreadProvider>
       <NavbarSearchProvider appSearch={appSearch}>
-        <AppShell
-          account={account}
-          avatarUrl={avatarUrl}
-          theme={theme}
-          themePreference={themePreference}
-          toggleTheme={toggleTheme}
-          onSignOut={handleSignOut}
-          getSupportedLanguages={getSupportedLanguages}
-          collections={collections}
-          organizations={organizations}
-          ticketUrl={ticket}
-          notifications={inbox}
-          push={pushAdapter}
-          sidebar={sidebar}
-          routeTitleKey={routeTitleKey}
-          routeCrumbParent={routeCrumbParent}
-          {...flags}
-        >
-          <AppRoutes
+        <CrumbProvider>
+          <AppShell
             account={account}
-            collections={collections}
-            context={context}
+            avatarUrl={avatarUrl}
             theme={theme}
-            setupComplete={Boolean(setupComplete)}
-            globalAdmin={globalAdmin}
-            afterSignIn={afterSignIn}
-            notifications={inbox}
+            themePreference={themePreference}
+            toggleTheme={toggleTheme}
+            onSignOut={handleSignOut}
+            getSupportedLanguages={getSupportedLanguages}
+            collections={collections}
+            organizations={organizations}
             ticketUrl={ticket}
-          />
-        </AppShell>
+            notifications={inbox}
+            push={pushAdapter}
+            sidebar={sidebar}
+            routeTitleKey={routeTitleKey}
+            routeCrumbParent={routeCrumbParent}
+            {...flags}
+          >
+            <AppRoutes
+              account={account}
+              collections={collections}
+              context={context}
+              theme={theme}
+              setupComplete={Boolean(setupComplete)}
+              globalAdmin={globalAdmin}
+              afterSignIn={afterSignIn}
+              notifications={inbox}
+              ticketUrl={ticket}
+            />
+          </AppShell>
+        </CrumbProvider>
       </NavbarSearchProvider>
     </UnreadProvider>
   );

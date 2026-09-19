@@ -1,0 +1,75 @@
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+
+const OPTIONS = [
+  { key: 'public', value: { is_public: true, guest_access: false } },
+  { key: 'guests', value: { is_public: false, guest_access: true } },
+  { key: 'private', value: { is_public: false, guest_access: false } },
+];
+
+const pickedOf = value => {
+  if (value.is_public) {
+    return 'public';
+  }
+  return value.guest_access ? 'guests' : 'private';
+};
+
+export const visibilityShape = PropTypes.shape({
+  is_public: PropTypes.bool.isRequired,
+  guest_access: PropTypes.bool.isRequired,
+});
+
+/**
+ * The one visibility control of every form that writes an item: three
+ * radios, Public, Guests and Private, over the wire's two booleans
+ * `is_public` and `guest_access`; `value` carries the pair (an object with
+ * more members in it is read for those two alone), `onChange` answers the
+ * pair the picked value means, `idPrefix` names the radios, `hint` is
+ * drawn under the group and `disabled` freezes it.
+ */
+const VisibilityPicker = ({
+  idPrefix,
+  value,
+  onChange,
+  hint = '',
+  disabled = false,
+  className = 'mb-3',
+}) => {
+  const { t } = useTranslation();
+  const picked = pickedOf(value);
+  return (
+    <fieldset className={className} disabled={disabled}>
+      <legend className="form-label fs-6">{t('pages.table.visibility')}</legend>
+      <div className="d-flex flex-wrap">
+        {OPTIONS.map(option => (
+          <div key={option.key} className="form-check me-3">
+            <input
+              type="radio"
+              className="form-check-input"
+              id={`${idPrefix}-${option.key}`}
+              name={`${idPrefix}-visibility`}
+              value={option.key}
+              checked={picked === option.key}
+              onChange={() => onChange({ ...option.value })}
+            />
+            <label className="form-check-label" htmlFor={`${idPrefix}-${option.key}`}>
+              {t(`pages.status.${option.key}`)}
+            </label>
+          </div>
+        ))}
+      </div>
+      {hint ? <div className="form-text">{hint}</div> : null}
+    </fieldset>
+  );
+};
+
+VisibilityPicker.propTypes = {
+  idPrefix: PropTypes.string.isRequired,
+  value: visibilityShape.isRequired,
+  onChange: PropTypes.func.isRequired,
+  hint: PropTypes.node,
+  disabled: PropTypes.bool,
+  className: PropTypes.string,
+};
+
+export default VisibilityPicker;

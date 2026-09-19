@@ -62,6 +62,7 @@ export const itemShape = PropTypes.shape({
   icon: PropTypes.string,
   artwork: PropTypes.string,
   isPublic: PropTypes.bool,
+  guestAccess: PropTypes.bool,
   published: PropTypes.bool,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
@@ -91,13 +92,23 @@ export const filterGroupShape = PropTypes.shape({
   shownFor: PropTypes.func,
 });
 
+export const visibilityOf = item => {
+  if (typeof item.isPublic !== 'boolean') {
+    return null;
+  }
+  if (item.isPublic) {
+    return 'public';
+  }
+  return item.guestAccess ? 'guests' : 'private';
+};
+
 export const VISIBILITY_GROUP = {
   key: 'visibility',
   labelKey: 'pages.table.visibility',
-  values: item => [item.isPublic === false ? 'private' : 'public'],
+  values: item => [visibilityOf(item) ?? 'public'],
   activeClass: 'bg-info',
   labelFor: (value, t) => t(`pages.status.${value}`),
-  order: ['public', 'private'],
+  order: ['public', 'guests', 'private'],
   shownFor: items => items.some(item => item.isPublic === false),
 };
 
@@ -115,6 +126,28 @@ export const filterGroupsOf = collection =>
   collection.filterGroups.filter(group => !SHARED_GROUP_KEYS.includes(group.key));
 
 export const isPrivate = item => item.isPublic === false;
+
+/**
+ * A download count as the host answered it: a number stays a number,
+ * anything else (the null a guest is answered) becomes null, so the count
+ * columns draw nothing for it.
+ *
+ * @param {*} value - The host's count
+ * @returns {number|null} The count, or null
+ */
+export const countOf = value => (typeof value === 'number' ? value : null);
+
+/**
+ * The sum of the counts that are numbers, null while none is, so a level
+ * summed from guest-answered nulls stays null instead of drawing 0.
+ *
+ * @param {Array<*>} values - The counts to sum
+ * @returns {number|null} The sum, or null
+ */
+export const sumCounts = values => {
+  const known = values.filter(value => typeof value === 'number');
+  return known.length === 0 ? null : known.reduce((sum, value) => sum + value, 0);
+};
 
 export const sortShape = PropTypes.arrayOf(
   PropTypes.shape({
@@ -200,13 +233,6 @@ export const statusOf = item => {
     return null;
   }
   return item.published ? 'published' : 'pending';
-};
-
-export const visibilityOf = item => {
-  if (typeof item.isPublic !== 'boolean') {
-    return null;
-  }
-  return item.isPublic ? 'public' : 'private';
 };
 
 export const sortVersionsNewestFirst = versions =>

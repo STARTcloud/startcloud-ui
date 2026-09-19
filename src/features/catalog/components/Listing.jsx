@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
@@ -126,12 +127,17 @@ const NO_WATCH = { ids: NO_IDS, toggle: null };
  * One collection's section of a listing page: the heading row with the
  * count or the picked state as its muted text and the one action pane at
  * its right — the picked-state group first, then the collection's own list
- * actions, then the page's actions and the view toggle — and under it the
+ * actions, then the view toggle on the first section of a page without a
+ * header — and under it the
  * collection's one `SubTable` (the watch column drawn star or blank, the
- * collection's quick actions and row actions from its slots, one group per
- * organization when the page spans them) or card grid, each row carrying
+ * collection's columns with `ctx` carrying the host status so a column's
+ * `when` can read the host's features, the collection's row actions from
+ * its slots, one group per organization when the page spans them) or card
+ * grid, each row carrying
  * its select checkbox while the collection has bulk actions the viewer may
- * run.
+ * run; with nothing to show, either draws the one `EmptyState` placard,
+ * titled `pages.noMatches` over `pages.noMatchesBody` while a filter is on
+ * and `pages.empty` over `pages.emptyBody` otherwise.
  */
 const CollectionSection = ({
   collection,
@@ -142,12 +148,12 @@ const CollectionSection = ({
   common,
   view,
   ctx,
-  actions = null,
+  toggle = null,
 }) => {
   const { t } = useTranslation();
   const selection = useSelection(items, { keyOf: itemKey, labelOf: item => item.name });
   const picked = items.filter(item => selection.selected.has(item.id));
-  const { ListActions, ItemQuickActions, RowActions } = collection.slots;
+  const { ListActions, RowActions } = collection.slots;
   const shared = {
     collection,
     items,
@@ -156,9 +162,10 @@ const CollectionSection = ({
     ...common,
   };
   const emptyText = ctx.filtering ? t('pages.noMatches') : t('pages.empty');
+  const emptyBody = ctx.filtering ? t('pages.noMatchesBody') : t('pages.emptyBody');
   const list =
     view === 'cards' ? (
-      <ItemCards {...shared} />
+      <ItemCards {...shared} emptyBody={emptyBody} />
     ) : (
       <SubTable
         columns={collection.columns}
@@ -167,7 +174,6 @@ const CollectionSection = ({
         rowProp="item"
         RowActions={RowActions}
         actionsProps={{ ctx }}
-        QuickActions={ItemQuickActions}
         selection={shared.selection}
         watches={common.watches || NO_WATCH}
         groups={common.groups}
@@ -181,6 +187,7 @@ const CollectionSection = ({
         onResize={table.onResize}
         ctx={ctx}
         emptyText={emptyText}
+        emptyBody={emptyBody}
       />
     );
   return (
@@ -199,7 +206,7 @@ const CollectionSection = ({
           />
         ) : null}
         {ListActions ? <ListActions ctx={ctx} /> : null}
-        {actions}
+        {toggle}
       </CollectionHeading>
       {list}
     </div>
@@ -215,7 +222,7 @@ CollectionSection.propTypes = {
   common: PropTypes.object.isRequired,
   view: PropTypes.string.isRequired,
   ctx: PropTypes.object.isRequired,
-  actions: PropTypes.node,
+  toggle: PropTypes.node,
 };
 
 /**
@@ -223,13 +230,13 @@ CollectionSection.propTypes = {
  * every collection it is given, registers the search binding, and draws one
  * heading row per collection carrying that collection's list actions, one
  * table or card grid per collection with organization group rows when the
- * page spans organizations, and the page's actions with the one view toggle
- * on the header row when the page has a header, else on the first
- * collection's heading row.
+ * page spans organizations, and the one view toggle on the header row when
+ * the page has a header, else on the first collection's heading row.
  */
-const Listing = ({ collections, org, member, grouped, context, header = null, actions = null }) => {
+const Listing = ({ collections, org, member, grouped, context, header = null }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [nonce, setNonce] = useState(0);
   const [data, setData] = useState({ key: '', byCollection: {} });
   const signedIn = Boolean(context.user);
@@ -296,6 +303,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
     ...context,
     t,
     language: i18n.language,
+    status,
     collection,
     org,
     member,
@@ -339,14 +347,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
           widths: widths[collection.key],
           onResize: (column, pixels) => setColumnWidth(collection.key, column, pixels),
         }}
-        actions={
-          !header && index === 0 ? (
-            <>
-              {actions}
-              {toggle}
-            </>
-          ) : null
-        }
+        toggle={!header && index === 0 ? toggle : null}
       />
     );
   };
@@ -356,10 +357,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null, ac
       {header ? (
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
           <div className="d-flex align-items-center gap-3 min-width-0">{header}</div>
-          <div className="d-flex align-items-center gap-2 ms-auto">
-            {actions}
-            {toggle}
-          </div>
+          <div className="d-flex align-items-center gap-2 ms-auto">{toggle}</div>
         </div>
       ) : null}
       {ready ? visible.map(renderCollection) : <div>{t('pages.loading')}</div>}
@@ -374,7 +372,6 @@ Listing.propTypes = {
   grouped: PropTypes.bool.isRequired,
   context: pageContextShape.isRequired,
   header: PropTypes.node,
-  actions: PropTypes.node,
 };
 
 export default Listing;

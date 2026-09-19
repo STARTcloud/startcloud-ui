@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -15,9 +16,9 @@ import { BOX_LABELS, BOX_SCHEMA } from '../../../../utils/forms';
 import { isGlobalAdmin, isOrgGuest, isOrgMember } from '../../../../utils/permissions';
 import { api } from '../api/boxes';
 
-const EMPTY_BOX = { name: '', description: '', is_public: false };
+const EMPTY_BOX = { name: '', description: '', is_public: false, guest_access: false };
 
-const CreateBoxForm = ({ org, draft, rules, onChange, onSubmit }) => {
+const CreateBoxForm = ({ org, draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <div className="create-form mt-2 mb-3 w-100 order-last">
@@ -69,42 +70,13 @@ const CreateBoxForm = ({ org, draft, rules, onChange, onSubmit }) => {
             />
           )}
         </Field>
-        <div className="form-group mt-2">
-          <label htmlFor="visibilityPrivate">
-            <strong>{t('boxes.box.visibility')}:</strong>
-          </label>
-          <div>
-            <div className="form-check">
-              <input
-                type="radio"
-                className="form-check-input"
-                id="visibilityPrivate"
-                name="is_public"
-                value="false"
-                checked={!draft.is_public}
-                onChange={onChange}
-              />
-              <label className="form-check-label" htmlFor="visibilityPrivate">
-                {t('boxes.box.organization.visibility.private')}
-              </label>
-            </div>
-            <div className="form-check">
-              <input
-                type="radio"
-                className="form-check-input"
-                id="visibilityPublic"
-                name="is_public"
-                value="true"
-                checked={draft.is_public}
-                onChange={onChange}
-              />
-              <label className="form-check-label" htmlFor="visibilityPublic">
-                {t('boxes.box.organization.visibility.public')}
-              </label>
-            </div>
-          </div>
-          <small className="form-text text-muted">{t('boxes.box.visibilityHint')}</small>
-        </div>
+        <VisibilityPicker
+          idPrefix={rules.idFor('visibility')}
+          value={draft}
+          onChange={onVisibility}
+          hint={t('boxes.box.visibilityHint')}
+          className="mt-2"
+        />
       </form>
     </div>
   );
@@ -116,9 +88,11 @@ CreateBoxForm.propTypes = {
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
     is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -168,8 +142,10 @@ export const BoxListActions = ({ ctx }) => {
 
   const onChange = event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: value }));
   };
+
+  const onVisibility = next => setDraft(current => ({ ...current, ...next }));
 
   const cancel = () => {
     setCreating(false);
@@ -229,6 +205,7 @@ export const BoxListActions = ({ ctx }) => {
           draft={draft}
           rules={rules}
           onChange={onChange}
+          onVisibility={onVisibility}
           onSubmit={submit}
         />
       ) : null}

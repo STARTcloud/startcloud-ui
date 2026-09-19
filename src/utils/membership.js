@@ -1,6 +1,13 @@
 const MANAGER_ROLES = ['OWNER', 'ADMIN'];
 
-const membershipOf = (organizations, name) =>
+/**
+ * The membership of that name in the normalized organization list, null
+ * when the list holds none.
+ * @param {Array<{ name: string, roles?: string[] }>} organizations - The chrome's organization list
+ * @param {string} name - The organization's route name
+ * @returns {Object|null}
+ */
+export const membershipOf = (organizations, name) =>
   organizations.find(entry => entry.name === name) || null;
 
 const hasRole = (organizations, name, roles) =>
@@ -55,3 +62,14 @@ export const isOwner = (organizations, name, admin = false) =>
 export const managesAny = (organizations, admin = false) =>
   admin ||
   organizations.some(entry => (entry.roles || []).some(role => MANAGER_ROLES.includes(role)));
+
+/**
+ * A role beyond a guest's in at least one organization, or a global admin:
+ * what a page asks before it draws a control every member but a guest may
+ * use.
+ * @param {Array<{ name: string, roles?: string[] }>} organizations
+ * @param {boolean} [admin] - Whether the viewer is a global admin
+ * @returns {boolean}
+ */
+export const writesAny = (organizations, admin = false) =>
+  admin || organizations.some(entry => (entry.roles || []).some(role => role !== 'GUEST'));

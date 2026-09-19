@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaBars, FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaBars, FaCircleHalfStroke, FaCompass, FaMoon, FaSun, FaTicket } from 'react-icons/fa6';
 
 import Crumbs, { crumbShape } from './Breadcrumbs';
 import { LanguageButton } from './LanguageModal';
@@ -53,29 +53,65 @@ Brand.propTypes = {
   LinkComponent: PropTypes.elementType.isRequired,
 };
 
-const SupportLinks = ({ links }) =>
-  links.map(link => (
-    <li key={link.key} className="nav-item">
-      <a
-        href={link.href}
-        className="nav-link"
-        target={link.external ? '_blank' : undefined}
-        rel={link.external ? 'noopener noreferrer' : undefined}
+const CLUSTER_BUTTON = 'btn btn-link nav-link cluster-btn';
+
+const DiscoverLink = ({ to, LinkComponent }) => {
+  const { t } = useTranslation();
+  return (
+    <li className="nav-item">
+      <LinkComponent to={to} className="nav-link">
+        {t('navbar.discover')}
+      </LinkComponent>
+    </li>
+  );
+};
+
+DiscoverLink.propTypes = {
+  to: PropTypes.string.isRequired,
+  LinkComponent: PropTypes.elementType.isRequired,
+};
+
+const DiscoverButton = ({ to, LinkComponent }) => {
+  const { t } = useTranslation();
+  return (
+    <li className="nav-item">
+      <LinkComponent
+        to={to}
+        className={CLUSTER_BUTTON}
+        title={t('navbar.discover')}
+        aria-label={t('navbar.discover')}
       >
-        {link.label}
+        <FaCompass />
+      </LinkComponent>
+    </li>
+  );
+};
+
+DiscoverButton.propTypes = {
+  to: PropTypes.string.isRequired,
+  LinkComponent: PropTypes.elementType.isRequired,
+};
+
+const TicketButton = ({ href }) => {
+  const { t } = useTranslation();
+  return (
+    <li className="nav-item">
+      <a
+        href={href}
+        className={CLUSTER_BUTTON}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={t('navbar.help')}
+        aria-label={t('navbar.help')}
+      >
+        <FaTicket />
       </a>
     </li>
-  ));
+  );
+};
 
-export const linkShape = PropTypes.shape({
-  key: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
+TicketButton.propTypes = {
   href: PropTypes.string.isRequired,
-  external: PropTypes.bool,
-});
-
-SupportLinks.propTypes = {
-  links: PropTypes.arrayOf(linkShape).isRequired,
 };
 
 const ThemeButton = ({ theme }) => {
@@ -89,7 +125,7 @@ const ThemeButton = ({ theme }) => {
       <button
         key={theme.preference}
         type="button"
-        className="btn btn-link nav-link cluster-btn"
+        className={CLUSTER_BUTTON}
         onClick={theme.onToggle}
         title={themeLabel}
         aria-label={themeLabel}
@@ -112,7 +148,6 @@ ThemeButton.propTypes = {
 
 const Header = ({
   brand = null,
-  links = [],
   crumbs = [],
   LinkComponent = 'a',
   theme,
@@ -122,6 +157,8 @@ const Header = ({
   signInTo = '',
   userMenu = null,
   onSidebarToggle = null,
+  discoverTo = '',
+  ticketUrl = '',
 }) => {
   const { t } = useTranslation();
 
@@ -131,7 +168,7 @@ const Header = ({
         {onSidebarToggle ? (
           <button
             type="button"
-            className="btn btn-link nav-link cluster-btn sidebar-toggle me-2"
+            className={`${CLUSTER_BUTTON} sidebar-toggle me-2`}
             onClick={onSidebarToggle}
             title={t('navbar.sidebar.toggle')}
             aria-label={t('navbar.sidebar.toggle')}
@@ -149,13 +186,15 @@ const Header = ({
         {signedIn ? (
           <ul className="nav nav-pills ms-auto align-items-center">
             <NavbarSearchControl />
+            {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
             <ThemeButton theme={theme} />
             <LanguageButton languages={language.languages} onPick={language.onPick} />
             {userMenu ? <UserMenu {...userMenu} /> : null}
           </ul>
         ) : (
           <ul className="nav nav-pills ms-auto align-items-center">
-            <SupportLinks links={links} />
+            {discoverTo ? <DiscoverLink to={discoverTo} LinkComponent={LinkComponent} /> : null}
+            {ticketUrl ? <TicketButton href={ticketUrl} /> : null}
             <LanguageButton languages={language.languages} onPick={language.onPick} />
             <ThemeButton theme={theme} />
             {onSignIn || signInTo ? (
@@ -172,7 +211,6 @@ const Header = ({
 
 Header.propTypes = {
   brand: brandShape,
-  links: PropTypes.arrayOf(linkShape),
   crumbs: PropTypes.arrayOf(crumbShape),
   LinkComponent: PropTypes.elementType,
   theme: themeShape.isRequired,
@@ -185,6 +223,8 @@ Header.propTypes = {
   signInTo: PropTypes.string,
   userMenu: PropTypes.object,
   onSidebarToggle: PropTypes.func,
+  discoverTo: PropTypes.string,
+  ticketUrl: PropTypes.string,
 };
 
 export default Header;

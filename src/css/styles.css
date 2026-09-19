@@ -1423,12 +1423,6 @@ button::-moz-focus-inner {
   white-space: nowrap;
 }
 
-@container (max-width: 14rem) {
-  .name-org {
-    display: none;
-  }
-}
-
 .items-table .col-k-count {
   text-align: right;
   padding-right: 1.25rem;
@@ -1512,7 +1506,6 @@ button::-moz-focus-inner {
 }
 
 .items-table .col-watch,
-.items-table .col-quick,
 .items-table .col-select {
   width: 2.5rem;
 }
@@ -1548,6 +1541,60 @@ button::-moz-focus-inner {
 .items-table tr.detail-row > td {
   --bs-table-accent-bg: transparent;
   background-color: var(--bs-tertiary-bg);
+  padding: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 44px 20px;
+  border: 1px solid var(--bs-secondary-border-subtle);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-secondary-bg-subtle);
+  color: var(--bs-secondary-color);
+  text-align: center;
+}
+
+.empty-state-glyph {
+  margin-bottom: 6px;
+  font-size: 2.75rem;
+  color: var(--bs-tertiary-color);
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+
+.empty-state-body {
+  max-width: 36rem;
+  font-size: 0.875rem;
+}
+
+.empty-state-sm {
+  gap: 2px;
+  padding: 18px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.empty-state-sm .empty-state-glyph {
+  margin-bottom: 2px;
+  font-size: 1.5rem;
+}
+
+.empty-state-sm .empty-state-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+}
+
+.items-table tr.empty-row > td {
+  --bs-table-accent-bg: transparent;
   padding: 0;
 }
 

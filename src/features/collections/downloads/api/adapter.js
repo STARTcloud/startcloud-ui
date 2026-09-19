@@ -1,15 +1,9 @@
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
+import { countOf, sumCounts } from '../../../../utils/itemShape';
 
 import { api } from './downloads';
 
 const rows = data => (Array.isArray(data) ? data : []);
-
-const countOf = value => (typeof value === 'number' ? value : null);
-
-const sumCounts = values => {
-  const known = values.filter(value => typeof value === 'number');
-  return known.length === 0 ? null : known.reduce((sum, value) => sum + value, 0);
-};
 
 const latestReleaseOf = versions =>
   versions
@@ -79,6 +73,7 @@ const downloadItem = (entry, orgName, logo) => {
     icon: entry.iconUrl || '',
     artwork: '',
     isPublic: Boolean(entry.isPublic),
+    guestAccess: Boolean(entry.guestAccess),
     published: Boolean(entry.published),
     createdAt: entry.createdAt || null,
     updatedAt: entry.updatedAt || null,

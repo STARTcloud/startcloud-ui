@@ -6,6 +6,7 @@ import { FaArrowUpRightFromSquare, FaBuilding } from 'react-icons/fa6';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import RecordRows from '../../../components/common/RecordRows';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
@@ -240,32 +241,18 @@ const extractOrgDetailsState = orgDetails => ({
   address: formatOrgAddress(orgDetails.address),
 });
 
-const OrgProfileRow = ({ row }) => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="row mb-1">
-      <dt className="col-sm-3">{t(`orgConsole.organization.${row.key}`)}</dt>
-      <dd className={`col-sm-9 mb-1${row.multiline ? ' org-profile-multiline' : ''}`}>
-        {row.link ? (
-          <a href={row.value} target="_blank" rel="noopener noreferrer">
-            {row.value}
-          </a>
-        ) : (
-          row.value
-        )}
-      </dd>
-    </div>
-  );
-};
-
-OrgProfileRow.propTypes = {
-  row: PropTypes.shape({
-    key: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-    link: PropTypes.bool,
-    multiline: PropTypes.bool,
-  }).isRequired,
+const profileValue = row => {
+  if (row.link) {
+    return (
+      <a href={row.value} target="_blank" rel="noopener noreferrer">
+        {row.value}
+      </a>
+    );
+  }
+  if (row.multiline) {
+    return <span className="org-profile-multiline">{row.value}</span>;
+  }
+  return row.value;
 };
 
 const ACCESS_MODE_LABEL_KEYS = {
@@ -329,11 +316,13 @@ const OrgProfileDisplay = ({
       </div>
       {orgDescription && <p>{orgDescription}</p>}
       {rows.length > 0 && (
-        <dl className="mb-3">
-          {rows.map(row => (
-            <OrgProfileRow key={row.key} row={row} />
-          ))}
-        </dl>
+        <RecordRows
+          rows={rows.map(row => ({
+            key: row.key,
+            label: t(`orgConsole.organization.${row.key}`),
+            value: profileValue(row),
+          }))}
+        />
       )}
       {orgIdpLink && (
         <a href={orgIdpLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary">

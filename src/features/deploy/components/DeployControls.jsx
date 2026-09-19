@@ -26,21 +26,31 @@ const deployProps = {
   version: PropTypes.string.isRequired,
 };
 
+const slotProps = {
+  item: itemShape.isRequired,
+  ctx: PropTypes.shape({ user: PropTypes.object }).isRequired,
+};
+
 /**
- * The Deploy controls every collection Hyperweaver can turn into a machine
- * draws the same way: a filled button carrying only the Hyperweaver glyph,
- * never a word, for action rows and the use-this strip, the bare glyph for
- * rows and cards through the `ItemQuickActions` slot, the version title on
- * the tooltip and aria-label of both; each drawn only while the host
+ * The Deploy control every collection Hyperweaver can turn into a machine
+ * draws the same way: one bare link carrying only the Hyperweaver glyph,
+ * never a word, the version title on its tooltip and aria-label, the glyph
+ * at 1em wherever it sits, a table cell, a card, an action row or the
+ * use-this strip alike; drawn only while the host
  * advertises `deploy`, the viewer is signed in, entitled to Hyperweaver and
- * Hyperweaver is configured. The collection supplies only where its
- * Hyperweaver lives, who may deploy and the deep link.
+ * Hyperweaver is configured. `DeployGlyph` is the control itself, for
+ * action rows and the use-this strip; `deployColumn` is the listing column
+ * that draws it for each row's deployable version, present only while the
+ * host advertises `deploy`, the viewer is entitled and a row has a
+ * deployable version; `CardGlyph` draws that column's cell on a card. The
+ * collection supplies only where its Hyperweaver lives, who may deploy and
+ * the deep link.
  *
  * @param {Object} app - The collection's side of Deploy
  * @param {() => Promise<string>} app.fetchHyperweaverUrl - Resolves the Hyperweaver origin, an empty string when none is configured; called once per page load
  * @param {(user: Object|null) => boolean} app.canDeploy - Whether the viewer holds the Hyperweaver entitlement
  * @param {(args: { hyperweaverUrl: string, item: Object, version: string }) => string} app.hrefFor - The deep link into Hyperweaver for one item version
- * @returns {{ DeployButton: Function, DeployGlyph: Function, ItemQuickActions: Function }} The controls
+ * @returns {{ DeployGlyph: Function, deployColumn: Object, CardGlyph: Function }} The controls
  */
 export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }) => {
   let urlPromise = null;
@@ -81,27 +91,6 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
     };
   };
 
-  const DeployButton = ({ user, item, version, size = '' }) => {
-    const deploy = useDeploy({ user, item, version });
-    if (!deploy) {
-      return null;
-    }
-    return (
-      <a
-        className={`btn btn-primary ${size} d-inline-flex align-items-center me-2`}
-        href={deploy.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={deploy.title}
-        aria-label={deploy.title}
-      >
-        <HyperweaverGlyph />
-      </a>
-    );
-  };
-
-  DeployButton.propTypes = { ...deployProps, size: PropTypes.string };
-
   const DeployGlyph = ({ user, item, version }) => {
     const deploy = useDeploy({ user, item, version });
     if (!deploy) {
@@ -109,7 +98,7 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
     }
     return (
       <a
-        className="text-primary"
+        className="text-primary d-inline-flex align-items-center v-align-middle me-2"
         href={deploy.href}
         target="_blank"
         rel="noopener noreferrer"
@@ -123,14 +112,22 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
 
   DeployGlyph.propTypes = deployProps;
 
-  const ItemQuickActions = ({ item, ctx }) => (
-    <DeployGlyph user={ctx.user} item={item} version={deployableVersion(item.versions)} />
-  );
-
-  ItemQuickActions.propTypes = {
-    item: itemShape.isRequired,
-    ctx: PropTypes.shape({ user: PropTypes.object }).isRequired,
+  const deployColumn = {
+    key: 'deploy',
+    kind: 'badge',
+    labelKey: 'pages.table.deploy',
+    when: (rows, ctx) =>
+      hasFeature(ctx.status, 'deploy') &&
+      canDeploy(ctx.user) &&
+      rows.some(row => deployableVersion(row.versions)),
+    render: (item, ctx) => (
+      <DeployGlyph user={ctx.user} item={item} version={deployableVersion(item.versions)} />
+    ),
   };
 
-  return { DeployButton, DeployGlyph, ItemQuickActions };
+  const CardGlyph = ({ item, ctx }) => deployColumn.render(item, ctx);
+
+  CardGlyph.propTypes = slotProps;
+
+  return { DeployGlyph, deployColumn, CardGlyph };
 };

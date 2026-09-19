@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { copyToClipboard } from '../../../../lib/clipboard';
@@ -22,7 +23,7 @@ import { canManageBox } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
 
-import { DeployButton, deployableVersion } from './deploy';
+import { DeployGlyph, deployableVersion } from './deploy';
 
 const STARTER_VAGRANTFILE = `## Vagrant File tooling compatabile with Bhyve and Virtualbox, potentially ESXI/Vmware,KVM
 ##
@@ -250,7 +251,7 @@ export const BoxItemExtras = ({ item, ctx }) => {
               ))}
             </select>
           </label>
-          <DeployButton user={user} item={item} version={selected} size="btn-sm" />
+          <DeployGlyph user={user} item={item} version={selected} />
         </span>
       </div>
       <CodeBlock code={initCommand} />
@@ -319,6 +320,7 @@ const draftFrom = box => ({
   name: box.name ?? '',
   description: box.description ?? '',
   is_public: box.isPublic ?? false,
+  guest_access: box.guestAccess ?? false,
   github_repo: box.githubRepo ?? '',
   workflow_file: box.workflowFile ?? '',
   cicd_url: box.cicdUrl ?? '',
@@ -370,7 +372,7 @@ EditTextField.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-const BoxEditForm = ({ org, published, draft, rules, onChange, onSubmit }) => {
+const BoxEditForm = ({ org, published, draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <div className="edit-form">
@@ -409,42 +411,13 @@ const BoxEditForm = ({ org, published, draft, rules, onChange, onSubmit }) => {
           <strong>{t('boxes.box.status')}: </strong>
           {published ? t('boxes.status.completed') : t('boxes.status.pending')}
         </div>
-        <div className="form-group mt-2">
-          <label htmlFor="visibilityPrivate">
-            <strong>{t('boxes.box.visibility')}:</strong>
-          </label>
-          <div className="d-flex">
-            <div className="form-check me-3">
-              <input
-                type="radio"
-                className="form-check-input"
-                id="visibilityPrivate"
-                name="is_public"
-                value="false"
-                checked={!draft.is_public}
-                onChange={onChange}
-              />
-              <label className="form-check-label" htmlFor="visibilityPrivate">
-                {t('boxes.box.organization.visibility.private')}
-              </label>
-            </div>
-            <div className="form-check">
-              <input
-                type="radio"
-                className="form-check-input"
-                id="visibilityPublic"
-                name="is_public"
-                value="true"
-                checked={Boolean(draft.is_public)}
-                onChange={onChange}
-              />
-              <label className="form-check-label" htmlFor="visibilityPublic">
-                {t('boxes.box.organization.visibility.public')}
-              </label>
-            </div>
-          </div>
-          <small className="form-text text-muted">{t('boxes.box.visibilityHint')}</small>
-        </div>
+        <VisibilityPicker
+          idPrefix={rules.idFor('visibility')}
+          value={draft}
+          onChange={onVisibility}
+          hint={t('boxes.box.visibilityHint')}
+          className="mt-2"
+        />
         <Field
           id={rules.idFor('description')}
           label={<OptionalLabel text={t('boxes.box.description')} />}
@@ -506,6 +479,7 @@ BoxEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -529,8 +503,10 @@ export const BoxItemActions = ({ item, ctx }) => {
 
   const onChange = useCallback(event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -576,11 +552,12 @@ export const BoxItemActions = ({ item, ctx }) => {
         draft={draft}
         rules={rules}
         onChange={onChange}
+        onVisibility={onVisibility}
         onSubmit={submit}
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, org, box.published, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, org, box.published, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -640,7 +617,7 @@ export const BoxItemActions = ({ item, ctx }) => {
 
   return (
     <>
-      <DeployButton user={user} item={item} version={deployableVersion(item.versions)} />
+      <DeployGlyph user={user} item={item} version={deployableVersion(item.versions)} />
       {manage ? editButtons : null}
       {manage ? publishButton : null}
       <Link className="btn btn-dark me-2" to={`/${org}`}>

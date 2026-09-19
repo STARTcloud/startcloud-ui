@@ -28,8 +28,7 @@
     "about": "About",
     "docs": "Docs",
     "contact": "Contact",
-    "needHelp": "Need help?",
-    "emailSupport": "Email support",
+    "discover": "Discover",
     "admin": "Admin",
     "orgConsole": "Organization console",
     "rebuild": "Rebuild catalog data",
@@ -587,6 +586,8 @@
     "users": {
       "title": "Users",
       "search": "Search users",
+      "notFound": "User not found",
+      "placeholder": "User",
       "filter": {
         "status": "Status",
         "tfa": "2FA on",
@@ -1325,7 +1326,6 @@
     "revokeInvite": "Revoke"
   },
   "discovery": {
-    "discoverButton": "Discover organizations",
     "title": "Discover Organizations",
     "description": "Browse public organizations and request to join them.",
     "searchPlaceholder": "Search organizations...",
@@ -1385,6 +1385,18 @@
     "delete": "Delete",
     "viewDetails": "View details",
     "search": "Search notifications",
+    "columns": {
+      "title": "Title",
+      "body": "Body",
+      "time": "Time",
+      "type": "Type"
+    },
+    "filter": {
+      "status": "Status",
+      "unread": "Unread",
+      "read": "Read",
+      "type": "Type"
+    },
     "bulk": {
       "selected": "{{count}} selected",
       "markRead": "Mark as read",
@@ -1751,10 +1763,17 @@
     "loading": "Loading…",
     "notFound": "Not found.",
     "empty": "Nothing here yet.",
+    "emptyBody": "Items will appear here once they are added.",
     "noMatches": "Nothing matches.",
+    "noMatchesBody": "Clear the search or the filters to see more.",
     "searchAll": "Search…",
     "selectAll": "Select all on this page",
     "selectColumn": "Select all on this page",
+    "sidebar": {
+      "title": "Catalog",
+      "home": "Home",
+      "browse": "Browse"
+    },
     "search": {
       "versions": "Search versions",
       "providers": "Search providers",
@@ -1786,6 +1805,8 @@
       "delete": "Delete",
       "makePublic": "Make public",
       "makePrivate": "Make private",
+      "allowGuests": "Allow guests",
+      "denyGuests": "Deny guests",
       "publish": "Publish",
       "unpublish": "Unpublish",
       "deprecate": "Deprecate",
@@ -1823,6 +1844,7 @@
     },
     "table": {
       "name": "Name",
+      "deploy": "Deploy",
       "os": "OS",
       "status": "Status",
       "visibility": "Visibility",
@@ -1863,6 +1885,7 @@
       "published": "Published",
       "pending": "Pending",
       "public": "Public",
+      "guests": "Guests",
       "private": "Private",
       "deprecated": "Deprecated"
     },
@@ -2090,10 +2113,6 @@
   },
   "downloads": {
     "search": "Search downloads",
-    "visibility": {
-      "public": "Public",
-      "private": "Private"
-    },
     "upload": {
       "drop": "Drop a file here or click to choose one",
       "uploading": "Uploading… {{percent}}%",
@@ -2130,7 +2149,6 @@
       "iconUrl": "Icon URL",
       "docsUrl": "Documentation URL",
       "notesUrl": "Release notes URL",
-      "visibility": "Visibility",
       "updated": "The product was updated."
     },
     "release": {
@@ -2252,7 +2270,7 @@
       "create": "Create ISO",
       "created": "ISO created successfully.",
       "createError": "An error occurred while creating the ISO.",
-      "visibilityHint": "Making an ISO private prevents users from accessing it unless given permission.",
+      "visibilityHint": "Public opens the ISO to everyone, Guests to the organization's guests and members, Private to its members alone.",
       "deleteTitle": "Delete ISO",
       "deleteMessage": "Are you sure you want to delete {{name}}?",
       "makePublic": "Make public",
@@ -2316,11 +2334,10 @@
       "name": "Box Name",
       "nameHint": "Letters, digits, dash and period; this is the URL and the folder.",
       "status": "Status",
-      "visibility": "Visibility",
       "description": "Description",
       "optional": "(Optional)",
       "shortDescription": "Short description is used to describe the box.",
-      "visibilityHint": "Making a box private prevents users from accessing it unless given permission.",
+      "visibilityHint": "Public opens the box to everyone, Guests to the organization's guests and members, Private to its members alone.",
       "cicd": {
         "title": "CI/CD Integration",
         "connect": "Connect your box to GitHub Actions for automated build status badges.",
@@ -2361,10 +2378,6 @@
         },
         "headers": {
           "createNewBox": "Create New Box"
-        },
-        "visibility": {
-          "public": "Public",
-          "private": "Private"
         }
       }
     }

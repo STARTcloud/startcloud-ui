@@ -259,6 +259,7 @@ const nodeShape = PropTypes.shape({
   to: PropTypes.string,
   status: PropTypes.oneOf(['up', 'idle']),
   children: PropTypes.func,
+  matches: PropTypes.func,
 });
 
 const nodeOpen = ({ node, tree, kids, current }) => {
@@ -268,10 +269,13 @@ const nodeOpen = ({ node, tree, kids, current }) => {
   if (tree.open.includes(node.key)) {
     return true;
   }
+  const [pathname] = current.split('?');
+  if (node.matches?.(pathname)) {
+    return true;
+  }
   if (node.to) {
     return current.startsWith(`${node.to}/`);
   }
-  const [pathname] = current.split('?');
   return Boolean(kids?.some(child => child.to && descendsFrom(pathname, child.to)));
 };
 
@@ -575,7 +579,10 @@ const useResize = (asideRef, setWidth) => {
  * `labelKey` drawn as a section heading above the nodes when the answer
  * carries one, nodes with a caret at the row's right end, `children()`
  * called on
- * expand and for the node the current route descends from, so a deep link
+ * expand and for the node the current route descends from (its `to` a
+ * prefix of the route, or its `matches(pathname)` answering true when the
+ * node carries one, for a tree whose routes do not nest under its nodes'
+ * paths), so a deep link
  * crumbs down the tree, a node without `to` folding on click and never
  * navigating, its children loaded on mount because only they say
  * whether the current route lies under it, a status dot for `up` and `idle`, the right-click

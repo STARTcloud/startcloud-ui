@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaClock } from 'react-icons/fa6';
 
-import MethodList, { MethodRow } from '../../../components/common/MethodList';
+import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { OrgLogo, organizationShape } from '../../../components/layout/OrgSwitcherModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
+import { membershipOf } from '../../../utils/membership';
 
 const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
 
@@ -23,6 +25,23 @@ const includesTerm = (term, ...fields) =>
 const dateOf = (value, language) => {
   const time = new Date(value);
   return Number.isNaN(time.getTime()) ? '' : time.toLocaleDateString(language);
+};
+
+const MembershipLogo = ({ org, organizations }) => {
+  const matched = membershipOf(organizations, nameOf(org));
+  return (
+    <OrgLogo
+      org={{ logo: matched?.logo || httpsUrl(org.logo_url), emailHash: matched?.emailHash || '' }}
+      size={24}
+      className="rounded-circle"
+      fallback={<FaBuilding aria-hidden />}
+    />
+  );
+};
+
+MembershipLogo.propTypes = {
+  org: PropTypes.shape({ logo_url: PropTypes.string }).isRequired,
+  organizations: PropTypes.arrayOf(organizationShape).isRequired,
 };
 
 const MembershipBadges = ({ org }) => {
@@ -137,14 +156,16 @@ CancelButton.propTypes = {
 /**
  * The Organizations section of the profile page on a UI backend with
  * memberships of its own: the memberships as `MethodRow`s under a
- * `SectionHeading` (the name, the Primary and role badges, the description
- * and the joined date, Make primary while the adapter carries `setPrimary`
- * and Leave while more than one membership remains) and the pending join
- * requests under a second heading with Cancel per row, both glass lists on
- * the page's ground, searched from the navbar; a change of the primary
- * organization re-reads the session through `onSaved`.
+ * `SectionHeading` (the organization's logo from the session's
+ * `organizations` matched by name, the row's own `logo_url` else, the
+ * building glyph otherwise; the name, the Primary and role badges, the
+ * description and the joined date, Make primary while the adapter carries
+ * `setPrimary` and Leave while more than one membership remains) and the
+ * pending join requests under a second heading with Cancel per row, both
+ * glass lists on the page's ground, searched from the navbar; a change of
+ * the primary organization re-reads the session through `onSaved`.
  */
-const OrganizationsTab = ({ account, onSaved }) => {
+const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [memberships, setMemberships] = useState([]);
@@ -249,7 +270,7 @@ const OrganizationsTab = ({ account, onSaved }) => {
           return (
             <MethodRow
               key={keyOf(org)}
-              icon={<FaBuilding aria-hidden />}
+              icon={<MembershipLogo org={org} organizations={sessionOrganizations} />}
               label={nameOf(org)}
               badges={<MembershipBadges org={org} />}
               subline={<MembershipSubline org={org} />}
@@ -292,6 +313,7 @@ OrganizationsTab.propTypes = {
       cancelRequest: PropTypes.func.isRequired,
     }).isRequired,
   }).isRequired,
+  organizations: PropTypes.arrayOf(organizationShape).isRequired,
   onSaved: PropTypes.func.isRequired,
 };
 

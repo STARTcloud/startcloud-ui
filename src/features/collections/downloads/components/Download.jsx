@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -16,13 +17,14 @@ import { isOrgGuest, isOrgManager, isOrgMember } from '../../../../utils/permiss
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
-import { TextAreaField, TextField, VisibilityRadios } from './fields';
+import { TextAreaField, TextField } from './fields';
 import { PlacePane } from './PlaceForm';
 
 const draftFrom = product => ({
   name: product.name ?? '',
   description: product.description ?? '',
   is_public: product.isPublic ?? false,
+  guest_access: product.guestAccess ?? false,
   family: product.family ?? '',
   vendor: product.vendor ?? '',
   icon_url: product.iconUrl ?? '',
@@ -57,7 +59,7 @@ export const DownloadListActions = ({ ctx }) => {
         org={org}
         pending={upload.pending}
         levels={{}}
-        isPublic={upload.isPublic}
+        visibility={upload.visibility}
         notify={notify}
         reload={reload}
         onDone={upload.clear}
@@ -71,8 +73,8 @@ export const DownloadListActions = ({ ctx }) => {
       progress={upload.progress}
       file={upload.file}
       error={upload.error}
-      isPublic={upload.isPublic}
-      onVisibility={upload.setIsPublic}
+      visibility={upload.visibility}
+      onVisibility={upload.setVisibility}
       onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );
@@ -109,7 +111,7 @@ export const DownloadItemHeaderExtra = ({ item }) => {
 
 DownloadItemHeaderExtra.propTypes = { item: itemShape.isRequired };
 
-const ProductEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -127,7 +129,12 @@ const ProductEditForm = ({ draft, rules, onChange, onSubmit }) => {
       <TextField name="icon_url" type="url" draft={draft} rules={rules} onChange={onChange} />
       <TextField name="docs_url" type="url" draft={draft} rules={rules} onChange={onChange} />
       <TextField name="notes_url" type="url" draft={draft} rules={rules} onChange={onChange} />
-      <VisibilityRadios draft={draft} onChange={onChange} />
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mb-2"
+      />
     </form>
   );
 };
@@ -136,6 +143,7 @@ ProductEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -154,8 +162,10 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
 
   const onChange = useCallback(event => {
     const { name, value } = event.target;
-    setDraft(current => ({ ...current, [name]: name === 'is_public' ? value === 'true' : value }));
+    setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -198,10 +208,16 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
       return undefined;
     }
     setEditor(
-      <ProductEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+      <ProductEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -324,7 +340,7 @@ export const DownloadVersionsActions = ({ item, ctx }) => {
         org={org}
         pending={upload.pending}
         levels={{ product: item.name }}
-        isPublic={upload.isPublic}
+        visibility={upload.visibility}
         notify={notify}
         reload={reload}
         onDone={upload.clear}
@@ -338,8 +354,8 @@ export const DownloadVersionsActions = ({ item, ctx }) => {
       progress={upload.progress}
       file={upload.file}
       error={upload.error}
-      isPublic={upload.isPublic}
-      onVisibility={upload.setIsPublic}
+      visibility={upload.visibility}
+      onVisibility={upload.setVisibility}
       onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );

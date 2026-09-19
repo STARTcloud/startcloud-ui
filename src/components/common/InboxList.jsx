@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaArrowUpRightFromSquare,
@@ -16,7 +15,7 @@ import { formatRelativeTime } from '../../utils/relativeTime';
 
 import { followableUrl } from './MethodList';
 
-const TYPE_ICONS = {
+export const TYPE_ICONS = {
   SECURITY: FaShieldHalved,
   OAUTH: FaShieldHalved,
   ACCOUNT: FaEnvelope,
@@ -26,7 +25,7 @@ const TYPE_ICONS = {
   ALERT: FaTriangleExclamation,
 };
 
-const SEVERITY_CLASSES = {
+export const SEVERITY_CLASSES = {
   DANGER: 'text-danger',
   CRITICAL: 'text-danger',
   ERROR: 'text-danger',
@@ -61,9 +60,34 @@ export const extractEntries = data => (Array.isArray(data?.items) ? data.items :
  */
 export const linkOf = entry => followableUrl(entry?.navigate);
 
-const absoluteTime = (value, language) => {
+/**
+ * A row's time in the viewer's locale, the tooltip behind the relative
+ * time, empty for a value that does not parse.
+ * @param {string} value - The row's `createdAt`
+ * @param {string} language - The i18n language
+ * @returns {string} The absolute time, or empty
+ */
+export const absoluteTime = (value, language) => {
   const time = new Date(value);
   return Number.isNaN(time.getTime()) ? '' : time.toLocaleString(language);
+};
+
+/**
+ * The type icon of one notification, `TYPE_ICONS` by the row's `type`
+ * with the bell for a type it does not name, colored by
+ * `SEVERITY_CLASSES` for the row's `severity`.
+ */
+export const NotificationGlyph = ({ entry }) => {
+  const Icon = TYPE_ICONS[entry.type] || FaBell;
+  return (
+    <Icon
+      className={`notification-item-icon ${SEVERITY_CLASSES[entry.severity] || 'text-body-secondary'}`}
+    />
+  );
+};
+
+NotificationGlyph.propTypes = {
+  entry: notificationShape.isRequired,
 };
 
 /**
@@ -73,39 +97,18 @@ const absoluteTime = (value, language) => {
  * time in its tooltip, the unread dot, and the mark-read and delete
  * controls.
  */
-export const NotificationRow = ({
-  entry,
-  onSelect,
-  onMarkRead,
-  onDismiss,
-  labels,
-  selectable = false,
-  checked = false,
-  onToggleSelect = null,
-}) => {
+export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels }) => {
   const { i18n } = useTranslation();
-  const Icon = TYPE_ICONS[entry.type] || FaBell;
   const unread = !entry.readAt;
 
   return (
-    <div className={`notification-row ${selectable ? 'notification-row-selectable' : ''}`}>
-      {selectable ? (
-        <input
-          type="checkbox"
-          className="form-check-input notification-item-select"
-          aria-label={entry.title}
-          checked={checked}
-          onChange={() => onToggleSelect(entry)}
-        />
-      ) : null}
+    <div className="notification-row">
       <button
         type="button"
         className="dropdown-item notification-item"
         onClick={() => onSelect(entry)}
       >
-        <Icon
-          className={`notification-item-icon ${SEVERITY_CLASSES[entry.severity] || 'text-body-secondary'}`}
-        />
+        <NotificationGlyph entry={entry} />
         <span className="notification-item-body">
           <span className={`notification-item-title ${unread ? 'fw-semibold' : ''}`}>
             {entry.title}
@@ -164,69 +167,29 @@ NotificationRow.propTypes = {
     dismiss: PropTypes.string.isRequired,
     viewDetails: PropTypes.string,
   }).isRequired,
-  selectable: PropTypes.bool,
-  checked: PropTypes.bool,
-  onToggleSelect: PropTypes.func,
 };
 
 /**
- * The row list the notifications modal and the inbox page both draw:
- * the same `NotificationRow` per entry, the caller owning the entries,
- * the selection, the mark-read and the delete, and the words the two
- * row controls carry; the inbox page alone passes `selectable`, whose
- * select-all checkbox draws at the list's head, indeterminate when some
- * but not all rows are picked (identity contract decision 142).
+ * The row list the notifications modal draws: one `NotificationRow` per
+ * entry, the caller owning the entries, the mark-read and the delete, and
+ * the words the row controls carry. The inbox page draws the same rows
+ * through `SubTable` instead, sharing `NotificationGlyph`, `absoluteTime`,
+ * `extractEntries` and `linkOf` (identity contract decision 142).
  */
-const InboxList = ({
-  entries,
-  onSelect,
-  onMarkRead,
-  onDismiss,
-  labels,
-  selectable = false,
-  selected = null,
-  onToggleSelect = null,
-  allSelected = false,
-  indeterminate = false,
-  onToggleSelectAll = null,
-}) => {
-  const { t } = useTranslation();
-  const selectAllRef = useRef(null);
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-  return (
-    <div className="notification-list">
-      {selectable ? (
-        <div className="d-flex align-items-center gap-2 px-3 py-2 border-bottom">
-          <input
-            ref={selectAllRef}
-            type="checkbox"
-            className="form-check-input"
-            aria-label={t('pages.selectColumn')}
-            checked={allSelected}
-            onChange={onToggleSelectAll}
-          />
-        </div>
-      ) : null}
-      {entries.map(entry => (
-        <NotificationRow
-          key={entry.id}
-          entry={entry}
-          onSelect={onSelect}
-          onMarkRead={onMarkRead}
-          onDismiss={onDismiss}
-          labels={labels}
-          selectable={selectable}
-          checked={Boolean(selected?.has(entry.id))}
-          onToggleSelect={onToggleSelect}
-        />
-      ))}
-    </div>
-  );
-};
+const InboxList = ({ entries, onSelect, onMarkRead, onDismiss, labels }) => (
+  <div className="notification-list">
+    {entries.map(entry => (
+      <NotificationRow
+        key={entry.id}
+        entry={entry}
+        onSelect={onSelect}
+        onMarkRead={onMarkRead}
+        onDismiss={onDismiss}
+        labels={labels}
+      />
+    ))}
+  </div>
+);
 
 InboxList.propTypes = {
   entries: PropTypes.arrayOf(notificationShape).isRequired,
@@ -238,12 +201,6 @@ InboxList.propTypes = {
     dismiss: PropTypes.string.isRequired,
     viewDetails: PropTypes.string,
   }).isRequired,
-  selectable: PropTypes.bool,
-  selected: PropTypes.instanceOf(Set),
-  onToggleSelect: PropTypes.func,
-  allSelected: PropTypes.bool,
-  indeterminate: PropTypes.bool,
-  onToggleSelectAll: PropTypes.func,
 };
 
 export default InboxList;

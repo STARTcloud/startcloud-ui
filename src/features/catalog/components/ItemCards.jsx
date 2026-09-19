@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import EmptyState from '../../../components/common/EmptyState';
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
 import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
@@ -58,11 +59,11 @@ const LINKS = [
   { key: 'notes', Icon: FaScroll, labelKey: 'pages.links.notes' },
 ];
 
-const CardLinks = ({ item, ItemQuickActions, ctx }) => {
+const CardLinks = ({ item, CardGlyph, ctx }) => {
   const { t } = useTranslation();
   const links = item.links || {};
   const present = LINKS.filter(link => links[link.key]);
-  if (present.length === 0 && !ItemQuickActions) {
+  if (present.length === 0 && !CardGlyph) {
     return null;
   }
   return (
@@ -80,9 +81,9 @@ const CardLinks = ({ item, ItemQuickActions, ctx }) => {
           <Icon />
         </a>
       ))}
-      {ItemQuickActions ? (
+      {CardGlyph ? (
         <span className="ms-auto d-inline-flex align-items-center gap-3">
-          <ItemQuickActions item={item} ctx={ctx} />
+          <CardGlyph item={item} ctx={ctx} />
         </span>
       ) : null}
     </div>
@@ -91,13 +92,13 @@ const CardLinks = ({ item, ItemQuickActions, ctx }) => {
 
 CardLinks.propTypes = {
   item: itemShape.isRequired,
-  ItemQuickActions: PropTypes.elementType,
+  CardGlyph: PropTypes.elementType,
   ctx: PropTypes.object.isRequired,
 };
 
 const ItemCard = ({ collection, item, watches, selection, ctx }) => {
   const { t } = useTranslation();
-  const { ItemChips, ItemQuickActions, CardExtras, RowActions } = collection.slots;
+  const { ItemChips, CardGlyph, CardExtras, RowActions } = collection.slots;
   const title = item.label || item.name;
   const watched = watches ? watches.ids.has(item.id) : false;
   return (
@@ -145,7 +146,7 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
           </Card.Text>
         ) : null}
         <div className="mt-auto d-flex flex-column gap-2">
-          <CardLinks item={item} ItemQuickActions={ItemQuickActions} ctx={ctx} />
+          <CardLinks item={item} CardGlyph={CardGlyph} ctx={ctx} />
           {CardExtras ? <CardExtras item={item} ctx={ctx} /> : null}
           {RowActions ? <RowActions item={item} ctx={ctx} /> : null}
         </div>
@@ -198,13 +199,15 @@ const ItemCards = ({
   watches,
   ctx,
   selection = null,
+  emptyBody = null,
 }) => {
   const { t } = useTranslation();
   if (items.length === 0) {
     return (
-      <div className="alert alert-secondary">
-        {ctx.filtering ? t('pages.noMatches') : t('pages.empty')}
-      </div>
+      <EmptyState
+        title={ctx.filtering ? t('pages.noMatches') : t('pages.empty')}
+        body={emptyBody}
+      />
     );
   }
   if (!groups) {
@@ -254,6 +257,7 @@ ItemCards.propTypes = {
   }),
   ctx: PropTypes.object.isRequired,
   selection: selectionShape,
+  emptyBody: PropTypes.node,
 };
 
 export default ItemCards;

@@ -5,27 +5,17 @@ import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
 import Listing from './Listing';
 
-const HomePage = ({ collections, context, actions = null }) => {
+const HomePage = ({ collections, context }) => {
   useEffect(() => {
     document.title = context.appName;
   }, [context.appName]);
 
-  return (
-    <Listing
-      collections={collections}
-      org=""
-      member={false}
-      grouped
-      context={context}
-      actions={actions}
-    />
-  );
+  return <Listing collections={collections} org="" member={false} grouped context={context} />;
 };
 
 HomePage.propTypes = {
   collections: PropTypes.arrayOf(collectionShape).isRequired,
   context: pageContextShape.isRequired,
-  actions: PropTypes.node,
 };
 
 export default HomePage;

@@ -43,7 +43,7 @@ import {
   BoxVersionBannerActions,
   BoxVersionNotesActions,
 } from './components/BoxVersion';
-import { BoxQuickActions } from './components/deploy';
+import { CardGlyph, deployColumn } from './components/deploy';
 
 export const boxes = {
   key: 'boxes',
@@ -80,6 +80,7 @@ export const boxes = {
   ],
   columns: [
     nameColumn,
+    deployColumn,
     visibilityColumn,
     createdColumn,
     updatedColumn,
@@ -104,7 +105,7 @@ export const boxes = {
   },
   slots: {
     ListActions: BoxListActions,
-    ItemQuickActions: BoxQuickActions,
+    CardGlyph,
     ItemActions: BoxItemActions,
     ItemHeaderExtra: BoxCicdBar,
     ItemExtras: BoxItemExtras,

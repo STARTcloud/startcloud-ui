@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaRotate } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import EmptyState from '../../../components/common/EmptyState';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
@@ -177,16 +178,20 @@ HealthCard.propTypes = {
   file: PropTypes.string.isRequired,
 };
 
-const CardGrid = ({ probes, file, emptyText }) => (
-  <div className="row g-3 mb-4">
-    {probes.map(probe => (
-      <div key={probe.client_id} className="col-md-6 col-xl-4">
-        <HealthCard probe={probe} file={file} />
-      </div>
-    ))}
-    {probes.length === 0 ? <div className="col text-muted">{emptyText}</div> : null}
-  </div>
-);
+const CardGrid = ({ probes, file, emptyText }) => {
+  if (probes.length === 0) {
+    return <EmptyState title={emptyText} />;
+  }
+  return (
+    <div className="row g-3 mb-4">
+      {probes.map(probe => (
+        <div key={probe.client_id} className="col-md-6 col-xl-4">
+          <HealthCard probe={probe} file={file} />
+        </div>
+      ))}
+    </div>
+  );
+};
 
 CardGrid.propTypes = {
   probes: PropTypes.arrayOf(probeShape).isRequired,

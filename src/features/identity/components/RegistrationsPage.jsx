@@ -5,10 +5,10 @@ import { FaDownload } from 'react-icons/fa6';
 import Pager from '../../../components/common/Pager';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
+import { useListSearch } from '../../../hooks/useListSearch';
 import { readDetailPrefs } from '../../../utils/prefs';
 import { registrations } from '../api/activity';
 import { useActivityPage } from '../hooks/useActivityPage';
-import { useListSearch } from '../hooks/useListSearch';
 import { REGISTRATIONS } from '../utils/examples';
 
 import AdminLoading from './AdminLoading';

@@ -148,8 +148,9 @@ Path=/` and `XSRF-TOKEN` is `Secure; SameSite=Lax; Path=/`, each with
   `organizations` claim of the id and access tokens and the SCIM
   `/Groups` membership carry the fourth exactly as they carry the first
   three. A `guest` is a read-only membership below `member`: a person
-  who signs in to browse and download what their organization holds and
-  writes nothing. The org console's role picker offers it, its member
+  who signs in to see the things their organization marked for guests,
+  which anyone with higher access sees too and the public never does,
+  never a download count, and writes nothing. The org console's role picker offers it, its member
   rows draw its badge, an invitation and a join request's assigned role
   may name it, and `default_role` may too, `MEMBER`, `ADMIN` or `GUEST`,
   so an organization that opens a door to the public may open a
@@ -598,21 +599,19 @@ session contract's sign-in page) by the states the issuer has:
   Sign in is hidden, the chrome's session-ended banner carries a Sign in
   action of its own, because the banner says "Sign in again" and the
   person must have something to press.
-- **Chrome.** The issuer's auth top bar today is the site logo on the
-  left and, top right, "Need help?" (`sites.<id>.assets.help_url`),
-  "Email support" (`sites.<id>.mail.support_email`) and the flag; on the
-  shared chrome the auth pages draw exactly that, the navbar contract's
-  signed-out cluster: the brand mark alone on the left, and on the right,
-  in order, "Need help?" (the improvement-request ticket link in a new
-  tab while `ticket` is non-null, built from `ticket.baseUrl`,
-  `ticket.reqType` and `ticket.fallbackCustomerId` alone; `links.docs`
-  carrying `help_url` while `ticket` is null; absent when neither),
-  "Email support" (`links.contact` carrying `mailto:<support_email>`,
-  absent when empty), the language control, and the theme button beside
-  it, which the auth pages never had (the site's pack is not a user
-  choice; the variant is). No search icon, because app-wide search needs
-  a session and no auth page binds the navbar search; no Sign in button,
-  because the page itself is the sign-in.
+- **Chrome.** The auth pages draw the navbar contract's signed-out
+  cluster: the brand mark alone on the left, and on the right, in order,
+  Discover (an in-router link to `/organizations/discover` while the
+  site advertises `discover`), one ticket icon (`FaTicket`, titled Help,
+  the improvement-request ticket link in a new tab, built from
+  `ticket.baseUrl`, `ticket.reqType` and `ticket.fallbackCustomerId`
+  alone, drawn only while `ticket` is non-null; `links.docs` and
+  `links.contact` draw nowhere in the cluster, being the menu's Docs and
+  Contact rows signed in), the language control, and the theme button
+  beside it (the site's pack is not a user choice; the variant is). No
+  search icon, because app-wide search needs a session and no auth page
+  binds the navbar search; no Sign in button on any auth path of any
+  host, because the page itself is the sign-in.
 - **After `next`.** The page navigates in-router when `next` is a path
   whose first segment is a page of this contract or of the pages contract,
   and sets `window.location` otherwise (a saved `/oauth2/authorize`, an
@@ -1605,7 +1604,7 @@ answer JSON or a problem body, the browser paths (`/user/profile`,
 | `/user/applications`             | ApplicationsPage: the estate's own applications the person authorized, each with its sessions, its granted scopes and Revoke; always on the issuer, because every issuer holds registered clients and a person must be able to see and end what they granted                                                                                                                                                                                                                                                                                                                                                                                                                 | `cookie`                                                       | the connected-applications section of `integrations.html`                                                                                                                                    |
 | `/user/terms`                    | UserTermsPage: the terms and policies the person accepted across the estate's applications, each with View                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `cookie`, `policies`                                           | the accepted-terms section of `integrations.html`                                                                                                                                            |
 | `/user/integrations`             | IntegrationsPage: third-party services alone, the external tools connected through the issuer, never an application the estate controls; drawn only while `GET /api/user/integrations` answers a `services` member, so an estate that connects none draws no page and no row                                                                                                                                                                                                                                                                                                                                                                                                 | `cookie`, `integrations`                                       | `integrations.html`, `IntegrationController`; the linked external accounts it carried are the profile's Security page now                                                                    |
-| `/notifications`                 | InboxPage: the full paged inbox with the modal's row controls, mark all, delete all                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `cookie`, `inbox`                                              | `notifications.html`, `NotificationPageController`                                                                                                                                           |
+| `/notifications`                 | InboxPage: the full paged inbox as the one shared table, its row actions labeled buttons, mark all, delete all                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `cookie`, `inbox`                                              | `notifications.html`, `NotificationPageController`                                                                                                                                           |
 
 `user`, `org`, `org-console` and `notifications` join the reserved first
 segments (`org-console`, `profile` and `organizations` already are).
@@ -1959,35 +1958,48 @@ replays inside its window and a guessing run meets `429` with
   a service the estate does not control and the other three are the
   person's own account, records and grants; the page binds the navbar
   search with a query over the services by name.
-- **InboxPage**: a `SectionHeading`, its title Inbox, the count as muted
+- **InboxPage**: a `SectionHeading`, its title Inbox, the total as muted
   text after the title, and the section's one action pane at its right:
   picked rows read "N selected", Clear selection, Mark as read, Mark as
   unread (one `POST /api/notifications/{id}/unread` per picked row,
-  decision 151) and
-  Delete, then Mark all as read and Delete all (behind a confirm), over
-  the same `NotificationRow` as the modal in a full-width list, a select
-  column whose header cell is a real checkbox, the select-all for the
-  page, never a button or link of its own, the row checkboxes its cells,
-  twenty-five per page with the pager, the per-row controls labeled
-  "Mark as read" and "Delete", every relative time carrying the absolute
-  time in its tooltip, "View details" following `navigate`, the unread
-  badge on the chrome updated through the notifications feature's one
-  context, which the modal, the page and the badge share, the
-  `unread-count` event correcting it where the UI backend streams; no
-  router prop carries a callback to a page; the page binds the navbar
-  search with a query over the loaded rows by title and body and its
-  Columns group (decision 142).
+  decision 151) and Delete (behind a confirm), then Mark all as read and
+  Delete all (behind a confirm), each bulk action one existing per-row
+  call per picked row counted into a result line under the heading
+  naming processed, skipped and each error's code; the rows in the one
+  shared `SubTable`, its select column a real checkbox header, the
+  select-all for the page, never a button or link of its own, the row
+  checkboxes its cells, the columns Title (the type icon colored by
+  severity, the title bold while unread and a link with the open-in
+  glyph while the row's `navigate` is followable, the unread dot), Body,
+  Time (the relative time with the absolute time in its tooltip) and
+  Type (a badge, hidden by default); the row actions as labeled outline
+  buttons, Mark as read while unread, View details while the row carries
+  a followable link, following `navigate`, and Delete; the page size
+  from the panel's Per page group and the pager as the section's foot;
+  an empty page drawing the shared empty placard, `inbox.empty`, or
+  `pages.noMatches` while narrowed; the Status (unread, read) and Type
+  groups narrowing the loaded rows client-side, the Per page and Columns
+  groups, the sort, the hidden columns, the widths and the size under
+  `table_prefs_inbox` through the shared `useListSearch` of `src/hooks`,
+  the navbar's count the rows on screen; the unread badge on the chrome
+  updated through the notifications feature's one context, which the
+  modal, the page and the badge share, the `unread-count` event
+  correcting it where the UI backend streams; no router prop carries a
+  callback to a page; the page binds the navbar search with a query over
+  the loaded rows by title and body (decision 142).
 
 ### Shared components the signed-in pages add
 
-| Component                 | Where                                     | Why shared                                                                                                                                                           |
-| ------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AddressFields`           | `src/components/common/AddressFields.jsx` | the postal address block with country select and state suggestions, optional Places autocomplete; the profile, the organization profile, the terms collection fields |
-| `StepUpDialog`            | `src/components/common/StepUpDialog.jsx`  | "Confirm it's you" with a password or a code; any UI backend that step-ups a sensitive change                                                                        |
-| `MethodRow`, `MethodList` | `src/components/common/MethodList.jsx`    | a list row with an icon, a label, a subline, badges and trailing actions; 2FA methods, passkeys, linked accounts, connected apps, sessions                           |
-| `SortableList`            | `src/components/common/SortableList.jsx`  | drag-to-reorder over a keyed list; favorites and the config editor's `orderable` arrays                                                                              |
-| `Pager`                   | `src/components/common/Pager.jsx`         | the section foot of the inbox and of the admin tables                                                                                                                |
-| `InboxList`               | `src/components/common/InboxList.jsx`     | the row list the modal and the page both draw                                                                                                                        |
+| Component                 | Where                                     | Why shared                                                                                                                                                                                                                                     |
+| ------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AddressFields`           | `src/components/common/AddressFields.jsx` | the postal address block with country select and state suggestions, optional Places autocomplete; the profile, the organization profile, the terms collection fields                                                                           |
+| `StepUpDialog`            | `src/components/common/StepUpDialog.jsx`  | "Confirm it's you" with a password or a code; any UI backend that step-ups a sensitive change                                                                                                                                                  |
+| `MethodRow`, `MethodList` | `src/components/common/MethodList.jsx`    | a list row with an icon, a label, a subline, badges and trailing actions; 2FA methods, passkeys, linked accounts, connected apps, sessions                                                                                                     |
+| `SortableList`            | `src/components/common/SortableList.jsx`  | drag-to-reorder over a keyed list; favorites and the config editor's `orderable` arrays                                                                                                                                                        |
+| `Pager`                   | `src/components/common/Pager.jsx`         | the section foot of the inbox and of the admin tables                                                                                                                                                                                          |
+| `InboxList`               | `src/components/common/InboxList.jsx`     | the row list the notifications modal draws; the page draws its rows through `SubTable` and shares `NotificationGlyph`, `absoluteTime`, `extractEntries` and `linkOf` from the same module                                                      |
+| `useListSearch`           | `src/hooks/useListSearch.js`              | the navbar binding of a paged list: its filter groups, the client-side groups, the Per page and Columns groups, the sort, the hidden columns, the widths and the page size under one `table_prefs_*` key; the inbox and every admin table page |
+| `RecordRows`              | `src/components/common/RecordRows.jsx`    | the read-only rows of one record, a label column and a value column; the organization console's profile of an IdP-managed organization on a `backend` host and the user record page                                                            |
 
 ### Signed-in keys
 
@@ -2039,7 +2051,7 @@ fields (`website`, `logoUrl`, `locale`, `timezone`, `telephone`,
 | organizations  | fourteen form posts each redirecting with a flash message; every organization's full console on one long page                            | one JSON per membership; the memberships under the one view toggle, list or cards, plus the shared console for the active organization                                    |
 | the step-up    | `stepupPassword` and `stepupCode` form fields per route, a modal wired by id                                                             | `POST /api/user/step-up` arming a five-minute window, `403 step_up_required` from a sensitive call outside it, `StepUpDialog` arming and retrying the same call unchanged |
 | the password   | `confirmPassword` posted; "At least 8 characters"                                                                                        | the page's `equals` rule; the minimum from `/api/rules`                                                                                                                   |
-| the inbox page | server-rendered rows, every action a reload                                                                                              | the modal's rows and adapter on a page                                                                                                                                    |
+| the inbox page | server-rendered rows, every action a reload                                                                                              | the modal's adapter on a page drawn as the one shared table                                                                                                               |
 | preferences    | `{ "error": "<text>" }` on a bad value                                                                                                   | `422` with a pointer per the validation contract                                                                                                                          |
 
 ---
@@ -2073,6 +2085,7 @@ principal (decided with the cookie provider).
 | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/admin`, `/admin/dashboard`                                                                | Overview › Dashboard: the five stat cards linking to their entries, the login map, recent logins and registrations, the restart card while a restart is pending                                                                                                                                                                    | `cookie`, `admin`                   | `admin/dashboard.html`, `AdminController.dashboard`, `/admin/api/login-heatmap`                                                                                                                                                            |
 | `/admin/users`                                                                              | Accounts › Users: the query and filters in the navbar module, the sortable table, the action pane's bulk actions, roles, customer id, primary organization, suspend, delete, rate limits; the page takes a `users` adapter, and a `backend` UI backend draws the same page at the same route over its own accounts                 | the same, or `backend` with `admin` | `admin/users.html`                                                                                                                                                                                                                         |
+| `/admin/users/:id`                                                                          | Accounts › Users › the account: one user's record page over the same `users` adapter, the route's page `user`, on `cookie` and `backend` alike                                                                                                                                                                                     | the same, or `backend` with `admin` | new                                                                                                                                                                                                                                        |
 | `/admin/organizations`                                                                      | Accounts › All organizations: the table, a select column, Edit over the whole record, delete, the action pane's bulk actions (Suspend, Resume, Delete); the page takes an `organizations` adapter, and a `backend` UI backend draws the same page at the same route over its own organizations, its bare `/admin` redirecting here | the same, or `backend` with `admin` | `admin/organizations.html`; the customer-id form alone                                                                                                                                                                                     |
 | `/admin/logins`, `/admin/registrations`, `/admin/sessions`                                  | Activity › Logins, Registrations, Sessions: one page per row, with filters, presets, JSON export, and revoke on sessions                                                                                                                                                                                                           | the same                            | `admin/logins.html`, `registrations.html`, `sessions.html`                                                                                                                                                                                 |
 | `/admin/service-usage`, `/admin/insights`, `/admin/client-health`, `/admin/provider-health` | Health › Service usage, Insights, Client health, Provider health: one page per row; the usage report, the fleet insights, the client probes, the provider probes                                                                                                                                                                   | the same                            | `admin/serviceUsage.html`, `insights.html`, `clientHealth.html`, `ClientHealthController` at `/client-health`, which moves under `/admin` because every admin page is a route there (decision 17) and the footer link that reached it goes |
@@ -2091,7 +2104,9 @@ is reached by no link on any page and is retired with the templates
 
 Two features export the issuer's column, and the router hands their
 concatenation to `AppShell` as the navbar contract's Sidebar section
-fixes it. `src/features/profile/sidebar.js`, `sidebar(status, account,
+fixes it, the catalog feature's Catalog group drawing before them on a
+host mounting a collection, which the issuer, listing none, never does.
+`src/features/profile/sidebar.js`, `sidebar(status, account,
 integrations, profile)` over the host's profile adapter, answers, for
 every signed-in person, one group
 `{ key: 'account', labelKey: 'account.sidebar.title', sections, tree? }`
@@ -2113,7 +2128,8 @@ Profile row is itself the profile page (`/user/profile`, `end: true`)
 and carries `children`, the word decision 68's node shape uses, here a
 list of rows in the row shape rather than a function because a row is
 named by a key: one row per section of the pages contract's
-`sectionsFor(profile)` after Profile itself, on the issuer exactly
+`sectionsFor(profile, account.organizations, isGlobalAdmin(account.user))`
+after Profile itself, on the issuer exactly
 Security (`/user/profile/security`), Preferences
 (`/user/profile/preferences`), Favorites (`/user/profile/favorites`) and
 Sessions (`/user/profile/sessions`), never a second Profile, each a deep
@@ -2122,17 +2138,20 @@ child row active by route, so the word Profile is drawn once in the
 column, and the tab strip gone on the issuer, since
 the column is the one navigation; a `backend` UI backend's export answers
 the same group with the same Profile row at `/profile` and its children
-from the same list over that host's adapter, Security, Organizations and
-Service accounts, so the column never lists a section the page cannot
-draw. On the
+from the same list over that host's adapter, Security, Organizations
+and, while one of the account's memberships holds a role beyond guest or
+the account is a global admin, Service accounts, so the column never
+lists a section the page cannot draw. On the
 issuer a person's pages are the whole site and today's sidebar already
 lists them beside the operator's, so the column draws on every page for
 every signed-in person and those pages are never behind the user menu
 alone. The operator's sections are the identity feature's own export,
 `src/features/identity/sidebar.js`, mounted like every identity page
 when the first `auth` token is `cookie`, answering `[]` unless the UI
-backend advertises `admin` and the account's `roles` holds `ROLE_ADMIN`,
-else one group `{ key: 'admin', labelKey: 'admin.sidebar.title',
+backend advertises `admin` and the account holds `ROLE_ADMIN`, under
+`roles` or `authorities`, the one predicate `isGlobalAdmin` of
+`src/utils/permissions.js` that every sidebar export and the shared admin
+feature's read, else one group `{ key: 'admin', labelKey: 'admin.sidebar.title',
 sections }` with the eight sections above in that order, each row
 `{ key, icon, labelKey, to, end?, badge?, external? }`, the Dashboard row with
 `end: true`, the Accounts section's second row labeled "All
@@ -2195,17 +2214,18 @@ backend draws them, Docs from `links.docs` and Contact from
 row exists and so always on the role, because the column carries no
 About row and the About page is where a person reads the role's
 version chips and reports a fault, so it must be reachable from the one
-control on every page; the menu's Help row stays the ticket, and the
-signed-out navbar's "Need help?" and "Email support" are that navbar's
-labels alone, never the menu's; and no Admin row, since Dashboard is a
+control on every page; the menu's Help row stays the ticket, the
+signed-out navbar carrying the ticket icon alone and neither link; and
+no Admin row, since Dashboard is a
 row of the column and a destination lives in the column or the menu,
 never both, Preferences being the one named exception because the
 avatar is the one control on every page.
 The column and the app section are hidden on every route of the
 sign-in, onboarding and interstitial groups and on `/error`, where the
 page is the whole screen. On a `backend` UI backend the profile feature
-exports nothing, because there a person's pages are a side matter beside
-the collections.
+exports the Account group with the Profile row at `/profile` and its
+children alone, drawn after the catalog's group, because there a
+person's pages are one row beside the collections.
 
 ### What the UI backend answers for admin
 
@@ -2220,6 +2240,7 @@ Every read is session or Bearer with `ROLE_ADMIN`; a paged list answers
 | `GET /api/admin/registrations?username&start_date&end_date&page&size`                                                                             | items `{ timestamp, username, email_verified, phone_verified, ip_address, city, country }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | the registrations model                                                                                         |
 | `GET /api/admin/sessions?page&size`                                                                                                               | items `{ id, full_name, client_name, ip_address, location, user_agent, authorized_at, last_accessed_at }`, `id` an opaque surrogate as on the profile                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | the sessions model                                                                                              |
 | `GET /api/admin/users?search&enabled&using_2fa&has_customer_id&active_after&sort&direction&page&size`                                             | items `{ id, username, full_name, customer_id, enabled, using_2fa, roles: [], organizations: [{ uuid, name, role, primary, personal }] }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | the users model with `userOrgs`                                                                                 |
+| `GET /api/admin/users/{id}`                                                                                                                       | one user item in the list's shape, `404` `not-found` for an id no user carries, so a link that carries the id alone (`/admin/users/42`) reads its row in one request and never walks the list (decision 167)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | new                                                                                                             |
 | `GET /api/admin/roles`                                                                                                                            | `["ROLE_USER", "ROLE_ADMIN", …]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `GET /admin/users/{id}/roles`, which the bulk dialog calls on the first selected user only to learn the catalog |
 | `GET /api/admin/organizations`                                                                                                                    | `[{ id, uuid, name, personal, invite_code, customer_id, created_at, member_count, email, website_url, logo_url, description, locale, timezone, telephone, address{…}, access_mode, default_role }]`, the record's editable fields riding the list so the Edit dialog prefills from the row in hand and reads nothing more                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | the organizations model                                                                                         |
 | `GET /api/admin/service-usage`                                                                                                                    | `{ total_sessions, total_authorizations, items: [{ client_id, client_name, active_sessions, total_authorizations, unique_users, first_used_at, last_used_at }] }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | the service-usage model                                                                                         |
@@ -2277,7 +2298,10 @@ problem body with `code`.
   feature's own api (`issuerUsers`, `issuerOrganizations`) and a
   `backend` UI backend's from its own accounts, so BoxVault draws the two
   pages at `/admin/users` and `/admin/organizations`: `users` is
-  `{ list(params), roles?, update?, setRoles?, suspend?, resume?, remove?, bulk?, rateLimit?: { read, unlockSignIn, unlockMethod, ban, unban }, exportUrl? }`
+  `{ list(params), get(id), roles?, update?, setRoles?, suspend?, resume?, remove?, bulk?, rateLimit?: { read, unlockSignIn, unlockMethod, ban, unban }, exportUrl? }`,
+  `get(id)` the issuer's `GET /api/admin/users/{id}` and, on a `backend`
+  host, the row found in the organizations-with-users answer the adapter
+  already holds, a missing id failing as a `404`,
   and `organizations` is
   `{ list, update(id, patch), remove(id), suspend?, resume?, bulk? }`;
   an action, a filter group or a column the host cannot answer is drawn
@@ -2335,7 +2359,23 @@ problem body with `code`.
     Unlock, then Delete, then
     Create and Refresh, then the view toggle, with a confirm on Delete
     and on Revoke sessions and the step-up dialog on both,
-    the result line naming processed, skipped and errors (decision 146).
+    the result line naming processed, skipped and errors (decision 146);
+    the Email cell is an in-router link to the row's record page at
+    `/admin/users/<id>`, and the columns, the row actions, the dialogs
+    and the actions hook of the Users page live in one shared
+    `UserActions` module both pages import.
+  - **User**: the record page at `/admin/users/:id`, reading
+    `GET /api/admin/users/{id}` through the adapter's `get(id)` alone,
+    never scanning a list for one row: a `SectionHeading` titled by the
+    username with the status badge and, in its action pane, Suspend or
+    Enable and the same row menu the Users page draws, over
+    `RecordRows`, the one read-only record row shape, built from the
+    table's own columns gated by the same `when`, every action
+    re-reading the record and Delete returning to the list, an id the
+    adapter answers not found with drawing the shared empty state
+    (`admin.users.notFound`); its crumb reads Admin, Users, then the
+    username through `usePageName`, "User" (`admin.users.placeholder`)
+    standing in until the record loads (decision 167).
   - **Organizations**: a `SectionHeading` over the table, its title All
     organizations, the count as muted text after the title; the table (a
     select column whose header cell is a real checkbox, the select-all
@@ -2722,7 +2762,7 @@ Settled before code, in the order they were raised:
 2. The problem `code` vocabulary is the one above; `429` carries the
    throttled case.
 3. `403 reset_invalid` for an unknown or expired reset token.
-4. The chrome's Sign in button is hidden on the issuer's sign-in pages.
+4. The chrome's Sign in button is hidden on every auth path of every host.
 5. The auth column's tokens map onto the pack variables; a pack may name
    its display face.
 6. Terms and policies are server-rendered HTML the page injects; the
@@ -3071,14 +3111,15 @@ Settled before code, in the order they were raised:
      group, so the rows are searchable and filterable like every other
      listing.
 116. The signed-out header carries the brand alone on the left and, on
-     the right in order, "Need help?" (the ticket link while `ticket` is
-     non-null, else `links.docs`, else nothing), "Email support" (the
-     `mailto:` of `links.contact`, else nothing), the language control
-     and the theme button, no search icon and no life-ring glyph, on the
-     auth pages and on every other signed-out page of every UI backend,
-     because the old issuer's auth pages drew exactly this and a person
-     who is not signed in needs help, support and a language before
-     anything else.
+     the right in order, Discover (an in-router link to the directory
+     while `discover` is advertised), one ticket icon (the ticket link
+     while the app holds a ticket system, else nothing), the language
+     control and the theme button, no search icon, no life-ring glyph
+     and no `links.docs` or `links.contact` link, on the auth pages and
+     on every other signed-out page of every UI backend, because a person
+     who is not signed in needs the directory, a way to report a fault
+     and a language before anything else, and the docs and the contact
+     are the signed-in menu's rows.
 117. A page's table preferences are one JSON object per `table_prefs_*`
      key, `{ view, sort, hiddenColumns, filters, folds }`, `view` present
      only where the page has the toggle; Organizations and Client health
@@ -3101,8 +3142,8 @@ Settled before code, in the order they were raised:
      other UI backend draws them, Docs from `links.docs` and Contact from
      `links.contact`, each absent while empty; the section draws while
      any row exists, so it always draws on the role; the menu's Help row
-     stays the ticket, and "Need help?" and "Email support" are the
-     signed-out navbar's labels alone, never the menu's; because the
+     stays the ticket, the signed-out navbar carrying the ticket icon
+     alone and neither link; because the
      column carries no About row and the About page, where the role's
      version chips are read and a fault is reported, must be reachable
      from the one control on every page.
@@ -3397,12 +3438,16 @@ labelKey? }`, drawn as a section heading above the tree in the same
      not, and an action pane holding Refresh then the view toggle, with
      no separate summary bar; because a status line and a heading that
      both sit over the same table say the same thing twice.
-142. The inbox gains a select column whose header cell is a real
-     checkbox, the select-all for the page, and its action pane gains,
-     while rows are picked, "N selected", Clear selection, Mark as read
-     and Delete, over the existing per-row routes; because a person
-     clearing many notifications at once should not click through them
-     one at a time.
+142. The inbox is the one shared table: a `SubTable` with the columns
+     Title, Body, Time and Type, a select column whose header cell is a
+     real checkbox, the select-all for the page, labeled row actions,
+     Mark as read, View details and Delete, its narrowing, page size and
+     columns in the navbar panel through `useListSearch`, and its action
+     pane gaining, while rows are picked, "N selected", Clear selection,
+     Mark as read and Delete, over the existing per-row routes; because a
+     person clearing many notifications at once should not click through
+     them one at a time, and a list of rows with a sort, hidden columns
+     and a pager is a table on every other page of the estate.
 143. The ProfilePage draws its avatar card on `/user/profile` alone, on
      the issuer or on a `backend` UI backend, one shape either way; the
      card goes on every other section the page draws under that route
@@ -3733,11 +3778,13 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      the other three are, offered by the org console's role picker and by
      an invitation, by a join request's assigned role and by
      `default_role`, drawn on the console's member rows and on the
-     switcher's badge as Guest, secondary like Member. A guest sees what
-     a member sees, the published
-     private items of their organization included, and no write control of
-     any page draws for one, the Download button staying; `isMember`
-     counts a guest, `isManager` and a collection's `canManage` never do.
+     switcher's badge as Guest, secondary like Member. A guest sees the
+     published private items its organization marked for guests and its
+     own uploads, never a download count, may not create an API key while
+     a member or admin may create one that acts as a guest, and no write
+     control of any page draws for one, the Download button staying;
+     `isMember` counts a guest, `isManager` and a collection's `canManage`
+     never do.
      Because a customer who downloads licensed files is a member of the
      organization for what they may see and a stranger for what they may
      change, and a second membership kind is the only way to say both.
@@ -3850,6 +3897,18 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      7644 §3.5.2), a person on any app of the estate must still see what
      the provider holds about them and where to change it, and the one
      page drawn on every UI backend is what convergence means.
+167. The identity provider adds `GET /api/admin/users/{id}`, session or
+     Bearer with `ROLE_ADMIN`, answering the same item
+     `GET /api/admin/users` answers for that id and `404` `not-found`
+     otherwise; the record page at `/admin/users/:id` reads it through
+     the users adapter's `get(id)`, the issuer's a primary-key read
+     behind `ROLE_ADMIN` and BoxVault's answered from the
+     organizations-with-users answer its adapter already holds, because
+     a link pasted from a ticket carries only the id and a page must
+     never scan a list for one row; the Users page's columns, row
+     actions, dialogs and hook live in one shared `UserActions` module
+     both pages import, and `RecordRows` is the one read-only record row
+     shape.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

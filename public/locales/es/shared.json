@@ -28,8 +28,7 @@
     "about": "Acerca de",
     "docs": "Documentación",
     "contact": "Contacto",
-    "needHelp": "¿Necesitas ayuda?",
-    "emailSupport": "Escribir a soporte",
+    "discover": "Descubrir",
     "admin": "Admin",
     "orgConsole": "Consola de la organización",
     "rebuild": "Regenerar datos del catálogo",
@@ -587,6 +586,8 @@
     "users": {
       "title": "Usuarios",
       "search": "Buscar usuarios",
+      "notFound": "Usuario no encontrado",
+      "placeholder": "Usuario",
       "filter": {
         "status": "Estado",
         "tfa": "2FA activado",
@@ -1325,7 +1326,6 @@
     "revokeInvite": "Revocar"
   },
   "discovery": {
-    "discoverButton": "Descubrir organizaciones",
     "title": "Descubrir Organizaciones",
     "description": "Explora organizaciones públicas y solicita unirte a ellas.",
     "searchPlaceholder": "Buscar organizaciones...",
@@ -1385,6 +1385,18 @@
     "delete": "Eliminar",
     "viewDetails": "Ver detalles",
     "search": "Buscar notificaciones",
+    "columns": {
+      "title": "Título",
+      "body": "Cuerpo",
+      "time": "Hora",
+      "type": "Tipo"
+    },
+    "filter": {
+      "status": "Estado",
+      "unread": "No leídas",
+      "read": "Leídas",
+      "type": "Tipo"
+    },
     "bulk": {
       "selected": "{{count}} seleccionadas",
       "markRead": "Marcar como leída",
@@ -1751,10 +1763,17 @@
     "loading": "Cargando…",
     "notFound": "No encontrado.",
     "empty": "Aún no hay nada aquí.",
+    "emptyBody": "Los elementos aparecerán aquí cuando se añadan.",
     "noMatches": "Nada coincide.",
+    "noMatchesBody": "Borra la búsqueda o los filtros para ver más.",
     "searchAll": "Buscar…",
     "selectAll": "Seleccionar todo en esta página",
     "selectColumn": "Seleccionar todo en esta página",
+    "sidebar": {
+      "title": "Catálogo",
+      "home": "Inicio",
+      "browse": "Explorar"
+    },
     "search": {
       "versions": "Buscar versiones",
       "providers": "Buscar proveedores",
@@ -1786,6 +1805,8 @@
       "delete": "Eliminar",
       "makePublic": "Hacer público",
       "makePrivate": "Hacer privado",
+      "allowGuests": "Permitir invitados",
+      "denyGuests": "Denegar invitados",
       "publish": "Publicar",
       "unpublish": "Despublicar",
       "deprecate": "Marcar obsoleta",
@@ -1823,6 +1844,7 @@
     },
     "table": {
       "name": "Nombre",
+      "deploy": "Desplegar",
       "os": "SO",
       "status": "Estado",
       "visibility": "Visibilidad",
@@ -1863,6 +1885,7 @@
       "published": "Publicado",
       "pending": "Pendiente",
       "public": "Público",
+      "guests": "Invitados",
       "private": "Privado",
       "deprecated": "Obsoleta"
     },
@@ -2090,10 +2113,6 @@
   },
   "downloads": {
     "search": "Buscar descargas",
-    "visibility": {
-      "public": "Público",
-      "private": "Privado"
-    },
     "upload": {
       "drop": "Suelte un archivo aquí o haga clic para elegir uno",
       "uploading": "Subiendo… {{percent}}%",
@@ -2130,7 +2149,6 @@
       "iconUrl": "URL del icono",
       "docsUrl": "URL de la documentación",
       "notesUrl": "URL de las notas de la versión",
-      "visibility": "Visibilidad",
       "updated": "El producto se actualizó."
     },
     "release": {
@@ -2252,7 +2270,7 @@
       "create": "Crear ISO",
       "created": "ISO creada exitosamente.",
       "createError": "Ocurrió un error al crear la ISO.",
-      "visibilityHint": "Hacer una ISO privada evita que los usuarios accedan a ella a menos que se les dé permiso.",
+      "visibilityHint": "Público abre la ISO a todos, Invitados a los invitados y miembros de la organización, Privado solo a sus miembros.",
       "deleteTitle": "Eliminar ISO",
       "deleteMessage": "¿Seguro que quieres eliminar {{name}}?",
       "makePublic": "Hacer pública",
@@ -2316,11 +2334,10 @@
       "name": "Nombre de la box",
       "nameHint": "Letras, dígitos, guion y punto; es la URL y la carpeta.",
       "status": "Estado",
-      "visibility": "Visibilidad",
       "description": "Descripción",
       "optional": "(Opcional)",
       "shortDescription": "La descripción corta se usa para describir la box.",
-      "visibilityHint": "Hacer una box privada evita que los usuarios accedan a ella a menos que se les dé permiso.",
+      "visibilityHint": "Público abre la box a todos, Invitados a los invitados y miembros de la organización, Privado solo a sus miembros.",
       "cicd": {
         "title": "Integración CI/CD",
         "connect": "Conecta tu box a GitHub Actions para insignias de estado de construcción automatizadas.",
@@ -2361,10 +2378,6 @@
         },
         "headers": {
           "createNewBox": "Crear Nueva Box"
-        },
-        "visibility": {
-          "public": "Público",
-          "private": "Privado"
         }
       }
     }

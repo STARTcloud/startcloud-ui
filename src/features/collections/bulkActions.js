@@ -7,6 +7,8 @@ const action = (key, labelKey, variant, confirm = false) => ({ key, labelKey, va
 export const ITEM_BULK = [
   action('make_public', 'pages.bulk.makePublic', 'btn-outline-info'),
   action('make_private', 'pages.bulk.makePrivate', 'btn-outline-secondary'),
+  action('allow_guests', 'pages.bulk.allowGuests', 'btn-outline-primary'),
+  action('deny_guests', 'pages.bulk.denyGuests', 'btn-outline-secondary'),
   action('publish', 'pages.bulk.publish', 'btn-outline-primary'),
   action('unpublish', 'pages.bulk.unpublish', 'btn-outline-warning'),
   action('delete', 'pages.bulk.delete', 'btn-outline-danger', true),

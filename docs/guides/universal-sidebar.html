@@ -966,17 +966,13 @@
           </div>
         </div>
         <div class="mini">
-          <div class="cap pick">No sidebar — the header keeps the brand, the chrome of today</div>
+          <div class="cap pick">
+            No sidebar — signed out on a host mounting no collection, the header keeps the brand
+          </div>
           <div class="navbar">
-            <span class="brand"><span class="brand-mark">B</span>BoxVault</span>
-            <div class="crumbs">
-              <span class="sep">›</span>STARTcloud<span class="sep">›</span>Boxes
-            </div>
-            <div class="cluster">
-              <span class="btn account"
-                ><span class="name">Mark</span><span class="avatar"></span
-              ></span>
-            </div>
+            <span class="brand"><span class="brand-mark">S</span>STARTcloud</span>
+            <div class="crumbs"></div>
+            <div class="cluster"><span class="btn">Sign in</span></div>
           </div>
           <div class="body">
             <div class="main">
@@ -1118,7 +1114,8 @@
               >the profile feature's Account section for everyone, the identity feature's operator
               sections for an admin (this page, Identity)</span
             ><span class="c"
-              >the shared admin feature's three entries for an admin, none elsewhere (this page,
+              >the catalog feature's Catalog group for every visitor, the profile feature's Account
+              group signed in, the shared admin feature's entries for an admin (this page,
               Pages)</span
             >
             <span class="c k">7 · header</span
@@ -1176,16 +1173,16 @@
             A feature's export · src/features/identity/sidebar.js, the issuer's operator sections
           </h2>
           <div class="payload">
-            <span class="k">export const</span> sidebar = (status, account) =&gt; {
+            <span class="k">export const</span> sidebar = (status, account, admin) =&gt; {
             <span class="k">if</span> (!hasFeature(status, <span class="s">'admin'</span>) ||
-            !account.user?.roles?.includes(<span class="s">'ROLE_ADMIN'</span>))
-            <span class="k">return</span> []; <span class="k">return</span> [{ key:
-            <span class="s">'admin'</span>, labelKey: <span class="s">'admin.sidebar.title'</span>,
-            sections: [ { key: <span class="s">'overview'</span>, items: [{ key:
-            <span class="s">'dashboard'</span>, icon: FaGauge, labelKey:
-            <span class="s">'admin.dashboard.title'</span>, to: <span class="s">'/admin'</span>,
-            end: <span class="k">true</span> }] }, { key: <span class="s">'accounts'</span>,
-            labelKey: <span class="s">'admin.sidebar.accounts'</span>, items: [ { key:
+            !isGlobalAdmin(account?.user)) <span class="k">return</span> [];
+            <span class="k">return</span> [{ key: <span class="s">'admin'</span>, labelKey:
+            <span class="s">'admin.sidebar.title'</span>, sections: [ { key:
+            <span class="s">'overview'</span>, items: [{ key: <span class="s">'dashboard'</span>,
+            icon: FaGauge, labelKey: <span class="s">'admin.dashboard.title'</span>, to:
+            <span class="s">'/admin'</span>, end: <span class="k">true</span> }] }, { key:
+            <span class="s">'accounts'</span>, labelKey:
+            <span class="s">'admin.sidebar.accounts'</span>, items: [ { key:
             <span class="s">'users'</span>, icon: FaUsers, labelKey:
             <span class="s">'admin.users.title'</span>, to: <span class="s">'/admin/users'</span> },
             { key: <span class="s">'orgs'</span>, icon: FaFolderTree, labelKey:
@@ -1221,7 +1218,9 @@
           <div class="tbl" style="grid-template-columns: 130px 1fr">
             <span class="hc">Piece</span><span class="hc">Rule</span> <span class="c k">mount</span
             ><span class="c"
-              >`router.jsx` calls every mounted feature's `sidebar(status, account)`, concatenates,
+              >`router.jsx` calls every mounted feature's `sidebar` export, `sidebar(status,
+              account)` for a feature gated by the host's tokens and `sidebar(account, collections)`
+              for the catalog, concatenates in the order catalog, profile, identity, vdi, admin, and
               hands the list to `AppShell` as `sidebar`; empty means no column</span
             >
             <span class="c k">grid</span
@@ -1256,9 +1255,11 @@
             >
             <span class="c k">tree</span
             ><span class="c"
-              >nodes with a caret, lazy `children()`, a status dot, a right-click menu from the
-              presenter; the selection is route-driven, never checkboxes; `views: [{ key, labelKey,
-              useTree }]` draws a select at the tree's top and the chosen view persists under
+              >nodes with a caret, lazy `children()`, an optional `matches(pathname)` opening the
+              node on a deep link whose route does not nest under the node's `to` (the catalog's
+              Browse tree), a status dot, a right-click menu from the presenter; the selection is
+              route-driven, never checkboxes; `views: [{ key, labelKey, useTree }]` draws a select
+              at the tree's top and the chosen view persists under
               `sidebar_view_&lt;group&gt;`</span
             >
             <span class="c k">foot</span
@@ -1331,12 +1332,14 @@
         the column is hidden on the sign-in, onboarding, interstitial and error routes.
       </div>
       <div class="callout">
-        <strong>BoxVault's entries.</strong> The shared admin feature exports on every UI backend
-        that advertises `admin`, each entry only while the adapter carries `users`, `organizations`,
-        `config` or `storage`, so BoxVault's admin page splits into Users, Organizations,
-        Configuration and System rows, the first two the identity feature's pages over BoxVault's
-        own adapters; its box and ISO pages export nothing, and on the issuer, whose adapter carries
-        none of the four, the shared feature exports nothing.
+        <strong>BoxVault's entries.</strong> The catalog feature exports the Catalog group, Home and
+        the Browse tree, on every UI backend mounting a collection, for every visitor; the profile
+        feature the Account group with the Profile row signed in; and the shared admin feature
+        exports on every UI backend that advertises `admin`, each entry only while the adapter
+        carries `users`, `organizations`, `config` or `storage`, so BoxVault's admin page splits
+        into Users, Organizations, Configuration and System rows, the first two the identity
+        feature's pages over BoxVault's own adapters; on the issuer, whose adapter carries none of
+        the four, the shared feature exports nothing.
       </div>
       <div class="callout">
         <strong>When the sidebar shows.</strong> On every page once a feature exported entries,
@@ -1372,7 +1375,8 @@
         <span class="c k">Pages</span
         ><span class="c">features export pages, adapters and api calls</span
         ><span class="c"
-          >a feature may export `sidebar(status, account)`; the reserved segments unchanged</span
+          >a feature may export `sidebar(status, account)`, the catalog `sidebar(account,
+          collections)`; the reserved segments unchanged</span
         >
         <span class="c k">Session</span
         ><span class="c"

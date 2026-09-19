@@ -1,6 +1,7 @@
 import { log } from '../../../../lib/logger';
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
 import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
+import { countOf, sumCounts } from '../../../../utils/itemShape';
 import { readDeprecated, readDeprecationReason, readReleaseNotes } from '../utils/versionFields';
 
 import { api } from './boxes';
@@ -9,13 +10,15 @@ const { origin } = window.location;
 
 const rows = data => (Array.isArray(data) ? data : []);
 
-const fileDownloads = files =>
-  (files || []).reduce((sum, file) => sum + (file.downloadCount || 0), 0);
+const fileDownloads = files => sumCounts((files || []).map(file => file.downloadCount));
 
 const architectureSummary = architecture => ({
   name: architecture.name,
   downloadCount: fileDownloads(architecture.files),
 });
+
+const architectureDownloads = architectures =>
+  sumCounts(architectures.map(architecture => architecture.downloadCount));
 
 const providerSummary = provider => {
   const architectures = (provider.architectures || []).map(architectureSummary);
@@ -24,7 +27,7 @@ const providerSummary = provider => {
     description: provider.description || '',
     createdAt: provider.createdAt || null,
     updatedAt: provider.updatedAt || null,
-    downloads: architectures.reduce((sum, architecture) => sum + architecture.downloadCount, 0),
+    downloads: architectureDownloads(architectures),
     architectures,
   };
 };
@@ -35,7 +38,7 @@ const versionSummary = version => {
     version: version.versionNumber,
     createdAt: version.createdAt || null,
     updatedAt: version.updatedAt || null,
-    downloads: providers.reduce((sum, provider) => sum + provider.downloads, 0),
+    downloads: sumCounts(providers.map(provider => provider.downloads)),
     description: version.description || '',
     releaseNotes: readReleaseNotes(version),
     deprecated: readDeprecated(version),
@@ -62,11 +65,12 @@ const boxItem = (box, orgName, logo) => ({
   icon: '',
   artwork: box.artwork ? `${origin}/api/organization/${orgName}/box/${box.name}/artwork` : '',
   isPublic: Boolean(box.isPublic),
+  guestAccess: Boolean(box.guestAccess),
   published: Boolean(box.published),
   createdAt: box.createdAt || null,
   updatedAt: box.updatedAt || null,
   latestReleaseAt: latestReleaseOf((box.versions || []).map(versionSummary)),
-  downloads: box.downloadCount || 0,
+  downloads: countOf(box.downloadCount),
   os: {
     label: getOsDisplayName(box.metadata),
     iconUrl: getDistroIconUrl(box.metadata?.distro) || '',
@@ -133,7 +137,7 @@ const getVersion = async (org, name, version) => {
         description: provider.description || '',
         createdAt: provider.createdAt || null,
         updatedAt: provider.updatedAt || null,
-        downloads: summaries.reduce((sum, architecture) => sum + architecture.downloadCount, 0),
+        downloads: architectureDownloads(summaries),
         architectures: await Promise.all(
           architectures.map(async (architecture, index) => ({
             name: architecture.name,
@@ -163,7 +167,7 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
       checksum: info.checksum || '',
       checksumType: info.checksumType || '',
       downloadUrl: url,
-      downloadCount: info.downloadCount || 0,
+      downloadCount: countOf(info.downloadCount),
       createdAt: info.createdAt || null,
       updatedAt: info.updatedAt || null,
     };
@@ -180,7 +184,7 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
       checksum: '',
       checksumType: '',
       downloadUrl: '',
-      downloadCount: 0,
+      downloadCount: null,
       createdAt: null,
       updatedAt: null,
     };

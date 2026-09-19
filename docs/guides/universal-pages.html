@@ -605,7 +605,7 @@
     width: 100%;
   }
   .grid.boxes {
-    grid-template-columns: 28px 28px 256px 104px 104px 104px 104px 104px 160px 160px 104px 256px 256px 32px;
+    grid-template-columns: 28px 28px 256px 72px 104px 104px 104px 104px 104px 160px 160px 104px 256px 256px;
   }
   .grid.isos {
     grid-template-columns: 28px 28px 256px 104px 104px 104px 104px 104px 160px 160px 104px 256px;
@@ -1411,9 +1411,10 @@
         them.
       </div>
       <div class="callout changed">
-        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees what a member
-        sees, published private items included, and never a write control; the Download button stays
-        (identity decision 163). The switcher's PhoneSwitchBoard row draws it.
+        <strong>Changed: a fourth role, Guest, read-only below Member:</strong> sees the public
+        items, the published private items its organization marked for guests and its own uploads,
+        never a download count and never a write control; the Download button stays (identity
+        decision 163). The switcher's PhoneSwitchBoard row draws it.
       </div>
     </div>
   </div>
@@ -1585,7 +1586,6 @@
             >Boxes<span class="countb">7</span>
           </h3>
           <span class="right"
-            ><span class="btn sm outline">Discover organizations</span
             ><span class="toggle"
               ><span class="btn on"
                 ><svg
@@ -1618,26 +1618,20 @@
           <span class="th"
             ><input type="checkbox" class="check-all" title="Select all on this page"
           /></span>
-          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
-          ><span class="th">Created</span><span class="th">Updated</span
-          ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Deploy</span
+          ><span class="th">Visibility</span><span class="th">Created</span
+          ><span class="th">Updated</span><span class="th">Downloads</span
+          ><span class="th">Status</span><span class="th">OS</span
           ><span class="th">Latest release</span><span class="th">Versions</span
-          ><span class="th">Providers</span><span class="th">Architectures</span
-          ><span class="th"></span>
+          ><span class="th">Providers</span><span class="th">Architectures</span>
           <span class="grp"
             ><span class="fold">▾</span><span class="mark row"></span
             ><span class="lnk">STARTcloud</span><span class="countb">4 boxes</span></span
           >
           <span class="td odd">☐</span><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span
-          ><span class="td odd">5</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">Alma 9</span><span class="td odd">last year</span
-          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
-          ><span class="td odd">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/alma9-server">alma9-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 1.2.3 with Hyperweaver"
               ><svg
@@ -1650,19 +1644,18 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td">☐</span><span class="td"><span class="star">☆</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span
+          ><span class="td odd">5</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Alma 9</span><span class="td odd">last year</span
+          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
+          ><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span
-            ><span class="lnk">STARTcloud/windows2022-server</span></span
-          ><span class="td"><span class="status secondary">Private</span></span
-          ><span class="td">12/28/2024</span><span class="td">8/1/2026</span
-          ><span class="td">30</span
-          ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">Windows 2022</span><span class="td">11 months ago</span
-          ><span class="td">6</span><span class="td">virtualbox, zone</span
-          ><span class="td">amd64</span
+            ><span class="lnk" title="STARTcloud/windows2022-server">windows2022-server</span></span
           ><span class="td"
             ><span class="lnk" title="Deploy 2.1.0 with Hyperweaver"
               ><svg
@@ -1675,19 +1668,18 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">12/28/2024</span><span class="td">8/1/2026</span
+          ><span class="td">30</span
+          ><span class="td"><span class="status success">Published</span></span
+          ><span class="td">Windows 2022</span><span class="td">11 months ago</span
+          ><span class="td">6</span><span class="td">virtualbox, zone</span
+          ><span class="td">amd64</span> <span class="td odd">☐</span
+          ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span
-          ><span class="td odd">60</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span
-          ><span class="td odd">3</span
-          ><span class="td odd">zone, virtualbox, utm, docker, aws</span
-          ><span class="td odd">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/debian13-server">debian13-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 2.0.1 with Hyperweaver"
               ><svg
@@ -1700,16 +1692,19 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td">☐</span><span class="td"><span class="star">★</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span
+          ><span class="td odd">60</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span
+          ><span class="td odd">3</span
+          ><span class="td odd">zone, virtualbox, utm, docker, aws</span
+          ><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">★</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span
-          ><span class="td"><span class="status secondary">Private</span></span
-          ><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span
-          ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">Debian 12</span><span class="td">4 months ago</span
-          ><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/uds4.0-server">uds4.0-server</span></span
           ><span class="td"
             ><span class="lnk" title="Deploy 4.0.0 with Hyperweaver"
               ><svg
@@ -1722,8 +1717,12 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span
+          ><span class="td"><span class="status success">Published</span></span
+          ><span class="td">Debian 12</span><span class="td">4 months ago</span
+          ><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span>
           <span class="grp"
             ><span class="fold">▾</span><span class="mark row alt"></span
             ><span class="lnk">PhoneSwitchBoard</span><span class="countb">2 boxes</span></span
@@ -1731,14 +1730,7 @@
           <span class="td odd">☐</span><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
             ><span class="mark row alt"></span
-            ><span class="lnk">PhoneSwitchBoard/debian13-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">3/2/2026</span><span class="td odd">8/28/2026</span
-          ><span class="td odd">77</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">Debian 13</span><span class="td odd">5 days ago</span
-          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
-          ><span class="td odd">amd64</span
+            ><span class="lnk" title="PhoneSwitchBoard/debian13-server">debian13-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 1.0.4 with Hyperweaver"
               ><svg
@@ -1751,18 +1743,18 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td">☐</span><span class="td"><span class="star">☆</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">3/2/2026</span><span class="td odd">8/28/2026</span
+          ><span class="td odd">77</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Debian 13</span><span class="td odd">5 days ago</span
+          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
+          ><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row alt"></span
-            ><span class="lnk">PhoneSwitchBoard/opnsense-router</span></span
-          ><span class="td"><span class="status secondary">Private</span></span
-          ><span class="td">7/30/2026</span><span class="td">7/30/2026</span
-          ><span class="td">0</span
-          ><span class="td"><span class="status warning">Pending</span></span
-          ><span class="td">OPNsense 26</span><span class="td">—</span><span class="td">1</span
-          ><span class="td">virtualbox</span><span class="td">amd64</span
+            ><span class="lnk" title="PhoneSwitchBoard/opnsense-router">opnsense-router</span></span
           ><span class="td"
             ><span class="lnk" title="Deploy 26.1.0 with Hyperweaver"
               ><svg
@@ -1775,8 +1767,13 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">7/30/2026</span><span class="td">7/30/2026</span
+          ><span class="td">0</span
+          ><span class="td"><span class="status warning">Pending</span></span
+          ><span class="td">OPNsense 26</span><span class="td">—</span><span class="td">1</span
+          ><span class="td">virtualbox</span><span class="td">amd64</span>
           <span class="grp"
             ><span class="fold">▾</span><span class="mark row moon"></span
             ><span class="lnk">Moonshine</span><span class="countb">1 box</span></span
@@ -1784,14 +1781,7 @@
           <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row moon"></span
-            ><span class="lnk">Moonshine/omnios-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">8/8/2025</span><span class="td odd">8/8/2025</span
-          ><span class="td odd">6</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">OmniOS r151054</span><span class="td odd">last year</span
-          ><span class="td odd">2</span><span class="td odd">zone</span
-          ><span class="td odd">amd64</span
+            ><span class="lnk" title="Moonshine/omnios-server">omnios-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 0.3.0 with Hyperweaver"
               ><svg
@@ -1804,8 +1794,14 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">8/8/2025</span><span class="td odd">8/8/2025</span
+          ><span class="td odd">6</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">OmniOS r151054</span><span class="td odd">last year</span
+          ><span class="td odd">2</span><span class="td odd">zone</span
+          ><span class="td odd">amd64</span>
         </div>
         <div class="rowh">
           <h3>
@@ -1838,7 +1834,9 @@
           <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
-            ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
+            ><span class="lnk" title="STARTcloud/virtio-win-0.1.271.iso"
+              >virtio-win-0.1.271.iso</span
+            ></span
           ><span class="td odd"><span class="status secondary">Private</span></span
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
@@ -1847,7 +1845,8 @@
           ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
           ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/Server2025.ISO">Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
@@ -1861,7 +1860,9 @@
           <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row alt"></span
-            ><span class="lnk">PhoneSwitchBoard/OPNsense-26.1.6-dvd-amd64.iso</span></span
+            ><span class="lnk" title="PhoneSwitchBoard/OPNsense-26.1.6-dvd-amd64.iso"
+              >OPNsense-26.1.6-dvd-amd64.iso</span
+            ></span
           ><span class="td odd"><span class="status secondary">Private</span></span
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">1</span
@@ -1898,20 +1899,23 @@
       </div>
       <div class="callout changed">
         <strong>Changed: shared columns first and identical</strong> on every table: star cell, Name
-        with the org logo and <code>org/name</code> as a link, Visibility, Created, Updated,
-        Downloads; then the columns only that collection has. An ISO gains the same fields as a box,
-        so its Downloads sums its files' <code>downloadCount</code>, incremented in the ISO download
+        with the org logo and the item name as a link, the full <code>org/name</code> in its title,
+        Deploy on a collection Hyperweaver deploys, Visibility, Created, Updated, Downloads; then
+        the columns only that collection has. An ISO gains the same fields as a box, so its
+        Downloads sums its files' <code>downloadCount</code>, incremented in the ISO download
         controller, and its own columns are the box's without Providers.
       </div>
       <div class="callout changed">
-        <strong>Changed: a collection with no rows is still drawn</strong>, heading, count and a
-        "Nothing here yet." row, so the page shape never shifts.
+        <strong>Changed: a collection with no rows is still drawn</strong>, heading, count and the
+        shared empty placard, "Nothing here yet." over its body line, no column headers above it, so
+        the page shape never shifts; an organization group with no items keeps its heading over one
+        compact placard row.
       </div>
       <div class="callout">
         <strong>No create or delete here:</strong> a box or ISO is created inside an organization,
-        so those actions live on the org page; home carries only Discover organizations, on its
-        first heading row beside the toggle, so nothing sits above the first heading. The catalog
-        draws the same page in cards by default.
+        so those actions live on the org page; home carries the toggle alone on its first heading
+        row, Discover being the navbar's, so nothing sits above the first heading. The catalog draws
+        the same page in cards by default.
       </div>
     </div>
   </div>
@@ -2044,7 +2048,8 @@
           </h2>
           <span class="right"
             ><span class="lnk">Clear selection</span><span class="btn sm">Make public</span
-            ><span class="btn sm">Make private</span><span class="btn sm">Publish</span
+            ><span class="btn sm">Make private</span><span class="btn sm">Allow guests</span
+            ><span class="btn sm">Deny guests</span><span class="btn sm">Publish</span
             ><span class="btn sm">Unpublish</span><span class="btn sm danger">Delete</span
             ><span class="btn sm success">Add New</span></span
           >
@@ -2053,22 +2058,16 @@
           <span class="th"
             ><input type="checkbox" class="check-all indeterminate" title="Select all on this page"
           /></span>
-          <span class="th">☆</span><span class="th">Name</span><span class="th">Visibility</span
-          ><span class="th">Created</span><span class="th">Updated</span
-          ><span class="th">Downloads</span><span class="th">Status</span><span class="th">OS</span
+          <span class="th">☆</span><span class="th">Name</span><span class="th">Deploy</span
+          ><span class="th">Visibility</span><span class="th">Created</span
+          ><span class="th">Updated</span><span class="th">Downloads</span
+          ><span class="th">Status</span><span class="th">OS</span
           ><span class="th">Latest release</span><span class="th">Versions</span
-          ><span class="th">Providers</span><span class="th">Architectures</span
-          ><span class="th"></span> <span class="td odd">☑</span
-          ><span class="td odd"><span class="star">★</span></span
+          ><span class="th">Providers</span><span class="th">Architectures</span>
+          <span class="td odd">☑</span><span class="td odd"><span class="star">★</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/alma9-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span
-          ><span class="td odd">5</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">Alma 9</span><span class="td odd">last year</span
-          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
-          ><span class="td odd">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/alma9-server">alma9-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 1.2.3 with Hyperweaver"
               ><svg
@@ -2081,19 +2080,18 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td">☑</span><span class="td"><span class="star">☆</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">12/28/2024</span><span class="td odd">8/29/2026</span
+          ><span class="td odd">5</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Alma 9</span><span class="td odd">last year</span
+          ><span class="td odd">1</span><span class="td odd">virtualbox, zone</span
+          ><span class="td odd">amd64</span> <span class="td">☑</span
+          ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
             ><span class="mark row"></span
-            ><span class="lnk">STARTcloud/windows2022-server</span></span
-          ><span class="td"><span class="status secondary">Private</span></span
-          ><span class="td">12/28/2024</span><span class="td">8/1/2026</span
-          ><span class="td">30</span
-          ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">Windows 2022</span><span class="td">11 months ago</span
-          ><span class="td">6</span><span class="td">virtualbox, zone</span
-          ><span class="td">amd64</span
+            ><span class="lnk" title="STARTcloud/windows2022-server">windows2022-server</span></span
           ><span class="td"
             ><span class="lnk" title="Deploy 2.1.0 with Hyperweaver"
               ><svg
@@ -2106,19 +2104,18 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td odd">☑</span><span class="td odd"><span class="star">☆</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">12/28/2024</span><span class="td">8/1/2026</span
+          ><span class="td">30</span
+          ><span class="td"><span class="status success">Published</span></span
+          ><span class="td">Windows 2022</span><span class="td">11 months ago</span
+          ><span class="td">6</span><span class="td">virtualbox, zone</span
+          ><span class="td">amd64</span> <span class="td odd">☑</span
+          ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/debian13-server</span></span
-          ><span class="td odd"><span class="status info">Public</span></span
-          ><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span
-          ><span class="td odd">60</span
-          ><span class="td odd"><span class="status success">Published</span></span
-          ><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span
-          ><span class="td odd">3</span
-          ><span class="td odd">zone, virtualbox, utm, docker, aws</span
-          ><span class="td odd">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/debian13-server">debian13-server</span></span
           ><span class="td odd"
             ><span class="lnk" title="Deploy 2.0.1 with Hyperweaver"
               ><svg
@@ -2131,16 +2128,19 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
-          <span class="td">☐</span><span class="td"><span class="star">★</span></span
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td odd"><span class="status info">Public</span></span
+          ><span class="td odd">8/13/2025</span><span class="td odd">7/2/2026</span
+          ><span class="td odd">60</span
+          ><span class="td odd"><span class="status success">Published</span></span
+          ><span class="td odd">Debian 13</span><span class="td odd">2 months ago</span
+          ><span class="td odd">3</span
+          ><span class="td odd">zone, virtualbox, utm, docker, aws</span
+          ><span class="td odd">amd64</span> <span class="td">☐</span
+          ><span class="td"><span class="star">★</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/uds4.0-server</span></span
-          ><span class="td"><span class="status secondary">Private</span></span
-          ><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span
-          ><span class="td"><span class="status success">Published</span></span
-          ><span class="td">Debian 12</span><span class="td">4 months ago</span
-          ><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/uds4.0-server">uds4.0-server</span></span
           ><span class="td"
             ><span class="lnk" title="Deploy 4.0.0 with Hyperweaver"
               ><svg
@@ -2153,8 +2153,12 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg></span
-          ></span>
+                <path d="M14 4l6 6"></path></svg></span></span
+          ><span class="td"><span class="status secondary">Private</span></span
+          ><span class="td">5/1/2026</span><span class="td">5/1/2026</span><span class="td">0</span
+          ><span class="td"><span class="status success">Published</span></span
+          ><span class="td">Debian 12</span><span class="td">4 months ago</span
+          ><span class="td">1</span><span class="td">zone</span><span class="td">amd64</span>
         </div>
         <div class="rowh">
           <h2>
@@ -2184,7 +2188,9 @@
           ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
-            ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
+            ><span class="lnk" title="STARTcloud/virtio-win-0.1.271.iso"
+              >virtio-win-0.1.271.iso</span
+            ></span
           ><span class="td odd"><span class="status secondary">Private</span></span
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
@@ -2193,7 +2199,8 @@
           ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
           ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/Server2025.ISO">Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
@@ -2422,20 +2429,7 @@
             <path d="M7 8l5-5 5 5"></path>
             <path d="M5 21h14"></path></svg
           ><span>Drop an ISO here or click to choose one</span
-          ><span class="switch"
-            ><span class="track"></span
-            ><svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
-            >Private</span
-          >
+          ><span class="switch">○ Public &nbsp; ○ Guests &nbsp; ● Private</span>
         </div>
         <div class="grid isos">
           <span class="th"
@@ -2449,7 +2443,9 @@
           ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
             ><span class="mark row"></span
-            ><span class="lnk">STARTcloud/virtio-win-0.1.271.iso</span></span
+            ><span class="lnk" title="STARTcloud/virtio-win-0.1.271.iso"
+              >virtio-win-0.1.271.iso</span
+            ></span
           ><span class="td odd"><span class="status secondary">Private</span></span
           ><span class="td odd">6/25/2026</span><span class="td odd">6/25/2026</span
           ><span class="td odd">12</span
@@ -2458,7 +2454,8 @@
           ><span class="td odd">1</span><span class="td odd">amd64</span> <span class="td">☐</span
           ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/Server2025.ISO</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/Server2025.ISO">Server2025.ISO</span></span
           ><span class="td"><span class="status secondary">Private</span></span
           ><span class="td">6/25/2026</span><span class="td">6/25/2026</span
           ><span class="td">3</span
@@ -2484,8 +2481,8 @@
       <div class="callout">
         <strong>On a single-collection page</strong> the heading row is the page's top row, so the
         toggle sits on it beside the actions; the upload zone is the Add New button opened on click
-        or hover, with the Public / Private switch and its progress bar, × or Escape to close; the
-        select column and its bulk pane in the heading row are now the page's Remove All.
+        or hover, with the Public / Guests / Private radios and its progress bar, × or Escape to
+        close; the select column and its bulk pane in the heading row are now the page's Remove All.
       </div>
       <div class="callout">
         <strong><code>/isos</code></strong> is the same page across organizations: organization
@@ -2749,7 +2746,7 @@
             </div>
           </div>
           <div class="actions">
-            <span class="btn primary"
+            <span class="lnk" title="Deploy 1.2.3 with Hyperweaver"
               ><svg
                 viewBox="0 0 24 24"
                 width="14"
@@ -2760,8 +2757,7 @@
               >
                 <path d="M5 15l-2 6 6-2"></path>
                 <path d="M9 15l6-6 4 4-6 6z"></path>
-                <path d="M14 4l6 6"></path></svg
-              >Deploy</span
+                <path d="M14 4l6 6"></path></svg></span
             ><span class="btn primary">Edit</span><span class="btn danger">Delete</span
             ><span class="btn warning">Unpublish</span><span class="btn dark">Back to files</span>
           </div>
@@ -2771,7 +2767,7 @@
             <span class="label">Use this box</span
             ><span class="select"
               >Version <span class="v">1.2.3 ▾</span
-              ><span class="btn sm primary"
+              ><span class="lnk" title="Deploy 1.2.3 with Hyperweaver"
                 ><svg
                   viewBox="0 0 24 24"
                   width="14"
@@ -2782,10 +2778,8 @@
                 >
                   <path d="M5 15l-2 6 6-2"></path>
                   <path d="M9 15l6-6 4 4-6 6z"></path>
-                  <path d="M14 4l6 6"></path></svg
-                >Deploy</span
-              ></span
-            >
+                  <path d="M14 4l6 6"></path></svg></span
+            ></span>
           </div>
           <div class="code">
             <span
@@ -2874,12 +2868,13 @@
     </div>
     <div class="callouts">
       <div class="callout changed">
-        <strong>Changed: Deploy climbs the hierarchy.</strong> The filled rocket button opens the
-        action row for the newest non-deprecated version and stays in the use-this strip for the
-        version picked there; box rows and cards carry the same rocket as a glyph through the
-        collection's <code>ItemQuickActions</code> slot, every one drawn only while the viewer is
-        signed in, entitled to Hyperweaver and Hyperweaver is configured; the tooltip names the
-        version it deploys.
+        <strong>Changed: Deploy is one glyph everywhere.</strong> The bare rocket link opens the
+        action row for the newest non-deprecated version and sits in the use-this strip beside the
+        version select for the version picked there; box rows carry the same glyph in the table's
+        Deploy column right after Name, and cards at the right of their links row through the
+        collection's <code>CardGlyph</code> slot, every one drawn only while the viewer is signed
+        in, entitled to Hyperweaver and Hyperweaver is configured; the tooltip names the version it
+        deploys.
       </div>
       <div class="callout">
         <strong>Unchanged otherwise:</strong> hero, action row, the use-this strip as the
@@ -3103,20 +3098,7 @@
             <path d="M7 8l5-5 5 5"></path>
             <path d="M5 21h14"></path></svg
           ><span>Drop a file here or click to choose one</span
-          ><span class="switch"
-            ><span class="track"></span
-            ><svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
-            >Private</span
-          >
+          ><span class="switch">○ Public &nbsp; ○ Guests &nbsp; ● Private</span>
         </div>
         <div
           class="grid"
@@ -3137,7 +3119,8 @@
           ><span class="th">Platforms</span> <span class="td odd">☐</span
           ><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/domino</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/domino">domino</span></span
           ><span class="td odd"><span class="status info">Public</span></span
           ><span class="td odd">3/2/2025</span><span class="td odd">8/29/2026</span
           ><span class="td odd">126</span
@@ -3147,7 +3130,8 @@
           ><span class="td odd">linux, windows</span> <span class="td">☐</span
           ><span class="td"><span class="star">☆</span></span
           ><span class="td first"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/sametime</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/sametime">sametime</span></span
           ><span class="td"><span class="status secondary">Private</span></span
           ><span class="td">1/15/2024</span><span class="td">3/2/2025</span
           ><span class="td">42</span
@@ -3156,7 +3140,8 @@
           ><span class="td">last year</span><span class="td">1</span><span class="td">linux</span>
           <span class="td odd">☐</span><span class="td odd"><span class="star">☆</span></span
           ><span class="td first odd"
-            ><span class="mark row"></span><span class="lnk">STARTcloud/domino-designer</span></span
+            ><span class="mark row"></span
+            ><span class="lnk" title="STARTcloud/domino-designer">domino-designer</span></span
           ><span class="td odd"><span class="status info">Public</span></span
           ><span class="td odd">9/2/2026</span><span class="td odd">9/2/2026</span
           ><span class="td odd">0</span
@@ -3180,12 +3165,14 @@
       </div>
       <div class="callout changed">
         <strong>Changed: Add New wraps the upload zone under the heading row as ISOs do,</strong>
-        the file and the Public / Private switch and nothing else drawn in it; the zone is relative
-        to the page it sits on, so here the route creates the product, the release and the patch the
-        file name names when they are absent, and a zone on a product, release or patch page uploads
-        into that product, release or patch. When the upload completes the new file's row appears
-        and Edit on it opens the form dialog with kind, platform, architecture, language and variant
-        prefilled from the file name for correction.
+        the file and the Public / Guests / Private radios and nothing else drawn in it, the pair
+        <code>is_public</code> and <code>guest_access</code> riding the place body and applied to a
+        product the place creates; the zone is relative to the page it sits on, so here the route
+        creates the product, the release and the patch the file name names when they are absent, and
+        a zone on a product, release or patch page uploads into that product, release or patch. When
+        the upload completes the new file's row appears and Edit on it opens the form dialog with
+        kind, platform, architecture, language and variant prefilled from the file name for
+        correction.
       </div>
       <div class="callout">
         <strong>Family, Vendor, Platform and Kind narrow client-side</strong> over the rows the list
@@ -3526,20 +3513,7 @@
             <path d="M7 8l5-5 5 5"></path>
             <path d="M5 21h14"></path></svg
           ><span>Drop a file here or click to choose one</span
-          ><span class="switch"
-            ><span class="track"></span
-            ><svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
-            >Private</span
-          >
+          ><span class="switch">○ Public &nbsp; ○ Guests &nbsp; ● Private</span>
         </div>
         <div class="grid" style="grid-template-columns: 26px 160px 110px 1fr 110px 110px">
           <span class="th"
@@ -3705,20 +3679,7 @@
             <path d="M7 8l5-5 5 5"></path>
             <path d="M5 21h14"></path></svg
           ><span>Drop a file here or click to choose one</span
-          ><span class="switch"
-            ><span class="track"></span
-            ><svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
-              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg
-            >Private</span
-          >
+          ><span class="switch">○ Public &nbsp; ○ Guests &nbsp; ● Private</span>
         </div>
         <div class="grid" style="grid-template-columns: 26px 160px 140px 1fr 110px 110px">
           <span class="th"
@@ -4535,6 +4496,9 @@
       </div>
       <div class="shell">
         <div class="side">
+          <div class="menu-header">Catalog</div>
+          <span class="item">Home</span><span class="item">Browse ▸</span>
+          <div class="divider"></div>
           <div class="menu-header">Account</div>
           <span class="item">Profile</span><span class="item">Security</span
           ><span class="item">Organizations</span><span class="item on">Service accounts</span>
@@ -4635,11 +4599,11 @@
       </div>
       <div class="callout changed">
         <strong>Every column resizes.</strong> One table component draws every table of the estate,
-        and each header cell but the select, star, quick-actions and Actions cells carries a handle
-        on its right edge: the handle shows on hover, a drag changes that column's width alone (the
-        pixel width shown while dragging), a double-click resets it to the stylesheet's width, and
-        the widths persist per page under <code>table_prefs_*</code> beside sort, hidden columns and
-        per page; a hidden column keeps its width for when it returns. Every column declares a
+        and each header cell but the select, star and Actions cells carries a handle on its right
+        edge: the handle shows on hover, a drag changes that column's width alone (the pixel width
+        shown while dragging), a double-click resets it to the stylesheet's width, and the widths
+        persist per page under <code>table_prefs_*</code> beside sort, hidden columns and per page;
+        a hidden column keeps its width for when it returns. Every column declares a
         <code>kind</code> from one vocabulary (name, text, badge, badges, date, relative, count,
         size, checksum, link, word) and takes its width and its look from it, narrow 6.5rem, medium
         10rem or flex, the flex columns (name, text, badges, checksum) sharing the room the fixed
@@ -4650,12 +4614,12 @@
         its Downloads column and a provider row's Architectures column is badges alone.
       </div>
       <div class="callout changed">
-        <strong>Name folds its organization.</strong> The Name cell draws the organization logo,
-        then <code>org/name</code>; below 14rem of the cell's own width the
-        <code>org/</code> segment folds away and the item name stays, the logo still naming the
-        organization and the cell's title carrying the full text. A downloads patch's files table
-        draws one Name column, the file name with the key as a small code beside it only when the
-        two differ; there is no Key column.
+        <strong>Name is the item alone.</strong> The Name cell draws the organization logo, the
+        item's icon when it has one, then the item name as the link, the full
+        <code>org/name</code> in the cell's title, because the organization is the logo beside the
+        name and the group row above it. A downloads patch's files table draws one Name column, the
+        file name with the key as a small code beside it only when the two differ; there is no Key
+        column.
       </div>
     </div>
   </div>
@@ -4841,7 +4805,8 @@
         ><span class="c"
           >no Private / Public level: one table per collection with organization group rows, private
           and public rows side by side under the Visibility column; every collection heading drawn,
-          empty rows say "Nothing here yet."; folds persist per page</span
+          an empty collection the shared placard, "Nothing here yet." over its body line; folds
+          persist per page</span
         >
         <span class="c k">home ISOs</span
         ><span class="c was">/api/isos/discover is public-only</span
@@ -4872,9 +4837,10 @@
           >ISO Name bare; boxes "Public" vs ISOs "Visibility"; boxes "Created" vs ISOs "Uploaded";
           no Updated anywhere; no ISO download count</span
         ><span class="c"
-          >shared columns first and identical: star cell, Name with logo and org/name link,
-          Visibility, Created, Updated, Downloads; then the collection's own, the ISO's being the
-          box's without Providers; ISOs sum their files' downloadCount, incremented in the download
+          >shared columns first and identical: star cell, Name with logo and the item name as the
+          link, org/name in its title, Deploy on a collection Hyperweaver deploys, Visibility,
+          Created, Updated, Downloads; then the collection's own, the ISO's being the box's without
+          Providers; ISOs sum their files' downloadCount, incremented in the download
           controller</span
         >
         <span class="c k">view toggle</span
@@ -4888,17 +4854,17 @@
           >an empty row above the first heading holding only Discover organizations and the toggle
           at its right</span
         ><span class="c"
-          >no row: Discover organizations and the toggle sit on the first collection's heading
-          row</span
+          >no row: the toggle sits on the first collection's heading row, Discover being the
+          navbar's</span
         >
         <span class="c k">Deploy</span
         ><span class="c was"
           >"Deploy to Hyperweaver", one small button inside the use-this strip</span
         ><span class="c"
-          >"Deploy": a filled rocket button first in the item page's action row for the newest
-          non-deprecated version, the same in the strip for the selected version, and a rocket glyph
-          on every box row and card (the <code>ItemQuickActions</code> slot), each tooltip naming
-          the version</span
+          >"Deploy": one bare rocket glyph, first in the item page's action row for the newest
+          non-deprecated version, beside the version select in the strip, in the table's Deploy
+          column after Name and at the right of every card's links row (the
+          <code>CardGlyph</code> slot), each tooltip naming the version</span
         >
         <span class="c k">catalog Quality</span
         ><span class="c was">an open card beside the hero</span
@@ -4916,8 +4882,9 @@
           >the catalog's cards lost their GitHub, Homepage and Issue links to the item page; box
           cards never had any</span
         ><span class="c"
-          >every card carries a glyph row for the item's links, repository, homepage, issues and
-          pipeline, each drawn only when the item has it</span
+          >every card carries a glyph row for the item's links, repository, homepage, issues,
+          pipeline, docs and notes, each drawn only when the item has it, the Deploy glyph at its
+          right</span
         >
         <span class="c k">catalog Visibility</span
         ><span class="c was"
@@ -4962,16 +4929,20 @@
           >star signed in (the Worker's /watches, per user), blank signed out; the star header sorts
           watched first</span
         >
-        <span class="c k">Name</span><span class="c">org logo + org/name link</span
-        ><span class="c">org logo + org/name link</span
-        ><span class="c">icon + label link, slug beside it</span> <span class="c k">Visibility</span
-        ><span class="c">Public / Private</span><span class="c">Public / Private</span
-        ><span class="c">Public / Private</span> <span class="c k">Created</span
-        ><span class="c">createdAt</span><span class="c">createdAt</span
-        ><span class="c">hidden, the catalog has none</span> <span class="c k">Updated</span
-        ><span class="c">updatedAt</span><span class="c">updatedAt</span
-        ><span class="c">hidden</span> <span class="c k">Downloads</span
-        ><span class="c">sum of file downloadCount</span
+        <span class="c k">Name</span
+        ><span class="c">org logo + item name link, org/name in the title</span
+        ><span class="c">org logo + item name link, org/name in the title</span
+        ><span class="c">icon + label link, slug beside it</span> <span class="c k">Deploy</span
+        ><span class="c">the rocket glyph while deploy is advertised and the viewer entitled</span
+        ><span class="c">none</span
+        ><span class="c">the rocket glyph while deploy is advertised and the viewer entitled</span>
+        <span class="c k">Visibility</span><span class="c">Public / Guests / Private</span
+        ><span class="c">Public / Guests / Private</span><span class="c">Public / Private</span>
+        <span class="c k">Created</span><span class="c">createdAt</span
+        ><span class="c">createdAt</span><span class="c">hidden, the catalog has none</span>
+        <span class="c k">Updated</span><span class="c">updatedAt</span
+        ><span class="c">updatedAt</span><span class="c">hidden</span>
+        <span class="c k">Downloads</span><span class="c">sum of file downloadCount</span
         ><span class="c">sum of file downloadCount</span><span class="c">health downloads</span>
         <span class="c k">then</span
         ><span class="c">Status · OS · Latest release · Versions · Providers · Architectures</span
@@ -5082,10 +5053,10 @@
 organization { name, uuid, logo, displayName, description }
 item {
   organization, name, label, description, icon, artwork,
-  isPublic, published, createdAt, updatedAt, latestReleaseAt, downloads,
+  isPublic, guestAccess, published, createdAt, updatedAt, latestReleaseAt, downloads,
   os { label, iconUrl } | null,
   metadata | null, readme | null,
-  links { repo, homepage, issues, pipeline, badge },
+  links { repo, homepage, issues, pipeline, badge, docs, notes },
   extras { … }            app-only data for slots, never read by a page
   versions [ version ]
 }
@@ -5101,9 +5072,8 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
         <span class="hc">Page</span><span class="hc">Renders</span> <span class="c k">HomePage</span
         ><span class="c"
           >Listing, grouped by organization: every collection, foldable organization group rows with
-          private and public rows side by side; Discover organizations and the one toggle on the
-          first heading row; Collection + Visibility + Watched + collection groups in the
-          panel</span
+          private and public rows side by side; the one toggle on the first heading row; Collection
+          + Visibility + Watched + collection groups in the panel</span
         >
         <span class="c k">OrgPage</span
         ><span class="c"

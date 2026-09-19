@@ -15,10 +15,12 @@ import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useSelection } from '../../../hooks/useSelection';
 import { log } from '../../../lib/logger';
+import { rules as hostRules } from '../../../lib/runtime';
 
 const PREFS_KEY = 'table_prefs_profile';
 const EXPIRATIONS = [30, 60, 90, 365];
 const ROLES = ['member', 'admin', 'owner'];
+const GATED_ROLE = 'superadmin';
 const SCHEMA = {
   required: ['organization_id', 'description'],
   properties: {
@@ -33,6 +35,12 @@ const LABELS = {
   description: 'profile.serviceAccounts.descriptionPlaceholder',
   expiration_days: 'profile.serviceAccounts.expires',
   role: 'profile.serviceAccounts.role',
+};
+
+const rolesOffered = admin => {
+  const listed = hostRules?.forms?.serviceAccount?.properties?.role?.enum;
+  const offered = listed || (admin ? [...ROLES, GATED_ROLE] : ROLES);
+  return admin ? offered : offered.filter(role => role !== GATED_ROLE);
 };
 
 const emptyForm = organizationId => ({
@@ -180,12 +188,11 @@ const CreateForm = ({ organizations, admin, onCreate, rules, form, onChange }) =
           value={form.role}
           onChange={value => set('role', value)}
         >
-          {ROLES.map(role => (
+          {rolesOffered(admin).map(role => (
             <option key={role} value={role}>
               {t(`roles.${role}`)}
             </option>
           ))}
-          {admin ? <option value="superadmin">{t('roles.superadmin')}</option> : null}
         </SelectField>
       </div>
       <button className="btn btn-primary" type="submit">
@@ -222,7 +229,8 @@ RowActions.propTypes = {
  * The Service accounts section of the profile page on a UI backend with
  * service accounts of its own: the create form in a `SectionCard` (the
  * organization, the active one preselected, the description, the expiry
- * and the role, the superadmin role offered to a global admin alone), the
+ * and the role from the host's serviceAccount rules enum, the superadmin
+ * role offered to a global admin alone), the
  * one-time token notice after a create, then the keys in the one
  * `SubTable` of the pages contract, one organization group row per
  * organization the way the listings group their rows, the select column a

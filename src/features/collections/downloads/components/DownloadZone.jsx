@@ -3,20 +3,26 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UploadZone from '../../../../components/common/UploadZone';
+import VisibilityPicker, { visibilityShape } from '../../../../components/common/VisibilityPicker';
 import { log } from '../../../../lib/logger';
 
 const UPLOAD_KEY = 'download-upload';
 
+const PRIVATE = { is_public: false, guest_access: false };
+
 /**
  * The upload state one downloads page holds: whether a file is going up, how
- * far it has gone, the visibility the new file is born with, the runner that
- * sends a picked file to the organization's pending store, and the pending
- * upload the last chunk answered, which the placing form is drawn from.
+ * far it has gone, the visibility the new file is born with as the wire's
+ * `is_public` and `guest_access` pair (held for the placing form, which
+ * sends it in the place body; the pending upload takes the bytes alone),
+ * the runner that sends a picked file to the organization's pending store,
+ * and the pending upload the last chunk answered, which the placing form is
+ * drawn from.
  *
  * @param {Object} options - The page's side
  * @param {Function} options.notify - The chrome's notice function
- * @returns {Object} `uploading`, `progress`, `file`, `error`, `isPublic`,
- * `setIsPublic`, `upload`, `pending`, `clear`
+ * @returns {Object} `uploading`, `progress`, `file`, `error`, `visibility`,
+ * `setVisibility`, `upload`, `pending`, `clear`
  */
 export const useUpload = ({ notify }) => {
   const { t } = useTranslation();
@@ -24,7 +30,7 @@ export const useUpload = ({ notify }) => {
   const [progress, setProgress] = useState(0);
   const [picked, setPicked] = useState(null);
   const [failure, setFailure] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const [visibility, setVisibility] = useState(PRIVATE);
   const [pending, setPending] = useState(null);
 
   const upload = send => file => {
@@ -36,7 +42,6 @@ export const useUpload = ({ notify }) => {
     notify('', '', { key: UPLOAD_KEY });
     send({
       file,
-      isPublic,
       onUploadProgress: event => setProgress(event.progress ?? 0),
     })
       .then(answer => {
@@ -61,8 +66,8 @@ export const useUpload = ({ notify }) => {
     progress,
     file: picked,
     error: failure,
-    isPublic,
-    setIsPublic,
+    visibility,
+    setVisibility,
     upload,
     pending,
     clear: () => setPending(null),
@@ -71,21 +76,21 @@ export const useUpload = ({ notify }) => {
 
 /**
  * The one Add New of every downloads page: the shared upload zone with the
- * file and the Public / Private switch and nothing else in it, relative to
- * the page it sits on, the box architecture upload's own progress block and
+ * file and the visibility picker and nothing else in it, relative to the
+ * page it sits on, the box architecture upload's own progress block and
  * failure line drawn under it once a file is picked.
  */
 const DownloadZone = ({
   uploading,
   progress,
-  isPublic,
+  visibility,
   onVisibility,
   onFile,
   file = null,
   error = '',
 }) => {
   const { t } = useTranslation();
-  const switchId = useId();
+  const idPrefix = useId();
   return (
     <UploadZone
       uploading={uploading}
@@ -96,19 +101,13 @@ const DownloadZone = ({
       file={file}
       error={error}
     >
-      <div className="form-check form-switch">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={switchId}
-          checked={isPublic}
-          disabled={uploading}
-          onChange={event => onVisibility(event.target.checked)}
-        />
-        <label className="form-check-label" htmlFor={switchId}>
-          {t(isPublic ? 'downloads.visibility.public' : 'downloads.visibility.private')}
-        </label>
-      </div>
+      <VisibilityPicker
+        idPrefix={idPrefix}
+        value={visibility}
+        onChange={onVisibility}
+        disabled={uploading}
+        className="mb-2"
+      />
     </UploadZone>
   );
 };
@@ -116,7 +115,7 @@ const DownloadZone = ({
 DownloadZone.propTypes = {
   uploading: PropTypes.bool.isRequired,
   progress: PropTypes.number.isRequired,
-  isPublic: PropTypes.bool.isRequired,
+  visibility: visibilityShape.isRequired,
   onVisibility: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
   file: PropTypes.shape({ size: PropTypes.number.isRequired }),

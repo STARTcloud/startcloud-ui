@@ -2,12 +2,7 @@ import { FaBuilding, FaGear, FaHardDrive, FaUsers } from 'react-icons/fa6';
 
 import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
-
-const isAdmin = account =>
-  Boolean(
-    account?.user?.roles?.includes('ROLE_ADMIN') ||
-    account?.user?.authorities?.includes('ROLE_ADMIN')
-  );
+import { isGlobalAdmin } from '../../utils/permissions';
 
 /**
  * The shared admin feature's sidebar export: on every host that
@@ -32,7 +27,7 @@ const isAdmin = account =>
  * @returns {Array} The sidebar groups
  */
 export const sidebar = (status, account, admin) => {
-  if (!hasFeature(status, 'admin') || !isAdmin(account)) {
+  if (!hasFeature(status, 'admin') || !isGlobalAdmin(account?.user)) {
     return [];
   }
   const configTree = admin.config && configNamesOf(status).length > 1;

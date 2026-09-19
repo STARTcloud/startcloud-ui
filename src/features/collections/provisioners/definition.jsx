@@ -20,7 +20,7 @@ import {
 import { itemShape } from '../../../utils/itemShape';
 
 import { catalogAdapter } from './api/adapter';
-import { DeployButton, ProvisionerQuickActions, deployableVersion } from './components/deploy';
+import { CardGlyph, DeployGlyph, deployColumn, deployableVersion } from './components/deploy';
 
 export const TIER_ORDER = ['diamond', 'platinum', 'gold', 'silver', 'bronze', 'unrated'];
 const VISIBLE_VERSIONS = 10;
@@ -133,7 +133,7 @@ const ItemActions = ({ item, ctx }) => {
   const { t } = useTranslation();
   return (
     <>
-      <DeployButton user={ctx.user} item={item} version={deployableVersion(item.versions)} />
+      <DeployGlyph user={ctx.user} item={item} version={deployableVersion(item.versions)} />
       <a
         href={item.links.repo}
         target="_blank"
@@ -364,6 +364,7 @@ export const provisioners = {
   ],
   columns: [
     labelColumn,
+    deployColumn,
     visibilityColumn,
     downloadsColumn,
     tierColumn,
@@ -388,8 +389,8 @@ export const provisioners = {
     ItemChips,
     ItemHeaderExtra,
     ItemActions,
-    ItemQuickActions: ProvisionerQuickActions,
     ItemSections: QualitySection,
+    CardGlyph,
     CardExtras,
   },
 };

@@ -2,9 +2,14 @@ import { profileMemberships } from '../lib/backendSession';
 
 import { isGuest, isManager, isMember, isOwner, managesAny } from './membership';
 
-/** Whether the user holds the global admin role (matches App.jsx / backend isAdmin). */
+/**
+ * Whether the user holds the global admin role, under `roles` or under
+ * `authorities`, the one predicate every host and sidebar reads.
+ * @param {object|null|undefined} user - The session's user
+ * @returns {boolean}
+ */
 export const isGlobalAdmin = user =>
-  Boolean(user) && Array.isArray(user.roles) && user.roles.includes('ROLE_ADMIN');
+  Boolean(user?.roles?.includes('ROLE_ADMIN') || user?.authorities?.includes('ROLE_ADMIN'));
 
 /** Member of the organization (any role). Mirrors verifyOrgAccess.isOrgMember. */
 export const isOrgMember = (user, organizationName) =>

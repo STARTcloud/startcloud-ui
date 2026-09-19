@@ -53,7 +53,7 @@ export const downloads = {
   leafIsFile: true,
   itemRoute: true,
   searchKey: 'downloads.search',
-  defaultView: 'table',
+  defaultView: 'cards',
   adapter: downloadsAdapter,
   canManage: (item, user) => isOrgManager(user, item.organization.name),
   filterGroups: [

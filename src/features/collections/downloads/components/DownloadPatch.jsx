@@ -229,7 +229,7 @@ export const DownloadArchitecturesActions = ({ item, version, provider, ctx }) =
         org={org}
         pending={upload.pending}
         levels={{ product: item.name, release: version, patch: provider.name }}
-        isPublic={upload.isPublic}
+        visibility={upload.visibility}
         notify={notify}
         reload={reload}
         onDone={upload.clear}
@@ -243,8 +243,8 @@ export const DownloadArchitecturesActions = ({ item, version, provider, ctx }) =
       progress={upload.progress}
       file={upload.file}
       error={upload.error}
-      isPublic={upload.isPublic}
-      onVisibility={upload.setIsPublic}
+      visibility={upload.visibility}
+      onVisibility={upload.setVisibility}
       onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );

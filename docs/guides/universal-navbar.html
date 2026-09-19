@@ -1155,13 +1155,14 @@
       layout are each app's own. The header is sticky with a small shadow, a tertiary band with a
       bottom border, 34px controls with 14px vertical padding and a 20px gutter; the cluster buttons
       are borderless and abut, the search icon first among them whenever the page has something to
-      search; utility links (About, Docs, Contact) sit in the top bar only while signed out and move
-      into the app-named section once signed in. The first frame is live: every control in it works
-      the way the contract says, on a small BoxVault boxes table, so a reviewer can click through
-      the search, the filters, the theme cycle, the language and organization modals, the
-      notifications, the logout scope and sign-in without running either app. The annotated frames
-      after it carry the explanations. BoxVault and provisioner-catalog are the reference
-      implementations — copy their markup and CSS rather than redrawing from these frames.
+      search; signed out the cluster carries Discover and a ticket icon and the utility links
+      (About, Docs, Contact) live in the app-named section once signed in. The first frame is live:
+      every control in it works the way the contract says, on a small BoxVault boxes table, so a
+      reviewer can click through the search, the filters, the theme cycle, the language and
+      organization modals, the notifications, the logout scope and sign-in without running either
+      app. The annotated frames after it carry the explanations. BoxVault and provisioner-catalog
+      are the reference implementations — copy their markup and CSS rather than redrawing from these
+      frames.
     </p>
   </section>
 
@@ -1187,11 +1188,17 @@
                 ><span class="org-mark sm"></span>PhoneSwitchBoard</a
               >
             </li>
-            <li class="js-signed-out hidden"><a href="#">About</a></li>
-            <li class="js-signed-out hidden"><a href="#">Docs</a></li>
-            <li class="js-signed-out hidden"><a href="#">Contact</a></li>
           </ul>
           <div class="cluster">
+            <a class="js-signed-out hidden" href="#" style="padding: 6px 10px">Discover</a>
+            <a
+              class="btn icon js-signed-out hidden"
+              href="#"
+              title="Help"
+              target="_blank"
+              rel="noopener noreferrer"
+              >🎫</a
+            >
             <button class="btn icon js-search-icon" type="button" title="Search">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="7" />
@@ -1692,10 +1699,10 @@
         <strong>What this frame proves.</strong> The cluster order (search · theme · the language
         globe with its code · name+avatar), the menu row order and conditions, both modals, the
         logout scope toggle, the session-ended banner under the header row with its dismiss, the
-        toast column top right, and the signed-out cluster with the utility links back in the top
-        bar — all as the contract text says, on BoxVault's PhoneSwitchBoard org page with its four
-        boxes groups; the crumb after the brand is the route (› PhoneSwitchBoard) and the switcher
-        never touches it.
+        toast column top right, and the signed-out cluster with Discover and the ticket icon, the
+        brand alone on the left — all as the contract text says, on BoxVault's PhoneSwitchBoard org
+        page with its four boxes groups; the crumb after the brand is the route (› PhoneSwitchBoard)
+        and the switcher never touches it.
       </div>
       <div class="callout">
         <strong>The logout row, both states.</strong> Click the icon: scope flips, menu stays open.
@@ -1745,24 +1752,12 @@
                 /></svg></span
             >App name</a
           >
-          <ul class="nav">
-            <li><a href="#">About</a></li>
-            <li><a href="#">Docs</a></li>
-            <li><a href="#">Contact</a></li>
-          </ul>
+          <ul class="nav"></ul>
           <div class="cluster">
-            <button class="btn icon" type="button" title="Search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.5-3.5" />
-              </svg>
-            </button>
-            <button class="btn icon" type="button" title="Theme: Auto (Dark)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
+            <a href="#" style="padding: 6px 10px">Discover</a>
+            <a class="btn icon" href="#" title="Help" target="_blank" rel="noopener noreferrer"
+              >🎫</a
+            >
             <button
               class="btn icon lang"
               type="button"
@@ -1775,6 +1770,12 @@
                 <path d="M12 3a14 14 0 0 1 0 18" />
                 <path d="M12 3a14 14 0 0 0 0 18" /></svg
               ><span class="code">EN</span>
+            </button>
+            <button class="btn icon" type="button" title="Theme: Auto (Dark)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none" />
+              </svg>
             </button>
             <button class="btn primary" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2330,10 +2331,10 @@
     <div class="callouts inline">
       <div class="callout">
         <strong>Collection and Visibility come first</strong> on any page that lists more than one
-        collection or has private rows — Boxes / ISOs and Public / Private as pills, so "only ISOs"
-        is a filter, never a page or a tab. Watched follows them, one shared pill over boxes and
-        ISOs alike while signed in. Then the groups and colors are BoxVault's own: Provider
-        (primary), Architecture (info), OS distro (success), each pill labeled
+        collection or has rows that are not public — Boxes / ISOs and Public / Guests / Private as
+        pills, so "only ISOs" is a filter, never a page or a tab. Watched follows them, one shared
+        pill over boxes and ISOs alike while signed in. Then the groups and colors are BoxVault's
+        own: Provider (primary), Architecture (info), OS distro (success), each pill labeled
         <code>value (count)</code> exactly as its <code>FilterPillGroup</code> renders today; a
         value stays in the panel at count 0 rather than vanishing.
       </div>
@@ -2525,9 +2526,10 @@
             Apps without a local profile draw no toggle.
           </div>
           <div class="callout">
-            <strong>Utility links.</strong> About, Docs and Contact sit in the top bar only while
-            signed out; signed in they live under This app, and the left nav carries at most the
-            brand and the breadcrumb.
+            <strong>Utility links.</strong> Docs and Contact live under This app signed in and draw
+            nowhere signed out; the left nav carries at most the brand and the breadcrumb, and the
+            signed-out cluster carries Discover and the ticket icon before the language and theme
+            controls.
           </div>
           <div class="callout">
             <strong>Organization row</strong> is BoxVault's "Organization" item with the switcher
@@ -2777,24 +2779,12 @@
                 /></svg></span
             >App name</a
           >
-          <ul class="nav">
-            <li><a href="#">About</a></li>
-            <li><a href="#">Docs</a></li>
-            <li><a href="#">Contact</a></li>
-          </ul>
+          <ul class="nav"></ul>
           <div class="cluster">
-            <button class="btn icon" type="button" title="Search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M20 20l-3.5-3.5" />
-              </svg>
-            </button>
-            <button class="btn icon" type="button" title="Theme: Auto (Dark)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
+            <a href="#" style="padding: 6px 10px">Discover</a>
+            <a class="btn icon" href="#" title="Help" target="_blank" rel="noopener noreferrer"
+              >🎫</a
+            >
             <button
               class="btn icon lang"
               type="button"
@@ -2807,6 +2797,12 @@
                 <path d="M12 3a14 14 0 0 1 0 18" />
                 <path d="M12 3a14 14 0 0 0 0 18" /></svg
               ><span class="code">EN</span>
+            </button>
+            <button class="btn icon" type="button" title="Theme: Auto (Dark)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none" />
+              </svg>
             </button>
             <button class="btn primary" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2954,6 +2950,23 @@
           </td>
         </tr>
         <tr>
+          <td>Discover</td>
+          <td>
+            a text link to <code>/organizations/discover</code> while <code>discover</code> is
+            advertised
+          </td>
+          <td>a compass icon after the search control, the same link</td>
+        </tr>
+        <tr>
+          <td>Help</td>
+          <td>
+            a ticket icon opening the ticket URL in a new tab, the fallback customer id alone, only
+            while a ticket system exists; <code>links.docs</code> and
+            <code>links.contact</code> draw nowhere
+          </td>
+          <td>hidden; the Help row of the menu carries the ticket</td>
+        </tr>
+        <tr>
           <td>Cluster buttons</td>
           <td colspan="2">
             34×34, borderless, transparent, hover fill; no gap between them; the account toggle is a
@@ -2962,7 +2975,7 @@
         </tr>
         <tr>
           <td>Left of the cluster</td>
-          <td>brand + About / Docs / Contact</td>
+          <td>the brand alone</td>
           <td>
             brand › breadcrumb only: plain crumbs from the route with a muted › separator, never
             pickers (both apps: › org › collection › item › version › provider); utility links move
@@ -3292,9 +3305,9 @@
             <td>Filter panel</td>
             <td>
               Full-bleed under the header on the tertiary band; Collection (on a page listing more
-              than one collection), then Visibility (when private rows exist), then one row per
-              page-supplied group of <code>value (count)</code> pills; active count + Clear filters
-              in the foot; gear omitted without groups.
+              than one collection), then Visibility (when rows that are not public exist), then one
+              row per page-supplied group of <code>value (count)</code> pills; active count + Clear
+              filters in the foot; gear omitted without groups.
             </td>
             <td>
               Catalog: Visibility · Watched (localStorage watches) · Tier (badge colors) · Provider
@@ -3341,10 +3354,10 @@
               matchers)
             </td>
             <td>
-              Collection (Boxes / ISOs, primary) · Visibility (Public / Private, info) · Watched
-              (box and ISO watches, warning, signed in) · Boxes: Provider (versions[].providers,
-              primary) · Architecture (providers[].architectures, info) · OS (metadata.distro,
-              success); counts are rows per value; persisted per page in
+              Collection (Boxes / ISOs, primary) · Visibility (Public / Guests / Private, info) ·
+              Watched (box and ISO watches, warning, signed in) · Boxes: Provider
+              (versions[].providers, primary) · Architecture (providers[].architectures, info) · OS
+              (metadata.distro, success); counts are rows per value; persisted per page in
               <code>boxvault_table_prefs_*</code>
             </td>
           </tr>
@@ -3352,8 +3365,8 @@
             <td>BoxVault · <code>/isos</code>, <code>/{org}/isos</code></td>
             <td>ISO name, description, organization</td>
             <td>
-              Visibility (isPublic, info) · Organization (organization.name, primary) across
-              organizations; counts are ISOs per value; persisted per page
+              Visibility (isPublic and guestAccess, info) · Organization (organization.name,
+              primary) across organizations; counts are ISOs per value; persisted per page
             </td>
           </tr>
           <tr>

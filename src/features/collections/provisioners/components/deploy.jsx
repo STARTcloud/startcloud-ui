@@ -22,11 +22,7 @@ const artifactUrl = (item, version) =>
 const hrefFor = ({ hyperweaverUrl, item, version }) =>
   `${hyperweaverUrl}/?create=machine&provisioner=${encodeURIComponent(`${item.organization.name}/${item.name}`)}&provisioner_version=${encodeURIComponent(version)}&provisioner_url=${encodeURIComponent(artifactUrl(item, version))}`;
 
-export const {
-  DeployButton,
-  DeployGlyph,
-  ItemQuickActions: ProvisionerQuickActions,
-} = createDeployControls({
+export const { DeployGlyph, deployColumn, CardGlyph } = createDeployControls({
   fetchHyperweaverUrl,
   canDeploy: hasHyperweaverEntitlement,
   hrefFor,

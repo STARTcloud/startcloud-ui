@@ -17,8 +17,7 @@ import {
 
 import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
-
-const isAdmin = account => Boolean(account?.user?.roles?.includes('ROLE_ADMIN'));
+import { isGlobalAdmin } from '../../utils/permissions';
 
 const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items });
 
@@ -43,7 +42,7 @@ const section = (key, items) => ({ key, labelKey: `admin.sidebar.${key}`, items 
  * @returns {Array} The sidebar groups
  */
 export const sidebar = (status, account, admin) => {
-  if (!hasFeature(status, 'admin') || !isAdmin(account)) {
+  if (!hasFeature(status, 'admin') || !isGlobalAdmin(account?.user)) {
     return [];
   }
   const configCount = admin.config ? configNamesOf(status).length : 0;

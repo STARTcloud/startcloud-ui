@@ -16,7 +16,9 @@ import RegistrationsPage from './RegistrationsPage';
 import ServiceUsagePage from './ServiceUsagePage';
 import SessionsPage from './SessionsPage';
 import TermsPage from './TermsPage';
-import UsersPage, { usersAdapterShape } from './UsersPage';
+import { usersAdapterShape } from './UserActions';
+import UserPage from './UserPage';
+import UsersPage from './UsersPage';
 
 const PAGES = {
   dashboard: DashboardPage,
@@ -34,7 +36,15 @@ const PAGES = {
   'email-templates': EmailTemplatesPage,
 };
 
+const RECORD_PAGES = {
+  user: UserPage,
+};
+
+const ADAPTER_OF = { users: 'users', user: 'users', organizations: 'organizations' };
+
 export const IDENTITY_ADMIN_PAGES = Object.keys(PAGES);
+
+export const IDENTITY_RECORD_PAGES = Object.keys(RECORD_PAGES);
 
 /**
  * The adapters the Users and All organizations pages read and act
@@ -47,13 +57,8 @@ export const adminAdaptersShape = PropTypes.shape({
 });
 
 const pageProps = (page, adapters) => {
-  if (page === 'users') {
-    return { adapter: adapters.users };
-  }
-  if (page === 'organizations') {
-    return { adapter: adapters.organizations };
-  }
-  return {};
+  const adapter = ADAPTER_OF[page];
+  return adapter ? { adapter: adapters[adapter] } : {};
 };
 
 /**
@@ -62,10 +67,12 @@ const pageProps = (page, adapters) => {
  * Logins, Registrations, Sessions, Service usage, Insights, Client
  * health, Provider health, Blocked IPs, Terms and Email templates, each
  * reading its own calls and drawing
- * in the scroll region beside the column; the sidebar rows are the one
- * navigation and no tab strip is drawn; the Users and All organizations
- * pages take their reads and actions from `adapters`, so a `backend`
- * host draws the same two pages over its own accounts. A visitor is sent
+ * in the scroll region beside the column, and the record pages under a
+ * row, `user` being one account of the Users list at the router's
+ * `/admin/users/:id`; the sidebar rows are the one
+ * navigation and no tab strip is drawn; the Users, All organizations and
+ * user pages take their reads and actions from `adapters`, so a `backend`
+ * host draws the same pages over its own accounts. A visitor is sent
  * to sign in with the page as the return path and a signed-in non-admin
  * home, `allowed` being the app's global-admin flag; `stepUp` arms the
  * step-up window the restart and the deletions need and `user` says
@@ -73,7 +80,7 @@ const pageProps = (page, adapters) => {
  */
 const IdentityAdminPage = ({ session, returnTo, allowed, page, stepUp, adapters, user = null }) => {
   const open = useAdminGate({ session, returnTo, allowed });
-  const Page = PAGES[page];
+  const Page = PAGES[page] || RECORD_PAGES[page];
   if (!open) {
     return null;
   }
@@ -90,7 +97,7 @@ IdentityAdminPage.propTypes = {
   session: PropTypes.object.isRequired,
   returnTo: returnToShape.isRequired,
   allowed: PropTypes.bool.isRequired,
-  page: PropTypes.oneOf(IDENTITY_ADMIN_PAGES).isRequired,
+  page: PropTypes.oneOf([...IDENTITY_ADMIN_PAGES, ...IDENTITY_RECORD_PAGES]).isRequired,
   stepUp: PropTypes.func.isRequired,
   adapters: adminAdaptersShape.isRequired,
   user: PropTypes.shape({ has_local_auth: PropTypes.bool }),

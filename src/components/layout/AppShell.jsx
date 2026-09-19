@@ -6,6 +6,7 @@ import { FaBook, FaBuilding, FaCircleInfo, FaEnvelope, FaGear } from 'react-icon
 import { Link, useLocation } from 'react-router-dom';
 
 import { POWERED_BY } from '../../config/brand';
+import { useCrumb } from '../../contexts/CrumbContext';
 import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { sessionStateShape } from '../../hooks/useSession';
@@ -18,6 +19,7 @@ import {
   buildRouteCrumbs,
   parentedCrumbs,
   parseRoute,
+  reservedSegments,
   rootCrumb,
   sidebarCrumbs,
   titleCrumb,
@@ -33,68 +35,9 @@ import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModa
 import { OrgLogo, organizationShape } from './OrgSwitcherModal';
 import Sidebar, { sidebarGroupShape } from './Sidebar';
 
-const UNIVERSAL_ROUTES = [
-  'about',
-  'organizations',
-  'login',
-  'auth',
-  'register',
-  'invite',
-  'profile',
-  'admin',
-  'org-console',
-  'setup',
-  'callback',
-  'docs',
-  'schema',
-  'private',
-  'push',
-  'search',
-  'vm',
-  'watches',
-  'authenticator',
-  'authenticator-method',
-  'passwordRecovery',
-  'passwordReset',
-  'registration',
-  'complete-onboarding',
-  'qrcode',
-  'provider-registration',
-  'public',
-  'oauth2',
-  'activate',
-  'activated',
-  'ciba',
-  'connect',
-  'continue',
-  'link-account-consent',
-  'link-account',
-  'user',
-  'org',
-  'notifications',
-  'error',
-  'api',
-  'assets',
-  'brand',
-  'locales',
-  'fonts',
-  'themes',
-];
-
 const SESSION_ENDED_KEY = 'session-ended';
 
-const supportLinks = ({ status, ticketUrl, t }) => {
-  const links = [];
-  if (ticketUrl) {
-    links.push({ key: 'help', label: t('navbar.needHelp'), href: ticketUrl, external: true });
-  } else if (status.links.docs) {
-    links.push({ key: 'help', label: t('navbar.needHelp'), href: status.links.docs });
-  }
-  if (status.links.contact) {
-    links.push({ key: 'contact', label: t('navbar.emailSupport'), href: status.links.contact });
-  }
-  return links;
-};
+const DISCOVER_PATH = '/organizations/discover';
 
 const footerRepoUrl = brand => brand.repo || brand.changelog || '';
 
@@ -227,7 +170,7 @@ const shellCrumbs = ({
   return reservedRoute ? [root, ...titleCrumb(titleKey, t)] : [root];
 };
 
-const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, t }) => {
+const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, pageName, t }) => {
   if (!parented) {
     return [];
   }
@@ -235,7 +178,7 @@ const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, t }) =>
   return parentedCrumbs({
     groups,
     parent: parented.parent,
-    name: parented.name({ activeOrganization }),
+    name: parented.name({ activeOrganization, pageName, t }),
     t,
   });
 };
@@ -249,6 +192,7 @@ const sidebarMatchFor = ({
   routeCrumbParent,
   organizations,
   activeOrgUuid,
+  pageName,
   t,
 }) => {
   if (!showSidebar) {
@@ -262,6 +206,7 @@ const sidebarMatchFor = ({
       parented: routeCrumbParent ? routeCrumbParent(pathname) : null,
       organizations,
       activeOrgUuid,
+      pageName,
       t,
     }),
   ];
@@ -319,16 +264,16 @@ const menuFor = ({ cookie, issuerUrl, onAuthPage, rows, adapters }) => ({
   ...adapters,
 });
 
-const signInFor = ({ account, anonymous, hidden, onAuthPage, pathname, search }) => {
-  if (anonymous || hidden) {
+const signInFor = ({ account, anonymous, onAuthPage, pathname, search }) => {
+  if (anonymous || onAuthPage) {
     return { onSignIn: null, signInTo: '' };
   }
-  const returnPath = account.sessionEnded?.returnTo || (onAuthPage ? '' : `${pathname}${search}`);
+  const returnPath = account.sessionEnded?.returnTo || `${pathname}${search}`;
   return { onSignIn: account.signIn, signInTo: returnTo.signInTo(returnPath) };
 };
 
-const bannerSignInFor = ({ account, hidden }) =>
-  hidden ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
+const bannerSignInFor = ({ account, onAuthPage }) =>
+  onAuthPage ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
 
 const columnGates = ({ cookie, showAbout, showOrgConsole }) => ({
   showAbout,
@@ -420,26 +365,34 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * loaded tree on a route a tree node matches, the way the sidebar mock's
  * `pathTo` walks it, `<group> › <row> › <name>` on a page
  * `routeCrumbParent` names a parent row for, the page's own name last,
- * the organization console's the active membership's name, and the
+ * resolved from what the shell holds (the organization console's the
+ * active membership's name) and from the name the page itself sets
+ * through `usePageName` into the crumb context, the resolver handed
+ * `{ activeOrganization, pageName, params, t }` so a translated
+ * placeholder stands in while the page has not loaded, and the
  * page's title from `routeTitleKey` on a
  * reserved route no row matches, so the row is never empty), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
  * the chrome; and the footer while the host lists the `footer` token. The
  * column and the app section are hidden on the auth routes of the
- * session's return-path helper, and on a `cookie` host the cluster's Sign
- * in button is hidden there too, the session-ended banner carrying its
- * own Sign in in its place; on a `cookie` host the menu draws no
+ * session's return-path helper, and on every host the cluster's Sign in
+ * button is hidden there too, the page below carrying the sign-in and the
+ * session-ended banner carrying its own Sign in in its place; on a
+ * `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
  * destination, its app section holding the About row, an in-router link
  * to `/about`, with the docs and contact rows as on every other host, and
  * its Preferences row an in-router link to `/user/profile/preferences`,
- * the one destination drawn in both the column and the menu; while signed out the
- * left of the bar holds the brand alone and the cluster is Need help?
- * (the ticket link the app supplies, built from the fallback customer id
- * alone, in a new tab, else `links.docs`), Email support (`links.contact`),
- * language, theme and Sign in, with no search icon because app-wide search
- * needs a session. The app supplies
+ * the one destination drawn in both the column and the menu; while the
+ * host advertises `discover` the cluster carries Discover, an in-router
+ * link to the discovery page, a text link while signed out and a compass
+ * icon after the search control while signed in; while signed out the
+ * left of the bar holds the brand alone and the cluster is Discover, the
+ * ticket icon (the ticket link the app supplies, built from the fallback
+ * customer id alone, in a new tab, drawn only while there is a ticket
+ * system), language, theme and Sign in, with no search icon because
+ * app-wide search needs a session. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's
@@ -472,15 +425,13 @@ const AppShell = ({
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const { pathname, search } = useLocation();
+  const { name: pageName } = useCrumb();
   const scrollRef = useRef(null);
   const { user, claims, activeOrgUuid } = account;
   const signedIn = Boolean(user);
   const anonymous = authMethod(status) === 'none';
   const cookie = authMethod(status) === 'cookie';
-  const reserved = [
-    ...UNIVERSAL_ROUTES,
-    ...collections.map(collection => collection.segment).filter(Boolean),
-  ];
+  const reserved = reservedSegments(collections);
   const [primary] = collections;
   const orgs = {
     organizations,
@@ -492,7 +443,6 @@ const AppShell = ({
     logoFor: logoResolver(primary),
   };
   const onAuthPage = returnTo.onAuthPage(pathname);
-  const signInHidden = cookie && onAuthPage;
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
   const [trees, setTrees] = useState({});
@@ -512,6 +462,7 @@ const AppShell = ({
       routeCrumbParent,
       organizations,
       activeOrgUuid,
+      pageName,
       t,
     }),
     routeCrumbs: route.crumbs,
@@ -522,7 +473,7 @@ const AppShell = ({
   });
   useSessionEndedBanner(
     Boolean(account.sessionEnded) && !signedIn && !anonymous,
-    bannerSignInFor({ account, hidden: signInHidden })
+    bannerSignInFor({ account, onAuthPage })
   );
 
   useEffect(() => {
@@ -542,17 +493,10 @@ const AppShell = ({
     />
   );
 
-  const signIn = signInFor({
-    account,
-    anonymous,
-    hidden: signInHidden,
-    onAuthPage,
-    pathname,
-    search,
-  });
+  const signIn = signInFor({ account, anonymous, onAuthPage, pathname, search });
 
   const gates = columnGates({ cookie, showAbout, showOrgConsole });
-  const links = signedIn ? [] : supportLinks({ status, ticketUrl, t });
+  const discoverTo = hasFeature(status, 'discover') ? DISCOVER_PATH : '';
 
   const userMenu = buildUserMenu({
     account,
@@ -585,7 +529,6 @@ const AppShell = ({
     <>
       <Header
         brand={showSidebar ? null : brand}
-        links={links}
         crumbs={crumbs}
         LinkComponent={Link}
         theme={{ preference: themePreference, resolved: theme, onToggle: toggleTheme }}
@@ -595,6 +538,8 @@ const AppShell = ({
         signInTo={signIn.signInTo}
         userMenu={userMenu}
         onSidebarToggle={showSidebar ? overlay.toggle : null}
+        discoverTo={discoverTo}
+        ticketUrl={ticketUrl}
       />
       <NoticeCards LinkComponent={Link} />
       <div ref={scrollRef} className="container-fluid app-scroll py-3">

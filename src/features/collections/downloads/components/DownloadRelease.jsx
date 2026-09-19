@@ -248,7 +248,7 @@ export const DownloadProvidersActions = ({ item, version, ctx }) => {
         org={org}
         pending={upload.pending}
         levels={{ product: item.name, release: version.version }}
-        isPublic={upload.isPublic}
+        visibility={upload.visibility}
         notify={notify}
         reload={reload}
         onDone={upload.clear}
@@ -262,8 +262,8 @@ export const DownloadProvidersActions = ({ item, version, ctx }) => {
       progress={upload.progress}
       file={upload.file}
       error={upload.error}
-      isPublic={upload.isPublic}
-      onVisibility={upload.setIsPublic}
+      visibility={upload.visibility}
+      onVisibility={upload.setVisibility}
       onFile={upload.upload(options => api.pending.upload(org, options))}
     />
   );

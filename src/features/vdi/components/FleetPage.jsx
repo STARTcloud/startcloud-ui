@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCircle, FaCompress, FaEraser, FaExpand } from 'react-icons/fa6';
 
+import EmptyState from '../../../components/common/EmptyState';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStreamStatus } from '../../../hooks/useEventStream';
 import { authMethod } from '../../../utils/capabilities';
@@ -181,9 +182,7 @@ const FleetBody = ({ context, theme }) => {
         onCollapseAll={() => setExpanded(new Set())}
       />
       {list.length === 0 ? (
-        <div className="alert alert-secondary">
-          <strong>{t('vdi.empty.title')}</strong> {t('vdi.empty.body')}
-        </div>
+        <EmptyState title={t('vdi.empty.title')} body={t('vdi.empty.body')} />
       ) : (
         <FleetTable
           rows={search.rows}

@@ -5,11 +5,13 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import Avatar from '../../../components/common/Avatar';
 import { useStepUp } from '../../../components/common/StepUpDialog';
+import { organizationShape } from '../../../components/layout/OrgSwitcherModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { isPendingGate } from '../../../lib/gates';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { userDisplayName, userSecondaryLine } from '../../../utils/identity';
+import { writesAny } from '../../../utils/membership';
 
 import FavoritesTab from './FavoritesTab';
 import IssuerDetailsTab from './IssuerDetailsTab';
@@ -105,24 +107,47 @@ const SEGMENTS = Object.fromEntries(
   Object.entries(PROFILE_ROUTE_SECTIONS).map(([segment, section]) => [section, segment])
 );
 
+const OPTIONAL_SECTIONS = [
+  'preferences',
+  'favorites',
+  'sessions',
+  'organizations',
+  'serviceAccounts',
+];
+
+const drawsSection = (account, section, memberships, admin) => {
+  if (section === 'preferences' && isReadOnly(account)) {
+    return true;
+  }
+  if (section === 'serviceAccounts') {
+    return Boolean(account[section]) && writesAny(memberships, admin);
+  }
+  return Boolean(account[section]);
+};
+
 /**
  * The sections the profile page draws for an `account` adapter, in the
  * order the sidebar lists them: Profile always, Security while the
  * adapter carries any security call, then Preferences, Favorites,
  * Sessions, Organizations and Service accounts while it carries theirs;
  * a `readOnly` adapter draws Preferences whenever the record carries
- * `preferences`, because the read is the profile itself.
+ * `preferences`, because the read is the profile itself; Service accounts
+ * only while one of the session's memberships holds a role beyond a
+ * guest's or the viewer is a global admin, because a guest may not create
+ * one.
  *
  * @param {Object} account - The `account` adapter
+ * @param {Array<Object>} memberships - The session's organizations in the chrome's shape
+ * @param {boolean} admin - Whether the viewer is a global admin
  * @returns {string[]} The section keys
  */
-export const sectionsFor = account => {
+export const sectionsFor = (account, memberships, admin) => {
   const sections = ['profile'];
   if (SECURITY_MEMBERS.some(member => account[member])) {
     sections.push('security');
   }
-  ['preferences', 'favorites', 'sessions', 'organizations', 'serviceAccounts'].forEach(section => {
-    if (account[section] || (section === 'preferences' && isReadOnly(account))) {
+  OPTIONAL_SECTIONS.forEach(section => {
+    if (drawsSection(account, section, memberships, admin)) {
       sections.push(section);
     }
   });
@@ -178,7 +203,13 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
     return <SessionsTab account={account} guard={guard} onSignedOut={page.signedOut} />;
   }
   if (active === 'organizations') {
-    return <OrganizationsTab account={account} onSaved={page.refresh} />;
+    return (
+      <OrganizationsTab
+        account={account}
+        organizations={page.organizations}
+        onSaved={page.refresh}
+      />
+    );
   }
   if (active === 'serviceAccounts') {
     return (
@@ -210,6 +241,7 @@ ActiveSection.propTypes = {
   page: PropTypes.shape({
     focusEmail: PropTypes.bool.isRequired,
     activeOrgUuid: PropTypes.string.isRequired,
+    organizations: PropTypes.arrayOf(organizationShape).isRequired,
     admin: PropTypes.bool.isRequired,
     refresh: PropTypes.func.isRequired,
     signedOut: PropTypes.func.isRequired,
@@ -368,7 +400,10 @@ const usePlacesKey = places => {
  * stepped-up call passes through the one step-up dialog while the adapter
  * carries `stepUp`, and runs plainly otherwise; `admin` is the app's
  * global-admin flag and `activeOrgUuid` the switcher's organization, both
- * read by the Service accounts section; `user` and `loaded` are the
+ * read by the Service accounts section, and `organizations` the session's
+ * memberships in the chrome's shape, deciding with `admin` whether that
+ * section draws at all and lending the Organizations section each
+ * membership's logo; `user` and `loaded` are the
  * session state's, the page drawing nothing until `loaded` and sending a
  * visitor to sign in only once `loaded` says there is no session, because
  * the cached account is a paint hint.
@@ -380,6 +415,7 @@ const ProfilePage = ({
   account,
   basePath,
   activeOrgUuid,
+  organizations,
   admin,
   user = null,
   loaded,
@@ -388,7 +424,10 @@ const ProfilePage = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { section = '' } = useParams();
-  const sections = useMemo(() => sectionsFor(account), [account]);
+  const sections = useMemo(
+    () => sectionsFor(account, organizations, admin),
+    [account, organizations, admin]
+  );
   const signedIn = loaded && Boolean(user);
   const { profile, version, refresh } = useProfileRecord({ account, session, events, signedIn });
   const placesKey = usePlacesKey(account.places || null);
@@ -454,6 +493,7 @@ const ProfilePage = ({
             page={{
               focusEmail,
               activeOrgUuid,
+              organizations,
               admin,
               refresh,
               signedOut,
@@ -478,6 +518,7 @@ ProfilePage.propTypes = {
   account: accountShape.isRequired,
   basePath: PropTypes.string.isRequired,
   activeOrgUuid: PropTypes.string.isRequired,
+  organizations: PropTypes.arrayOf(organizationShape).isRequired,
   admin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   loaded: PropTypes.bool.isRequired,

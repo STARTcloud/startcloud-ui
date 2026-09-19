@@ -16,6 +16,67 @@ export const providerPath = (collection, org, name, version, provider) =>
 export const architecturePath = (collection, org, name, version, provider, architecture) =>
   `${providerPath(collection, org, name, version, provider)}/${architecture}`;
 
+export const UNIVERSAL_ROUTES = [
+  'about',
+  'organizations',
+  'login',
+  'auth',
+  'register',
+  'invite',
+  'profile',
+  'admin',
+  'org-console',
+  'setup',
+  'callback',
+  'docs',
+  'schema',
+  'private',
+  'push',
+  'search',
+  'vm',
+  'watches',
+  'authenticator',
+  'authenticator-method',
+  'passwordRecovery',
+  'passwordReset',
+  'registration',
+  'complete-onboarding',
+  'qrcode',
+  'provider-registration',
+  'public',
+  'oauth2',
+  'activate',
+  'activated',
+  'ciba',
+  'connect',
+  'continue',
+  'link-account-consent',
+  'link-account',
+  'user',
+  'org',
+  'notifications',
+  'error',
+  'api',
+  'assets',
+  'brand',
+  'locales',
+  'fonts',
+  'themes',
+];
+
+/**
+ * The first segments no organization may own: every app page plus the
+ * route segment of every mounted collection, the one list the shell's
+ * crumbs and the catalog tree both parse routes against.
+ *
+ * @param {Array<Object>} collections - The host's mounted collection definitions
+ * @returns {Array<string>} The reserved first segments
+ */
+export const reservedSegments = collections => [
+  ...UNIVERSAL_ROUTES,
+  ...collections.map(collection => collection.segment).filter(Boolean),
+];
+
 const emptyRoute = {
   org: '',
   collection: null,
