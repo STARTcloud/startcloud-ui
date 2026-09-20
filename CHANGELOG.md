@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.27.0...v0.28.0) (2026-09-20)
+
+
+### Features
+
+* the sign-in page's identity providers as a three-column grid of tiles from three on, the default provider kept as the one filled button ([fe1fb7d](https://github.com/STARTcloud/startcloud-ui/commit/fe1fb7d929fdaa8b0d35577c232f8ea9f9b11095))
+
 ## [0.27.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.26.0...v0.27.0) (2026-09-20)
 
 
