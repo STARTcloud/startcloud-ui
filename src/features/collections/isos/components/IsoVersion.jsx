@@ -223,6 +223,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
     <>
       <VisibilityStep
         value={visibilityPair(version)}
+        max={visibilityPair(item)}
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />

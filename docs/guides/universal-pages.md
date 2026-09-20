@@ -763,8 +763,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   `ItemSections` slot. A version, release, provider or patch that carries
   its own three words is edited like the item: its page's action row
   carries the visibility step and Publish / Unpublish, its edit form the
-  shared `VisibilityPicker`, and a row never wider than its parent, the
-  host answering the validation contract's 422 at the wider word. The ISO page is the same component with
+  shared `VisibilityPicker`, and a row never wider than its parent: the
+  step takes the parent's pair as `max` and cycles within its width, so
+  under a Guests parent it steps Private, Guests, Private and under a
+  Private parent it is disabled with the reason as its title, the host
+  answering the validation contract's 422 at the wider word for anything
+  the picker still sends. The ISO page is the same component with
   `hasVersions: true`, the ISO gaining the same fields as a box, its
   versions table carrying the artifacts column instead of providers; its
   actions (the visibility step, Publish / Unpublish, Rename,

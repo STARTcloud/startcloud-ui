@@ -122,6 +122,7 @@ import {
   changeName,
   changePassword,
   issuerAccount,
+  issuerGuestAccount,
   leaveOrganization,
   myRequests,
   patchProfile,
@@ -145,7 +146,7 @@ import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
 import { gravatarProfile } from '../utils/gravatar';
-import { isMember } from '../utils/membership';
+import { guestOnly, isMember } from '../utils/membership';
 import { collectionPath } from '../utils/routes';
 
 const authAdapter = {
@@ -309,7 +310,7 @@ const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
 
 const profileAccountFor = ({ status, account }) => {
   if (authMethod(status) === 'cookie') {
-    return issuerAccount;
+    return guestOnly(account.organizations) ? issuerGuestAccount : issuerAccount;
   }
   return backendAccountFor({
     user: account.user,
@@ -957,7 +958,7 @@ const issuerProfile = ({ account, globalAdmin }) => (
     session={session}
     events={events}
     returnTo={returnTo}
-    account={issuerAccount}
+    account={guestOnly(account.organizations) ? issuerGuestAccount : issuerAccount}
     basePath="/user/profile"
     activeOrgUuid={account.activeOrgUuid}
     organizations={account.organizations}

@@ -27,6 +27,7 @@ import {
   architectureShape,
   itemShape,
   providerShape,
+  versionShape,
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
@@ -110,7 +111,7 @@ ProviderEditForm.propTypes = {
   onSubmit: PropTypes.func.isRequired,
 };
 
-export const BoxProviderActions = ({ item, version, provider, ctx }) => {
+export const BoxProviderActions = ({ item, version, provider, parent = null, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const status = useStatus();
@@ -249,6 +250,7 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
     <>
       <VisibilityStep
         value={visibilityPair(provider)}
+        max={parent ? visibilityPair(parent) : null}
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
@@ -269,7 +271,7 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
   );
 };
 
-BoxProviderActions.propTypes = slotShape;
+BoxProviderActions.propTypes = { ...slotShape, parent: versionShape };
 
 const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmit }) => {
   const { t } = useTranslation();

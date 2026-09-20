@@ -21,7 +21,9 @@ const rowIdOf = name => `architecture-${name}`;
  * carry architectures directly: the header, then the architectures table,
  * one file per row, with the picked-state pane in its heading; a route that
  * names an architecture in its fifth part brings that row into view once,
- * marking nothing.
+ * marking nothing. The slots receive the version row as `parent`, read
+ * from the item summary's versions, so a provider's visibility step stays
+ * within its version's width.
  */
 const ProviderPage = ({ collection, org, name, version, provider, context, architecture = '' }) => {
   const { t, i18n } = useTranslation();
@@ -107,7 +109,8 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
     return <div className="list row" />;
   }
 
-  const slotProps = { item, version, provider: entry, ctx };
+  const parent = (item.versions || []).find(row => row.version === version) || null;
+  const slotProps = { item, version, provider: entry, parent, ctx };
   const actions = ProviderActions ? <ProviderActions {...slotProps} /> : null;
   const manage = managesItem(status, collection, item, context.user);
   const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);

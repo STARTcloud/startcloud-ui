@@ -8,7 +8,9 @@ const OPTIONS = [
   { key: 'private', value: { is_public: false, guest_access: false } },
 ];
 
-const NEXT = { private: 'guests', guests: 'public', public: 'private' };
+const CYCLE = ['private', 'guests', 'public'];
+
+const WIDTH = { private: 0, guests: 1, public: 2 };
 
 const ICONS = { public: FaGlobe, guests: FaUsers, private: FaLock };
 
@@ -19,25 +21,45 @@ const pickedOf = value => {
   return value.guest_access ? 'guests' : 'private';
 };
 
+const nextWithin = (current, max) => {
+  const limit = max ? WIDTH[pickedOf(max)] : WIDTH.public;
+  const allowed = CYCLE.filter(state => WIDTH[state] <= limit);
+  return allowed[(allowed.indexOf(current) + 1) % allowed.length];
+};
+
 export const visibilityShape = PropTypes.shape({
   is_public: PropTypes.bool.isRequired,
   guest_access: PropTypes.bool.isRequired,
 });
 
 /**
- * The one visibility action of every item page: one button that steps the
- * item Private, Guests, Public and round again, its label and icon naming
- * the step it takes next; `value` carries the wire pair and `onChange`
- * answers the pair the next step means, the same pair the radios answer.
+ * The one visibility action of every item page and every row page below
+ * it: one button that steps the row Private, Guests, Public and round
+ * again, its label and icon naming the step it takes next; `value`
+ * carries the wire pair and `onChange` answers the pair the next step
+ * means, the same pair the radios answer. `max` is the parent row's pair
+ * where the row has one: the cycle then stays within the parent's width,
+ * so a row under a Guests parent steps Private, Guests, Private and never
+ * offers a state the host refuses, and under a Private parent the button
+ * is disabled with the reason as its title.
  */
-export const VisibilityStep = ({ value, onChange, className = 'btn btn-outline-secondary' }) => {
+export const VisibilityStep = ({
+  value,
+  onChange,
+  max = null,
+  className = 'btn btn-outline-secondary',
+}) => {
   const { t } = useTranslation();
-  const next = NEXT[pickedOf(value)];
+  const current = pickedOf(value);
+  const next = nextWithin(current, max);
+  const stuck = next === current;
   const Icon = ICONS[next];
   return (
     <button
       type="button"
       className={className}
+      disabled={stuck}
+      title={stuck ? t('pages.visibility.withinParent') : undefined}
       onClick={() => onChange({ ...OPTIONS.find(option => option.key === next).value })}
     >
       <Icon className="me-2" />
@@ -49,6 +71,7 @@ export const VisibilityStep = ({ value, onChange, className = 'btn btn-outline-s
 VisibilityStep.propTypes = {
   value: visibilityShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  max: visibilityShape,
   className: PropTypes.string,
 };
 

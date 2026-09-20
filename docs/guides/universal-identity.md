@@ -3792,7 +3792,17 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      a member or admin may create one that acts as a guest, and no write
      control of any page draws for one, the Download button staying;
      `isMember` counts a guest, `isManager` and a collection's `canManage`
-     never do.
+     never do. A guest-only account, one with at least one membership and
+     every one of them a guest (`guestOnly`), the shared download login an
+     organization prints for its customers, is read-only on itself: the
+     issuer's profile draws its record `readOnly` with no credential,
+     passkey, second-factor, session or deletion section and the
+     preferences write alone, the Account column is the Profile row alone,
+     Create a team is absent, and the issuer refuses every self-write route
+     for it with `403` `guest_only`, so the page mirrors the API rather
+     than standing in for it; a person who is a guest in one organization
+     and more in another is a normal account. The admins edit such an
+     account through the admin routes.
      Because a customer who downloads licensed files is a member of the
      organization for what they may see and a stranger for what they may
      change, and a second membership kind is the only way to say both.

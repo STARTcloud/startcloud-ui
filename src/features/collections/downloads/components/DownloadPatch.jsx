@@ -28,6 +28,7 @@ import {
   architectureShape,
   itemShape,
   providerShape,
+  versionShape,
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
@@ -94,7 +95,7 @@ PatchEditForm.propTypes = {
   onSubmit: PropTypes.func.isRequired,
 };
 
-export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
+export const DownloadProviderActions = ({ item, version, provider, parent = null, ctx }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const status = useStatus();
@@ -237,6 +238,7 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
     <>
       <VisibilityStep
         value={visibilityPair(provider)}
+        max={parent ? visibilityPair(parent) : null}
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
@@ -257,7 +259,7 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
   );
 };
 
-DownloadProviderActions.propTypes = slotShape;
+DownloadProviderActions.propTypes = { ...slotShape, parent: versionShape };
 
 export const DownloadArchitecturesActions = ({ item, version, provider, ctx }) => {
   const status = useStatus();

@@ -73,3 +73,20 @@ export const managesAny = (organizations, admin = false) =>
  */
 export const writesAny = (organizations, admin = false) =>
   admin || organizations.some(entry => (entry.roles || []).some(role => role !== 'GUEST'));
+
+/**
+ * A guest-only account: at least one membership and every one of them a
+ * guest, the shared download login an organization prints for its
+ * customers; such an account is read-only on itself, its profile drawn
+ * without a write control, its Account column Profile alone and no team
+ * to create, while a person who is a guest somewhere and more elsewhere
+ * is a normal account.
+ * @param {Array<{ name: string, roles?: string[] }>} organizations
+ * @returns {boolean}
+ */
+export const guestOnly = organizations =>
+  organizations.length > 0 &&
+  organizations.every(entry => {
+    const roles = entry.roles || [];
+    return roles.length > 0 && roles.every(role => role === 'GUEST');
+  });

@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fa6';
 
 import { authMethod, hasFeature } from '../../utils/capabilities';
+import { guestOnly } from '../../utils/membership';
 import { isGlobalAdmin } from '../../utils/permissions';
 
 import { sectionPath, sectionsFor } from './components/ProfilePage';
@@ -66,7 +67,9 @@ const group = (items, tree) => [
  * `integrations`, the group's `tree` of decision 68 answering the
  * Integrations entry only once `GET /api/user/integrations`, read once
  * when the tree mounts through the integrations adapter the router hands
- * in, has answered `services`; nothing on any other host.
+ * in, has answered `services`; for a guest-only account (`guestOnly`,
+ * the shared download login) the group is the Profile row alone;
+ * nothing on any other host.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -84,6 +87,9 @@ export const sidebar = (status, account, integrations, profile) => {
   }
   if (method !== 'cookie') {
     return [];
+  }
+  if (guestOnly(account.organizations)) {
+    return group([profileRow('/user/profile', profile, account)]);
   }
   const items = [profileRow('/user/profile', profile, account)];
   if (hasFeature(status, 'org-console')) {

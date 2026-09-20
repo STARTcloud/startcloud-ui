@@ -6,6 +6,7 @@ export {
   favorites,
   generateBackupCodes,
   issuerAccount,
+  issuerGuestAccount,
   linkProvider,
   linkedAccounts,
   menuFavorites,
