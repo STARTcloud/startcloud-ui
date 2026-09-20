@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.24.0...v0.25.0) (2026-09-20)
+
+
+### Features
+
+* the account cluster in one order in both states, search, Discover, the ticket icon, theme, language, then the account menu or Sign in, and the branding contract naming the issuer's branding endpoint as the source of a federated host's pack ([c0d2251](https://github.com/STARTcloud/startcloud-ui/commit/c0d22517542c15a2c37ebadf275933ca7190a4d0))
+* the Browse tree behind the browse token or the admin role, collection glyphs as components, crumbs from the route alone with no root crumb beside the column, the Catalog group and Home row gone ([5426781](https://github.com/STARTcloud/startcloud-ui/commit/5426781377bc132a0c4fdf0c6ddef9e25c2aecc1))
+* the startcloud pack as the shared UI's base look under its name, a pack named per host in each backend's own config and never fetched from the identity provider ([f8be90a](https://github.com/STARTcloud/startcloud-ui/commit/f8be90adf227a19550325a0bb2dc39b20ae5ce97))
+
+
+### Bug Fixes
+
+* adding a default named entry for themeing ([3cf2fad](https://github.com/STARTcloud/startcloud-ui/commit/3cf2faddee0c6b04d69849b54911ee8d6536835a))
+* more linting ([7542457](https://github.com/STARTcloud/startcloud-ui/commit/7542457f7cd53cb241a8754be204f548e6ea8a71))
+
 ## [0.24.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.23.0...v0.24.0) (2026-09-20)
 
 
