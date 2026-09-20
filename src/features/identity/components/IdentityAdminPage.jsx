@@ -56,9 +56,10 @@ export const adminAdaptersShape = PropTypes.shape({
   organizations: organizationsAdapterShape,
 });
 
-const pageProps = (page, adapters) => {
+const pageProps = (page, adapters, user) => {
   const adapter = ADAPTER_OF[page];
-  return adapter ? { adapter: adapters[adapter] } : {};
+  const props = adapter ? { adapter: adapters[adapter] } : {};
+  return RECORD_PAGES[page] ? { ...props, viewer: user } : props;
 };
 
 /**
@@ -76,7 +77,8 @@ const pageProps = (page, adapters) => {
  * to sign in with the page as the return path and a signed-in non-admin
  * home, `allowed` being the app's global-admin flag; `stepUp` arms the
  * step-up window the restart and the deletions need and `user` says
- * whether the account has a password for the dialog.
+ * whether the account has a password for the dialog and, as `viewer` of
+ * a record page, whose record is the admin's own.
  */
 const IdentityAdminPage = ({ session, returnTo, allowed, page, stepUp, adapters, user = null }) => {
   const open = useAdminGate({ session, returnTo, allowed });
@@ -87,7 +89,7 @@ const IdentityAdminPage = ({ session, returnTo, allowed, page, stepUp, adapters,
   return (
     <GuardProvider stepUp={stepUp} hasPassword={Boolean(user?.has_local_auth)}>
       <div className="list">
-        <Page {...pageProps(page, adapters)} />
+        <Page {...pageProps(page, adapters, user)} />
       </div>
     </GuardProvider>
   );
@@ -100,7 +102,7 @@ IdentityAdminPage.propTypes = {
   page: PropTypes.oneOf([...IDENTITY_ADMIN_PAGES, ...IDENTITY_RECORD_PAGES]).isRequired,
   stepUp: PropTypes.func.isRequired,
   adapters: adminAdaptersShape.isRequired,
-  user: PropTypes.shape({ has_local_auth: PropTypes.bool }),
+  user: PropTypes.shape({ has_local_auth: PropTypes.bool, email: PropTypes.string }),
 };
 
 export default IdentityAdminPage;

@@ -90,6 +90,10 @@
     "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
     "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
     "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero.",
+    "own_account": "Cambia tu propia cuenta desde tu página de perfil.",
+    "guest_only": "Esta cuenta compartida no se puede cambiar aquí.",
+    "invite_wrong_account": "Inicia sesión con la dirección invitada para aceptar esta invitación.",
+    "no_local_password": "Esta cuenta no tiene contraseña; la marca solo aplica al inicio de sesión local.",
     "self": "tu propia cuenta",
     "not_found": "ya no existe",
     "not_a_member": "no es miembro de esa organización",
@@ -591,6 +595,16 @@
       "search": "Buscar usuarios",
       "notFound": "Usuario no encontrado",
       "placeholder": "Usuario",
+      "record": {
+        "profile": "Perfil",
+        "signIn": "Inicio de sesión",
+        "passwordChange": "Exigir un cambio de contraseña en el próximo inicio de sesión",
+        "passwordChangeHint": "La persona deberá elegir una contraseña nueva la próxima vez que inicie sesión; sus sesiones de aplicaciones y sus inicios recordados terminan, y se le avisa por la bandeja de entrada y por correo.",
+        "passwordChangeSaved": "Inicio de sesión guardado.",
+        "emailTitle": "Cambiar la dirección de correo",
+        "emailSaved": "Dirección de correo guardada.",
+        "stepUpReason": "Cambiar la cuenta de otra persona cambia cómo inicia sesión."
+      },
       "filter": {
         "status": "Estado",
         "tfa": "2FA activado",

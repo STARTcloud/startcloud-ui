@@ -17,6 +17,18 @@ export const roles = () => client.get('/api/admin/roles');
 
 export const updateUser = (userId, patch) => client.patch(user(userId), patch);
 
+export const updateUserAddress = (userId, body) => client.put(`${user(userId)}/address`, body);
+
+export const setUserEmail = (userId, email) => client.put(`${user(userId)}/email`, { email });
+
+export const setUserPhone = (userId, mobileNumber) =>
+  client.put(`${user(userId)}/phone`, { mobile_number: mobileNumber });
+
+export const updateUserPreferences = (userId, patch) =>
+  client.patch(`${user(userId)}/preferences`, patch);
+
+export const placesKey = () => client.get('/api/config/places');
+
 export const setRoles = (userId, roleNames) =>
   client.put(`${user(userId)}/roles`, { roles: roleNames });
 
@@ -49,14 +61,27 @@ export const organizationsBulk = body => client.post('/api/admin/organizations/b
  * and the user record page: the paged list, the single record by id, the
  * role catalog, the record patch, the whole-set roles write, suspend and
  * resume as `enabled` patches, the stepped-up delete, the bulk route, the
- * rate-limit gates and the export URL of the panel's action; the page
- * draws an action or a column only while the adapter carries its call.
+ * rate-limit gates and the export URL of the panel's action; the record
+ * page's writes over another account, every one behind the step-up
+ * window and refused `403 own_account` on the admin's own id: the detail
+ * members and `password_change_required` through `update`, the address
+ * `PUT`, the email `PUT` (`409` on a taken address), the plain phone
+ * `PUT` and the preferences `PATCH` (language, theme, timezone, region,
+ * ciba_channel); `places` answers the Google Places key the address
+ * block loads with.
+ * The page draws an action or a column only while the adapter carries
+ * its call.
  */
 export const issuerUsers = {
   list: users,
   get: getUser,
   roles,
   update: updateUser,
+  address: updateUserAddress,
+  email: setUserEmail,
+  phone: setUserPhone,
+  preferences: updateUserPreferences,
+  places: placesKey,
   setRoles,
   suspend: userId => updateUser(userId, { enabled: false }),
   resume: userId => updateUser(userId, { enabled: true }),

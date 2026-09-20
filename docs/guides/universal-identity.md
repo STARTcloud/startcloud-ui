@@ -2384,7 +2384,21 @@ problem body with `code`.
     adapter answers not found with drawing the shared empty state
     (`admin.users.notFound`); its crumb reads Admin, Users, then the
     username through `usePageName`, "User" (`admin.users.placeholder`)
-    standing in until the record loads (decision 167).
+    standing in until the record loads (decision 167). Under the rows,
+    on the issuer, the record's `profile` is edited the way the person
+    edits their own: a Profile card drawing the shared profile section
+    over an adapter bound to the id (the detail members through
+    `PATCH /api/admin/users/{id}`, the address through its `PUT`, the
+    mobile as one plain field through the phone `PUT`, the email through
+    a dialog over the email `PUT`), a Preferences card drawing the shared
+    preferences section with the record's language and theme as fields
+    saved with the rest over the preferences `PATCH`, never the viewer's
+    own, and a Sign-in card with the "Require a password change at next
+    sign-in" switch writing `password_change_required` through the
+    record `PATCH`; every write
+    passes the step-up dialog, and the cards are absent on the admin's
+    own record, which the issuer refuses `403 own_account` and the
+    profile page serves.
   - **Organizations**: a `SectionHeading` over the table, its title All
     organizations, the count as muted text after the title; the table (a
     select column whose header cell is a real checkbox, the select-all
@@ -3796,11 +3810,13 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      every one of them a guest (`guestOnly`), the shared download login an
      organization prints for its customers, is read-only on itself: the
      issuer's profile draws its record `readOnly` with no credential,
-     passkey, second-factor, session or deletion section and the
-     preferences write alone, the Account column is the Profile row alone,
-     Create a team is absent, and the issuer refuses every self-write route
-     for it with `403` `guest_only`, so the page mirrors the API rather
-     than standing in for it; a person who is a guest in one organization
+     passkey, second-factor, session or deletion section and no
+     preferences write, theme and language staying the browser's, the
+     Account column is the Profile row alone, Create a team is absent, and
+     the issuer refuses every self-write route for it, the preferences
+     `PATCH` included, with `403` `guest_only`, reads, the step-up and
+     sign-out staying open, so the page mirrors the API rather than
+     standing in for it; a person who is a guest in one organization
      and more in another is a normal account. The admins edit such an
      account through the admin routes.
      Because a customer who downloads licensed files is a member of the
@@ -3926,7 +3942,23 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      never scan a list for one row; the Users page's columns, row
      actions, dialogs and hook live in one shared `UserActions` module
      both pages import, and `RecordRows` is the one read-only record row
-     shape.
+     shape. The issuer's item carries `profile`, the `GET /api/user`
+     shape with the mobile's number, `preferences` and
+     `password_change_required`; an admin edits another account's
+     details through `PATCH /api/admin/users/{id}`, its address, email
+     and phone through `PUT …/address`, `PUT …/email` and `PUT …/phone`,
+     its preferences (language, theme, timezone, region, ciba_channel)
+     through `PATCH …/preferences` under the preferences form's rules,
+     and removes a second-factor method through
+     `DELETE …/tfa/methods/{id}`, every
+     write behind the step-up window and refused `403 own_account` on
+     the admin's own id; there is no route that sets another account's
+     password and none is planned: the admin sets
+     `password_change_required` instead, and the account is sent to the
+     forced password step at its next sign-in, after its second factor,
+     its client sessions and remembered logins ended and an inbox notice
+     and an email sent, `409 no_local_password` while the account has no
+     local password.
 
 The sidebar is the issuer's navigation for every signed-in person: the
 Account section, and the operator's sections for an admin, as group 5

@@ -1,4 +1,5 @@
 import { httpsUrl } from '../components/common/MethodList';
+import { guestOnly } from '../utils/membership';
 
 import { createApiClient } from './apiClient';
 import { isPendingGate, pendingGateNext } from './gates';
@@ -106,7 +107,10 @@ export const accountMemberships = user =>
  * the moment it answers, not only the one that noticed it first.
  * `load({ navigate })` sets that holder once before reading `GET /api/user`
  * and falls back to the cached profile on any failure but a `401`, which
- * clears it instead. `begin({ method, navigate })` with no method, `local`
+ * clears it instead. `savePreferences` writes the chrome's theme and
+ * language through `PATCH /api/user/preferences` except for a guest-only
+ * account, which the issuer refuses `403 guest_only`, so its choices stay
+ * the browser's. `begin({ method, navigate })` with no method, `local`
  * or `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a
  * top-level navigation.
  *
@@ -243,7 +247,8 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
   };
 
   const savePreferences = async patch => {
-    if (!current()) {
+    const profile = current();
+    if (!profile || guestOnly(accountMemberships(profile))) {
       return;
     }
     const saved = await api.patch('/api/user/preferences', patch).catch(() => null);

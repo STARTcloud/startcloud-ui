@@ -90,6 +90,10 @@
     "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
     "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
     "last_owner": "A team needs an owner; make someone else an owner first.",
+    "own_account": "Change your own account from your profile page.",
+    "guest_only": "This shared account cannot be changed here.",
+    "invite_wrong_account": "Sign in as the invited address to accept this invitation.",
+    "no_local_password": "This account has no password; the flag applies to local sign-in alone.",
     "self": "your own account",
     "not_found": "no longer exists",
     "not_a_member": "not a member of that organization",
@@ -591,6 +595,16 @@
       "search": "Search users",
       "notFound": "User not found",
       "placeholder": "User",
+      "record": {
+        "profile": "Profile",
+        "signIn": "Sign-in",
+        "passwordChange": "Require a password change at next sign-in",
+        "passwordChangeHint": "The person is sent to choose a new password the next time they sign in; their application sessions and remembered logins end, and they are told by inbox notice and email.",
+        "passwordChangeSaved": "Sign-in saved.",
+        "emailTitle": "Change the email address",
+        "emailSaved": "Email address saved.",
+        "stepUpReason": "Changing another person's account changes how they sign in."
+      },
       "filter": {
         "status": "Status",
         "tfa": "2FA on",

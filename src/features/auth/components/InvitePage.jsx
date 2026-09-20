@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
+import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { authShape, returnToShape } from '../../../utils/auth';
 import { isMember } from '../../../utils/membership';
@@ -12,7 +13,9 @@ import { isMember } from '../../../utils/membership';
  * validates the token through `auth.validateInvitation`, sends a visitor
  * to sign in or register, refuses an account the invitation was not
  * addressed to, and accepts through `auth.acceptInvitation`, making the
- * organization active and refreshing the session.
+ * organization active and refreshing the session; a refused accept paints
+ * its `code` (`invite_wrong_account`, sign in as the invited address)
+ * before the status line.
  */
 const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
   const { t } = useTranslation();
@@ -68,7 +71,7 @@ const InvitePage = ({ session, returnTo, auth, activeOrgKey }) => {
       window.location.href = `/${org}`;
     } catch (err) {
       setAccepting(false);
-      notify('danger', t(err.messageKey || 'errors.request'));
+      notify('danger', t(errorKeys(err)));
     }
   };
 

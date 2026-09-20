@@ -112,16 +112,16 @@ export const placesKey = () => client.get('/api/config/places');
  * The identity provider's `account` adapter for a guest-only account, the
  * shared download login: the same record read, `readOnly` so every
  * section draws its fields with no write control and no Manage link (the
- * issuer is the record's home), the Places key for the address block's
- * display and the preferences write alone, theme and language being the
- * browser's; every credential, passkey, second-factor, session and
- * deletion call is absent, so the page draws none of their sections.
+ * issuer is the record's home) and the Places key for the address block's
+ * display; the issuer refuses every self-write for it, the preferences
+ * write included, so theme and language stay the browser's and every
+ * credential, passkey, second-factor, session and deletion call is
+ * absent, the page drawing none of their sections.
  */
 export const issuerGuestAccount = {
   profile,
   mutability: 'readOnly',
   places: placesKey,
-  preferences: savePreferences,
 };
 
 export const issuerAccount = {

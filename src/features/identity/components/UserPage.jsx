@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ import {
   userColumns,
   usersAdapterShape,
 } from './UserActions';
+import UserRecord from './UserRecord';
 import { useRoleCatalog } from './UsersDialogs';
 
 const LIST_PATH = '/admin/users';
@@ -37,20 +39,23 @@ const rowsOf = (row, ctx) =>
  * drawing a `SectionHeading` titled by the username with the status badge
  * and, in its action pane, the row actions the Users page draws, then the
  * record's rows from the table's own columns, each drawn only while the
- * row carries the field; every action re-reads the record, the delete
- * returning to the list, and an id the adapter answers not found with
- * draws the shared empty state.
+ * row carries the field, then the editable `UserRecord` sections where
+ * the adapter writes another account, remounted on every save; every
+ * action re-reads the record, the delete returning to the list, and an
+ * id the adapter answers not found with draws the shared empty state.
  */
-const UserPage = ({ adapter }) => {
+const UserPage = ({ adapter, viewer = null }) => {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const catalog = useRoleCatalog(adapter.roles);
+  const [version, setVersion] = useState(0);
   const { data, loading, reload } = useAdminRead({
     read: () => adapter.get(id),
     example: null,
-    key: id,
+    key: `${id}:${version}`,
   });
+  const saved = () => setVersion(current => current + 1);
   const { open, close, onAction, confirmDelete } = useUserActions({
     adapter,
     reload,
@@ -77,6 +82,7 @@ const UserPage = ({ adapter }) => {
         actions={<RowActions user={data} adapter={adapter} onAction={onAction} />}
       />
       <RecordRows rows={rowsOf(data, ctx)} />
+      <UserRecord key={version} user={data} adapter={adapter} viewer={viewer} onSaved={saved} />
       <UserDialogs
         open={open}
         adapter={adapter}
@@ -91,6 +97,7 @@ const UserPage = ({ adapter }) => {
 
 UserPage.propTypes = {
   adapter: usersAdapterShape.isRequired,
+  viewer: PropTypes.shape({ email: PropTypes.string }),
 };
 
 export default UserPage;

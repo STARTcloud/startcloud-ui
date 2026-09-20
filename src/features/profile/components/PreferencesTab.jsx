@@ -58,10 +58,34 @@ const languageName = code => {
 };
 
 const settingsOf = preferences => ({
+  language: preferences?.language || '',
+  theme: preferences?.theme || 'auto',
   timezone: preferences?.timezone || '',
   region: preferences?.region || '',
   ciba_channel: preferences?.ciba_channel || 'PUSH',
 });
+
+const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
+  const patch = { ciba_channel: settings.ciba_channel };
+  if (settings.timezone && settings.timezone !== (preferences.timezone || '')) {
+    patch.timezone = settings.timezone;
+  }
+  if (settings.region !== (preferences.region || '')) {
+    patch.region = settings.region || null;
+  }
+  if (!own) {
+    patch.language = settings.language;
+    patch.theme = settings.theme;
+    return patch;
+  }
+  if (pin) {
+    patch.ciba_user_code = pin;
+  }
+  if (clearPin) {
+    patch.ciba_user_code = null;
+  }
+  return patch;
+};
 
 const supportedLanguages = i18n =>
   (Array.isArray(i18n.options.supportedLngs) ? i18n.options.supportedLngs : []).filter(
@@ -149,10 +173,63 @@ ReadOnlyPreferences.propTypes = {
   }).isRequired,
 };
 
+const PinField = ({ rules, pin, pinSet, pinRef, onPin, onSet, onClear }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {pinSet ? <p className="small text-muted mb-1">{t('profile.preferences.pinSet')}</p> : null}
+      <Field
+        id={rules.idFor('ciba_user_code')}
+        label={t('profile.preferences.pin')}
+        hint={t('profile.preferences.pinHint')}
+        error={rules.errors.ciba_user_code || ''}
+      >
+        {aria => (
+          <div className="input-group">
+            <input
+              {...aria}
+              ref={pinRef}
+              type="password"
+              className="form-control"
+              autoComplete="off"
+              placeholder={t('profile.preferences.pinPlaceholder')}
+              value={pin}
+              onChange={event => onPin(event.target.value)}
+              onBlur={() => rules.onBlur('ciba_user_code')}
+            />
+            <button type="button" className="btn btn-outline-secondary" onClick={onSet}>
+              {t('profile.preferences.set')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onClear}
+              disabled={!pinSet}
+            >
+              {t('profile.preferences.clear')}
+            </button>
+          </div>
+        )}
+      </Field>
+    </>
+  );
+};
+
+PinField.propTypes = {
+  rules: PropTypes.object.isRequired,
+  pin: PropTypes.string.isRequired,
+  pinSet: PropTypes.bool.isRequired,
+  pinRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
+  onPin: PropTypes.func.isRequired,
+  onSet: PropTypes.func.isRequired,
+  onClear: PropTypes.func.isRequired,
+};
+
 const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const { preference: themePreference, setPreference: setThemePreference } = useTheme();
+  const own = session !== null;
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
   const [settings, setSettings] = useState(() => settingsOf(preferences));
@@ -197,8 +274,20 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const set = (field, value) => setSettings(previous => ({ ...previous, [field]: value }));
 
   const changeLanguage = async language => {
+    if (!own) {
+      set('language', language);
+      return;
+    }
     session.savePreferences({ language });
     await i18n.changeLanguage(language);
+  };
+
+  const changeTheme = theme => {
+    if (!own) {
+      set('theme', theme);
+      return;
+    }
+    setThemePreference(theme);
   };
 
   const setPinMode = () => {
@@ -217,21 +306,8 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
     if (!rules.validateAll()) {
       return;
     }
-    const patch = { ciba_channel: settings.ciba_channel };
-    if (settings.timezone && settings.timezone !== (preferences.timezone || '')) {
-      patch.timezone = settings.timezone;
-    }
-    if (settings.region !== (preferences.region || '')) {
-      patch.region = settings.region || null;
-    }
-    if (pin) {
-      patch.ciba_user_code = pin;
-    }
-    if (clearPin) {
-      patch.ciba_user_code = null;
-    }
     try {
-      await account.preferences(patch);
+      await account.preferences(patchOf({ settings, preferences, pin, clearPin, own }));
       setPin('');
       setClearPin(false);
       rules.reset();
@@ -267,8 +343,8 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               <SelectField
                 id="profile-preferences-language"
                 label={t('profile.preferences.language')}
-                hint={t('profile.preferences.languageHint')}
-                value={i18n.language}
+                hint={own ? t('profile.preferences.languageHint') : ''}
+                value={own ? i18n.language : settings.language || i18n.language}
                 onChange={event => changeLanguage(event.target.value)}
               >
                 {languages.map(code => (
@@ -282,9 +358,9 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               <SelectField
                 id="profile-preferences-theme"
                 label={t('profile.preferences.theme.label')}
-                hint={t('profile.preferences.themeHint')}
-                value={themePreference}
-                onChange={event => setThemePreference(event.target.value)}
+                hint={own ? t('profile.preferences.themeHint') : ''}
+                value={own ? themePreference : settings.theme}
+                onChange={event => changeTheme(event.target.value)}
               >
                 {THEMES.map(theme => (
                   <option key={theme} value={theme}>
@@ -353,48 +429,19 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
                 ))}
               </SelectField>
             </div>
-            <div className="col-md-6">
-              {pinSet ? (
-                <p className="small text-muted mb-1">{t('profile.preferences.pinSet')}</p>
-              ) : null}
-              <Field
-                id={rules.idFor('ciba_user_code')}
-                label={t('profile.preferences.pin')}
-                hint={t('profile.preferences.pinHint')}
-                error={rules.errors.ciba_user_code || ''}
-              >
-                {aria => (
-                  <div className="input-group">
-                    <input
-                      {...aria}
-                      ref={pinRef}
-                      type="password"
-                      className="form-control"
-                      autoComplete="off"
-                      placeholder={t('profile.preferences.pinPlaceholder')}
-                      value={pin}
-                      onChange={event => setPin(event.target.value)}
-                      onBlur={() => rules.onBlur('ciba_user_code')}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={setPinMode}
-                    >
-                      {t('profile.preferences.set')}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={clearPinMode}
-                      disabled={!pinSet}
-                    >
-                      {t('profile.preferences.clear')}
-                    </button>
-                  </div>
-                )}
-              </Field>
-            </div>
+            {own ? (
+              <div className="col-md-6">
+                <PinField
+                  rules={rules}
+                  pin={pin}
+                  pinSet={pinSet}
+                  pinRef={pinRef}
+                  onPin={setPin}
+                  onSet={setPinMode}
+                  onClear={clearPinMode}
+                />
+              </div>
+            ) : null}
           </div>
           <button type="submit" className="btn btn-primary">
             {t('profile.preferences.save')}
@@ -411,7 +458,7 @@ EditablePreferences.propTypes = {
     preferences: PropTypes.object,
     mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
   }).isRequired,
-  session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }).isRequired,
+  session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }),
   folds: PropTypes.shape({
     folded: PropTypes.func.isRequired,
     toggle: PropTypes.func.isRequired,
@@ -442,9 +489,13 @@ EditablePreferences.propTypes = {
  * identity provider owns, the language, theme, time zone and region draw
  * as `readonly` fields in the same card with the Manage at identity
  * provider link as its action, the approval channel and PIN being the
- * issuer's own and not drawn.
+ * issuer's own and not drawn. Without a `session`, the record another
+ * person's on the admin record page, language and theme are the record's
+ * own values saved with the rest through `account.preferences` and never
+ * the viewer's chrome, and the PIN is not drawn because the admin route
+ * takes none.
  */
-const PreferencesTab = ({ account, profile, session, readOnly, onSaved }) => {
+const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null }) => {
   const folds = useFolds(PREFS_KEY);
   if (readOnly) {
     return <ReadOnlyPreferences account={account} profile={profile} folds={folds} />;
@@ -466,7 +517,7 @@ PreferencesTab.propTypes = {
     preferences: PropTypes.object,
     mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
   }).isRequired,
-  session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }).isRequired,
+  session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }),
   readOnly: PropTypes.bool.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
