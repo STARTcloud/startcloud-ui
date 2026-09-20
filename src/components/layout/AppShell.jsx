@@ -346,15 +346,17 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * its Preferences row an in-router link to `/user/profile/preferences`,
  * the one destination drawn in both the column and the menu; while the
  * host advertises `discover` the cluster carries Discover, an in-router
- * link to the discovery page drawn as the compass cluster button in both
- * states, after the search control while signed in; while signed out the
- * left of the bar holds the brand alone and the cluster is Discover, the
- * ticket icon (the ticket link the app supplies, built from the fallback
- * customer id alone, in a new tab, drawn only while there is a ticket
- * system), language, theme and Sign in, with no search icon because
- * app-wide search needs a session; signed in, the search icon, its box
- * and the panel under the bar draw only while the host lists `search`,
- * a host without the token drawing none of them. The app supplies
+ * link to the discovery page drawn as the compass cluster button; the
+ * cluster keeps one order in both states, search, Discover, the ticket
+ * icon, theme, language, then the account menu or Sign in, each control
+ * drawn only in the state it belongs to: signed out the left of the bar
+ * holds the brand alone and the cluster is Discover, the ticket icon
+ * (the ticket link the app supplies, built from the fallback customer id
+ * alone, in a new tab, drawn only while there is a ticket system), theme,
+ * language and Sign in, with no search icon because app-wide search
+ * needs a session; signed in, the search icon, its box and the panel
+ * under the bar draw only while the host lists `search`, a host without
+ * the token drawing none of them. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries and the menu rows the host's

@@ -285,9 +285,14 @@ their own server; browser-direct is permitted, not assumed.
 **The shared UI never calls the branding endpoint.** A UI backend that
 wants a pack names it in its own `/api/status` as
 `brand.pack: { name, css }`, `name` the bare pack name for `data-brand`
-and `css` the stylesheet URL, resolved by the UI
-backend's server from its local configuration or from the endpoint above;
-the shell stamps `data-brand` and appends the `<link>` from that member
+and `css` the stylesheet URL, resolved by the UI backend's server from
+the endpoint above whenever the backend is tied to an identity provider
+(its status names `idp`), for its own client id, along with the site's
+default variant and brand metadata, cached on the endpoint's five-minute
+clock, and from its local configuration only on a standalone install
+with no identity provider, so every app of one site paints the site's
+pack and no app copies a pack name into its own config by hand; the
+shell stamps `data-brand` and appends the `<link>` from that member
 alone, and a payload without it stamps nothing. A UI backend that rewrites
 `index.html` per site stamps the same two values into the file and
 answers the same `brand.pack`, so the shell finds them present and

@@ -130,6 +130,53 @@ ThemeButton.propTypes = {
   theme: themeShape.isRequired,
 };
 
+/**
+ * The account cluster in one order for both states, search, Discover, the
+ * ticket icon, theme, language, then the account menu or Sign in, each
+ * control drawn only in the state it belongs to: search and the menu
+ * signed in, the ticket icon and Sign in signed out, the rest in both.
+ */
+const Cluster = ({
+  signedIn,
+  discoverTo,
+  ticketUrl,
+  theme,
+  language,
+  userMenu,
+  onSignIn,
+  signInTo,
+  LinkComponent,
+}) => (
+  <ul className="nav nav-pills ms-auto align-items-center">
+    {signedIn ? <NavbarSearchControl /> : null}
+    {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
+    {!signedIn && ticketUrl ? <TicketButton href={ticketUrl} /> : null}
+    <ThemeButton theme={theme} />
+    <LanguageButton languages={language.languages} onPick={language.onPick} />
+    {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
+    {!signedIn && (onSignIn || signInTo) ? (
+      <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
+    ) : null}
+  </ul>
+);
+
+const languageShape = PropTypes.shape({
+  languages: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onPick: PropTypes.func.isRequired,
+});
+
+Cluster.propTypes = {
+  signedIn: PropTypes.bool.isRequired,
+  discoverTo: PropTypes.string.isRequired,
+  ticketUrl: PropTypes.string.isRequired,
+  theme: themeShape.isRequired,
+  language: languageShape.isRequired,
+  userMenu: PropTypes.object,
+  onSignIn: PropTypes.func,
+  signInTo: PropTypes.string.isRequired,
+  LinkComponent: PropTypes.elementType.isRequired,
+};
+
 const Header = ({
   brand = null,
   crumbs = [],
@@ -167,25 +214,17 @@ const Header = ({
           ) : null}
         </ul>
 
-        {signedIn ? (
-          <ul className="nav nav-pills ms-auto align-items-center">
-            <NavbarSearchControl />
-            {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
-            <ThemeButton theme={theme} />
-            <LanguageButton languages={language.languages} onPick={language.onPick} />
-            {userMenu ? <UserMenu {...userMenu} /> : null}
-          </ul>
-        ) : (
-          <ul className="nav nav-pills ms-auto align-items-center">
-            {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
-            {ticketUrl ? <TicketButton href={ticketUrl} /> : null}
-            <LanguageButton languages={language.languages} onPick={language.onPick} />
-            <ThemeButton theme={theme} />
-            {onSignIn || signInTo ? (
-              <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
-            ) : null}
-          </ul>
-        )}
+        <Cluster
+          signedIn={signedIn}
+          discoverTo={discoverTo}
+          ticketUrl={ticketUrl}
+          theme={theme}
+          language={language}
+          userMenu={userMenu}
+          onSignIn={onSignIn}
+          signInTo={signInTo}
+          LinkComponent={LinkComponent}
+        />
       </div>
       <NoticeBanners LinkComponent={LinkComponent} />
       <NavbarSearchPanel />
@@ -198,10 +237,7 @@ Header.propTypes = {
   crumbs: PropTypes.arrayOf(crumbShape),
   LinkComponent: PropTypes.elementType,
   theme: themeShape.isRequired,
-  language: PropTypes.shape({
-    languages: PropTypes.arrayOf(PropTypes.string).isRequired,
-    onPick: PropTypes.func.isRequired,
-  }).isRequired,
+  language: languageShape.isRequired,
   signedIn: PropTypes.bool.isRequired,
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
