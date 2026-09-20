@@ -9,7 +9,7 @@ export const tfaState = method =>
 export const sendTfa = () => client.post('/api/auth/tfa/send', null, OPTIONS);
 
 export const verifyTfa = ({ code, tfaMethod }) =>
-  client.post('/authenticator', new URLSearchParams({ code, tfaMethod }), FORM);
+  client.post('/authenticator', new URLSearchParams({ code, tfa_method: tfaMethod }), FORM);
 
 export const resendTfa = () => client.post('/resend-tfa', null, OPTIONS);
 
@@ -18,6 +18,9 @@ export const tfaMethods = () => client.get('/api/auth/tfa/methods', OPTIONS);
 export const pickTfaMethod = ({ tfaMethod, authenticatorId }) =>
   client.post(
     '/authenticator-method',
-    new URLSearchParams({ tfaMethod, ...(authenticatorId ? { authenticatorId } : {}) }),
+    new URLSearchParams({
+      tfa_method: tfaMethod,
+      ...(authenticatorId ? { authenticator_id: authenticatorId } : {}),
+    }),
     FORM
   );
