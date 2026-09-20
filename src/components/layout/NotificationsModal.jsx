@@ -169,7 +169,7 @@ const NotificationsModal = ({
   }, [show, notifications]);
 
   const markRead = async entry => {
-    if (entry.readAt) {
+    if (entry.read_at) {
       return;
     }
     try {
@@ -177,7 +177,7 @@ const NotificationsModal = ({
       onUnreadDelta(-1);
       setEntries(prev =>
         prev.map(item =>
-          item.id === entry.id ? { ...item, readAt: new Date().toISOString() } : item
+          item.id === entry.id ? { ...item, read_at: new Date().toISOString() } : item
         )
       );
     } catch {
@@ -204,7 +204,7 @@ const NotificationsModal = ({
     try {
       await notifications.remove(entry.id);
       setEntries(prev => prev.filter(item => item.id !== entry.id));
-      if (!entry.readAt) {
+      if (!entry.read_at) {
         onUnreadDelta(-1);
       }
     } catch {
@@ -217,7 +217,7 @@ const NotificationsModal = ({
       await notifications.markAllRead();
       onUnreadDelta(-Infinity);
       setEntries(prev =>
-        prev.map(item => (item.readAt ? item : { ...item, readAt: new Date().toISOString() }))
+        prev.map(item => (item.read_at ? item : { ...item, read_at: new Date().toISOString() }))
       );
     } catch {
       notify('danger', t('inbox.markAllReadError'));

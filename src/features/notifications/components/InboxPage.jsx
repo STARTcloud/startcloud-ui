@@ -31,7 +31,7 @@ const FILTER_GROUPS = [
   {
     key: 'read',
     labelKey: 'inbox.filter.status',
-    values: row => [row.readAt ? 'read' : 'unread'],
+    values: row => [row.read_at ? 'read' : 'unread'],
     order: ['unread', 'read'],
     activeClass: 'bg-primary',
     labelFor: (value, t) => t(`inbox.filter.${value}`),
@@ -75,7 +75,7 @@ const runBulk = async (rows, call) => {
 };
 
 const TitleCell = ({ entry, onSelect }) => {
-  const unread = !entry.readAt;
+  const unread = !entry.read_at;
   const weight = unread ? ' fw-semibold' : '';
   return (
     <span className="d-inline-flex align-items-start gap-2">
@@ -121,10 +121,10 @@ const columns = [
     key: 'time',
     kind: 'relative',
     labelKey: 'inbox.columns.time',
-    sortValue: row => new Date(row.createdAt || 0).getTime(),
+    sortValue: row => new Date(row.created_at || 0).getTime(),
     render: (row, ctx) => (
-      <span title={absoluteTime(row.createdAt, ctx.language)}>
-        {formatRelativeTime(row.createdAt, ctx.language)}
+      <span title={absoluteTime(row.created_at, ctx.language)}>
+        {formatRelativeTime(row.created_at, ctx.language)}
       </span>
     ),
   },
@@ -149,7 +149,7 @@ const RowActions = ({ entry, onMarkRead, onSelect, onDismiss }) => {
   const { t } = useTranslation();
   return (
     <>
-      {entry.readAt ? null : (
+      {entry.read_at ? null : (
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
@@ -216,12 +216,12 @@ const useBulkActions = ({
     const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
       notifications.markRead(entry.id)
     );
-    const newlyRead = succeeded.filter(entry => !entry.readAt);
+    const newlyRead = succeeded.filter(entry => !entry.read_at);
     if (newlyRead.length > 0) {
       adjustUnread(-newlyRead.length);
       const ids = new Set(newlyRead.map(entry => entry.id));
       setEntries(previous =>
-        previous.map(item => (ids.has(item.id) ? { ...item, readAt: readNow() } : item))
+        previous.map(item => (ids.has(item.id) ? { ...item, read_at: readNow() } : item))
       );
     }
     setBulkResult({ processed, skipped, errors });
@@ -233,12 +233,12 @@ const useBulkActions = ({
     const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
       notifications.markUnread(entry.id)
     );
-    const newlyUnread = succeeded.filter(entry => entry.readAt);
+    const newlyUnread = succeeded.filter(entry => entry.read_at);
     if (newlyUnread.length > 0) {
       adjustUnread(newlyUnread.length);
       const ids = new Set(newlyUnread.map(entry => entry.id));
       setEntries(previous =>
-        previous.map(item => (ids.has(item.id) ? { ...item, readAt: null } : item))
+        previous.map(item => (ids.has(item.id) ? { ...item, read_at: null } : item))
       );
     }
     setBulkResult({ processed, skipped, errors });
@@ -250,7 +250,7 @@ const useBulkActions = ({
     const { succeeded, processed, skipped, errors } = await runBulk(picked, entry =>
       notifications.remove(entry.id)
     );
-    const unreadDeleted = succeeded.filter(entry => !entry.readAt).length;
+    const unreadDeleted = succeeded.filter(entry => !entry.read_at).length;
     if (unreadDeleted > 0) {
       adjustUnread(-unreadDeleted);
     }
@@ -389,14 +389,14 @@ const InboxPage = ({ notifications }) => {
   }, [load]);
 
   const markRead = async entry => {
-    if (entry.readAt) {
+    if (entry.read_at) {
       return;
     }
     try {
       await notifications.markRead(entry.id);
       adjustUnread(-1);
       setEntries(previous =>
-        previous.map(item => (item.id === entry.id ? { ...item, readAt: readNow() } : item))
+        previous.map(item => (item.id === entry.id ? { ...item, read_at: readNow() } : item))
       );
     } catch (error) {
       notify('danger', t(error.messageKey || 'errors.request'));
@@ -420,7 +420,7 @@ const InboxPage = ({ notifications }) => {
   const dismiss = async entry => {
     try {
       await notifications.remove(entry.id);
-      if (!entry.readAt) {
+      if (!entry.read_at) {
         adjustUnread(-1);
       }
       await load();
@@ -434,7 +434,7 @@ const InboxPage = ({ notifications }) => {
       await notifications.markAllRead();
       adjustUnread(-Infinity);
       setEntries(previous =>
-        previous.map(item => (item.readAt ? item : { ...item, readAt: readNow() }))
+        previous.map(item => (item.read_at ? item : { ...item, read_at: readNow() }))
       );
     } catch (error) {
       notify('danger', t(error.messageKey || 'errors.request'));

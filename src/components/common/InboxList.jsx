@@ -41,8 +41,8 @@ export const notificationShape = PropTypes.shape({
   type: PropTypes.string,
   severity: PropTypes.string,
   navigate: PropTypes.string,
-  createdAt: PropTypes.string,
-  readAt: PropTypes.string,
+  created_at: PropTypes.string,
+  read_at: PropTypes.string,
 });
 
 /**
@@ -63,7 +63,7 @@ export const linkOf = entry => followableUrl(entry?.navigate);
 /**
  * A row's time in the viewer's locale, the tooltip behind the relative
  * time, empty for a value that does not parse.
- * @param {string} value - The row's `createdAt`
+ * @param {string} value - The row's `created_at`
  * @param {string} language - The i18n language
  * @returns {string} The absolute time, or empty
  */
@@ -99,7 +99,7 @@ NotificationGlyph.propTypes = {
  */
 export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels }) => {
   const { i18n } = useTranslation();
-  const unread = !entry.readAt;
+  const unread = !entry.read_at;
 
   return (
     <div className="notification-row">
@@ -119,9 +119,9 @@ export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels
           {entry.body ? <span className="notification-item-text">{entry.body}</span> : null}
           <span
             className="notification-item-time"
-            title={absoluteTime(entry.createdAt, i18n.language)}
+            title={absoluteTime(entry.created_at, i18n.language)}
           >
-            {formatRelativeTime(entry.createdAt, i18n.language)}
+            {formatRelativeTime(entry.created_at, i18n.language)}
           </span>
         </span>
         {unread ? <span className="notification-item-dot" /> : null}
