@@ -25,7 +25,9 @@ const LABELS = { password: 'auth:onboarding.password', confirm: 'auth:onboarding
  * `next` is itself, then draws the password step: "Welcome, {{name}}.",
  * the password with its reveal and the passphrase generator, the
  * confirmation as the page's `equals` rule, a hidden username field
- * carrying the address, and one Continue.
+ * carrying the address, and one Continue; the "choose a password" subhead
+ * is drawn only once the state says the password step is the one owed,
+ * the spinner standing alone under "Welcome." until then.
  */
 const OnboardingHub = ({ returnTo }) => {
   const { t } = useTranslation(['auth']);
@@ -69,7 +71,7 @@ const OnboardingHub = ({ returnTo }) => {
       title={
         firstName ? t('onboarding.welcome', { name: firstName }) : t('onboarding.welcomePlain')
       }
-      subtitle={t('onboarding.subhead')}
+      subtitle={here ? t('onboarding.subhead') : ''}
       problem={problem}
     >
       <form className="auth-form" onSubmit={submit} noValidate>

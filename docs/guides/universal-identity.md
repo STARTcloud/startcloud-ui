@@ -1087,6 +1087,12 @@ from every step; it becomes the one `401` code.
   manager pairs the new password with the account, and one button,
   "Continue", because the dots say how far the chain goes and a button
   that says "Complete setup" before the email or organization step lies.
+  The "choose a password" subhead is drawn only once the state names the
+  hub as `next`; until the state answers, the heading stands over the
+  spinner alone. The state read follows a `403` gate that carries `next`
+  (`terms_required`, `onboarding_required`) the way the session follows
+  one elsewhere, and a `403` `not_pending` means the onboarding is over
+  and goes to `/`, so the hub never spins on a problem answer.
   Every step page draws the step dots from `steps` and `done`, each dot
   labeled "Step n of m" with a hidden step name so a screen reader hears
   the progress, moves focus to its heading when it appears, and a

@@ -1,7 +1,7 @@
 import { httpsUrl } from '../components/common/MethodList';
 
 import { createApiClient } from './apiClient';
-import { isPendingGate } from './gates';
+import { isPendingGate, pendingGateNext } from './gates';
 
 const DISPLAY_FIELDS = ['name', 'email', 'picture', 'roles', 'organizations', 'has_local_auth'];
 const DROPPED_KEYS = [
@@ -157,8 +157,8 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
 
   const followPendingGate = error => {
     store(error.data);
-    const next = typeof error.data?.next === 'string' ? error.data.next : '';
-    if (!navigateHolder || !SAFE_PATH.test(next) || window.location.pathname === next) {
+    const next = pendingGateNext(error);
+    if (!navigateHolder || !next || window.location.pathname === next) {
       return;
     }
     navigateHolder(next, { replace: true });

@@ -3,11 +3,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useProblemReporter } from '../../hooks/useProblemReporter';
+import { isNotPending, isPendingGate, pendingGateNext } from '../../lib/gates';
 import { followNext } from '../../lib/next';
 
 import { onboardingState } from './api/onboarding';
 
 const SESSION_EXPIRED = '/login?error=session_expired';
+
+const gateDestination = error => {
+  if (isPendingGate(error)) {
+    return pendingGateNext(error);
+  }
+  return isNotPending(error) ? '/' : '';
+};
 
 export const onboardingShape = PropTypes.shape({
   next: PropTypes.string.isRequired,
@@ -42,7 +50,11 @@ export const onboardingShape = PropTypes.shape({
  * The one state call every step page reads, `GET /api/auth/onboarding`,
  * fetched on mount and again through `reload`: the answer, or null while
  * it is on its way or after a failure; a `401` sends the visitor to
- * `/login?error=session_expired`, any other failure raises one danger card.
+ * `/login?error=session_expired`, a `403` gate carrying `next`
+ * (`terms_required`, `onboarding_required`) moves the page there the way
+ * the session follows a gate elsewhere, a `403` `not_pending` means the
+ * onboarding is over and goes home, and any other failure raises one
+ * danger card.
  *
  * @returns {{ state: Object|null, failed: boolean, reload: Function }}
  */
@@ -63,6 +75,11 @@ export const useOnboarding = () => {
         .catch(error => {
           if (error.status === 401) {
             navigate(SESSION_EXPIRED, { replace: true });
+            return null;
+          }
+          const destination = gateDestination(error);
+          if (destination) {
+            navigate(destination, { replace: true });
             return null;
           }
           report(error);
