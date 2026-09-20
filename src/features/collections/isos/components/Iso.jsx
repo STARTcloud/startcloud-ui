@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCheck, FaGlobe, FaLock, FaPen, FaTrash, FaXmark } from 'react-icons/fa6';
+import { FaCheck, FaPen, FaTrash, FaXmark } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -362,14 +362,11 @@ export const IsoItemActions = ({ item, ctx }) => {
     }
     return (
       <>
-        <button
-          type="button"
+        <VisibilityStep
+          value={{ is_public: item.isPublic, guest_access: item.guestAccess }}
+          onChange={pair => update(pair, 'Error updating ISO visibility')}
           className="btn btn-outline-secondary me-2"
-          onClick={() => update({ is_public: !iso.is_public }, 'Error updating ISO visibility')}
-        >
-          {iso.is_public ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
-          {t(iso.is_public ? 'boxes.iso.makePrivate' : 'boxes.iso.makePublic')}
-        </button>
+        />
         <button
           type="button"
           className={`btn ${iso.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}

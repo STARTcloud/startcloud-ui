@@ -2591,7 +2591,7 @@
             </div>
           </div>
           <div class="actions">
-            <span class="btn">Make public</span><span class="btn warning">Unpublish</span
+            <span class="btn">Make guest</span><span class="btn warning">Unpublish</span
             ><span class="btn">Rename</span><span class="btn danger">Delete</span
             ><span class="btn dark">Back</span>
           </div>
@@ -2630,11 +2630,12 @@
         item-level artifact.
       </div>
       <div class="callout">
-        <strong>Slots:</strong> Make public / Make private, Publish / Unpublish, Rename and Delete
-        are BoxVault's ISO actions in the page's <code>ItemActions</code> slot, gated by org
-        admin/owner as today; Add Version, the version row actions, the upload zone and the artifact
-        row actions are the same slots a box fills; an unpublished ISO is visible to members only,
-        exactly as a pending box; the catalog passes none.
+        <strong>Slots:</strong> the visibility step (Make guest, Make public, Make private, one
+        button naming the next state), Publish / Unpublish, Rename and Delete are BoxVault's ISO
+        actions in the page's <code>ItemActions</code> slot, gated by org admin/owner as today; Add
+        Version, the version row actions, the upload zone and the artifact row actions are the same
+        slots a box fills; an unpublished ISO is visible to members only, exactly as a pending box;
+        the catalog passes none.
       </div>
     </div>
   </div>
@@ -5752,7 +5753,7 @@ architecture { name, defaultBox, fileName, fileSize, checksum, checksumType,
       var names = Object.keys(s.versions);
       var manage = org.member
         ? '<span class="btn">' +
-          (s.pub ? 'Make private' : 'Make public') +
+          (s.pub ? 'Make private' : s.guests ? 'Make public' : 'Make guest') +
           '</span><span class="btn warning">' +
           (s.published ? 'Unpublish' : 'Publish') +
           '</span><span class="btn">Rename</span><span class="btn danger">Delete</span>'

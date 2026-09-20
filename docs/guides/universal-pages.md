@@ -755,7 +755,7 @@ adds its own foldable section to an item page (the catalog's Quality).
   `ItemSections` slot. The ISO page is the same component with
   `hasVersions: true`, the ISO gaining the same fields as a box, its
   versions table carrying the artifacts column instead of providers; its
-  actions (Make public / Make private, Publish / Unpublish, Rename,
+  actions (the visibility step, Publish / Unpublish, Rename,
   Delete) are the `ItemActions` slot, and Add Version, the version row
   actions, the artifact upload zone and the artifact row actions are the
   same slots a box fills.
@@ -787,7 +787,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   shared `VisibilityPicker` and nothing else drawn in it, three radios,
   Public, Guests and Private, writing the pair `is_public` and
   `guest_access`, the one visibility control every create and edit form
-  of the boxes, ISOs and downloads collections draws too; the place body
+  of the boxes, ISOs and downloads collections draws too, and the item
+  page's action row carries the same pair as one button, the visibility
+  step, `VisibilityStep` beside the picker, which names the next state
+  of Private, Guests, Public and round again (Make guest, Make public,
+  Make private) and writes the pair in one click with no edit form, the
+  same button on the box, ISO and product pages; the place body
   carries the pair and the route applies it only to a product the place
   creates; no
   downloads page carries a second add and no record is created by a form

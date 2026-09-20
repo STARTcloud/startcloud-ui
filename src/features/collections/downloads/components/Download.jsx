@@ -1,12 +1,11 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaGlobe, FaLock } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -292,14 +291,11 @@ export const DownloadItemActions = ({ item, ctx }) => {
 
   return (
     <>
-      <button
-        type="button"
+      <VisibilityStep
+        value={{ is_public: item.isPublic, guest_access: item.guestAccess }}
+        onChange={pair => update(pair, 'Error updating download visibility')}
         className="btn btn-outline-secondary me-2"
-        onClick={() => update({ is_public: !item.isPublic }, 'Error updating download visibility')}
-      >
-        {item.isPublic ? <FaLock className="me-2" /> : <FaGlobe className="me-2" />}
-        {t(item.isPublic ? 'downloads.actions.makePrivate' : 'downloads.actions.makePublic')}
-      </button>
+      />
       <button
         type="button"
         className={`btn ${item.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}

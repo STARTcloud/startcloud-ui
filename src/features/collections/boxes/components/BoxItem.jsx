@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { copyToClipboard } from '../../../../lib/clipboard';
@@ -565,15 +565,17 @@ export const BoxItemActions = ({ item, ctx }) => {
     rules.reset();
   };
 
-  const publish = published => {
+  const update = (fields, message) => {
     api.boxes
-      .update(org, box.name, { published })
+      .update(org, box.name, fields)
       .then(reload)
       .catch(error => {
-        log.api.error('Error updating box release status', { error: error.message });
+        log.api.error(message, { boxName: box.name, error: error.message });
         notify('danger', t(error.messageKey || 'errors.request'));
       });
   };
+
+  const publish = published => update({ published }, 'Error updating box release status');
 
   const remove = () => {
     api.boxes
@@ -605,6 +607,14 @@ export const BoxItemActions = ({ item, ctx }) => {
     </>
   );
 
+  const visibilityButton = (
+    <VisibilityStep
+      value={{ is_public: item.isPublic, guest_access: item.guestAccess }}
+      onChange={pair => update(pair, 'Error updating box visibility')}
+      className="btn btn-outline-secondary me-2"
+    />
+  );
+
   const publishButton = box.published ? (
     <button type="button" className="btn btn-warning me-2" onClick={() => publish(false)}>
       {t('boxes.box.unpublish')}
@@ -618,8 +628,9 @@ export const BoxItemActions = ({ item, ctx }) => {
   return (
     <>
       <DeployGlyph user={user} item={item} version={deployableVersion(item.versions)} />
-      {manage ? editButtons : null}
+      {manage && !editing ? visibilityButton : null}
       {manage ? publishButton : null}
+      {manage ? editButtons : null}
       <Link className="btn btn-dark me-2" to={`/${org}`}>
         {t('boxes.actions.backToFiles')}
       </Link>

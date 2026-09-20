@@ -1886,6 +1886,11 @@
       "private": "Privado",
       "deprecated": "Obsoleta"
     },
+    "visibility": {
+      "public": "Hacer público",
+      "guests": "Hacer de invitados",
+      "private": "Hacer privado"
+    },
     "item": {
       "details": "Detalles",
       "facts": "Datos",
@@ -2116,8 +2121,6 @@
       "done": "El archivo se subió."
     },
     "actions": {
-      "makePublic": "Hacer público",
-      "makePrivate": "Hacer privado",
       "publish": "Publicar",
       "unpublish": "Despublicar",
       "docs": "Documentación",
@@ -2270,8 +2273,6 @@
       "visibilityHint": "Público abre la ISO a todos, Invitados a los invitados y miembros de la organización, Privado solo a sus miembros.",
       "deleteTitle": "Eliminar ISO",
       "deleteMessage": "¿Seguro que quieres eliminar {{name}}?",
-      "makePublic": "Hacer pública",
-      "makePrivate": "Hacer privada",
       "publish": "Publicar",
       "unpublish": "Despublicar"
     },
