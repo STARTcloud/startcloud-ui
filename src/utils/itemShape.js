@@ -223,6 +223,7 @@ export const bulkActionShape = PropTypes.shape({
   labelKey: PropTypes.string.isRequired,
   variant: PropTypes.string.isRequired,
   confirm: PropTypes.bool.isRequired,
+  opens: PropTypes.bool,
 });
 
 export const collectionShape = PropTypes.shape({

@@ -1824,6 +1824,7 @@
       "publish": "Publish",
       "unpublish": "Unpublish",
       "deprecate": "Deprecate",
+      "cascade": "Also open everything beneath",
       "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
       "confirmTitle": "Confirm the bulk action",
       "confirmBody": "{{action}} for {{count}} selected rows. Type \"{{keyword}}\" to confirm.",
@@ -2138,8 +2139,6 @@
       "done": "The file was uploaded."
     },
     "actions": {
-      "publish": "Publish",
-      "unpublish": "Unpublish",
       "docs": "Docs",
       "notes": "Notes"
     },
@@ -2283,9 +2282,7 @@
       "created": "ISO created successfully.",
       "visibilityHint": "Public opens the ISO to everyone, Guests to the organization's guests and members, Private to its members alone.",
       "deleteTitle": "Delete ISO",
-      "deleteMessage": "Are you sure you want to delete {{name}}?",
-      "publish": "Publish",
-      "unpublish": "Unpublish"
+      "deleteMessage": "Are you sure you want to delete {{name}}?"
     },
     "search": {
       "boxes": "Search boxes",
@@ -2353,8 +2350,6 @@
         "pipelineHint": "Direct link to your CI/CD pipeline or GitHub Actions page",
         "viewPipeline": "View Pipeline"
       },
-      "publish": "Publish",
-      "unpublish": "Unpublish",
       "useThisBox": {
         "title": "Use this box",
         "version": "Version",

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import { CascadeCheck } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { collectionShape } from '../../../utils/itemShape';
 import { refusalMessage } from '../../../utils/validation';
@@ -29,10 +30,14 @@ export const bulkGroupShape = PropTypes.shape({
  * The picked-state group of a section's action pane: Clear selection, then
  * the collection's bulk actions for this level as `definition.bulk` names
  * them, each destructive one gated by the shared confirm, sent as one
- * `bulk(level, action, names, scope)` call per scope the picked rows span,
+ * `bulk(level, action, names, scope, recursive)` call per scope the picked
+ * rows span,
  * the one result line naming processed, skipped and each error's code after
- * it. Draws nothing while no row is picked or the collection names no bulk
- * action for the level.
+ * it. While the level offers an opening verb the cascade check draws once
+ * for the pane and a ticked one sends `recursive: true` with those verbs
+ * alone, the closing ones running to every row beneath on their own. Draws
+ * nothing while no row is picked or the collection names no bulk action
+ * for the level.
  */
 const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const { t } = useTranslation();
@@ -40,6 +45,7 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const [pending, setPending] = useState(null);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [beneath, setBeneath] = useState(false);
   const actions = (collection.bulk || {})[level] || [];
   const count = groups.reduce((sum, group) => sum + group.names.length, 0);
 
@@ -50,7 +56,15 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const run = action => {
     setBusy(true);
     Promise.all(
-      groups.map(group => collection.adapter.bulk(level, action.key, group.names, group.scope))
+      groups.map(group =>
+        collection.adapter.bulk(
+          level,
+          action.key,
+          group.names,
+          group.scope,
+          Boolean(action.opens && beneath)
+        )
+      )
     )
       .then(answers => {
         setResult(merged(answers));
@@ -78,6 +92,9 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
           {t(action.labelKey)}
         </button>
       ))}
+      {actions.some(entry => entry.opens) ? (
+        <CascadeCheck checked={beneath} onChange={setBeneath} />
+      ) : null}
       {line ? (
         <span className="small text-muted" role="status">
           {line}

@@ -1824,6 +1824,7 @@
       "publish": "Publicar",
       "unpublish": "Despublicar",
       "deprecate": "Marcar obsoleta",
+      "cascade": "Abrir también todo lo que hay debajo",
       "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
       "confirmTitle": "Confirmar la acción masiva",
       "confirmBody": "{{action}} para {{count}} filas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
@@ -2138,8 +2139,6 @@
       "done": "El archivo se subió."
     },
     "actions": {
-      "publish": "Publicar",
-      "unpublish": "Despublicar",
       "docs": "Documentación",
       "notes": "Notas"
     },
@@ -2283,9 +2282,7 @@
       "created": "ISO creada exitosamente.",
       "visibilityHint": "Público abre la ISO a todos, Invitados a los invitados y miembros de la organización, Privado solo a sus miembros.",
       "deleteTitle": "Eliminar ISO",
-      "deleteMessage": "¿Seguro que quieres eliminar {{name}}?",
-      "publish": "Publicar",
-      "unpublish": "Despublicar"
+      "deleteMessage": "¿Seguro que quieres eliminar {{name}}?"
     },
     "search": {
       "boxes": "Buscar boxes",
@@ -2353,8 +2350,6 @@
         "pipelineHint": "Enlace directo a tu tubería CI/CD o página de GitHub Actions",
         "viewPipeline": "Ver Tubería"
       },
-      "publish": "Publicar",
-      "unpublish": "Despublicar",
       "useThisBox": {
         "title": "Usar esta box",
         "version": "Versión",

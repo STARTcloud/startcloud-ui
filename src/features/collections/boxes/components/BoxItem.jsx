@@ -6,7 +6,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { copyToClipboard } from '../../../../lib/clipboard';
@@ -577,8 +580,6 @@ export const BoxItemActions = ({ item, ctx }) => {
       });
   };
 
-  const publish = published => update({ published }, 'Error updating box release status');
-
   const remove = () => {
     api.boxes
       .remove(org, box.name)
@@ -617,14 +618,11 @@ export const BoxItemActions = ({ item, ctx }) => {
     />
   );
 
-  const publishButton = box.published ? (
-    <button type="button" className="btn btn-warning me-2" onClick={() => publish(false)}>
-      {t('boxes.box.unpublish')}
-    </button>
-  ) : (
-    <button type="button" className="btn btn-outline-primary me-2" onClick={() => publish(true)}>
-      {t('boxes.box.publish')}
-    </button>
+  const publishButton = (
+    <PublishStep
+      published={Boolean(box.published)}
+      onChange={fields => update(fields, 'Error updating box release status')}
+    />
   );
 
   return (

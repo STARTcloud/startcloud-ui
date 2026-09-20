@@ -7,7 +7,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -369,13 +372,10 @@ export const IsoItemActions = ({ item, ctx }) => {
           onChange={pair => update(pair, 'Error updating ISO visibility')}
           className="btn btn-outline-secondary me-2"
         />
-        <button
-          type="button"
-          className={`btn ${iso.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
-          onClick={() => update({ published: !iso.published }, 'Error updating ISO release status')}
-        >
-          {t(iso.published ? 'boxes.iso.unpublish' : 'boxes.iso.publish')}
-        </button>
+        <PublishStep
+          published={Boolean(iso.published)}
+          onChange={fields => update(fields, 'Error updating ISO release status')}
+        />
         <button
           type="button"
           className="btn btn-outline-secondary me-2"

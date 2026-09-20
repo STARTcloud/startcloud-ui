@@ -130,16 +130,19 @@ const watches = {
  * One bulk call for one level of one scope: `POST …/bulk { action, names }`
  * on the level's own route, the answer `{ processed, skipped, errors }`; a
  * product's releases stand where a box's versions do, its patches where the
- * providers do and its files where the architectures do.
+ * providers do and its files where the architectures do; `recursive`
+ * rides an opening verb the cascade check ticked, lifting every row
+ * beneath to the same word.
  *
  * @param {string} level - `items`, `versions`, `providers` or `architectures`
  * @param {string} action - The action the level's `bulk` definition names
  * @param {Array<string>} names - The picked rows' names
  * @param {Object} scope - The levels above: `org`, `name`, `version`, `provider`
+ * @param {boolean} [recursive] - Whether the opening verb runs to every row beneath
  * @returns {Promise<Object>} The bulk answer
  */
-const bulk = (level, action, names, scope) => {
-  const body = { action, names };
+const bulk = (level, action, names, scope, recursive = false) => {
+  const body = recursive ? { action, names, recursive: true } : { action, names };
   if (level === 'items') {
     return api.bulk.items(scope.org, body);
   }

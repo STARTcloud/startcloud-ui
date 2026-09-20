@@ -5,7 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
-import VisibilityPicker, { VisibilityStep } from '../../../../components/common/VisibilityPicker';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -297,13 +300,10 @@ export const DownloadItemActions = ({ item, ctx }) => {
         onChange={pair => update(pair, 'Error updating download visibility')}
         className="btn btn-outline-secondary me-2"
       />
-      <button
-        type="button"
-        className={`btn ${item.published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
-        onClick={() => update({ published: !item.published }, 'Error updating download status')}
-      >
-        {t(item.published ? 'downloads.actions.unpublish' : 'downloads.actions.publish')}
-      </button>
+      <PublishStep
+        published={Boolean(item.published)}
+        onChange={fields => update(fields, 'Error updating download status')}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={editor.open}>
         {t('boxes.buttons.edit')}
       </button>

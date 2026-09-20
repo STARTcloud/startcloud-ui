@@ -768,7 +768,13 @@ adds its own foldable section to an item page (the catalog's Quality).
   under a Guests parent it steps Private, Guests, Private and under a
   Private parent it is disabled with the reason as its title, the host
   answering the validation contract's 422 at the wider word for anything
-  the picker still sends. The ISO page is the same component with
+  the picker still sends. Visibility travels down: an action that opens a
+  row (Make guest, Make public, Publish, and the bulk bar's three opening
+  verbs) draws the one cascade check beside it, "Also open everything
+  beneath", off by default, and sends `recursive: true` while it is
+  ticked, lifting every row beneath to the same word and never past the
+  row itself; an action that closes a row draws no check, because closing
+  always runs to every row beneath on its own. The ISO page is the same component with
   `hasVersions: true`, the ISO gaining the same fields as a box, its
   versions table carrying the artifacts column instead of providers; its
   actions (the visibility step, Publish / Unpublish, Rename,

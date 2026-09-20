@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaGlobe, FaLock, FaUsers } from 'react-icons/fa6';
 
@@ -33,6 +34,39 @@ export const visibilityShape = PropTypes.shape({
 });
 
 /**
+ * The one cascade control of the estate: "Also open everything beneath",
+ * off by default, drawn beside an action that opens a row (Make public,
+ * Make guest, Publish, and the bulk bar's three opening verbs) and never
+ * beside one that closes it, because closing always runs to every row
+ * beneath and needs no word. Ticked, the write carries `recursive: true`,
+ * which lifts every row beneath to the same word and never past the row
+ * itself.
+ */
+export const CascadeCheck = ({ checked, onChange }) => {
+  const { t } = useTranslation();
+  const id = useId();
+  return (
+    <span className="form-check form-check-inline mb-0 me-2">
+      <input
+        type="checkbox"
+        className="form-check-input"
+        id={id}
+        checked={checked}
+        onChange={event => onChange(event.target.checked)}
+      />
+      <label className="form-check-label small" htmlFor={id}>
+        {t('pages.bulk.cascade')}
+      </label>
+    </span>
+  );
+};
+
+CascadeCheck.propTypes = {
+  checked: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+/**
  * The one visibility action of every item page and every row page below
  * it: one button that steps the row Private, Guests, Public and round
  * again, its label and icon naming the step it takes next; `value`
@@ -42,7 +76,9 @@ export const visibilityShape = PropTypes.shape({
  * so a row under a Guests parent steps Private, Guests, Private and never
  * offers a state the host refuses, and under a Private parent the button
  * is disabled with the `withinParent` sentence of the validation contract
- * as its title, the parent's word filled in.
+ * as its title, the parent's word filled in. While the next step opens
+ * the row (Guests over Private, Public over Guests) the cascade check
+ * draws beside it and a ticked one sends `recursive: true` with the pair.
  */
 export const VisibilityStep = ({
   value,
@@ -51,28 +87,38 @@ export const VisibilityStep = ({
   className = 'btn btn-outline-secondary',
 }) => {
   const { t } = useTranslation();
+  const [beneath, setBeneath] = useState(false);
   const current = pickedOf(value);
   const next = nextWithin(current, max);
   const stuck = next === current;
+  const opens = WIDTH[next] > WIDTH[current];
   const Icon = ICONS[next];
   return (
-    <button
-      type="button"
-      className={className}
-      disabled={stuck}
-      title={
-        stuck
-          ? t('validation.withinParent', {
-              label: t('pages.table.visibility'),
-              parent: t(`pages.status.${pickedOf(max)}`),
-            })
-          : undefined
-      }
-      onClick={() => onChange({ ...OPTIONS.find(option => option.key === next).value })}
-    >
-      <Icon className="me-2" />
-      {t(`pages.visibility.${next}`)}
-    </button>
+    <>
+      <button
+        type="button"
+        className={className}
+        disabled={stuck}
+        title={
+          stuck
+            ? t('validation.withinParent', {
+                label: t('pages.table.visibility'),
+                parent: t(`pages.status.${pickedOf(max)}`),
+              })
+            : undefined
+        }
+        onClick={() =>
+          onChange({
+            ...OPTIONS.find(option => option.key === next).value,
+            ...(beneath ? { recursive: true } : {}),
+          })
+        }
+      >
+        <Icon className="me-2" />
+        {t(`pages.visibility.${next}`)}
+      </button>
+      {opens && !stuck ? <CascadeCheck checked={beneath} onChange={setBeneath} /> : null}
+    </>
   );
 };
 
@@ -91,7 +137,9 @@ VisibilityStep.propTypes = {
  * is disabled with the `withinParent` sentence of the validation contract
  * as its title, because the host refuses a published row under a pending
  * one. `className` is the button's base, the small variant on a table
- * row's action cell.
+ * row's action cell. While the row is pending the click opens it, so the
+ * cascade check draws beside the button and a ticked one sends
+ * `recursive: true` with the word.
  */
 export const PublishStep = ({
   published,
@@ -100,24 +148,30 @@ export const PublishStep = ({
   className = 'btn me-2',
 }) => {
   const { t } = useTranslation();
+  const [beneath, setBeneath] = useState(false);
   const stuck = !published && parentPublished === false;
   return (
-    <button
-      type="button"
-      className={`${className} ${published ? 'btn-warning' : 'btn-outline-primary'}`}
-      disabled={stuck}
-      title={
-        stuck
-          ? t('validation.withinParent', {
-              label: t('pages.table.status'),
-              parent: t('pages.status.pending'),
-            })
-          : undefined
-      }
-      onClick={() => onChange({ published: !published })}
-    >
-      {t(published ? 'pages.bulk.unpublish' : 'pages.bulk.publish')}
-    </button>
+    <>
+      <button
+        type="button"
+        className={`${className} ${published ? 'btn-warning' : 'btn-outline-primary'}`}
+        disabled={stuck}
+        title={
+          stuck
+            ? t('validation.withinParent', {
+                label: t('pages.table.status'),
+                parent: t('pages.status.pending'),
+              })
+            : undefined
+        }
+        onClick={() =>
+          onChange({ published: !published, ...(!published && beneath ? { recursive: true } : {}) })
+        }
+      >
+        {t(published ? 'pages.bulk.unpublish' : 'pages.bulk.publish')}
+      </button>
+      {!published && !stuck ? <CascadeCheck checked={beneath} onChange={setBeneath} /> : null}
+    </>
   );
 };
 
