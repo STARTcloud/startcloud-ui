@@ -21,6 +21,9 @@ export const architectureShape = PropTypes.shape({
 export const providerShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   description: PropTypes.string,
+  isPublic: PropTypes.bool,
+  guestAccess: PropTypes.bool,
+  published: PropTypes.bool,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
   downloads: PropTypes.number,
@@ -33,6 +36,9 @@ export const providerShape = PropTypes.shape({
 
 export const versionShape = PropTypes.shape({
   version: PropTypes.string.isRequired,
+  isPublic: PropTypes.bool,
+  guestAccess: PropTypes.bool,
+  published: PropTypes.bool,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
   downloads: PropTypes.number,
@@ -43,6 +49,32 @@ export const versionShape = PropTypes.shape({
   providers: PropTypes.arrayOf(providerShape),
   artifacts: PropTypes.arrayOf(architectureShape),
   extras: PropTypes.object,
+});
+
+/**
+ * The three access words a row carries on the wire, read the same way on
+ * an item, a version, a release, a provider and a patch: absent words
+ * read as private and unpublished, the way the host births a row.
+ *
+ * @param {Object} entry - The wire row
+ * @returns {{ isPublic: boolean, guestAccess: boolean, published: boolean }}
+ */
+export const accessOf = entry => ({
+  isPublic: Boolean(entry.is_public),
+  guestAccess: Boolean(entry.guest_access),
+  published: Boolean(entry.published),
+});
+
+/**
+ * The wire pair a row's visibility control writes, from the row's own
+ * two words.
+ *
+ * @param {{ isPublic: boolean, guestAccess: boolean }} row - A row of the item shape
+ * @returns {{ is_public: boolean, guest_access: boolean }}
+ */
+export const visibilityPair = row => ({
+  is_public: Boolean(row.isPublic),
+  guest_access: Boolean(row.guestAccess),
 });
 
 export const organizationShape = PropTypes.shape({

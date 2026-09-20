@@ -7,6 +7,10 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import UploadProgress from '../../../../components/common/UploadProgress';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -19,7 +23,12 @@ import {
   PROVIDER_LABELS,
   PROVIDER_SCHEMA,
 } from '../../../../utils/forms';
-import { architectureShape, itemShape, providerShape } from '../../../../utils/itemShape';
+import {
+  architectureShape,
+  itemShape,
+  providerShape,
+  visibilityPair,
+} from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
 import { isVisible } from '../../../../utils/validation';
 import { api } from '../api/boxes';
@@ -38,7 +47,7 @@ const slotShape = {
   }).isRequired,
 };
 
-const ProviderEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const ProviderEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -78,6 +87,12 @@ const ProviderEditForm = ({ draft, rules, onChange, onSubmit }) => {
           />
         )}
       </Field>
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mt-2"
+      />
     </form>
   );
 };
@@ -86,9 +101,12 @@ ProviderEditForm.propTypes = {
   draft: PropTypes.shape({
     name: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -102,6 +120,7 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
   const [draft, setDraft] = useState({
     name: provider.name,
     description: provider.description || '',
+    ...visibilityPair(provider),
   });
   const [showDelete, setShowDelete] = useState(false);
   const rules = useFormRules({
@@ -116,6 +135,20 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+
+  const access = fields =>
+    api.providers
+      .update(org, item.name, version, provider.name, fields)
+      .then(reload)
+      .catch(requestError => {
+        log.api.error('Error updating provider access', {
+          providerName: provider.name,
+          error: requestError.message,
+        });
+        notify('danger', t(requestError.messageKey || 'errors.request'));
+      });
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -159,10 +192,16 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
       return undefined;
     }
     setEditor(
-      <ProviderEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+      <ProviderEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -208,6 +247,12 @@ export const BoxProviderActions = ({ item, version, provider, ctx }) => {
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(provider)}
+        onChange={access}
+        className="btn btn-outline-secondary me-2"
+      />
+      <PublishStep published={Boolean(provider.published)} onChange={access} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

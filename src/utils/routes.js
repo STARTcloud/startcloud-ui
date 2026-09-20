@@ -229,13 +229,28 @@ export const parentedCrumbs = ({ groups, parent, name, t }) => {
   return crumbs.length > 0 ? [...crumbs, { key: 'page', label: name }] : [];
 };
 
-export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
+/**
+ * The crumbs of a catalog route, one per present level: the organization
+ * with its mark, the collection with its glyph, then the item, version,
+ * provider and architecture as text; the organization crumb is left out
+ * on a host whose status names that organization as the one the host
+ * serves (`organization`), because the brand link before it already
+ * names it.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object|null} options.route - The parsed route
+ * @param {Function} options.t - The translator
+ * @param {import('react').ReactNode} options.orgIcon - The organization's mark
+ * @param {string} [options.hostOrg] - The organization the host serves, empty on a host of many
+ * @returns {Array} The crumbs
+ */
+export const buildRouteCrumbs = ({ route, t, orgIcon, hostOrg = '' }) => {
   if (!route) {
     return [];
   }
   const { org, collection, item, version, provider, architecture } = route;
   const crumbs = [];
-  if (org) {
+  if (org && org !== hostOrg) {
     crumbs.push({ key: 'org', icon: orgIcon, label: org, to: `/${org}` });
   }
   if (collection) {

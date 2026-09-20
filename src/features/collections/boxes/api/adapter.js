@@ -1,7 +1,7 @@
 import { log } from '../../../../lib/logger';
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
 import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
-import { countOf, sumCounts } from '../../../../utils/itemShape';
+import { accessOf, countOf, sumCounts } from '../../../../utils/itemShape';
 import { readDeprecated, readDeprecationReason, readReleaseNotes } from '../utils/versionFields';
 
 import { api } from './boxes';
@@ -25,6 +25,7 @@ const providerSummary = provider => {
   return {
     name: provider.name,
     description: provider.description || '',
+    ...accessOf(provider),
     createdAt: provider.created_at || null,
     updatedAt: provider.updated_at || null,
     downloads: architectureDownloads(architectures),
@@ -36,6 +37,7 @@ const versionSummary = version => {
   const providers = (version.providers || []).map(providerSummary);
   return {
     version: version.version_number,
+    ...accessOf(version),
     createdAt: version.created_at || null,
     updatedAt: version.updated_at || null,
     downloads: sumCounts(providers.map(provider => provider.downloads)),
@@ -135,6 +137,7 @@ const getVersion = async (org, name, version) => {
       return {
         name: provider.name,
         description: provider.description || '',
+        ...accessOf(provider),
         createdAt: provider.created_at || null,
         updatedAt: provider.updated_at || null,
         downloads: architectureDownloads(summaries),
@@ -204,6 +207,7 @@ const getProvider = async (org, name, version, provider) => {
   return {
     name: providerData.name,
     description: providerData.description || '',
+    ...accessOf(providerData),
     architectures,
     extras: { raw: providerData },
   };

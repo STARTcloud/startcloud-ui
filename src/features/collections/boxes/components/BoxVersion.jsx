@@ -6,6 +6,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -18,7 +22,12 @@ import {
   VERSION_LABELS,
   VERSION_SCHEMA,
 } from '../../../../utils/forms';
-import { itemShape, providerShape, versionShape } from '../../../../utils/itemShape';
+import {
+  itemShape,
+  providerShape,
+  versionShape,
+  visibilityPair,
+} from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
 import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
@@ -52,7 +61,7 @@ const versionFailure = ({ error, version, t, notify }) => {
   notify('danger', t(error.messageKey || 'errors.request'));
 };
 
-const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const VersionEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -92,6 +101,12 @@ const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
           />
         )}
       </Field>
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mt-2"
+      />
     </form>
   );
 };
@@ -100,9 +115,12 @@ VersionEditForm.propTypes = {
   draft: PropTypes.shape({
     version_number: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
   }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -116,6 +134,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
   const [draft, setDraft] = useState({
     version_number: version.version,
     description: version.description || '',
+    ...visibilityPair(version),
   });
   const [showDelete, setShowDelete] = useState(false);
   const rules = useFormRules({
@@ -130,6 +149,13 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+
+  const access = fields =>
+    updateVersion({ org, item, version, fields, t, notify, reload }).catch(error =>
+      versionFailure({ error, version, t, notify })
+    );
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -169,10 +195,16 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
       return undefined;
     }
     setEditor(
-      <VersionEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+      <VersionEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -217,6 +249,12 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(version)}
+        onChange={access}
+        className="btn btn-outline-secondary me-2"
+      />
+      <PublishStep published={Boolean(version.published)} onChange={access} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

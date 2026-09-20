@@ -85,9 +85,18 @@ export const ISO_LABELS = { name: 'boxes.iso.name', description: 'boxes.box.desc
 
 export const ISO_RENAME_SCHEMA = { required: ['name'], properties: { name: { type: 'string' } } };
 
+const ACCESS_PROPERTIES = {
+  is_public: { type: 'boolean' },
+  guest_access: { type: 'boolean' },
+};
+
 export const VERSION_SCHEMA = {
   required: ['version_number'],
-  properties: { version_number: { type: 'string' }, description: { type: 'string' } },
+  properties: {
+    version_number: { type: 'string' },
+    description: { type: 'string' },
+    ...ACCESS_PROPERTIES,
+  },
 };
 
 export const VERSION_LABELS = {
@@ -95,7 +104,9 @@ export const VERSION_LABELS = {
   description: 'boxes.provider.description',
 };
 
-export const ISO_VERSION_SCHEMA = { properties: { description: { type: 'string' } } };
+export const ISO_VERSION_SCHEMA = {
+  properties: { description: { type: 'string' }, ...ACCESS_PROPERTIES },
+};
 
 export const DEPRECATION_SCHEMA = {
   required: ['deprecation_reason'],
@@ -106,7 +117,7 @@ export const DEPRECATION_LABELS = { deprecation_reason: 'boxes.version.deprecati
 
 export const PROVIDER_SCHEMA = {
   required: ['name'],
-  properties: { name: { type: 'string' }, description: { type: 'string' } },
+  properties: { name: { type: 'string' }, description: { type: 'string' }, ...ACCESS_PROPERTIES },
 };
 
 export const PROVIDER_LABELS = {
@@ -176,6 +187,7 @@ export const RELEASE_SCHEMA = {
     version_number: { type: 'string' },
     description: { type: 'string' },
     release_notes: { type: 'string' },
+    ...ACCESS_PROPERTIES,
   },
 };
 
@@ -192,6 +204,7 @@ export const PATCH_SCHEMA = {
     kind: { type: 'string', enum: PATCH_KINDS },
     released_at: { type: 'string' },
     notes_url: { type: 'string' },
+    ...ACCESS_PROPERTIES,
   },
 };
 

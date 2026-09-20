@@ -5,8 +5,14 @@ import { listWord } from '../../utils/closedLists';
 import { providerPath, versionPath } from '../../utils/routes';
 
 import ChecksumCell from './ChecksumCell';
-import { createdColumn, updatedColumn } from './columns';
+import { createdColumn, statusColumn, updatedColumn, visibilityColumn } from './columns';
 import { hasAny } from './SubTable';
+
+const carriesAccess = hasAny(row => typeof row.isPublic === 'boolean');
+
+const rowVisibilityColumn = { ...visibilityColumn, when: carriesAccess };
+
+const rowStatusColumn = { ...statusColumn, when: carriesAccess };
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -81,9 +87,10 @@ const checksumColumn = {
 
 /**
  * The columns the versions table of an item page draws, one level below the
- * item: the version with its deprecated badge, when it was released, its
- * details, and the names of the level below it, whichever of providers and
- * artifacts the collection carries.
+ * item: the version with its deprecated badge, its visibility and status
+ * badges where the host answers the row's own access words, when it was
+ * released, its details, and the names of the level below it, whichever
+ * of providers and artifacts the collection carries.
  *
  * @param {{org: string, name: string}} scope - The item the versions belong to
  * @returns {Array<Object>} The columns
@@ -103,6 +110,8 @@ export const versionLevelColumns = ({ org, name }) => [
       </>
     ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   {
     key: 'released',
     kind: 'date',
@@ -162,9 +171,10 @@ const providerDownloads = provider =>
 
 /**
  * The columns the providers table of a version page draws: the provider
- * linking to its own page, its details, the downloads of its files summed
- * and one badge per architecture, each file's own count and download
- * living on the provider's page where the file is a row.
+ * linking to its own page, its visibility and status badges where the
+ * host answers the row's own access words, its details, the downloads of
+ * its files summed and one badge per architecture, each file's own count
+ * and download living on the provider's page where the file is a row.
  *
  * @param {{org: string, name: string, version: string}} scope - The version the providers belong to
  * @returns {Array<Object>} The columns
@@ -181,6 +191,8 @@ export const providerLevelColumns = ({ org, name, version }) => [
       </Link>
     ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   {
     key: 'details',
     kind: 'text',
@@ -256,8 +268,9 @@ const countCell = entries => (entries || []).length;
 
 /**
  * The columns the releases table of a downloads product draws: the release
- * linking to its own page, when it shipped, its details and how many patches
- * it carries.
+ * linking to its own page, its visibility and status badges where the host
+ * answers the row's own access words, when it shipped, its details and
+ * how many patches it carries.
  *
  * @param {{org: string, name: string}} scope - The product the releases belong to
  * @returns {Array<Object>} The columns
@@ -277,6 +290,8 @@ export const releaseLevelColumns = ({ org, name }) => [
       </>
     ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   {
     key: 'released',
     kind: 'date',
@@ -304,8 +319,9 @@ export const releaseLevelColumns = ({ org, name }) => [
 
 /**
  * The columns the patches table of a downloads release draws: the patch
- * linking to its own page, its kind, the date the vendor shipped it and how
- * many files it carries.
+ * linking to its own page, its visibility and status badges where the host
+ * answers the row's own access words, its kind, the date the vendor
+ * shipped it and how many files it carries.
  *
  * @param {{org: string, name: string, version: string}} scope - The release the patches belong to
  * @returns {Array<Object>} The columns
@@ -320,6 +336,8 @@ export const patchLevelColumns = ({ org, name, version }) => [
       <Link to={providerPath(ctx.collection, org, name, version, patch.name)}>{patch.name}</Link>
     ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   {
     key: 'kind',
     kind: 'badge',

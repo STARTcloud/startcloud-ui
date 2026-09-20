@@ -9,6 +9,7 @@ import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
 import {
@@ -20,6 +21,7 @@ import {
   statusOf,
   visibilityOf,
 } from '../../../utils/itemShape';
+import { managesItem } from '../../../utils/permissions';
 
 import BulkActions from './BulkActions';
 import ItemFacts from './ItemFacts';
@@ -255,7 +257,7 @@ const VersionsSection = ({ collection, item, columns, search, form, manage, org,
         columns={columns}
         rows={search.rows}
         rowKey={version => version.version}
-        RowActions={VersionRowActions}
+        RowActions={manage ? VersionRowActions : null}
         actionsProps={{ item, ctx }}
         rowProp="version"
         sort={search.sort}
@@ -285,6 +287,7 @@ VersionsSection.propTypes = {
 const ItemPage = ({ collection, org, name, context }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [nonce, setNonce] = useState(0);
   const [data, setData] = useState({ key: '', item: null });
   const [editor, setEditor] = useState(null);
@@ -374,7 +377,7 @@ const ItemPage = ({ collection, org, name, context }) => {
           columns={columns}
           search={search}
           form={form}
-          manage={Boolean(collection.canManage && collection.canManage(item, context.user))}
+          manage={managesItem(status, collection, item, context.user)}
           org={org}
           ctx={ctx}
         />

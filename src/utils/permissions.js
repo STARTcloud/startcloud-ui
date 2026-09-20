@@ -1,5 +1,6 @@
 import { profileMemberships } from '../lib/backendSession';
 
+import { hasFeature } from './capabilities';
 import { isGuest, isManager, isMember, isOwner, managesAny } from './membership';
 
 /**
@@ -64,3 +65,20 @@ export const canManageBox = (user, organizationName, box) => {
   }
   return isManager(profileMemberships(user), organizationName);
 };
+
+/**
+ * Whether the viewer may write to an item on this host: the host lists
+ * `uploads` and the collection's own `canManage` says yes for the item;
+ * the one test the item, version and provider pages make before they
+ * draw bulk actions or hand a row-actions slot to the table, so an
+ * actions column exists only where a cell can.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Object} collection - The collection definition
+ * @param {Object|null} item - The loaded item
+ * @param {object|null} user - The session's user
+ * @returns {boolean}
+ */
+export const managesItem = (status, collection, item, user) =>
+  hasFeature(status, 'uploads') &&
+  Boolean(item && collection.canManage && collection.canManage(item, user));

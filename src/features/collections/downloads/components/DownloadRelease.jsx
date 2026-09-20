@@ -5,12 +5,21 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { RELEASE_LABELS, RELEASE_SCHEMA } from '../../../../utils/forms';
-import { itemShape, providerShape, versionShape } from '../../../../utils/itemShape';
+import {
+  itemShape,
+  providerShape,
+  versionShape,
+  visibilityPair,
+} from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
 import { api } from '../api/downloads';
 
@@ -33,7 +42,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const ReleaseEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const ReleaseEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -47,6 +56,12 @@ const ReleaseEditForm = ({ draft, rules, onChange, onSubmit }) => {
       />
       <TextAreaField name="description" draft={draft} rules={rules} onChange={onChange} />
       <TextAreaField name="release_notes" draft={draft} rules={rules} onChange={onChange} />
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mb-2"
+      />
     </form>
   );
 };
@@ -55,6 +70,7 @@ ReleaseEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -70,6 +86,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     version_number: version.version,
     description: version.description || '',
     release_notes: version.releaseNotes || '',
+    ...visibilityPair(version),
   });
   const rules = useFormRules({
     formKey: 'release',
@@ -83,6 +100,20 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+
+  const access = fields =>
+    api.releases
+      .update(org, item.name, version.version, fields)
+      .then(reload)
+      .catch(error => {
+        log.api.error('Error updating release access', {
+          versionNumber: version.version,
+          error: error.message,
+        });
+        notify('danger', t(error.messageKey || 'errors.request'));
+      });
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -126,10 +157,16 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
       return undefined;
     }
     setEditor(
-      <ReleaseEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+      <ReleaseEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.releases
@@ -177,6 +214,12 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(version)}
+        onChange={access}
+        className="btn btn-outline-secondary me-2"
+      />
+      <PublishStep published={Boolean(version.published)} onChange={access} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

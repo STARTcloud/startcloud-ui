@@ -5,6 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -20,7 +24,12 @@ import {
   PATCH_LABELS,
   PATCH_SCHEMA,
 } from '../../../../utils/forms';
-import { architectureShape, itemShape, providerShape } from '../../../../utils/itemShape';
+import {
+  architectureShape,
+  itemShape,
+  providerShape,
+  visibilityPair,
+} from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
 import { isVisible } from '../../../../utils/validation';
 import { api } from '../api/downloads';
@@ -45,7 +54,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const PatchEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const PatchEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -67,6 +76,12 @@ const PatchEditForm = ({ draft, rules, onChange, onSubmit }) => {
       />
       <TextField name="released_at" type="date" draft={draft} rules={rules} onChange={onChange} />
       <TextField name="notes_url" type="url" draft={draft} rules={rules} onChange={onChange} />
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mb-2"
+      />
     </form>
   );
 };
@@ -75,6 +90,7 @@ PatchEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -91,6 +107,7 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
     kind: provider.kind || PATCH_KINDS[0],
     released_at: provider.releasedAt ? provider.releasedAt.slice(0, 10) : '',
     notes_url: provider.notesUrl || '',
+    ...visibilityPair(provider),
   });
   const rules = useFormRules({
     formKey: 'patch',
@@ -104,6 +121,20 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+
+  const access = fields =>
+    api.patches
+      .update(org, item.name, version, provider.name, fields)
+      .then(reload)
+      .catch(error => {
+        log.api.error('Error updating patch access', {
+          patchName: provider.name,
+          error: error.message,
+        });
+        notify('danger', t(error.messageKey || 'errors.request'));
+      });
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -146,9 +177,17 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
     if (!editing) {
       return undefined;
     }
-    setEditor(<PatchEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />);
+    setEditor(
+      <PatchEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
+    );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.patches
@@ -196,6 +235,12 @@ export const DownloadProviderActions = ({ item, version, provider, ctx }) => {
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(provider)}
+        onChange={access}
+        className="btn btn-outline-secondary me-2"
+      />
+      <PublishStep published={Boolean(provider.published)} onChange={access} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

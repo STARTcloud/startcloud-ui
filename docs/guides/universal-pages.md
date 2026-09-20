@@ -250,7 +250,12 @@ creation the way it refuses `api`.
   itself, is plain text.
 - The org crumb carries the org's logo → Gravatar → the app's mark; the
   collection crumb carries the definition's `icon` component; item,
-  version and provider crumbs are text.
+  version and provider crumbs are text. On a host whose status names the
+  one organization it serves (`organization`, the navbar contract's
+  status payload) the org crumb is left out, the brand link before it
+  already naming that organization, so a face such as
+  downloads.prominic.net reads Prominic › Downloads › Domino and not
+  Prominic › Prominic › Downloads › Domino.
 - The collection crumb is always drawn, even where the route has no
   segment for it (BoxVault's `/{org}/{box}` reads `› org › Boxes › box`);
   it links to the collection page, which in BoxVault's boxes case is the
@@ -750,9 +755,16 @@ adds its own foldable section to an item page (the catalog's Quality).
   Hyperweaver with the box pre-selected),
   the facts panel (from `metadata`)
   and the README side by side when present, the versions table newest
-  first (version, released, details, providers, artifacts, each column
-  shown only when a version carries it, the row actions slot), then the
-  `ItemSections` slot. The ISO page is the same component with
+  first (version, visibility and status where the host answers the row's
+  own `is_public`, `guest_access` and `published`, released, details,
+  providers, artifacts, each column shown only when a version carries it,
+  the row actions slot, the six access verbs of the item's bulk actions
+  beside the deprecation and the delete in the selection), then the
+  `ItemSections` slot. A version, release, provider or patch that carries
+  its own three words is edited like the item: its page's action row
+  carries the visibility step and Publish / Unpublish, its edit form the
+  shared `VisibilityPicker`, and a row never wider than its parent, the
+  host answering the validation contract's 422 at the wider word. The ISO page is the same component with
   `hasVersions: true`, the ISO gaining the same fields as a box, its
   versions table carrying the artifacts column instead of providers; its
   actions (the visibility step, Publish / Unpublish, Rename,
@@ -763,7 +775,9 @@ adds its own foldable section to an item page (the catalog's Quality).
   banner, release notes (markdown), the meta row, the artifacts table
   where a version has artifacts (each architecture of a collection without
   providers a link to the leaf page), the providers table (name,
-  description, downloads per architecture, actions slot).
+  visibility and status where the row carries its own words, description,
+  downloads per architecture, actions slot, the six access verbs and the
+  delete in the selection).
 - **ProviderPage**: PageHeader, the architectures table (name, default,
   size, checksum click-to-copy, checksum type, download with count,
   actions slot); the same component is the ISO architecture's leaf at

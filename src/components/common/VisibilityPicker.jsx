@@ -53,6 +53,29 @@ VisibilityStep.propTypes = {
 };
 
 /**
+ * The one publish action of a row page below the item: Publish while the
+ * row is pending, Unpublish while it is published, `onChange` answering
+ * `{ published }` for the row's PUT.
+ */
+export const PublishStep = ({ published, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className={`btn ${published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
+      onClick={() => onChange({ published: !published })}
+    >
+      {t(published ? 'pages.bulk.unpublish' : 'pages.bulk.publish')}
+    </button>
+  );
+};
+
+PublishStep.propTypes = {
+  published: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+/**
  * The one visibility control of every form that writes an item: three
  * radios, Public, Guests and Private, over the wire's two booleans
  * `is_public` and `guest_access`; `value` carries the pair (an object with

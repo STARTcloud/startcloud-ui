@@ -1,6 +1,6 @@
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
 import { getDistroIconUrl, getOsDisplayName } from '../../../../utils/distroIcons';
-import { countOf, sumCounts } from '../../../../utils/itemShape';
+import { accessOf, countOf, sumCounts } from '../../../../utils/itemShape';
 
 import { api } from './isos';
 
@@ -31,6 +31,7 @@ const versionSummary = version => {
   const artifacts = (version.files || []).map(fileArtifact);
   return {
     version: version.version_number,
+    ...accessOf(version),
     createdAt: version.created_at || null,
     updatedAt: version.updated_at || null,
     downloads: sumCounts(artifacts.map(artifact => artifact.downloadCount)),

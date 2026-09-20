@@ -172,7 +172,7 @@ const sidebarMatchFor = ({
   return lists.find(list => list.length > 0) || [];
 };
 
-const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) => {
+const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, hostOrg, t }) => {
   const route = parseRoute(pathname, { reserved, collections });
   const routeOrg = route?.org || '';
   const member = orgs.organizations.find(entry => entry.name === routeOrg) || null;
@@ -186,7 +186,10 @@ const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, t }) 
       fallback={orgs.crumbMark || null}
     />
   );
-  return { crumbs: signedIn ? buildRouteCrumbs({ route, t, orgIcon }) : [], reserved: !route };
+  return {
+    crumbs: signedIn ? buildRouteCrumbs({ route, t, orgIcon, hostOrg }) : [],
+    reserved: !route,
+  };
 };
 
 const useSessionEndedBanner = (ended, signInTo) => {
@@ -410,7 +413,15 @@ const AppShell = ({
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
-  const route = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
+  const route = useRouteCrumbs({
+    pathname,
+    reserved,
+    collections,
+    signedIn,
+    orgs,
+    hostOrg: status.organization || '',
+    t,
+  });
   const crumbs = shellCrumbs({
     showSidebar,
     sidebarMatch: sidebarMatchFor({

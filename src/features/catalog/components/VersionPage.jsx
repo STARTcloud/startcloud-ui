@@ -13,6 +13,7 @@ import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
 import {
@@ -21,6 +22,7 @@ import {
   pageContextShape,
   versionShape,
 } from '../../../utils/itemShape';
+import { managesItem } from '../../../utils/permissions';
 import { sortItems } from '../../../utils/sort';
 
 import BulkActions from './BulkActions';
@@ -150,7 +152,7 @@ const ProvidersSection = ({ collection, columns, search, form, scope, manage, sl
         columns={columns}
         rows={search.rows}
         rowKey={provider => provider.name}
-        RowActions={ProviderRowActions}
+        RowActions={manage ? ProviderRowActions : null}
         actionsProps={slotProps}
         rowProp="provider"
         sort={search.sort}
@@ -219,7 +221,7 @@ const ArtifactsSection = ({
         rows={rows}
         rowKey={artifact => artifact.name}
         LeadActions={DownloadAction}
-        RowActions={ArtifactRowActions}
+        RowActions={manage ? ArtifactRowActions : null}
         actionsProps={slotProps}
         rowProp="architecture"
         sort={search.sort}
@@ -272,6 +274,7 @@ const sideArtifacts = (artifacts, search, columns) => {
 const VersionPage = ({ collection, org, name, version, context }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [nonce, setNonce] = useState(0);
   const [data, setData] = useState({ key: '', item: null, entry: null });
   const [editor, setEditor] = useState(null);
@@ -333,7 +336,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
     setEditor,
     setForm,
   };
-  const manage = Boolean(item && collection.canManage && collection.canManage(item, context.user));
+  const manage = managesItem(status, collection, item, context.user);
 
   if (!ready) {
     return (

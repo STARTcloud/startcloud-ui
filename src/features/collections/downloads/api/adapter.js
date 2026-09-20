@@ -1,5 +1,5 @@
 import { fetchOrganization, logoFor, withLogos } from '../../../../lib/organizations';
-import { countOf, sumCounts } from '../../../../utils/itemShape';
+import { accessOf, countOf, sumCounts } from '../../../../utils/itemShape';
 
 import { api } from './downloads';
 
@@ -34,6 +34,7 @@ const patchSummary = entry => {
   return {
     name: entry.name,
     description: entry.description || '',
+    ...accessOf(entry),
     kind: entry.kind || null,
     releasedAt: entry.released_at || null,
     notesUrl: entry.notes_url || null,
@@ -49,6 +50,7 @@ const releaseSummary = entry => {
   const providers = rows(entry.patches).map(patchSummary);
   return {
     version: entry.version_number,
+    ...accessOf(entry),
     createdAt: entry.created_at || null,
     updatedAt: entry.updated_at || null,
     downloads: sumCounts(providers.map(provider => provider.downloads)),

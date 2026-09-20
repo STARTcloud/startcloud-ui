@@ -7,6 +7,10 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import UploadZone from '../../../../components/common/UploadZone';
+import VisibilityPicker, {
+  PublishStep,
+  VisibilityStep,
+} from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
@@ -19,7 +23,12 @@ import {
   ISO_VERSION_SCHEMA,
   VERSION_LABELS,
 } from '../../../../utils/forms';
-import { architectureShape, itemShape, versionShape } from '../../../../utils/itemShape';
+import {
+  architectureShape,
+  itemShape,
+  versionShape,
+  visibilityPair,
+} from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
@@ -55,7 +64,7 @@ const versionFailure = ({ error, version, t, notify }) => {
   notify('danger', t(error.messageKey || 'errors.request'));
 };
 
-const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
+const VersionEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -77,14 +86,25 @@ const VersionEditForm = ({ draft, rules, onChange, onSubmit }) => {
           />
         )}
       </Field>
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={draft}
+        onChange={onVisibility}
+        className="mt-2"
+      />
     </form>
   );
 };
 
 VersionEditForm.propTypes = {
-  draft: PropTypes.shape({ description: PropTypes.string.isRequired }).isRequired,
+  draft: PropTypes.shape({
+    description: PropTypes.string.isRequired,
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
+  }).isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 
@@ -95,7 +115,10 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
   const { user, org, reload, notify, setEditor } = ctx;
   const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ description: version.description || '' });
+  const [draft, setDraft] = useState({
+    description: version.description || '',
+    ...visibilityPair(version),
+  });
   const [showDelete, setShowDelete] = useState(false);
   const rules = useFormRules({
     formKey: 'version',
@@ -109,6 +132,13 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
     const { name, value } = event.target;
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+
+  const access = fields =>
+    updateVersion({ org, item, version, fields, t, notify, reload }).catch(error =>
+      versionFailure({ error, version, t, notify })
+    );
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -137,10 +167,16 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
       return undefined;
     }
     setEditor(
-      <VersionEditForm draft={draft} rules={rules} onChange={onChange} onSubmit={submit} />
+      <VersionEditForm
+        draft={draft}
+        rules={rules}
+        onChange={onChange}
+        onVisibility={onVisibility}
+        onSubmit={submit}
+      />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -185,6 +221,12 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(version)}
+        onChange={access}
+        className="btn btn-outline-secondary me-2"
+      />
+      <PublishStep published={Boolean(version.published)} onChange={access} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

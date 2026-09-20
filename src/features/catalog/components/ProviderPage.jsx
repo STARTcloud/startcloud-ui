@@ -6,9 +6,11 @@ import { DownloadAction, architectureLevelMatches } from '../../../components/co
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
+import { managesItem } from '../../../utils/permissions';
 
 import BulkActions from './BulkActions';
 
@@ -24,6 +26,7 @@ const rowIdOf = name => `architecture-${name}`;
 const ProviderPage = ({ collection, org, name, version, provider, context, architecture = '' }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [nonce, setNonce] = useState(0);
   const [data, setData] = useState({ key: '', item: null, entry: null });
   const [editor, setEditor] = useState(null);
@@ -106,7 +109,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
 
   const slotProps = { item, version, provider: entry, ctx };
   const actions = ProviderActions ? <ProviderActions {...slotProps} /> : null;
-  const manage = Boolean(item && collection.canManage && collection.canManage(item, context.user));
+  const manage = managesItem(status, collection, item, context.user);
   const bulkable = Boolean(collection.bulk && collection.adapter.bulk && manage);
   const names = search.rows.filter(row => selection.selected.has(row.name)).map(row => row.name);
 
@@ -150,7 +153,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
           rowKey={row => row.name}
           rowId={row => rowIdOf(row.name)}
           LeadActions={DownloadAction}
-          RowActions={ArchitectureRowActions}
+          RowActions={manage ? ArchitectureRowActions : null}
           actionsProps={slotProps}
           rowProp="architecture"
           sort={search.sort}
