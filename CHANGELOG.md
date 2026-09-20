@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.29.0...v0.30.0) (2026-09-20)
+
+
+### Features
+
+* a blank member that is not required is never validated so an optional select on its blank choice saves, the admin preferences form without the PIN the person alone holds, Ctrl+F opening the navbar search outside any field, and the record page's Two-factor card over the admin read with Remove on SMS and APP methods alone ([49086cf](https://github.com/STARTcloud/startcloud-ui/commit/49086cff1c1ce9f5a4a47237b8e12300af1bb688))
+
 ## [0.29.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.28.1...v0.29.0) (2026-09-20)
 
 
