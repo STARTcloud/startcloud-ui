@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.29.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.28.1...v0.29.0) (2026-09-20)
+
+
+### Features
+
+* a guest-only account read-only on itself, the issuer's profile drawn without write sections, the Account column its Profile row alone and no team to create ([68858ba](https://github.com/STARTcloud/startcloud-ui/commit/68858ba5bfdd95c7af0fca3273cbdbc046d67d30))
+* an admin edits another account on its record page over the issuer's live routes, the details, address, phone, email dialog and preferences cards bound to the id and stepped up, the password change required switch, the cards absent on the admin's own record, the guest-only account's preferences kept in the browser as the issuer now refuses its writes, the invite page naming the wrong signed-in address, and the Last used column on the service accounts table ([c290533](https://github.com/STARTcloud/startcloud-ui/commit/c290533b722677b66afcbd067608d11d17b59764))
+* every row action bar paints the validation contract's sentence for a refused write through one refusalMessage helper, the withinParent rule codified with the parent's word and read as the disabled title of the visibility step and of Publish under a pending parent, the three access words on box architectures, ISO files and download files with badges, the small step and Publish on their rows bounded by the row above, the box row writing its architecture then its file, the upload zones born with the picker's pair as query members, one ROW_BULK of the six verbs and the delete on every level but the versions, the orphaned locale keys removed, and a Last used column on the service accounts table ([0c69195](https://github.com/STARTcloud/startcloud-ui/commit/0c69195ed0bd30a162b6f5c1b6c0f27a7892e915))
+
 ## [0.28.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.28.0...v0.28.1) (2026-09-20)
 
 
