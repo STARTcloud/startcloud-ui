@@ -14,6 +14,7 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import {
+  ACCESS_LABELS,
   CHECKSUM_TYPES,
   DOWNLOAD_FILE_LABELS,
   DOWNLOAD_FILE_SCHEMA,
@@ -32,7 +33,7 @@ import {
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
-import { isVisible } from '../../../../utils/validation';
+import { isVisible, refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
@@ -134,7 +135,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
           patchName: provider.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
       });
 
   const save = () => {
@@ -199,7 +200,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
           patchName: provider.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
@@ -242,7 +243,11 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
-      <PublishStep published={Boolean(provider.published)} onChange={access} />
+      <PublishStep
+        published={Boolean(provider.published)}
+        parentPublished={parent ? Boolean(parent.published) : null}
+        onChange={access}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>
@@ -441,6 +446,18 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
     return null;
   }
 
+  const access = fields =>
+    api.files
+      .update(org, item.name, version, provider.name, architecture.name, fields)
+      .then(reload)
+      .catch(error => {
+        log.api.error('Error updating a download file access', {
+          fileKey: architecture.name,
+          error: error.message,
+        });
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
+      });
+
   const remove = () => {
     api.files
       .remove(org, item.name, version, provider.name, architecture.name)
@@ -453,7 +470,7 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
           fileKey: architecture.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
@@ -480,6 +497,18 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(architecture)}
+        max={visibilityPair(provider)}
+        onChange={access}
+        className="btn btn-sm btn-outline-secondary"
+      />
+      <PublishStep
+        published={Boolean(architecture.published)}
+        parentPublished={Boolean(provider.published)}
+        onChange={access}
+        className="btn btn-sm"
+      />
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"

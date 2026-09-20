@@ -17,6 +17,7 @@ import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import { formatFileSize } from '../../../../utils/formatFileSize';
 import {
+  ACCESS_LABELS,
   ARCHITECTURE_LABELS,
   ARCHITECTURE_SCHEMA,
   CHECKSUM_TYPES,
@@ -31,7 +32,7 @@ import {
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
-import { isVisible } from '../../../../utils/validation';
+import { isVisible, refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/boxes';
 
 const slotShape = {
@@ -148,7 +149,7 @@ export const BoxProviderActions = ({ item, version, provider, parent = null, ctx
           providerName: provider.name,
           error: requestError.message,
         });
-        notify('danger', t(requestError.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error: requestError, labels: ACCESS_LABELS, t }));
       });
 
   const save = () => {
@@ -218,7 +219,7 @@ export const BoxProviderActions = ({ item, version, provider, parent = null, ctx
           providerName: provider.name,
           error: requestError.message,
         });
-        notify('danger', t('boxes.provider.deleteError'));
+        notify('danger', refusalMessage({ error: requestError, t }));
       });
   };
 
@@ -254,7 +255,11 @@ export const BoxProviderActions = ({ item, version, provider, parent = null, ctx
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
-      <PublishStep published={Boolean(provider.published)} onChange={access} />
+      <PublishStep
+        published={Boolean(provider.published)}
+        parentPublished={parent ? Boolean(parent.published) : null}
+        onChange={access}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>
@@ -273,7 +278,15 @@ export const BoxProviderActions = ({ item, version, provider, parent = null, ctx
 
 BoxProviderActions.propTypes = { ...slotShape, parent: versionShape };
 
-const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmit }) => {
+const AddArchitectureForm = ({
+  draft,
+  rules,
+  progress,
+  onChange,
+  onVisibility,
+  onFile,
+  onSubmit,
+}) => {
   const { t } = useTranslation();
   const { file } = draft;
   return (
@@ -325,6 +338,12 @@ const AddArchitectureForm = ({ draft, rules, progress, onChange, onFile, onSubmi
           )}
         </Field>
         {file ? <UploadProgress file={file} progress={progress} /> : null}
+        <VisibilityPicker
+          idPrefix={rules.idFor('visibility')}
+          value={draft}
+          onChange={onVisibility}
+          className="mt-2"
+        />
         <Field
           id={rules.idFor('name')}
           label={t('boxes.architecture.name')}
@@ -395,6 +414,8 @@ AddArchitectureForm.propTypes = {
   draft: PropTypes.shape({
     name: PropTypes.string.isRequired,
     default_box: PropTypes.bool.isRequired,
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
     checksum_type: PropTypes.string.isRequired,
     checksum: PropTypes.string.isRequired,
     file: PropTypes.object,
@@ -402,6 +423,7 @@ AddArchitectureForm.propTypes = {
   rules: formRulesShape.isRequired,
   progress: PropTypes.number.isRequired,
   onChange: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
   onFile: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
@@ -409,6 +431,8 @@ AddArchitectureForm.propTypes = {
 const EMPTY_ARCHITECTURE = {
   name: '',
   default_box: false,
+  is_public: false,
+  guest_access: false,
   checksum_type: 'NULL',
   checksum: '',
   file: null,
@@ -439,6 +463,8 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
     const file = event.target.files[0] || null;
     setDraft(current => ({ ...current, file }));
   }, []);
+
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
 
   const onProgress = event => {
     if (event.status === 'assembling') {
@@ -471,6 +497,8 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
           architecture: draft.name,
           checksum: draft.checksum,
           checksum_type: draft.checksum_type,
+          is_public: draft.is_public,
+          guest_access: draft.guest_access,
         },
         onProgress
       );
@@ -510,12 +538,13 @@ export const BoxArchitecturesActions = ({ item, version, provider, ctx }) => {
         rules={rules}
         progress={progress}
         onChange={onChange}
+        onVisibility={onVisibility}
         onFile={onFile}
         onSubmit={submit}
       />
     );
     return () => setForm(null);
-  }, [show, draft, rules, progress, onChange, onFile, submit, setForm]);
+  }, [show, draft, rules, progress, onChange, onVisibility, onFile, submit, setForm]);
 
   if (!hasFeature(status, 'uploads') || !canManageBox(user, org, item.extras.raw)) {
     return null;
@@ -560,6 +589,21 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
     return null;
   }
 
+  const access = fields =>
+    api.architectures
+      .update(org, item.name, version, provider.name, architecture.name, fields)
+      .then(() =>
+        api.files.access(org, item.name, version, provider.name, architecture.name, fields)
+      )
+      .then(reload)
+      .catch(error => {
+        log.api.error('Error updating architecture access', {
+          architectureName: architecture.name,
+          error: error.message,
+        });
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
+      });
+
   const remove = () => {
     api.architectures
       .remove(org, item.name, version, provider.name, architecture.name)
@@ -572,12 +616,24 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
           architectureName: architecture.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(architecture)}
+        max={visibilityPair(provider)}
+        onChange={access}
+        className="btn btn-sm btn-outline-secondary"
+      />
+      <PublishStep
+        published={Boolean(architecture.published)}
+        parentPublished={Boolean(provider.published)}
+        onChange={access}
+        className="btn btn-sm"
+      />
       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}
       </button>

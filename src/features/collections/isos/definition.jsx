@@ -18,7 +18,7 @@ import {
 } from '../../../components/common/levelColumns';
 import { architectureNames } from '../../../utils/itemShape';
 import { isOrgManager } from '../../../utils/permissions';
-import { DELETE_BULK, ITEM_BULK, VERSION_BULK } from '../bulkActions';
+import { ROW_BULK, VERSION_BULK } from '../bulkActions';
 
 import { isosAdapter } from './api/adapter';
 import {
@@ -86,9 +86,9 @@ export const isos = {
     architectures: { labelKey: 'pages.version.artifacts', columns: architectureLevelColumns },
   },
   bulk: {
-    items: ITEM_BULK,
+    items: ROW_BULK,
     versions: VERSION_BULK,
-    architectures: DELETE_BULK,
+    architectures: ROW_BULK,
   },
   slots: {
     ListActions: IsoListActions,

@@ -173,6 +173,7 @@
     "writable": "Enter a directory that {{user}} can write to for {{label}}.",
     "reachable": "Enter a host and port that answer for {{label}}; {{host}}:{{port}} did not answer.",
     "placeholder": "Set {{name}} in the environment or give {{label}} a default.",
+    "withinParent": "Keep {{label}} within {{parent}}, the setting one level up.",
     "unknown": "Check {{label}}."
   },
   "session": {
@@ -365,6 +366,8 @@
       "organization": "Organization",
       "role": "Role",
       "expires": "Expires",
+      "lastUsed": "Last used",
+      "never": "Never",
       "username": "Username",
       "description": "Description",
       "count_one": "{{count}} service account",
@@ -1889,8 +1892,7 @@
     "visibility": {
       "public": "Make public",
       "guests": "Make guest",
-      "private": "Make private",
-      "withinParent": "A row is never wider than its parent"
+      "private": "Make private"
     },
     "item": {
       "details": "Details",
@@ -2242,11 +2244,7 @@
       "back": "Back"
     },
     "messages": {
-      "uploadFailed": "Upload failed",
-      "deleteFailed": "Delete failed",
-      "copyFailed": "Copy failed",
-      "operationSuccessful": "Operation completed successfully",
-      "operationFailed": "Operation failed"
+      "operationSuccessful": "Operation completed successfully"
     },
     "errors": {
       "upload": {
@@ -2263,14 +2261,12 @@
         "uploading": "Uploading… {{percent}}%"
       },
       "file": {
-        "deleted": "File deleted successfully!",
-        "deleteError": "Could not delete the file."
+        "deleted": "File deleted successfully!"
       },
       "name": "ISO Name",
       "createTitle": "Create New ISO",
       "create": "Create ISO",
       "created": "ISO created successfully.",
-      "createError": "An error occurred while creating the ISO.",
       "visibilityHint": "Public opens the ISO to everyone, Guests to the organization's guests and members, Private to its members alone.",
       "deleteTitle": "Delete ISO",
       "deleteMessage": "Are you sure you want to delete {{name}}?",
@@ -2283,22 +2279,16 @@
     },
     "provider": {
       "deleted": "Provider deleted successfully!",
-      "deleteError": "Error deleting provider. Please try again.",
       "created": "Provider created successfully!",
-      "createError": "An error occurred while creating the provider.",
       "updated": "Provider updated successfully!",
-      "updateError": "Could not update provider",
       "name": "Provider Name",
       "description": "Description",
       "add": "Add Provider"
     },
     "version": {
       "deleted": "Version deleted successfully!",
-      "deleteError": "Error deleting version. Please try again.",
       "updated": "Version updated successfully!",
-      "updateError": "An error occurred while updating the version.",
       "added": "Version added successfully!",
-      "addError": "An error occurred while adding the version.",
       "number": "Version Number",
       "add": "Add Version",
       "releaseNotes": "Release notes",
@@ -2309,7 +2299,6 @@
     },
     "architecture": {
       "deleted": "Architecture deleted successfully!",
-      "deleteError": "Could not delete architecture",
       "name": "Architecture Name",
       "add": "Add Architecture",
       "file": "Box file",
@@ -2328,8 +2317,6 @@
     },
     "box": {
       "updated": "Box updated successfully!",
-      "updateError": "An error occurred while updating the box.",
-      "deleteError": "An error occurred while deleting the box.",
       "name": "Box Name",
       "nameHint": "Letters, digits, dash and period; this is the URL and the folder.",
       "status": "Status",

@@ -16,6 +16,7 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { useSelection } from '../../../hooks/useSelection';
 import { log } from '../../../lib/logger';
 import { rules as hostRules } from '../../../lib/runtime';
+import { formatRelativeTime } from '../../../utils/relativeTime';
 
 const PREFS_KEY = 'table_prefs_profile';
 const EXPIRATIONS = [30, 60, 90, 365];
@@ -55,6 +56,11 @@ const dateOf = (value, language) => {
   return Number.isNaN(time.getTime()) ? '' : time.toLocaleDateString(language);
 };
 
+const absoluteTime = (value, language) => {
+  const time = new Date(value);
+  return Number.isNaN(time.getTime()) ? '' : time.toLocaleString(language);
+};
+
 const matches = (row, needle) =>
   [row.username, row.description || '', row.organization?.name || ''].some(text =>
     text.toLowerCase().includes(needle)
@@ -89,6 +95,20 @@ const COLUMNS = [
     labelKey: 'profile.serviceAccounts.expires',
     sortValue: row => new Date(row.expires_at || 0).getTime(),
     render: (row, ctx) => dateOf(row.expires_at, ctx.language),
+  },
+  {
+    key: 'lastUsedAt',
+    kind: 'relative',
+    labelKey: 'profile.serviceAccounts.lastUsed',
+    sortValue: row => new Date(row.last_used_at || 0).getTime(),
+    render: (row, ctx) =>
+      row.last_used_at ? (
+        <span title={absoluteTime(row.last_used_at, ctx.language)}>
+          {formatRelativeTime(row.last_used_at, ctx.language)}
+        </span>
+      ) : (
+        ctx.t('profile.serviceAccounts.never')
+      ),
   },
 ];
 
@@ -234,8 +254,10 @@ RowActions.propTypes = {
  * one-time token notice after a create, then the keys in the one
  * `SubTable` of the pages contract, one organization group row per
  * organization the way the listings group their rows, the select column a
- * real checkbox header, the username, description, role and expiry
- * columns, Delete in the Actions column, and while rows are picked the
+ * real checkbox header, the username, description, role, expiry and last
+ * used columns (the last a relative time with the absolute time as its
+ * title, "Never" while the key was never used), Delete in the Actions
+ * column, and while rows are picked the
  * heading's action pane reading "N selected", Clear selection and Delete
  * behind the confirm; the navbar search narrows the rows and the Columns
  * group shows or hides them under `table_prefs_profile`, and a `#<id>` in

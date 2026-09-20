@@ -90,6 +90,20 @@ const ACCESS_PROPERTIES = {
   guest_access: { type: 'boolean' },
 };
 
+/**
+ * The labels of the words a row action bar writes without a form, for the
+ * sentence `refusalMessage` paints when the host refuses one: the two
+ * visibility words under the Visibility column's name, `published` under
+ * the Status column's, the deprecation pair under the version form's.
+ */
+export const ACCESS_LABELS = {
+  is_public: 'pages.table.visibility',
+  guest_access: 'pages.table.visibility',
+  published: 'pages.table.status',
+  deprecated: 'pages.status.deprecated',
+  deprecation_reason: 'boxes.version.deprecationReason',
+};
+
 export const VERSION_SCHEMA = {
   required: ['version_number'],
   properties: {
@@ -130,6 +144,7 @@ export const ARCHITECTURE_SCHEMA = {
   properties: {
     name: { type: 'string' },
     default_box: { type: 'boolean' },
+    ...ACCESS_PROPERTIES,
     checksum_type: { type: 'string', enum: CHECKSUM_TYPES },
     checksum: {
       type: 'string',
@@ -151,7 +166,7 @@ export const ARCHITECTURE_LABELS = {
 
 export const ISO_ARCHITECTURE_SCHEMA = {
   required: ['name'],
-  properties: { name: { type: 'string' } },
+  properties: { name: { type: 'string' }, ...ACCESS_PROPERTIES },
 };
 
 export const ISO_ARCHITECTURE_LABELS = { name: 'boxes.architecture.name' };

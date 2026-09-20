@@ -44,6 +44,7 @@ const RULE_KEYS = [
   'writable',
   'reachable',
   'placeholder',
+  'withinParent',
 ];
 
 const isUri = value => {
@@ -485,8 +486,9 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * `personName`, `iconName`, `languageTag`, `timezone`, `region`) or `nonBlank` for
  * the contract's whitespace rule, a format and a type by theirs; the
  * config contract's `propertyNames` (`params.key`), `readOnly`,
- * `writable` (`params.user`), `reachable` (`params.host`, `params.port`)
- * and `placeholder` (`params.name`) by their own keys; a rule the UI does
+ * `writable` (`params.user`), `reachable` (`params.host`, `params.port`),
+ * `placeholder` (`params.name`) and the pages' `withinParent`
+ * (`params.parent`) by their own keys; a rule the UI does
  * not know through
  * `validation.unknown` with the field's label, the error's `detail` never
  * shown.
@@ -520,4 +522,31 @@ export const messageFor = (error, label, t) => {
     return t(`validation.${error.rule}`, { label, ...params });
   }
   return unknownMessage(label, t);
+};
+
+/**
+ * The one sentence a row action bar paints when a write it sent without a
+ * form is refused: every `errors[]` entry of the `ApiError`'s problem body
+ * through `messageFor`, labelled by the pointer's member through `labels`
+ * (the member's own name when none names it) and joined by a space, so a
+ * refused step, publish, deprecation or delete says what the rule was;
+ * the status line of the API client when the answer carried no entries.
+ *
+ * @param {Object} options - The refusal
+ * @param {Object} options.error - The `ApiError`
+ * @param {Object} [options.labels] - Body member to translation key of its label
+ * @param {Function} options.t - The translator
+ * @returns {string}
+ */
+export const refusalMessage = ({ error, labels = {}, t }) => {
+  const entries = Array.isArray(error?.fieldErrors) ? error.fieldErrors : [];
+  if (entries.length === 0) {
+    return t(error?.messageKey || 'errors.request');
+  }
+  return entries
+    .map(entry => {
+      const member = String(entry.pointer || '').replace(/^\//, '');
+      return messageFor(entry, labels[member] ? t(labels[member]) : member, t);
+    })
+    .join(' ');
 };

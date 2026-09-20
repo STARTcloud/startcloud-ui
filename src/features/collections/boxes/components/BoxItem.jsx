@@ -13,6 +13,7 @@ import { copyToClipboard } from '../../../../lib/clipboard';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import {
+  ACCESS_LABELS,
   BOX_EDIT_LABELS,
   BOX_EDIT_SCHEMA,
   VERSION_LABELS,
@@ -20,6 +21,7 @@ import {
 } from '../../../../utils/forms';
 import { itemShape, sortVersionsNewestFirst, versionShape } from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
+import { refusalMessage } from '../../../../utils/validation';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
 
@@ -571,7 +573,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error(message, { boxName: box.name, error: error.message });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
       });
   };
 
@@ -583,7 +585,7 @@ export const BoxItemActions = ({ item, ctx }) => {
       .then(() => navigate(`/${org}`))
       .catch(error => {
         log.api.error('Error deleting box', { boxName: box.name, error: error.message });
-        notify('danger', t('boxes.box.deleteError'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
@@ -831,7 +833,7 @@ export const BoxVersionRowActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 

@@ -38,7 +38,8 @@ const reportProgress = (onUploadProgress, total, loaded, status, message = '') =
 };
 
 const sendChunk = async (options, index, uploaded) => {
-  const { client, path, file, checksum, checksumType, totalChunks, onUploadProgress } = options;
+  const { client, path, params, file, checksum, checksumType, totalChunks, onUploadProgress } =
+    options;
   const start = index * CHUNK_SIZE;
   const end = Math.min(start + CHUNK_SIZE, file.size);
   log.file.debug('Uploading chunk', {
@@ -51,6 +52,7 @@ const sendChunk = async (options, index, uploaded) => {
   try {
     return await client.post(path, file.slice(start, end), {
       contentType: 'octet-stream',
+      params,
       headers: chunkHeaders({ file, checksum, checksumType, index, totalChunks }),
       onUploadProgress: event =>
         reportProgress(onUploadProgress, file.size, uploaded + event.loaded, 'uploading'),
@@ -146,6 +148,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
  * @param {Object} options - The upload
  * @param {Object} options.client - The API client
  * @param {string} options.path - The chunk upload path
+ * @param {Object} [options.params] - Query members every chunk carries, the access words a route births the rows with
  * @param {File} options.file - The file to send
  * @param {string} [options.checksum] - The declared checksum
  * @param {string} [options.checksum_type] - The checksum algorithm, `NULL` when none
@@ -156,6 +159,7 @@ const pollAssembly = async ({ info, fileSize, onUploadProgress, startedAt, delay
 export const uploadChunked = async ({
   client,
   path,
+  params = undefined,
   file,
   checksum,
   checksum_type: checksumType,
@@ -175,7 +179,16 @@ export const uploadChunked = async ({
     checksumType: checksumType || 'NULL',
   });
   try {
-    const options = { client, path, file, checksum, checksumType, totalChunks, onUploadProgress };
+    const options = {
+      client,
+      path,
+      params,
+      file,
+      checksum,
+      checksumType,
+      totalChunks,
+      onUploadProgress,
+    };
     const result = totalChunks > 0 ? await sendFrom(options, 0, 0) : null;
     if (result && !result.assembling) {
       log.file.info('Upload completed successfully', { result });

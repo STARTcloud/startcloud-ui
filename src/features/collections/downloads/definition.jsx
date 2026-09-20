@@ -21,7 +21,7 @@ import {
 import { listWord } from '../../../utils/closedLists';
 import { fileKinds, platformNames } from '../../../utils/itemShape';
 import { isOrgManager } from '../../../utils/permissions';
-import { DELETE_BULK, ITEM_BULK, PROVIDER_BULK, VERSION_BULK } from '../bulkActions';
+import { ROW_BULK, VERSION_BULK } from '../bulkActions';
 
 import { downloadsAdapter } from './api/adapter';
 import {
@@ -103,10 +103,10 @@ export const downloads = {
     architectures: { labelKey: 'pages.table.files', columns: fileLevelColumns },
   },
   bulk: {
-    items: ITEM_BULK,
+    items: ROW_BULK,
     versions: VERSION_BULK,
-    providers: PROVIDER_BULK,
-    architectures: DELETE_BULK,
+    providers: ROW_BULK,
+    architectures: ROW_BULK,
   },
   slots: {
     ListActions: DownloadListActions,

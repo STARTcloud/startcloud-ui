@@ -2,6 +2,9 @@ import PropTypes from 'prop-types';
 
 export const architectureShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
+  isPublic: PropTypes.bool,
+  guestAccess: PropTypes.bool,
+  published: PropTypes.bool,
   defaultBox: PropTypes.bool,
   fileName: PropTypes.string,
   fileSize: PropTypes.number,
@@ -53,8 +56,9 @@ export const versionShape = PropTypes.shape({
 
 /**
  * The three access words a row carries on the wire, read the same way on
- * an item, a version, a release, a provider and a patch: absent words
- * read as private and unpublished, the way the host births a row.
+ * an item, a version, a release, a provider, a patch, an architecture and
+ * a file: absent words read as private and unpublished, the way the host
+ * births a row.
  *
  * @param {Object} entry - The wire row
  * @returns {{ isPublic: boolean, guestAccess: boolean, published: boolean }}

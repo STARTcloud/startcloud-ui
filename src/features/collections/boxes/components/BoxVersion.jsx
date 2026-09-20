@@ -15,6 +15,7 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import {
+  ACCESS_LABELS,
   DEPRECATION_LABELS,
   DEPRECATION_SCHEMA,
   PROVIDER_LABELS,
@@ -29,6 +30,7 @@ import {
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { canManageBox } from '../../../../utils/permissions';
+import { refusalMessage } from '../../../../utils/validation';
 import { deleteProviderCascade, deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/boxes';
 
@@ -58,7 +60,7 @@ const versionFailure = ({ error, version, t, notify }) => {
     versionNumber: version.version,
     error: error.message,
   });
-  notify('danger', t(error.messageKey || 'errors.request'));
+  notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
 };
 
 const VersionEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
@@ -219,7 +221,7 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: requestError.message,
         });
-        notify('danger', t(requestError.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error: requestError, t }));
       });
   };
 
@@ -255,7 +257,11 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
-      <PublishStep published={Boolean(version.published)} onChange={access} />
+      <PublishStep
+        published={Boolean(version.published)}
+        parentPublished={Boolean(item.published)}
+        onChange={access}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>
@@ -631,7 +637,7 @@ export const BoxProviderRowActions = ({ item, version, provider, ctx }) => {
           providerName: provider.name,
           error: error.message,
         });
-        notify('danger', t('boxes.provider.deleteError'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 

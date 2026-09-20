@@ -5,8 +5,8 @@ const DELETE = action('delete', 'pages.bulk.delete', 'btn-outline-danger', true)
 /**
  * The six access verbs every row carrying its own `is_public`,
  * `guest_access` and `published` words offers, the item, its versions or
- * releases and its providers or patches alike, in the order the action
- * pane draws them.
+ * releases, its providers or patches and its architectures or files
+ * alike, in the order the action pane draws them.
  */
 const ACCESS_BULK = [
   action('make_public', 'pages.bulk.makePublic', 'btn-outline-info'),
@@ -18,10 +18,10 @@ const ACCESS_BULK = [
 ];
 
 /**
- * The bulk actions an item level offers on a collection the estate writes
- * to: the six access verbs, then the delete.
+ * The bulk actions every level but the versions offers on a collection the
+ * estate writes to: the six access verbs, then the delete.
  */
-export const ITEM_BULK = [...ACCESS_BULK, DELETE];
+export const ROW_BULK = [...ACCESS_BULK, DELETE];
 
 /**
  * The bulk actions a version or release level offers: the six access
@@ -32,15 +32,3 @@ export const VERSION_BULK = [
   action('deprecate', 'pages.bulk.deprecate', 'btn-outline-warning'),
   DELETE,
 ];
-
-/**
- * The bulk actions a provider or patch level offers: the six access verbs,
- * then the delete.
- */
-export const PROVIDER_BULK = [...ACCESS_BULK, DELETE];
-
-/**
- * The bulk actions the file level offers: the delete alone, a file
- * carrying no access words of its own.
- */
-export const DELETE_BULK = [DELETE];

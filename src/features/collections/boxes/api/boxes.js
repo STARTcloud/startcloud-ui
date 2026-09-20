@@ -22,9 +22,11 @@ const fileInfo = (organization, name, number, providerName, architectureName) =>
 const uploadBoxFile = (file, options, onUploadProgress) => {
   const { organization, name, version: number, provider: providerName } = options;
   const { architecture: architectureName, checksum, checksum_type: checksumType } = options;
+  const { is_public: isPublic, guest_access: guestAccess } = options;
   return uploadChunked({
     client,
     path: `${architecture(organization, name, number, providerName, architectureName)}/file/upload`,
+    params: { is_public: isPublic, guest_access: guestAccess },
     file,
     checksum,
     checksum_type: checksumType,
@@ -36,7 +38,10 @@ const uploadBoxFile = (file, options, onUploadProgress) => {
 /**
  * Every box call, one line each over the API client; every call resolves
  * to the response body and rejects with `ApiError`. Paths are built from
- * raw names through `encodePath`.
+ * raw names through `encodePath`. A box file's own access words go to
+ * `files.access`, the `PUT …/architecture/{name}/file` taking the three
+ * words alone; the upload carries the pair it is born with as query
+ * members.
  */
 export const api = {
   boxes: {
@@ -75,11 +80,18 @@ export const api = {
       client.get(`${provider(organization, name, number, providerName)}/architecture`),
     create: (organization, name, number, providerName, body) =>
       client.post(`${provider(organization, name, number, providerName)}/architecture`, body),
+    update: (organization, name, number, providerName, architectureName, body) =>
+      client.put(architecture(organization, name, number, providerName, architectureName), body),
     remove: (organization, name, number, providerName, architectureName) =>
       client.delete(architecture(organization, name, number, providerName, architectureName)),
   },
   files: {
     info: fileInfo,
+    access: (organization, name, number, providerName, architectureName, body) =>
+      client.put(
+        `${architecture(organization, name, number, providerName, architectureName)}/file`,
+        body
+      ),
     remove: (organization, name, number, providerName, architectureName) =>
       client.delete(
         `${architecture(organization, name, number, providerName, architectureName)}/file/delete`

@@ -15,8 +15,10 @@ const file = (organization, name, number, architectureName) =>
  * to the response body and rejects with `ApiError`. Paths are built from
  * raw names through `encodePath`. An ISO is versioned like a box without
  * providers: each version carries one file per architecture, uploaded raw
- * under its architecture with the file name in `x-file-name`, the server
- * computing the checksum.
+ * under its architecture with the file name in `x-file-name` and the pair
+ * it is born with as query members, the server computing the checksum;
+ * the file's own access words go to `files.access`, the `PUT …/file`
+ * taking the three words alone.
  */
 export const api = {
   isos: {
@@ -41,12 +43,21 @@ export const api = {
   files: {
     info: (organization, name, number, architectureName) =>
       client.get(`${file(organization, name, number, architectureName)}/info`),
-    upload: (organization, name, number, architectureName, isoFile, onUploadProgress) =>
+    upload: (
+      organization,
+      name,
+      number,
+      architectureName,
+      { file: isoFile, access, onUploadProgress }
+    ) =>
       client.post(`${file(organization, name, number, architectureName)}/upload`, isoFile, {
         contentType: 'octet-stream',
+        params: access,
         headers: { 'x-file-name': isoFile.name },
         onUploadProgress,
       }),
+    access: (organization, name, number, architectureName, body) =>
+      client.put(file(organization, name, number, architectureName), body),
     downloadLink: (organization, name, number, architectureName) =>
       client
         .post(`${file(organization, name, number, architectureName)}/get-download-link`, {})

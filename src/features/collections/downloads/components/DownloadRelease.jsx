@@ -13,7 +13,7 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { RELEASE_LABELS, RELEASE_SCHEMA } from '../../../../utils/forms';
+import { ACCESS_LABELS, RELEASE_LABELS, RELEASE_SCHEMA } from '../../../../utils/forms';
 import {
   itemShape,
   providerShape,
@@ -21,6 +21,7 @@ import {
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
+import { refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
@@ -112,7 +113,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
       });
 
   const save = () => {
@@ -177,7 +178,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
@@ -220,7 +221,11 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
-      <PublishStep published={Boolean(version.published)} onChange={access} />
+      <PublishStep
+        published={Boolean(version.published)}
+        parentPublished={Boolean(item.published)}
+        onChange={access}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>
@@ -261,7 +266,7 @@ export const DownloadVersionRowActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
@@ -337,7 +342,7 @@ export const DownloadProviderRowActions = ({ item, version, provider, ctx }) => 
           patchName: provider.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 

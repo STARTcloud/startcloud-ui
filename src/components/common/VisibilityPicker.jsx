@@ -41,7 +41,8 @@ export const visibilityShape = PropTypes.shape({
  * where the row has one: the cycle then stays within the parent's width,
  * so a row under a Guests parent steps Private, Guests, Private and never
  * offers a state the host refuses, and under a Private parent the button
- * is disabled with the reason as its title.
+ * is disabled with the `withinParent` sentence of the validation contract
+ * as its title, the parent's word filled in.
  */
 export const VisibilityStep = ({
   value,
@@ -59,7 +60,14 @@ export const VisibilityStep = ({
       type="button"
       className={className}
       disabled={stuck}
-      title={stuck ? t('pages.visibility.withinParent') : undefined}
+      title={
+        stuck
+          ? t('validation.withinParent', {
+              label: t('pages.table.visibility'),
+              parent: t(`pages.status.${pickedOf(max)}`),
+            })
+          : undefined
+      }
       onClick={() => onChange({ ...OPTIONS.find(option => option.key === next).value })}
     >
       <Icon className="me-2" />
@@ -78,14 +86,34 @@ VisibilityStep.propTypes = {
 /**
  * The one publish action of a row page below the item: Publish while the
  * row is pending, Unpublish while it is published, `onChange` answering
- * `{ published }` for the row's PUT.
+ * `{ published }` for the row's PUT. `parentPublished` is the parent
+ * row's word where the row has one: while the parent is pending, Publish
+ * is disabled with the `withinParent` sentence of the validation contract
+ * as its title, because the host refuses a published row under a pending
+ * one. `className` is the button's base, the small variant on a table
+ * row's action cell.
  */
-export const PublishStep = ({ published, onChange }) => {
+export const PublishStep = ({
+  published,
+  onChange,
+  parentPublished = null,
+  className = 'btn me-2',
+}) => {
   const { t } = useTranslation();
+  const stuck = !published && parentPublished === false;
   return (
     <button
       type="button"
-      className={`btn ${published ? 'btn-warning' : 'btn-outline-primary'} me-2`}
+      className={`${className} ${published ? 'btn-warning' : 'btn-outline-primary'}`}
+      disabled={stuck}
+      title={
+        stuck
+          ? t('validation.withinParent', {
+              label: t('pages.table.status'),
+              parent: t('pages.status.pending'),
+            })
+          : undefined
+      }
       onClick={() => onChange({ published: !published })}
     >
       {t(published ? 'pages.bulk.unpublish' : 'pages.bulk.publish')}
@@ -96,6 +124,8 @@ export const PublishStep = ({ published, onChange }) => {
 PublishStep.propTypes = {
   published: PropTypes.bool.isRequired,
   onChange: PropTypes.func.isRequired,
+  parentPublished: PropTypes.bool,
+  className: PropTypes.string,
 };
 
 /**

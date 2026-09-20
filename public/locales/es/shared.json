@@ -173,6 +173,7 @@
     "writable": "Introduce un directorio en el que {{user}} pueda escribir para {{label}}.",
     "reachable": "Introduce un host y un puerto que respondan para {{label}}; {{host}}:{{port}} no respondió.",
     "placeholder": "Define {{name}} en el entorno o da un valor predeterminado a {{label}}.",
+    "withinParent": "Mantén {{label}} dentro de {{parent}}, el ajuste del nivel superior.",
     "unknown": "Revisa {{label}}."
   },
   "session": {
@@ -365,6 +366,8 @@
       "organization": "Organización",
       "role": "Rol",
       "expires": "Expira",
+      "lastUsed": "Último uso",
+      "never": "Nunca",
       "username": "Nombre de usuario",
       "description": "Descripción",
       "count_one": "{{count}} cuenta de servicio",
@@ -1889,8 +1892,7 @@
     "visibility": {
       "public": "Hacer público",
       "guests": "Hacer de invitados",
-      "private": "Hacer privado",
-      "withinParent": "Una fila nunca es más amplia que su elemento superior"
+      "private": "Hacer privado"
     },
     "item": {
       "details": "Detalles",
@@ -2242,11 +2244,7 @@
       "back": "Atrás"
     },
     "messages": {
-      "uploadFailed": "Carga fallida",
-      "deleteFailed": "Eliminación fallida",
-      "copyFailed": "Copia fallida",
-      "operationSuccessful": "Operación completada exitosamente",
-      "operationFailed": "Operación fallida"
+      "operationSuccessful": "Operación completada exitosamente"
     },
     "errors": {
       "upload": {
@@ -2263,14 +2261,12 @@
         "uploading": "Subiendo… {{percent}}%"
       },
       "file": {
-        "deleted": "¡El archivo fue eliminado exitosamente!",
-        "deleteError": "No se pudo eliminar el archivo."
+        "deleted": "¡El archivo fue eliminado exitosamente!"
       },
       "name": "Nombre de la ISO",
       "createTitle": "Crear Nueva ISO",
       "create": "Crear ISO",
       "created": "ISO creada exitosamente.",
-      "createError": "Ocurrió un error al crear la ISO.",
       "visibilityHint": "Público abre la ISO a todos, Invitados a los invitados y miembros de la organización, Privado solo a sus miembros.",
       "deleteTitle": "Eliminar ISO",
       "deleteMessage": "¿Seguro que quieres eliminar {{name}}?",
@@ -2283,22 +2279,16 @@
     },
     "provider": {
       "deleted": "¡El proveedor fue eliminado exitosamente!",
-      "deleteError": "Error al eliminar proveedor. Por favor intenta de nuevo.",
       "created": "¡El proveedor fue creado exitosamente!",
-      "createError": "Ocurrió un error al crear el proveedor.",
       "updated": "¡El proveedor fue actualizado exitosamente!",
-      "updateError": "No se pudo actualizar el proveedor",
       "name": "Nombre del Proveedor",
       "description": "Descripción",
       "add": "Añadir Proveedor"
     },
     "version": {
       "deleted": "¡La versión fue eliminada exitosamente!",
-      "deleteError": "Error al eliminar versión. Por favor intenta de nuevo.",
       "updated": "¡La versión fue actualizada exitosamente!",
-      "updateError": "Ocurrió un error al actualizar la versión.",
       "added": "¡La versión fue añadida exitosamente!",
-      "addError": "Ocurrió un error al añadir la versión.",
       "number": "Número de Versión",
       "add": "Añadir Versión",
       "releaseNotes": "Notas de la versión",
@@ -2309,7 +2299,6 @@
     },
     "architecture": {
       "deleted": "¡La arquitectura fue eliminada exitosamente!",
-      "deleteError": "No se pudo eliminar la arquitectura",
       "name": "Nombre de Arquitectura",
       "add": "Añadir Arquitectura",
       "file": "Archivo de box",
@@ -2328,8 +2317,6 @@
     },
     "box": {
       "updated": "¡La box fue actualizada exitosamente!",
-      "updateError": "Ocurrió un error al actualizar la box.",
-      "deleteError": "Ocurrió un error al eliminar la box.",
       "name": "Nombre de la box",
       "nameHint": "Letras, dígitos, guion y punto; es la URL y la carpeta.",
       "status": "Estado",

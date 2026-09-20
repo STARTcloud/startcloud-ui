@@ -14,6 +14,7 @@ const latestReleaseOf = versions =>
 
 const fileArtifact = entry => ({
   name: entry.key,
+  ...accessOf(entry),
   fileName: entry.file_name || '',
   fileSize: entry.file_size || 0,
   checksum: entry.checksum || '',

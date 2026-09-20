@@ -227,9 +227,10 @@ export const providerLevelColumns = ({ org, name, version }) => [
  * The columns the architectures table draws, the level whose row is one
  * file: the name, a link to its own page on a collection whose versions
  * carry architectures directly and only while the page is not already that
- * one, then the dates, the count, the default flag where a row carries one,
- * the size and the checksum; the download is the table's `DownloadAction`
- * in the Actions column.
+ * one, its visibility and status badges where the host answers the row's
+ * own access words, then the dates, the count, the default flag where a
+ * row carries one, the size and the checksum; the download is the table's
+ * `DownloadAction` in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The level above, `provider` empty on a version page
  * @returns {Array<Object>} The columns
@@ -249,6 +250,8 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
         </Link>
       ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   { ...createdColumn, defaultHidden: false, when: hasAny(architecture => architecture.createdAt) },
   { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
   downloadsColumn,
@@ -380,10 +383,11 @@ const wordColumn = (key, labelKey, group) => ({
  * The columns the files table of a downloads patch draws, the level whose
  * row is one file: one Name column, the name it was uploaded with and, only
  * when the key differs from it, the key as a small code beside it (the
- * shape `labelColumn` gives the catalog's label and slug), its kind,
- * platform, architecture and language, the downloads, the size and the
- * checksum; the tokened download is the table's `DownloadAction` in the
- * Actions column.
+ * shape `labelColumn` gives the catalog's label and slug), its visibility
+ * and status badges where the host answers the row's own access words,
+ * its kind, platform, architecture and language, the downloads, the size
+ * and the checksum; the tokened download is the table's `DownloadAction`
+ * in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The patch the files belong to
  * @returns {Array<Object>} The columns
@@ -403,6 +407,8 @@ export const fileLevelColumns = () => [
       </>
     ),
   },
+  rowVisibilityColumn,
+  rowStatusColumn,
   wordColumn('kind', 'pages.table.kind', 'kind'),
   wordColumn('platform', 'pages.table.platform', 'platform'),
   wordColumn('architecture', 'pages.table.architecture', 'architecture'),

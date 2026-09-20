@@ -782,11 +782,23 @@ adds its own foldable section to an item page (the catalog's Quality).
   visibility and status where the row carries its own words, description,
   downloads per architecture, actions slot, the six access verbs and the
   delete in the selection).
-- **ProviderPage**: PageHeader, the architectures table (name, default,
-  size, checksum click-to-copy, checksum type, download with count,
-  actions slot); the same component is the ISO architecture's leaf at
-  `/{org}/isos/{iso}/{version}/{arch}`, one file in its table, a shared
-  component both collections call.
+- **ProviderPage**: PageHeader, the architectures table (name, visibility
+  and status where the row carries its own words, default, size, checksum
+  click-to-copy, checksum type, download with count, actions slot, the six
+  access verbs and the delete in the selection); the same component is
+  the ISO architecture's leaf at `/{org}/isos/{iso}/{version}/{arch}`,
+  one file in its table, a shared component both collections call. The
+  leaf rows carry the three words too, a box architecture and its file,
+  an ISO file and a download file, born private, closed to guests and
+  unpublished unless the upload's picker says otherwise (the pair as
+  query members on the byte-streaming upload routes, in the body on the
+  JSON place route), and their action cell carries the small visibility
+  step and Publish before Delete, bounded by the row above them the way
+  the pages above are: a box architecture row writes its architecture
+  then its file with the same words, its badges reading the
+  architecture's, an ISO file writes `PUT …/architecture/{arch}/file`,
+  a download file its own `PUT …/file/{key}`, and a wider word is the
+  validation contract's `withinParent`.
 - **Downloads on the same pages**: the ItemPage lists a product's releases
   newest first with a Patches count in place of Providers, the word
   Patches on every screen of the level because a patch is a thing a
@@ -795,8 +807,9 @@ adds its own foldable section to an item page (the catalog's Quality).
   release number for `release` and the patch identifier otherwise, kind,
   released, files count, the row actions slot); the ProviderPage is the
   patch page, its architectures table the files table (key, file name,
-  kind, platform, architecture, language, size, checksum click-to-copy,
-  download with count, the row actions slot), a file address landing on
+  visibility and status, kind, platform, architecture, language, size,
+  checksum click-to-copy, download with count, the row actions slot with
+  the step and Publish before Edit and Delete), a file address landing on
   that page with the fifth crumb drawn and nothing painted on the row,
   because no table of the estate marks a row; the columns and labels of
   those three tables come from the collection's `levels` in the registry.

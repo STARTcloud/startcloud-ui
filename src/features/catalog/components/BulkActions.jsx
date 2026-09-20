@@ -6,6 +6,7 @@ import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { collectionShape } from '../../../utils/itemShape';
+import { refusalMessage } from '../../../utils/validation';
 
 const EMPTY_RESULT = { processed: 0, skipped: 0, errors: [] };
 
@@ -55,7 +56,7 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
         setResult(merged(answers));
         onDone();
       })
-      .catch(error => notify('danger', t(error.messageKey || 'errors.request')))
+      .catch(error => notify('danger', refusalMessage({ error, t })))
       .finally(() => setBusy(false));
   };
 

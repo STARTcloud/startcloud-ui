@@ -10,9 +10,10 @@ import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
-import { DOWNLOAD_LABELS, DOWNLOAD_SCHEMA } from '../../../../utils/forms';
+import { ACCESS_LABELS, DOWNLOAD_LABELS, DOWNLOAD_SCHEMA } from '../../../../utils/forms';
 import { itemShape } from '../../../../utils/itemShape';
 import { isOrgGuest, isOrgManager, isOrgMember } from '../../../../utils/permissions';
+import { refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
@@ -248,7 +249,7 @@ export const DownloadItemActions = ({ item, ctx }) => {
       .then(reload)
       .catch(error => {
         log.api.error(message, { productName: product.name, error: error.message });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
       });
   };
 
@@ -261,7 +262,7 @@ export const DownloadItemActions = ({ item, ctx }) => {
           productName: product.name,
           error: error.message,
         });
-        notify('danger', t('boxes.messages.deleteFailed'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 

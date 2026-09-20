@@ -16,6 +16,7 @@ import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
 import { log } from '../../../../lib/logger';
 import { hasFeature } from '../../../../utils/capabilities';
 import {
+  ACCESS_LABELS,
   DEPRECATION_LABELS,
   DEPRECATION_SCHEMA,
   ISO_ARCHITECTURE_LABELS,
@@ -30,10 +31,11 @@ import {
   visibilityPair,
 } from '../../../../utils/itemShape';
 import { isOrgManager } from '../../../../utils/permissions';
+import { refusalMessage } from '../../../../utils/validation';
 import { deleteVersionCascade } from '../api/adapter';
 import { api } from '../api/isos';
 
-const EMPTY_ARCHITECTURE = { name: '' };
+const EMPTY_ARCHITECTURE = { name: '', is_public: false, guest_access: false };
 const EMPTY_DEPRECATION = { deprecation_reason: '' };
 const UPLOAD_KEY = 'iso-upload';
 
@@ -61,7 +63,7 @@ const versionFailure = ({ error, version, t, notify }) => {
     versionNumber: version.version,
     error: error.message,
   });
-  notify('danger', t(error.messageKey || 'errors.request'));
+  notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
 };
 
 const VersionEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
@@ -191,7 +193,7 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
           versionNumber: version.version,
           error: requestError.message,
         });
-        notify('danger', t(requestError.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error: requestError, t }));
       });
   };
 
@@ -227,7 +229,11 @@ export const IsoVersionActions = ({ item, version, ctx }) => {
         onChange={access}
         className="btn btn-outline-secondary me-2"
       />
-      <PublishStep published={Boolean(version.published)} onChange={access} />
+      <PublishStep
+        published={Boolean(version.published)}
+        parentPublished={Boolean(item.published)}
+        onChange={access}
+      />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>
@@ -435,7 +441,7 @@ export const IsoVersionNotesActions = ({ item, version, ctx }) => {
 
 IsoVersionNotesActions.propTypes = slotShape;
 
-const IsoUploadFields = ({ uploading, form, rules, onName }) => {
+const IsoUploadFields = ({ uploading, form, rules, onName, onVisibility }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -458,15 +464,27 @@ const IsoUploadFields = ({ uploading, form, rules, onName }) => {
           />
         )}
       </Field>
+      <VisibilityPicker
+        idPrefix={rules.idFor('visibility')}
+        value={form}
+        onChange={onVisibility}
+        disabled={uploading}
+        className="mb-2"
+      />
     </>
   );
 };
 
 IsoUploadFields.propTypes = {
   uploading: PropTypes.bool.isRequired,
-  form: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
+  form: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
+  }).isRequired,
   rules: formRulesShape.isRequired,
   onName: PropTypes.func.isRequired,
+  onVisibility: PropTypes.func.isRequired,
 };
 
 export const IsoArtifactsActions = ({ item, version, ctx }) => {
@@ -493,12 +511,15 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
       return;
     }
     const architecture = form.name;
+    const access = { is_public: form.is_public, guest_access: form.guest_access };
     setUploading(true);
     setProgress(0);
     notify('', '', { key: UPLOAD_KEY });
     api.files
-      .upload(org, item.name, version.version, architecture, file, event => {
-        setProgress(Math.round((100 * event.loaded) / event.total));
+      .upload(org, item.name, version.version, architecture, {
+        file,
+        access,
+        onUploadProgress: event => setProgress(Math.round((100 * event.loaded) / event.total)),
       })
       .then(() => {
         notify('success', t('boxes.messages.operationSuccessful'), { key: UPLOAD_KEY });
@@ -532,7 +553,8 @@ export const IsoArtifactsActions = ({ item, version, ctx }) => {
         uploading={uploading}
         form={form}
         rules={rules}
-        onName={name => setForm({ name })}
+        onName={name => setForm(current => ({ ...current, name }))}
+        onVisibility={next => setForm(current => ({ ...current, ...next }))}
       />
     </UploadZone>
   );
@@ -550,6 +572,18 @@ export const IsoArtifactRowActions = ({ item, version, architecture, ctx }) => {
     return null;
   }
 
+  const access = fields =>
+    api.files
+      .access(org, item.name, version.version, architecture.name, fields)
+      .then(reload)
+      .catch(error => {
+        log.api.error('Error updating ISO file access', {
+          architectureName: architecture.name,
+          error: error.message,
+        });
+        notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
+      });
+
   const remove = () => {
     api.files
       .remove(org, item.name, version.version, architecture.name)
@@ -562,12 +596,24 @@ export const IsoArtifactRowActions = ({ item, version, architecture, ctx }) => {
           architectureName: architecture.name,
           error: error.message,
         });
-        notify('danger', t(error.messageKey || 'errors.request'));
+        notify('danger', refusalMessage({ error, t }));
       });
   };
 
   return (
     <>
+      <VisibilityStep
+        value={visibilityPair(architecture)}
+        max={visibilityPair(version)}
+        onChange={access}
+        className="btn btn-sm btn-outline-secondary"
+      />
+      <PublishStep
+        published={Boolean(architecture.published)}
+        parentPublished={Boolean(version.published)}
+        onChange={access}
+        className="btn btn-sm"
+      />
       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}
       </button>

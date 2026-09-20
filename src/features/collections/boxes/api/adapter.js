@@ -14,6 +14,7 @@ const fileDownloads = files => sumCounts((files || []).map(file => file.download
 
 const architectureSummary = architecture => ({
   name: architecture.name,
+  ...accessOf(architecture),
   downloadCount: fileDownloads(architecture.files),
 });
 
@@ -144,6 +145,7 @@ const getVersion = async (org, name, version) => {
         architectures: await Promise.all(
           architectures.map(async (architecture, index) => ({
             name: architecture.name,
+            ...accessOf(architecture),
             defaultBox: Boolean(architecture.default_box),
             downloadUrl: await downloadLink(org, name, version, provider.name, architecture.name),
             downloadCount: summaries[index].downloadCount,
@@ -164,6 +166,7 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
     ]);
     return {
       name: architecture.name,
+      ...accessOf(architecture),
       defaultBox: Boolean(architecture.default_box),
       fileName: info.file_name || '',
       fileSize: info.file_size || 0,
@@ -181,6 +184,7 @@ const architectureDetail = async (org, name, version, provider, architecture) =>
     });
     return {
       name: architecture.name,
+      ...accessOf(architecture),
       defaultBox: Boolean(architecture.default_box),
       fileName: '',
       fileSize: 0,
