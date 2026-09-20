@@ -561,7 +561,11 @@ session contract's sign-in page) by the states the issuer has:
   the profile page registers passkeys with the same code.
 - **Providers.** One `ProviderButtons` button per `oidc-` method, after
   an "or" divider when a form is shown; a click sets `window.location` to
-  `/oauth2/authorization/<id>` through `session.begin`.
+  `/oauth2/authorization/<id>` through `session.begin`. The default
+  provider is the one filled full-width button; the others are full-width
+  secondary buttons while fewer than three and a three-column grid of
+  tiles, the mark above the name, from three on, so the policy links stay
+  above the fold at 1080p however many providers a site lists.
 - **Sent state.** After a `202` the page navigates to `/login?sent`, the
   address kept in router state and never in the URL, and draws the inbox
   icon, "Check your inbox", the address, "The link is valid for

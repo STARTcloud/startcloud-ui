@@ -1910,6 +1910,66 @@ button::-moz-focus-inner {
   flex-shrink: 0;
 }
 
+.auth-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.auth-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 12px 8px;
+  border: 1px solid var(--auth-line);
+  border-radius: 12px;
+  background: var(--auth-field-bg);
+  color: var(--auth-ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.auth-tile .auth-provider-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.auth-tile span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-tile:hover:not(:disabled) {
+  border-color: var(--auth-line-strong);
+  background: var(--auth-soft);
+}
+
+.auth-tile:focus-visible {
+  outline: 0;
+  border-color: var(--auth-accent);
+  box-shadow: var(--auth-focus);
+}
+
+.auth-tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth-tile.is-loading {
+  opacity: 1;
+  border-color: var(--auth-accent);
+}
+
 .auth-or {
   display: flex;
   align-items: center;

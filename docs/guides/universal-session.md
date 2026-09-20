@@ -516,7 +516,9 @@ loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
 - `LoginPage({ session, account, returnTo, auth, appName })` reads
   `auth.methods()`, draws the local form only where the provider carries
   `login`, one button per identity provider through `session.begin({
-method })`, the remembered choice between the two, the silent
+method })` (the default provider filled and full width, the rest full
+  width while fewer than three and three-column tiles from three on),
+  the remembered choice between the two, the silent
   `prompt=none` attempt of the navbar contract, the provider begun at
   once with no chooser drawn while the answer enables exactly one method
   and it is the `default_provider` (a host whose sites map lists one
