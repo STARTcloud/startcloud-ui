@@ -1,0 +1,6 @@
+primary: '#0d6efd'
+on_primary: '#ffffff'
+surfaces:
+  dark:
+    body-bg: '#1a1d20'
+    border-color: '#4d565e'

@@ -286,14 +286,12 @@ their own server; browser-direct is permitted, not assumed.
 wants a pack names it in its own `/api/status` as
 `brand.pack: { name, css }`, `name` the bare pack name for `data-brand`
 and `css` the stylesheet URL, resolved by the UI backend's server from
-the endpoint above whenever the backend is tied to an identity provider
-(its status names `idp`), for its own client id, along with the site's
-default variant and brand metadata, cached on the endpoint's five-minute
-clock, and from its local configuration only on a standalone install
-with no identity provider, so every app of one site paints the site's
-pack and no app copies a pack name into its own config by hand; the
-shell stamps `data-brand` and appends the `<link>` from that member
-alone, and a payload without it stamps nothing. A UI backend that rewrites
+its local configuration, one pack name per host, the same way the
+identity provider names `theme_id` per site, never fetched from the
+identity provider at runtime, since every app serves the same build and
+so already holds every pack; the shell stamps `data-brand` and appends
+the `<link>` from that member alone, and a payload without it stamps
+nothing. A UI backend that rewrites
 `index.html` per site stamps the same two values into the file and
 answers the same `brand.pack`, so the shell finds them present and
 appends nothing, the identity provider and BoxVault being such backends,
@@ -492,7 +490,11 @@ Every site of the identity provider names a pack; a site with no pack is
 not a valid site, because the auth column and the chrome then paint stock
 Bootstrap where the site's own accent belongs, and `theme_id: light` is
 retired as a site value (the variant is the person's, decision 70's list
-is amended).
+is amended). The look the shared UI paints with no pack at all, its own
+base sheet alone, is the pack named `default`: Bootstrap's `#0d6efd`
+accent with white on it, stock light surfaces, and the dark surfaces
+`#1a1d20` with the `#4d565e` border, so a site or a host that wants that
+look names `default` instead of naming nothing.
 
 Email is branded through the identity provider's email-template
 documents, a copy per site and per locale edited on its Email templates
@@ -552,9 +554,11 @@ shell ships the fallbacks until each lands:
 | `public/themes/switchboard/poppins-<weight>.woff2`                                                                           | weights 500, 600, 700                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land   |
 | `public/themes/startcloud/startcloud.css` and its YAML source                                                                | the fourth pack                                                         | the accent the retired `auth.css` painted for the `startcloud` site                                                   |
 | `public/themes/prominic/prominic.css`, its YAML source and `mark.svg`, `public/brand/prominic/icon.png` and `logo-small.png` | the fifth pack, the Prominic accent `#67142c`, the asterisk as the mark | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url` |
+| `public/themes/default/default.css` and its YAML source                                                                      | the sixth pack, the shared UI's own base look under a name                | any site of the identity provider or host of BoxVault that wants the un-packed look, named as `theme_id` or `brand.pack`         |
 
 The sites are `startcloud`, `moonshinedev`, `switchboard`,
-`nomadservices` and, on BoxVault's downloads face alone, `prominic`.
+`nomadservices`, on BoxVault's downloads face alone `prominic`, and
+`default` wherever the base look is wanted by name.
 
 ---
 
