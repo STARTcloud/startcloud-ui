@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.24.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.23.0...v0.24.0) (2026-09-20)
+
+
+### Features
+
+* every BoxVault answer read in snake_case only, the adapters, the upload chain, the backend session and its stored profile, the profile, org console, discovery, admin and notification readers following, the UI's own item shape unchanged ([bb66046](https://github.com/STARTcloud/startcloud-ui/commit/bb660466bf7967ff5678581139f40c763cb49e53))
+* notification rows read in snake_case, read_at and created_at on the inbox page, the list and the modal, and the second-factor posts sending tfa_method and authenticator_id, the identity contract following ([90fe45e](https://github.com/STARTcloud/startcloud-ui/commit/90fe45efaecd6aa2a180e775bc097d9a49b10776))
+* notification rows read in snake_case, read_at and created_at on the inbox page, the list and the modal, the identity contract's exception retired ([08a5b6c](https://github.com/STARTcloud/startcloud-ui/commit/08a5b6c49e278352acda549d9f8f301d7386901e))
+* the authenticator page's method query as tfa_method, matching the issuer's redirect ([95a4739](https://github.com/STARTcloud/startcloud-ui/commit/95a4739fea3e0df3862b384e728899dc6314d5c1))
+
 ## [0.23.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.22.0...v0.23.0) (2026-09-19)
 
 
