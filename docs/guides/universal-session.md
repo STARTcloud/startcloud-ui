@@ -517,8 +517,12 @@ loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
   `auth.methods()`, draws the local form only where the provider carries
   `login`, one button per identity provider through `session.begin({
 method })`, the remembered choice between the two, the silent
-  `prompt=none` attempt of the navbar contract, and remembers the return
-  path for the callback; `account` is the session state of `useSession`,
+  `prompt=none` attempt of the navbar contract, the provider begun at
+  once with no chooser drawn while the answer enables exactly one method
+  and it is the `default_provider` (a host whose sites map lists one
+  sign-in method for a face), under the same guards as the silent
+  attempt so a returned `error` or a `provider` parameter still draws
+  the one button, and remembers the return path for the callback; `account` is the session state of `useSession`,
   whose adopted session alone (`loaded` and a user) sends a signed-in
   person off a sign-in page to the consumed return path or home, never the
   cached account.

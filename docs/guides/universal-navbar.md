@@ -980,7 +980,10 @@ the Notifications modal's vocabulary):
 Where the app has a default provider, the login page tries `prompt=none`
 once per browser session before showing a form; a bounce is benign and
 never an error. Any `error`, `provider`, or `logout` parameter suppresses
-the attempt.
+the attempt. Where the methods answer enables exactly one method and it
+is the default provider, the login page begins that provider at once
+under the same suppressions and draws no chooser, because a page with
+one button is a click for nothing.
 
 ---
 

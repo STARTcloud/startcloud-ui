@@ -391,6 +391,30 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     return enabledAuthMethods.some(method => method.id === `oidc-${defaultProvider}`);
   }, [methodsLoading, silentLogin, defaultProvider, urlParams, enabledAuthMethods, session, auth]);
 
+  const shouldBeginSole = useMemo(() => {
+    if (methodsLoading || shouldAttemptSilent || !defaultProvider) {
+      return false;
+    }
+    if (enabledAuthMethods.length !== 1 || oidcMethods.length !== 1) {
+      return false;
+    }
+    if (hasSilentBlockingParams(urlParams)) {
+      return false;
+    }
+    if (session.restore()) {
+      return false;
+    }
+    return oidcMethods[0].id === `oidc-${defaultProvider}`;
+  }, [
+    methodsLoading,
+    shouldAttemptSilent,
+    defaultProvider,
+    enabledAuthMethods,
+    oidcMethods,
+    urlParams,
+    session,
+  ]);
+
   useEffect(() => {
     let canceled = false;
 
@@ -440,6 +464,20 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     }
   }, [shouldAttemptSilent, defaultProvider, urlParams, auth, returnTo, session]);
 
+  useEffect(() => {
+    if (!shouldBeginSole) {
+      return;
+    }
+    try {
+      rememberReturn(returnTo, urlParams);
+      session.begin({ method: defaultProvider });
+    } catch (err) {
+      log.auth.error('Sole provider sign-in failed to start', {
+        error: err.message,
+      });
+    }
+  }, [shouldBeginSole, defaultProvider, urlParams, returnTo, session]);
+
   const handleSwitchMode = next => {
     setChosenMode(next);
     storeLoginMethod(auth.loginMethodKey, next);
@@ -488,7 +526,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
       });
   };
 
-  if (shouldAttemptSilent) {
+  if (shouldAttemptSilent || shouldBeginSole) {
     return (
       <AuthShell title={t('login.checkingSession')}>
         <AuthSpinner label={t('login.checkingSession')} />
@@ -542,7 +580,10 @@ BackendLoginPage.propTypes = {
  * the app's enabled methods from `auth.methods()`, the local form where the
  * provider carries `login`, one button per identity provider through
  * `session.begin`, the remembered choice between the two, the one silent SSO
- * attempt per browser session, and the return path kept for the callback;
+ * attempt per browser session, the provider begun at once and no chooser
+ * drawn while the host enables exactly one method and it is the default
+ * provider, under the same guards as the silent attempt, and the return
+ * path kept for the callback;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
  * issuer's modes and states through `CookieLogin`, which sends a person
  * whose adopted session (`account`) is live away.
