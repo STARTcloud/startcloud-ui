@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.28.0...v0.28.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* the onboarding hub following a gate's next or going home on not_pending instead of spinning, and its password subhead drawn only once the state names that step ([f94ef80](https://github.com/STARTcloud/startcloud-ui/commit/f94ef804c80c74cd1ca659c228d2cff6b5f2ee52))
+
 ## [0.28.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.27.0...v0.28.0) (2026-09-20)
 
 
