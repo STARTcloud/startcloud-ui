@@ -39,7 +39,7 @@ export const isos = {
   key: 'isos',
   labelKey: 'collections.isos',
   countKey: 'collections.isosCount',
-  icon: <FaCompactDisc aria-hidden />,
+  icon: FaCompactDisc,
   segment: 'isos',
   hasVersions: true,
   hasProviders: false,

@@ -46,7 +46,7 @@ export const downloads = {
   key: 'downloads',
   labelKey: 'collections.downloads',
   countKey: 'collections.downloadsCount',
-  icon: <FaDownload aria-hidden />,
+  icon: FaDownload,
   segment: 'downloads',
   hasVersions: true,
   hasProviders: true,

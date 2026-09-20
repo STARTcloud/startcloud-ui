@@ -529,8 +529,8 @@ const TITLE_PREFIXES = [...new Set(Object.keys(PAGE_TITLES).map(prefixOf))].sort
  * table every route registration below reads its title from, so a
  * route's title lives in one place; the lookup takes the longest
  * registered path, its parameter segments dropped, that the pathname
- * equals or descends from, and the shell draws it as the second crumb
- * after the root crumb when no sidebar row matches the route.
+ * equals or descends from, and the shell draws it as the one crumb when
+ * no sidebar row matches the route.
  *
  * @param {string} pathname - The current path
  * @returns {string} The title key, empty when no route is registered
@@ -548,11 +548,12 @@ export const routeTitleKey = pathname => {
  * unless the host lists the `sidebar` feature token (a host listing no
  * `features` array draws the column, `hasFeature` answering true there),
  * so the badges, the crumbs and the header's brand slot all follow from
- * the empty list; below that gate the catalog feature's Catalog group
- * while the host mounts a collection, for every visitor (handed the
- * session's account and the mounted collection definitions its Browse
- * tree walks, no status because it branches on nothing else the host
- * advertises), the profile feature's Account
+ * the empty list; below that gate the catalog feature's Browse group
+ * while the host mounts a collection (handed the status, the session's
+ * account and the mounted collection definitions its tree walks: the
+ * group for every visitor while the host advertises `browse`, for a
+ * `ROLE_ADMIN` account alone while it advertises `admin` instead, else
+ * none), the profile feature's Account
  * group (handed the integrations adapter its Integrations entry reads
  * once and the host's profile adapter its Profile children are built
  * from), the identity feature's operator group while the host's first
@@ -575,7 +576,7 @@ export const sidebarEntries = ({ status, account, collections }) => {
   const cookie = authMethod(status) === 'cookie';
   const admin = adminAdapterFor(status);
   return [
-    ...catalogSidebar(account, collections),
+    ...catalogSidebar(status, account, collections),
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),

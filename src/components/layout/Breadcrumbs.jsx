@@ -52,7 +52,8 @@ CrumbLink.propTypes = {
  * The crumbs of the header row: every crumb but the last a link to its
  * route, the last the page itself as plain text, a muted separator
  * before each one and, with `leading` off, none before the first, the
- * case of a host with a column whose row opens with the root crumb.
+ * case of a host with a column, whose brand link stands where the
+ * header's brand would.
  */
 const Crumbs = ({ crumbs, LinkComponent = 'a', leading = true }) =>
   crumbs.map((crumb, index) => (

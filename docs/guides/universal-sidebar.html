@@ -882,9 +882,8 @@
         <strong>Changed: the brand moves.</strong> With a sidebar the brand mark and product name
         are the sidebar's top, one link to `/`, so the brand means home on every host; the chevron
         beside them alone collapses the column, and in the rail the mark expands it. The header row
-        then opens with the root crumb, the product name linking to `/`, then the crumbs, so there
-        is always a way back to the home page. Without a sidebar the header keeps the brand as
-        today.
+        then carries no brand and no root crumb, the crumbs alone, the column's top being the way
+        back to the home page. Without a sidebar the header keeps the brand as today.
       </div>
       <div class="callout changed">
         <strong>Changed: the foot is bare unless a feature exports `actionMenu`.</strong> Without
@@ -929,10 +928,7 @@
             </div>
             <div class="main">
               <div class="navbar">
-                <div class="crumbs">
-                  <a href="#">STARTcloud</a><span class="sep">›</span>Admin<span class="sep">›</span
-                  >Users
-                </div>
+                <div class="crumbs">Admin<span class="sep">›</span>Users</div>
                 <div class="cluster"><span class="avatar"></span></div>
               </div>
               <div class="content"><div class="ghost">page</div></div>
@@ -956,8 +952,8 @@
             <div class="main">
               <div class="navbar">
                 <div class="crumbs">
-                  <a href="#">VDI Health</a><span class="sep">›</span>Fleet<span class="sep">›</span
-                  ><a href="#">Engineering</a><span class="sep">›</span>vdi-eng-014
+                  Fleet<span class="sep">›</span><a href="#">Engineering</a
+                  ><span class="sep">›</span>vdi-eng-014
                 </div>
                 <div class="cluster"><span class="avatar"></span></div>
               </div>
@@ -986,9 +982,9 @@
       <div class="callout">
         <strong>Brand.</strong> The navbar contract fixes a 62px header with the brand first and the
         cluster last; with a sidebar the brand is the column's top instead, at the same 62px so the
-        two seams align, and the header row opens with the root crumb, the product name linking to
-        `/`, then the crumbs. The mark and the product name are one link to `/`, the chevron alone
-        the collapse; in the rail only the mark remains and a click on it expands.
+        two seams align, and the header row carries no brand and no root crumb, the crumbs alone.
+        The mark and the product name are one link to `/`, the chevron alone the collapse; in the
+        rail only the mark remains and a click on it expands.
       </div>
       <div class="callout">
         <strong>Profile.</strong> Every UI backend keeps the header row and its cluster; the
@@ -1114,7 +1110,8 @@
               >the profile feature's Account section for everyone, the identity feature's operator
               sections for an admin (this page, Identity)</span
             ><span class="c"
-              >the catalog feature's Catalog group for every visitor, the profile feature's Account
+              >the catalog feature's Browse group, for every visitor while the host lists `browse`
+              and for an admin alone while it lists `admin` instead, the profile feature's Account
               group signed in, the shared admin feature's entries for an admin (this page,
               Pages)</span
             >
@@ -1219,9 +1216,9 @@
             <span class="hc">Piece</span><span class="hc">Rule</span> <span class="c k">mount</span
             ><span class="c"
               >`router.jsx` calls every mounted feature's `sidebar` export, `sidebar(status,
-              account)` for a feature gated by the host's tokens and `sidebar(account, collections)`
-              for the catalog, concatenates in the order catalog, profile, identity, vdi, admin, and
-              hands the list to `AppShell` as `sidebar`; empty means no column</span
+              account)` for a feature gated by the host's tokens and `sidebar(status, account,
+              collections)` for the catalog, concatenates in the order catalog, profile, identity,
+              vdi, admin, and hands the list to `AppShell` as `sidebar`; empty means no column</span
             >
             <span class="c k">grid</span
             ><span class="c"
@@ -1241,7 +1238,7 @@
             ><span class="c"
               >two controls, 62px: the brand mark and the product name one link to `/`, the chevron
               alone toggling the rail; in the rail the mark alone, titled "Expand", expands; the
-              header row then carries no brand and opens with the root crumb</span
+              header row then carries no brand and no root crumb, the crumbs alone</span
             >
             <span class="c k">row</span
             ><span class="c"
@@ -1332,14 +1329,15 @@
         the column is hidden on the sign-in, onboarding, interstitial and error routes.
       </div>
       <div class="callout">
-        <strong>BoxVault's entries.</strong> The catalog feature exports the Catalog group, Home and
-        the Browse tree, on every UI backend mounting a collection, for every visitor; the profile
-        feature the Account group with the Profile row signed in; and the shared admin feature
-        exports on every UI backend that advertises `admin`, each entry only while the adapter
-        carries `users`, `organizations`, `config` or `storage`, so BoxVault's admin page splits
-        into Users, Organizations, Configuration and System rows, the first two the identity
-        feature's pages over BoxVault's own adapters; on the issuer, whose adapter carries none of
-        the four, the shared feature exports nothing.
+        <strong>BoxVault's entries.</strong> The catalog feature exports the Browse group, the
+        Browse tree alone, on every UI backend mounting a collection, for every visitor while it
+        lists `browse` and for an admin alone while it lists `admin` instead; the profile feature
+        the Account group with the Profile row signed in; and the shared admin feature exports on
+        every UI backend that advertises `admin`, each entry only while the adapter carries `users`,
+        `organizations`, `config` or `storage`, so BoxVault's admin page splits into Users,
+        Organizations, Configuration and System rows, the first two the identity feature's pages
+        over BoxVault's own adapters; on the issuer, whose adapter carries none of the four, the
+        shared feature exports nothing.
       </div>
       <div class="callout">
         <strong>When the sidebar shows.</strong> On every page once a feature exported entries,
@@ -1375,7 +1373,7 @@
         <span class="c k">Pages</span
         ><span class="c">features export pages, adapters and api calls</span
         ><span class="c"
-          >a feature may export `sidebar(status, account)`, the catalog `sidebar(account,
+          >a feature may export `sidebar(status, account)`, the catalog `sidebar(status, account,
           collections)`; the reserved segments unchanged</span
         >
         <span class="c k">Session</span
@@ -1729,19 +1727,18 @@
           esc(b.brand) +
           '</span>'
         : '';
-      var trail = b.none ? crumbs : [b.brand].concat(crumbs);
+      var trail = crumbs;
       c +=
         '<div class="crumbs">' +
         trail
           .map(function (x, i) {
             var sep = b.none || i > 0 ? '<span class="sep">›</span>' : '';
             var last = i === trail.length - 1;
-            var link = !b.none && i === 0;
             return (
               sep +
               (last
                 ? '<span>' + esc(x) + '</span>'
-                : '<a href="#" data-act="' + (link ? 'home' : 'crumb') + '">' + esc(x) + '</a>')
+                : '<a href="#" data-act="crumb">' + esc(x) + '</a>')
             );
           })
           .join('') +
@@ -1942,7 +1939,7 @@
         (b.none
           ? "No feature of this UI backend exported sidebar entries; the chrome is exactly today's, the brand in the header."
           : home
-            ? 'the root of this UI backend, reached from the brand at the top of the column; no row matches, so the crumbs are the root crumb and the page title'
+            ? 'the root of this UI backend, reached from the brand at the top of the column; no row matches, so the crumb is the page title alone'
             : 'the page this entry routes to; the column never draws page content') +
         '</div><div class="ghost">page content, scrolling in this region alone</div><div class="ghost"></div><div class="ghost"></div><div class="ghost">the footer below never moves</div></div>';
       h +=
@@ -1970,7 +1967,7 @@
         ' · features=[' +
         esc(b.features.join(', ')) +
         ']</span></span></div>' +
-        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the chevron at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it, and a click on the mark expands it · click the brand at the top of the column or the root crumb, the page goes to the root of the backend · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route after the root crumb, every crumb but the last a link, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
+        '<div class="try">Try: pick a UI backend, the column follows what its features export, and the box, provisioner and catalog pages draw none with the brand back in the header · click the chevron at the top of the column, the rail keeps the mark alone and the navbar, page and footer move left with it, and a click on the mark expands it · click the brand at the top of the column, the page goes to the root of the backend · scroll the page region and the column\'s entries, the frame and the footer stay put · pick a row, the crumbs follow the route, every crumb but the last a link, and on the issuer no page repeats the rows as tabs · open a pool, the tree loads its children · on VDI Health switch the tree view between pool and session state, the same VMs under other parents · pick Hyperweaver for the swap: its scope controls take the account slot and the user menu sits at the foot of the column, the avatar alone in the rail.</div>';
     };
     var onClick = function (e) {
       var el = e.target.closest('[data-backend], [data-act], [data-toggle], [data-pick]');

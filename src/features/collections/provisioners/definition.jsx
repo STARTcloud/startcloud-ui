@@ -337,7 +337,7 @@ export const provisioners = {
   key: 'provisioners',
   labelKey: 'collections.provisioners',
   countKey: 'collections.provisionersCount',
-  icon: <FaCubes aria-hidden />,
+  icon: FaCubes,
   segment: '',
   hasVersions: true,
   hasProviders: true,

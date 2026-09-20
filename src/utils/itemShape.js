@@ -193,7 +193,7 @@ export const collectionShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
   countKey: PropTypes.string.isRequired,
-  icon: PropTypes.node,
+  icon: PropTypes.elementType,
   segment: PropTypes.string.isRequired,
   hasVersions: PropTypes.bool.isRequired,
   hasProviders: PropTypes.bool.isRequired,

@@ -421,16 +421,11 @@ ContextMenu.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-const TreeView = ({ groupKey, useTree, current, onTree, opened }) => {
+const TreeView = ({ useTree, current, opened }) => {
   const { t } = useTranslation();
   const { nodes, menu = null, labelKey = null } = useTree();
   const [kids, setKids] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
-
-  useEffect(() => {
-    onTree?.(groupKey, { nodes, kids });
-    return () => onTree?.(groupKey, null);
-  }, [groupKey, nodes, kids, onTree]);
 
   const load = useCallback(node => {
     Promise.resolve(node.children()).then(children => {
@@ -463,14 +458,12 @@ const TreeView = ({ groupKey, useTree, current, onTree, opened }) => {
 };
 
 TreeView.propTypes = {
-  groupKey: PropTypes.string.isRequired,
   useTree: PropTypes.func.isRequired,
   current: PropTypes.string.isRequired,
-  onTree: PropTypes.func,
   opened: openedShape.isRequired,
 };
 
-const GroupView = ({ group, badges, current, pathname, onTree }) => {
+const GroupView = ({ group, badges, current, pathname }) => {
   const { t } = useTranslation();
   const opened = useOpenKeys(group.key);
   const [view, setView] = useState(
@@ -512,10 +505,8 @@ const GroupView = ({ group, badges, current, pathname, onTree }) => {
       {useTree ? (
         <TreeView
           key={activeView?.key || 'tree'}
-          groupKey={group.key}
           useTree={useTree}
           current={current}
-          onTree={onTree}
           opened={opened}
         />
       ) : null}
@@ -528,7 +519,6 @@ GroupView.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   current: PropTypes.string.isRequired,
   pathname: PropTypes.string.isRequired,
-  onTree: PropTypes.func,
 };
 
 const useResize = (asideRef, setWidth) => {
@@ -593,11 +583,8 @@ const useResize = (asideRef, setWidth) => {
  * Right on a node, Escape closing a menu; and under 900px an overlay from
  * the left the header toggle opens. Every entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
- * `onTree(groupKey, { nodes, kids } | null)` reports each tree's root
- * nodes and the children it has loaded so the shell can draw the crumbs
- * of a route a tree node matches.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
+const Sidebar = ({ entries, brand, badges, open, onClose }) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
   const asideRef = useRef(null);
@@ -679,7 +666,6 @@ const Sidebar = ({ entries, brand, badges, open, onClose, onTree = null }) => {
                 badges={badges}
                 current={current}
                 pathname={pathname}
-                onTree={onTree}
               />
             ))}
           </div>
@@ -714,7 +700,6 @@ Sidebar.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  onTree: PropTypes.func,
 };
 
 export default Sidebar;

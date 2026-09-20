@@ -49,7 +49,7 @@ export const boxes = {
   key: 'boxes',
   labelKey: 'collections.boxes',
   countKey: 'collections.boxesCount',
-  icon: <FaCube aria-hidden />,
+  icon: FaCube,
   segment: '',
   hasVersions: true,
   hasProviders: true,

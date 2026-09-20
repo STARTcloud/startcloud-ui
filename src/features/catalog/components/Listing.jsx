@@ -84,10 +84,11 @@ const useWatches = ({ collections, user, notify }) => {
 
 const CollectionHeading = ({ collection, count, picked, children }) => {
   const { t } = useTranslation();
+  const Icon = collection.icon;
   return (
     <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
       <h2 className="h5 mb-0 me-auto d-flex align-items-center gap-2">
-        {collection.icon}
+        <Icon aria-hidden />
         {t(collection.labelKey)}
         {picked > 0 ? (
           <span className="small text-muted">· {t('pages.bulk.selected', { count: picked })}</span>

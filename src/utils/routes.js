@@ -1,3 +1,5 @@
+import { createElement } from 'react';
+
 /**
  * The first segment of a collection's own all-organizations listing: its
  * route segment, or its key for a collection mounted without one.
@@ -148,14 +150,8 @@ export const parseRoute = (pathname, { reserved, collections }) => {
 };
 
 /**
- * The root crumb a host with a column opens its crumbs with: the product
- * name, linking to `/`.
- */
-export const rootCrumb = name => ({ key: 'root', label: name, to: '/' });
-
-/**
- * The page's title as the second crumb of a reserved route no sidebar
- * row matches, from the route's registered title key; none without one.
+ * The page's title as the one crumb of a reserved route no sidebar row
+ * matches, from the route's registered title key; none without one.
  */
 export const titleCrumb = (titleKey, t) => (titleKey ? [{ key: 'title', label: t(titleKey) }] : []);
 
@@ -191,7 +187,7 @@ const sidebarEntries = groups =>
  * @param {Array} options.groups - The sidebar groups the features exported
  * @param {string} options.pathname - The current path
  * @param {Function} options.t - The translator
- * @returns {Array} The crumbs after the root crumb
+ * @returns {Array} The crumbs
  */
 export const sidebarCrumbs = ({ groups, pathname, t }) => {
   const [match] = sidebarEntries(groups)
@@ -223,7 +219,7 @@ export const sidebarCrumbs = ({ groups, pathname, t }) => {
  * @param {string} options.parent - The path of the row the page descends from
  * @param {string} options.name - The page's own name
  * @param {Function} options.t - The translator
- * @returns {Array} The crumbs after the root crumb
+ * @returns {Array} The crumbs
  */
 export const parentedCrumbs = ({ groups, parent, name, t }) => {
   if (!parent || !name) {
@@ -245,7 +241,7 @@ export const buildRouteCrumbs = ({ route, t, orgIcon }) => {
   if (collection) {
     crumbs.push({
       key: 'collection',
-      icon: collection.icon,
+      icon: createElement(collection.icon, { 'aria-hidden': true }),
       label: t(collection.labelKey),
       to: collectionPath(collection, org),
     });

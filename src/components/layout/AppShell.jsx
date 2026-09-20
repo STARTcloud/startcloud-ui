@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBook, FaBuilding, FaCircleInfo, FaEnvelope, FaGear } from 'react-icons/fa6';
@@ -20,7 +20,6 @@ import {
   parentedCrumbs,
   parseRoute,
   reservedSegments,
-  rootCrumb,
   sidebarCrumbs,
   titleCrumb,
 } from '../../utils/routes';
@@ -63,34 +62,6 @@ const menuLinksFor = ({ status, cookie, issuerUrl }) => {
     viewAllTo: '',
     preferencesTo: '',
   };
-};
-
-const pathTo = (nodes, kids, current, acc) => {
-  for (const node of nodes) {
-    const next = [...acc, node];
-    if (node.to === current) {
-      return next;
-    }
-    const hit = kids[node.key] ? pathTo(kids[node.key], kids, current, next) : null;
-    if (hit) {
-      return hit;
-    }
-  }
-  return null;
-};
-
-const treeCrumbs = ({ groups, trees, current, t }) => {
-  for (const group of groups) {
-    const tree = trees[group.key];
-    const path = tree ? pathTo(tree.nodes, tree.kids, current, []) : null;
-    if (path) {
-      return [
-        { key: 'group', label: t(group.labelKey) },
-        ...path.map(node => ({ key: node.key, label: node.label, to: node.to })),
-      ];
-    }
-  }
-  return [];
 };
 
 const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
@@ -148,26 +119,17 @@ const useRouteOrgLogo = (routeOrg, signedIn, logoFor) => {
   return resolved.name === routeOrg ? resolved.logo : '';
 };
 
-const shellCrumbs = ({
-  showSidebar,
-  sidebarMatch,
-  routeCrumbs,
-  reservedRoute,
-  name,
-  titleKey,
-  t,
-}) => {
+const shellCrumbs = ({ showSidebar, sidebarMatch, routeCrumbs, reservedRoute, titleKey, t }) => {
   if (!showSidebar) {
     return routeCrumbs;
   }
-  const root = rootCrumb(name);
   if (sidebarMatch.length > 0) {
-    return [root, ...sidebarMatch];
+    return sidebarMatch;
   }
   if (routeCrumbs.length > 0) {
-    return [root, ...routeCrumbs];
+    return routeCrumbs;
   }
-  return reservedRoute ? [root, ...titleCrumb(titleKey, t)] : [root];
+  return reservedRoute ? titleCrumb(titleKey, t) : [];
 };
 
 const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, pageName, t }) => {
@@ -186,9 +148,7 @@ const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, pageNam
 const sidebarMatchFor = ({
   showSidebar,
   groups,
-  trees,
   pathname,
-  search,
   routeCrumbParent,
   organizations,
   activeOrgUuid,
@@ -199,7 +159,6 @@ const sidebarMatchFor = ({
     return [];
   }
   const lists = [
-    treeCrumbs({ groups, trees, current: `${pathname}${search}`, t }),
     sidebarCrumbs({ groups, pathname, t }),
     pageCrumbsFor({
       groups,
@@ -360,20 +319,19 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * exported entries for it (the gate on `sidebarEntries`, the shell only
  * reading whether the list is empty), then
  * the header with the brand from `status.brand` (in the sidebar's top
- * while one draws, one link to `/`), the route crumbs (opened with the root crumb, the
- * product name linking to `/`, while the sidebar draws; `<group> › <row>`
+ * while one draws, one link to `/`), the crumbs (while the sidebar draws,
+ * from the route alone, never from the tree: `<group> › <row>`
  * on a route a sidebar row matches, `<group> › <row> › <child>` on a
- * route a child row matches, `<group> › <node> › …` down the
- * loaded tree on a route a tree node matches, the way the sidebar mock's
- * `pathTo` walks it, `<group> › <row> › <name>` on a page
+ * route a child row matches, `<group> › <row> › <name>` on a page
  * `routeCrumbParent` names a parent row for, the page's own name last,
  * resolved from what the shell holds (the organization console's the
  * active membership's name) and from the name the page itself sets
  * through `usePageName` into the crumb context, the resolver handed
  * `{ activeOrganization, pageName, params, t }` so a translated
- * placeholder stands in while the page has not loaded, and the
- * page's title from `routeTitleKey` on a
- * reserved route no row matches, so the row is never empty), the user
+ * placeholder stands in while the page has not loaded, else the route
+ * parser's crumbs on a catalog route, else the page's title from
+ * `routeTitleKey` on a reserved route, else nothing; without a column
+ * the route parser's crumbs alone), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
  * the chrome; and the footer while the host lists the `footer` token. The
@@ -449,10 +407,6 @@ const AppShell = ({
   const onAuthPage = returnTo.onAuthPage(pathname);
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
-  const [trees, setTrees] = useState({});
-  const onTree = useCallback((key, tree) => {
-    setTrees(previous => ({ ...previous, [key]: tree }));
-  }, []);
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
   const route = useRouteCrumbs({ pathname, reserved, collections, signedIn, orgs, t });
   const crumbs = shellCrumbs({
@@ -460,9 +414,7 @@ const AppShell = ({
     sidebarMatch: sidebarMatchFor({
       showSidebar,
       groups: sidebar,
-      trees,
       pathname,
-      search,
       routeCrumbParent,
       organizations,
       activeOrgUuid,
@@ -471,7 +423,6 @@ const AppShell = ({
     }),
     routeCrumbs: route.crumbs,
     reservedRoute: route.reserved,
-    name: status.brand.name,
     titleKey: routeTitleKey ? routeTitleKey(pathname) : '',
     t,
   });
@@ -567,7 +518,6 @@ const AppShell = ({
         badges={badges}
         open={overlay.open}
         onClose={overlay.close}
-        onTree={onTree}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>

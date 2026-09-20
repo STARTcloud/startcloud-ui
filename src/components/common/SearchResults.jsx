@@ -110,10 +110,7 @@ const groupRows = (rows, collections) => {
  * not know.
  */
 export const KindGlyph = ({ kind, collection = null }) => {
-  if (collection?.icon) {
-    return collection.icon;
-  }
-  const Icon = KIND_ICONS[kind] || FaCircleQuestion;
+  const Icon = collection?.icon || KIND_ICONS[kind] || FaCircleQuestion;
   return <Icon aria-hidden />;
 };
 

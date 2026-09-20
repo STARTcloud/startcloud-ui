@@ -2102,8 +2102,10 @@ is reached by no link on any page and is retired with the templates
 
 Two features export the issuer's column, and the router hands their
 concatenation to `AppShell` as the navbar contract's Sidebar section
-fixes it, the catalog feature's Catalog group drawing before them on a
-host mounting a collection, which the issuer, listing none, never does.
+fixes it, the catalog feature's Browse group drawing before them on a
+host mounting a collection, for every visitor while it lists `browse`
+and for a `ROLE_ADMIN` account alone while it lists `admin` instead,
+which the issuer, listing none, never does.
 `src/features/profile/sidebar.js`, `sidebar(status, account,
 integrations, profile)` over the host's profile adapter, answers, for
 every signed-in person, one group
@@ -2196,12 +2198,11 @@ behind the column's Configuration entry over an adapter carrying
 never branches on the UI backend's role, because a UI
 backend that needs a different column adds a feature and opts into it,
 never a role branch inside a shared one. The column shows the brand at
-its top, one link to `/`, and the header row opens with the root crumb,
-the product name linking to `/`, then the crumbs
-(`STARTcloud › Account › Profile`, `STARTcloud › Admin › Users`), the
+its top, one link to `/`, and the header row carries no brand and no
+root crumb, the crumbs alone (`Account › Profile`, `Admin › Users`), the
 group a plain word and the row the last crumb, plain text; on a child
 route the breadcrumb reads the group, the parent row, then the child's
-label (`STARTcloud › Account › Profile › Favorites`), the parent a link
+label (`Account › Profile › Favorites`), the parent a link
 to its own page and the child the last crumb; the user
 menu keeps its universal rows, its Preferences row an in-router link to
 `/user/profile/preferences`, its app section headed by `brand.name`

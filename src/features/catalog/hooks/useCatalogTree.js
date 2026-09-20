@@ -65,7 +65,9 @@ const organizationNodes = ({ collection, items, routeOf }) =>
 
 /**
  * The catalog feature's sidebar tree in decision 68's hook shape: one root
- * node per mounted collection, labelled by the collection's `labelKey` and
+ * node per mounted collection, labelled by the collection's `labelKey`,
+ * carrying the collection's `icon` component as its glyph (the only nodes
+ * that carry one, the rail hiding the rest) and
  * routing to its own all-organizations listing (`collectionPath` with no
  * organization, the collection's segment or, without one, its key), whose
  * children are one node per organization
@@ -82,11 +84,12 @@ const organizationNodes = ({ collection, items, routeOf }) =>
  * deep link opens the path down to the item the way the crumbs read it;
  * the `listAll` answer is memoized per collection for the signed-in person,
  * so two organizations expand from one read, and forgotten when the person
- * changes; the answer carries the Browse heading as its `labelKey`.
+ * changes; the answer carries no `labelKey`, the Browse group's own label
+ * being the one heading over the nodes.
  *
  * @param {Array<Object>} collections - The host's mounted collection definitions
  * @param {Object|null} user - The session's user, the memo's owner
- * @returns {{ nodes: Array<Object>, labelKey: string }} The tree the sidebar draws
+ * @returns {{ nodes: Array<Object> }} The tree the sidebar draws
  */
 export const useCatalogTree = (collections, user) => {
   const { t } = useTranslation();
@@ -113,9 +116,9 @@ export const useCatalogTree = (collections, user) => {
 
   return useMemo(
     () => ({
-      labelKey: 'pages.sidebar.browse',
       nodes: collections.map(collection => ({
         key: collection.key,
+        icon: collection.icon,
         label: t(collection.labelKey),
         to: collectionPath(collection, ''),
         matches: pathname => routeOf(pathname)?.collection === collection,
