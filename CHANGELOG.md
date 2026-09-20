@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.30.0...v0.31.0) (2026-09-20)
+
+
+### Features
+
+* descriptions, readmes and release notes drawn as markdown with every link in its own tab, the vendor standing where the organization did with its own mark in place of the organization's, cards carrying the row's family, count and newest release, the published and guests badges kept for a viewer who may write the row, no watch star for a guest-only account, and the downloads column hidden where no row carries a count ([c021d34](https://github.com/STARTcloud/startcloud-ui/commit/c021d34d6518678ba0b128de599c60b571df0ee0))
+* visibility travels down the tree, one cascade check beside every opening action and the bulk bar's opening verbs sending recursive, the item pages' publish buttons converged onto the shared step, a blank member that is not required never validated, the admin preferences form without the PIN, Ctrl+F opening the navbar search, and the record page's Two-factor card over the admin read ([2842073](https://github.com/STARTcloud/startcloud-ui/commit/2842073e66606098f69e13ff52f0fdc8673459a2))
+
 ## [0.30.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.29.0...v0.30.0) (2026-09-20)
 
 
