@@ -21,7 +21,7 @@ import {
   passkeyVerify,
 } from '../../../lib/passkeys';
 import { cancelSignIn, magicLinkRequest } from '../../../lib/signin';
-import { authShape, returnToShape, storeLoginMethod } from '../../../utils/auth';
+import { authShape, returnToShape, signInAffordances, storeLoginMethod } from '../../../utils/auth';
 import { NON_BLANK } from '../../../utils/validation';
 import { useMethods } from '../useMethods';
 import { useSignedInRedirect } from '../useSignedInRedirect';
@@ -44,17 +44,17 @@ const SAFE_PATH = /^\/(?![/\\])/;
 
 const enabledMethods = answer => (answer?.methods || []).filter(method => method.enabled);
 
-const availableModes = answer => {
-  if (!answer) {
-    return MODES;
-  }
-  return enabledMethods(answer)
-    .map(method => MODE_OF[method.id])
-    .filter(Boolean);
+const availableModes = (answer, affordances) => {
+  const modes = answer
+    ? enabledMethods(answer)
+        .map(method => MODE_OF[method.id])
+        .filter(Boolean)
+    : MODES;
+  return affordances?.signInLink === false ? modes.filter(mode => mode !== 'magic_link') : modes;
 };
 
-const resolveMode = ({ params, stored, answer }) => {
-  const available = availableModes(answer);
+const resolveMode = ({ params, stored, answer, affordances }) => {
+  const available = availableModes(answer, affordances);
   const error = params.get('error') || '';
   const candidates = [
     error.startsWith('magic_link_') ? 'magic_link' : '',
@@ -173,7 +173,17 @@ PolicyLinks.propTypes = {
   ).isRequired,
 };
 
-const LoginForm = ({ mode, values, rules, revealed, wait, conditional, handlers, formRef }) => {
+const LoginForm = ({
+  mode,
+  values,
+  rules,
+  revealed,
+  wait,
+  conditional,
+  handlers,
+  formRef,
+  showReset,
+}) => {
   const { t } = useTranslation(['auth']);
   const password = mode === 'password';
   const address = password ? 'username' : 'email';
@@ -224,7 +234,7 @@ const LoginForm = ({ mode, values, rules, revealed, wait, conditional, handlers,
           />
           <span>{t('login.keepSignedIn')}</span>
         </label>
-        {password ? (
+        {password && showReset ? (
           <Link to="/passwordRecovery" className="auth-link auth-link-muted">
             {t('login.forgotPassword')}
           </Link>
@@ -277,12 +287,23 @@ LoginForm.propTypes = {
     busy: PropTypes.bool.isRequired,
   }).isRequired,
   formRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
+  showReset: PropTypes.bool.isRequired,
 };
 
-const LoginExtras = ({ answer, providers, mode, busy, onSwitch, onCancel, session, appName }) => {
+const LoginExtras = ({
+  answer,
+  affordances,
+  providers,
+  mode,
+  busy,
+  onSwitch,
+  onCancel,
+  session,
+  appName,
+}) => {
   const { t } = useTranslation(['auth']);
   const otherMode = MODES.find(candidate => candidate !== mode);
-  const canSwitch = Boolean(mode) && availableModes(answer).includes(otherMode);
+  const canSwitch = Boolean(mode) && availableModes(answer, affordances).includes(otherMode);
   const cancel = Boolean(answer?.cancel);
   return (
     <>
@@ -311,7 +332,7 @@ const LoginExtras = ({ answer, providers, mode, busy, onSwitch, onCancel, sessio
           ) : null}
         </div>
       ) : null}
-      {answer?.local_registration_enabled ? (
+      {affordances.registration ? (
         <p className="auth-foot">
           {t('login.newHere', { app: appName })}{' '}
           <Link to="/registration" className="auth-link">
@@ -326,6 +347,10 @@ const LoginExtras = ({ answer, providers, mode, busy, onSwitch, onCancel, sessio
 
 LoginExtras.propTypes = {
   answer: PropTypes.object,
+  affordances: PropTypes.shape({
+    registration: PropTypes.bool.isRequired,
+    signInLink: PropTypes.bool.isRequired,
+  }).isRequired,
   providers: PropTypes.arrayOf(PropTypes.object).isRequired,
   mode: PropTypes.string.isRequired,
   busy: PropTypes.bool.isRequired,
@@ -462,6 +487,10 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
  * provider button per `oidc-` method; the sent state at `/login?sent` with
  * the address in router state; the query alerts; the foot with "Create an
  * account", the policy links and Cancel while a request is parked. The
+ * three closable affordances, Create an account, Forgot password and the
+ * sign-in link mode, are drawn per `signInAffordances`, so a client that
+ * narrows this page with `hide` on the address, the way `oidc_provider`
+ * narrows the providers, loses those controls for its own flow alone. The
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
@@ -484,8 +513,9 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
   const form = useRef(null);
 
   const stored = localStorage.getItem(auth.loginMethodKey) || '';
-  const resolved = resolveMode({ params, stored, answer });
-  const mode = availableModes(answer).includes(chosenMode) ? chosenMode : resolved;
+  const affordances = useMemo(() => signInAffordances({ answer, params }), [answer, params]);
+  const resolved = resolveMode({ params, stored, answer, affordances });
+  const mode = availableModes(answer, affordances).includes(chosenMode) ? chosenMode : resolved;
   const ruleValues = useMemo(
     () => (mode === 'password' ? values : { ...values, email: values.username }),
     [mode, values]
@@ -579,6 +609,7 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
           conditional={conditional}
           handlers={handlers}
           formRef={form}
+          showReset={affordances.passwordReset}
         />
       ) : null}
       {!loading && !mode && providers.length === 0 ? (
@@ -586,6 +617,7 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
       ) : null}
       <LoginExtras
         answer={answer}
+        affordances={affordances}
         providers={providers}
         mode={mode}
         busy={busy}

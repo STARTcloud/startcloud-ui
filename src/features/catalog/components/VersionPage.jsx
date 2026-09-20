@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Markdown from 'react-markdown';
 
 import DeprecationBanner from '../../../components/common/DeprecationBanner';
 import {
@@ -9,6 +8,7 @@ import {
   architectureLevelMatches,
   providerLevelMatches,
 } from '../../../components/common/levelColumns';
+import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
@@ -79,7 +79,7 @@ const VersionSummary = ({ entry, manage, actions, editor, slots, slotProps }) =>
             <h5 className="mb-0">{t('pages.version.releaseNotes')}</h5>
           </div>
           <div className="card-body">
-            {entry.releaseNotes ? <Markdown>{entry.releaseNotes}</Markdown> : null}
+            <MarkdownText text={entry.releaseNotes} />
             {VersionNotesActions ? <VersionNotesActions {...slotProps} /> : null}
           </div>
         </div>

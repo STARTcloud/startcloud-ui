@@ -15,10 +15,19 @@ import { Link } from 'react-router-dom';
 
 import EmptyState from '../../../components/common/EmptyState';
 import GroupHeading, { groupShape } from '../../../components/common/GroupHeading';
+import MarkdownText from '../../../components/common/MarkdownText';
 import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
-import { collectionShape, itemShape, statusOf, visibilityOf } from '../../../utils/itemShape';
+import {
+  collectionShape,
+  itemShape,
+  latestReleaseTime,
+  statusOf,
+  visibilityOf,
+} from '../../../utils/itemShape';
+import { managesItem } from '../../../utils/permissions';
+import { formatRelativeTime } from '../../../utils/relativeTime';
 import { itemPath } from '../../../utils/routes';
 
 const CardMedia = ({ item, ctx }) => {
@@ -96,11 +105,44 @@ CardLinks.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+const CardFacts = ({ collection, item, ctx }) => {
+  const { t } = useTranslation();
+  const released = latestReleaseTime(item);
+  const versions = (item.versions || []).length;
+  const versionsLabel = collection.levels?.versions?.labelKey || 'pages.table.versions';
+  const facts = [
+    item.family ? ['family', t('pages.table.family'), item.family] : null,
+    versions > 0 ? ['versions', t(versionsLabel), versions] : null,
+    released
+      ? ['released', t('pages.table.released'), formatRelativeTime(released, ctx.language)]
+      : null,
+  ].filter(Boolean);
+  if (facts.length === 0) {
+    return null;
+  }
+  return (
+    <div className="d-flex flex-wrap gap-3 small text-body-secondary mb-2">
+      {facts.map(([key, label, value]) => (
+        <span key={key}>
+          {label}: <strong className="text-body">{value}</strong>
+        </span>
+      ))}
+    </div>
+  );
+};
+
+CardFacts.propTypes = {
+  collection: collectionShape.isRequired,
+  item: itemShape.isRequired,
+  ctx: PropTypes.object.isRequired,
+};
+
 const ItemCard = ({ collection, item, watches, selection, ctx }) => {
   const { t } = useTranslation();
   const { ItemChips, CardGlyph, CardExtras, RowActions } = collection.slots;
   const title = item.label || item.name;
   const watched = watches ? watches.ids.has(item.id) : false;
+  const manage = managesItem(ctx.status, collection, item, ctx.user);
   return (
     <Card className="h-100 shadow-sm catalog-card">
       <Card.Body className="d-flex flex-column">
@@ -115,7 +157,7 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
                 title
               )}
             </Card.Title>
-            <div className="small text-body-secondary">{item.organization.name}</div>
+            <div className="small text-body-secondary">{item.vendor || item.organization.name}</div>
             {item.label && item.label !== item.name ? (
               <code className="checksum">{item.name}</code>
             ) : null}
@@ -134,17 +176,14 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
         </div>
         <div className="d-flex flex-wrap gap-1 mb-2">
           <StatusChips
-            status={statusOf(item)}
-            visibility={visibilityOf(item)}
+            status={manage ? statusOf(item) : null}
+            visibility={manage ? visibilityOf(item) : null}
             osLabel={item.os?.label || null}
           />
           {ItemChips ? <ItemChips item={item} ctx={ctx} /> : null}
         </div>
-        {item.description ? (
-          <Card.Text className="card-desc" title={item.description}>
-            {item.description}
-          </Card.Text>
-        ) : null}
+        <CardFacts collection={collection} item={item} ctx={ctx} />
+        <MarkdownText text={item.description} className="card-desc mb-2" />
         <div className="mt-auto d-flex flex-column gap-2">
           <CardLinks item={item} CardGlyph={CardGlyph} ctx={ctx} />
           {CardExtras ? <CardExtras item={item} ctx={ctx} /> : null}

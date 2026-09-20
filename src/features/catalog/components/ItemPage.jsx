@@ -2,9 +2,9 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
-import Markdown from 'react-markdown';
 
 import { versionLevelMatches } from '../../../components/common/levelColumns';
+import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
@@ -34,7 +34,7 @@ const Readme = ({ readme }) => {
         <h5 className="mb-0">{t('pages.item.readme')}</h5>
       </div>
       <div className="card-body">
-        <Markdown>{readme}</Markdown>
+        <MarkdownText text={readme} />
       </div>
     </div>
   );
@@ -135,7 +135,7 @@ const mediaFor = item => {
   return null;
 };
 
-const ItemHeading = ({ item, org, editor, actions, watch, ctx }) => {
+const ItemHeading = ({ item, org, editor, actions, watch, manage, ctx }) => {
   const { t } = useTranslation();
   const { ItemChips, ItemHeaderExtra } = ctx.collection.slots;
   if (editor) {
@@ -158,8 +158,8 @@ const ItemHeading = ({ item, org, editor, actions, watch, ctx }) => {
   const chips = (
     <>
       <StatusChips
-        status={statusOf(item)}
-        visibility={visibilityOf(item)}
+        status={manage ? statusOf(item) : null}
+        visibility={manage ? visibilityOf(item) : null}
         osLabel={item.os?.label || null}
       />
       {ItemChips ? <ItemChips item={item} ctx={ctx} /> : null}
@@ -169,11 +169,11 @@ const ItemHeading = ({ item, org, editor, actions, watch, ctx }) => {
     <PageHeader
       media={mediaFor(item)}
       title={title}
-      subtitle={`${org} / ${item.name}`}
+      subtitle={`${item.vendor || org} / ${item.name}`}
       chips={chips}
       actions={actions}
     >
-      {item.description ? <p className="mb-0 mt-2">{item.description}</p> : null}
+      <MarkdownText text={item.description} className="mb-0 mt-2" />
       {ItemHeaderExtra ? <ItemHeaderExtra item={item} ctx={ctx} /> : null}
     </PageHeader>
   );
@@ -185,6 +185,7 @@ ItemHeading.propTypes = {
   editor: PropTypes.node,
   actions: PropTypes.node,
   watch: watchShape.isRequired,
+  manage: PropTypes.bool.isRequired,
   ctx: PropTypes.object.isRequired,
 };
 
@@ -357,6 +358,7 @@ const ItemPage = ({ collection, org, name, context }) => {
   }
 
   const actions = ItemActions ? <ItemActions item={item} ctx={ctx} /> : null;
+  const manage = managesItem(status, collection, item, context.user);
 
   return (
     <div className="list row">
@@ -366,6 +368,7 @@ const ItemPage = ({ collection, org, name, context }) => {
         editor={editor}
         actions={actions}
         watch={watch}
+        manage={manage}
         ctx={ctx}
       />
       {ItemExtras ? <ItemExtras item={item} ctx={ctx} /> : null}
@@ -377,7 +380,7 @@ const ItemPage = ({ collection, org, name, context }) => {
           columns={columns}
           search={search}
           form={form}
-          manage={managesItem(status, collection, item, context.user)}
+          manage={manage}
           org={org}
           ctx={ctx}
         />

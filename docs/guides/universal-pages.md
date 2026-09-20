@@ -346,12 +346,40 @@ adapter, registers the search binding, and renders:
   folds, never under a key of its own; the collection's `defaultView`
   seeds it (the catalog's provisioners and BoxVault's downloads cards,
   boxes and ISOs list).
+- **The row's identity is the vendor's where a row names one.** A record
+  carrying a `vendor` draws that name where the organization's would
+  stand, on the card under the title and in the Name cell's title text,
+  and its own `icon_url` takes the organization's logo's place rather
+  than joining it, one mark per row; a record naming no vendor draws the
+  organization as before. A product licensed from another company is
+  never presented as the hosting organization's, which is a legal line,
+  not a cosmetic one.
+- **A description is Markdown.** The card's description, the item
+  heading's, the README and the release notes all draw through the one
+  `MarkdownText` block: the text a person wrote rendered as Markdown,
+  every link a real link that opens in its own tab and carries no
+  referrer, raw HTML never rendered and an untrusted scheme dropped. The
+  card clamps its description to three lines as before.
+- **A card carries the row's own facts**, under the chips and above the
+  description: the family, the count of versions or releases under that
+  level's own word, and the newest release as a relative time, each drawn
+  only while the row carries it.
+- **The status and visibility chips are a manager's.** A card and an item
+  heading draw them only for a viewer who may write the row, the same
+  `managesItem` test the Actions column makes; a guest, who may read and
+  download and change nothing, sees the row's own facts instead of two
+  badges about a state they cannot move. The OS chip and the collection's
+  own `ItemChips` draw for everyone.
+- **A guest-only account keeps nothing of its own**, so a listing draws
+  no watch star for one; the column is blank the way it is for a visitor.
 - **One table per collection**, organization rows as group rows inside it,
   so every column lines up across organizations. Tables and cards render
   the same rows; cards carry `ItemChips`, a row of link glyphs for the
   item's `links` (repository, homepage, issues, pipeline, docs, notes,
   each drawn only when present) with the collection's `CardGlyph` slot at
-  the row's right, and `CardExtras`. A table draws the Deploy column
+  the row's right, and `CardExtras`. The Downloads column carries the
+  same `when` its level tables carry, so a viewer answered no counts is
+  drawn no column rather than a header over blank cells. A table draws the Deploy column
   (`key` `deploy`, `kind` `badge`, the label `pages.table.deploy`) right
   after Name and before Visibility, present only while the UI backend
   advertises `deploy`, the viewer is signed in and entitled and a row has

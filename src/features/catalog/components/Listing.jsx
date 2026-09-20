@@ -8,7 +8,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useSelection } from '../../../hooks/useSelection';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
-import { isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
+import { isGuestOnly, isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
 
 import BulkActions from './BulkActions';
@@ -36,7 +36,8 @@ const useWatches = ({ collections, user, notify }) => {
   const { t } = useTranslation();
   const [ids, setIds] = useState({});
   const signedIn = Boolean(user);
-  const available = signedIn && collections.some(collection => collection.adapter.watches);
+  const available =
+    signedIn && !isGuestOnly(user) && collections.some(collection => collection.adapter.watches);
 
   useEffect(() => {
     const watchable = collections.filter(collection => collection.adapter.watches);

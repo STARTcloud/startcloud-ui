@@ -1,7 +1,7 @@
 import { profileMemberships } from '../lib/backendSession';
 
 import { hasFeature } from './capabilities';
-import { isGuest, isManager, isMember, isOwner, managesAny } from './membership';
+import { guestOnly, isGuest, isManager, isMember, isOwner, managesAny } from './membership';
 
 /**
  * Whether the user holds the global admin role, under `roles` or under
@@ -22,6 +22,13 @@ export const isOrgMember = (user, organizationName) =>
  */
 export const isOrgGuest = (user, organizationName) =>
   isGuest(profileMemberships(user), organizationName);
+
+/**
+ * A guest-only account, the shared download login: every membership a
+ * guest's, so the viewer may read and download and keep nothing of their
+ * own, which is why a listing draws no watch star for one.
+ */
+export const isGuestOnly = user => guestOnly(profileMemberships(user));
 
 /**
  * Owner or admin of at least one organization, or a global admin: what a

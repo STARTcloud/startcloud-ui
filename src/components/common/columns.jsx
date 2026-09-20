@@ -13,6 +13,7 @@ import { itemPath } from '../../utils/routes';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
 
 import { VisibilityBadge } from './StatusChips';
+import { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -50,20 +51,23 @@ export const nameColumn = {
   labelKey: 'pages.table.name',
   sortValue: item => item.name.toLowerCase(),
   render: (item, ctx) => {
-    const orgName = item.organization.name;
-    const text = `${orgName}/${item.name}`;
+    const owner = item.vendor || item.organization.name;
+    const text = `${owner}/${item.name}`;
     return (
       <>
-        <OrgLogo
-          org={item.organization}
-          size={30}
-          className="rounded-circle avatar-lg icon-with-margin-sm v-align-middle"
-          fallback={ctx.orgMark}
-        />
-        {itemIcon(item.icon)}
+        {item.icon ? (
+          itemIcon(item.icon)
+        ) : (
+          <OrgLogo
+            org={item.organization}
+            size={30}
+            className="rounded-circle avatar-lg icon-with-margin-sm v-align-middle"
+            fallback={ctx.orgMark}
+          />
+        )}
         {ctx.collection.itemRoute ? (
           <Link
-            to={itemPath(ctx.collection, orgName, item.name)}
+            to={itemPath(ctx.collection, item.organization.name, item.name)}
             className="v-align-middle"
             title={text}
           >
@@ -176,6 +180,7 @@ export const downloadsColumn = {
   kind: 'count',
   labelKey: 'pages.table.downloads',
   sortValue: item => item.downloads || 0,
+  when: hasAny(item => typeof item.downloads === 'number'),
   render: item => (typeof item.downloads === 'number' ? item.downloads : ''),
 };
 

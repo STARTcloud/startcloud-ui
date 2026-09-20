@@ -14,6 +14,7 @@ import {
   authShape,
   readStoredLoginMethod,
   returnToShape,
+  signInAffordances,
   sortMethodsByDefault,
   storeLoginMethod,
 } from '../../../utils/auth';
@@ -373,7 +374,14 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     [mode, localEnabled, providerParam, oidcMethods, visibleOidcMethods]
   );
 
-  const registrationOpen = localRegistrationEnabled || oidcMethods.length > 0;
+  const registrationOpen = useMemo(
+    () =>
+      signInAffordances({
+        answer: { local_registration_enabled: localRegistrationEnabled },
+        params: urlParams,
+      }).registration,
+    [localRegistrationEnabled, urlParams]
+  );
 
   const shouldAttemptSilent = useMemo(() => {
     if (methodsLoading || !silentLogin || !defaultProvider) {
@@ -583,7 +591,9 @@ BackendLoginPage.propTypes = {
  * attempt per browser session, the provider begun at once and no chooser
  * drawn while the host enables exactly one method and it is the default
  * provider, under the same guards as the silent attempt, and the return
- * path kept for the callback;
+ * path kept for the callback; Create an account is drawn only while the
+ * host answers `local_registration_enabled` and the address does not
+ * name `registration` in `hide`, never merely because a provider exists;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
  * issuer's modes and states through `CookieLogin`, which sends a person
  * whose adopted session (`account`) is live away.
