@@ -490,11 +490,11 @@ Every site of the identity provider names a pack; a site with no pack is
 not a valid site, because the auth column and the chrome then paint stock
 Bootstrap where the site's own accent belongs, and `theme_id: light` is
 retired as a site value (the variant is the person's, decision 70's list
-is amended). The look the shared UI paints with no pack at all, its own
-base sheet alone, is the pack named `default`: Bootstrap's `#0d6efd`
-accent with white on it, stock light surfaces, and the dark surfaces
-`#1a1d20` with the `#4d565e` border, so a site or a host that wants that
-look names `default` instead of naming nothing.
+is amended). The `startcloud` pack is the shared UI's own base look under
+its name: Bootstrap's `#0d6efd` accent with white on it, stock light
+surfaces, and the dark surfaces `#1a1d20` with the `#4d565e` border, the
+same values the base sheet paints with no pack at all, so a site or a
+host names `startcloud` for that look instead of naming nothing.
 
 Email is branded through the identity provider's email-template
 documents, a copy per site and per locale edited on its Email templates
@@ -545,20 +545,18 @@ The files the identity provider's sites need in the shared build, every
 one supplied by the estate's owner and none drawn by the UI work; the
 shell ships the fallbacks until each lands:
 
-| File                                                                                                                         | Size                                                                    | Used by                                                                                                               |
-| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `public/brand/<site>/icon.png`, one per site                                                                                 | 64×64                                                                   | `brand.logo_url`: the chrome's mark, the org mark, the favicon                                                        |
-| `public/brand/<site>/logo-small.png`, one per site                                                                           | 640×104                                                                 | the branding endpoint's `small` slot for relying apps                                                                 |
-| `public/brand/providers/<id>.svg`, one per federated provider                                                                | square, monochrome                                                      | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands                |
-| `public/themes/<pack>/mark.svg`, optional                                                                                    | 512×512, monochrome                                                     | `--brand-logo` when the pack's YAML names it                                                                          |
-| `public/themes/switchboard/poppins-<weight>.woff2`                                                                           | weights 500, 600, 700                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land   |
-| `public/themes/startcloud/startcloud.css` and its YAML source                                                                | the fourth pack                                                         | the accent the retired `auth.css` painted for the `startcloud` site                                                   |
+| File                                                                                                                         | Size                                                                    | Used by                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `public/brand/<site>/icon.png`, one per site                                                                                 | 64×64                                                                   | `brand.logo_url`: the chrome's mark, the org mark, the favicon                                                           |
+| `public/brand/<site>/logo-small.png`, one per site                                                                           | 640×104                                                                 | the branding endpoint's `small` slot for relying apps                                                                    |
+| `public/brand/providers/<id>.svg`, one per federated provider                                                                | square, monochrome                                                      | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands                   |
+| `public/themes/<pack>/mark.svg`, optional                                                                                    | 512×512, monochrome                                                     | `--brand-logo` when the pack's YAML names it                                                                             |
+| `public/themes/switchboard/poppins-<weight>.woff2`                                                                           | weights 500, 600, 700                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land      |
+| `public/themes/startcloud/startcloud.css` and its YAML source                                                                | the fourth pack, the shared UI's own base look under its name           | the `startcloud` site and every BoxVault host that names it as `brand.pack`                                           |
 | `public/themes/prominic/prominic.css`, its YAML source and `mark.svg`, `public/brand/prominic/icon.png` and `logo-small.png` | the fifth pack, the Prominic accent `#67142c`, the asterisk as the mark | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url` |
-| `public/themes/default/default.css` and its YAML source                                                                      | the sixth pack, the shared UI's own base look under a name                | any site of the identity provider or host of BoxVault that wants the un-packed look, named as `theme_id` or `brand.pack`         |
 
 The sites are `startcloud`, `moonshinedev`, `switchboard`,
-`nomadservices`, on BoxVault's downloads face alone `prominic`, and
-`default` wherever the base look is wanted by name.
+`nomadservices` and, on BoxVault's downloads face alone, `prominic`.
 
 ---
 
@@ -592,11 +590,10 @@ arithmetic, and the two extremes are the only pair no accent can defeat
 that white can pass. A pack that names `on_primary` is checked as named.
 The identity provider's four sites resolve to: `moonshinedev` (`#1f9d57`)
 `#000000` at 6.02:1, `switchboard` (`#24ade3`) `#000000` at 7.5:1,
-`nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud` (its
-accent from the retired `auth.css`, the lighter STARTcloud blue) `#ffffff`
-or `#000000` by the generator's rule; `--brand-on-primary` is also the
-auth column's button text, so those buttons read black on the two light
-accents.
+`nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud`
+(`#0d6efd`, Bootstrap's own blue) `#ffffff` at 4.50:1 as named;
+`--brand-on-primary` is also the auth column's button text, so those
+buttons read black on the two light accents.
 
 `lang` on `<html>` must carry the user's language: screen readers take
 pronunciation from it, and the value is already stored, published and

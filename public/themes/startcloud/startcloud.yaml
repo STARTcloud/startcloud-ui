@@ -1,19 +1,6 @@
-primary: '#2196c2'
-on_primary: '#000000'
+primary: '#0d6efd'
+on_primary: '#ffffff'
 surfaces:
-  light:
-    body-bg: '#f4f6f9'
-    tertiary-bg: '#e7ecf2'
-    secondary-bg: '#fbfcfe'
-    border-color: '#dde0e4'
-    body-color: '#2d3b4a'
-    emphasis-color: '#0e1a26'
-    secondary-color: '#5c6a78'
   dark:
-    body-bg: '#0a1018'
-    tertiary-bg: '#11192a'
-    secondary-bg: '#131c2e'
-    border-color: '#20262e'
-    body-color: '#c5d0dc'
-    emphasis-color: '#e8edf3'
-    secondary-color: '#8b97a6'
+    body-bg: '#1a1d20'
+    border-color: '#4d565e'
