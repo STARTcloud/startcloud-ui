@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.25.0...v0.26.0) (2026-09-20)
+
+
+### Features
+
+* one visibility step button on the box, ISO and product pages, stepping Private, Guests and Public with its label naming the next state, in place of the two-way Make public button and the box page's missing one ([5b39a55](https://github.com/STARTcloud/startcloud-ui/commit/5b39a55c81e4b87f37967d62f4d0a7e8167f36cc))
+
 ## [0.25.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.24.0...v0.25.0) (2026-09-20)
 
 
