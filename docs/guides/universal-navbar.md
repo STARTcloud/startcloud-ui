@@ -123,10 +123,12 @@ identical in every app.
   magnifier button like the theme and language buttons. It exists only
   while the host lists the `search` feature token; without it no page
   shows the icon.
-- **Expand**: click, or hover-dwell of about 400 ms, replaces the icon
-  with a 340px input carrying a leading magnifier, the page's placeholder,
-  a live `matched / total` count, a gear, and a ×; focus lands in the
-  input. Typing filters the page live on every keystroke — there is no
+- **Expand**: click, hover-dwell of about 400 ms, or Ctrl+F (Cmd+F on a
+  Mac) pressed outside any input, select, textarea or editable element,
+  replaces the icon with a 340px input carrying a leading magnifier, the
+  page's placeholder, a live `matched / total` count, a gear, and a ×;
+  focus lands in the input, and once it holds focus the browser's own
+  find is untouched. Typing filters the page live on every keystroke — there is no
   submit and no server round trip from the shell. On a page whose rows
   are a paged list narrowed by the server alone the count is `matched`
   alone, drawn as "N results", because the server answers the narrowed

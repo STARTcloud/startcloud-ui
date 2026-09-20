@@ -2393,9 +2393,11 @@ problem body with `code`.
     a dialog over the email `PUT`), a Preferences card drawing the shared
     preferences section with the record's language and theme as fields
     saved with the rest over the preferences `PATCH`, never the viewer's
-    own, and a Sign-in card with the "Require a password change at next
-    sign-in" switch writing `password_change_required` through the
-    record `PATCH`; every write
+    own, a Two-factor card listing the record's methods as the Security
+    section lists them, Remove on the SMS and APP rows alone, and a
+    Sign-in card with the "Require a password change at next sign-in"
+    switch writing `password_change_required` through the record
+    `PATCH`; every write
     passes the step-up dialog, and the cards are absent on the admin's
     own record, which the issuer refuses `403 own_account` and the
     profile page serves.
@@ -3949,8 +3951,12 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      and phone through `PUT …/address`, `PUT …/email` and `PUT …/phone`,
      its preferences (language, theme, timezone, region, ciba_channel)
      through `PATCH …/preferences` under the preferences form's rules,
-     and removes a second-factor method through
-     `DELETE …/tfa/methods/{id}`, every
+     reads its second-factor methods through `GET …/tfa/methods` (the
+     rows `GET /api/user/tfa/methods` answers, passkeys included, a read
+     with no step-up) and removes an SMS or APP method through
+     `DELETE …/tfa/methods/{id}` (`409 last_method` on the last while
+     two-factor is on; a passkey is drawn and never removed by an
+     admin), every
      write behind the step-up window and refused `403 own_account` on
      the admin's own id; there is no route that sets another account's
      password and none is planned: the admin sets

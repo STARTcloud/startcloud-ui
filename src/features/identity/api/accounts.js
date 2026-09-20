@@ -27,6 +27,11 @@ export const setUserPhone = (userId, mobileNumber) =>
 export const updateUserPreferences = (userId, patch) =>
   client.patch(`${user(userId)}/preferences`, patch);
 
+export const userTfaMethods = userId => client.get(`${user(userId)}/tfa/methods`);
+
+export const removeUserTfaMethod = (userId, methodId) =>
+  client.delete(`${user(userId)}${encodePath('tfa', 'methods', methodId)}`);
+
 export const placesKey = () => client.get('/api/config/places');
 
 export const setRoles = (userId, roleNames) =>
@@ -66,9 +71,11 @@ export const organizationsBulk = body => client.post('/api/admin/organizations/b
  * window and refused `403 own_account` on the admin's own id: the detail
  * members and `password_change_required` through `update`, the address
  * `PUT`, the email `PUT` (`409` on a taken address), the plain phone
- * `PUT` and the preferences `PATCH` (language, theme, timezone, region,
- * ciba_channel); `places` answers the Google Places key the address
- * block loads with.
+ * `PUT`, the preferences `PATCH` (language, theme, timezone, region,
+ * ciba_channel) and, under `tfa`, the read of the account's second-factor
+ * methods (passkeys included, no step-up) and the `DELETE` of an SMS or
+ * APP method (`409 last_method` on the last while two-factor is on);
+ * `places` answers the Google Places key the address block loads with.
  * The page draws an action or a column only while the adapter carries
  * its call.
  */
@@ -81,6 +88,7 @@ export const issuerUsers = {
   email: setUserEmail,
   phone: setUserPhone,
   preferences: updateUserPreferences,
+  tfa: { methods: userTfaMethods, remove: removeUserTfaMethod },
   places: placesKey,
   setRoles,
   suspend: userId => updateUser(userId, { enabled: false }),

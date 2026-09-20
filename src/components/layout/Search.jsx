@@ -17,6 +17,28 @@ import { hasFeature } from '../../utils/capabilities';
 const HOVER_DWELL_MS = 400;
 const DEBOUNCE_MS = 250;
 const MIN_QUERY = 2;
+const EDITABLE = 'input,select,textarea,[contenteditable]';
+
+const isFindShortcut = event =>
+  event.key.toLowerCase() === 'f' && (event.ctrlKey || event.metaKey) && !event.altKey;
+
+const useFindShortcut = ({ on, setExpanded, inputRef }) => {
+  useEffect(() => {
+    if (!on) {
+      return undefined;
+    }
+    const onKeyDown = event => {
+      if (!isFindShortcut(event) || event.target?.closest?.(EDITABLE)) {
+        return;
+      }
+      event.preventDefault();
+      setExpanded(true);
+      inputRef.current?.focus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [on, setExpanded, inputRef]);
+};
 
 const SearchIconButton = ({ filtersOn, onOpen, onMouseEnter, onMouseLeave }) => {
   const { t } = useTranslation();
@@ -196,7 +218,10 @@ const useAppResults = ({ context, expanded, query }) => {
  * box. With a page binding the box drives the page's search and filters
  * and, from two characters on, the app-wide search too; with none it
  * drives only the app-wide search under the brand's placeholder. The
- * app-wide answer lands in the context for the panel to draw.
+ * app-wide answer lands in the context for the panel to draw. Ctrl+F, or
+ * Cmd+F on a Mac, pressed outside any input, select, textarea or editable
+ * element expands the box and puts focus in it in place of the browser's
+ * find; once the box holds focus the browser's own find is untouched.
  */
 export const NavbarSearchControl = () => {
   const { t } = useTranslation();
@@ -206,11 +231,17 @@ export const NavbarSearchControl = () => {
   const expanded = Boolean(context?.expanded);
   const query = binding ? binding.query : context?.appQuery || '';
   const dwell = useRef(null);
+  const drawn = Boolean(context) && hasFeature(status, 'search');
 
   useEffect(() => () => clearTimeout(dwell.current), []);
   useAppResults({ context, expanded, query });
+  useFindShortcut({
+    on: drawn,
+    setExpanded: context?.setExpanded,
+    inputRef: context?.inputRef,
+  });
 
-  if (!context || !hasFeature(status, 'search')) {
+  if (!drawn) {
     return null;
   }
 

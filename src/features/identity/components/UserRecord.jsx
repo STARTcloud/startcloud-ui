@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaCommentSms, FaKey, FaMobileScreen } from 'react-icons/fa6';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MethodList, { MethodRow } from '../../../components/common/MethodList';
 import SectionCard from '../../../components/common/SectionCard';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useGuard } from '../../../contexts/GuardContext';
@@ -19,8 +21,95 @@ import { usersAdapterShape } from './UserActions';
 const PREFS_KEY = 'table_prefs_admin_user';
 const EMAIL_SCHEMA = { required: ['email'], properties: { email: { $ref: '#/$defs/email' } } };
 const EMAIL_LABELS = { email: 'profile.details.email' };
+const METHOD_ICONS = { SMS: FaCommentSms, APP: FaMobileScreen, PASSKEY: FaKey };
+const REMOVABLE = ['SMS', 'APP'];
 
 const isStepUp = error => error?.code === 'step_up_required';
+
+const methodLabel = (method, t) => {
+  if (method.type === 'SMS') {
+    return t('profile.security.tfa.sms');
+  }
+  if (method.type === 'APP') {
+    return t('profile.security.tfa.app');
+  }
+  return method.label || t('profile.security.passkeys.title');
+};
+
+const TfaMethods = ({ userId, tfa, guard, reason, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [methods, setMethods] = useState([]);
+
+  const load = useCallback(
+    () =>
+      tfa
+        .methods(userId)
+        .then(list => setMethods(Array.isArray(list) ? list : []))
+        .catch(error => notify('danger', t(errorKeys(error)))),
+    [notify, t, tfa, userId]
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const remove = method =>
+    guard(() => tfa.remove(userId, method.id), reason)
+      .then(async () => {
+        notify('success', t('profile.security.tfa.removed'));
+        await load();
+        onSaved();
+      })
+      .catch(error => {
+        if (!isStepUp(error)) {
+          notify('danger', t(errorKeys(error)));
+        }
+      });
+
+  return (
+    <MethodList empty={t('profile.security.tfa.noMethods')}>
+      {methods.map(method => {
+        const Icon = METHOD_ICONS[method.type] || FaMobileScreen;
+        return (
+          <MethodRow
+            key={method.id}
+            icon={<Icon aria-hidden />}
+            label={methodLabel(method, t)}
+            badges={
+              method.preferred ? (
+                <span className="badge bg-primary">{t('profile.security.tfa.preferredBadge')}</span>
+              ) : null
+            }
+            subline={method.display || method.label}
+            actions={
+              REMOVABLE.includes(method.type) ? (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => remove(method)}
+                >
+                  {t('profile.security.tfa.remove')}
+                </button>
+              ) : null
+            }
+          />
+        );
+      })}
+    </MethodList>
+  );
+};
+
+TfaMethods.propTypes = {
+  userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  tfa: PropTypes.shape({
+    methods: PropTypes.func.isRequired,
+    remove: PropTypes.func.isRequired,
+  }).isRequired,
+  guard: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
 
 const usePlacesKey = places => {
   const [key, setKey] = useState('');
@@ -156,7 +245,10 @@ PasswordChangeSwitch.propTypes = {
  * through the phone `PUT`, the email through its own dialog over the
  * email `PUT`), the Preferences card drawing the shared preferences
  * section with the record's own language and theme saved with the rest
- * through the preferences `PATCH` while the adapter carries it, and the
+ * through the preferences `PATCH` while the adapter carries it, the
+ * Two-factor card listing the record's methods from the adapter's `tfa`
+ * read the way the Security section lists them, passkeys included,
+ * Remove on the SMS and APP rows alone through its `DELETE`, and the
  * Sign-in card with the "Require a password change at next sign-in"
  * switch writing `password_change_required` through the record
  * `PATCH`; drawn only while the record carries `profile` and the
@@ -235,6 +327,21 @@ const UserRecord = ({ user, adapter, viewer, onSaved }) => {
             onSaved={onSaved}
           />
         </div>
+      ) : null}
+      {adapter.tfa ? (
+        <SectionCard
+          title={t('profile.security.tfa.title')}
+          folded={folds.folded('tfa')}
+          onFold={() => folds.toggle('tfa')}
+        >
+          <TfaMethods
+            userId={user.id}
+            tfa={adapter.tfa}
+            guard={guard}
+            reason={reason}
+            onSaved={onSaved}
+          />
+        </SectionCard>
       ) : null}
       <SectionCard
         title={t('admin.users.record.signIn')}

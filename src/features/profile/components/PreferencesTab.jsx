@@ -18,13 +18,15 @@ const PREFS_KEY = 'table_prefs_profile_preferences';
 const THEMES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
 const REGION_SETS = ['EU', 'EEA', 'UK'];
-const SCHEMA = {
+const RECORD_SCHEMA = {
   properties: {
     timezone: { $ref: '#/$defs/timezone' },
     region: { $ref: '#/$defs/region' },
     ciba_channel: { type: 'string', enum: CHANNELS },
-    ciba_user_code: { type: 'string' },
   },
+};
+const SCHEMA = {
+  properties: { ...RECORD_SCHEMA.properties, ciba_user_code: { type: 'string' } },
 };
 const LABELS = {
   timezone: 'profile.preferences.timezone',
@@ -259,13 +261,13 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
       timezone: zone,
       region: settings.region,
       ciba_channel: settings.ciba_channel,
-      ciba_user_code: pin,
+      ...(own ? { ciba_user_code: pin } : {}),
     }),
-    [zone, settings.region, settings.ciba_channel, pin]
+    [zone, settings.region, settings.ciba_channel, pin, own]
   );
   const rules = useFormRules({
     formKey: 'preferences',
-    schema: SCHEMA,
+    schema: own ? SCHEMA : RECORD_SCHEMA,
     values,
     labels: LABELS,
     idPrefix: 'profile-preferences',

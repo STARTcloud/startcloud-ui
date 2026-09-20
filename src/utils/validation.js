@@ -225,7 +225,7 @@ const itemsCheck = (rule, value) => {
   return null;
 };
 
-const BLANK_CHECKS = [nonBlankCheck, lengthCheck, patternCheck];
+const BLANK_CHECKS = [nonBlankCheck, lengthCheck];
 
 const CHECKS = [
   typeCheck,
@@ -295,9 +295,11 @@ const firstFailure = (rule, value, patternName, document) => {
 /**
  * Evaluate one value against one schema: `type`, `required` (presence
  * alone: undefined and null count as missing when the schema says
- * `required: true`; a blank string is evaluated against `minLength` and
- * `pattern` alone and skips `type`, `format`, `enum`, `minimum` and
- * `maximum`), `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`
+ * `required: true`; a blank string on an optional member is not
+ * evaluated at all, blank meaning not set, the route clearing the
+ * member, and on a required one it is evaluated against `minLength` and
+ * the non-blank `pattern` alone and skips `type`, `format`, `enum`,
+ * `minimum` and `maximum`), `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`
  * (whichever bound was crossed, never a `range`), `enum`, `format` (`uri`,
  * `hostname`, `ipv4`, and the config contract's `duration` and `ttl` as the
  * patterns its ConfigField row fixes, reported with rule `format` and the
@@ -316,6 +318,9 @@ export const validateValue = (schema, value, document = FALLBACK_DOCUMENT) => {
   const { rule, patternName } = resolve(schema, document);
   if (isBlank(value)) {
     return rule.required === true ? [{ pointer: '', rule: 'required', params: {} }] : [];
+  }
+  if (value === '' && rule.required !== true) {
+    return [];
   }
   const failure = firstFailure(rule, value, patternName, document);
   return failure ? [{ pointer: '', ...failure }] : [];

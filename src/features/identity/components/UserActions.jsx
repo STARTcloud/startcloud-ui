@@ -21,6 +21,10 @@ export const usersAdapterShape = PropTypes.shape({
   email: PropTypes.func,
   phone: PropTypes.func,
   preferences: PropTypes.func,
+  tfa: PropTypes.shape({
+    methods: PropTypes.func.isRequired,
+    remove: PropTypes.func.isRequired,
+  }),
   places: PropTypes.func,
   setRoles: PropTypes.func,
   suspend: PropTypes.func,
