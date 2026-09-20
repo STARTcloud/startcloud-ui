@@ -461,7 +461,7 @@ members the `backend` UI backends answer, grown for the issuer:
 }
 ```
 
-`method` is the one the server resolved (`?method=` on the page, else the
+`method` is the one the server resolved (`?tfa_method=` on the page, else the
 preferred authenticator, else the user's preferred method); `target` is
 present for `SMS` and `APP`; `sent` is whether a code for this method is
 outstanding, so the page never asks for another while one is live;

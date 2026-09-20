@@ -81,7 +81,7 @@ const preferredKey = (answer, options) => {
  * `/authenticator-method`: the radio cards of every second-factor method
  * the account holds, the enabled ones first and a locked one last and
  * disabled, the preferred checked or else the first enabled, Continue
- * posting the choice and moving to `/authenticator?method=`, and Cancel
+ * posting the choice and moving to `/authenticator?tfa_method=`, and Cancel
  * posting `/auth-cancel`.
  */
 const TfaMethodPage = ({ returnTo }) => {
@@ -134,7 +134,7 @@ const TfaMethodPage = ({ returnTo }) => {
     setProblem(null);
     setBusy(true);
     pickTfaMethod(choice)
-      .then(() => navigate(`/authenticator?method=${encodeURIComponent(choice.tfaMethod)}`))
+      .then(() => navigate(`/authenticator?tfa_method=${encodeURIComponent(choice.tfaMethod)}`))
       .catch(fail);
   };
 

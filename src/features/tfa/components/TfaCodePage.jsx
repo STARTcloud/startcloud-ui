@@ -119,7 +119,7 @@ const TfaCodePage = ({ returnTo, events }) => {
   const location = useLocation();
   const report = useProblemReporter();
   const method = useMemo(
-    () => new URLSearchParams(location.search).get('method') || '',
+    () => new URLSearchParams(location.search).get('tfa_method') || '',
     [location.search]
   );
   const onLocked = useCallback(
