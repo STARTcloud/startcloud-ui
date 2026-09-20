@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.26.0...v0.27.0) (2026-09-20)
+
+
+### Features
+
+* the login page beginning the sole enabled provider at once with no chooser drawn, under the silent attempt's own guards ([db5f3e5](https://github.com/STARTcloud/startcloud-ui/commit/db5f3e585a0eaaaa2767cc8f17ce2c6aad76bdf2))
+
 ## [0.26.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.25.0...v0.26.0) (2026-09-20)
 
 
