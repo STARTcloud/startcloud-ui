@@ -6,8 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import VisibilityPicker, {
-  PublishStep,
-  VisibilityStep,
+  StatusMenu,
+  VisibilityMenu,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -25,7 +25,7 @@ import { refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
 import { MoveDialog } from './BulkDialogs';
-import { FormCascade, ReconcileButton } from './Download';
+import { editBody } from './Download';
 import DownloadZone, { useUpload } from './DownloadZone';
 import { TextAreaField, TextField } from './fields';
 import { PlacePane } from './PlaceForm';
@@ -45,7 +45,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const ReleaseEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit }) => {
+const ReleaseEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -65,14 +65,12 @@ const ReleaseEditForm = ({ draft, current, rules, onChange, onVisibility, onSubm
         onChange={onVisibility}
         className="mb-2"
       />
-      <FormCascade draft={draft} current={current} onChange={onVisibility} />
     </form>
   );
 };
 
 ReleaseEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
-  current: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
@@ -152,10 +150,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
-  const onVisibility = useCallback(
-    next => setDraft(current => ({ ...current, recursive: false, ...next })),
-    []
-  );
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
 
   const access = fields =>
     api.releases
@@ -175,7 +170,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     }
     const renamed = draft.version_number !== version.version;
     api.releases
-      .update(org, item.name, version.version, draft)
+      .update(org, item.name, version.version, editBody(draft, visibilityPair(version)))
       .then(() => {
         notify('success', t('downloads.release.updated'));
         setEditing(false);
@@ -213,7 +208,6 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     setEditor(
       <ReleaseEditForm
         draft={draft}
-        current={visibilityPair(version)}
         rules={rules}
         onChange={onChange}
         onVisibility={onVisibility}
@@ -221,7 +215,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, version, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.releases
@@ -269,22 +263,17 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(version)}
+      <VisibilityMenu
+        current={visibilityPair(version)}
         max={visibilityPair(item)}
-        onChange={access}
         className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(version.published)}
         parentPublished={Boolean(item.published)}
-        onChange={access}
-      />
-      <ReconcileButton
-        level="versions"
-        scope={{ org, name: item.name }}
-        name={version.version}
-        ctx={ctx}
+        className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
       <MoveButton level="versions" scope={{ org, name: item.name }} move={move} ctx={ctx} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>

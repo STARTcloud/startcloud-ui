@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import { CascadeCheck } from '../../../components/common/VisibilityPicker';
+import { StatusMenu, VisibilityMenu, pickedOf } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { collectionShape } from '../../../utils/itemShape';
 import { refusalMessage } from '../../../utils/validation';
+import { OPENING_VERBS, STATUS_VERBS, VISIBILITY_VERBS } from '../../collections/bulkActions';
 
 const EMPTY_RESULT = { processed: 0, skipped: 0, errors: [] };
 
@@ -26,20 +27,41 @@ export const bulkGroupShape = PropTypes.shape({
   names: PropTypes.arrayOf(PropTypes.string).isRequired,
 });
 
+const PickerFor = ({ action, count, busy, onVisibility, onStatus }) => {
+  const className = `btn btn-sm ${action.variant}`;
+  if (action.picker === 'visibility') {
+    return (
+      <VisibilityMenu count={count} className={className} disabled={busy} onPick={onVisibility} />
+    );
+  }
+  return <StatusMenu count={count} className={className} disabled={busy} onPick={onStatus} />;
+};
+
+PickerFor.propTypes = {
+  action: PropTypes.shape({
+    picker: PropTypes.string.isRequired,
+    variant: PropTypes.string.isRequired,
+  }).isRequired,
+  count: PropTypes.number.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onVisibility: PropTypes.func.isRequired,
+  onStatus: PropTypes.func.isRequired,
+};
+
 /**
  * The picked-state group of a section's action pane: Clear selection, then
  * the collection's bulk actions for this level as `definition.bulk` names
- * them, each destructive one gated by the shared confirm and each one
- * naming a `dialog` drawn through the collection's `BulkDialog` slot
- * first, the dialog answering the body members the call carries beside
- * the names (`values` on a set, the target address on a move); sent as
- * one `bulk(level, action, names, scope, extra)` call per scope the picked
- * rows span, the one result line naming processed, skipped and each
- * error's code after it. While the level offers an opening verb the
- * cascade check draws once for the pane and a ticked one sends
- * `recursive: true` with those verbs alone, the closing ones running to
- * every row beneath on their own. Draws nothing while no row is picked or
- * the collection names no bulk action for the level.
+ * them, the Visibility and Status pickers first, a pick sent as its wire
+ * verbs in order, `recursive: true` riding an opening verb while the
+ * line's scope glyph shows everything beneath; then each action naming a
+ * `dialog`, drawn through the collection's `BulkDialog` slot first, the
+ * dialog answering the body members the call carries beside the names
+ * (`values` on Edit, the target address on Move to); then the rest, a
+ * destructive one gated by the shared confirm. Every call is one
+ * `bulk(level, verb, names, scope, extra)` per scope the picked rows
+ * span, the one result line naming processed, skipped and each error's
+ * code after them all. Draws nothing while no row is picked or the
+ * collection names no bulk action for the level.
  */
 const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const { t } = useTranslation();
@@ -48,7 +70,6 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const [dialog, setDialog] = useState(null);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [beneath, setBeneath] = useState(false);
   const { BulkDialog } = collection.slots;
   const actions = (collection.bulk || {})[level] || [];
   const count = groups.reduce((sum, group) => sum + group.names.length, 0);
@@ -57,14 +78,14 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
     return null;
   }
 
-  const run = (action, extra = {}) => {
-    const body = { ...(action.opens && beneath ? { recursive: true } : {}), ...extra };
-    setBusy(true);
+  const send = (verb, extra) =>
     Promise.all(
-      groups.map(group =>
-        collection.adapter.bulk(level, action.key, group.names, group.scope, body)
-      )
-    )
+      groups.map(group => collection.adapter.bulk(level, verb, group.names, group.scope, extra))
+    );
+
+  const finish = calls => {
+    setBusy(true);
+    calls
       .then(answers => {
         setResult(merged(answers));
         onDone();
@@ -72,6 +93,21 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
       .catch(error => notify('danger', refusalMessage({ error, t })))
       .finally(() => setBusy(false));
   };
+
+  const run = (action, extra = {}) => finish(send(action.key, extra));
+
+  const runVerbs = (verbs, beneath) =>
+    finish(
+      verbs.reduce(
+        (chain, verb) =>
+          chain.then(answers =>
+            send(verb, beneath && OPENING_VERBS.includes(verb) ? { recursive: true } : {}).then(
+              more => [...answers, ...more]
+            )
+          ),
+        Promise.resolve([])
+      )
+    );
 
   const pick = action => {
     if (action.dialog && BulkDialog) {
@@ -92,20 +128,35 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
       <button type="button" className="btn btn-sm btn-link" onClick={onClear}>
         {t('pages.bulk.clearSelection')}
       </button>
-      {actions.map(action => (
-        <button
-          key={action.key}
-          type="button"
-          className={`btn btn-sm ${action.variant}`}
-          disabled={busy}
-          onClick={() => pick(action)}
-        >
-          {t(action.labelKey)}
-        </button>
-      ))}
-      {actions.some(entry => entry.opens) ? (
-        <CascadeCheck checked={beneath} onChange={setBeneath} />
-      ) : null}
+      {actions.map(action =>
+        action.picker ? (
+          <PickerFor
+            key={action.key}
+            action={action}
+            count={count}
+            busy={busy}
+            onVisibility={body =>
+              runVerbs(VISIBILITY_VERBS[pickedOf(body)], Boolean(body.recursive))
+            }
+            onStatus={body =>
+              runVerbs(
+                STATUS_VERBS[body.published ? 'publish' : 'unpublish'],
+                Boolean(body.recursive)
+              )
+            }
+          />
+        ) : (
+          <button
+            key={action.key}
+            type="button"
+            className={`btn btn-sm ${action.variant}`}
+            disabled={busy}
+            onClick={() => pick(action)}
+          >
+            {t(action.labelKey)}
+          </button>
+        )
+      )}
       {line ? (
         <span className="small text-muted" role="status">
           {line}

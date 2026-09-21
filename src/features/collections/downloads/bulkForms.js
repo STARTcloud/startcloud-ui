@@ -14,7 +14,7 @@ const area = name => ({ name, control: 'textarea' });
 const pick = (name, options, group) => ({ name, control: 'select', options, group });
 
 /**
- * The Set values form of each downloads level: the host form its `values`
+ * The Edit form of each downloads level: the host form its `values`
  * are validated against, the labels of its members and the fields the
  * dialog draws, every member optional and a blank one left as it is; a
  * link member typed and then emptied is sent as an empty string, which
@@ -62,7 +62,7 @@ export const BULK_FORMS = {
 };
 
 /**
- * The page schema of one level's Set values form: every field a string,
+ * The page schema of one level's Edit form: every field a string,
  * a select over its closed list, nothing required.
  *
  * @param {string} level - `items`, `versions`, `providers` or `architectures`

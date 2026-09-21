@@ -8,8 +8,8 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import VisibilityPicker, {
-  PublishStep,
-  VisibilityStep,
+  StatusMenu,
+  VisibilityMenu,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -367,14 +367,15 @@ export const IsoItemActions = ({ item, ctx }) => {
     }
     return (
       <>
-        <VisibilityStep
-          value={{ is_public: item.isPublic, guest_access: item.guestAccess }}
-          onChange={pair => update(pair, 'Error updating ISO visibility')}
+        <VisibilityMenu
+          current={{ is_public: item.isPublic, guest_access: item.guestAccess }}
           className="btn btn-outline-secondary me-2"
+          onPick={body => update(body, 'Error updating ISO visibility')}
         />
-        <PublishStep
+        <StatusMenu
           published={Boolean(iso.published)}
-          onChange={fields => update(fields, 'Error updating ISO release status')}
+          className="btn btn-outline-secondary me-2"
+          onPick={body => update(body, 'Error updating ISO release status')}
         />
         <button
           type="button"

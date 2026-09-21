@@ -318,6 +318,16 @@ button::-moz-focus-inner {
   cursor: pointer;
 }
 
+.scope-glyph {
+  cursor: pointer;
+  color: var(--bs-secondary-color);
+}
+
+.scope-glyph:hover,
+.scope-glyph:focus-visible {
+  color: var(--bs-emphasis-color);
+}
+
 .min-width-0 {
   min-width: 0;
 }

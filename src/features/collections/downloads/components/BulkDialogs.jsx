@@ -59,7 +59,7 @@ BulkField.propTypes = {
 };
 
 /**
- * The Set values dialog of one downloads level: the level's fields from
+ * The Edit dialog of one downloads level: the level's fields from
  * `BULK_FORMS`, validated against the host's bulk form, every member
  * blank until typed and only the touched ones sent as `values`, so a
  * member left alone stays as it is on every picked row and a link typed
@@ -98,7 +98,7 @@ export const SetValuesDialog = ({ level, count, onSubmit, onClose }) => {
     <Modal show onHide={onClose} dialogClassName="list-modal" scrollable>
       <form onSubmit={submit} noValidate>
         <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('pages.bulk.valuesTitle', { count })}</Modal.Title>
+          <Modal.Title as="h5">{t('pages.bulk.editTitle', { count })}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <FormErrorSummary errors={rules.summary} />
@@ -282,8 +282,8 @@ MoveDialog.propTypes = {
 };
 
 /**
- * The downloads collection's `BulkDialog` slot: the Set values dialog for
- * an action naming `values`, the Move to dialog for one naming `move`,
+ * The downloads collection's `BulkDialog` slot: the Edit dialog for an
+ * action naming `values`, the Move to dialog for one naming `move`,
  * the picked rows' one scope handed to the latter.
  */
 export const DownloadBulkDialog = ({ action, level, groups, count, onSubmit, onClose }) => {

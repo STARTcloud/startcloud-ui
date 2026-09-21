@@ -7,8 +7,8 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import VisibilityPicker, {
-  PublishStep,
-  VisibilityStep,
+  StatusMenu,
+  VisibilityMenu,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -251,16 +251,17 @@ export const BoxVersionActions = ({ item, version, ctx }) => {
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(version)}
+      <VisibilityMenu
+        current={visibilityPair(version)}
         max={visibilityPair(item)}
-        onChange={access}
         className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(version.published)}
         parentPublished={Boolean(item.published)}
-        onChange={access}
+        className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}

@@ -8,8 +8,8 @@ import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import UploadProgress from '../../../../components/common/UploadProgress';
 import VisibilityPicker, {
-  PublishStep,
-  VisibilityStep,
+  StatusMenu,
+  VisibilityMenu,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -249,16 +249,17 @@ export const BoxProviderActions = ({ item, version, provider, parent = null, ctx
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(provider)}
+      <VisibilityMenu
+        current={visibilityPair(provider)}
         max={parent ? visibilityPair(parent) : null}
-        onChange={access}
         className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(provider.published)}
         parentPublished={parent ? Boolean(parent.published) : null}
-        onChange={access}
+        className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
@@ -622,17 +623,17 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(architecture)}
+      <VisibilityMenu
+        current={visibilityPair(architecture)}
         max={visibilityPair(provider)}
-        onChange={access}
         className="btn btn-sm btn-outline-secondary"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(architecture.published)}
         parentPublished={Boolean(provider.published)}
-        onChange={access}
-        className="btn btn-sm"
+        className="btn btn-sm btn-outline-secondary"
+        onPick={access}
       />
       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>
         {t('boxes.buttons.delete')}

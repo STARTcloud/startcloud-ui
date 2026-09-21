@@ -6,8 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import VisibilityPicker, {
-  PublishStep,
-  VisibilityStep,
+  StatusMenu,
+  VisibilityMenu,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -36,7 +36,7 @@ import { isOrgManager } from '../../../../utils/permissions';
 import { isVisible, refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
-import { FormCascade, ReconcileButton } from './Download';
+import { editBody } from './Download';
 import { MoveButton } from './DownloadRelease';
 import DownloadZone, { useUpload } from './DownloadZone';
 import { SelectField, TextField } from './fields';
@@ -58,7 +58,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const PatchEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit }) => {
+const PatchEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -86,14 +86,12 @@ const PatchEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit
         onChange={onVisibility}
         className="mb-2"
       />
-      <FormCascade draft={draft} current={current} onChange={onVisibility} />
     </form>
   );
 };
 
 PatchEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
-  current: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
@@ -134,10 +132,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
-  const onVisibility = useCallback(
-    next => setDraft(current => ({ ...current, recursive: false, ...next })),
-    []
-  );
+  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
 
   const access = fields =>
     api.patches
@@ -157,7 +152,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
     }
     const renamed = draft.name !== provider.name;
     api.patches
-      .update(org, item.name, version, provider.name, draft)
+      .update(org, item.name, version, provider.name, editBody(draft, visibilityPair(provider)))
       .then(() => {
         notify('success', t('downloads.patch.updated'));
         setEditing(false);
@@ -195,7 +190,6 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
     setEditor(
       <PatchEditForm
         draft={draft}
-        current={visibilityPair(provider)}
         rules={rules}
         onChange={onChange}
         onVisibility={onVisibility}
@@ -203,7 +197,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, provider, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.patches
@@ -251,22 +245,17 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(provider)}
+      <VisibilityMenu
+        current={visibilityPair(provider)}
         max={parent ? visibilityPair(parent) : null}
-        onChange={access}
         className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(provider.published)}
         parentPublished={parent ? Boolean(parent.published) : null}
-        onChange={access}
-      />
-      <ReconcileButton
-        level="providers"
-        scope={{ org, name: item.name, version }}
-        name={provider.name}
-        ctx={ctx}
+        className="btn btn-outline-secondary me-2"
+        onPick={access}
       />
       <MoveButton
         level="providers"
@@ -528,17 +517,17 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
 
   return (
     <>
-      <VisibilityStep
-        value={visibilityPair(architecture)}
+      <VisibilityMenu
+        current={visibilityPair(architecture)}
         max={visibilityPair(provider)}
-        onChange={access}
         className="btn btn-sm btn-outline-secondary"
+        onPick={access}
       />
-      <PublishStep
+      <StatusMenu
         published={Boolean(architecture.published)}
         parentPublished={Boolean(provider.published)}
-        onChange={access}
-        className="btn btn-sm"
+        className="btn btn-sm btn-outline-secondary"
+        onPick={access}
       />
       <MoveButton
         level="architectures"
