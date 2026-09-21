@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.31.0...v0.31.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* adding some Icons and hiding ui elements on certain auth clients ([1e2e0e1](https://github.com/STARTcloud/startcloud-ui/commit/1e2e0e13074be377dcc2dc440218a8076543983d))
+
 ## [0.31.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.30.0...v0.31.0) (2026-09-20)
 
 
