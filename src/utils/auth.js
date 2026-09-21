@@ -26,40 +26,24 @@ export const returnToShape = PropTypes.shape({
   signInTo: PropTypes.func.isRequired,
 });
 
-const HIDE_PARAM = 'hide';
-
-const hiddenSet = params =>
-  new Set(
-    (params?.get(HIDE_PARAM) || '')
-      .split(',')
-      .map(token => token.trim())
-      .filter(Boolean)
-  );
-
 /**
- * The three sign-in affordances a host may close, answered for the page
- * being drawn: Create an account, Forgot password and the emailed
- * sign-in link. Each is open unless the methods answer says otherwise or
- * the login address names it in `hide`, the comma list a client composes
- * from its own configuration the way it already composes
- * `oidc_provider`; registration alone is closed until the answer opens
- * it, as it has always been. The list hides a control, it does not
- * forbid the act, so a host that must refuse one refuses it on its own
- * routes as well.
+ * The three sign-in affordances a host may close, answered per Host by
+ * the methods answer for the page being drawn: Create an account, Forgot
+ * password and the emailed sign-in link. Registration is closed until
+ * `local_registration_enabled` opens it, as it has always been; the
+ * other two are open unless `password_reset_enabled` or
+ * `sign_in_link_enabled` says false. The answer hides a control, it does
+ * not forbid the act, so a host that must refuse one refuses it on its
+ * own routes as well.
  *
- * @param {Object} options - The page's side
- * @param {Object|null} [options.answer] - The methods answer
- * @param {URLSearchParams|null} [options.params] - The login address's query
+ * @param {Object|null} answer - The methods answer
  * @returns {{ registration: boolean, passwordReset: boolean, signInLink: boolean }}
  */
-export const signInAffordances = ({ answer = null, params = null }) => {
-  const hidden = hiddenSet(params);
-  return {
-    registration: Boolean(answer?.local_registration_enabled) && !hidden.has('registration'),
-    passwordReset: answer?.password_reset_enabled !== false && !hidden.has('password_reset'),
-    signInLink: answer?.sign_in_link_enabled !== false && !hidden.has('sign_in_link'),
-  };
-};
+export const signInAffordances = answer => ({
+  registration: Boolean(answer?.local_registration_enabled),
+  passwordReset: answer?.password_reset_enabled !== false,
+  signInLink: answer?.sign_in_link_enabled !== false,
+});
 
 export const sortMethodsByDefault = (methods, defaultProvider) => {
   if (!defaultProvider) {

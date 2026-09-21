@@ -488,9 +488,8 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
  * the address in router state; the query alerts; the foot with "Create an
  * account", the policy links and Cancel while a request is parked. The
  * three closable affordances, Create an account, Forgot password and the
- * sign-in link mode, are drawn per `signInAffordances`, so a client that
- * narrows this page with `hide` on the address, the way `oidc_provider`
- * narrows the providers, loses those controls for its own flow alone. The
+ * sign-in link mode, are drawn per `signInAffordances` from the site's
+ * own booleans on the methods answer. The
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
@@ -513,7 +512,7 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
   const form = useRef(null);
 
   const stored = localStorage.getItem(auth.loginMethodKey) || '';
-  const affordances = useMemo(() => signInAffordances({ answer, params }), [answer, params]);
+  const affordances = useMemo(() => signInAffordances(answer), [answer]);
   const resolved = resolveMode({ params, stored, answer, affordances });
   const mode = availableModes(answer, affordances).includes(chosenMode) ? chosenMode : resolved;
   const ruleValues = useMemo(
