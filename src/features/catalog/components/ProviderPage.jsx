@@ -39,11 +39,23 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
   const { item, entry } = data;
   const level = collection.levels.architectures;
   const architectureColumns = level.columns({ org, name, version, provider });
+  const ctx = {
+    ...context,
+    t,
+    language: i18n.language,
+    org,
+    collection,
+    reload: () => setNonce(current => current + 1),
+    notify,
+    setEditor,
+    setForm,
+  };
   const search = useDetailSearch({
     rows: ready && entry ? entry.architectures || [] : [],
     matches: architectureLevelMatches,
     placeholderKey: 'pages.search.architectures',
     columns: architectureColumns,
+    ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}_${provider}`,
   });
   const selection = useSelection(search.rows, { keyOf: row => row.name, labelOf: row => row.name });
@@ -86,17 +98,6 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
   }, [ready, architecture, key]);
 
   const { ProviderActions, ArchitecturesActions, ArchitectureRowActions } = collection.slots;
-  const ctx = {
-    ...context,
-    t,
-    language: i18n.language,
-    org,
-    collection,
-    reload: () => setNonce(current => current + 1),
-    notify,
-    setEditor,
-    setForm,
-  };
 
   if (!ready) {
     return (

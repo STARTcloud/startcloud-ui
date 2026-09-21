@@ -18,53 +18,51 @@ const PREFS_KEY = 'table_prefs_admin_registrations';
 
 const rowKey = row => `${row.timestamp}:${row.username}`;
 
+const yesNo = (value, ctx) => ctx.t(value ? 'yes' : 'no');
+
 const YesNo = (value, ctx) => (
   <span className={`badge ${value ? 'bg-success' : 'bg-warning text-dark'}`}>
-    {value ? ctx.t('yes') : ctx.t('no')}
+    {yesNo(value, ctx)}
   </span>
 );
 
+const verifiedColumn = (key, labelKey) => ({
+  key,
+  kind: 'badge',
+  labelKey,
+  value: (row, ctx) => yesNo(row[key], ctx),
+  render: (row, ctx) => YesNo(row[key], ctx),
+});
+
 const columns = [
-  {
-    key: 'timestamp',
-    kind: 'date',
-    labelKey: 'admin.activity.time',
-    sortValue: row => new Date(row.timestamp || 0).getTime(),
-    render: row => <DateCell value={row.timestamp} />,
-  },
   {
     key: 'username',
     kind: 'name',
     labelKey: 'admin.activity.username',
-    sortValue: row => row.username.toLowerCase(),
+    value: row => row.username,
     render: row => <strong>{row.username}</strong>,
   },
   {
-    key: 'email_verified',
-    kind: 'badge',
-    labelKey: 'admin.activity.registrations.emailVerified',
-    sortValue: row => (row.email_verified ? 0 : 1),
-    render: (row, ctx) => YesNo(row.email_verified, ctx),
+    key: 'timestamp',
+    kind: 'date',
+    labelKey: 'admin.activity.time',
+    value: row => new Date(row.timestamp || 0).getTime(),
+    render: row => <DateCell value={row.timestamp} />,
   },
-  {
-    key: 'phone_verified',
-    kind: 'badge',
-    labelKey: 'admin.activity.registrations.phoneVerified',
-    sortValue: row => (row.phone_verified ? 0 : 1),
-    render: (row, ctx) => YesNo(row.phone_verified, ctx),
-  },
+  verifiedColumn('email_verified', 'admin.activity.registrations.emailVerified'),
+  verifiedColumn('phone_verified', 'admin.activity.registrations.phoneVerified'),
   {
     key: 'ip_address',
     kind: 'text',
     labelKey: 'admin.activity.address',
+    value: row => row.ip_address || '',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'location',
     kind: 'text',
     labelKey: 'admin.activity.location',
-    sortValue: row => `${row.country || ''} ${row.city || ''}`.toLowerCase(),
-    render: row => [row.city, row.country].filter(Boolean).join(', '),
+    value: row => [row.city, row.country].filter(Boolean).join(', '),
   },
 ];
 
@@ -105,9 +103,9 @@ const groupsOf = ({ state, t }) => [
  * sent to the list, Export
  * the panel's action over the list's parameters, the Per page and Columns
  * groups under `table_prefs_admin_registrations`, the page reset to 0 on
- * a size change, the columns headed
- * Email verified and Phone verified over their Yes and No, and the pager
- * as the section's foot.
+ * a size change, the table with the username first and the columns headed
+ * Email verified and Phone verified over their Yes and No, every column
+ * sorting by what its cell shows, and the pager as the section's foot.
  */
 const RegistrationsPage = () => {
   const { t, i18n } = useTranslation();
@@ -120,6 +118,7 @@ const RegistrationsPage = () => {
     size,
   });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
+  const ctx = { t, language: i18n.language };
   const search = useListSearch({
     query: state.query,
     onQueryChange: state.setQuery,
@@ -137,6 +136,7 @@ const RegistrationsPage = () => {
     matched: state.data?.total || 0,
     rows,
     columns,
+    ctx,
     prefsKey: PREFS_KEY,
   });
 
@@ -166,7 +166,7 @@ const RegistrationsPage = () => {
           hiddenColumns={search.hiddenColumns}
           widths={search.widths}
           onResize={search.setColumnWidth}
-          ctx={{ t, language: i18n.language }}
+          ctx={ctx}
           emptyText={
             Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
           }

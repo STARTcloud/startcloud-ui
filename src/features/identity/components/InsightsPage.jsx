@@ -76,30 +76,27 @@ const text = key => ({
   key,
   kind: 'text',
   labelKey: labelOf(key),
-  sortValue: row => String(row[key] ?? '').toLowerCase(),
-  render: row => row[key] ?? '',
+  value: row => row[key] ?? '',
 });
 const number = key => ({
   key,
   kind: 'count',
   labelKey: labelOf(key),
   className: 'text-end',
-  sortValue: row => row[key] ?? 0,
-  render: row => row[key] ?? 0,
+  value: row => row[key] ?? 0,
 });
 const date = key => ({
   key,
   kind: 'date',
   labelKey: labelOf(key),
-  sortValue: row => new Date(row[key] || 0).getTime(),
+  value: row => new Date(row[key] || 0).getTime(),
   render: row => <DateCell value={row[key]} />,
 });
 const yesNo = key => ({
   key,
   kind: 'word',
   labelKey: labelOf(key),
-  sortValue: row => (row[key] ? 0 : 1),
-  render: (row, ctx) => (row[key] ? ctx.t('yes') : ctx.t('no')),
+  value: (row, ctx) => ctx.t(row[key] ? 'yes' : 'no'),
 });
 
 const PERSONAL_GROUP = {
@@ -128,7 +125,7 @@ const TABLES = [
   ),
   table(
     'penetration',
-    [number('app_count'), number('users')],
+    [text('app_count'), number('users')],
     [{ column: 'app_count', direction: 'asc' }]
   ),
   table(
@@ -184,8 +181,8 @@ InsightCard.propTypes = {
   label: PropTypes.string.isRequired,
 };
 
-const InsightTable = ({ tableKey, search }) => {
-  const { t, i18n } = useTranslation();
+const InsightTable = ({ tableKey, search, ctx }) => {
+  const { t } = useTranslation();
   const spec = TABLES.find(entry => entry.key === tableKey);
   return (
     <SubTable
@@ -197,7 +194,7 @@ const InsightTable = ({ tableKey, search }) => {
       hiddenColumns={search.hiddenColumns[tableKey]}
       widths={search.widths[tableKey]}
       onResize={(column, pixels) => search.setColumnWidth(tableKey, column, pixels)}
-      ctx={{ t, language: i18n.language }}
+      ctx={ctx}
       emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
     />
   );
@@ -205,6 +202,7 @@ const InsightTable = ({ tableKey, search }) => {
 
 InsightTable.propTypes = {
   tableKey: PropTypes.string.isRequired,
+  ctx: PropTypes.object.isRequired,
   search: PropTypes.shape({
     rows: PropTypes.object.isRequired,
     filtering: PropTypes.bool.isRequired,
@@ -283,15 +281,17 @@ Definition.propTypes = {
  * admin date format; the remaining definitions in an info fold.
  */
 const InsightsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, loading } = useAdminRead({ read: insights, example: INSIGHTS });
   const rowsByTable = useMemo(
     () => Object.fromEntries(TABLES.map(entry => [entry.key, rowsOf(data || {}, entry.key)])),
     [data]
   );
+  const ctx = { t, language: i18n.language };
   const search = useInsightsSearch({
     tables: TABLES,
     rowsByTable,
+    ctx,
     placeholderKey: 'admin.health.insights.search',
     prefsKey: PREFS_KEY,
   });
@@ -340,17 +340,17 @@ const InsightsPage = () => {
         </div>
       </Section>
       <Section title={t('admin.health.insights.app_activity')}>
-        <InsightTable tableKey="app_activity" search={search} />
+        <InsightTable tableKey="app_activity" search={search} ctx={ctx} />
       </Section>
       <div className="row">
         <div className="col-lg-6">
           <Section title={t('admin.health.insights.penetration')}>
-            <InsightTable tableKey="penetration" search={search} />
+            <InsightTable tableKey="penetration" search={search} ctx={ctx} />
           </Section>
         </div>
         <div className="col-lg-6">
           <Section title={t('admin.health.insights.app_pairs')}>
-            <InsightTable tableKey="app_pairs" search={search} />
+            <InsightTable tableKey="app_pairs" search={search} ctx={ctx} />
           </Section>
         </div>
       </div>
@@ -371,7 +371,7 @@ const InsightsPage = () => {
               ))}
             </div>
             <SectionHeading title={t('admin.health.insights.quiet_users')} className="mb-2" />
-            <InsightTable tableKey="quiet_users" search={search} />
+            <InsightTable tableKey="quiet_users" search={search} ctx={ctx} />
           </div>
           <div className="col-lg-4">
             <dl className="row small mb-0">
@@ -388,7 +388,7 @@ const InsightsPage = () => {
         </div>
       </Section>
       <Section title={t('admin.health.insights.org_rollup')}>
-        <InsightTable tableKey="org_rollup" search={search} />
+        <InsightTable tableKey="org_rollup" search={search} ctx={ctx} />
       </Section>
       <details>
         <summary>{t('admin.health.definitions')}</summary>

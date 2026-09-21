@@ -627,12 +627,14 @@ export const BoxArchitectureRowActions = ({ item, version, provider, architectur
         current={visibilityPair(architecture)}
         max={visibilityPair(provider)}
         className="btn btn-sm btn-outline-secondary"
+        compact
         onPick={access}
       />
       <StatusMenu
         published={Boolean(architecture.published)}
         parentPublished={Boolean(provider.published)}
         className="btn btn-sm btn-outline-secondary"
+        compact
         onPick={access}
       />
       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setShow(true)}>

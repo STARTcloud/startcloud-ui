@@ -35,34 +35,34 @@ const INVITATIONS_PREFS_KEY = 'table_prefs_org_console_invitations';
 
 const localeDate = value => new Date(value).toLocaleDateString();
 const localeTime = value => new Date(value).toLocaleString();
+const timeOf = value => new Date(value || 0).getTime();
+const yesNo = (flag, t) => t(flag ? 'yes' : 'no');
 
 const JOIN_REQUEST_COLUMNS = [
   {
     key: 'user',
     kind: 'name',
     labelKey: 'orgConsole.joinRequest.user',
-    sortValue: request => request.user.username.toLowerCase(),
+    value: request => request.user.username,
     render: request => <strong>{request.user.username}</strong>,
   },
   {
     key: 'email',
     kind: 'text',
     labelKey: 'orgConsole.joinRequest.email',
-    sortValue: request => (request.user.email || '').toLowerCase(),
-    render: request => request.user.email,
+    value: request => request.user.email || '',
   },
   {
     key: 'message',
     kind: 'text',
     labelKey: 'orgConsole.joinRequest.message',
-    sortValue: request => (request.message || '').toLowerCase(),
-    render: (request, ctx) => request.message || ctx.t('orgConsole.joinRequest.noMessage'),
+    value: (request, ctx) => request.message || ctx.t('orgConsole.joinRequest.noMessage'),
   },
   {
     key: 'requested',
     kind: 'date',
     labelKey: 'orgConsole.joinRequest.requested',
-    sortValue: request => new Date(request.created_at || 0).getTime(),
+    value: request => timeOf(request.created_at),
     render: request => localeDate(request.created_at),
   },
 ];
@@ -350,8 +350,28 @@ OrgProfileDisplay.propTypes = {
   orgIdpLink: PropTypes.string.isRequired,
 };
 
+/**
+ * The text the Link cell of an invitation shows: the invitation link's
+ * text while the invitation carries a token, the provider link's while
+ * the organization is managed there, else the managed-by-provider note.
+ *
+ * @param {Object} invitation - The invitation, its `token`
+ * @param {string} orgIdpLink - The organization's provider link, empty for none
+ * @param {Function} t - The translator
+ * @returns {string} The cell's text
+ */
+const invitationLinkText = (invitation, orgIdpLink, t) => {
+  if (invitation.token) {
+    return t('orgConsole.invitation.linkText');
+  }
+  return orgIdpLink
+    ? t('orgConsole.organization.manageAtIdp')
+    : t('orgConsole.invitation.managedByIdp');
+};
+
 const InvitationLinkCell = ({ invitation, orgIdpLink }) => {
   const { t } = useTranslation();
+  const text = invitationLinkText(invitation, orgIdpLink, t);
 
   if (invitation.token) {
     return (
@@ -360,7 +380,7 @@ const InvitationLinkCell = ({ invitation, orgIdpLink }) => {
         target="_blank"
         rel="noopener noreferrer"
       >
-        {t('orgConsole.invitation.linkText')}
+        {text}
       </a>
     );
   }
@@ -368,12 +388,12 @@ const InvitationLinkCell = ({ invitation, orgIdpLink }) => {
   if (orgIdpLink) {
     return (
       <a href={orgIdpLink} target="_blank" rel="noopener noreferrer">
-        {t('orgConsole.organization.manageAtIdp')}
+        {text}
       </a>
     );
   }
 
-  return <small className="text-body-secondary">{t('orgConsole.invitation.managedByIdp')}</small>;
+  return <small className="text-body-secondary">{text}</small>;
 };
 
 InvitationLinkCell.propTypes = {
@@ -388,24 +408,23 @@ const INVITATION_COLUMNS = [
     key: 'email',
     kind: 'name',
     labelKey: 'orgConsole.invitation.email',
-    sortValue: invitation => invitation.email.toLowerCase(),
-    render: invitation => invitation.email,
+    value: invitation => invitation.email,
   },
   {
     key: 'expires',
     kind: 'date',
     labelKey: 'orgConsole.invitation.expires',
-    sortValue: invitation => new Date(invitation.expires || 0).getTime(),
+    value: invitation => timeOf(invitation.expires),
     render: invitation => localeTime(invitation.expires),
   },
   {
     key: 'accepted',
     kind: 'word',
     labelKey: 'orgConsole.invitation.accepted',
-    sortValue: invitation => (invitation.accepted ? 0 : 1),
+    value: (invitation, ctx) => yesNo(invitation.accepted, ctx.t),
     render: (invitation, ctx) => (
       <>
-        {invitation.accepted ? ctx.t('yes') : ctx.t('no')}
+        {yesNo(invitation.accepted, ctx.t)}
         {invitation.accepted_at ? (
           <small className="text-body-secondary d-block">
             {localeTime(invitation.accepted_at)}
@@ -418,13 +437,13 @@ const INVITATION_COLUMNS = [
     key: 'expired',
     kind: 'word',
     labelKey: 'orgConsole.invitation.expired',
-    sortValue: invitation => (invitation.expired ? 0 : 1),
-    render: (invitation, ctx) => (invitation.expired ? ctx.t('yes') : ctx.t('no')),
+    value: (invitation, ctx) => yesNo(invitation.expired, ctx.t),
   },
   {
     key: 'link',
     kind: 'link',
     labelKey: 'orgConsole.invitation.link',
+    value: (invitation, ctx) => invitationLinkText(invitation, ctx.orgIdpLink, ctx.t),
     render: (invitation, ctx) => (
       <InvitationLinkCell invitation={invitation} orgIdpLink={ctx.orgIdpLink} />
     ),
@@ -493,12 +512,13 @@ const tablePrefsShape = PropTypes.shape({
  */
 const JoinRequestsTab = ({ joinRequests, emptyText, prefs, onApprove, onDeny, rowRef }) => {
   const { t } = useTranslation();
+  const ctx = { t };
   return (
     <>
       <SectionHeading title={t('orgConsole.joinRequest.title')} count={joinRequests.length} />
       <SubTable
         columns={JOIN_REQUEST_COLUMNS}
-        rows={sortItems(joinRequests, prefs.sort, JOIN_REQUEST_COLUMNS)}
+        rows={sortItems(joinRequests, prefs.sort, JOIN_REQUEST_COLUMNS, ctx)}
         rowKey={request => request.id}
         rowRef={rowRef}
         RowActions={JoinRequestActions}
@@ -509,7 +529,7 @@ const JoinRequestsTab = ({ joinRequests, emptyText, prefs, onApprove, onDeny, ro
         hiddenColumns={prefs.hiddenColumns}
         widths={prefs.widths}
         onResize={prefs.setColumnWidth}
-        ctx={{ t }}
+        ctx={ctx}
         emptyText={emptyText}
       />
     </>
@@ -532,10 +552,11 @@ JoinRequestsTab.propTypes = {
  */
 const InvitationsTable = ({ invitations, emptyText, prefs, orgIdpLink, onDelete }) => {
   const { t } = useTranslation();
+  const ctx = { t, orgIdpLink };
   return (
     <SubTable
       columns={INVITATION_COLUMNS}
-      rows={sortItems(invitations, prefs.sort, INVITATION_COLUMNS)}
+      rows={sortItems(invitations, prefs.sort, INVITATION_COLUMNS, ctx)}
       rowKey={invitation => invitation.id}
       RowActions={InvitationActions}
       actionsProps={{ onDelete }}
@@ -545,7 +566,7 @@ const InvitationsTable = ({ invitations, emptyText, prefs, orgIdpLink, onDelete 
       hiddenColumns={prefs.hiddenColumns}
       widths={prefs.widths}
       onResize={prefs.setColumnWidth}
-      ctx={{ t, orgIdpLink }}
+      ctx={ctx}
       emptyText={emptyText}
     />
   );

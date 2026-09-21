@@ -1,3 +1,5 @@
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
 const compare = (left, right) => {
   if (Array.isArray(left) && Array.isArray(right)) {
     for (let index = 0; index < left.length; index += 1) {
@@ -8,40 +10,40 @@ const compare = (left, right) => {
     }
     return 0;
   }
-  if (left < right) {
-    return -1;
+  if (typeof left === 'number' && typeof right === 'number') {
+    return left - right;
   }
-  if (left > right) {
-    return 1;
-  }
-  return 0;
+  return collator.compare(String(left ?? ''), String(right ?? ''));
 };
 
 /**
  * Sorts items by every entry of the sort stack in order, each entry naming
- * a column among the given ones that carries a `sortValue`; an entry whose
- * column is absent is skipped, so a sort on a hidden column is dropped. A
- * `sortValue` may return an array, compared element by element. Returns
- * the items untouched when no entry applies.
+ * a column among the given ones, by what that column's `value(row, ctx)`
+ * answers: two numbers by number, anything else as text through one
+ * collator that orders naturally (9.0.1 before 12.0.4) and ignores case,
+ * an array element by element. An entry whose column is absent is
+ * skipped, so a sort on a hidden column is dropped. Returns the items
+ * untouched when no entry applies.
  *
  * @param {Array} items - The items to sort
  * @param {Array<{ column: string, direction: string }>} stack - The active sort, first entry first
- * @param {Array} columns - The columns a sort may target
+ * @param {Array} columns - The columns a sort may target, each with `key` and `value`
+ * @param {Object} ctx - The context every `value` receives
  * @returns {Array} The sorted items
  */
-export const sortItems = (items, stack, columns) => {
+export const sortItems = (items, stack, columns, ctx) => {
   const entries = stack
     .map(entry => ({
       column: columns.find(column => column.key === entry.column),
       direction: entry.direction === 'desc' ? -1 : 1,
     }))
-    .filter(entry => entry.column && entry.column.sortValue);
+    .filter(entry => entry.column);
   if (entries.length === 0) {
     return items;
   }
   return [...items].sort((a, b) => {
     for (const { column, direction } of entries) {
-      const result = direction * compare(column.sortValue(a), column.sortValue(b));
+      const result = direction * compare(column.value(a, ctx), column.value(b, ctx));
       if (result !== 0) {
         return result;
       }

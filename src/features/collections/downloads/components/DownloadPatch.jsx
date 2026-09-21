@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import RowMenu from '../../../../components/common/RowMenu';
 import VisibilityPicker, {
   StatusMenu,
   VisibilityMenu,
@@ -36,6 +38,7 @@ import { isOrgManager } from '../../../../utils/permissions';
 import { isVisible, refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
+import { MoveDialog } from './BulkDialogs';
 import { editBody } from './Download';
 import { MoveButton } from './DownloadRelease';
 import DownloadZone, { useUpload } from './DownloadZone';
@@ -402,6 +405,7 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
   const status = useStatus();
   const { user, org, reload, notify, setForm } = ctx;
   const [editing, setEditing] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [draft, setDraft] = useState(() => draftFrom(architecture));
   const rules = useFormRules({
@@ -521,35 +525,45 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
         current={visibilityPair(architecture)}
         max={visibilityPair(provider)}
         className="btn btn-sm btn-outline-secondary"
+        compact
         onPick={access}
       />
       <StatusMenu
         published={Boolean(architecture.published)}
         parentPublished={Boolean(provider.published)}
         className="btn btn-sm btn-outline-secondary"
+        compact
         onPick={access}
       />
-      <MoveButton
-        level="architectures"
-        scope={{ org, name: item.name, version, provider: provider.name }}
-        move={move}
-        ctx={ctx}
-        className="btn btn-sm"
-      />
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary"
-        onClick={() => setEditing(true)}
-      >
-        {t('boxes.buttons.edit')}
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-danger"
-        onClick={() => setShowDelete(true)}
-      >
-        {t('boxes.buttons.delete')}
-      </button>
+      <RowMenu label={t('pages.table.more')}>
+        <Dropdown.Item as="button" type="button" onClick={() => setEditing(true)}>
+          {t('boxes.buttons.edit')}
+        </Dropdown.Item>
+        <Dropdown.Item as="button" type="button" onClick={() => setMoving(true)}>
+          {t('pages.bulk.move')}
+        </Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.Item
+          as="button"
+          type="button"
+          className="text-danger"
+          onClick={() => setShowDelete(true)}
+        >
+          {t('boxes.buttons.delete')}
+        </Dropdown.Item>
+      </RowMenu>
+      {moving ? (
+        <MoveDialog
+          level="architectures"
+          scope={{ org, name: item.name, version, provider: provider.name }}
+          count={1}
+          onSubmit={target => {
+            setMoving(false);
+            move(target).catch(error => notify('danger', refusalMessage({ error, t })));
+          }}
+          onClose={() => setMoving(false)}
+        />
+      ) : null}
       <ConfirmModal
         show={showDelete}
         handleClose={() => setShowDelete(false)}

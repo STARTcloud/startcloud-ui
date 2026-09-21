@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
 import {
-  VISIBILITY_GROUP,
   architectureNames,
   latestReleaseTime,
   platformNames,
@@ -16,7 +15,11 @@ import { OrgLogo } from '../layout/OrgSwitcherModal';
 import { VisibilityBadge } from './StatusChips';
 import { hasAny } from './SubTable';
 
+const NONE = 'N/A';
+
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
+
+const timeOf = value => new Date(value || 0).getTime();
 
 /**
  * The `when` of the two access columns, Visibility and Status: drawn
@@ -31,7 +34,35 @@ const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 export const managesRows = (rows, ctx) =>
   rows.length > 0 && managesListing(ctx.user, ctx.org || '');
 
-const namesKey = names => names.join(' ').toLowerCase();
+/**
+ * The text a badges cell shows: its names joined by a space, or `empty`
+ * while it has none, the same text `nameBadges` draws as badges.
+ *
+ * @param {Array<string>} names - The badge names
+ * @param {string} [empty] - The text drawn while there are no names
+ * @returns {string} The cell's text
+ */
+export const badgesText = (names, empty = '') => (names.length > 0 ? names.join(' ') : empty);
+
+/**
+ * One small badge per name, or `empty` while there are none.
+ *
+ * @param {Array<string>} names - The badge names
+ * @param {string} [empty] - The text drawn while there are no names
+ * @returns {import('react').ReactNode} The badges
+ */
+export const nameBadges = (names, empty = '') =>
+  names.length > 0 ? (
+    <span className="d-inline-flex flex-wrap gap-1">
+      {names.map(name => (
+        <span key={name} className="badge bg-secondary badge-xs">
+          {name}
+        </span>
+      ))}
+    </span>
+  ) : (
+    empty
+  );
 
 const itemIcon = icon =>
   icon ? (
@@ -46,24 +77,11 @@ const itemIcon = icon =>
     />
   ) : null;
 
-const nameBadges = names =>
-  names.length > 0 ? (
-    <span className="d-inline-flex flex-wrap gap-1">
-      {names.map(name => (
-        <span key={name} className="badge bg-secondary badge-xs">
-          {name}
-        </span>
-      ))}
-    </span>
-  ) : (
-    'N/A'
-  );
-
 export const nameColumn = {
   key: 'name',
   kind: 'name',
   labelKey: 'pages.table.name',
-  sortValue: item => item.name.toLowerCase(),
+  value: item => item.name,
   render: (item, ctx) => {
     const owner = item.vendor || item.organization.name;
     const text = `${owner}/${item.name}`;
@@ -101,7 +119,7 @@ export const labelColumn = {
   key: 'label',
   kind: 'name',
   labelKey: 'pages.table.name',
-  sortValue: item => (item.label || item.name).toLowerCase(),
+  value: item => item.label || item.name,
   render: (item, ctx) => (
     <>
       {itemIcon(item.icon)}
@@ -122,7 +140,7 @@ export const osColumn = {
   key: 'os',
   kind: 'text',
   labelKey: 'pages.table.os',
-  sortValue: item => (item.os?.label || '').toLowerCase(),
+  value: item => item.os?.label || '',
   render: item => {
     const label = item.os?.label || '';
     const iconUrl = item.os?.iconUrl || '';
@@ -140,15 +158,18 @@ export const osColumn = {
   },
 };
 
+const statusWord = (item, ctx) =>
+  ctx.t(item.published ? 'pages.status.published' : 'pages.status.pending');
+
 export const statusColumn = {
   key: 'status',
   kind: 'badge',
   labelKey: 'pages.table.status',
   when: managesRows,
-  sortValue: item => (item.published ? 0 : 1),
+  value: statusWord,
   render: (item, ctx) => (
     <span className={`badge ${item.published ? 'bg-success' : 'bg-warning'}`}>
-      {ctx.t(item.published ? 'pages.status.published' : 'pages.status.pending')}
+      {statusWord(item, ctx)}
     </span>
   ),
 };
@@ -158,7 +179,10 @@ export const visibilityColumn = {
   kind: 'badge',
   labelKey: 'pages.table.visibility',
   when: managesRows,
-  sortValue: item => VISIBILITY_GROUP.order.indexOf(visibilityOf(item)),
+  value: (item, ctx) => {
+    const visibility = visibilityOf(item);
+    return visibility ? ctx.t(`pages.status.${visibility}`) : '';
+  },
   render: item => <VisibilityBadge visibility={visibilityOf(item)} />,
 };
 
@@ -167,7 +191,7 @@ export const createdColumn = {
   kind: 'date',
   labelKey: 'pages.table.created',
   defaultHidden: true,
-  sortValue: item => new Date(item.createdAt || 0).getTime(),
+  value: item => timeOf(item.createdAt),
   render: item => localeDate(item.createdAt),
 };
 
@@ -176,7 +200,7 @@ export const updatedColumn = {
   kind: 'date',
   labelKey: 'pages.table.updated',
   defaultHidden: true,
-  sortValue: item => new Date(item.updatedAt || 0).getTime(),
+  value: item => timeOf(item.updatedAt),
   render: item => localeDate(item.updatedAt),
 };
 
@@ -184,7 +208,7 @@ export const releasedColumn = {
   key: 'released',
   kind: 'relative',
   labelKey: 'pages.table.released',
-  sortValue: item => latestReleaseTime(item) || 0,
+  value: item => latestReleaseTime(item) || 0,
   render: (item, ctx) => {
     const time = latestReleaseTime(item);
     return time ? formatRelativeTime(time, ctx.language) : '';
@@ -195,49 +219,44 @@ export const downloadsColumn = {
   key: 'downloads',
   kind: 'count',
   labelKey: 'pages.table.downloads',
-  sortValue: item => item.downloads || 0,
   when: hasAny(item => typeof item.downloads === 'number'),
-  render: item => (typeof item.downloads === 'number' ? item.downloads : ''),
+  value: item => (typeof item.downloads === 'number' ? item.downloads : ''),
 };
 
 export const versionsColumn = {
   key: 'versions',
   kind: 'count',
   labelKey: 'pages.table.versions',
-  sortValue: item => (item.versions || []).length,
-  render: item => (item.versions || []).length,
+  value: item => (item.versions || []).length,
 };
 
 export const providersColumn = {
   key: 'providers',
   kind: 'badges',
   labelKey: 'pages.table.providers',
-  sortValue: item => namesKey(providerNames(item)),
-  render: item => nameBadges(providerNames(item)),
+  value: item => badgesText(providerNames(item), NONE),
+  render: item => nameBadges(providerNames(item), NONE),
 };
 
 export const familyColumn = {
   key: 'family',
   kind: 'text',
   labelKey: 'pages.table.family',
-  sortValue: item => (item.family || '').toLowerCase(),
-  render: item => item.family || '',
+  value: item => item.family || '',
 };
 
 export const vendorColumn = {
   key: 'vendor',
   kind: 'text',
   labelKey: 'pages.table.vendor',
-  sortValue: item => (item.vendor || '').toLowerCase(),
-  render: item => item.vendor || '',
+  value: item => item.vendor || '',
 };
 
 export const releasesColumn = {
   key: 'releases',
   kind: 'count',
   labelKey: 'pages.table.releases',
-  sortValue: item => (item.versions || []).length,
-  render: item => (item.versions || []).length,
+  value: item => (item.versions || []).length,
 };
 
 export const platformsColumn = {
@@ -245,8 +264,8 @@ export const platformsColumn = {
   kind: 'badges',
   labelKey: 'pages.table.platforms',
   defaultHidden: true,
-  sortValue: item => namesKey(platformNames(item)),
-  render: item => nameBadges(platformNames(item)),
+  value: item => badgesText(platformNames(item), NONE),
+  render: item => nameBadges(platformNames(item), NONE),
 };
 
 export const architecturesColumn = {
@@ -254,6 +273,6 @@ export const architecturesColumn = {
   kind: 'badges',
   labelKey: 'pages.table.architectures',
   defaultHidden: true,
-  sortValue: item => namesKey(architectureNames(item)),
-  render: item => nameBadges(architectureNames(item)),
+  value: item => badgesText(architectureNames(item), NONE),
+  render: item => nameBadges(architectureNames(item), NONE),
 };

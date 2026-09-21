@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { drawnColumns } from '../components/common/SubTable';
 import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
 
@@ -23,7 +24,8 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * Registers one navbar search binding for a detail page's table, with one
  * filter group per enumerable column the page names in `filterGroups`,
  * narrowing the rows client-side, and one Columns group last that shows
- * or hides the table's columns, and returns the rows the query and the
+ * or hides the columns the table is drawing (their `when` true for the
+ * rows and `ctx`), and returns the rows the query and the
  * groups leave in the active sort order, the query itself, whether a
  * query or a group is active, the sort with its setter, the hidden
  * column keys and the column widths with their setter. A sort on a hidden
@@ -41,7 +43,8 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {Array} options.rows - Every row of the table
  * @param {Function} options.matches - `matches(row, needle)` for one lower-cased needle
  * @param {string} options.placeholderKey - Translation key of the search placeholder
- * @param {Array} options.columns - The table's columns, each with `key`, `labelKey` and optionally `sortValue` and `defaultHidden`
+ * @param {Array} options.columns - The table's columns, each with `key`, `labelKey`, `value` and optionally `when` and `defaultHidden`
+ * @param {Object} options.ctx - The context the table's columns receive
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
  * @param {Array} [options.filterGroups] - The client-side group specs of `useClientFilters`
  * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - An externally held query
@@ -54,6 +57,7 @@ export const useDetailSearch = ({
   matches,
   placeholderKey,
   columns,
+  ctx,
   prefsKey,
   filterGroups,
   bound = null,
@@ -74,7 +78,7 @@ export const useDetailSearch = ({
   const searched = needle ? rows.filter(row => matches(row, needle)) : rows;
   const filters = useClientFilters({ specs: filterGroups, rows: searched, bound: url });
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const sorted = sortItems(filters.rows, prefs.sort, shown);
+  const sorted = sortItems(filters.rows, prefs.sort, shown, ctx);
 
   useNavbarSearchBinding({
     query,
@@ -84,7 +88,12 @@ export const useDetailSearch = ({
     total: rows.length,
     groups: [
       ...filters.groups,
-      columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t }),
+      columnsGroup({
+        columns: drawnColumns(columns, sorted, ctx),
+        hidden: prefs.hiddenColumns,
+        setPrefs,
+        t,
+      }),
     ],
     onClearFilters: filters.clear,
   });

@@ -102,26 +102,28 @@ TitleCell.propTypes = {
   onSelect: PropTypes.func.isRequired,
 };
 
+const typeWord = (row, ctx) =>
+  row.type ? ctx.t(`inbox.type.${row.type}`, { defaultValue: row.type }) : '';
+
 const columns = [
   {
     key: 'title',
     kind: 'name',
     labelKey: 'inbox.columns.title',
-    sortValue: row => (row.title || '').toLowerCase(),
+    value: row => row.title || '',
     render: (row, ctx) => <TitleCell entry={row} onSelect={ctx.onSelect} />,
   },
   {
     key: 'body',
     kind: 'text',
     labelKey: 'inbox.columns.body',
-    sortValue: row => (row.body || '').toLowerCase(),
-    render: row => row.body || '',
+    value: row => row.body || '',
   },
   {
     key: 'time',
     kind: 'relative',
     labelKey: 'inbox.columns.time',
-    sortValue: row => new Date(row.created_at || 0).getTime(),
+    value: row => new Date(row.created_at || 0).getTime(),
     render: (row, ctx) => (
       <span title={absoluteTime(row.created_at, ctx.language)}>
         {formatRelativeTime(row.created_at, ctx.language)}
@@ -133,15 +135,9 @@ const columns = [
     kind: 'badge',
     labelKey: 'inbox.columns.type',
     defaultHidden: true,
-    sortValue: row => row.type || '',
+    value: typeWord,
     render: (row, ctx) =>
-      row.type ? (
-        <span className="badge bg-secondary">
-          {ctx.t(`inbox.type.${row.type}`, { defaultValue: row.type })}
-        </span>
-      ) : (
-        ''
-      ),
+      row.type ? <span className="badge bg-secondary">{typeWord(row, ctx)}</span> : '',
   },
 ];
 
@@ -358,6 +354,7 @@ const InboxPage = ({ notifications }) => {
     action: null,
     rows: searched,
     columns,
+    ctx: { t, language: i18n.language },
     prefsKey: PREFS_KEY,
   });
 

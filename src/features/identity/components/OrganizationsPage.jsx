@@ -25,6 +25,7 @@ import OrganizationDialog, {
   adminOrganizationShape,
   DEFAULT_ROLES,
 } from './OrganizationDialog';
+import { customerIdCell, customerIdText } from './UserActions';
 import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
@@ -60,12 +61,18 @@ const FILTER_GROUPS = [
 ];
 const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 
+const typeWord = (row, t) =>
+  t(row.personal ? 'admin.organizations.personal' : 'admin.organizations.team');
+
+const statusWord = (row, t) =>
+  t(row.suspended ? 'admin.organizations.suspended' : 'admin.organizations.active');
+
 const columnsFor = () => [
   {
     key: 'name',
     kind: 'name',
     labelKey: 'admin.organizations.table.name',
-    sortValue: row => row.name.toLowerCase(),
+    value: row => row.name,
     render: (row, ctx) => (
       <span className="d-inline-flex align-items-center gap-2">
         <OrgLogo
@@ -86,10 +93,10 @@ const columnsFor = () => [
     kind: 'badge',
     labelKey: 'admin.organizations.table.type',
     when: carries('personal'),
-    sortValue: row => (row.personal ? 1 : 0),
+    value: (row, ctx) => typeWord(row, ctx.t),
     render: (row, ctx) => (
       <span className={`badge ${row.personal ? 'bg-secondary' : 'bg-primary'}`}>
-        {row.personal ? ctx.t('admin.organizations.personal') : ctx.t('admin.organizations.team')}
+        {typeWord(row, ctx.t)}
       </span>
     ),
   },
@@ -98,12 +105,10 @@ const columnsFor = () => [
     kind: 'badge',
     labelKey: 'admin.organizations.table.status',
     when: carries('suspended'),
-    sortValue: row => (row.suspended ? 1 : 0),
+    value: (row, ctx) => statusWord(row, ctx.t),
     render: (row, ctx) => (
       <span className={`badge ${row.suspended ? 'bg-warning text-dark' : 'bg-success'}`}>
-        {row.suspended
-          ? ctx.t('admin.organizations.suspended')
-          : ctx.t('admin.organizations.active')}
+        {statusWord(row, ctx.t)}
       </span>
     ),
   },
@@ -112,6 +117,7 @@ const columnsFor = () => [
     kind: 'text',
     labelKey: 'admin.organizations.table.inviteCode',
     when: hasAny(row => row.invite_code),
+    value: row => row.invite_code || '',
     render: row => (row.invite_code ? <code>{row.invite_code}</code> : '—'),
   },
   {
@@ -119,28 +125,22 @@ const columnsFor = () => [
     kind: 'badge',
     labelKey: 'admin.organizations.table.customerId',
     when: carries('customer_id'),
-    sortValue: row => row.customer_id || '',
-    render: (row, ctx) =>
-      row.customer_id ? (
-        <span className="badge bg-secondary">{row.customer_id}</span>
-      ) : (
-        <span className="text-muted">{ctx.t('admin.users.table.notSet')}</span>
-      ),
+    value: (row, ctx) => customerIdText(row, ctx.t),
+    render: (row, ctx) => customerIdCell(row, ctx.t),
   },
   {
     key: 'member_count',
     kind: 'count',
     labelKey: 'admin.organizations.table.members',
     className: 'text-end',
-    sortValue: row => row.member_count || 0,
-    render: row => row.member_count ?? 0,
+    value: row => row.member_count ?? 0,
   },
   {
     key: 'created_at',
     kind: 'date',
     labelKey: 'admin.organizations.table.created',
     when: hasAny(row => row.created_at),
-    sortValue: row => new Date(row.created_at || 0).getTime(),
+    value: row => new Date(row.created_at || 0).getTime(),
     render: row => <DateCell value={row.created_at} />,
   },
 ];
@@ -416,11 +416,13 @@ const OrganizationsPage = ({ adapter }) => {
   const selection = useSelection(selectable, { labelOf: row => row.name });
   const columns = useMemo(() => columnsFor(), []);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
+  const ctx = { t, language: i18n.language };
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.organizations.search',
     columns,
+    ctx,
     prefsKey: PREFS_KEY,
     filterGroups: FILTER_GROUPS,
     url,
@@ -499,7 +501,7 @@ const OrganizationsPage = ({ adapter }) => {
         hiddenColumns={search.hiddenColumns}
         widths={search.widths}
         onResize={search.setColumnWidth}
-        ctx={{ t, language: i18n.language }}
+        ctx={ctx}
         emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
         selection={adapter.bulk ? selection.subtable : null}
       />

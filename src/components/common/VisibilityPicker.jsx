@@ -2,7 +2,16 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { ButtonGroup, Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaCheck, FaGlobe, FaLock, FaRegSquare, FaSitemap, FaUsers } from 'react-icons/fa6';
+import {
+  FaCheck,
+  FaCircleCheck,
+  FaGlobe,
+  FaLock,
+  FaRegClock,
+  FaRegSquare,
+  FaSitemap,
+  FaUsers,
+} from 'react-icons/fa6';
 
 const OPTIONS = [
   { key: 'public', value: { is_public: true, guest_access: false } },
@@ -65,6 +74,45 @@ export const opensVisibility = (next, current) => WIDTH[pickedOf(next)] > WIDTH[
 
 const withScope = (body, beneath) => (beneath ? { ...body, recursive: true } : body);
 
+const STATUS_ICONS = { published: FaCircleCheck, pending: FaRegClock };
+
+/**
+ * The status word a published flag means, empty on the bulk pane's mixed
+ * pick where no one word holds.
+ *
+ * @param {boolean|null} published - The flag, null while mixed
+ * @returns {string} `published`, `pending` or empty
+ */
+const statusWordOf = published => {
+  if (published === null) {
+    return '';
+  }
+  return published ? 'published' : 'pending';
+};
+
+/**
+ * The face of a scoped menu: the word with its icon before it, or, in
+ * the compact form a table line draws, the icon alone with the word left
+ * to the tooltip; the word alone while no icon names the current value.
+ *
+ * @param {{ Icon: Function|null, word: string, compact: boolean }} face
+ * @returns {import('react').ReactNode}
+ */
+const faceOf = ({ Icon, word, compact }) => {
+  if (!Icon) {
+    return word;
+  }
+  if (compact) {
+    return <Icon aria-hidden />;
+  }
+  return (
+    <>
+      <Icon className="me-2" aria-hidden />
+      {word}
+    </>
+  );
+};
+
 const ScopeGlyph = ({ alone, count, onToggle }) => {
   const { t } = useTranslation();
   const title = alone ? t('pages.bulk.scopeAlone', { count }) : t('pages.bulk.scopeBeneath');
@@ -122,12 +170,19 @@ const lineShape = PropTypes.shape({
  * `className` is the face's button classes, an `me-2` in it moving to the
  * wrapper so the bar's spacing holds.
  */
-const ScopedMenu = ({ face, className, disabled, count, lines, onPick }) => {
+const ScopedMenu = ({ face, title, className, disabled, count, lines, onPick }) => {
   const [alone, setAlone] = useState({});
   const { group, button } = splitMargin(className);
   return (
     <Dropdown as={ButtonGroup} className={group}>
-      <Dropdown.Toggle as="button" type="button" className={button} disabled={disabled}>
+      <Dropdown.Toggle
+        as="button"
+        type="button"
+        className={button}
+        disabled={disabled}
+        title={title}
+        aria-label={title}
+      >
         {face}
       </Dropdown.Toggle>
       <Dropdown.Menu>
@@ -162,6 +217,7 @@ const ScopedMenu = ({ face, className, disabled, count, lines, onPick }) => {
 
 ScopedMenu.propTypes = {
   face: PropTypes.node.isRequired,
+  title: PropTypes.string.isRequired,
   className: PropTypes.string.isRequired,
   disabled: PropTypes.bool.isRequired,
   count: PropTypes.number.isRequired,
@@ -178,7 +234,8 @@ ScopedMenu.propTypes = {
  * Public open. `max` is the parent's pair where there is one, the lines
  * beyond it disabled with the `withinParent` sentence as their title.
  * `onPick` answers the wire pair, `recursive: true` beside it while the
- * scope is everything beneath.
+ * scope is everything beneath. `compact`, the form a table line draws,
+ * puts the word's icon alone on the face and the word in its tooltip.
  */
 export const VisibilityMenu = ({
   current = null,
@@ -186,6 +243,7 @@ export const VisibilityMenu = ({
   count = 1,
   className = 'btn btn-outline-secondary',
   disabled = false,
+  compact = false,
   onPick,
 }) => {
   const { t } = useTranslation();
@@ -210,17 +268,13 @@ export const VisibilityMenu = ({
     };
   });
   const FaceIcon = picked ? ICONS[picked] : null;
-  const face = picked ? (
-    <>
-      <FaceIcon className="me-2" />
-      {t(`pages.status.${picked}`)}
-    </>
-  ) : (
-    t('pages.table.visibility')
-  );
+  const word = picked ? t(`pages.status.${picked}`) : t('pages.table.visibility');
+  const title = picked ? `${t('pages.table.visibility')}: ${word}` : word;
+  const face = faceOf({ Icon: FaceIcon, word, compact });
   return (
     <ScopedMenu
       face={face}
+      title={title}
       className={className}
       disabled={disabled}
       count={count}
@@ -236,6 +290,7 @@ VisibilityMenu.propTypes = {
   count: PropTypes.number,
   className: PropTypes.string,
   disabled: PropTypes.bool,
+  compact: PropTypes.bool,
   onPick: PropTypes.func.isRequired,
 };
 
@@ -247,7 +302,8 @@ VisibilityMenu.propTypes = {
  * carries the scope glyph, and is disabled with the `withinParent`
  * sentence while `parentPublished` is false. `onPick` answers
  * `{ published }`, `recursive: true` beside it while the scope is
- * everything beneath.
+ * everything beneath. `compact`, the form a table line draws, puts the
+ * state's icon alone on the face and the word in its tooltip.
  */
 export const StatusMenu = ({
   published = null,
@@ -255,6 +311,7 @@ export const StatusMenu = ({
   count = 1,
   className = 'btn btn-outline-secondary',
   disabled = false,
+  compact = false,
   onPick,
 }) => {
   const { t } = useTranslation();
@@ -280,13 +337,14 @@ export const StatusMenu = ({
       active: published === false,
     },
   ];
-  const face =
-    published === null
-      ? t('pages.table.status')
-      : t(published ? 'pages.status.published' : 'pages.status.pending');
+  const state = statusWordOf(published);
+  const word = state ? t(`pages.status.${state}`) : t('pages.table.status');
+  const title = state ? `${t('pages.table.status')}: ${word}` : word;
+  const face = faceOf({ Icon: state ? STATUS_ICONS[state] : null, word, compact });
   return (
     <ScopedMenu
       face={face}
+      title={title}
       className={className}
       disabled={disabled}
       count={count}
@@ -302,6 +360,7 @@ StatusMenu.propTypes = {
   count: PropTypes.number,
   className: PropTypes.string,
   disabled: PropTypes.bool,
+  compact: PropTypes.bool,
   onPick: PropTypes.func.isRequired,
 };
 

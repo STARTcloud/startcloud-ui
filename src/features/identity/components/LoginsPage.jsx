@@ -18,31 +18,32 @@ const PREFS_KEY = 'table_prefs_admin_logins';
 
 const rowKey = row => `${row.timestamp}:${row.username}:${row.ip_address}`;
 
+const resultWord = (row, ctx) =>
+  ctx.t(row.success ? 'admin.activity.logins.success' : 'admin.activity.logins.failed');
+
 const columns = [
-  {
-    key: 'timestamp',
-    kind: 'date',
-    labelKey: 'admin.activity.time',
-    sortValue: row => new Date(row.timestamp || 0).getTime(),
-    render: row => <DateCell value={row.timestamp} />,
-  },
   {
     key: 'username',
     kind: 'name',
     labelKey: 'admin.activity.username',
-    sortValue: row => row.username.toLowerCase(),
+    value: row => row.username,
     render: row => <strong>{row.username}</strong>,
+  },
+  {
+    key: 'timestamp',
+    kind: 'date',
+    labelKey: 'admin.activity.time',
+    value: row => new Date(row.timestamp || 0).getTime(),
+    render: row => <DateCell value={row.timestamp} />,
   },
   {
     key: 'success',
     kind: 'badge',
     labelKey: 'admin.activity.logins.result',
-    sortValue: row => (row.success ? 0 : 1),
+    value: resultWord,
     render: (row, ctx) => (
       <span className={`badge ${row.success ? 'bg-success' : 'bg-danger'}`}>
-        {row.success
-          ? ctx.t('admin.activity.logins.success')
-          : ctx.t('admin.activity.logins.failed')}
+        {resultWord(row, ctx)}
       </span>
     ),
   },
@@ -50,27 +51,27 @@ const columns = [
     key: 'failure_reason',
     kind: 'text',
     labelKey: 'admin.activity.logins.reason',
-    render: row => row.failure_reason || '',
+    value: row => row.failure_reason || '',
   },
   {
     key: 'ip_address',
     kind: 'text',
     labelKey: 'admin.activity.address',
+    value: row => row.ip_address || '',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'location',
     kind: 'text',
     labelKey: 'admin.activity.location',
-    sortValue: row => `${row.country || ''} ${row.city || ''}`.toLowerCase(),
-    render: row => [row.city, row.country].filter(Boolean).join(', '),
+    value: row => [row.city, row.country].filter(Boolean).join(', '),
   },
   {
     key: 'user_agent',
     kind: 'text',
     labelKey: 'admin.activity.device',
     defaultHidden: true,
-    render: row => row.user_agent || '',
+    value: row => row.user_agent || '',
   },
 ];
 
@@ -109,14 +110,16 @@ const groupsOf = ({ state, t }) => [
  * Export the panel's action over the same parameters, and the Per page and
  * Columns groups under `table_prefs_admin_logins`, the page reset to 0 on
  * a size change; a `SectionHeading` carrying the
- * total as muted text after the title, the table with its Reason column
- * for a failed row, and the pager as the section's foot.
+ * total as muted text after the title, the table, the username first,
+ * with its Reason column for a failed row, every column sorting by what
+ * its cell shows, and the pager as the section's foot.
  */
 const LoginsPage = () => {
   const { t, i18n } = useTranslation();
   const [size, setSize] = useState(() => readDetailPrefs(PREFS_KEY, columns).size);
   const state = useActivityPage({ read: logins, example: LOGINS, exportName: 'logins', size });
   const rows = useMemo(() => state.data?.items || [], [state.data]);
+  const ctx = { t, language: i18n.language };
   const search = useListSearch({
     query: state.query,
     onQueryChange: state.setQuery,
@@ -132,6 +135,7 @@ const LoginsPage = () => {
     matched: state.data?.total || 0,
     rows,
     columns,
+    ctx,
     prefsKey: PREFS_KEY,
   });
 
@@ -161,7 +165,7 @@ const LoginsPage = () => {
           hiddenColumns={search.hiddenColumns}
           widths={search.widths}
           onResize={search.setColumnWidth}
-          ctx={{ t, language: i18n.language }}
+          ctx={ctx}
           emptyText={
             Object.keys(state.narrowed).length > 0 ? t('pages.noMatches') : t('pages.empty')
           }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { drawnColumns } from '../components/common/SubTable';
 import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
 
@@ -39,14 +40,16 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * list's parameters by the page), then one group per enumerable column
  * the list names no parameter for (`clientGroups`), narrowing the rows
  * the list answered client-side, followed by the Per page group (25, 50,
- * 100, 250; not a filter) and the Columns group, the page's one action
- * drawn at the panel's foot, and `matched` published with no `total`,
- * since a count over the page held would lie: the answer's `total` where
- * the server alone narrows, or, when the page hands none in, the count
- * of the rows the client-side groups leave, the rows on screen. Answers
- * the page's rows in the active sort order, the sort with its setter, the
- * hidden column keys, the column widths with their setter and the page
- * size with its setter, persisted under `prefsKey`.
+ * 100, 250; not a filter) and the Columns group over the columns the
+ * table is drawing (their `when` true for the rows and `ctx`), the
+ * page's one action drawn at the panel's foot, and `matched` published
+ * with no `total`, since a count over the page held would lie: the
+ * answer's `total` where the server alone narrows, or, when the page
+ * hands none in, the count of the rows the client-side groups leave, the
+ * rows on screen. Answers the page's rows in the active sort order, the
+ * sort with its setter, the hidden column keys, the column widths with
+ * their setter and the page size with its setter, persisted under
+ * `prefsKey`.
  *
  * @param {Object} options
  * @param {string} options.query - The query the page holds
@@ -60,6 +63,7 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * @param {number|null} [options.matched] - The paged answer's `total`; the client-narrowed row count when absent
  * @param {Array} options.rows - The rows the list answered
  * @param {Array} options.columns - The table's columns
+ * @param {Object} options.ctx - The context the table's columns receive
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
  * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, size: number, setSize: Function }} The search state
  */
@@ -75,6 +79,7 @@ export const useListSearch = ({
   matched = null,
   rows,
   columns,
+  ctx,
   prefsKey,
 }) => {
   const { t } = useTranslation();
@@ -86,6 +91,7 @@ export const useListSearch = ({
   }, [prefsKey, prefs]);
 
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
+  const sorted = sortItems(filters.rows, prefs.sort, shown, ctx);
 
   useNavbarSearchBinding({
     query,
@@ -96,7 +102,12 @@ export const useListSearch = ({
       ...groups,
       ...filters.groups,
       perPageGroup({ size: prefs.size, setPrefs, t }),
-      columnsGroup({ columns, hidden: prefs.hiddenColumns, setPrefs, t }),
+      columnsGroup({
+        columns: drawnColumns(columns, sorted, ctx),
+        hidden: prefs.hiddenColumns,
+        setPrefs,
+        t,
+      }),
     ],
     onClearFilters: () => {
       onClearFilters();
@@ -114,7 +125,7 @@ export const useListSearch = ({
   const setSize = size => setPrefs(current => ({ ...current, size }));
 
   return {
-    rows: sortItems(filters.rows, prefs.sort, shown),
+    rows: sorted,
     sort: prefs.sort,
     setSort,
     hiddenColumns: prefs.hiddenColumns,

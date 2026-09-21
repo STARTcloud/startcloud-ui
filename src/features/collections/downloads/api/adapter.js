@@ -5,14 +5,15 @@ import { api } from './downloads';
 
 const rows = data => (Array.isArray(data) ? data : []);
 
-const latestReleaseOf = versions =>
-  versions
-    .map(version => version.createdAt)
-    .filter(Boolean)
-    .sort()
-    .pop() || null;
-
-const fileArtifact = entry => ({
+/**
+ * One file of a patch as an architecture row; a file has no date of its
+ * own, so it carries the `releasedAt` of the patch it belongs to.
+ *
+ * @param {Object} entry - The wire file
+ * @param {string|null} releasedAt - The patch's `released_at`
+ * @returns {Object} The row
+ */
+const fileArtifact = (entry, releasedAt) => ({
   name: entry.key,
   ...accessOf(entry),
   fileName: entry.file_name || '',
@@ -28,16 +29,18 @@ const fileArtifact = entry => ({
   variant: entry.variant || '',
   createdAt: entry.created_at || null,
   updatedAt: entry.updated_at || null,
+  releasedAt,
 });
 
 const patchSummary = entry => {
-  const architectures = rows(entry.files).map(fileArtifact);
+  const releasedAt = entry.released_at || null;
+  const architectures = rows(entry.files).map(file => fileArtifact(file, releasedAt));
   return {
     name: entry.name,
     description: entry.description || '',
     ...accessOf(entry),
     kind: entry.kind || null,
-    releasedAt: entry.released_at || null,
+    releasedAt,
     notesUrl: entry.notes_url || null,
     createdAt: entry.created_at || null,
     updatedAt: entry.updated_at || null,
@@ -54,6 +57,7 @@ const releaseSummary = entry => {
     ...accessOf(entry),
     createdAt: entry.created_at || null,
     updatedAt: entry.updated_at || null,
+    releasedAt: entry.released_at || null,
     downloads: sumCounts(providers.map(provider => provider.downloads)),
     description: entry.description || '',
     releaseNotes: entry.release_notes ?? null,
@@ -80,7 +84,7 @@ const downloadItem = (entry, orgName, logo) => {
     published: Boolean(entry.published),
     createdAt: entry.created_at || null,
     updatedAt: entry.updated_at || null,
-    latestReleaseAt: latestReleaseOf(versions),
+    latestReleaseAt: entry.latest_release_at || null,
     downloads: countOf(entry.download_count),
     family: entry.family || '',
     vendor: entry.vendor || '',

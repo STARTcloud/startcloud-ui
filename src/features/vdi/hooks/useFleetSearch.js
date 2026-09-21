@@ -347,7 +347,8 @@ const filtering = (needle, filters) =>
  * query over hostname, user names, UNC paths, pool, IP, MAC, instance id
  * and UDS user; the groups Status and Pool (tristate, a pill cycling
  * neutral → include → exclude), Session, Cache, Drives and Publication,
- * then Columns; the sort stack over the given columns with hostname as
+ * then Columns; the sort stack over the given columns' `value`, the
+ * translator as the columns' context, with hostname as
  * the tiebreak; the column widths with their setter; every choice, the
  * widths and the pool fold persisted under `prefsKey`.
  * A `pool` or `session` member of the route's query, the routes the
@@ -384,7 +385,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
     vm => (needle === '' || matchesQuery(vm, needle)) && passesFilters(vm, filters, now)
   );
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const rows = sortItems([...passing].sort(byHostname), prefs.sort, shown);
+  const rows = sortItems([...passing].sort(byHostname), prefs.sort, shown, { t });
   const counts = countValues(vms, now);
 
   useNavbarSearchBinding({

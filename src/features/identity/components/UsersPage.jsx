@@ -220,6 +220,7 @@ const UsersPage = ({ adapter }) => {
     () => (adapter.roles ? rolesGroupOf(catalog) : []),
     [adapter, catalog]
   );
+  const ctx = { t, language: i18n.language };
   const search = useListSearch({
     query: url.query,
     onQueryChange: url.setQuery,
@@ -232,6 +233,7 @@ const UsersPage = ({ adapter }) => {
     matched: answer.data?.total || 0,
     rows,
     columns,
+    ctx,
     prefsKey: PREFS_KEY,
   });
 
@@ -262,7 +264,6 @@ const UsersPage = ({ adapter }) => {
   }, [t]);
 
   const { open, close, onAction, confirmDelete } = useUserActions({ adapter, reload });
-  const ctx = { t, language: i18n.language };
   const narrowing = Object.keys(narrowed).length > 0;
   const bulkPane = (
     <BulkPane

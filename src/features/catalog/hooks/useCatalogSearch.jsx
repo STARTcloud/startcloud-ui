@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { drawnColumns } from '../../../components/common/SubTable';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import {
   VISIBILITY_GROUP,
@@ -52,7 +53,7 @@ const passesWatched = (item, watched, watchedIds) =>
 
 const watchSort = watchedIds => ({
   key: 'watch',
-  sortValue: item => (watchedIds.has(item.id) ? 0 : 1),
+  value: item => (watchedIds.has(item.id) ? 0 : 1),
 });
 
 const collectionGroup = (collections, itemsByCollection, prefs, setPrefs, t) => ({
@@ -132,14 +133,14 @@ const ownGroup = ({ collection, group, items, filters, prefixed, setPrefs, ctx, 
     })),
 });
 
-const columnsGroup = ({ collection, hidden, prefixed, setPrefs, t }) => ({
+const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) => ({
   key: `${collection.key}.columns`,
   label: groupLabel(collection, 'pages.filter.columns', prefixed, t),
-  entries: Object.fromEntries(collection.columns.map(column => [column.key, null])),
-  activeSet: new Set(collection.columns.map(column => column.key).filter(key => !hidden.has(key))),
+  entries: Object.fromEntries(columns.map(column => [column.key, null])),
+  activeSet: new Set(columns.map(column => column.key).filter(key => !hidden.has(key))),
   activeClass: 'bg-secondary',
   columns: true,
-  labelFor: key => t(collection.columns.find(column => column.key === key).labelKey),
+  labelFor: key => t(columns.find(column => column.key === key).labelKey),
   onToggle: key =>
     setPrefs(current => ({
       ...current,
@@ -156,7 +157,9 @@ const columnsGroup = ({ collection, hidden, prefixed, setPrefs, t }) => ({
  * group plus the filtered, sorted items per collection. The Collection,
  * Visibility and Watched groups are shared across the page; the collection's
  * own groups follow them and, in list view, a Columns group per collection
- * that shows or hides that table's columns. Watched ids arrive as one Set per
+ * that shows or hides the columns that table is drawing (their `when`
+ * true for its rows and the context `ctxFor(collection)` answers, the
+ * one its table receives). Watched ids arrive as one Set per
  * collection key, because item ids only mean something inside their own
  * collection. Filters, sort, the one view, the hidden columns, the column
  * widths (per collection, set through `setColumnWidth(collectionKey,
@@ -169,6 +172,7 @@ export const useCatalogSearch = ({
   org,
   signedIn,
   watchedIds,
+  ctxFor,
   prefsKey,
 }) => {
   const { t } = useTranslation();
@@ -222,10 +226,13 @@ export const useCatalogSearch = ({
         passesWatched(item, prefs.watched, ctx.watchedIds) &&
         passesGroups(item, shown, filters, ctx)
     );
-    filtered[collection.key] = sortItems(passing, prefs.sort[collection.key], [
-      watchSort(ctx.watchedIds),
-      ...collection.columns.filter(column => !hidden.has(column.key)),
-    ]);
+    const tableCtx = ctxFor(collection);
+    filtered[collection.key] = sortItems(
+      passing,
+      prefs.sort[collection.key],
+      [watchSort(ctx.watchedIds), ...collection.columns.filter(column => !hidden.has(column.key))],
+      tableCtx
+    );
     matched += passing.length;
     shown.forEach(group => {
       const own = ownGroup({ collection, group, items, filters, prefixed, setPrefs, ctx, t });
@@ -234,7 +241,16 @@ export const useCatalogSearch = ({
       }
     });
     if (prefs.view === 'table') {
-      groups.push(columnsGroup({ collection, hidden, prefixed, setPrefs, t }));
+      groups.push(
+        columnsGroup({
+          collection,
+          columns: drawnColumns(collection.columns, filtered[collection.key], tableCtx),
+          hidden,
+          prefixed,
+          setPrefs,
+          t,
+        })
+      );
     }
   });
 

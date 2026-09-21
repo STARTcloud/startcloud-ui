@@ -8,6 +8,7 @@ import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
 import { useCssVar } from '../../../hooks/useCssVar';
 import { useTablePrefs } from '../../../hooks/useTablePrefs';
+import { sortItems } from '../../../utils/sort';
 import { serviceUsage } from '../api/health';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { SERVICE_USAGE } from '../utils/examples';
@@ -29,11 +30,14 @@ UsageBar.propTypes = {
   percent: PropTypes.number.isRequired,
 };
 
+const shareOf = (row, ctx) => percentOf(row.active_sessions, ctx.totalSessions);
+
 const columns = [
   {
     key: 'client',
     kind: 'name',
     labelKey: 'admin.health.usage.service',
+    value: row => row.client_name,
     render: row => (
       <span>
         <strong>{row.client_name}</strong>
@@ -47,6 +51,7 @@ const columns = [
     kind: 'count',
     labelKey: 'admin.health.usage.active',
     className: 'text-end',
+    value: row => row.active_sessions,
     render: row => <span className="badge bg-secondary">{row.active_sessions}</span>,
   },
   {
@@ -54,21 +59,22 @@ const columns = [
     kind: 'count',
     labelKey: 'admin.health.usage.authorizations',
     className: 'text-end',
-    render: row => row.total_authorizations,
+    value: row => row.total_authorizations,
   },
   {
     key: 'unique_users',
     kind: 'count',
     labelKey: 'admin.health.usage.users',
     className: 'text-end',
-    render: row => row.unique_users,
+    value: row => row.unique_users,
   },
   {
     key: 'usage',
     kind: 'text',
     labelKey: 'admin.health.usage.share',
+    value: shareOf,
     render: (row, ctx) => {
-      const percent = percentOf(row.active_sessions, ctx.totalSessions);
+      const percent = shareOf(row, ctx);
       return (
         <span className="d-block">
           <span className="progress usage-bar" aria-hidden="true">
@@ -83,19 +89,22 @@ const columns = [
     key: 'first_used_at',
     kind: 'date',
     labelKey: 'admin.health.usage.firstUsed',
+    value: row => new Date(row.first_used_at || 0).getTime(),
     render: row => <DateCell value={row.first_used_at} />,
   },
   {
     key: 'last_used_at',
     kind: 'date',
     labelKey: 'admin.health.usage.lastUsed',
+    value: row => new Date(row.last_used_at || 0).getTime(),
     render: row => <DateCell value={row.last_used_at} />,
   },
 ];
 
 /**
  * Health › Service usage: the two usage stat cards, the usage table with
- * the percentage bar, first used and last activity per row, its sort,
+ * the percentage bar, first used and last activity per row, every column
+ * sorting by what its cell shows, its sort,
  * hidden columns and column widths under `table_prefs_admin_service_usage`,
  * and the definitions in an info fold on the page.
  */
@@ -111,6 +120,8 @@ const ServiceUsagePage = () => {
   if (loading || !data) {
     return <AdminLoading />;
   }
+
+  const ctx = { t, language: i18n.language, totalSessions: data.total_sessions };
 
   return (
     <div>
@@ -129,14 +140,14 @@ const ServiceUsagePage = () => {
       </div>
       <SubTable
         columns={columns}
-        rows={data.items || []}
+        rows={sortItems(data.items || [], prefs.sort, columns, ctx)}
         rowKey={row => row.client_id}
         sort={prefs.sort}
         onSort={prefs.setSort}
         hiddenColumns={prefs.hiddenColumns}
         widths={prefs.widths}
         onResize={prefs.setColumnWidth}
-        ctx={{ t, language: i18n.language, totalSessions: data.total_sessions }}
+        ctx={ctx}
         emptyText={t('pages.empty')}
       />
       <details className="mt-3">

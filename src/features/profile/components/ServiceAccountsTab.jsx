@@ -66,41 +66,44 @@ const matches = (row, needle) =>
     text.toLowerCase().includes(needle)
   );
 
+const timeOf = value => new Date(value || 0).getTime();
+
+const roleWord = (row, ctx) => (row.role ? ctx.t(`roles.${row.role}`) : '');
+
 const COLUMNS = [
   {
     key: 'username',
     kind: 'name',
     labelKey: 'profile.serviceAccounts.username',
-    sortValue: row => row.username.toLowerCase(),
+    value: row => row.username,
     render: row => <strong>{row.username}</strong>,
   },
   {
     key: 'description',
     kind: 'text',
     labelKey: 'profile.serviceAccounts.description',
-    sortValue: row => (row.description || '').toLowerCase(),
-    render: row => row.description || '',
+    value: row => row.description || '',
   },
   {
     key: 'role',
     kind: 'badge',
     labelKey: 'profile.serviceAccounts.role',
-    sortValue: row => row.role || '',
+    value: roleWord,
     render: (row, ctx) =>
-      row.role ? <span className="badge bg-secondary">{ctx.t(`roles.${row.role}`)}</span> : '',
+      row.role ? <span className="badge bg-secondary">{roleWord(row, ctx)}</span> : '',
   },
   {
     key: 'expiresAt',
     kind: 'date',
     labelKey: 'profile.serviceAccounts.expires',
-    sortValue: row => new Date(row.expires_at || 0).getTime(),
+    value: row => timeOf(row.expires_at),
     render: (row, ctx) => dateOf(row.expires_at, ctx.language),
   },
   {
     key: 'lastUsedAt',
     kind: 'relative',
     labelKey: 'profile.serviceAccounts.lastUsed',
-    sortValue: row => new Date(row.last_used_at || 0).getTime(),
+    value: row => timeOf(row.last_used_at),
     render: (row, ctx) =>
       row.last_used_at ? (
         <span title={absoluteTime(row.last_used_at, ctx.language)}>
@@ -282,11 +285,13 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
     values: form,
     labels: LABELS,
   });
+  const ctx = { t, language: i18n.language };
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'profile.search.serviceAccounts',
     columns: COLUMNS,
+    ctx,
     prefsKey: PREFS_KEY,
     filterGroups: [],
   });
@@ -443,7 +448,7 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
         hiddenColumns={search.hiddenColumns}
         widths={search.widths}
         onResize={search.setColumnWidth}
-        ctx={{ t, language: i18n.language }}
+        ctx={ctx}
         emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
         selection={selection.subtable}
         groups={groups}

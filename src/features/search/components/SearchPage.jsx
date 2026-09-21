@@ -21,30 +21,30 @@ const rowKey = row =>
 
 const matchesAny = () => true;
 
+const matchedWord = (row, ctx) =>
+  ctx.t(`search.matched.${row.matched}`, { defaultValue: row.matched });
+
 const columnsFor = appSearch => [
   {
     key: 'title',
     kind: 'link',
     labelKey: 'search.columns.title',
-    sortValue: row => row.title.toLowerCase(),
+    value: row => row.title,
     render: row => <Link to={searchRowPath(row, appSearch)}>{row.title}</Link>,
   },
   {
     key: 'where',
     kind: 'text',
     labelKey: 'search.columns.where',
-    sortValue: row => row.subtitle.toLowerCase(),
-    render: row => row.subtitle,
+    value: row => row.subtitle,
   },
   {
     key: 'matched',
     kind: 'badge',
     labelKey: 'search.columns.matched',
-    sortValue: row => row.matched,
+    value: matchedWord,
     render: (row, ctx) => (
-      <span className="badge bg-secondary badge-xs">
-        {ctx.t(`search.matched.${row.matched}`, { defaultValue: row.matched })}
-      </span>
+      <span className="badge bg-secondary badge-xs">{matchedWord(row, ctx)}</span>
     ),
   },
 ];
@@ -182,11 +182,13 @@ const SearchPage = ({ context }) => {
   const query = url.query.trim();
   const data = usePageResults({ appSearch, query });
   const columns = useMemo(() => columnsFor(appSearch), [appSearch]);
+  const ctx = { ...context, t, language: i18n.language };
   const search = useDetailSearch({
     rows: data.results,
     matches: matchesAny,
     placeholderKey: 'search.appPlaceholder',
     columns,
+    ctx,
     prefsKey: `${context.prefsPrefix}_search`,
     bound: {
       query: url.query,
@@ -199,7 +201,6 @@ const SearchPage = ({ context }) => {
     document.title = t('search.page.title');
   }, [t]);
 
-  const ctx = { ...context, t, language: i18n.language };
   const total = data.results.length + sumOf(data.truncated);
 
   return (

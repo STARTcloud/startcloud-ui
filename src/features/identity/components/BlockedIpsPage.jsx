@@ -9,6 +9,7 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useTablePrefs } from '../../../hooks/useTablePrefs';
+import { sortItems } from '../../../utils/sort';
 import { bruteForce, unblock, unblockAll, unblockBulk } from '../api/security';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { BRUTE_FORCE } from '../utils/examples';
@@ -22,6 +23,7 @@ const columns = [
     key: 'ip',
     kind: 'text',
     labelKey: 'admin.blocked.table.ip',
+    value: row => row.ip,
     render: row => <code>{row.ip}</code>,
   },
   {
@@ -29,6 +31,7 @@ const columns = [
     kind: 'count',
     labelKey: 'admin.blocked.table.attempts',
     className: 'text-end',
+    value: row => row.attempts,
     render: row => <span className="badge bg-danger">{row.attempts}</span>,
   },
 ];
@@ -155,7 +158,8 @@ BulkActions.propTypes = {
  * select-all for the page, the per-row Unblock behind its own confirm,
  * and the heading's action pane gaining, while rows are picked, "N
  * selected", Clear selection and Unblock beside Unblock all; the table's
- * sort, hidden columns and column widths under `table_prefs_admin_blocked`;
+ * columns sorting by what their cells show, its sort, hidden columns and
+ * column widths under `table_prefs_admin_blocked`;
  * the sidebar's badge is the shell's, from the `admin` topic's
  * `blocked-count`.
  */
@@ -200,6 +204,7 @@ const BlockedIpsPage = () => {
   }
 
   const blocked = data.blocked || [];
+  const ctx = { t, language: i18n.language };
   const enabledCount = data.enabled
     ? t('admin.blocked.enabled', { count: blocked.length })
     : t('admin.blocked.disabled');
@@ -241,7 +246,7 @@ const BlockedIpsPage = () => {
       />
       <SubTable
         columns={columns}
-        rows={blocked}
+        rows={sortItems(blocked, prefs.sort, columns, ctx)}
         rowKey={row => row.ip}
         RowActions={RowActions}
         actionsProps={{ onUnblock: setUnblocking }}
@@ -251,7 +256,7 @@ const BlockedIpsPage = () => {
         hiddenColumns={prefs.hiddenColumns}
         widths={prefs.widths}
         onResize={prefs.setColumnWidth}
-        ctx={{ t, language: i18n.language }}
+        ctx={ctx}
         emptyText={t('pages.empty')}
         selection={selection.subtable}
       />

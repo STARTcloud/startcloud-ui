@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBug, FaCubes, FaGithub, FaHouse } from 'react-icons/fa6';
 
 import {
+  badgesText,
   downloadsColumn,
   labelColumn,
   releasedColumn,
@@ -25,6 +26,9 @@ import { CardGlyph, DeployGlyph, deployColumn, deployableVersion } from './compo
 export const TIER_ORDER = ['diamond', 'platinum', 'gold', 'silver', 'bronze', 'unrated'];
 const VISIBLE_VERSIONS = 10;
 const RULES_GUIDE = '/docs/guides/quality-tiers/';
+const NONE = 'N/A';
+
+const coverageProviders = item => Object.keys(item.extras.coverage.counts).sort();
 
 const coverageClass = (count, total) => {
   if (count === total) {
@@ -39,7 +43,7 @@ const coverageClass = (count, total) => {
 const CoverageChips = ({ item }) => {
   const { t } = useTranslation();
   const { counts, total } = item.extras.coverage;
-  const providers = Object.keys(counts).sort();
+  const providers = coverageProviders(item);
   if (providers.length === 0) {
     return null;
   }
@@ -320,7 +324,7 @@ const tierColumn = {
   key: 'tier',
   kind: 'badge',
   labelKey: 'pages.table.tier',
-  sortValue: item => TIER_ORDER.indexOf(item.extras.tier),
+  value: (item, ctx) => ctx.t(`provisioners.tiers.${item.extras.tier}`),
   render: item => <TierBadge item={item} />,
 };
 
@@ -328,9 +332,8 @@ const coverageColumn = {
   key: 'providers',
   kind: 'badges',
   labelKey: 'pages.table.providers',
-  sortValue: item => Object.keys(item.extras.coverage.counts).sort().join(' ').toLowerCase(),
-  render: item =>
-    Object.keys(item.extras.coverage.counts).length > 0 ? <CoverageChips item={item} /> : 'N/A',
+  value: item => badgesText(coverageProviders(item), NONE),
+  render: item => (coverageProviders(item).length > 0 ? <CoverageChips item={item} /> : NONE),
 };
 
 export const provisioners = {

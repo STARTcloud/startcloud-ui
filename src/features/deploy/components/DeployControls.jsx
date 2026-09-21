@@ -40,7 +40,8 @@ const slotProps = {
  * advertises `deploy`, the viewer is signed in, entitled to Hyperweaver and
  * Hyperweaver is configured. `DeployGlyph` is the control itself, for
  * action rows and the use-this strip; `deployColumn` is the listing column
- * that draws it for each row's deployable version, present only while the
+ * that draws it for each row's deployable version, that version its
+ * `value` and so its sort, present only while the
  * host advertises `deploy`, the viewer is entitled and a row has a
  * deployable version; `CardGlyph` draws that column's cell on a card. The
  * collection supplies only where its Hyperweaver lives, who may deploy and
@@ -120,6 +121,7 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
       hasFeature(ctx.status, 'deploy') &&
       canDeploy(ctx.user) &&
       rows.some(row => deployableVersion(row.versions)),
+    value: item => deployableVersion(item.versions),
     render: (item, ctx) => (
       <DeployGlyph user={ctx.user} item={item} version={deployableVersion(item.versions)} />
     ),

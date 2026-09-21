@@ -31,13 +31,21 @@ export const KINDS = {
 export const KIND_NAMES = Object.keys(KINDS);
 
 /**
+ * The width a column kind takes, `narrow`, `medium` or `flex`.
+ *
+ * @param {string} kind One of `KINDS`
+ * @returns {string} The width name
+ */
+export const kindWidth = kind => KINDS[kind].width;
+
+/**
  * The classes of a column kind: its width class, `col-w-narrow`,
  * `col-w-medium` or `col-w-flex`, and its kind class, `col-k-<kind>`.
  *
  * @param {string} kind One of `KINDS`
  * @returns {string} The classes the column's `col`, `th` and `td` carry
  */
-export const kindClasses = kind => `col-w-${KINDS[kind].width} col-k-${kind}`;
+export const kindClasses = kind => `col-w-${kindWidth(kind)} col-k-${kind}`;
 
 /**
  * Whether a column kind takes its width from the room the fixed columns
@@ -46,4 +54,4 @@ export const kindClasses = kind => `col-w-${KINDS[kind].width} col-k-${kind}`;
  * @param {string} kind One of `KINDS`
  * @returns {boolean} True for a `flex` kind
  */
-export const isFlexKind = kind => KINDS[kind].width === 'flex';
+export const isFlexKind = kind => kindWidth(kind) === 'flex';

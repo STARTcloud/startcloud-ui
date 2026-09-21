@@ -49,6 +49,13 @@ const ownerOf = repo => repo.split('/')[0];
 const ownerLogo = owner => `https://github.com/${owner}.png?size=64`;
 const artifactName = url => url.split('/').pop();
 
+const latestReleasedAt = versions =>
+  versions
+    .map(entry => entry.released_at)
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
+
 const providerCoverage = versions => {
   const measured = Object.values(versions || {}).filter(entry => Array.isArray(entry?.providers));
   const counts = {};
@@ -94,7 +101,7 @@ const toItem = (provisioner, healthEntry, organization, isPrivate) => {
     isPublic: !isPrivate,
     published: null,
     createdAt: null,
-    latestReleaseAt: health.latest_release_at || null,
+    latestReleaseAt: health.latest_release_at || latestReleasedAt(provisioner.versions),
     downloads: typeof health.downloads === 'number' ? health.downloads : null,
     os: null,
     metadata: null,

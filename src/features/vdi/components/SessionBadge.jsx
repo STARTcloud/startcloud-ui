@@ -18,46 +18,64 @@ const formatIdle = (minutes, t) => {
   return t('vdi.duration.minutes', { minutes: value });
 };
 
+const STATES = {
+  standby: { Icon: FaPowerOff, className: 'text-secondary' },
+  active: { Icon: FaCircle, className: 'text-success' },
+  idle: { Icon: FaCircleHalfStroke, className: 'text-warning' },
+  no_session: { Icon: FaRegCircle, className: 'text-secondary' },
+};
+
+/**
+ * The session state of a VM as one key: `standby` for a powered-off cache
+ * entry or a VM that never checked in, else the agent's `session_state`
+ * where it is one of `active`, `idle` and `no_session`, empty while
+ * unknown.
+ *
+ * @param {Object} vm - The vm object
+ * @returns {string} The key, or ''
+ */
+const sessionState = vm => {
+  if (vmIsStandby(vm) || !vm.last_checkin) {
+    return 'standby';
+  }
+  const state = vm.user?.session_state;
+  return state in STATES ? state : '';
+};
+
+/**
+ * The text the Session cell shows: Standby, Active, Idle with the idle
+ * time, No session, or empty while the state is unknown.
+ *
+ * @param {Object} vm - The vm object
+ * @param {Function} t - The translator
+ * @returns {string} The text
+ */
+export const sessionText = (vm, t) => {
+  const state = sessionState(vm);
+  if (state === 'idle') {
+    return t('vdi.session.idleFor', { time: formatIdle(vm.user?.idle_minutes, t) });
+  }
+  return state ? t(`vdi.session.${state}`) : '';
+};
+
 /**
  * The session state of a VM: Standby for a powered-off cache entry,
- * Active, Idle with the idle time, No session, or a dash while unknown.
+ * Active, Idle with the idle time, No session, or a dash while unknown,
+ * the text `sessionText` answers beside the state's glyph.
  */
 const SessionBadge = ({ vm }) => {
   const { t } = useTranslation();
-  if (vmIsStandby(vm) || !vm.last_checkin) {
-    return (
-      <span className="text-secondary">
-        <FaPowerOff className="me-1" aria-hidden />
-        {t('vdi.session.standby')}
-      </span>
-    );
+  const state = sessionState(vm);
+  if (!state) {
+    return <span className="text-body-tertiary">—</span>;
   }
-  const state = vm.user?.session_state;
-  if (state === 'active') {
-    return (
-      <span className="text-success">
-        <FaCircle className="me-1" aria-hidden />
-        {t('vdi.session.active')}
-      </span>
-    );
-  }
-  if (state === 'idle') {
-    return (
-      <span className="text-warning">
-        <FaCircleHalfStroke className="me-1" aria-hidden />
-        {t('vdi.session.idleFor', { time: formatIdle(vm.user?.idle_minutes, t) })}
-      </span>
-    );
-  }
-  if (state === 'no_session') {
-    return (
-      <span className="text-secondary">
-        <FaRegCircle className="me-1" aria-hidden />
-        {t('vdi.session.no_session')}
-      </span>
-    );
-  }
-  return <span className="text-body-tertiary">—</span>;
+  const { Icon, className } = STATES[state];
+  return (
+    <span className={className}>
+      <Icon className="me-1" aria-hidden />
+      {sessionText(vm, t)}
+    </span>
+  );
 };
 
 SessionBadge.propTypes = {

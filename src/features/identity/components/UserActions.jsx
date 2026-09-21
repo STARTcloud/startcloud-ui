@@ -53,17 +53,47 @@ const carries = field => rows => rows.some(row => field in row);
  * @param {Function} t - The translator
  * @returns {import('react').ReactElement} The badge
  */
+const statusWord = (row, t) =>
+  t(row.enabled ? 'admin.users.table.active' : 'admin.users.table.disabled');
+
 export const statusBadge = (row, t) => (
   <span className={`badge ${row.enabled ? 'bg-success' : 'bg-warning text-dark'}`}>
-    {row.enabled ? t('admin.users.table.active') : t('admin.users.table.disabled')}
+    {statusWord(row, t)}
   </span>
 );
+
+const tfaWord = (row, t) => t(row.using_2fa ? 'admin.users.table.on' : 'admin.users.table.off');
+
+/**
+ * The text the Customer ID cell shows: the id, or Not set.
+ *
+ * @param {Object} row - The row, its `customer_id`
+ * @param {Function} t - The translator
+ * @returns {string} The text
+ */
+export const customerIdText = (row, t) => row.customer_id || t('admin.users.table.notSet');
+
+/**
+ * The Customer ID cell: the id as a badge, or Not set muted.
+ *
+ * @param {Object} row - The row, its `customer_id`
+ * @param {Function} t - The translator
+ * @returns {import('react').ReactElement} The cell
+ */
+export const customerIdCell = (row, t) =>
+  row.customer_id ? (
+    <span className="badge bg-secondary">{row.customer_id}</span>
+  ) : (
+    <span className="text-muted">{customerIdText(row, t)}</span>
+  );
 
 /**
  * The columns of a Users row, the table's and the record page's one
  * shape: the email cell drawn by `renderName`, then the name, the customer
  * id and the 2FA flag while the rows carry them, the status, the roles and
- * the organizations as badges, the primary organization gold.
+ * the organizations as badges, the primary organization gold; every
+ * column sorts by what its cell shows, the badges columns by their
+ * labels joined.
  *
  * @param {Function} renderName - Draws the email cell from the row
  * @returns {Array} The columns
@@ -73,40 +103,35 @@ export const userColumns = renderName => [
     key: 'username',
     kind: 'name',
     labelKey: 'admin.users.table.email',
-    sortValue: row => row.username.toLowerCase(),
+    value: row => row.username,
     render: renderName,
   },
   {
     key: 'full_name',
     kind: 'text',
     labelKey: 'admin.users.table.name',
-    sortValue: row => (row.full_name || '').toLowerCase(),
-    render: row => row.full_name || '',
+    value: row => row.full_name || '',
   },
   {
     key: 'customer_id',
     kind: 'badge',
     labelKey: 'admin.users.table.customerId',
     when: carries('customer_id'),
-    sortValue: row => row.customer_id || '',
-    render: (row, ctx) =>
-      row.customer_id ? (
-        <span className="badge bg-secondary">{row.customer_id}</span>
-      ) : (
-        <span className="text-muted">{ctx.t('admin.users.table.notSet')}</span>
-      ),
+    value: (row, ctx) => customerIdText(row, ctx.t),
+    render: (row, ctx) => customerIdCell(row, ctx.t),
   },
   {
     key: 'enabled',
     kind: 'badge',
     labelKey: 'admin.users.table.status',
-    sortValue: row => (row.enabled ? 0 : 1),
+    value: (row, ctx) => statusWord(row, ctx.t),
     render: (row, ctx) => statusBadge(row, ctx.t),
   },
   {
     key: 'roles',
     kind: 'badges',
     labelKey: 'admin.users.table.roles',
+    value: row => row.roles.map(roleLabel).join(' '),
     render: row => (
       <span className="d-flex flex-wrap gap-1">
         {row.roles.map(role => (
@@ -121,6 +146,7 @@ export const userColumns = renderName => [
     key: 'organizations',
     kind: 'badges',
     labelKey: 'admin.users.table.organizations',
+    value: row => row.organizations.map(org => org.name).join(' '),
     render: (row, ctx) => (
       <span className="d-flex flex-wrap gap-1">
         {row.organizations.map(org => (
@@ -140,9 +166,10 @@ export const userColumns = renderName => [
     kind: 'badge',
     labelKey: 'admin.users.table.tfa',
     when: carries('using_2fa'),
+    value: (row, ctx) => tfaWord(row, ctx.t),
     render: (row, ctx) => (
       <span className={`badge ${row.using_2fa ? 'bg-success' : 'bg-secondary'}`}>
-        {row.using_2fa ? ctx.t('admin.users.table.on') : ctx.t('admin.users.table.off')}
+        {tfaWord(row, ctx.t)}
       </span>
     ),
   },

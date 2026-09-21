@@ -46,10 +46,14 @@ const stateOf = probe => {
 };
 
 const TONES = { healthy: 'success', unhealthy: 'danger', unknown: 'secondary' };
-const STATE_ORDER = { healthy: 0, unhealthy: 1, unknown: 2 };
 
 const reasonOf = probe =>
   stateOf(probe) === 'unhealthy' ? probe.error_message || probe.status : '';
+
+const checkWord = (probe, t) =>
+  probe.check ? t(`admin.health.clients.checkOf.${probe.check}`) : '';
+
+const statusWord = (probe, t) => t(`admin.health.status.${stateOf(probe)}`);
 
 const itemPath = (file, key) => `/admin/config/${file}#${encodeURIComponent(key)}`;
 
@@ -98,8 +102,7 @@ ResponseTime.propTypes = {
 
 const StatusBadge = ({ probe }) => {
   const { t } = useTranslation();
-  const state = stateOf(probe);
-  return <span className={`badge bg-${TONES[state]}`}>{t(`admin.health.status.${state}`)}</span>;
+  return <span className={`badge bg-${TONES[stateOf(probe)]}`}>{statusWord(probe, t)}</span>;
 };
 
 StatusBadge.propTypes = {
@@ -151,7 +154,7 @@ const HealthCard = ({ probe, file }) => {
             {probe.check ? (
               <>
                 <dt className="col-4">{t('admin.health.clients.check')}</dt>
-                <dd className="col-8 mb-1">{t(`admin.health.clients.checkOf.${probe.check}`)}</dd>
+                <dd className="col-8 mb-1">{checkWord(probe, t)}</dd>
               </>
             ) : null}
             {probe.endpoint ? (
@@ -199,12 +202,19 @@ CardGrid.propTypes = {
   emptyText: PropTypes.node.isRequired,
 };
 
+/**
+ * The columns of the health table, each sorting by what its cell shows;
+ * a dash cell reads as empty and the response time as its milliseconds.
+ *
+ * @param {string} file - The config file the name links into
+ * @returns {Array<Object>} The columns
+ */
 const columnsFor = file => [
   {
     key: 'name',
     kind: 'name',
     labelKey: 'admin.health.clients.table.name',
-    sortValue: row => row.client_name.toLowerCase(),
+    value: row => row.client_name,
     render: row => (
       <span>
         <strong>
@@ -219,22 +229,22 @@ const columnsFor = file => [
     key: 'check',
     kind: 'text',
     labelKey: 'admin.health.clients.check',
-    sortValue: row => row.check || '',
-    render: (row, ctx) => (row.check ? ctx.t(`admin.health.clients.checkOf.${row.check}`) : '—'),
+    value: (row, ctx) => checkWord(row, ctx.t),
+    render: (row, ctx) => checkWord(row, ctx.t) || '—',
   },
   {
     key: 'endpoint',
     kind: 'text',
     labelKey: 'admin.health.clients.endpoint',
     className: 'text-break',
-    sortValue: row => row.endpoint || '',
+    value: row => row.endpoint || row.base_url || '',
     render: row => row.endpoint || <BaseUrl url={row.base_url} />,
   },
   {
     key: 'status',
     kind: 'badge',
     labelKey: 'admin.health.clients.table.status',
-    sortValue: row => STATE_ORDER[stateOf(row)],
+    value: (row, ctx) => statusWord(row, ctx.t),
     render: row => <StatusBadge probe={row} />,
   },
   {
@@ -242,14 +252,14 @@ const columnsFor = file => [
     kind: 'count',
     labelKey: 'admin.health.clients.table.responseTime',
     className: 'text-end',
-    sortValue: row => (typeof row.response_time_ms === 'number' ? row.response_time_ms : -1),
+    value: row => (typeof row.response_time_ms === 'number' ? row.response_time_ms : ''),
     render: row => (stateOf(row) === 'unknown' ? '—' : <ResponseTime probe={row} />),
   },
   {
     key: 'last_checked',
     kind: 'date',
     labelKey: 'admin.health.clients.table.lastChecked',
-    sortValue: row => new Date(row.last_checked || 0).getTime(),
+    value: row => new Date(row.last_checked || 0).getTime(),
     render: row => <DateCell value={row.last_checked} />,
   },
   {
@@ -257,7 +267,7 @@ const columnsFor = file => [
     kind: 'text',
     labelKey: 'admin.health.clients.reason',
     className: 'text-break',
-    sortValue: row => reasonOf(row).toLowerCase(),
+    value: reasonOf,
     render: row => <span className="text-danger">{reasonOf(row)}</span>,
   },
 ];
@@ -307,11 +317,13 @@ const HealthPage = ({ kind }) => {
   const rows = useMemo(() => data?.[page.member] || [], [data, page]);
   const columns = useMemo(() => columnsFor(page.file), [page]);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
+  const ctx = { t, language: i18n.language };
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: page.searchKey,
     columns,
+    ctx,
     prefsKey: page.prefsKey,
     filterGroups: FILTER_GROUPS,
     url,
@@ -372,7 +384,7 @@ const HealthPage = ({ kind }) => {
           hiddenColumns={search.hiddenColumns}
           widths={search.widths}
           onResize={search.setColumnWidth}
-          ctx={{ t, language: i18n.language }}
+          ctx={ctx}
           emptyText={emptyText}
         />
       )}

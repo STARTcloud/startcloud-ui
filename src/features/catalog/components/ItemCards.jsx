@@ -19,16 +19,21 @@ import MarkdownText from '../../../components/common/MarkdownText';
 import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
+import { listWord } from '../../../utils/closedLists';
 import {
   collectionShape,
+  fileKinds,
   itemShape,
   latestReleaseTime,
+  platformNames,
+  providerNames,
+  sortVersionsNewestFirst,
   statusOf,
   visibilityOf,
 } from '../../../utils/itemShape';
 import { managesItem } from '../../../utils/permissions';
 import { formatRelativeTime } from '../../../utils/relativeTime';
-import { itemPath } from '../../../utils/routes';
+import { itemPath, versionPath } from '../../../utils/routes';
 
 const CardMedia = ({ item, ctx }) => {
   if (item.artwork || item.icon) {
@@ -76,7 +81,7 @@ const CardLinks = ({ item, CardGlyph, ctx }) => {
     return null;
   }
   return (
-    <div className="d-flex align-items-center gap-3 card-links">
+    <div className="d-flex align-items-center gap-3 card-links card-above">
       {present.map(({ key, Icon, labelKey }) => (
         <a
           key={key}
@@ -105,29 +110,73 @@ CardLinks.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+/**
+ * The facts line of a card: the family, the count of versions or
+ * releases, and the latest of them as a link to its own page with how
+ * long ago it shipped; then one chip per provider, platform and kind
+ * found beneath the item, so a card says what a person can get without
+ * opening it.
+ */
 const CardFacts = ({ collection, item, ctx }) => {
   const { t } = useTranslation();
   const released = latestReleaseTime(item);
-  const versions = (item.versions || []).length;
+  const versions = sortVersionsNewestFirst(item.versions || []);
+  const [latest] = versions;
   const versionsLabel = collection.levels?.versions?.labelKey || 'pages.table.versions';
   const facts = [
     item.family ? ['family', t('pages.table.family'), item.family] : null,
-    versions > 0 ? ['versions', t(versionsLabel), versions] : null,
-    released
-      ? ['released', t('pages.table.released'), formatRelativeTime(released, ctx.language)]
+    versions.length > 0 ? ['versions', t(versionsLabel), versions.length] : null,
+    latest
+      ? [
+          'latest',
+          t('pages.table.released'),
+          <>
+            {collection.itemRoute ? (
+              <Link
+                to={versionPath(collection, item.organization.name, item.name, latest.version)}
+                className="card-above"
+              >
+                {latest.version}
+              </Link>
+            ) : (
+              latest.version
+            )}
+            {released ? ` · ${formatRelativeTime(released, ctx.language)}` : ''}
+          </>,
+        ]
       : null,
   ].filter(Boolean);
-  if (facts.length === 0) {
+  const chips = [
+    ...providerNames(item).map(name => ['provider', name, name]),
+    ...platformNames(item)
+      .filter(name => name !== 'any')
+      .map(name => ['platform', name, listWord(t, 'platform', name)]),
+    ...fileKinds(item).map(name => ['kind', name, listWord(t, 'kind', name)]),
+  ];
+  if (facts.length === 0 && chips.length === 0) {
     return null;
   }
   return (
-    <div className="d-flex flex-wrap gap-3 small text-body-secondary mb-2">
-      {facts.map(([key, label, value]) => (
-        <span key={key}>
-          {label}: <strong className="text-body">{value}</strong>
-        </span>
-      ))}
-    </div>
+    <>
+      {facts.length > 0 ? (
+        <div className="d-flex flex-wrap gap-3 small text-body-secondary mb-2">
+          {facts.map(([key, label, value]) => (
+            <span key={key}>
+              {label}: <strong className="text-body">{value}</strong>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {chips.length > 0 ? (
+        <div className="d-flex flex-wrap gap-1 mb-2">
+          {chips.map(([group, key, label]) => (
+            <span key={`${group}:${key}`} className="badge bg-secondary bg-opacity-50 badge-xs">
+              {label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </>
   );
 };
 
@@ -137,6 +186,15 @@ CardFacts.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+/**
+ * One card of the grid: the media, the title (a stretched link over the
+ * whole card while the collection routes to an item page, so the card
+ * itself is the thing to click), the vendor or organization under it,
+ * the chips a manager sees, the facts line, the description, then the
+ * links, the extras and the actions, every one of those its own target
+ * above the card link so a star, a link or a checkbox never opens the
+ * item.
+ */
 const ItemCard = ({ collection, item, watches, selection, ctx }) => {
   const { t } = useTranslation();
   const { ItemChips, CardGlyph, CardExtras, RowActions } = collection.slots;
@@ -147,12 +205,21 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
     <Card className="h-100 shadow-sm catalog-card">
       <Card.Body className="d-flex flex-column">
         <div className="d-flex align-items-start gap-2 mb-2">
-          {selection ? <RowCheckbox selection={selection} row={item} /> : null}
+          {selection ? (
+            <span className="card-above">
+              <RowCheckbox selection={selection} row={item} />
+            </span>
+          ) : null}
           <CardMedia item={item} ctx={ctx} />
           <div className="flex-grow-1 min-width-0">
             <Card.Title className="mb-0 text-break">
               {collection.itemRoute ? (
-                <Link to={itemPath(collection, item.organization.name, item.name)}>{title}</Link>
+                <Link
+                  to={itemPath(collection, item.organization.name, item.name)}
+                  className="stretched-link"
+                >
+                  {title}
+                </Link>
               ) : (
                 title
               )}
@@ -165,7 +232,7 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
           {watches ? (
             <button
               type="button"
-              className="btn btn-link p-0 text-warning"
+              className="btn btn-link p-0 text-warning card-above"
               onClick={() => watches.toggle(item)}
               title={watched ? t('pages.watch.unwatch') : t('pages.watch.watch')}
               aria-pressed={watched}
@@ -186,8 +253,16 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
         <MarkdownText text={item.description} className="card-desc mb-2" />
         <div className="mt-auto d-flex flex-column gap-2">
           <CardLinks item={item} CardGlyph={CardGlyph} ctx={ctx} />
-          {CardExtras ? <CardExtras item={item} ctx={ctx} /> : null}
-          {RowActions ? <RowActions item={item} ctx={ctx} /> : null}
+          {CardExtras ? (
+            <div className="card-above">
+              <CardExtras item={item} ctx={ctx} />
+            </div>
+          ) : null}
+          {RowActions ? (
+            <div className="card-above">
+              <RowActions item={item} ctx={ctx} />
+            </div>
+          ) : null}
         </div>
       </Card.Body>
     </Card>

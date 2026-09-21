@@ -299,11 +299,23 @@ const ItemPage = ({ collection, org, name, context }) => {
   const columns = collection.levels.versions
     ? collection.levels.versions.columns({ org, name })
     : [];
+  const ctx = {
+    ...context,
+    t,
+    language: i18n.language,
+    org,
+    collection,
+    reload: () => setNonce(current => current + 1),
+    notify,
+    setEditor,
+    setForm,
+  };
   const search = useDetailSearch({
     rows: ready && item ? sortVersionsNewestFirst(item.versions || []) : [],
     matches: versionLevelMatches,
     placeholderKey: 'pages.search.versions',
     columns,
+    ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}`,
   });
 
@@ -332,17 +344,6 @@ const ItemPage = ({ collection, org, name, context }) => {
   }, [ready, item, name]);
 
   const { ItemActions, ItemExtras, ItemSections } = collection.slots;
-  const ctx = {
-    ...context,
-    t,
-    language: i18n.language,
-    org,
-    collection,
-    reload: () => setNonce(current => current + 1),
-    notify,
-    setEditor,
-    setForm,
-  };
 
   if (!ready) {
     return (

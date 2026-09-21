@@ -255,12 +255,12 @@ const detailRows = (collection, entry) => {
   return collection.hasProviders ? entry.providers || [] : entry.artifacts || [];
 };
 
-const sideArtifacts = (artifacts, search, columns) => {
+const sideArtifacts = (artifacts, search, columns, ctx) => {
   const needle = search.query.trim().toLowerCase();
   const shown = search.filtering
     ? artifacts.filter(artifact => architectureLevelMatches(artifact, needle))
     : artifacts;
-  return sortItems(shown, search.sort, columns);
+  return sortItems(shown, search.sort, columns, ctx);
 };
 
 /**
@@ -292,9 +292,21 @@ const VersionPage = ({ collection, org, name, version, context }) => {
         placeholderKey: 'pages.search.artifacts',
         columns: artifactColumns,
       };
+  const ctx = {
+    ...context,
+    t,
+    language: i18n.language,
+    org,
+    collection,
+    reload: () => setNonce(current => current + 1),
+    notify,
+    setEditor,
+    setForm,
+  };
   const search = useDetailSearch({
     rows: ready ? detailRows(collection, entry) : [],
     ...detail,
+    ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}`,
   });
 
@@ -325,17 +337,6 @@ const VersionPage = ({ collection, org, name, version, context }) => {
   }, [name, version]);
 
   const { VersionActions } = collection.slots;
-  const ctx = {
-    ...context,
-    t,
-    language: i18n.language,
-    org,
-    collection,
-    reload: () => setNonce(current => current + 1),
-    notify,
-    setEditor,
-    setForm,
-  };
   const manage = managesItem(status, collection, item, context.user);
 
   if (!ready) {
@@ -367,7 +368,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
         <ArtifactsSection
           collection={collection}
           columns={artifactColumns}
-          rows={sideArtifacts(artifacts, search, artifactColumns)}
+          rows={sideArtifacts(artifacts, search, artifactColumns, ctx)}
           search={search}
           scope={scope}
           manage={false}

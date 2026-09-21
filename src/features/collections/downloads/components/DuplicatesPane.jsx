@@ -15,19 +15,21 @@ const NO_HIDDEN = new Set();
 
 const rowKey = row => [row.product, row.release, row.patch, row.name].join('/');
 
+const originalWord = (row, ctx) => (row.original ? ctx.t('downloads.duplicates.original') : '');
+
 const COLUMNS = [
   {
     key: 'checksum',
     kind: 'checksum',
     labelKey: 'pages.table.checksum',
-    sortValue: row => [row.checksum, row.product, row.release, row.patch, row.name],
+    value: row => row.checksum,
     render: row => <ChecksumCell checksum={row.checksum} checksumType={row.checksumType} />,
   },
   {
     key: 'name',
     kind: 'name',
     labelKey: 'pages.table.name',
-    sortValue: row => (row.fileName || row.name).toLowerCase(),
+    value: row => row.fileName || row.name,
     render: (row, ctx) => (
       <Link
         to={architecturePath(
@@ -47,34 +49,28 @@ const COLUMNS = [
     key: 'where',
     kind: 'text',
     labelKey: 'downloads.duplicates.where',
-    sortValue: row => [row.product, row.release, row.patch],
-    render: row => `${row.product} / ${row.release} / ${row.patch}`,
+    value: row => `${row.product} / ${row.release} / ${row.patch}`,
   },
   {
     key: 'copies',
     kind: 'count',
     labelKey: 'downloads.duplicates.copies',
-    sortValue: row => row.copies,
-    render: row => row.copies,
+    value: row => row.copies,
   },
   {
     key: 'size',
     kind: 'size',
     labelKey: 'pages.table.fileSize',
-    sortValue: row => row.fileSize,
+    value: row => row.fileSize,
     render: (row, ctx) => ctx.formatFileSize(row.fileSize),
   },
   {
     key: 'original',
     kind: 'badge',
     labelKey: 'downloads.duplicates.original',
-    sortValue: row => (row.original ? 0 : 1),
+    value: originalWord,
     render: (row, ctx) =>
-      row.original ? (
-        <span className="badge bg-success">{ctx.t('downloads.duplicates.original')}</span>
-      ) : (
-        ''
-      ),
+      row.original ? <span className="badge bg-success">{originalWord(row, ctx)}</span> : '',
   },
 ];
 
@@ -86,7 +82,8 @@ const DEFAULT_SORT = [{ column: 'checksum', direction: 'asc' }];
  * checksum another file carries, one row per file linking to its own
  * address, the rows sorted by checksum so a group's copies sit together,
  * the group's copy count and the original flag beside each; the header
- * sort is the table's own and the navbar search stays the listing's.
+ * sort is the table's own, every column sorting by the text its cell
+ * shows, and the navbar search stays the listing's.
  */
 const DuplicatesPane = ({ org, ctx, onClose }) => {
   const { t } = useTranslation();
@@ -112,7 +109,10 @@ const DuplicatesPane = ({ org, ctx, onClose }) => {
     };
   }, [org]);
 
-  const sorted = useMemo(() => (rows ? sortItems(rows, sort, COLUMNS) : []), [rows, sort]);
+  const sorted = useMemo(
+    () => (rows ? sortItems(rows, sort, COLUMNS, ctx) : []),
+    [rows, sort, ctx]
+  );
 
   return (
     <div className="w-100 order-last">

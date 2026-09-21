@@ -7,8 +7,6 @@ const BADGE_CLASSES = {
   standby: 'bg-secondary bg-opacity-25 text-secondary-emphasis',
 };
 
-const SORT_KEYS = { in_use: 0, assigned: 1, available: 2, standby: 3 };
-
 /**
  * The cache level of a VM as one key: `in_use` or `assigned` at level 0 by
  * `uds_in_use`, `available` at 1, `standby` at 2, `level_N` beyond, empty
@@ -50,8 +48,3 @@ export const cacheLabel = (uds, t) => {
 
 export const cacheBadgeClass = uds =>
   BADGE_CLASSES[cacheKey(uds)] || 'bg-secondary bg-opacity-25 text-body';
-
-export const cacheSortKey = uds => {
-  const key = cacheKey(uds);
-  return key in SORT_KEYS ? SORT_KEYS[key] : 9;
-};

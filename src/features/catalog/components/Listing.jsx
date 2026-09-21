@@ -276,12 +276,24 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
   }, [key, collections, org, member, notify, t]);
 
   const watches = useWatches({ collections, user: context.user, notify });
+  const baseCtxFor = collection => ({
+    ...context,
+    t,
+    language: i18n.language,
+    status,
+    collection,
+    org,
+    member,
+    reload,
+    notify,
+  });
   const search = useCatalogSearch({
     collections,
     itemsByCollection: data.byCollection,
     org,
     signedIn,
     watchedIds: watches.ids,
+    ctxFor: baseCtxFor,
     prefsKey: `${context.prefsPrefix}_${collections.map(c => c.key).join('+')}_${org || 'home'}`,
   });
   const {
@@ -301,18 +313,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
 
   const toggle = <ViewToggle view={view} onChange={setView} />;
 
-  const ctxFor = collection => ({
-    ...context,
-    t,
-    language: i18n.language,
-    status,
-    collection,
-    org,
-    member,
-    filtering,
-    reload,
-    notify,
-  });
+  const ctxFor = collection => ({ ...baseCtxFor(collection), filtering });
 
   const manages = org ? isOrgManager(context.user, org) : managesAnyOrganization(context.user);
 

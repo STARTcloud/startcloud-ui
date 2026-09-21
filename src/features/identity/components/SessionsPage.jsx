@@ -36,12 +36,14 @@ const FILTER_GROUPS = [
 ];
 const FILTER_KEYS = FILTER_GROUPS.map(group => group.key);
 
+const timeOf = value => new Date(value || 0).getTime();
+
 const columns = [
   {
     key: 'user',
     kind: 'name',
     labelKey: 'admin.activity.sessions.user',
-    sortValue: row => (row.full_name || '').toLowerCase(),
+    value: row => row.full_name || '',
     render: row => (
       <span>
         <strong>{row.full_name}</strong>
@@ -54,14 +56,14 @@ const columns = [
     key: 'ip_address',
     kind: 'text',
     labelKey: 'admin.activity.address',
-    sortValue: row => row.ip_address || '',
+    value: row => row.ip_address || '',
     render: row => <code>{row.ip_address}</code>,
   },
   {
     key: 'device',
     kind: 'text',
     labelKey: 'admin.activity.device',
-    sortValue: row => (row.user_agent || '').toLowerCase(),
+    value: row => row.user_agent || '',
     render: row => (
       <span>
         {row.user_agent}
@@ -74,14 +76,14 @@ const columns = [
     key: 'authorized_at',
     kind: 'date',
     labelKey: 'admin.activity.sessions.authorized',
-    sortValue: row => new Date(row.authorized_at || 0).getTime(),
+    value: row => timeOf(row.authorized_at),
     render: row => <DateCell value={row.authorized_at} />,
   },
   {
     key: 'last_accessed_at',
     kind: 'date',
     labelKey: 'admin.activity.sessions.lastActive',
-    sortValue: row => new Date(row.last_accessed_at || 0).getTime(),
+    value: row => timeOf(row.last_accessed_at),
     render: row => <DateCell value={row.last_accessed_at} />,
   },
 ];
@@ -238,11 +240,13 @@ const SessionsPage = () => {
   const rows = useMemo(() => data?.items || [], [data]);
   const selection = useSelection(rows);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
+  const ctx = { t, language: i18n.language };
   const search = useDetailSearch({
     rows,
     matches,
     placeholderKey: 'admin.activity.sessions.search',
     columns,
+    ctx,
     prefsKey: PREFS_KEY,
     filterGroups: FILTER_GROUPS,
     url,
@@ -306,7 +310,7 @@ const SessionsPage = () => {
           hiddenColumns={search.hiddenColumns}
           widths={search.widths}
           onResize={search.setColumnWidth}
-          ctx={{ t, language: i18n.language }}
+          ctx={ctx}
           emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
           selection={selection.subtable}
         />

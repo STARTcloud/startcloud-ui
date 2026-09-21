@@ -14,6 +14,7 @@ export const architectureShape = PropTypes.shape({
   downloadCount: PropTypes.number,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
+  releasedAt: PropTypes.string,
   kind: PropTypes.string,
   platform: PropTypes.string,
   architecture: PropTypes.string,
@@ -44,6 +45,7 @@ export const versionShape = PropTypes.shape({
   published: PropTypes.bool,
   createdAt: PropTypes.string,
   updatedAt: PropTypes.string,
+  releasedAt: PropTypes.string,
   downloads: PropTypes.number,
   description: PropTypes.string,
   releaseNotes: PropTypes.string,
@@ -207,8 +209,8 @@ export const columnShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   kind: PropTypes.string.isRequired,
   labelKey: PropTypes.string,
-  sortValue: PropTypes.func,
-  render: PropTypes.func.isRequired,
+  value: PropTypes.func.isRequired,
+  render: PropTypes.func,
   when: PropTypes.func,
   defaultHidden: PropTypes.bool,
 });
@@ -278,17 +280,16 @@ export const sortVersionsNewestFirst = versions =>
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   );
 
-export const latestReleaseTime = item => {
-  if (item.latestReleaseAt) {
-    return new Date(item.latestReleaseAt).getTime();
-  }
-  const versions = item.versions || [];
-  const latest = versions.reduce((newest, version) => {
-    const time = new Date(version.createdAt || 0).getTime();
-    return Number.isNaN(time) ? newest : Math.max(newest, time);
-  }, 0);
-  return latest || null;
-};
+/**
+ * The instant of an item's latest release as its adapter answered it in
+ * `latestReleaseAt`, null while the adapter answered none, so a listing
+ * and a card never fall back to the day a row was inserted.
+ *
+ * @param {Object} item - An item of the item shape
+ * @returns {number|null} The epoch milliseconds, or null
+ */
+export const latestReleaseTime = item =>
+  item.latestReleaseAt ? new Date(item.latestReleaseAt).getTime() : null;
 
 const sortNames = names =>
   [...new Set(names)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));

@@ -9,45 +9,38 @@ import { CollapseButton } from '../../../components/common/GroupHeading';
 import SubTable from '../../../components/common/SubTable';
 import { sortShape } from '../../../utils/itemShape';
 import { useVmHistory } from '../hooks/useVmHistory';
-import { cacheSortKey } from '../utils/cacheLevel';
 import { vmHasNoSession, vmIsDecommissioned, vmIsStandby, vmKey } from '../utils/vmStatus';
 
 import CacheBadge from './CacheBadge';
 import DriveBadges from './DriveBadges';
 import IconsCell from './IconsCell';
 import LastSeen from './LastSeen';
-import SessionBadge from './SessionBadge';
+import SessionBadge, { sessionText } from './SessionBadge';
 import VmHistory from './VmHistory';
 import VmMetrics, { grafanaShape } from './VmMetrics';
 import VmOverview from './VmOverview';
 import VmStats from './VmStats';
-
-const NO_POOL = String.fromCharCode(0xffff);
 
 const DECOMMISSION_KEYS = {
   hostname_recycled: 'vdi.status.recycled',
   uds_removed: 'vdi.status.removed',
 };
 
-const sessionKey = vm => {
-  if (vmIsStandby(vm)) {
-    return 3;
-  }
-  const state = vm.user?.session_state;
-  if (state === 'active') {
-    return 0;
-  }
-  return state === 'idle' ? 1 : 2;
-};
-
-const seenKey = vm => {
-  if (vm.last_checkin) {
-    return new Date(vm.last_checkin).getTime();
-  }
-  return vm._synthetic && vm.uds?.cache_level === 2 ? -2 : -1;
-};
-
 const vmPath = vm => `/vm/${encodeURIComponent(vm.instance_id)}`;
+
+const samOf = vm => (vm.user?.username ? vm.user.username.split('\\').pop() : '');
+
+const userName = vm => vm.user?.display_name || samOf(vm);
+
+const iconCount = vm => {
+  if (vmIsStandby(vm) || vmHasNoSession(vm)) {
+    return '';
+  }
+  return vm.desktop?.icon_count ?? '';
+};
+
+const drivesText = vm =>
+  (vm.drives || []).map(drive => `${drive.letter}: ${drive.status}`).join(' ');
 
 const HostnameCell = ({ vm, ctx }) => (
   <span className="d-inline-flex align-items-center gap-2">
@@ -100,7 +93,7 @@ PoolCell.propTypes = {
 };
 
 const UserCell = ({ vm }) => {
-  const sam = vm.user?.username ? vm.user.username.split('\\').pop() : '';
+  const sam = samOf(vm);
   if (vm.user?.display_name) {
     return (
       <>
@@ -117,64 +110,67 @@ UserCell.propTypes = {
   vm: PropTypes.object.isRequired,
 };
 
+/**
+ * The fleet table's columns, each sorting by what its cell shows: the
+ * hostname, the pool name, the user's shown name, the session word, the
+ * icon count, the last check-in instant, the cycle milliseconds and the
+ * drive badges' text, a dash cell reading as empty.
+ */
 export const fleetColumns = [
   {
     key: 'hostname',
     kind: 'name',
     labelKey: 'vdi.table.hostname',
-    sortValue: vm => vm.hostname.toLowerCase(),
+    value: vm => vm.hostname,
     render: (vm, ctx) => <HostnameCell vm={vm} ctx={ctx} />,
   },
   {
     key: 'pool',
     kind: 'text',
     labelKey: 'vdi.table.pool',
-    sortValue: vm => [vm.uds?.pool_name || NO_POOL, cacheSortKey(vm.uds)],
+    value: vm => vm.uds?.pool_name || '',
     render: vm => <PoolCell vm={vm} />,
   },
   {
     key: 'user',
     kind: 'text',
     labelKey: 'vdi.table.user',
-    sortValue: vm => (vm.user?.username || '').toLowerCase(),
+    value: userName,
     render: vm => <UserCell vm={vm} />,
   },
   {
     key: 'session',
     kind: 'badge',
     labelKey: 'vdi.table.session',
-    sortValue: sessionKey,
+    value: (vm, ctx) => sessionText(vm, ctx.t),
     render: vm => <SessionBadge vm={vm} />,
   },
   {
     key: 'icons',
     kind: 'count',
     labelKey: 'vdi.table.icons',
-    sortValue: vm => vm.desktop?.icon_count || 0,
+    value: iconCount,
     render: vm => <IconsCell vm={vm} />,
   },
   {
     key: 'seen',
     kind: 'relative',
     labelKey: 'vdi.table.seen',
-    sortValue: seenKey,
+    value: vm => (vm.last_checkin ? new Date(vm.last_checkin).getTime() : 0),
     render: (vm, ctx) => <LastSeen vm={vm} now={ctx.now} />,
   },
   {
     key: 'cycle',
     kind: 'text',
     labelKey: 'vdi.table.cycle',
-    sortValue: vm => vm.timings_ms?.total_cycle || 0,
+    value: vm => vm.timings_ms?.total_cycle || '',
     render: vm => (vm.timings_ms?.total_cycle ? `${vm.timings_ms.total_cycle}ms` : '—'),
   },
   {
     key: 'drives',
     kind: 'badges',
     labelKey: 'vdi.table.drives',
-    sortValue: vm => {
-      const drives = vm.drives || [];
-      return drives.filter(drive => drive.status !== 'healthy').length * 1000 - drives.length;
-    },
+    value: drivesText,
     render: vm => <DriveBadges drives={vm.drives || []} />,
   },
 ];
