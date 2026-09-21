@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.31.1...v0.32.0) (2026-09-21)
+
+
+### Features
+
+* every opening visibility and publish action a split button whose caret offers the same act with everything beneath, on the action bars, the file lines and the bulk pane alike, the loose cascade checkbox kept for the edit forms alone; the notifications bell and inbox withheld from a guest-only account; the Account column's Inbox row renamed Notifications; and the organization logo drawn on the profile's memberships and before every name on the All organizations table ([d55fe0b](https://github.com/STARTcloud/startcloud-ui/commit/d55fe0bd96720da583bf765dce4272686e9fc267))
+* the downloads bulk row growing Set values, Move to and Reconcile visibility beneath through one dialog slot, the same Move and Reconcile on the product, release and patch bars and Move on every file row, the cascade check beside the visibility radios of the three edit forms, a Duplicates view under an organization's downloads listing every file whose checksum another carries, one body extension on every collection's bulk call, the Visibility and Status columns drawn for a viewer who manages the rows alone, link columns sharing the table's width and the file language a closed-list word, the family drawn once on a card and the vendor once on a product page, and the watch star centred on the title ([fe0b5e1](https://github.com/STARTcloud/startcloud-ui/commit/fe0b5e13aee73318e8dff8f70ae0f6e9f7948786))
+
 ## [0.31.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.31.0...v0.31.1) (2026-09-21)
 
 
