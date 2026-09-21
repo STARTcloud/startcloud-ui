@@ -21,9 +21,15 @@ import {
 import { listWord } from '../../../utils/closedLists';
 import { fileKinds, platformNames } from '../../../utils/itemShape';
 import { isOrgManager } from '../../../utils/permissions';
-import { ROW_BULK, VERSION_BULK } from '../bulkActions';
+import {
+  DOWNLOAD_FILE_BULK,
+  DOWNLOAD_ITEM_BULK,
+  DOWNLOAD_PATCH_BULK,
+  DOWNLOAD_RELEASE_BULK,
+} from '../bulkActions';
 
 import { downloadsAdapter } from './api/adapter';
+import { DownloadBulkDialog } from './components/BulkDialogs';
 import {
   DownloadItemActions,
   DownloadItemHeaderExtra,
@@ -103,12 +109,13 @@ export const downloads = {
     architectures: { labelKey: 'pages.table.files', columns: fileLevelColumns },
   },
   bulk: {
-    items: ROW_BULK,
-    versions: VERSION_BULK,
-    providers: ROW_BULK,
-    architectures: ROW_BULK,
+    items: DOWNLOAD_ITEM_BULK,
+    versions: DOWNLOAD_RELEASE_BULK,
+    providers: DOWNLOAD_PATCH_BULK,
+    architectures: DOWNLOAD_FILE_BULK,
   },
   slots: {
+    BulkDialog: DownloadBulkDialog,
     ListActions: DownloadListActions,
     ItemActions: DownloadItemActions,
     ItemHeaderExtra: DownloadItemHeaderExtra,

@@ -8,6 +8,7 @@ import {
   providerNames,
   visibilityOf,
 } from '../../utils/itemShape';
+import { managesListing } from '../../utils/permissions';
 import { formatRelativeTime } from '../../utils/relativeTime';
 import { itemPath } from '../../utils/routes';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
@@ -16,6 +17,19 @@ import { VisibilityBadge } from './StatusChips';
 import { hasAny } from './SubTable';
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
+
+/**
+ * The `when` of the two access columns, Visibility and Status: drawn
+ * while the table has rows, for a viewer who manages the page's
+ * organization, or any organization on the home listing, and for nobody
+ * else, the same gate the cards' chips stand behind.
+ *
+ * @param {Array} rows - The table's rows
+ * @param {Object} ctx - The page context, its `user` and `org`
+ * @returns {boolean}
+ */
+export const managesRows = (rows, ctx) =>
+  rows.length > 0 && managesListing(ctx.user, ctx.org || '');
 
 const namesKey = names => names.join(' ').toLowerCase();
 
@@ -130,6 +144,7 @@ export const statusColumn = {
   key: 'status',
   kind: 'badge',
   labelKey: 'pages.table.status',
+  when: managesRows,
   sortValue: item => (item.published ? 0 : 1),
   render: (item, ctx) => (
     <span className={`badge ${item.published ? 'bg-success' : 'bg-warning'}`}>
@@ -142,6 +157,7 @@ export const visibilityColumn = {
   key: 'visibility',
   kind: 'badge',
   labelKey: 'pages.table.visibility',
+  when: managesRows,
   sortValue: item => VISIBILITY_GROUP.order.indexOf(visibilityOf(item)),
   render: item => <VisibilityBadge visibility={visibilityOf(item)} />,
 };

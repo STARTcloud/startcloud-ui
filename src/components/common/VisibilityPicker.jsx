@@ -34,6 +34,16 @@ export const visibilityShape = PropTypes.shape({
 });
 
 /**
+ * Whether `next` opens a row wider than `current`, the test a form makes
+ * before it draws the cascade check beside its radios.
+ *
+ * @param {{is_public: boolean, guest_access: boolean}} next - The pair picked
+ * @param {{is_public: boolean, guest_access: boolean}} current - The pair the row holds
+ * @returns {boolean}
+ */
+export const opensVisibility = (next, current) => WIDTH[pickedOf(next)] > WIDTH[pickedOf(current)];
+
+/**
  * The one cascade control of the estate: "Also open everything beneath",
  * off by default, drawn beside an action that opens a row (Make public,
  * Make guest, Publish, and the bulk bar's three opening verbs) and never

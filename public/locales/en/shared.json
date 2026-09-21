@@ -549,7 +549,7 @@
       "applications": "Applications",
       "terms": "Terms and policies",
       "integrations": "Integrations",
-      "inbox": "Inbox"
+      "notifications": "Notifications"
     }
   },
   "admin": {
@@ -1825,13 +1825,24 @@
       "unpublish": "Unpublish",
       "deprecate": "Deprecate",
       "cascade": "Also open everything beneath",
+      "setValues": "Set values",
+      "valuesTitle_one": "Set values on {{count}} row",
+      "valuesTitle_other": "Set values on {{count}} rows",
+      "unchanged": "Leave as it is",
+      "apply": "Apply",
+      "move": "Move to…",
+      "moveTitle_one": "Move {{count}} row",
+      "moveTitle_other": "Move {{count}} rows",
+      "reconcile": "Reconcile visibility beneath",
       "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
       "confirmTitle": "Confirm the bulk action",
       "confirmBody": "{{action}} for {{count}} selected rows. Type \"{{keyword}}\" to confirm.",
       "errors": {
         "not_found": "no longer exists",
         "not_allowed": "not yours to change",
-        "in_use": "still in use"
+        "in_use": "still in use",
+        "conflict": "already taken at the target",
+        "forbidden": "wider than its new parent"
       }
     },
     "confirm": {
@@ -2176,11 +2187,20 @@
     },
     "patch": {
       "name": "Patch name",
+      "description": "Description",
       "kind": "Kind",
       "releasedAt": "Released",
       "notesUrl": "Release notes URL",
       "updated": "The patch was updated.",
       "deleted": "The patch was deleted."
+    },
+    "duplicates": {
+      "button": "Duplicates",
+      "title": "Duplicate files",
+      "none": "No two files share a checksum.",
+      "where": "Where",
+      "copies": "Copies",
+      "original": "Original"
     },
     "file": {
       "key": "Key",

@@ -36,6 +36,8 @@ import { isOrgManager } from '../../../../utils/permissions';
 import { isVisible, refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
+import { FormCascade, ReconcileButton } from './Download';
+import { MoveButton } from './DownloadRelease';
 import DownloadZone, { useUpload } from './DownloadZone';
 import { SelectField, TextField } from './fields';
 import { PlacePane } from './PlaceForm';
@@ -56,7 +58,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const PatchEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
+const PatchEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -84,12 +86,14 @@ const PatchEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
         onChange={onVisibility}
         className="mb-2"
       />
+      <FormCascade draft={draft} current={current} onChange={onVisibility} />
     </form>
   );
 };
 
 PatchEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
+  current: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
@@ -104,6 +108,12 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
   const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [editing, setEditing] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const move = target =>
+    api.patches
+      .update(org, item.name, version, provider.name, target)
+      .then(() =>
+        navigate(`/${org}/downloads/${target.download}/${target.release}/${provider.name}`)
+      );
   const [draft, setDraft] = useState({
     name: provider.name,
     kind: provider.kind || PATCH_KINDS[0],
@@ -124,7 +134,10 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
-  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+  const onVisibility = useCallback(
+    next => setDraft(current => ({ ...current, recursive: false, ...next })),
+    []
+  );
 
   const access = fields =>
     api.patches
@@ -182,6 +195,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
     setEditor(
       <PatchEditForm
         draft={draft}
+        current={visibilityPair(provider)}
         rules={rules}
         onChange={onChange}
         onVisibility={onVisibility}
@@ -189,7 +203,7 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, provider, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.patches
@@ -247,6 +261,18 @@ export const DownloadProviderActions = ({ item, version, provider, parent = null
         published={Boolean(provider.published)}
         parentPublished={parent ? Boolean(parent.published) : null}
         onChange={access}
+      />
+      <ReconcileButton
+        level="providers"
+        scope={{ org, name: item.name, version }}
+        name={provider.name}
+        ctx={ctx}
+      />
+      <MoveButton
+        level="providers"
+        scope={{ org, name: item.name, version }}
+        move={move}
+        ctx={ctx}
       />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
@@ -458,6 +484,11 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
         notify('danger', refusalMessage({ error, labels: ACCESS_LABELS, t }));
       });
 
+  const move = target =>
+    api.files
+      .update(org, item.name, version, provider.name, architecture.name, target)
+      .then(reload);
+
   const remove = () => {
     api.files
       .remove(org, item.name, version, provider.name, architecture.name)
@@ -507,6 +538,13 @@ export const DownloadArchitectureRowActions = ({ item, version, provider, archit
         published={Boolean(architecture.published)}
         parentPublished={Boolean(provider.published)}
         onChange={access}
+        className="btn btn-sm"
+      />
+      <MoveButton
+        level="architectures"
+        scope={{ org, name: item.name, version, provider: provider.name }}
+        move={move}
+        ctx={ctx}
         className="btn btn-sm"
       />
       <button

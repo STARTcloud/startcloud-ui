@@ -50,7 +50,7 @@ const WatchStar = ({ watched, busy, onToggle }) => {
   return (
     <button
       type="button"
-      className="btn btn-link p-0 text-warning fs-5 v-align-middle"
+      className="btn btn-link p-0 text-warning d-inline-flex"
       onClick={onToggle}
       disabled={busy}
       title={label}
@@ -146,14 +146,12 @@ const ItemHeading = ({ item, org, editor, actions, watch, manage, ctx }) => {
     );
   }
   const title = (
-    <>
+    <span className="d-inline-flex align-items-center gap-2">
       {item.label || item.name}
       {watch.available ? (
-        <span className="ms-2 align-middle">
-          <WatchStar watched={watch.watched} busy={watch.busy} onToggle={watch.toggle} />
-        </span>
+        <WatchStar watched={watch.watched} busy={watch.busy} onToggle={watch.toggle} />
       ) : null}
-    </>
+    </span>
   );
   const chips = (
     <>

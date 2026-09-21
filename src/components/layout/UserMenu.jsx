@@ -73,7 +73,8 @@ PreferencesItem.propTypes = {
 /**
  * The account button's avatar with the unread count on its top right, the
  * same number the menu's Notifications row shows from the notifications
- * feature's one context, hidden at zero, in the sidebar Inbox badge's look.
+ * feature's one context, hidden at zero, in the look of the sidebar's
+ * Notifications badge.
  */
 const AvatarBadge = ({ renderAvatar }) => {
   const { unread } = useUnread();

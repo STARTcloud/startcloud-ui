@@ -5,8 +5,9 @@
  * (one status badge), `badges` (a list of small badges), `date` (a locale
  * date), `relative` (a relative time), `count` (a right-aligned integer),
  * `size` (formatted bytes), `checksum` (the `ChecksumCell`, ellipsized),
- * `link` (a link cell, the version and release names) and `word` (a
- * closed-list word). A width is `narrow`, `medium` or `flex`; the fixed
+ * `link` (a link cell, the version and release names and a search hit's
+ * title, sharing the room the way a name does) and `word` (a closed-list
+ * word). A width is `narrow`, `medium` or `flex`; the fixed
  * two are declared once in the stylesheet as `.col-w-<width>`, and the
  * `flex` columns share whatever room the fixed ones leave, so a wide
  * table fills its space and a narrow one shrinks the text that can
@@ -23,7 +24,7 @@ export const KINDS = {
   count: { width: 'narrow' },
   size: { width: 'narrow' },
   checksum: { width: 'flex' },
-  link: { width: 'medium' },
+  link: { width: 'flex' },
   word: { width: 'narrow' },
 };
 

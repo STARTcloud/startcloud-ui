@@ -549,7 +549,7 @@
       "applications": "Aplicaciones",
       "terms": "Términos y políticas",
       "integrations": "Integraciones",
-      "inbox": "Bandeja de entrada"
+      "notifications": "Notificaciones"
     }
   },
   "admin": {
@@ -1825,13 +1825,24 @@
       "unpublish": "Despublicar",
       "deprecate": "Marcar obsoleta",
       "cascade": "Abrir también todo lo que hay debajo",
+      "setValues": "Establecer valores",
+      "valuesTitle_one": "Establecer valores en {{count}} fila",
+      "valuesTitle_other": "Establecer valores en {{count}} filas",
+      "unchanged": "Dejar como está",
+      "apply": "Aplicar",
+      "move": "Mover a…",
+      "moveTitle_one": "Mover {{count}} fila",
+      "moveTitle_other": "Mover {{count}} filas",
+      "reconcile": "Conciliar la visibilidad de lo que hay debajo",
       "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
       "confirmTitle": "Confirmar la acción masiva",
       "confirmBody": "{{action}} para {{count}} filas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
       "errors": {
         "not_found": "ya no existe",
         "not_allowed": "no es tuyo para cambiarlo",
-        "in_use": "aún está en uso"
+        "in_use": "aún está en uso",
+        "conflict": "ya está en uso en el destino",
+        "forbidden": "más abierto que su nuevo padre"
       }
     },
     "confirm": {
@@ -2176,11 +2187,20 @@
     },
     "patch": {
       "name": "Nombre del parche",
+      "description": "Descripción",
       "kind": "Tipo",
       "releasedAt": "Publicado",
       "notesUrl": "URL de las notas de la versión",
       "updated": "El parche se actualizó.",
       "deleted": "El parche se eliminó."
+    },
+    "duplicates": {
+      "button": "Duplicados",
+      "title": "Archivos duplicados",
+      "none": "No hay dos archivos con la misma suma de comprobación.",
+      "where": "Dónde",
+      "copies": "Copias",
+      "original": "Original"
     },
     "file": {
       "key": "Clave",

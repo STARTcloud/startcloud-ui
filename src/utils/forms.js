@@ -225,6 +225,7 @@ export const PATCH_SCHEMA = {
 
 export const PATCH_LABELS = {
   name: 'downloads.patch.name',
+  description: 'downloads.patch.description',
   kind: 'downloads.patch.kind',
   released_at: 'downloads.patch.releasedAt',
   notes_url: 'downloads.patch.notesUrl',

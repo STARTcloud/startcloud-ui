@@ -79,6 +79,8 @@ export const adminOrganizationShape = PropTypes.shape({
   email: PropTypes.string,
   website_url: PropTypes.string,
   logo_url: PropTypes.string,
+  logo: PropTypes.string,
+  email_hash: PropTypes.string,
   description: PropTypes.string,
   locale: PropTypes.string,
   timezone: PropTypes.string,

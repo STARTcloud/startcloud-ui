@@ -86,7 +86,8 @@ TextAreaField.propTypes = {
 
 /**
  * One labelled select of a downloads form over a closed list, each value
- * drawn as its own word.
+ * drawn as its own word; `blank`, where given, is the label of an empty
+ * first option, the choice a bulk form makes to leave a member as it is.
  */
 export const SelectField = ({
   name,
@@ -96,6 +97,7 @@ export const SelectField = ({
   onChange,
   group = '',
   className = 'mb-2',
+  blank = '',
 }) => {
   const { t } = useTranslation();
   return (
@@ -114,6 +116,7 @@ export const SelectField = ({
           onChange={onChange}
           onBlur={() => rules.onBlur(name)}
         >
+          {blank ? <option value="">{blank}</option> : null}
           {options.map(option => (
             <option key={option} value={option}>
               {group ? listWord(t, group, option) : option}
@@ -133,4 +136,5 @@ SelectField.propTypes = {
   onChange: PropTypes.func.isRequired,
   group: PropTypes.string,
   className: PropTypes.string,
+  blank: PropTypes.string,
 };

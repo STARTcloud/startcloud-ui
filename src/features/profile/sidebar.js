@@ -62,8 +62,9 @@ const group = (items, tree) => [
  * host), so the column never lists a section the page cannot draw
  * (decision 109); on a `cookie` host the group also carries Organizations
  * while the host advertises `org-console`, Applications always, Terms and
- * policies while `policies`, Inbox while `inbox` (the row carrying the
- * `unread` badge the shell resolves) and, while the host advertises
+ * policies while `policies`, Notifications while `inbox` (the row to the
+ * inbox page, carrying the `unread` badge the shell resolves) and, while
+ * the host advertises
  * `integrations`, the group's `tree` of decision 68 answering the
  * Integrations entry only once `GET /api/user/integrations`, read once
  * when the tree mounts through the integrations adapter the router hands
@@ -118,7 +119,7 @@ export const sidebar = (status, account, integrations, profile) => {
     items.push({
       key: 'inbox',
       icon: FaBell,
-      labelKey: 'account.sidebar.inbox',
+      labelKey: 'account.sidebar.notifications',
       to: '/notifications',
       badge: 'unread',
     });

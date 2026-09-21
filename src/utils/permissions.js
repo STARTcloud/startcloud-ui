@@ -74,6 +74,20 @@ export const canManageBox = (user, organizationName, box) => {
 };
 
 /**
+ * Whether the viewer manages the rows a page lists: the page's
+ * organization when it has one, any organization on the home listing;
+ * the test the Visibility and Status columns make before they draw, so a
+ * guest, a plain member and an anonymous visitor read a table without
+ * the two words they cannot change, as the cards already hide them.
+ *
+ * @param {object|null} user - The session's user
+ * @param {string} organizationName - The page's organization, empty on the home listing
+ * @returns {boolean}
+ */
+export const managesListing = (user, organizationName) =>
+  organizationName ? isOrgManager(user, organizationName) : managesAnyOrganization(user);
+
+/**
  * Whether the viewer may write to an item on this host: the host lists
  * `uploads` and the collection's own `canManage` says yes for the item;
  * the one test the item, version and provider pages make before they

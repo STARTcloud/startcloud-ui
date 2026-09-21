@@ -53,7 +53,9 @@ const uploadPending = (organization, { file: picked, onUploadProgress }) => {
  * from raw names through `encodePath`. A product owns releases, a release
  * owns patches and a patch owns files; a person's file lands in two steps
  * through `pending`, the bytes first and the placing form after them; the
- * level upload routes are a program's and no page calls them.
+ * level upload routes are a program's and no page calls them. The
+ * organization's `duplicates` answers every checksum more than one file
+ * row carries, the largest group first, for a writer of the organization.
  */
 export const api = {
   downloads: {
@@ -65,6 +67,7 @@ export const api = {
     watch: (organization, name) => client.post(`${product(organization, name)}/watch`, {}),
     unwatch: (organization, name) => client.delete(`${product(organization, name)}/watch`),
     watches: () => client.get('/api/user/download-watches'),
+    duplicates: organization => client.get(`${org(organization)}/download/duplicates`),
   },
   releases: {
     get: (organization, name, number) => client.get(release(organization, name, number)),

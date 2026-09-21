@@ -27,11 +27,27 @@ const dateOf = (value, language) => {
   return Number.isNaN(time.getTime()) ? '' : time.toLocaleDateString(language);
 };
 
+/**
+ * The membership row's logo: the session's own organization list matched
+ * by name first, then the row as the host answers it, its `logo` or its
+ * `logo_url` on the row or under its `organization`, and the email hash
+ * beside it so the Gravatar stands in where no logo is stored; the
+ * building glyph when nothing resolves.
+ */
 const MembershipLogo = ({ org, organizations }) => {
   const matched = membershipOf(organizations, nameOf(org));
+  const nested = org.organization || {};
+  const logo =
+    matched?.logo ||
+    org.logo ||
+    nested.logo ||
+    httpsUrl(org.logo_url) ||
+    httpsUrl(nested.logo_url) ||
+    '';
+  const emailHash = matched?.emailHash || org.email_hash || nested.email_hash || '';
   return (
     <OrgLogo
-      org={{ logo: matched?.logo || httpsUrl(org.logo_url), emailHash: matched?.emailHash || '' }}
+      org={{ logo, emailHash }}
       size={24}
       className="rounded-circle"
       fallback={<FaBuilding aria-hidden />}
@@ -40,7 +56,12 @@ const MembershipLogo = ({ org, organizations }) => {
 };
 
 MembershipLogo.propTypes = {
-  org: PropTypes.shape({ logo_url: PropTypes.string }).isRequired,
+  org: PropTypes.shape({
+    logo: PropTypes.string,
+    logo_url: PropTypes.string,
+    email_hash: PropTypes.string,
+    organization: PropTypes.object,
+  }).isRequired,
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
 };
 
@@ -157,8 +178,9 @@ CancelButton.propTypes = {
  * The Organizations section of the profile page on a UI backend with
  * memberships of its own: the memberships as `MethodRow`s under a
  * `SectionHeading` (the organization's logo from the session's
- * `organizations` matched by name, the row's own `logo_url` else, the
- * building glyph otherwise; the name, the Primary and role badges, the
+ * `organizations` matched by name, the row's own `logo`, `logo_url` or
+ * the Gravatar of its `email_hash` else, the building glyph otherwise;
+ * the name, the Primary and role badges, the
  * description and the joined date, Make primary while the adapter carries
  * `setPrimary` and Leave while more than one membership remains) and the
  * pending join requests under a second heading with Cancel per row, both

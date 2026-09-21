@@ -5,14 +5,22 @@ import { listWord } from '../../utils/closedLists';
 import { providerPath, versionPath } from '../../utils/routes';
 
 import ChecksumCell from './ChecksumCell';
-import { createdColumn, statusColumn, updatedColumn, visibilityColumn } from './columns';
+import {
+  createdColumn,
+  managesRows,
+  statusColumn,
+  updatedColumn,
+  visibilityColumn,
+} from './columns';
 import { hasAny } from './SubTable';
 
 const carriesAccess = hasAny(row => typeof row.isPublic === 'boolean');
 
-const rowVisibilityColumn = { ...visibilityColumn, when: carriesAccess };
+const managedAccess = (rows, ctx) => carriesAccess(rows) && managesRows(rows, ctx);
 
-const rowStatusColumn = { ...statusColumn, when: carriesAccess };
+const rowVisibilityColumn = { ...visibilityColumn, when: managedAccess };
+
+const rowStatusColumn = { ...statusColumn, when: managedAccess };
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -385,9 +393,9 @@ const wordColumn = (key, labelKey, group) => ({
  * when the key differs from it, the key as a small code beside it (the
  * shape `labelColumn` gives the catalog's label and slug), its visibility
  * and status badges where the host answers the row's own access words,
- * its kind, platform, architecture and language, the downloads, the size
- * and the checksum; the tokened download is the table's `DownloadAction`
- * in the Actions column.
+ * its kind, platform, architecture and language as closed-list words, the
+ * downloads, the size and the checksum; the tokened download is the
+ * table's `DownloadAction` in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The patch the files belong to
  * @returns {Array<Object>} The columns
@@ -412,13 +420,7 @@ export const fileLevelColumns = () => [
   wordColumn('kind', 'pages.table.kind', 'kind'),
   wordColumn('platform', 'pages.table.platform', 'platform'),
   wordColumn('architecture', 'pages.table.architecture', 'architecture'),
-  {
-    key: 'language',
-    kind: 'text',
-    labelKey: 'pages.table.language',
-    sortValue: file => (file.language || '').toLowerCase(),
-    render: file => file.language || '',
-  },
+  wordColumn('language', 'pages.table.language', 'language'),
   {
     key: 'variant',
     kind: 'text',

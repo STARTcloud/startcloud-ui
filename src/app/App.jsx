@@ -39,7 +39,7 @@ import { loadOrganizations } from '../lib/organizations';
 import { client, events, fetchHealth, hubClient, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
-import { isManager } from '../utils/membership';
+import { guestOnly, isManager } from '../utils/membership';
 import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
@@ -53,9 +53,18 @@ const createRuntimeAdapters = status => ({
   ...createPushAdapter({ status, client }),
 });
 
-const notificationsFor = ({ status, cookie, claims, user, notifications }) => {
+/**
+ * The notifications adapter the shell's bell and the inbox route share,
+ * null when the host lists no `notifications`, when the session carries
+ * no notifications scope, or when the account is guest-only, the shared
+ * download login, which keeps nothing of its own and so has no inbox.
+ */
+const notificationsFor = ({ status, cookie, claims, user, memberships, notifications }) => {
   const scoped = cookie || hasNotificationsScope(claims) || hasNotificationsScope(user);
-  return hasFeature(status, 'notifications') && scoped ? notifications : null;
+  if (!hasFeature(status, 'notifications') || !scoped || guestOnly(memberships)) {
+    return null;
+  }
+  return notifications;
 };
 
 const shellFlags = ({
@@ -87,7 +96,8 @@ const shellFlags = ({
  * time the route leaves those paths, the ticket link, the
  * notification adapters (the inbox one handed to the shell's bell and to
  * the inbox route alike, its unread count in the notifications feature's
- * one context around them both), the sidebar entries the mounted
+ * one context around them both, neither drawn for a guest-only
+ * account), the sidebar entries the mounted
  * features export, the crumb context a page names its own crumb through,
  * and the shell around the routes.
  */
@@ -176,7 +186,7 @@ const App = ({ getSupportedLanguages }) => {
     memberships,
     activeOrgUuid,
   });
-  const inbox = notificationsFor({ status, cookie, claims, user, notifications });
+  const inbox = notificationsFor({ status, cookie, claims, user, memberships, notifications });
 
   const handleSignOut = () => {
     account.signOut();

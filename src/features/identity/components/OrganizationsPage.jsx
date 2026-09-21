@@ -1,12 +1,15 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaBuilding } from 'react-icons/fa6';
 
 import { resultLineOf } from '../../../components/common/bulkResult';
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import { httpsUrl } from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable, { hasAny } from '../../../components/common/SubTable';
+import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
 import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
@@ -65,6 +68,12 @@ const columnsFor = () => [
     sortValue: row => row.name.toLowerCase(),
     render: (row, ctx) => (
       <span className="d-inline-flex align-items-center gap-2">
+        <OrgLogo
+          org={{ logo: row.logo || httpsUrl(row.logo_url), emailHash: row.email_hash || '' }}
+          size={24}
+          className="rounded-circle"
+          fallback={<FaBuilding aria-hidden />}
+        />
         <strong title={row.uuid || undefined}>{row.name}</strong>
         {row.managed ? (
           <span className="badge bg-info">{ctx.t('admin.organizations.managed')}</span>
@@ -380,7 +389,9 @@ BulkActions.propTypes = {
  * `type`, and the Columns group under `table_prefs_admin_organizations`,
  * a `SectionHeading` carrying the count as muted text after the title,
  * the table's select column a real checkbox header while the adapter
- * carries `bulk`, the table (name with the uuid in its tooltip, then, each
+ * carries `bulk`, the table (the organization's logo, the row's `logo`
+ * or `logo_url` else the Gravatar of its `email_hash` else the building
+ * glyph, then the name with the uuid in its tooltip, then, each
  * while the rows carry it, Personal or Team, the suspended state, the
  * invite code, the customer id, the created time, and the members), Edit
  * opening the `OrganizationDialog` over the whole record prefilled from

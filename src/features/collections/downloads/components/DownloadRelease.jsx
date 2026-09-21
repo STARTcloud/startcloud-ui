@@ -24,6 +24,8 @@ import { isOrgManager } from '../../../../utils/permissions';
 import { refusalMessage } from '../../../../utils/validation';
 import { api } from '../api/downloads';
 
+import { MoveDialog } from './BulkDialogs';
+import { FormCascade, ReconcileButton } from './Download';
 import DownloadZone, { useUpload } from './DownloadZone';
 import { TextAreaField, TextField } from './fields';
 import { PlacePane } from './PlaceForm';
@@ -43,7 +45,7 @@ const slotShape = {
   ctx: ctxShape.isRequired,
 };
 
-const ReleaseEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
+const ReleaseEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -63,16 +65,60 @@ const ReleaseEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => 
         onChange={onVisibility}
         className="mb-2"
       />
+      <FormCascade draft={draft} current={current} onChange={onVisibility} />
     </form>
   );
 };
 
 ReleaseEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
+  current: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+};
+
+/**
+ * The Move to action of one row page: the Move dialog over the row's own
+ * scope and, on its answer, `move(target)`, the row's single PUT with the
+ * target members, the page then sent to the row's new address.
+ */
+export const MoveButton = ({ level, scope, move, ctx, className = 'btn me-2' }) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const submit = target => {
+    setOpen(false);
+    move(target).catch(error => ctx.notify('danger', refusalMessage({ error, t })));
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className={`${className} btn-outline-secondary`}
+        onClick={() => setOpen(true)}
+      >
+        {t('pages.bulk.move')}
+      </button>
+      {open ? (
+        <MoveDialog
+          level={level}
+          scope={scope}
+          count={1}
+          onSubmit={submit}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+    </>
+  );
+};
+
+MoveButton.propTypes = {
+  level: PropTypes.oneOf(['versions', 'providers', 'architectures']).isRequired,
+  scope: PropTypes.object.isRequired,
+  move: PropTypes.func.isRequired,
+  ctx: PropTypes.shape({ notify: PropTypes.func.isRequired }).isRequired,
+  className: PropTypes.string,
 };
 
 export const DownloadVersionActions = ({ item, version, ctx }) => {
@@ -83,6 +129,10 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
   const manage = hasFeature(status, 'uploads') && isOrgManager(user, org);
   const [editing, setEditing] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const move = target =>
+    api.releases
+      .update(org, item.name, version.version, target)
+      .then(() => navigate(`/${org}/downloads/${target.download}/${version.version}`));
   const [draft, setDraft] = useState({
     version_number: version.version,
     description: version.description || '',
@@ -102,7 +152,10 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
-  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+  const onVisibility = useCallback(
+    next => setDraft(current => ({ ...current, recursive: false, ...next })),
+    []
+  );
 
   const access = fields =>
     api.releases
@@ -160,6 +213,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
     setEditor(
       <ReleaseEditForm
         draft={draft}
+        current={visibilityPair(version)}
         rules={rules}
         onChange={onChange}
         onVisibility={onVisibility}
@@ -167,7 +221,7 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, version, rules, onChange, onVisibility, submit, setEditor]);
 
   const remove = () => {
     api.releases
@@ -226,6 +280,13 @@ export const DownloadVersionActions = ({ item, version, ctx }) => {
         parentPublished={Boolean(item.published)}
         onChange={access}
       />
+      <ReconcileButton
+        level="versions"
+        scope={{ org, name: item.name }}
+        name={version.version}
+        ctx={ctx}
+      />
+      <MoveButton level="versions" scope={{ org, name: item.name }} move={move} ctx={ctx} />
       <button type="button" className="btn btn-primary me-2" onClick={() => setEditing(true)}>
         {t('boxes.buttons.edit')}
       </button>

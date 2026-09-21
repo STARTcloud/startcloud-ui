@@ -82,7 +82,6 @@ const downloadItem = (entry, orgName, logo) => {
     updatedAt: entry.updated_at || null,
     latestReleaseAt: latestReleaseOf(versions),
     downloads: countOf(entry.download_count),
-    os: { label: entry.family || '', iconUrl: '' },
     family: entry.family || '',
     vendor: entry.vendor || '',
     metadata: null,
@@ -127,22 +126,24 @@ const watches = {
 };
 
 /**
- * One bulk call for one level of one scope: `POST …/bulk { action, names }`
- * on the level's own route, the answer `{ processed, skipped, errors }`; a
- * product's releases stand where a box's versions do, its patches where the
- * providers do and its files where the architectures do; `recursive`
- * rides an opening verb the cascade check ticked, lifting every row
- * beneath to the same word.
+ * One bulk call for one level of one scope: `POST …/bulk { action, names,
+ * ...extra }` on the level's own route, the answer `{ processed, skipped,
+ * errors }`; a product's releases stand where a box's versions do, its
+ * patches where the providers do and its files where the architectures
+ * do. `extra` is what the action carries beside the names: `recursive:
+ * true` on an opening verb the cascade check ticked, `values` on `set`,
+ * the target `download`, `release` and `patch` on `move`, nothing on the
+ * rest.
  *
  * @param {string} level - `items`, `versions`, `providers` or `architectures`
  * @param {string} action - The action the level's `bulk` definition names
  * @param {Array<string>} names - The picked rows' names
  * @param {Object} scope - The levels above: `org`, `name`, `version`, `provider`
- * @param {boolean} [recursive] - Whether the opening verb runs to every row beneath
+ * @param {Object} [extra] - The action's own body members
  * @returns {Promise<Object>} The bulk answer
  */
-const bulk = (level, action, names, scope, recursive = false) => {
-  const body = recursive ? { action, names, recursive: true } : { action, names };
+const bulk = (level, action, names, scope, extra = {}) => {
+  const body = { action, names, ...extra };
   if (level === 'items') {
     return api.bulk.items(scope.org, body);
   }
@@ -155,6 +156,34 @@ const bulk = (level, action, names, scope, recursive = false) => {
   return api.bulk.architectures(scope.org, scope.name, scope.version, scope.provider, body);
 };
 
+const duplicateFile = (group, entry) => ({
+  checksum: group.checksum,
+  checksumType: group.checksum_type || '',
+  product: entry.product,
+  release: entry.release,
+  patch: entry.patch,
+  name: entry.key,
+  fileName: entry.file_name || '',
+  fileSize: entry.file_size || 0,
+  original: Boolean(entry.original),
+  copies: rows(group.files).length,
+});
+
+/**
+ * Every file row of the organization whose checksum another file row
+ * carries, one row per file with its group's checksum and size beside it,
+ * in the order the host answers the groups.
+ *
+ * @param {string} org - The organization
+ * @returns {Promise<Array<Object>>} The duplicate files
+ */
+const duplicates = org =>
+  api.downloads
+    .duplicates(org)
+    .then(data =>
+      rows(data).flatMap(group => rows(group.files).map(entry => duplicateFile(group, entry)))
+    );
+
 export const downloadsAdapter = {
   listAll: () =>
     api.downloads.discover().then(data => withLogos(rows(data), 'Unknown', downloadItem)),
@@ -166,5 +195,6 @@ export const downloadsAdapter = {
   getOrganization: fetchOrganization,
   pending: api.pending,
   bulk,
+  duplicates,
   watches,
 };

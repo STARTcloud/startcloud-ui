@@ -3,11 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { resultLineOf } from '../../../../components/common/bulkResult';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import VisibilityPicker, {
+  CascadeCheck,
   PublishStep,
   VisibilityStep,
+  opensVisibility,
 } from '../../../../components/common/VisibilityPicker';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -17,9 +20,11 @@ import { ACCESS_LABELS, DOWNLOAD_LABELS, DOWNLOAD_SCHEMA } from '../../../../uti
 import { itemShape } from '../../../../utils/itemShape';
 import { isOrgGuest, isOrgManager, isOrgMember } from '../../../../utils/permissions';
 import { refusalMessage } from '../../../../utils/validation';
+import { downloadsAdapter } from '../api/adapter';
 import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
+import DuplicatesPane from './DuplicatesPane';
 import { TextAreaField, TextField } from './fields';
 import { PlacePane } from './PlaceForm';
 
@@ -35,6 +40,76 @@ const draftFrom = product => ({
   notes_url: product.notes_url ?? '',
 });
 
+/**
+ * The cascade check of an edit form, drawn beside the visibility radios
+ * while the picked pair opens the row wider than the pair it holds; a
+ * ticked one puts `recursive: true` in the draft the PUT sends, so the
+ * rows beneath follow the row to its new word.
+ */
+export const FormCascade = ({ draft, current, onChange }) =>
+  opensVisibility(draft, current) ? (
+    <CascadeCheck
+      checked={Boolean(draft.recursive)}
+      onChange={checked => onChange({ recursive: checked })}
+    />
+  ) : null;
+
+FormCascade.propTypes = {
+  draft: PropTypes.shape({
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
+    recursive: PropTypes.bool,
+  }).isRequired,
+  current: PropTypes.shape({
+    is_public: PropTypes.bool.isRequired,
+    guest_access: PropTypes.bool.isRequired,
+  }).isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+/**
+ * The one Reconcile visibility beneath action of a product, release or
+ * patch page: one `reconcile` bulk call at the row's own level with the
+ * row's name alone, the answer's result line raised as the notice, then
+ * the page reloaded.
+ */
+export const ReconcileButton = ({ level, scope, name, ctx, className = 'btn me-2' }) => {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const reconcile = () => {
+    setBusy(true);
+    downloadsAdapter
+      .bulk(level, 'reconcile', [name], scope)
+      .then(answer => {
+        ctx.notify('success', resultLineOf(t, 'pages.bulk', answer));
+        ctx.reload();
+      })
+      .catch(error => ctx.notify('danger', refusalMessage({ error, t })))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <button
+      type="button"
+      className={`${className} btn-outline-warning`}
+      disabled={busy}
+      onClick={reconcile}
+    >
+      {t('pages.bulk.reconcile')}
+    </button>
+  );
+};
+
+ReconcileButton.propTypes = {
+  level: PropTypes.oneOf(['items', 'versions', 'providers']).isRequired,
+  scope: PropTypes.object.isRequired,
+  name: PropTypes.string.isRequired,
+  ctx: PropTypes.shape({
+    notify: PropTypes.func.isRequired,
+    reload: PropTypes.func.isRequired,
+  }).isRequired,
+  className: PropTypes.string,
+};
+
 const slotCtxShape = PropTypes.shape({
   user: PropTypes.object,
   org: PropTypes.string.isRequired,
@@ -44,10 +119,18 @@ const slotCtxShape = PropTypes.shape({
   setForm: PropTypes.func,
 });
 
+/**
+ * The action pane of an organization's downloads listing for a writing
+ * member: the Add New zone with its placing form, and beside it the
+ * Duplicates button that opens the Duplicates view under the heading row
+ * in place of the zone until it is closed.
+ */
 export const DownloadListActions = ({ ctx }) => {
+  const { t } = useTranslation();
   const status = useStatus();
   const { user, org, notify, reload } = ctx;
   const upload = useUpload({ notify });
+  const [duplicates, setDuplicates] = useState(false);
 
   if (!org || !user || !hasFeature(status, 'uploads') || !isOrgMember(user, org)) {
     return null;
@@ -70,16 +153,29 @@ export const DownloadListActions = ({ ctx }) => {
     );
   }
 
+  if (duplicates) {
+    return <DuplicatesPane org={org} ctx={ctx} onClose={() => setDuplicates(false)} />;
+  }
+
   return (
-    <DownloadZone
-      uploading={upload.uploading}
-      progress={upload.progress}
-      file={upload.file}
-      error={upload.error}
-      visibility={upload.visibility}
-      onVisibility={upload.setVisibility}
-      onFile={upload.upload(options => api.pending.upload(org, options))}
-    />
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => setDuplicates(true)}
+      >
+        {t('downloads.duplicates.button')}
+      </button>
+      <DownloadZone
+        uploading={upload.uploading}
+        progress={upload.progress}
+        file={upload.file}
+        error={upload.error}
+        visibility={upload.visibility}
+        onVisibility={upload.setVisibility}
+        onFile={upload.upload(options => api.pending.upload(org, options))}
+      />
+    </>
   );
 };
 
@@ -88,33 +184,28 @@ DownloadListActions.propTypes = { ctx: slotCtxShape.isRequired };
 export const DownloadItemHeaderExtra = ({ item }) => {
   const { t } = useTranslation();
   const { docs, notes } = item.links || {};
-  if (!item.vendor && !docs && !notes) {
+  if (!docs && !notes) {
     return null;
   }
   return (
-    <>
-      {item.vendor ? <p className="mb-0 mt-1">{item.vendor}</p> : null}
-      {docs || notes ? (
-        <div className="d-flex align-items-center gap-3 mt-1 small">
-          {docs ? (
-            <a href={docs} target="_blank" rel="noopener noreferrer">
-              {t('downloads.actions.docs')}
-            </a>
-          ) : null}
-          {notes ? (
-            <a href={notes} target="_blank" rel="noopener noreferrer">
-              {t('downloads.actions.notes')}
-            </a>
-          ) : null}
-        </div>
+    <div className="d-flex align-items-center gap-3 mt-1 small">
+      {docs ? (
+        <a href={docs} target="_blank" rel="noopener noreferrer">
+          {t('downloads.actions.docs')}
+        </a>
       ) : null}
-    </>
+      {notes ? (
+        <a href={notes} target="_blank" rel="noopener noreferrer">
+          {t('downloads.actions.notes')}
+        </a>
+      ) : null}
+    </div>
   );
 };
 
 DownloadItemHeaderExtra.propTypes = { item: itemShape.isRequired };
 
-const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
+const ProductEditForm = ({ draft, current, rules, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -138,12 +229,14 @@ const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => 
         onChange={onVisibility}
         className="mb-2"
       />
+      <FormCascade draft={draft} current={current} onChange={onVisibility} />
     </form>
   );
 };
 
 ProductEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
+  current: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
@@ -168,7 +261,10 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
     setDraft(current => ({ ...current, [name]: value }));
   }, []);
 
-  const onVisibility = useCallback(next => setDraft(current => ({ ...current, ...next })), []);
+  const onVisibility = useCallback(
+    next => setDraft(current => ({ ...current, recursive: false, ...next })),
+    []
+  );
 
   const save = () => {
     if (!rules.validateAll()) {
@@ -213,6 +309,7 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
     setEditor(
       <ProductEditForm
         draft={draft}
+        current={draftFrom(product)}
         rules={rules}
         onChange={onChange}
         onVisibility={onVisibility}
@@ -220,7 +317,7 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, product, rules, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);
@@ -304,6 +401,7 @@ export const DownloadItemActions = ({ item, ctx }) => {
         published={Boolean(item.published)}
         onChange={fields => update(fields, 'Error updating download status')}
       />
+      <ReconcileButton level="items" scope={{ org }} name={item.name} ctx={ctx} />
       <button type="button" className="btn btn-primary me-2" onClick={editor.open}>
         {t('boxes.buttons.edit')}
       </button>

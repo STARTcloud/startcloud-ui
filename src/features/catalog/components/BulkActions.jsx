@@ -29,23 +29,27 @@ export const bulkGroupShape = PropTypes.shape({
 /**
  * The picked-state group of a section's action pane: Clear selection, then
  * the collection's bulk actions for this level as `definition.bulk` names
- * them, each destructive one gated by the shared confirm, sent as one
- * `bulk(level, action, names, scope, recursive)` call per scope the picked
- * rows span,
- * the one result line naming processed, skipped and each error's code after
- * it. While the level offers an opening verb the cascade check draws once
- * for the pane and a ticked one sends `recursive: true` with those verbs
- * alone, the closing ones running to every row beneath on their own. Draws
- * nothing while no row is picked or the collection names no bulk action
- * for the level.
+ * them, each destructive one gated by the shared confirm and each one
+ * naming a `dialog` drawn through the collection's `BulkDialog` slot
+ * first, the dialog answering the body members the call carries beside
+ * the names (`values` on a set, the target address on a move); sent as
+ * one `bulk(level, action, names, scope, extra)` call per scope the picked
+ * rows span, the one result line naming processed, skipped and each
+ * error's code after it. While the level offers an opening verb the
+ * cascade check draws once for the pane and a ticked one sends
+ * `recursive: true` with those verbs alone, the closing ones running to
+ * every row beneath on their own. Draws nothing while no row is picked or
+ * the collection names no bulk action for the level.
  */
 const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [pending, setPending] = useState(null);
+  const [dialog, setDialog] = useState(null);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [beneath, setBeneath] = useState(false);
+  const { BulkDialog } = collection.slots;
   const actions = (collection.bulk || {})[level] || [];
   const count = groups.reduce((sum, group) => sum + group.names.length, 0);
 
@@ -53,17 +57,12 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
     return null;
   }
 
-  const run = action => {
+  const run = (action, extra = {}) => {
+    const body = { ...(action.opens && beneath ? { recursive: true } : {}), ...extra };
     setBusy(true);
     Promise.all(
       groups.map(group =>
-        collection.adapter.bulk(
-          level,
-          action.key,
-          group.names,
-          group.scope,
-          Boolean(action.opens && beneath)
-        )
+        collection.adapter.bulk(level, action.key, group.names, group.scope, body)
       )
     )
       .then(answers => {
@@ -72,6 +71,18 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
       })
       .catch(error => notify('danger', refusalMessage({ error, t })))
       .finally(() => setBusy(false));
+  };
+
+  const pick = action => {
+    if (action.dialog && BulkDialog) {
+      setDialog(action);
+      return;
+    }
+    if (action.confirm) {
+      setPending(action);
+      return;
+    }
+    run(action);
   };
 
   const line = resultLineOf(t, 'pages.bulk', result);
@@ -87,7 +98,7 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
           type="button"
           className={`btn btn-sm ${action.variant}`}
           disabled={busy}
-          onClick={() => (action.confirm ? setPending(action) : run(action))}
+          onClick={() => pick(action)}
         >
           {t(action.labelKey)}
         </button>
@@ -111,6 +122,19 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
           keyword: t('pages.confirm.keyword'),
         })}
       />
+      {BulkDialog && dialog ? (
+        <BulkDialog
+          action={dialog}
+          level={level}
+          groups={groups}
+          count={count}
+          onSubmit={extra => {
+            setDialog(null);
+            run(dialog, extra);
+          }}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
     </>
   );
 };
