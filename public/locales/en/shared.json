@@ -1857,6 +1857,9 @@
         "confirm": "Restart"
       }
     },
+    "card": {
+      "updated": "updated {{time}}"
+    },
     "links": {
       "repo": "Source repository",
       "homepage": "Homepage",
@@ -1877,6 +1880,8 @@
       "released": "Latest release",
       "downloads": "Downloads",
       "versions": "Versions",
+      "versionsCount_one": "{{count}} version",
+      "versionsCount_other": "{{count}} versions",
       "providers": "Providers",
       "architectures": "Architectures",
       "actions": "Actions",
@@ -1894,6 +1899,8 @@
       "vendor": "Vendor",
       "release": "Release",
       "releases": "Releases",
+      "releasesCount_one": "{{count}} release",
+      "releasesCount_other": "{{count}} releases",
       "patches": "Patches",
       "files": "Files",
       "platforms": "Platforms",

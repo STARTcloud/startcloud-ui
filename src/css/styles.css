@@ -866,6 +866,13 @@ button::-moz-focus-inner {
   flex-shrink: 0;
 }
 
+.card-media {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .prov-icon-fallback {
   padding: 6px;
   color: var(--bs-secondary-color);

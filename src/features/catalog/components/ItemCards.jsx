@@ -19,21 +19,16 @@ import MarkdownText from '../../../components/common/MarkdownText';
 import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
-import { listWord } from '../../../utils/closedLists';
 import {
   collectionShape,
-  fileKinds,
   itemShape,
   latestReleaseTime,
-  platformNames,
-  providerNames,
-  sortVersionsNewestFirst,
   statusOf,
   visibilityOf,
 } from '../../../utils/itemShape';
 import { managesItem } from '../../../utils/permissions';
 import { formatRelativeTime } from '../../../utils/relativeTime';
-import { itemPath, versionPath } from '../../../utils/routes';
+import { itemPath } from '../../../utils/routes';
 
 const CardMedia = ({ item, ctx }) => {
   if (item.artwork || item.icon) {
@@ -41,7 +36,7 @@ const CardMedia = ({ item, ctx }) => {
       <img
         src={item.artwork || item.icon}
         alt=""
-        className="prov-icon"
+        className="card-media"
         loading="lazy"
         onError={event => {
           event.currentTarget.classList.add('d-none');
@@ -52,8 +47,8 @@ const CardMedia = ({ item, ctx }) => {
   return (
     <OrgLogo
       org={item.organization}
-      size={40}
-      className="rounded-circle org-logo-lg"
+      size={56}
+      className="rounded-circle card-media"
       fallback={ctx.orgMark}
     />
   );
@@ -81,7 +76,7 @@ const CardLinks = ({ item, CardGlyph, ctx }) => {
     return null;
   }
   return (
-    <div className="d-flex align-items-center gap-3 card-links card-above">
+    <div className="d-flex align-items-center gap-3 pt-2 border-top card-links card-above">
       {present.map(({ key, Icon, labelKey }) => (
         <a
           key={key}
@@ -111,96 +106,77 @@ CardLinks.propTypes = {
 };
 
 /**
- * The facts line of a card: the family, the count of versions or
- * releases, and the latest of them as a link to its own page with how
- * long ago it shipped; then one chip per provider, platform and kind
- * found beneath the item, so a card says what a person can get without
- * opening it.
+ * The foot line of a card: how many versions or releases the item holds,
+ * in the word the collection's versions level goes by, and how long ago
+ * the host says it last released; nothing while it holds none.
  */
-const CardFacts = ({ collection, item, ctx }) => {
+const CardFoot = ({ collection, item, ctx }) => {
   const { t } = useTranslation();
-  const released = latestReleaseTime(item);
-  const versions = sortVersionsNewestFirst(item.versions || []);
-  const [latest] = versions;
-  const versionsLabel = collection.levels?.versions?.labelKey || 'pages.table.versions';
-  const facts = [
-    item.family ? ['family', t('pages.table.family'), item.family] : null,
-    versions.length > 0 ? ['versions', t(versionsLabel), versions.length] : null,
-    latest
-      ? [
-          'latest',
-          t('pages.table.released'),
-          <>
-            {collection.itemRoute ? (
-              <Link
-                to={versionPath(collection, item.organization.name, item.name, latest.version)}
-                className="card-above"
-              >
-                {latest.version}
-              </Link>
-            ) : (
-              latest.version
-            )}
-            {released ? ` · ${formatRelativeTime(released, ctx.language)}` : ''}
-          </>,
-        ]
-      : null,
-  ].filter(Boolean);
-  const chips = [
-    ...providerNames(item).map(name => ['provider', name, name]),
-    ...platformNames(item)
-      .filter(name => name !== 'any')
-      .map(name => ['platform', name, listWord(t, 'platform', name)]),
-    ...fileKinds(item).map(name => ['kind', name, listWord(t, 'kind', name)]),
-  ];
-  if (facts.length === 0 && chips.length === 0) {
+  const count = (item.versions || []).length;
+  if (count === 0) {
     return null;
   }
+  const released = latestReleaseTime(item);
+  const countKey = `${collection.levels?.versions?.labelKey || 'pages.table.versions'}Count`;
   return (
-    <>
-      {facts.length > 0 ? (
-        <div className="d-flex flex-wrap gap-3 small text-body-secondary mb-2">
-          {facts.map(([key, label, value]) => (
-            <span key={key}>
-              {label}: <strong className="text-body">{value}</strong>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {chips.length > 0 ? (
-        <div className="d-flex flex-wrap gap-1 mb-2">
-          {chips.map(([group, key, label]) => (
-            <span key={`${group}:${key}`} className="badge bg-secondary bg-opacity-50 badge-xs">
-              {label}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </>
+    <div className="small text-body-secondary">
+      {t(countKey, { count })}
+      {released
+        ? ` · ${t('pages.card.updated', { time: formatRelativeTime(released, ctx.language) })}`
+        : ''}
+    </div>
   );
 };
 
-CardFacts.propTypes = {
+CardFoot.propTypes = {
   collection: collectionShape.isRequired,
   item: itemShape.isRequired,
   ctx: PropTypes.object.isRequired,
 };
 
+const watchesShape = PropTypes.shape({
+  ids: PropTypes.instanceOf(Set).isRequired,
+  toggle: PropTypes.func.isRequired,
+});
+
+const WatchStar = ({ item, watches }) => {
+  const { t } = useTranslation();
+  const watched = watches.ids.has(item.id);
+  return (
+    <button
+      type="button"
+      className="btn btn-link p-0 text-warning card-above"
+      onClick={() => watches.toggle(item)}
+      title={watched ? t('pages.watch.unwatch') : t('pages.watch.watch')}
+      aria-pressed={watched}
+    >
+      {watched ? <FaStar /> : <FaRegStar />}
+    </button>
+  );
+};
+
+WatchStar.propTypes = {
+  item: itemShape.isRequired,
+  watches: watchesShape.isRequired,
+};
+
+const bylineOf = item =>
+  [item.vendor || item.organization.name, item.family].filter(Boolean).join(' · ');
+
 /**
  * One card of the grid: the media, the title (a stretched link over the
  * whole card while the collection routes to an item page, so the card
- * itself is the thing to click), the vendor or organization under it,
- * the chips a manager sees, the facts line, the description, then the
- * links, the extras and the actions, every one of those its own target
- * above the card link so a star, a link or a checkbox never opens the
- * item.
+ * itself is the thing to click), the vendor or organization and the
+ * family under it, the chips a manager sees, the description, then the
+ * foot line, the links, the extras and the actions, every control its
+ * own target above the card link so a star, a link or a checkbox never
+ * opens the item.
  */
 const ItemCard = ({ collection, item, watches, selection, ctx }) => {
-  const { t } = useTranslation();
   const { ItemChips, CardGlyph, CardExtras, RowActions } = collection.slots;
   const title = item.label || item.name;
-  const watched = watches ? watches.ids.has(item.id) : false;
   const manage = managesItem(ctx.status, collection, item, ctx.user);
+  const chips = manage || Boolean(item.os?.label) || Boolean(ItemChips);
   return (
     <Card className="h-100 shadow-sm catalog-card">
       <Card.Body className="d-flex flex-column">
@@ -224,34 +200,26 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
                 title
               )}
             </Card.Title>
-            <div className="small text-body-secondary">{item.vendor || item.organization.name}</div>
+            <div className="small text-body-secondary">{bylineOf(item)}</div>
             {item.label && item.label !== item.name ? (
               <code className="checksum">{item.name}</code>
             ) : null}
           </div>
-          {watches ? (
-            <button
-              type="button"
-              className="btn btn-link p-0 text-warning card-above"
-              onClick={() => watches.toggle(item)}
-              title={watched ? t('pages.watch.unwatch') : t('pages.watch.watch')}
-              aria-pressed={watched}
-            >
-              {watched ? <FaStar /> : <FaRegStar />}
-            </button>
-          ) : null}
+          {watches ? <WatchStar item={item} watches={watches} /> : null}
         </div>
-        <div className="d-flex flex-wrap gap-1 mb-2">
-          <StatusChips
-            status={manage ? statusOf(item) : null}
-            visibility={manage ? visibilityOf(item) : null}
-            osLabel={item.os?.label || null}
-          />
-          {ItemChips ? <ItemChips item={item} ctx={ctx} /> : null}
-        </div>
-        <CardFacts collection={collection} item={item} ctx={ctx} />
+        {chips ? (
+          <div className="d-flex flex-wrap gap-1 mb-2">
+            <StatusChips
+              status={manage ? statusOf(item) : null}
+              visibility={manage ? visibilityOf(item) : null}
+              osLabel={item.os?.label || null}
+            />
+            {ItemChips ? <ItemChips item={item} ctx={ctx} /> : null}
+          </div>
+        ) : null}
         <MarkdownText text={item.description} className="card-desc mb-2" />
         <div className="mt-auto d-flex flex-column gap-2">
+          <CardFoot collection={collection} item={item} ctx={ctx} />
           <CardLinks item={item} CardGlyph={CardGlyph} ctx={ctx} />
           {CardExtras ? (
             <div className="card-above">
@@ -272,10 +240,7 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
 ItemCard.propTypes = {
   collection: collectionShape.isRequired,
   item: itemShape.isRequired,
-  watches: PropTypes.shape({
-    ids: PropTypes.instanceOf(Set).isRequired,
-    toggle: PropTypes.func.isRequired,
-  }),
+  watches: watchesShape,
   selection: selectionShape,
   ctx: PropTypes.object.isRequired,
 };
@@ -365,10 +330,7 @@ ItemCards.propTypes = {
   groups: PropTypes.arrayOf(groupShape),
   collapsed: PropTypes.object.isRequired,
   onToggleGroup: PropTypes.func.isRequired,
-  watches: PropTypes.shape({
-    ids: PropTypes.instanceOf(Set).isRequired,
-    toggle: PropTypes.func.isRequired,
-  }),
+  watches: watchesShape,
   ctx: PropTypes.object.isRequired,
   selection: selectionShape,
   emptyBody: PropTypes.node,
