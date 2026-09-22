@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.35.0...v0.36.0) (2026-09-22)
+
+
+### Features
+
+* every table column sorting by the value it shows through one natural compare, the flex room split by the content of each column, the Columns pills listing only the columns drawn, the username first on the Logins and Registrations tables, the release and latest-release dates drawn from the dates the host answers, every card opening its item from anywhere on the card with the star, links and actions as their own targets, the card showing its vendor and family under the name, its description, its count of releases and how long ago the host says it last released, the file line's Visibility and Status as icon menus with Edit, Move to and Delete folded into one More menu, the watch star held from a guest-only account on the item page as it is on the listing, and the issuer's sign-in answers emitting login only where the page stays in-router so the login page never redraws as the profile while the browser leaves for the authorization endpoint ([c5a38e1](https://github.com/STARTcloud/startcloud-ui/commit/c5a38e1604a6ecf4a73aafc00ab970e0d0a1c6c0))
+
 ## [0.35.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.34.1...v0.35.0) (2026-09-22)
 
 
