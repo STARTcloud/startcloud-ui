@@ -68,11 +68,11 @@ const LINKS = [
   { key: 'notes', Icon: FaScroll, labelKey: 'pages.links.notes' },
 ];
 
-const CardLinks = ({ item, CardGlyph, ctx }) => {
+const CardLinks = ({ item }) => {
   const { t } = useTranslation();
   const links = item.links || {};
   const present = LINKS.filter(link => links[link.key]);
-  if (present.length === 0 && !CardGlyph) {
+  if (present.length === 0) {
     return null;
   }
   return (
@@ -90,8 +90,39 @@ const CardLinks = ({ item, CardGlyph, ctx }) => {
           <Icon />
         </a>
       ))}
+    </div>
+  );
+};
+
+CardLinks.propTypes = {
+  item: itemShape.isRequired,
+};
+
+/**
+ * The foot line of a card: how many versions or releases the item holds,
+ * through the `countKey` of the collection's versions level, how long ago
+ * the host says it last released, and the collection's card glyph at the
+ * right; nothing while it holds none and the collection has no glyph.
+ */
+const CardFoot = ({ collection, item, CardGlyph, ctx }) => {
+  const { t } = useTranslation();
+  const count = (item.versions || []).length;
+  if (count === 0 && !CardGlyph) {
+    return null;
+  }
+  const released = latestReleaseTime(item);
+  return (
+    <div className="d-flex align-items-center gap-3 small text-body-secondary">
+      {count > 0 ? (
+        <span>
+          {t(collection.levels.versions.countKey, { count })}
+          {released
+            ? ` · ${t('pages.card.updated', { time: formatRelativeTime(released, ctx.language) })}`
+            : ''}
+        </span>
+      ) : null}
       {CardGlyph ? (
-        <span className="ms-auto d-inline-flex align-items-center gap-3">
+        <span className="ms-auto d-inline-flex align-items-center card-above">
           <CardGlyph item={item} ctx={ctx} />
         </span>
       ) : null}
@@ -99,38 +130,10 @@ const CardLinks = ({ item, CardGlyph, ctx }) => {
   );
 };
 
-CardLinks.propTypes = {
-  item: itemShape.isRequired,
-  CardGlyph: PropTypes.elementType,
-  ctx: PropTypes.object.isRequired,
-};
-
-/**
- * The foot line of a card: how many versions or releases the item holds,
- * in the word the collection's versions level goes by, and how long ago
- * the host says it last released; nothing while it holds none.
- */
-const CardFoot = ({ collection, item, ctx }) => {
-  const { t } = useTranslation();
-  const count = (item.versions || []).length;
-  if (count === 0) {
-    return null;
-  }
-  const released = latestReleaseTime(item);
-  const countKey = `${collection.levels?.versions?.labelKey || 'pages.table.versions'}Count`;
-  return (
-    <div className="small text-body-secondary">
-      {t(countKey, { count })}
-      {released
-        ? ` · ${t('pages.card.updated', { time: formatRelativeTime(released, ctx.language) })}`
-        : ''}
-    </div>
-  );
-};
-
 CardFoot.propTypes = {
   collection: collectionShape.isRequired,
   item: itemShape.isRequired,
+  CardGlyph: PropTypes.elementType,
   ctx: PropTypes.object.isRequired,
 };
 
@@ -219,8 +222,8 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
         ) : null}
         <MarkdownText text={item.description} className="card-desc mb-2" />
         <div className="mt-auto d-flex flex-column gap-2">
-          <CardFoot collection={collection} item={item} ctx={ctx} />
-          <CardLinks item={item} CardGlyph={CardGlyph} ctx={ctx} />
+          <CardFoot collection={collection} item={item} CardGlyph={CardGlyph} ctx={ctx} />
+          <CardLinks item={item} />
           {CardExtras ? (
             <div className="card-above">
               <CardExtras item={item} ctx={ctx} />

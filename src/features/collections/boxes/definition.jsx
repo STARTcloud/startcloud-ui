@@ -93,7 +93,11 @@ export const boxes = {
     architecturesColumn,
   ],
   levels: {
-    versions: { labelKey: 'pages.item.versions', columns: versionLevelColumns },
+    versions: {
+      labelKey: 'pages.item.versions',
+      countKey: 'pages.table.versionsCount',
+      columns: versionLevelColumns,
+    },
     providers: { labelKey: 'pages.table.providers', columns: providerLevelColumns },
     architectures: { labelKey: 'pages.table.architectures', columns: architectureLevelColumns },
   },

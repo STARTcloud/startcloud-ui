@@ -82,7 +82,11 @@ export const isos = {
     architecturesColumn,
   ],
   levels: {
-    versions: { labelKey: 'pages.item.versions', columns: versionLevelColumns },
+    versions: {
+      labelKey: 'pages.item.versions',
+      countKey: 'pages.table.versionsCount',
+      columns: versionLevelColumns,
+    },
     architectures: { labelKey: 'pages.version.artifacts', columns: architectureLevelColumns },
   },
   bulk: {

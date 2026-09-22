@@ -217,6 +217,7 @@ export const columnShape = PropTypes.shape({
 
 export const levelShape = PropTypes.shape({
   labelKey: PropTypes.string.isRequired,
+  countKey: PropTypes.string,
   columns: PropTypes.func.isRequired,
 });
 

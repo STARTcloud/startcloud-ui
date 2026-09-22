@@ -104,7 +104,11 @@ export const downloads = {
     platformsColumn,
   ],
   levels: {
-    versions: { labelKey: 'pages.table.releases', columns: releaseLevelColumns },
+    versions: {
+      labelKey: 'pages.table.releases',
+      countKey: 'pages.table.releasesCount',
+      columns: releaseLevelColumns,
+    },
     providers: { labelKey: 'pages.table.patches', columns: patchLevelColumns },
     architectures: { labelKey: 'pages.table.files', columns: fileLevelColumns },
   },
