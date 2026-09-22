@@ -14,6 +14,7 @@ import {
   updatedColumn,
   visibilityColumn,
 } from './columns';
+import MarkdownText from './MarkdownText';
 import { hasAny } from './SubTable';
 
 const carriesAccess = hasAny(row => typeof row.isPublic === 'boolean');
@@ -93,6 +94,7 @@ const detailsColumn = {
   labelKey: 'pages.table.details',
   when: hasAny(row => row.description),
   value: row => row.description || '',
+  render: row => <MarkdownText text={row.description} />,
 };
 
 /**

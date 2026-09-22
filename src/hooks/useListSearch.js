@@ -65,6 +65,7 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * @param {Array} options.columns - The table's columns
  * @param {Object} options.ctx - The context the table's columns receive
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
+ * @param {Array} [options.defaultSort] - The sort stack drawn while nothing is saved
  * @returns {{ rows: Array, sort: Array, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, size: number, setSize: Function }} The search state
  */
 export const useListSearch = ({
@@ -81,6 +82,7 @@ export const useListSearch = ({
   columns,
   ctx,
   prefsKey,
+  defaultSort = [],
 }) => {
   const { t } = useTranslation();
   const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns));
@@ -91,7 +93,8 @@ export const useListSearch = ({
   }, [prefsKey, prefs]);
 
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const sorted = sortItems(filters.rows, prefs.sort, shown, ctx);
+  const stack = prefs.sort.length > 0 ? prefs.sort : defaultSort;
+  const sorted = sortItems(filters.rows, stack, shown, ctx);
 
   useNavbarSearchBinding({
     query,
@@ -126,7 +129,7 @@ export const useListSearch = ({
 
   return {
     rows: sorted,
-    sort: prefs.sort,
+    sort: stack,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
     widths: prefs.widths,

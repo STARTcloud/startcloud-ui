@@ -52,6 +52,13 @@ export const sortItems = (items, stack, columns, ctx) => {
   });
 };
 
+/**
+ * The one natural, case-insensitive text compare of the estate, the
+ * collator `sortItems` orders text by (9.0.1 before 12.0.4).
+ */
+export const compareText = (left, right) =>
+  collator.compare(String(left ?? ''), String(right ?? ''));
+
 const advance = (stack, index) => {
   const entry = stack[index];
   if (entry.direction === 'asc') {

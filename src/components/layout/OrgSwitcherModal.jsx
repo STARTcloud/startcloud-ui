@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaCheck, FaCrown } from 'react-icons/fa6';
 
 import { gravatarProfile } from '../../utils/gravatar';
+import MarkdownText from '../common/MarkdownText';
 
 const ROLE_CLASSES = {
   OWNER: 'bg-danger',
@@ -89,7 +90,7 @@ const OrgRow = ({ org, active, orgMark, onPick }) => {
           <OrgLogo org={org} fallback={orgMark} />
           <div>
             <div className="fw-bold">{org.name}</div>
-            {org.description ? <small className="text-muted">{org.description}</small> : null}
+            <MarkdownText text={org.description} className="small text-muted" />
           </div>
         </div>
       </div>

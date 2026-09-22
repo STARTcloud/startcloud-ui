@@ -15,6 +15,7 @@ import { SEARCH_KINDS, collectionOfRow, searchRowPath } from '../../../utils/sea
 
 const PAGE_LIMIT = 50;
 const MIN_QUERY = 2;
+const DEFAULT_SORT = [{ column: 'title', direction: 'asc' }];
 
 const rowKey = row =>
   [row.kind, row.org, row.name, row.version, row.provider, row.architecture, row.matched].join(':');
@@ -195,6 +196,7 @@ const SearchPage = ({ context }) => {
       onQueryChange: url.setQuery,
       placeholder: t('search.appPlaceholder', { app: status.brand.name }),
     },
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {

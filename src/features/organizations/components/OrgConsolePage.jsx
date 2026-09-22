@@ -6,6 +6,7 @@ import { FaArrowUpRightFromSquare, FaBuilding } from 'react-icons/fa6';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MarkdownText from '../../../components/common/MarkdownText';
 import RecordRows from '../../../components/common/RecordRows';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
@@ -32,6 +33,8 @@ const clearNothing = () => undefined;
 const PREFS_KEY = 'table_prefs_org_console';
 const REQUESTS_PREFS_KEY = 'table_prefs_org_console_requests';
 const INVITATIONS_PREFS_KEY = 'table_prefs_org_console_invitations';
+const REQUESTS_DEFAULT_SORT = [{ column: 'requested', direction: 'desc' }];
+const INVITATIONS_DEFAULT_SORT = [{ column: 'expires', direction: 'asc' }];
 
 const localeDate = value => new Date(value).toLocaleDateString();
 const localeTime = value => new Date(value).toLocaleString();
@@ -314,7 +317,7 @@ const OrgProfileDisplay = ({
           </div>
         </div>
       </div>
-      {orgDescription && <p>{orgDescription}</p>}
+      <MarkdownText text={orgDescription} />
       {rows.length > 0 && (
         <RecordRows
           rows={rows.map(row => ({
@@ -630,8 +633,16 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const [orgDisplayName, setOrgDisplayName] = useState('');
   const [activeTab, setActiveTab] = useState(() => TAB_OF_SEGMENT[tab] || 'organization');
   const folds = useFolds(PREFS_KEY);
-  const requestPrefs = useTablePrefs(REQUESTS_PREFS_KEY, JOIN_REQUEST_COLUMNS);
-  const invitationPrefs = useTablePrefs(INVITATIONS_PREFS_KEY, INVITATION_COLUMNS);
+  const requestPrefs = useTablePrefs(
+    REQUESTS_PREFS_KEY,
+    JOIN_REQUEST_COLUMNS,
+    REQUESTS_DEFAULT_SORT
+  );
+  const invitationPrefs = useTablePrefs(
+    INVITATIONS_PREFS_KEY,
+    INVITATION_COLUMNS,
+    INVITATIONS_DEFAULT_SORT
+  );
   const memberArrival = useArrival(users);
   const requestArrival = useArrival(joinRequests);
   const current = session.restore();

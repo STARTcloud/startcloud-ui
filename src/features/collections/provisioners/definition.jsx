@@ -375,6 +375,7 @@ export const provisioners = {
     versionsColumn,
     coverageColumn,
   ],
+  defaultSort: [{ column: 'label', direction: 'asc' }],
   levels: {
     versions: {
       labelKey: 'pages.item.versions',

@@ -50,6 +50,7 @@ const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
  * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - An externally held query
  * @param {Object|null} [options.url] - The URL narrowing holding the groups' values
  * @param {string[]|null} [options.views] - The views the page toggles between, the first the default
+ * @param {Array} [options.defaultSort] - The sort stack drawn while nothing is saved
  * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, view: string, setView: Function }} The filtered, sorted rows and the search state
  */
 export const useDetailSearch = ({
@@ -63,6 +64,7 @@ export const useDetailSearch = ({
   bound = null,
   url = null,
   views = null,
+  defaultSort = [],
 }) => {
   const { t } = useTranslation();
   const [ownQuery, setOwnQuery] = useState('');
@@ -78,7 +80,8 @@ export const useDetailSearch = ({
   const searched = needle ? rows.filter(row => matches(row, needle)) : rows;
   const filters = useClientFilters({ specs: filterGroups, rows: searched, bound: url });
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const sorted = sortItems(filters.rows, prefs.sort, shown, ctx);
+  const stack = prefs.sort.length > 0 ? prefs.sort : defaultSort;
+  const sorted = sortItems(filters.rows, stack, shown, ctx);
 
   useNavbarSearchBinding({
     query,
@@ -108,7 +111,7 @@ export const useDetailSearch = ({
     rows: sorted,
     query,
     filtering: needle !== '' || filters.active,
-    sort: prefs.sort,
+    sort: stack,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
     widths: prefs.widths,

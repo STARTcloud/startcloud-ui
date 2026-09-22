@@ -17,6 +17,7 @@ import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 
 const PREFS_KEY = 'table_prefs_admin_service_usage';
+const DEFAULT_SORT = [{ column: 'client', direction: 'asc' }];
 
 const percentOf = (part, whole) => (whole > 0 ? (part / whole) * 100 : 0);
 
@@ -111,7 +112,7 @@ const columns = [
 const ServiceUsagePage = () => {
   const { t, i18n } = useTranslation();
   const { data, loading } = useAdminRead({ read: serviceUsage, example: SERVICE_USAGE });
-  const prefs = useTablePrefs(PREFS_KEY, columns);
+  const prefs = useTablePrefs(PREFS_KEY, columns, DEFAULT_SORT);
 
   useEffect(() => {
     document.title = t('admin.health.usage.title');

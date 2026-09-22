@@ -27,6 +27,7 @@ import { useRoleCatalog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_users';
 const PAGE_SIZE = 25;
+const DEFAULT_SORT = [{ column: 'username', direction: 'asc' }];
 const CLIENT_KEYS = ['roles'];
 const FILTER_KEYS = ['enabled', 'using_2fa', 'has_customer_id', 'active_after', ...CLIENT_KEYS];
 
@@ -235,6 +236,7 @@ const UsersPage = ({ adapter }) => {
     columns,
     ctx,
     prefsKey: PREFS_KEY,
+    defaultSort: DEFAULT_SORT,
   });
 
   const [pagedForSize, setPagedForSize] = useState(search.size);

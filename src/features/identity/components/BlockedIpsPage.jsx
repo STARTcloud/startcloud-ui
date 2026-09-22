@@ -17,6 +17,7 @@ import { BRUTE_FORCE } from '../utils/examples';
 import AdminLoading from './AdminLoading';
 
 const PREFS_KEY = 'table_prefs_admin_blocked';
+const DEFAULT_SORT = [{ column: 'ip', direction: 'asc' }];
 
 const columns = [
   {
@@ -171,7 +172,7 @@ const BlockedIpsPage = () => {
   const [unblockingAll, setUnblockingAll] = useState(false);
   const blockedRows = useMemo(() => data?.blocked || [], [data]);
   const selection = useSelection(blockedRows);
-  const prefs = useTablePrefs(PREFS_KEY, columns);
+  const prefs = useTablePrefs(PREFS_KEY, columns, DEFAULT_SORT);
 
   useEffect(() => {
     document.title = t('admin.blocked.title');

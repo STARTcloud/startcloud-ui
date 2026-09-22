@@ -11,14 +11,17 @@ import { nextSort } from '../utils/sort';
  *
  * @param {string} prefsKey - The localStorage key of the table's prefs
  * @param {Array} columns - The table's columns, `defaultHidden` ones hidden until saved
+ * @param {Array} [defaultSort] - The sort stack drawn while nothing is saved
  * @returns {{ sort: Array, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function }} The preferences
  */
-export const useTablePrefs = (prefsKey, columns) => {
+export const useTablePrefs = (prefsKey, columns, defaultSort = []) => {
   const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns));
 
   useEffect(() => {
     writeDetailPrefs(prefsKey, prefs);
   }, [prefsKey, prefs]);
+
+  const stack = prefs.sort.length > 0 ? prefs.sort : defaultSort;
 
   const setSort = (column, options) =>
     setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) }));
@@ -27,7 +30,7 @@ export const useTablePrefs = (prefsKey, columns) => {
     setPrefs(current => ({ ...current, widths: withWidth(current.widths, column, pixels) }));
 
   return {
-    sort: prefs.sort,
+    sort: stack,
     setSort,
     hiddenColumns: prefs.hiddenColumns,
     widths: prefs.widths,

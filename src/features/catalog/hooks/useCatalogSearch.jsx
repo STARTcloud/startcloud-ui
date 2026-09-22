@@ -109,6 +109,9 @@ const watchedGroup = (visible, itemsByCollection, watchedIds, prefs, setPrefs, t
   };
 };
 
+const effectiveSort = (prefs, collection) =>
+  prefs.sort[collection.key].length > 0 ? prefs.sort[collection.key] : collection.defaultSort || [];
+
 const groupLabel = (collection, labelKey, prefixed, t) =>
   prefixed ? `${t(collection.labelKey)} · ${t(labelKey)}` : t(labelKey);
 
@@ -164,7 +167,8 @@ const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) =>
  * collection. Filters, sort, the one view, the hidden columns, the column
  * widths (per collection, set through `setColumnWidth(collectionKey,
  * column, pixels)`, null resetting one) and the collapsed groups persist
- * per page under the app's prefs prefix.
+ * per page under the app's prefs prefix. A collection with no saved sort
+ * draws its `defaultSort`.
  */
 export const useCatalogSearch = ({
   collections,
@@ -209,6 +213,9 @@ export const useCatalogSearch = ({
   }
 
   const filtered = {};
+  const sort = Object.fromEntries(
+    visible.map(collection => [collection.key, effectiveSort(prefs, collection)])
+  );
   let matched = 0;
   visible.forEach(collection => {
     const items = itemsByCollection[collection.key] || [];
@@ -229,7 +236,7 @@ export const useCatalogSearch = ({
     const tableCtx = ctxFor(collection);
     filtered[collection.key] = sortItems(
       passing,
-      prefs.sort[collection.key],
+      sort[collection.key],
       [watchSort(ctx.watchedIds), ...collection.columns.filter(column => !hidden.has(column.key))],
       tableCtx
     );
@@ -303,7 +310,7 @@ export const useCatalogSearch = ({
     visible,
     filtered,
     filtering,
-    sort: prefs.sort,
+    sort,
     setSort,
     view: prefs.view,
     setView,

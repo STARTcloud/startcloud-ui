@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MarkdownText from '../../../components/common/MarkdownText';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
@@ -19,6 +20,7 @@ import { rules as hostRules } from '../../../lib/runtime';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 
 const PREFS_KEY = 'table_prefs_profile';
+const DEFAULT_SORT = [{ column: 'username', direction: 'asc' }];
 const EXPIRATIONS = [30, 60, 90, 365];
 const ROLES = ['member', 'admin', 'owner'];
 const GATED_ROLE = 'superadmin';
@@ -83,6 +85,7 @@ const COLUMNS = [
     kind: 'text',
     labelKey: 'profile.serviceAccounts.description',
     value: row => row.description || '',
+    render: row => <MarkdownText text={row.description} />,
   },
   {
     key: 'role',
@@ -294,6 +297,7 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
     ctx,
     prefsKey: PREFS_KEY,
     filterGroups: [],
+    defaultSort: DEFAULT_SORT,
   });
   const groups = useMemo(() => groupsOf(search.rows), [search.rows]);
 

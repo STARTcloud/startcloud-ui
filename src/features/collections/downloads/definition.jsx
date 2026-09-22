@@ -103,6 +103,7 @@ export const downloads = {
     releasesColumn,
     platformsColumn,
   ],
+  defaultSort: [{ column: 'name', direction: 'asc' }],
   levels: {
     versions: {
       labelKey: 'pages.table.releases',

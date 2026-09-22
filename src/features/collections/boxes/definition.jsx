@@ -92,6 +92,7 @@ export const boxes = {
     providersColumn,
     architecturesColumn,
   ],
+  defaultSort: [{ column: 'name', direction: 'asc' }],
   levels: {
     versions: {
       labelKey: 'pages.item.versions',

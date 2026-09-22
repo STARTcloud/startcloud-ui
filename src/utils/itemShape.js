@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 
+import { compareText } from './sort';
+
 export const architectureShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   isPublic: PropTypes.bool,
@@ -245,6 +247,7 @@ export const collectionShape = PropTypes.shape({
   adapter: PropTypes.object.isRequired,
   filterGroups: PropTypes.arrayOf(filterGroupShape).isRequired,
   columns: PropTypes.arrayOf(columnShape).isRequired,
+  defaultSort: sortShape,
   levels: PropTypes.shape({
     versions: levelShape,
     providers: levelShape,
@@ -276,10 +279,16 @@ export const statusOf = item => {
   return item.published ? 'published' : 'pending';
 };
 
+/**
+ * The versions of an item highest first by the version text through the
+ * one natural compare, the order the Releases table, the sidebar tree and
+ * the version pickers share.
+ *
+ * @param {Array} versions - The item's versions
+ * @returns {Array} The versions, highest first
+ */
 export const sortVersionsNewestFirst = versions =>
-  [...versions].sort(
-    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-  );
+  [...versions].sort((a, b) => compareText(b.version, a.version));
 
 /**
  * The instant of an item's latest release as its adapter answered it in

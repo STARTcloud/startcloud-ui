@@ -29,6 +29,7 @@ import { customerIdCell, customerIdText } from './UserActions';
 import { CustomerIdDialog } from './UsersDialogs';
 
 const PREFS_KEY = 'table_prefs_admin_organizations';
+const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
 export const organizationsAdapterShape = PropTypes.shape({
   list: PropTypes.func.isRequired,
@@ -431,6 +432,7 @@ const OrganizationsPage = ({ adapter }) => {
       onQueryChange: url.setQuery,
       placeholder: t('admin.organizations.search'),
     },
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {

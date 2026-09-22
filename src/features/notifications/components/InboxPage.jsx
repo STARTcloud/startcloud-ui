@@ -26,6 +26,7 @@ import { formatRelativeTime } from '../../../utils/relativeTime';
 
 const PREFS_KEY = 'table_prefs_inbox';
 const NO_GROUPS = [];
+const DEFAULT_SORT = [{ column: 'time', direction: 'desc' }];
 
 const FILTER_GROUPS = [
   {
@@ -356,6 +357,7 @@ const InboxPage = ({ notifications }) => {
     columns,
     ctx: { t, language: i18n.language },
     prefsKey: PREFS_KEY,
+    defaultSort: DEFAULT_SORT,
   });
 
   const [pagedForSize, setPagedForSize] = useState(search.size);

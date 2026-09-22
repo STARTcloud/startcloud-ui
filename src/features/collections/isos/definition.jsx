@@ -81,6 +81,7 @@ export const isos = {
     versionsColumn,
     architecturesColumn,
   ],
+  defaultSort: [{ column: 'name', direction: 'asc' }],
   levels: {
     versions: {
       labelKey: 'pages.item.versions',

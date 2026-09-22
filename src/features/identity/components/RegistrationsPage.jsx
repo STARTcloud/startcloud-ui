@@ -15,6 +15,7 @@ import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 
 const PREFS_KEY = 'table_prefs_admin_registrations';
+const DEFAULT_SORT = [{ column: 'timestamp', direction: 'desc' }];
 
 const rowKey = row => `${row.timestamp}:${row.username}`;
 
@@ -138,6 +139,7 @@ const RegistrationsPage = () => {
     columns,
     ctx,
     prefsKey: PREFS_KEY,
+    defaultSort: DEFAULT_SORT,
   });
 
   if (size !== search.size) {

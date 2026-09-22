@@ -21,6 +21,7 @@ import DateCell from './DateCell';
 
 const PREFS_KEY = 'table_prefs_admin_sessions';
 const PAGE_SIZE = 25;
+const DEFAULT_SORT = [{ column: 'last_accessed_at', direction: 'desc' }];
 
 const matches = (row, needle) =>
   [row.full_name || '', row.client_name || ''].some(text => text.toLowerCase().includes(needle));
@@ -255,6 +256,7 @@ const SessionsPage = () => {
       onQueryChange: url.setQuery,
       placeholder: t('admin.activity.sessions.search'),
     },
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {

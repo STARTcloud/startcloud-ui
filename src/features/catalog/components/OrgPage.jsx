@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 
+import MarkdownText from '../../../components/common/MarkdownText';
 import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 
@@ -47,7 +48,7 @@ const OrgPage = ({ collections, org, member, context }) => {
         {info.displayName && info.displayName !== info.name ? (
           <code className="checksum">{info.name}</code>
         ) : null}
-        {info.description ? <div className="text-muted small">{info.description}</div> : null}
+        <MarkdownText text={info.description} className="text-muted small" />
       </div>
     </>
   );

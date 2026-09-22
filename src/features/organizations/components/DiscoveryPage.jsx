@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import MarkdownText from '../../../components/common/MarkdownText';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
@@ -133,7 +134,11 @@ const OrgCard = ({ org, gravatarUrl, orgMark, onRequest }) => {
           </div>
         </div>
         <div className="card-body">
-          <p className="card-text">{org.description || t('discovery.noDescription')}</p>
+          {org.description ? (
+            <MarkdownText text={org.description} className="card-text" />
+          ) : (
+            <p className="card-text">{t('discovery.noDescription')}</p>
+          )}
           <div className="d-flex justify-content-between text-muted small">
             <span>
               <FaUsers className="me-1" />

@@ -27,12 +27,13 @@ import { sortItems } from '../../../utils/sort';
 
 import BulkActions from './BulkActions';
 
+const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
+
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
 const MetaRow = ({ entry }) => {
   const { t } = useTranslation();
   const rows = [
-    ['description', entry.description],
     ['createdAt', localeDate(entry.createdAt)],
     ['updatedAt', localeDate(entry.updatedAt)],
   ].filter(([, value]) => value);
@@ -70,6 +71,7 @@ const VersionSummary = ({ entry, manage, actions, editor, slots, slotProps }) =>
         chips={entry.deprecated ? <StatusChips deprecated /> : null}
         actions={actions}
       />
+      <MarkdownText text={entry.description} className="mb-3" />
       <DeprecationBanner version={entry}>
         {VersionBannerActions ? <VersionBannerActions {...slotProps} /> : null}
       </DeprecationBanner>
@@ -308,6 +310,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
     ...detail,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}`,
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {

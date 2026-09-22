@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaClock } from 'react-icons/fa6';
 
+import MarkdownText from '../../../components/common/MarkdownText';
 import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { OrgLogo, organizationShape } from '../../../components/layout/OrgSwitcherModal';
@@ -90,7 +91,7 @@ const MembershipSubline = ({ org }) => {
   const description = descriptionOf(org);
   return (
     <>
-      {description ? <span className="d-block">{description}</span> : null}
+      <MarkdownText text={description} className="d-block" />
       <span className="d-block">
         {t('profile.organizations.joined')}: {dateOf(org.joined_at, i18n.language)}
       </span>
@@ -141,7 +142,7 @@ const RequestSubline = ({ request }) => {
   const description = request.organization?.description || '';
   return (
     <>
-      {description ? <span className="d-block">{description}</span> : null}
+      <MarkdownText text={description} className="d-block" />
       <span className="d-block">
         {t('profile.organizations.requested')}: {dateOf(request.created_at, i18n.language)}
       </span>

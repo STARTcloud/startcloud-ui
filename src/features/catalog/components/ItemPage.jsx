@@ -26,6 +26,8 @@ import { isGuestOnly, managesItem } from '../../../utils/permissions';
 import BulkActions from './BulkActions';
 import ItemFacts from './ItemFacts';
 
+const DEFAULT_SORT = [{ column: 'version', direction: 'desc' }];
+
 const Readme = ({ readme }) => {
   const { t } = useTranslation();
   return (
@@ -317,6 +319,7 @@ const ItemPage = ({ collection, org, name, context }) => {
     columns,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}`,
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {

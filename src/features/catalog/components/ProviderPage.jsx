@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DownloadAction, architectureLevelMatches } from '../../../components/common/levelColumns';
+import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -13,6 +14,8 @@ import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { managesItem } from '../../../utils/permissions';
 
 import BulkActions from './BulkActions';
+
+const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
 const rowIdOf = name => `architecture-${name}`;
 
@@ -57,6 +60,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
     columns: architectureColumns,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}_${provider}`,
+    defaultSort: DEFAULT_SORT,
   });
   const selection = useSelection(search.rows, { keyOf: row => row.name, labelOf: row => row.name });
 
@@ -124,7 +128,9 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
           {editor}
         </PageHeader>
       ) : (
-        <PageHeader title={entry.name} subtitle={entry.description || ''} actions={actions} />
+        <PageHeader title={entry.name} actions={actions}>
+          <MarkdownText text={entry.description} className="mb-0 mt-2" />
+        </PageHeader>
       )}
       <div className="list-table mt-2">
         <div className="d-flex align-items-center gap-2 flex-wrap mb-3">

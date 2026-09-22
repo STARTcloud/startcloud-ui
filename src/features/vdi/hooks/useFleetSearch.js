@@ -19,6 +19,7 @@ const TRISTATE = ['status', 'pool'];
 const SETS = ['session', 'cache', 'drive', 'pub'];
 const SESSION_KEYS = ['active', 'idle', 'no_session'];
 const PUB_KEYS = ['current', 'stale'];
+const DEFAULT_SORT = [{ column: 'hostname', direction: 'asc' }];
 
 const parse = key => {
   try {
@@ -348,7 +349,8 @@ const filtering = (needle, filters) =>
  * and UDS user; the groups Status and Pool (tristate, a pill cycling
  * neutral → include → exclude), Session, Cache, Drives and Publication,
  * then Columns; the sort stack over the given columns' `value`, the
- * translator as the columns' context, with hostname as
+ * translator as the columns' context, hostname ascending the default
+ * while nothing is saved, with hostname as
  * the tiebreak; the column widths with their setter; every choice, the
  * widths and the pool fold persisted under `prefsKey`.
  * A `pool` or `session` member of the route's query, the routes the
@@ -385,7 +387,8 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
     vm => (needle === '' || matchesQuery(vm, needle)) && passesFilters(vm, filters, now)
   );
   const shown = columns.filter(column => !prefs.hiddenColumns.has(column.key));
-  const rows = sortItems([...passing].sort(byHostname), prefs.sort, shown, { t });
+  const stack = prefs.sort.length > 0 ? prefs.sort : DEFAULT_SORT;
+  const rows = sortItems([...passing].sort(byHostname), stack, shown, { t });
   const counts = countValues(vms, now);
 
   useNavbarSearchBinding({
@@ -418,7 +421,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
     rows,
     total: vms.length,
     filtering: filtering(needle, filters),
-    sort: prefs.sort,
+    sort: stack,
     setSort: (column, options) =>
       setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) })),
     resetSort: () => setPrefs(current => ({ ...current, sort: [] })),

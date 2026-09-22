@@ -36,6 +36,7 @@ const KINDS = {
   },
 };
 const VIEWS = ['table', 'cards'];
+const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 const HTTPS = /^https?:/;
 
 const stateOf = probe => {
@@ -333,6 +334,7 @@ const HealthPage = ({ kind }) => {
       placeholder: t(page.searchKey),
     },
     views: VIEWS,
+    defaultSort: DEFAULT_SORT,
   });
 
   useEffect(() => {
