@@ -21,7 +21,7 @@ import {
   statusOf,
   visibilityOf,
 } from '../../../utils/itemShape';
-import { managesItem } from '../../../utils/permissions';
+import { isGuestOnly, managesItem } from '../../../utils/permissions';
 
 import BulkActions from './BulkActions';
 import ItemFacts from './ItemFacts';
@@ -75,14 +75,15 @@ const watchShape = PropTypes.shape({
   toggle: PropTypes.func.isRequired,
 });
 
-const useItemWatch = ({ collection, item, signedIn, notify }) => {
+const useItemWatch = ({ collection, item, user, notify }) => {
   const { t } = useTranslation();
   const [watched, setWatched] = useState(false);
   const [busy, setBusy] = useState(false);
   const { watches } = collection.adapter;
+  const available = Boolean(watches) && Boolean(user) && !isGuestOnly(user);
 
   useEffect(() => {
-    if (!watches || !signedIn || !item) {
+    if (!available || !item) {
       return undefined;
     }
     let mounted = true;
@@ -97,7 +98,7 @@ const useItemWatch = ({ collection, item, signedIn, notify }) => {
     return () => {
       mounted = false;
     };
-  }, [watches, signedIn, item]);
+  }, [watches, available, item]);
 
   const toggle = () => {
     const next = !watched;
@@ -112,7 +113,7 @@ const useItemWatch = ({ collection, item, signedIn, notify }) => {
       .finally(() => setBusy(false));
   };
 
-  return { available: Boolean(watches) && signedIn, watched, busy, toggle };
+  return { available, watched, busy, toggle };
 };
 
 const mediaFor = item => {
@@ -294,8 +295,7 @@ const ItemPage = ({ collection, org, name, context }) => {
   const key = `${org}/${name}/${nonce}`;
   const ready = data.key === key;
   const { item } = data;
-  const signedIn = Boolean(context.user);
-  const watch = useItemWatch({ collection, item: ready ? item : null, signedIn, notify });
+  const watch = useItemWatch({ collection, item: ready ? item : null, user: context.user, notify });
   const columns = collection.levels.versions
     ? collection.levels.versions.columns({ org, name })
     : [];
