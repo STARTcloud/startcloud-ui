@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.36.0...v0.36.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* some things ([9b6f8c2](https://github.com/STARTcloud/startcloud-ui/commit/9b6f8c28cb24302f44725ee95efd4a8eca02bb26))
+
 ## [0.36.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.35.0...v0.36.0) (2026-09-22)
 
 
