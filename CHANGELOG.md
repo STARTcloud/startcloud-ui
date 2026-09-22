@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.33.0...v0.34.0) (2026-09-22)
+
+
+### Features
+
+* every table column sorting by the value it shows through one natural compare, the flex room split by the content of each column, the Columns pills listing only the columns drawn, the username first on the Logins and Registrations tables, the release and latest-release dates drawn from the dates the host answers, every card opening its item from anywhere on the card with the star, links and actions as their own targets, the card showing its vendor and family under the name, its description, its count of releases and how long ago the host says it last released, and the file line's Visibility and Status as icon menus with Edit, Move to and Delete folded into one More menu ([005feb5](https://github.com/STARTcloud/startcloud-ui/commit/005feb5004da212f03a04e62645515a49a011b77))
+
 ## [0.33.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.32.0...v0.33.0) (2026-09-21)
 
 
