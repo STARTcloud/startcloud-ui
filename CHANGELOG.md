@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.34.0...v0.34.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* hyperweaver glyph placement ([1368809](https://github.com/STARTcloud/startcloud-ui/commit/13688091046928026a63e28d708f0ba9a6e4060d))
+
 ## [0.34.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.33.0...v0.34.0) (2026-09-22)
 
 
