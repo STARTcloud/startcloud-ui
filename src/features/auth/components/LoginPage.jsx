@@ -591,13 +591,15 @@ BackendLoginPage.propTypes = {
  * provider exists;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
  * issuer's modes and states through `CookieLogin`, which sends a person
- * whose adopted session (`account`) is live away.
+ * whose adopted session (`account`) is live away and hands the session
+ * bus (`events`) to every answer it follows.
  */
-const LoginPage = ({ session, account, returnTo, auth, appName }) => {
+const LoginPage = ({ session, events, account, returnTo, auth, appName }) => {
   if (session.id === 'cookie') {
     return (
       <CookieLogin
         session={session}
+        events={events}
         account={account}
         returnTo={returnTo}
         auth={auth}
@@ -610,6 +612,7 @@ const LoginPage = ({ session, account, returnTo, auth, appName }) => {
 
 LoginPage.propTypes = {
   session: PropTypes.object.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
   auth: authShape.isRequired,

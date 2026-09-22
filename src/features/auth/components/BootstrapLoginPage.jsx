@@ -18,8 +18,9 @@ const readOnce = () => {
 
 /**
  * `/login/bootstrap`: consumes the seeded link's `email`, `token` and
- * `return` through `POST /login/bootstrap`, emits `login` on the bus and
- * follows `next`; the invalid state offers "Sign in another way".
+ * `return` through `POST /login/bootstrap` and follows `next` with the bus
+ * handed along, so `login` is emitted where the page stays in-router; the
+ * invalid state offers "Sign in another way".
  */
 const BootstrapLoginPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);

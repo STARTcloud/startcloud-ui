@@ -21,7 +21,8 @@ const invalidProblem = code => ({ code, status: 0, wait: 0, since: 0 });
  * The page an emailed single-use link lands on: reads the link once through
  * `read` (`email` and `token` from the URL by default), replaces the
  * location with `path` so the token never sits in history, posts the body
- * through `consume` and follows `next`; a refused token draws the danger
+ * through `consume` and follows `next`, the bus handed along as `events`
+ * where the link signs the person in; a refused token draws the danger
  * alert from its `code` (or `invalidCode` when the parameters are missing)
  * with one link to request another.
  */
@@ -51,10 +52,7 @@ const LinkConsumePage = ({
       return;
     }
     consume(body)
-      .then(answer => {
-        events?.emit('login');
-        followNext({ next: answer?.next, navigate, returnTo });
-      })
+      .then(answer => followNext({ next: answer?.next, navigate, returnTo, events }))
       .catch(error => setProblem(report(error) || invalidProblem(invalidCode)));
   }, [body, complete, consume, events, invalidCode, navigate, path, report, returnTo]);
 

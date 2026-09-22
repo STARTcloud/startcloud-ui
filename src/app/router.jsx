@@ -1272,6 +1272,7 @@ const AppRoutes = ({
           backend || cookie ? (
             <LoginPage
               session={session}
+              events={events}
               account={account}
               returnTo={returnTo}
               auth={authAdapter}

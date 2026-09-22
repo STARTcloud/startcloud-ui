@@ -8,8 +8,9 @@ import LinkConsumePage from './LinkConsumePage';
 
 /**
  * `/login/magic`: consumes the mail's `email` and `token` through
- * `POST /login/magic`, emits `login` on the bus and follows `next`; the
- * invalid state links to a fresh request.
+ * `POST /login/magic` and follows `next` with the bus handed along, so
+ * `login` is emitted where the page stays in-router; the invalid state
+ * links to a fresh request.
  */
 const MagicLinkPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);

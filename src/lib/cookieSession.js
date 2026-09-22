@@ -94,7 +94,9 @@ export const accountMemberships = user =>
  * `X-XSRF-TOKEN` on every method but GET, HEAD and OPTIONS, the display
  * fields of the profile cached under `storageKey`, `GET /api/user` as the
  * one confirmation of a session, the form-encoded `POST /login` answering
- * `next`, and `POST /user/logout` for both sign-outs. A session it
+ * `next` (the page that follows it emits `login` on the bus, through
+ * `followNext`, only where it stays in-router), and `POST /user/logout`
+ * for both sign-outs. A session it
  * restores or loads is `{ user, organizations, oidc, issuerUrl, clientId }`,
  * the user being the cached display fields, `oidc` always false and
  * `clientId` empty, the issuer being no client of itself. The API
@@ -116,7 +118,7 @@ export const accountMemberships = user =>
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
- * @param {Object} options.events - The bus from `createSessionEvents`; `login` is emitted after a sign-in and `sessionEnded` when the issuer rejects the session
+ * @param {Object} options.events - The bus from `createSessionEvents`; `sessionEnded` is emitted when the issuer rejects the session
  * @param {string} [options.storageKey] - localStorage key of the cached display fields
  * @returns {Object} The session provider `useSession`, the API client and the sign-in page drive
  */
@@ -235,7 +237,6 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
       contentType: 'form',
       headers: JSON_ACCEPT,
     });
-    events.emit('login');
     return data?.next || '';
   };
 

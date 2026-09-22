@@ -136,7 +136,7 @@ const TfaCodePage = ({ returnTo, events }) => {
     document.title = t('tfa.title');
   }, [t]);
 
-  const follow = next => followNext({ next, navigate, returnTo });
+  const follow = next => followNext({ next, navigate, returnTo, events });
 
   const fail = error => {
     setBusy(false);
@@ -154,10 +154,7 @@ const TfaCodePage = ({ returnTo, events }) => {
     setProblem(null);
     setBusy(true);
     verifyTfa({ code: value, tfaMethod: state.method })
-      .then(answer => {
-        events.emit('login');
-        follow(answer?.next);
-      })
+      .then(answer => follow(answer?.next))
       .catch(fail);
   };
 

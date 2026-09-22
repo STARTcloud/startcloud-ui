@@ -409,14 +409,23 @@ SentState.propTypes = {
   onDifferent: PropTypes.func.isRequired,
 };
 
-const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, setBusy }) => {
+const useLoginActions = ({
+  session,
+  events,
+  returnTo,
+  values,
+  rules,
+  mode,
+  setProblem,
+  setBusy,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const report = useProblemReporter();
 
   const follow = useCallback(
-    next => followNext({ next, navigate, returnTo }),
-    [navigate, returnTo]
+    next => followNext({ next, navigate, returnTo, events }),
+    [events, navigate, returnTo]
   );
 
   const fail = useCallback(
@@ -493,9 +502,13 @@ const useLoginActions = ({ session, returnTo, values, rules, mode, setProblem, s
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
- * the form is what the parked request is waiting for.
+ * the form is what the parked request is waiting for. Every answer that
+ * signs the person in is followed through `followNext` with the bus as
+ * `events`, so `login` is emitted only where the page stays in-router and
+ * the still-open form never redraws as the profile while the browser
+ * leaves for the authorization endpoint.
  */
-const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
+const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const location = useLocation();
@@ -526,7 +539,16 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
     labels: LABELS,
   });
   const wait = useWait(problem);
-  const actions = useLoginActions({ session, returnTo, values, rules, mode, setProblem, setBusy });
+  const actions = useLoginActions({
+    session,
+    events,
+    returnTo,
+    values,
+    rules,
+    mode,
+    setProblem,
+    setBusy,
+  });
   const passkey = passkeyMethod(answer);
   const conditional = Boolean(passkey?.conditional_ui);
   const abortConditional = useConditionalPasskey({
@@ -636,6 +658,7 @@ const CookieLogin = ({ session, account, returnTo, auth, appName }) => {
 
 CookieLogin.propTypes = {
   session: PropTypes.object.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   account: sessionStateShape.isRequired,
   returnTo: returnToShape.isRequired,
   auth: authShape.isRequired,

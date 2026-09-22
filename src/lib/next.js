@@ -64,20 +64,28 @@ export const isPagePath = target => {
  * an absolute URL is followed only when its origin is the serving origin,
  * or when the caller marks it `trusted` because the server validated it
  * against the client's registered URIs; anything else lands on the
- * consumed return path or home.
+ * consumed return path or home. A step that established a session hands
+ * the bus as `events`, and `login` is emitted on it only where the page
+ * stays in-router, so a page the browser is about to leave never redraws
+ * as a signed-in one while the top-level navigation is under way.
  *
  * @param {Object} options - The step's answer and the router's side
  * @param {string} options.next - The answered `next`
  * @param {Function} options.navigate - The router's `navigate`
  * @param {Object} options.returnTo - The helper from `createReturnTo`
  * @param {boolean} [options.trusted] - Follow an absolute URL of any origin
+ * @param {{ emit: Function }|null} [options.events] - The session bus, when the step signed the person in
  */
-export const followNext = ({ next, navigate, returnTo, trusted = false }) => {
+export const followNext = ({ next, navigate, returnTo, trusted = false, events = null }) => {
+  const stay = target => {
+    events?.emit('login');
+    navigate(target, { replace: true });
+  };
   const target = typeof next === 'string' ? next : '';
   if (SAFE_PATH.test(target)) {
     const resolved = pathnameOf(target) === '/' ? returnTo.consume() || '/' : target;
     if (isPagePath(resolved)) {
-      navigate(resolved, { replace: true });
+      stay(resolved);
     } else {
       window.location.assign(resolved);
     }
@@ -88,5 +96,5 @@ export const followNext = ({ next, navigate, returnTo, trusted = false }) => {
     window.location.assign(url.href);
     return;
   }
-  navigate(returnTo.consume() || '/', { replace: true });
+  stay(returnTo.consume() || '/');
 };
