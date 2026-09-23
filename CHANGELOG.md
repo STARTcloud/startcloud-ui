@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.36.1...v0.37.0) (2026-09-23)
+
+
+### Features
+
+* every table opening on the host's per-site sorts before its own default, the status payload's sorts member read per collection and level on the listings and on the versions, patches and files tables, and the navbar and pages contracts naming it ([dab3145](https://github.com/STARTcloud/startcloud-ui/commit/dab3145b98153d3ffea7c7dc1a01b38e00dc9664))
+
 ## [0.36.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.36.0...v0.36.1) (2026-09-22)
 
 
