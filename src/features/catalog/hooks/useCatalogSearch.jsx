@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { drawnColumns } from '../../../components/common/SubTable';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { hostSort } from '../../../utils/capabilities';
 import {
   VISIBILITY_GROUP,
   WATCHED_GROUP,
@@ -109,8 +111,10 @@ const watchedGroup = (visible, itemsByCollection, watchedIds, prefs, setPrefs, t
   };
 };
 
-const effectiveSort = (prefs, collection) =>
-  prefs.sort[collection.key].length > 0 ? prefs.sort[collection.key] : collection.defaultSort || [];
+const effectiveSort = (prefs, collection, status) =>
+  prefs.sort[collection.key].length > 0
+    ? prefs.sort[collection.key]
+    : hostSort(status, collection.key, 'items') || collection.defaultSort || [];
 
 const groupLabel = (collection, labelKey, prefixed, t) =>
   prefixed ? `${t(collection.labelKey)} · ${t(labelKey)}` : t(labelKey);
@@ -168,7 +172,7 @@ const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) =>
  * widths (per collection, set through `setColumnWidth(collectionKey,
  * column, pixels)`, null resetting one) and the collapsed groups persist
  * per page under the app's prefs prefix. A collection with no saved sort
- * draws its `defaultSort`.
+ * draws the host's `sorts` for its items, else its `defaultSort`.
  */
 export const useCatalogSearch = ({
   collections,
@@ -180,6 +184,7 @@ export const useCatalogSearch = ({
   prefsKey,
 }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const [query, setQuery] = useState('');
   const [prefs, setPrefs] = useState(() => readPrefs(prefsKey, collections));
 
@@ -214,7 +219,7 @@ export const useCatalogSearch = ({
 
   const filtered = {};
   const sort = Object.fromEntries(
-    visible.map(collection => [collection.key, effectiveSort(prefs, collection)])
+    visible.map(collection => [collection.key, effectiveSort(prefs, collection, status)])
   );
   let matched = 0;
   visible.forEach(collection => {

@@ -16,6 +16,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
+import { hostSort } from '../../../utils/capabilities';
 import {
   collectionShape,
   detailSearchShape,
@@ -271,7 +272,8 @@ const sideArtifacts = (artifacts, search, columns, ctx) => {
  * providers table (with the version's own artifacts above it when it carries
  * any), else the version's artifacts table, one file per architecture; the
  * navbar search, the header sort and the Columns pills drive whichever of
- * the two tables the collection puts first.
+ * the two tables the collection puts first, that table opening on the
+ * host's `sorts` for its level, else by name ascending.
  */
 const VersionPage = ({ collection, org, name, version, context }) => {
   const { t, i18n } = useTranslation();
@@ -287,6 +289,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
   const scope = { org, name, version };
   const columns = collection.levels.providers ? collection.levels.providers.columns(scope) : [];
   const artifactColumns = collection.levels.architectures.columns(scope);
+  const level = collection.hasProviders ? 'providers' : 'architectures';
   const detail = collection.hasProviders
     ? { matches: providerLevelMatches, placeholderKey: 'pages.search.providers', columns }
     : {
@@ -310,7 +313,7 @@ const VersionPage = ({ collection, org, name, version, context }) => {
     ...detail,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}`,
-    defaultSort: DEFAULT_SORT,
+    defaultSort: hostSort(status, collection.key, level) || DEFAULT_SORT,
   });
 
   useEffect(() => {

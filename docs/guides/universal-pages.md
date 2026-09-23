@@ -483,7 +483,14 @@ by their lower-cased text, dates and counts by value, Visibility public,
 then guests, then private and Status with Published first, Providers, Architectures
 and the catalog's coverage by their alphabetical names joined so rows
 with the same set sit together, and a missing value first on the
-ascending pass. A column may carry
+ascending pass. Every table opens on a default sort while the viewer has
+saved none: a listing on its collection's `defaultSort`, a level page on
+its own, and the host's `sorts` for that collection and level in the
+status payload standing before either, so one site orders one level its
+own way (downloads.prominic.net's patches by name descending, the base
+install first and the newest fix pack under it) and no other host and no
+other table changes, because a site's preference is that site's status
+and never a rule in the shared definitions. A column may carry
 `defaultHidden` (Created, Updated and Architectures do), and in list view
 the viewer shows or hides any column of a table through that collection's
 Columns group in the filter panel; the hidden set persists per page
@@ -783,7 +790,8 @@ adds its own foldable section to an item page (the catalog's Quality).
   Hyperweaver with the box pre-selected),
   the facts panel (from `metadata`)
   and the README side by side when present, the versions table newest
-  first (version, visibility and status where the host answers the row's
+  first unless the host's `sorts` names another order for the level
+  (version, visibility and status where the host answers the row's
   own `is_public`, `guest_access` and `published`, released, details,
   providers, artifacts, each column shown only when a version carries it,
   the row actions slot, the six access verbs of the item's bulk actions
@@ -834,7 +842,8 @@ adds its own foldable section to an item page (the catalog's Quality).
   a download file its own `PUT …/file/{key}`, and a wider word is the
   validation contract's `withinParent`.
 - **Downloads on the same pages**: the ItemPage lists a product's releases
-  newest first with a Patches count in place of Providers, the word
+  newest first, or in the order the host's `sorts` names for the level,
+  with a Patches count in place of Providers, the word
   Patches on every screen of the level because a patch is a thing a
   person downloads and an update is something a machine does; the
   VersionPage's providers table is the patches table (the name drawn as the

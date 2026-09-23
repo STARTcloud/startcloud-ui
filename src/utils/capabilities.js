@@ -1,3 +1,5 @@
+import { sortStackOf } from './prefs';
+
 /**
  * Whether the host behind `status` advertises a feature token; a host
  * whose `features` is not an array renders everything.
@@ -50,4 +52,20 @@ export const authMethod = status => {
     return 'backend';
   }
   return auth[0] || 'none';
+};
+
+/**
+ * The sort stack the host behind `status` names for one level of one
+ * collection, `status.sorts[collection][level]` read through the stored
+ * sort reader so a malformed entry answers no stack; null while the host
+ * names none, so the collection's or the page's own default stands.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} collection - Collection key, e.g. 'downloads'
+ * @param {string} level - 'items', 'versions', 'providers' or 'architectures'
+ * @returns {Array<{ column: string, direction: string }>|null} The stack, or null
+ */
+export const hostSort = (status, collection, level) => {
+  const stack = sortStackOf(status?.sorts?.[collection]?.[level]);
+  return stack.length > 0 ? stack : null;
 };

@@ -10,6 +10,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
+import { hostSort } from '../../../utils/capabilities';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { managesItem } from '../../../utils/permissions';
 
@@ -22,7 +23,8 @@ const rowIdOf = name => `architecture-${name}`;
 /**
  * One provider of a version, and the leaf of a collection whose versions
  * carry architectures directly: the header, then the architectures table,
- * one file per row, with the picked-state pane in its heading; a route that
+ * one file per row, opening on the host's `sorts` for the level, else by
+ * name ascending, with the picked-state pane in its heading; a route that
  * names an architecture in its fifth part brings that row into view once,
  * marking nothing. The slots receive the version row as `parent`, read
  * from the item summary's versions, so a provider's visibility step stays
@@ -60,7 +62,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
     columns: architectureColumns,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}_${version}_${provider}`,
-    defaultSort: DEFAULT_SORT,
+    defaultSort: hostSort(status, collection.key, 'architectures') || DEFAULT_SORT,
   });
   const selection = useSelection(search.rows, { keyOf: row => row.name, labelOf: row => row.name });
 

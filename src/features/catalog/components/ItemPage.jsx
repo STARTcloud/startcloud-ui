@@ -12,6 +12,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
+import { hostSort } from '../../../utils/capabilities';
 import {
   collectionShape,
   detailSearchShape,
@@ -319,7 +320,7 @@ const ItemPage = ({ collection, org, name, context }) => {
     columns,
     ctx,
     prefsKey: `${context.prefsPrefix}_${org}_${name}`,
-    defaultSort: DEFAULT_SORT,
+    defaultSort: hostSort(status, collection.key, 'versions') || DEFAULT_SORT,
   });
 
   useEffect(() => {
