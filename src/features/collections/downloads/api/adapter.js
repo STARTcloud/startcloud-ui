@@ -7,7 +7,9 @@ const rows = data => (Array.isArray(data) ? data : []);
 
 /**
  * One file of a patch as an architecture row; a file has no date of its
- * own, so it carries the `releasedAt` of the patch it belongs to.
+ * own, so it carries the `releasedAt` of the patch it belongs to; a row
+ * holding `source_url` and no bytes is a link, its download a redirect
+ * to that address.
  *
  * @param {Object} entry - The wire file
  * @param {string|null} releasedAt - The patch's `released_at`
@@ -27,6 +29,7 @@ const fileArtifact = (entry, releasedAt) => ({
   architecture: entry.architecture || '',
   language: entry.language || '',
   variant: entry.variant || '',
+  sourceUrl: entry.source_url || '',
   createdAt: entry.created_at || null,
   updatedAt: entry.updated_at || null,
   releasedAt,

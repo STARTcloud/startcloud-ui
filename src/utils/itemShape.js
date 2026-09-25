@@ -22,6 +22,7 @@ export const architectureShape = PropTypes.shape({
   architecture: PropTypes.string,
   language: PropTypes.string,
   variant: PropTypes.string,
+  sourceUrl: PropTypes.string,
 });
 
 export const providerShape = PropTypes.shape({

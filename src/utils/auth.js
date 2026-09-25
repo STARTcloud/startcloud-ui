@@ -27,22 +27,24 @@ export const returnToShape = PropTypes.shape({
 });
 
 /**
- * The three sign-in affordances a host may close, answered per Host by
- * the methods answer for the page being drawn: Create an account, Forgot
- * password and the emailed sign-in link. Registration is closed until
- * `local_registration_enabled` opens it, as it has always been; the
- * other two are open unless `password_reset_enabled` or
- * `sign_in_link_enabled` says false. The answer hides a control, it does
- * not forbid the act, so a host that must refuse one refuses it on its
- * own routes as well.
+ * The sign-in affordances a host may close, answered per Host by the
+ * methods answer for the page being drawn: Create an account, Forgot
+ * password, the emailed sign-in link and Keep me logged in. Registration
+ * is closed until `local_registration_enabled` opens it, as it has always
+ * been; the others are open unless `password_reset_enabled`,
+ * `sign_in_link_enabled` or `remember_me_enabled` says false, each the
+ * answer's word for a client's `hide-*` key. The answer hides a control,
+ * it does not forbid the act, so a host that must refuse one refuses it on
+ * its own routes as well.
  *
  * @param {Object|null} answer - The methods answer
- * @returns {{ registration: boolean, passwordReset: boolean, signInLink: boolean }}
+ * @returns {{ registration: boolean, passwordReset: boolean, signInLink: boolean, rememberMe: boolean }}
  */
 export const signInAffordances = answer => ({
   registration: Boolean(answer?.local_registration_enabled),
   passwordReset: answer?.password_reset_enabled !== false,
   signInLink: answer?.sign_in_link_enabled !== false,
+  rememberMe: answer?.remember_me_enabled !== false,
 });
 
 export const sortMethodsByDefault = (methods, defaultProvider) => {

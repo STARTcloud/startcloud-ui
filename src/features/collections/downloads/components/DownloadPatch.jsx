@@ -367,6 +367,7 @@ const FileEditForm = ({ draft, rules, onChange, onSubmit }) => {
         hint={t('downloads.hints.language')}
       />
       <TextField name="variant" draft={draft} rules={rules} onChange={onChange} />
+      <TextField name="source_url" type="url" draft={draft} rules={rules} onChange={onChange} />
       <SelectField
         name="checksum_type"
         options={CHECKSUM_TYPES}
@@ -396,6 +397,7 @@ const draftFrom = file => ({
   architecture: file.architecture || 'any',
   language: file.language || 'any',
   variant: file.variant || '',
+  source_url: file.sourceUrl || '',
   checksum_type: file.checksumType || 'NULL',
   checksum: file.checksum || '',
 });

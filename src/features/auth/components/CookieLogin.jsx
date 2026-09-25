@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import AuthShell, { AuthAlert, AuthSpinner, InboxIcon } from '../../../components/common/AuthShell';
+import BrandLogo from '../../../components/common/BrandLogo';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PasswordField from '../../../components/common/PasswordField';
@@ -173,6 +174,13 @@ PolicyLinks.propTypes = {
   ).isRequired,
 };
 
+const SiteMark = ({ answer }) =>
+  answer?.mark_enabled ? <BrandLogo className="auth-brand-mark" /> : null;
+
+SiteMark.propTypes = {
+  answer: PropTypes.object,
+};
+
 const LoginForm = ({
   mode,
   values,
@@ -183,6 +191,7 @@ const LoginForm = ({
   handlers,
   formRef,
   showReset,
+  showRemember,
 }) => {
   const { t } = useTranslation(['auth']);
   const password = mode === 'password';
@@ -225,15 +234,17 @@ const LoginForm = ({
         />
       ) : null}
       <div className="auth-row">
-        <label className="auth-check">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={values.remember}
-            onChange={handlers.onChange}
-          />
-          <span>{t('login.keepSignedIn')}</span>
-        </label>
+        {showRemember ? (
+          <label className="auth-check">
+            <input
+              type="checkbox"
+              name="remember"
+              checked={values.remember}
+              onChange={handlers.onChange}
+            />
+            <span>{t('login.keepSignedIn')}</span>
+          </label>
+        ) : null}
         {password && showReset ? (
           <Link to="/passwordRecovery" className="auth-link auth-link-muted">
             {t('login.forgotPassword')}
@@ -288,6 +299,7 @@ LoginForm.propTypes = {
   }).isRequired,
   formRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
   showReset: PropTypes.bool.isRequired,
+  showRemember: PropTypes.bool.isRequired,
 };
 
 const LoginExtras = ({
@@ -495,10 +507,12 @@ const useLoginActions = ({
  * button and the conditional prompt while `passkey` is enabled; one
  * provider button per `oidc-` method; the sent state at `/login?sent` with
  * the address in router state; the query alerts; the foot with "Create an
- * account", the policy links and Cancel while a request is parked. The
- * three closable affordances, Create an account, Forgot password and the
- * sign-in link mode, are drawn per `signInAffordances` from the site's
- * own booleans on the methods answer. The
+ * account", the policy links and Cancel while the answer says `cancel`,
+ * a request parked and the client not hiding it; the site's mark above
+ * the heading while the answer says `mark_enabled`. The closable
+ * affordances, Create an account, Forgot password, the sign-in link mode
+ * and Keep me logged in, are drawn per `signInAffordances` from the
+ * booleans on the methods answer. The
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
@@ -617,7 +631,7 @@ const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
   };
 
   return (
-    <AuthShell title={t('login.headline', { app: appName })}>
+    <AuthShell title={t('login.headline', { app: appName })} icon={<SiteMark answer={answer} />}>
       {problem ? <ProblemAlert problem={problem} /> : null}
       {notice ? <AuthAlert tone={notice.tone}>{t(notice.keys)}</AuthAlert> : null}
       {mode ? (
@@ -631,6 +645,7 @@ const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
           handlers={handlers}
           formRef={form}
           showReset={affordances.passwordReset}
+          showRemember={affordances.rememberMe}
         />
       ) : null}
       {!loading && !mode && providers.length === 0 ? (

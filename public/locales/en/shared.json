@@ -1909,6 +1909,9 @@
       "version": "Version",
       "details": "Details",
       "download": "Download",
+      "copyLink": "Copy download link",
+      "linkCopied": "Download link copied to clipboard.",
+      "copyLinkFailed": "Could not copy the download link.",
       "defaultBox": "Default box",
       "fileSize": "File size",
       "checksumType": "Checksum type",
@@ -2247,6 +2250,7 @@
       "architecture": "Architecture",
       "language": "Language",
       "variant": "Variant",
+      "sourceUrl": "Source URL",
       "checksumType": "Checksum type",
       "checksum": "Checksum",
       "updated": "The file was updated.",
@@ -2266,7 +2270,8 @@
       "template": "template",
       "notes": "notes",
       "tool": "tool",
-      "other": "other"
+      "other": "other",
+      "link": "link"
     },
     "platform": {
       "linux": "Linux",

@@ -58,6 +58,7 @@ export const BULK_FORMS = {
       pick('architecture', FILE_ARCHITECTURES, 'architecture'),
       text('language'),
       text('variant'),
+      text('source_url', { type: 'url' }),
     ],
   },
 };

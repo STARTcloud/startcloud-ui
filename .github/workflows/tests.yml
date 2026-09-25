@@ -75,7 +75,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     env:
       CI: 'true'
-      BASE_URL: ${{ inputs.class == 'shared-ui' && '' || inputs.origin }}
+      BASE_URL: ${{ inputs.class != 'shared-ui' && inputs.origin || '' }}
       CONFIG_DIR: ${{ inputs.config-dir }}
     steps:
       - name: Checkout code

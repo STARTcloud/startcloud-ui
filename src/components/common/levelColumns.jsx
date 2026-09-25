@@ -1,6 +1,9 @@
 import PropTypes from 'prop-types';
+import { FaClipboard, FaDownload } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import { useNotify } from '../../contexts/NoticeContext';
+import { copyToClipboard } from '../../lib/clipboard';
 import { listWord } from '../../utils/closedLists';
 import { providerPath, versionPath } from '../../utils/routes';
 
@@ -40,24 +43,51 @@ const namesOf = entries => (entries || []).map(entry => entry.name);
 
 const badgeLinkClass = 'badge bg-secondary bg-opacity-50 text-body text-decoration-none me-1';
 
+const hostOf = url => (URL.canParse(url) ? new URL(url).host : '');
+
 /**
- * The one download action of every table whose row is a file: the
- * `SubTable`'s `LeadActions` on the architectures and files tables, a
- * Download button in the Actions column while the row carries a
- * `downloadUrl`, drawn for every viewer the row is shown to because a
- * download is a read the row already granted.
+ * The download actions of every table whose row is a file: the
+ * `SubTable`'s `LeadActions` on the architectures and files tables, two
+ * icon buttons in the Actions column while the row carries a
+ * `downloadUrl`, Download with its tooltip and beside it a clipboard that
+ * copies the URL for a browser, curl or wget, drawn for every viewer the
+ * row is shown to because a download is a read the row already granted.
  */
-export const DownloadAction = ({ architecture, ctx }) =>
-  architecture.downloadUrl ? (
-    <a
-      href={architecture.downloadUrl}
-      className="btn btn-sm btn-outline-primary"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {ctx.t('pages.table.download')}
-    </a>
-  ) : null;
+export const DownloadAction = ({ architecture, ctx }) => {
+  const notify = useNotify();
+  if (!architecture.downloadUrl) {
+    return null;
+  }
+  const copy = () => {
+    copyToClipboard(architecture.downloadUrl).then(
+      () => notify('success', ctx.t('pages.table.linkCopied')),
+      () => notify('danger', ctx.t('pages.table.copyLinkFailed'))
+    );
+  };
+  return (
+    <span className="d-inline-flex gap-1">
+      <a
+        href={architecture.downloadUrl}
+        className="btn btn-sm btn-outline-primary"
+        target="_blank"
+        rel="noopener noreferrer"
+        title={ctx.t('pages.table.download')}
+        aria-label={ctx.t('pages.table.download')}
+      >
+        <FaDownload />
+      </a>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-primary"
+        title={ctx.t('pages.table.copyLink')}
+        aria-label={ctx.t('pages.table.copyLink')}
+        onClick={copy}
+      >
+        <FaClipboard />
+      </button>
+    </span>
+  );
+};
 
 DownloadAction.propTypes = {
   architecture: PropTypes.shape({ downloadUrl: PropTypes.string }).isRequired,
@@ -386,7 +416,9 @@ const wordColumn = (key, labelKey, group, priority) => ({
  * the date its patch shipped, its kind, platform, architecture and
  * language as closed-list words (the language drawn only while a file of
  * the table names one other than `any`, and the first column to fold
- * while it is drawn), the downloads, the size and the checksum; the
+ * while it is drawn), the downloads, the size and the checksum; a link
+ * row, one holding `sourceUrl` and no bytes, draws the source's host
+ * muted beside its name and nothing for its size and checksum; the
  * tokened download is the table's `DownloadAction` in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The patch the files belong to
@@ -404,6 +436,7 @@ export const fileLevelColumns = () => [
         {file.fileName && file.fileName !== file.name ? (
           <code className="checksum ms-2">{file.name}</code>
         ) : null}
+        {file.sourceUrl ? <span className="text-muted ms-2">{hostOf(file.sourceUrl)}</span> : null}
       </>
     ),
   },

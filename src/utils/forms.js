@@ -18,6 +18,7 @@ export const FILE_KINDS = [
   'notes',
   'tool',
   'other',
+  'link',
 ];
 
 export const FILE_PLATFORMS = ['linux', 'windows', 'macos', 'omnios', 'other', 'any'];
@@ -264,6 +265,7 @@ export const DOWNLOAD_FILE_SCHEMA = {
     architecture: { type: 'string', enum: FILE_ARCHITECTURES },
     language: { type: 'string' },
     variant: { type: 'string' },
+    source_url: { type: 'string' },
     checksum_type: { type: 'string', enum: CHECKSUM_TYPES },
     checksum: {
       type: 'string',
@@ -294,6 +296,7 @@ export const DOWNLOAD_FILE_LABELS = {
   architecture: 'downloads.file.architecture',
   language: 'downloads.file.language',
   variant: 'downloads.file.variant',
+  source_url: 'downloads.file.sourceUrl',
   checksum_type: 'downloads.file.checksumType',
   checksum: 'downloads.file.checksum',
 };

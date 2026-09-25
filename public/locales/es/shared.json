@@ -1909,6 +1909,9 @@
       "version": "Versión",
       "details": "Detalles",
       "download": "Descargar",
+      "copyLink": "Copiar el enlace de descarga",
+      "linkCopied": "Enlace de descarga copiado al portapapeles.",
+      "copyLinkFailed": "No se pudo copiar el enlace de descarga.",
       "defaultBox": "Box predeterminada",
       "fileSize": "Tamaño de archivo",
       "checksumType": "Tipo de checksum",
@@ -2247,6 +2250,7 @@
       "architecture": "Arquitectura",
       "language": "Idioma",
       "variant": "Variante",
+      "sourceUrl": "URL de origen",
       "checksumType": "Tipo de checksum",
       "checksum": "Suma de comprobación",
       "updated": "El archivo se actualizó.",
@@ -2266,7 +2270,8 @@
       "template": "plantilla",
       "notes": "notas",
       "tool": "herramienta",
-      "other": "otro"
+      "other": "otro",
+      "link": "enlace"
     },
     "platform": {
       "linux": "Linux",

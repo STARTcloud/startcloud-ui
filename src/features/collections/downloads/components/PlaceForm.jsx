@@ -52,6 +52,7 @@ const draftFrom = (pending, levels) => {
     architecture: guess.architecture || 'any',
     language: guess.language || 'any',
     variant: '',
+    source_url: '',
     checksum_type: 'NULL',
     checksum: '',
   };
@@ -164,6 +165,14 @@ const PlaceForm = ({ draft, rules, fixed, onChange, onSubmit }) => {
         />
         <TextField
           name="variant"
+          draft={draft}
+          rules={rules}
+          onChange={onChange}
+          className={NARROW}
+        />
+        <TextField
+          name="source_url"
+          type="url"
           draft={draft}
           rules={rules}
           onChange={onChange}
