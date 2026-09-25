@@ -29,7 +29,7 @@ const rowsOf = (row, ctx) =>
     .map(column => ({
       key: column.key,
       label: ctx.t(column.labelKey),
-      value: column.render(row, ctx),
+      value: column.render ? column.render(row, ctx) : column.value(row, ctx),
     }));
 
 /**
@@ -39,7 +39,8 @@ const rowsOf = (row, ctx) =>
  * drawing a `SectionHeading` titled by the username with the status badge
  * and, in its action pane, the row actions the Users page draws, then the
  * record's rows from the table's own columns, each drawn only while the
- * row carries the field, then the editable `UserRecord` sections where
+ * row carries the field, a column's `render` or, without one, its `value`
+ * as the row's value, then the editable `UserRecord` sections where
  * the adapter writes another account, remounted on every save; every
  * action re-reads the record, the delete returning to the list, and an
  * id the adapter answers not found with draws the shared empty state.
