@@ -37,7 +37,15 @@ import { useSetupGate } from '../hooks/useSetupGate';
 import { useTheme } from '../hooks/useTheme';
 import { useTicketUrl } from '../hooks/useTicketUrl';
 import { loadOrganizations } from '../lib/organizations';
-import { client, events, fetchHealth, hubClient, returnTo, session } from '../lib/runtime';
+import {
+  client,
+  events,
+  fetchHealth,
+  hubClient,
+  offeredPacks,
+  returnTo,
+  session,
+} from '../lib/runtime';
 import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
 import { guestOnly, isManager } from '../utils/membership';
@@ -46,6 +54,8 @@ import { isGlobalAdmin } from '../utils/permissions';
 import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
 
 const persistTheme = preference => session.savePreferences({ theme: preference });
+
+const persistPack = pack => session.savePreferences({ pack: pack || null });
 
 const adoptMemberships = next => setMemberships(next?.organizations || []);
 
@@ -88,7 +98,8 @@ const shellFlags = ({
 
 /**
  * The app behind the status: the session from the host's first `auth`
- * token, the theme and favicon, the setup gate while the host advertises
+ * token, the theme, the look over the packs the host offers, and the
+ * favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
  * identity-provider one), the profile reload and
@@ -137,7 +148,18 @@ const App = ({ getSupportedLanguages }) => {
     preference: themePreference,
     setPreference: setThemePreference,
     toggleTheme,
-  } = useTheme({ siteTheme: status.brand.theme || '', onPersist: persistTheme });
+    pack,
+    packs,
+    setPack,
+    previewPack,
+    endPreview,
+  } = useTheme({
+    siteTheme: status.brand.theme || '',
+    sitePack: status.brand.pack || null,
+    packs: offeredPacks(status.brand),
+    onPersist: persistTheme,
+    onPersistPack: persistPack,
+  });
   const setupComplete = useSetupGate({
     enabled: hasFeature(status, 'setup'),
     checkStatus: setupApi.status,
@@ -154,7 +176,7 @@ const App = ({ getSupportedLanguages }) => {
 
   useFavicon(brandLogoUrl(status.brand));
   usePwa(status.brand.name);
-  useAccountPreferences({ user, setThemePreference });
+  useAccountPreferences({ user, setThemePreference, setPackPreference: setPack });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
   useEffect(() => {
     if (!returnTo.onAuthPage(location.pathname)) {
@@ -213,6 +235,8 @@ const App = ({ getSupportedLanguages }) => {
             theme={theme}
             themePreference={themePreference}
             toggleTheme={toggleTheme}
+            setThemePreference={setThemePreference}
+            look={{ pack, packs, setPack, previewPack, endPreview }}
             onSignOut={handleSignOut}
             getSupportedLanguages={getSupportedLanguages}
             collections={collections}

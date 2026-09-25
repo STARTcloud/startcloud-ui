@@ -47,6 +47,21 @@ what lets Super.Human.Installer brand hyperweaver's clients while BoxVault
 on the same site keeps its own — sometimes a pack answers "which customer",
 sometimes "which product", in the same slot.
 
+**A person may override the pack, the way they override the variant.**
+The `pack` preference, a bare pack name or `null`, is carried by the same
+write path and claim as `theme`, resolved in the same order
+(the account value, else `localStorage.pack`, else the host's own pack)
+and never composed with the variant; a host that lets a person choose
+answers the packs it offers as `brand.packs` in its status payload
+(`[{ name, css, label }]`, the navbar contract's status row), the shared
+UI draws its Look picker from that list alone and constructs no
+stylesheet URL, and a host that answers no list offers no choice, so a
+white-label site never shows a sibling's look. The choice is cached in
+local storage beside `theme` so the pre-paint script can stamp
+`data-brand` and append the chosen pack's `<link>` before first paint,
+after the host's own, and a guest-only account keeps it browser-local as
+it keeps `theme`.
+
 Adoption is layered and nothing is forced. **Layer 1** — the variant and
 language, applied by each app through whatever theme and i18n system it
 already has. No convergence required. **Layer 2** — packs, which require the
@@ -247,7 +262,7 @@ changes in the same release.
       "width": 320,
       "height": 100
     },
-    "icon": { "src": "https://…/icon.png", "width": 64, "height": 64 }
+    "icon": { "src": "https://…/mark-64.png", "width": 64, "height": 64 }
   }
 }
 ```
@@ -326,6 +341,11 @@ Content-Type: application/json
   through the same call: `ciba_channel`, one of `PUSH`, `EMAIL` or `SMS`
   (`SMS` only while a verified mobile number exists), and `ciba_user_code`,
   the approval PIN, `null` clearing it; the PIN is never read back.
+- `pack` is writable beside `theme`: a bare pack name (`^[a-z0-9-]+$`)
+  the host offers in `brand.packs` sets the person's look, `null` clears
+  it so they follow the host's own pack, and a name the host does not
+  offer answers `422` `enum` at `/pack`; read back as `preferences.pack`
+  wherever `preferences.theme` is read back.
 - `region` is writable beside `language`, `theme` and `timezone`: the
   person's chosen legal region, a two-letter ISO 3166-1 country code or
   one of `EU`, `EEA`, `UK`, `null` clears it, used by the identity
@@ -339,10 +359,10 @@ Content-Type: application/json
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
-- `GET` on the same path returns the six members the identity provider
-  stores: `language`, `theme`, `timezone`, `region`, `ciba_channel` and
-  `ciba_user_code_set`, the last two the sign-in approval channel and
-  whether an approval PIN is set.
+- `GET` on the same path returns the seven members the identity provider
+  stores: `language`, `theme`, `pack`, `timezone`, `region`,
+  `ciba_channel` and `ciba_user_code_set`, the last two the sign-in
+  approval channel and whether an approval PIN is set.
 - The shared Preferences tab sends `timezone` only when the person chose
   one that differs from the stored value; the zone it detects and
   preselects while none is stored is never written on its own.
@@ -543,6 +563,29 @@ therefore **optional per pack**.
 CSP-blocked, or no pack configured must render the app's own mark — never a
 broken image, never a half-branded page.
 
+**One folder per brand, `public/brand/<name>/`, the same set in every
+one, Prominic the model every other folder is measured against.** The
+vectors are the sources and the rasters are rendered from them, never
+drawn by hand: `logo.svg` is the brand's own wordmark, mark and name in
+the brand's own type with every glyph as a path so no font is needed;
+`mark.svg` is the square mark alone on a 512 canvas with a 41-unit margin;
+`glyph.svg`, where the brand has one, is the mark's smallest element
+alone on the same canvas; `header.svg` is `logo.svg` centred on 4608×512.
+Every file paints itself: a `<style>` block with one `.brand-mark-root`
+rule setting `color-scheme: light dark`, one class per colour prefixed by
+the brand (`.pr-fg`, `.sc-cloud`) whose `fill` is a plain hex first and a
+`light-dark(light, dark)` pair second, so an `<img>` follows the machine
+and an inline copy follows `data-bs-theme`; a counter is a hole cut with
+`fill-rule="evenodd"`, never a shape painted in the page colour; no
+editor metadata, no ids, no `<title>`, `role="img"` and `aria-label` on
+the root. Every raster is named after the vector it is rendered from and
+the pixel size it holds, never by a size word: `mark-64.png`,
+`mark-192.png`, `mark-512.png` and `favicon.ico` (16, 32 and 48 in one
+file) are renders of `mark.svg`, `logo.png` a render of `logo.svg` fitted
+into 640×104, each on a transparent ground; the branding endpoint's slot
+names (`mark`, `small`, `icon`) are the identity provider's API and are
+not file names.
+
 The files the identity provider's sites need in the shared build, every
 one supplied by the estate's owner and none drawn by the UI work; the
 shell ships the fallbacks until each lands:
@@ -550,11 +593,16 @@ shell ships the fallbacks until each lands:
 | File                                                                                        | Size                                                                                                                                                                    | Used by                                                                                                                                                                                       |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `public/brand/<name>/mark.svg`, one per brand or product the estate owns                    | 512×512, its light and dark paint through `light-dark()` under `color-scheme: light dark`, so an `<img>` follows the machine and an inline copy follows `data-bs-theme` | `brand.logo_url` (the chrome's mark, the org mark, the favicon), a pack's `logo` as a root path (`--brand-logo`), and the `icon_url` of a sign-in provider of our own; one file, no dark twin |
-| `public/brand/<name>/header.svg`, one per brand or product                                  | 4608×512, the mark centred                                                                                                                                              | the README header of that brand's repositories                                                                                                                                                |
-| `public/brand/<site>/icon.png`, one per site                                                | 64×64                                                                                                                                                                   | kept beside the mark for a host that still names a PNG; the SVG is preferred everywhere                                                                                                       |
-| `public/brand/<site>/logo-small.png`, one per site                                          | 640×104                                                                                                                                                                 | the branding endpoint's `small` slot for relying apps                                                                                                                                         |
+| `public/brand/<name>/logo.svg`, one per brand or product                                    | the brand's own wordmark, mark plus name in the brand's own type as paths, its own aspect, the same `light-dark()` paint                                                | the source of `logo.png` and `header.svg`; the README header and any place the name is drawn beside the mark                                                                                  |
+| `public/brand/<name>/glyph.svg`, where the brand has one                                    | 512×512, the smallest element of the mark alone (Prominic's asterisk)                                                                                                   | the tiniest sizes, a favicon or a rail, where the whole mark would not read                                                                                                                   |
+| `public/brand/<name>/header.svg`, one per brand or product                                  | 4608×512, `logo.svg` centred                                                                                                                                            | the README header of that brand's repositories                                                                                                                                                |
+| `public/brand/<name>/mark-192.png` and `mark-512.png`, one pair per brand or product        | 192×192 and 512×512, rendered from `mark.svg` on a transparent ground, never drawn by hand                                                                              | the web app manifest's raster icons and the `apple-touch-icon`, since an installed app's icon is a raster on every platform                                                                   |
+| `public/brand/<name>/mark-64.png`, one per brand or product                                 | 64×64, rendered from `mark.svg`                                                                                                                                         | the branding endpoint's `icon` slot; the SVG is preferred everywhere the UI itself draws                                                                                                      |
+| `public/brand/<name>/favicon.ico`, one per brand or product                                 | 16, 32 and 48 in one file, rendered from `mark.svg`                                                                                                                     | the `<link rel="icon">` beside the SVG link in `index.html`, for a browser, a bookmark or a shortcut that takes no SVG favicon                                                                |
+| `public/brand/<name>/logo.png`, one per brand or product                                    | 640×104, `logo.svg` rendered at height 104 and centred, fitted by width only where the wordmark is wider than 640 at that height                                        | the branding endpoint's `small` slot for relying apps                                                                                                                                         |
 | `public/brand/providers/<id>.svg`, one per federated provider that is not ours              | square                                                                                                                                                                  | `icon_url` of `GET /api/auth/methods` (google, github, microsoft); our own providers name `/brand/<name>/mark.svg`                                                                            |
 | `public/themes/switchboard/poppins-<weight>.woff2`                                          | weights 500, 600, 700                                                                                                                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land                                                                           |
+| `public/themes/prominic/ocr-a-tribute-400.woff2`                                            | weight 400, the face of the Prominic wordmark                                                                                                                           | `--brand-auth-display` of the `prominic` pack, named under `fonts` in its YAML; the system monospace paints until it loads                                                                    |
 | `public/themes/startcloud/startcloud.css` and its YAML source                               | the fourth pack, the shared UI's own base look under its name                                                                                                           | the `startcloud` site and every BoxVault host that names it as `brand.pack`                                                                                                                   |
 | `public/themes/prominic/prominic.css` and its YAML source, `logo: /brand/prominic/mark.svg` | the fifth pack, the Prominic accent `#67142c`, the p and asterisk as the mark                                                                                           | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url`                                                                         |
 

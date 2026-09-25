@@ -62,6 +62,7 @@ const languageName = code => {
 const settingsOf = preferences => ({
   language: preferences?.language || '',
   theme: preferences?.theme || 'auto',
+  pack: preferences?.pack || '',
   timezone: preferences?.timezone || '',
   region: preferences?.region || '',
   ciba_channel: preferences?.ciba_channel || 'PUSH',
@@ -78,6 +79,7 @@ const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
   if (!own) {
     patch.language = settings.language;
     patch.theme = settings.theme;
+    patch.pack = settings.pack || null;
     return patch;
   }
   if (pin) {
@@ -127,9 +129,11 @@ ReadOnlyField.propTypes = {
   value: PropTypes.string.isRequired,
 };
 
+const lookName = (packs, name) => packs.find(pack => pack.name === name)?.label || name;
+
 const ReadOnlyPreferences = ({ account, profile, folds }) => {
   const { t, i18n } = useTranslation();
-  const { preference: themePreference } = useTheme();
+  const { preference: themePreference, pack, packs } = useTheme();
   const preferences = profile.preferences || {};
   const fields = [
     ['language', t('profile.preferences.language'), languageName(i18n.language)],
@@ -138,6 +142,15 @@ const ReadOnlyPreferences = ({ account, profile, folds }) => {
       t('profile.preferences.theme.label'),
       t(`profile.preferences.theme.${themePreference}`),
     ],
+    ...(packs.length > 0
+      ? [
+          [
+            'look',
+            t('profile.preferences.look.label'),
+            pack ? lookName(packs, pack) : t('profile.preferences.look.follow'),
+          ],
+        ]
+      : []),
     ['timezone', t('profile.preferences.timezone'), preferences.timezone || detectedZone()],
     [
       'region',
@@ -230,7 +243,13 @@ PinField.propTypes = {
 const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
-  const { preference: themePreference, setPreference: setThemePreference } = useTheme();
+  const {
+    preference: themePreference,
+    setPreference: setThemePreference,
+    pack,
+    packs,
+    setPack,
+  } = useTheme();
   const own = session !== null;
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
@@ -290,6 +309,14 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
       return;
     }
     setThemePreference(theme);
+  };
+
+  const changeLook = name => {
+    if (!own) {
+      set('pack', name);
+      return;
+    }
+    setPack(name);
   };
 
   const setPinMode = () => {
@@ -413,6 +440,26 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               </SelectField>
             </div>
           </div>
+          {packs.length > 0 ? (
+            <div className="row">
+              <div className="col-md-3">
+                <SelectField
+                  id="profile-preferences-look"
+                  label={t('profile.preferences.look.label')}
+                  hint={own ? t('profile.preferences.lookHint') : ''}
+                  value={own ? pack : settings.pack}
+                  onChange={event => changeLook(event.target.value)}
+                >
+                  <option value="">{t('profile.preferences.look.follow')}</option>
+                  {packs.map(entry => (
+                    <option key={entry.name} value={entry.name}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            </div>
+          ) : null}
           <div className="row">
             <div className="col-md-6">
               <SelectField
@@ -474,7 +521,9 @@ EditablePreferences.propTypes = {
  * fold is kept under `table_prefs_profile_preferences`: language,
  * theme, time zone and region on one row, language and theme as selects
  * that write through on change, the same values the chrome's controls
- * write through the shared `useTheme` and the shared `i18n`; the time
+ * write through the shared `useTheme` and the shared `i18n`; a Look
+ * select on its own row while the host offers packs, "Follow this site"
+ * or one of them, writing through on change as the theme does; the time
  * zone from the `Intl` list with the detected zone preselected while none
  * is set; region as a select of the two-letter country list plus `EU`,
  * `EEA` and `UK`, the legal region the terms and policy variants resolve

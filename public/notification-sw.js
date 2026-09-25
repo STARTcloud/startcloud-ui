@@ -1,7 +1,12 @@
 const PARAMS = new URL(self.location.href).searchParams;
 const APP_NAME = PARAMS.get('app') || 'Notification';
 const CACHE_NAME = `startcloud-ui-${PARAMS.get('v') || '0'}`;
-const PRECACHE = ['/manifest.json', '/brand/startcloud/mark.svg', '/brand/startcloud/icon.png'];
+const PRECACHE = [
+  '/manifest.json',
+  '/brand/startcloud/mark.svg',
+  '/brand/startcloud/mark-192.png',
+  '/brand/startcloud/mark-512.png',
+];
 
 self.addEventListener('install', event => {
   event.waitUntil(

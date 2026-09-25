@@ -31,6 +31,13 @@ export const statusShape = PropTypes.shape({
       name: PropTypes.string.isRequired,
       css: PropTypes.string.isRequired,
     }),
+    packs: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        css: PropTypes.string.isRequired,
+        label: PropTypes.string.isRequired,
+      })
+    ),
   }),
   auth: PropTypes.arrayOf(PropTypes.string),
   analytics: PropTypes.shape({

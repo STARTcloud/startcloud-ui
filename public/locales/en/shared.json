@@ -53,8 +53,14 @@
     "light": "Theme: light",
     "dark": "Theme: dark",
     "name": {
+      "auto": "Auto (follow device)",
       "light": "Light",
       "dark": "Dark"
+    },
+    "look": {
+      "menu": "Theme and look",
+      "title": "Look",
+      "follow": "Follow this site"
     }
   },
   "sessionEnded": {
@@ -486,6 +492,11 @@
         "auto": "Auto (follow device)"
       },
       "themeHint": "Saved as you change it, the same value the theme button writes.",
+      "look": {
+        "label": "Look",
+        "follow": "Follow this site"
+      },
+      "lookHint": "Saved as you change it, the same value the theme menu writes.",
       "timezone": "Time zone",
       "timezoneHint": "The detected zone is preselected while none is set.",
       "region": "Region",

@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 
 /**
- * The Hyperweaver woven H, inline from hyperweaver-ui's
- * public/images/hyperweaver-glyph.svg, drawn at 1em so it sits in a button or
- * a row like an icon.
+ * The Hyperweaver woven H, the same drawing as the build's
+ * public/brand/hyperweaver/mark.svg, inline at 1em so it sits in a button
+ * or a row like an icon.
  */
 const HyperweaverGlyph = ({ className = '' }) => (
   <svg

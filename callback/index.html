@@ -21,11 +21,31 @@
           if (lang) {
             document.documentElement.lang = lang;
           }
+          var packName = localStorage.getItem('pack') || '';
+          var packs = JSON.parse(localStorage.getItem('packs') || '[]');
+          var pack = /^[a-z0-9-]+$/.test(packName)
+            ? packs.filter(function (entry) {
+                return entry && entry.name === packName;
+              })[0]
+            : null;
+          if (
+            pack &&
+            /^\/(?![/\\])/.test(pack.css || '') &&
+            document.documentElement.getAttribute('data-brand') !== pack.name
+          ) {
+            document.documentElement.setAttribute('data-brand', pack.name);
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'brand-pack';
+            link.href = pack.css;
+            document.head.appendChild(link);
+          }
         } catch (error) {
           document.documentElement.setAttribute('data-bs-theme', 'light');
         }
       })();
     </script>
+    <link rel="icon" href="/brand/startcloud/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/brand/startcloud/mark.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Signing in… — STARTcloud</title>

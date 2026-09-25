@@ -152,12 +152,7 @@ export default defineConfig(({ command }) => ({
         // he is going to say no, so do not do it.
         entryFileNames: `assets/[name].js`,
         chunkFileNames: `assets/[name].js`,
-        assetFileNames: assetInfo => {
-          if (assetInfo.name === 'favicon.ico' || assetInfo.name === 'dark-favicon.ico') {
-            return '[name][extname]';
-          }
-          return `assets/[name].[ext]`;
-        },
+        assetFileNames: `assets/[name].[ext]`,
         manualChunks: id => {
           if (id.includes('node_modules/leaflet')) {
             return 'leaflet';

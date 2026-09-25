@@ -4,6 +4,7 @@ import { FaBars, FaCircleHalfStroke, FaCompass, FaMoon, FaSun, FaTicket } from '
 
 import Crumbs, { crumbShape } from './Breadcrumbs';
 import { LanguageButton } from './LanguageModal';
+import LookMenu, { lookShape } from './LookMenu';
 import { NoticeBanners } from './Notices';
 import { NavbarSearchControl } from './Search';
 import { NavbarSearchPanel } from './SearchPanel';
@@ -104,6 +105,9 @@ const ThemeButton = ({ theme }) => {
   const themeLabel = t(`theme.${theme.preference}`, {
     variant: t(`theme.name.${theme.resolved}`),
   });
+  if (theme.look?.packs.length > 0) {
+    return <LookMenu theme={theme} className={CLUSTER_BUTTON} />;
+  }
   return (
     <li className="nav-item">
       <button
@@ -124,6 +128,8 @@ const themeShape = PropTypes.shape({
   preference: PropTypes.string.isRequired,
   resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
   onToggle: PropTypes.func.isRequired,
+  onPick: PropTypes.func,
+  look: lookShape,
 });
 
 ThemeButton.propTypes = {
@@ -132,9 +138,10 @@ ThemeButton.propTypes = {
 
 /**
  * The account cluster in one order for both states, search, Discover, the
- * ticket icon, theme, language, then the account menu or Sign in, each
- * control drawn only in the state it belongs to: search and the menu
- * signed in, the ticket icon and Sign in signed out, the rest in both.
+ * ticket icon, theme (the cycling button, or the variant-and-look menu
+ * while the host offers packs), language, then the account menu or Sign
+ * in, each control drawn only in the state it belongs to: search and the
+ * menu signed in, the ticket icon and Sign in signed out, the rest in both.
  */
 const Cluster = ({
   signedIn,

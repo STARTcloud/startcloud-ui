@@ -53,8 +53,14 @@
     "light": "Tema: claro",
     "dark": "Tema: oscuro",
     "name": {
+      "auto": "Automático (seguir el dispositivo)",
       "light": "Claro",
       "dark": "Oscuro"
+    },
+    "look": {
+      "menu": "Tema y aspecto",
+      "title": "Aspecto",
+      "follow": "Seguir este sitio"
     }
   },
   "sessionEnded": {
@@ -486,6 +492,11 @@
         "auto": "Automático (seguir el dispositivo)"
       },
       "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
+      "look": {
+        "label": "Aspecto",
+        "follow": "Seguir este sitio"
+      },
+      "lookHint": "Se guarda al cambiarlo, el mismo valor que escribe el menú de tema.",
       "timezone": "Zona horaria",
       "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
       "region": "Región",

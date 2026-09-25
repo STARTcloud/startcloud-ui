@@ -4,3 +4,8 @@ logo: /brand/prominic/mark.svg
 logo_color:
   light: '#67142c'
   dark: '#e07a9a'
+display: "'OCR A Tribute', monospace"
+fonts:
+  - family: OCR A Tribute
+    file: ocr-a-tribute-400.woff2
+    weight: 400

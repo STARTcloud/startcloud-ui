@@ -1,6 +1,6 @@
 # STARTcloud UI
 
-One React + Vite web UI for the STARTcloud estate — a single build that serves whichever backend hosts it, starting with **BoxVault**, the **Provisioner Catalog** and the **VDI Health Monitor**, with the identity provider and further apps to follow.
+One React + Vite web UI for the STARTcloud estate — a single build that serves whichever backend hosts it, **BoxVault**, the **Provisioner Catalog**, the **VDI Health Monitor** and the **identity provider**, with further apps to follow.
 
 The page asks the origin that served it `GET /api/status` and builds itself from the answer: `brand` and `links` draw the shell, `auth` picks the session (the host's own backend or the browser as an OIDC client), `collections` names the collections to mount, and every route, menu row and control is gated at runtime by the `features` tokens the host advertises. A backend that lacks a token never shows that surface; a new backend is a new status payload, never new UI code.
 
@@ -55,7 +55,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
      "version": "0.77.0",
      "brand": {
        "name": "BoxVault",
-       "logo_url": "/brand/boxvault.svg",
+       "logo_url": "/brand/boxvault/mark.svg",
        "repo": "https://github.com/Makr91/BoxVault"
      },
      "auth": ["backend"],
@@ -87,7 +87,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
    | `auth`            | `["backend"]` for your own session routes (`/api/auth/*`, `/api/user`, `/api/userinfo/claims`, `/api/user/preferences`), `["idp"]` for the browser as the OIDC public client, or `[]` for no session at all (everyone sees everything, no Sign in button) |
    | `idp`             | With `idp` only: `issuer`, `client_id`, `scopes`, `storage_prefix`                                                                                                                                                                                        |
    | `collections`     | The collections to mount, in order; the order sets mount order only, each definition carries its own route segment: `boxes`, `isos`, `provisioners`; `[]` on a host without collections                                                                   |
-   | `config`          | The configuration file names the admin page draws one tab each for, served at `/api/config/<name>`; absent means `["app"]`                                                                                                                                |
+   | `config`          | The configuration file names the admin page draws one route each for, `/admin/config/<name>`, served at `/api/config/<name>`; absent means `["app"]`                                                                                                      |
    | `events`          | With the `events` token only: `{ path, topics }`, the one event stream the runtime opens per tab and every topic the host streams                                                                                                                         |
    | `features`        | The gate; absence hides the surface, no array at all renders everything                                                                                                                                                                                   |
    | `links`           | `docs` and `contact`                                                                                                                                                                                                                                      |
@@ -102,14 +102,14 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
 | `setup`            | `/setup` and the setup gate before any other route                                                                    |
 | `admin`            | `/admin` and the Admin menu row (still needs `ROLE_ADMIN`)                                                            |
 | `org-console`      | `/org-console` and its menu row (still needs org OWNER/ADMIN)                                                         |
-| `discover`         | `/organizations/discover` and the Discover button on the home page                                                    |
+| `discover`         | `/organizations/discover` and the cluster's Discover compass                                                          |
 | `invitations`      | the Invitations tab in the org console                                                                                |
 | `uploads`          | ISO upload zone, box file upload, the upload slots                                                                    |
 | `private-catalogs` | `/api/private/<uuid>/...` per membership, the access-denied banner                                                    |
 | `watches`          | watch stars and the Watched filter                                                                                    |
 | `deploy`           | the Deploy button and glyph (still needs the hyperweaver entitlement and `/api/config`)                               |
 | `rebuild`          | the Rebuild catalog data menu row (still needs `ROLE_ADMIN`)                                                          |
-| `favorites`        | the Add to Favorites toggle on About (needs `/api/favorites`)                                                         |
+| `favorites`        | the Add to Favorites toggle on About over `GET` and `PUT /api/user/favorites`                                         |
 | `notifications`    | the Notifications menu row (still needs the scope)                                                                    |
 | `health`           | the footer health heart from `/api/health`                                                                            |
 | `search`           | the app-wide search list and `/search?q=` ask `GET /api/search`; without it the UI searches what its collections load |
@@ -118,7 +118,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
 
 The routes `/login`, `/register`, `/profile`, `/invite/:token` and `/auth/callback` exist only for `backend`; `/callback/` only for `idp`. A deep link to a route the host lacks renders a not-available page naming the missing token. `/search?q=` exists on every host.
 
-The VDI Health Monitor answers `role: "vdi-health"` with `brand.logo_url: "/brand/vdi-health.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
+The VDI Health Monitor answers `role: "vdi-health"` with `brand.logo_url: "/brand/vdi-health/mark.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
 
 ## Layout
 
@@ -134,14 +134,16 @@ src/
     collections/
       registry.js     token -> collection, mounted in status.collections order
       boxes/  isos/  provisioners/   definition, api/ (adapter and calls), components/, utils/, assets/, index.js
-  hooks/              useSession, useTheme, useFavicon, useSearchBinding, useEventStream
+  hooks/              useSession, useTheme, useFavicon, usePwa, useSearchBinding, useEventStream
   contexts/           StatusContext, NoticeContext, SearchContext
   lib/                apiClient, backendSession, browserOidc, anonymousSession, createSession, runtime, sse, eventHub, i18n, logger, ...
   utils/              capabilities, routes, relativeTime, gravatar, identity, ticketUrl, membership, ...
   config/             brand fallbacks and constants that are not from status
   css/                styles.css, fonts.css
 public/
-  brand/              boxvault.svg  boxvault-dark.svg  vdi-health.svg
+  brand/<name>/       mark.svg  logo.svg  glyph.svg  header.svg  mark-64.png  mark-192.png  mark-512.png  favicon.ico  logo.png
+  brand/providers/    google.svg  github.svg  microsoft.svg
+  brand/vendors/      the product vendors' marks
   locales/<lang>/     shared.json  auth.json
 ```
 

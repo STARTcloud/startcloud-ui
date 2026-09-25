@@ -11,21 +11,85 @@ const PUBLIC = { auth: false };
 const DATA_ATTRIBUTE = /^data-[a-z0-9-]+$/;
 const PACK_NAME = /^[a-z0-9-]+$/;
 const SAME_ORIGIN_PATH = /^\/(?![/\\])/;
+const PACK_LINK_ID = 'brand-pack';
+const PACK_KEY = 'pack';
+const PACKS_KEY = 'packs';
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
 
-const applyPack = pack => {
-  if (document.documentElement.hasAttribute('data-brand')) {
+const validPack = pack =>
+  Boolean(pack?.css) && SAME_ORIGIN_PATH.test(pack.css) && PACK_NAME.test(pack.name || '');
+
+/**
+ * The packs a person may choose on this host, `brand.packs` of the status
+ * with every malformed entry dropped.
+ *
+ * @param {Object} brand - `status.brand`
+ * @returns {Array<{ name: string, css: string, label: string }>} The offered packs
+ */
+export const offeredPacks = brand =>
+  (Array.isArray(brand?.packs) ? brand.packs : []).filter(
+    pack => validPack(pack) && typeof pack.label === 'string'
+  );
+
+/**
+ * The pack the person chose on this host, read from the `pack` key beside
+ * `theme`, or null while the choice is unset or names a pack the host no
+ * longer offers.
+ *
+ * @param {Array<{ name: string }>} packs - The offered packs
+ * @returns {Object|null} The chosen pack
+ */
+export const chosenPack = packs => {
+  const name = localStorage.getItem(PACK_KEY) || '';
+  return packs.find(pack => pack.name === name) || null;
+};
+
+/**
+ * Paint the page in a pack: `data-brand` stamped from its name and its
+ * stylesheet linked last in the head, after the app's own, so a tie on
+ * specificity goes to the pack; null removes the person's own link and the
+ * attribute, leaving whatever the served page stamped. A pack the served
+ * page already stamped is left as it is.
+ *
+ * @param {{ name: string, css: string }|null} pack - The pack to paint, or null for none
+ */
+export const applyPack = pack => {
+  const root = document.documentElement;
+  const link = document.getElementById(PACK_LINK_ID);
+  if (!validPack(pack)) {
+    link?.remove();
+    root.removeAttribute('data-brand');
     return;
   }
-  if (!pack?.css || !PACK_NAME.test(pack.name || '')) {
+  if (!link && root.getAttribute('data-brand') === pack.name) {
     return;
   }
-  document.documentElement.setAttribute('data-brand', pack.name);
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = pack.css;
-  document.head.appendChild(link);
+  const element = link || document.createElement('link');
+  element.rel = 'stylesheet';
+  element.id = PACK_LINK_ID;
+  if (element.getAttribute('href') !== pack.css) {
+    element.href = pack.css;
+  }
+  root.setAttribute('data-brand', pack.name);
+  document.head.appendChild(element);
+};
+
+const paintBrand = brand => {
+  const packs = offeredPacks(brand);
+  if (packs.length > 0) {
+    localStorage.setItem(PACKS_KEY, JSON.stringify(packs));
+  } else {
+    localStorage.removeItem(PACKS_KEY);
+  }
+  const chosen = chosenPack(packs);
+  if (chosen) {
+    applyPack(chosen);
+    return;
+  }
+  if (!document.documentElement.hasAttribute('data-brand') && validPack(brand?.pack)) {
+    applyPack(brand.pack);
+  }
 };
 
 const appendAnalytics = analytics => {
@@ -123,15 +187,18 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * `analytics`; and the pack when the status carries `brand.pack`,
  * `data-brand` stamped from its `name` and its `css` appended as a
  * stylesheet link after the app's own, unless the served page already
- * carries `data-brand`, in which case nothing is touched. Runs once per
- * entry before anything renders; the exports are live bindings.
+ * carries `data-brand`, in which case nothing is touched; the packs the
+ * host offers a person, `brand.packs`, cached under `packs` for the
+ * pre-paint script, and the person's own choice under `pack`, when it
+ * names an offered pack, painted over the host's. Runs once per entry
+ * before anything renders; the exports are live bindings.
  *
  * @param {Object} status - The payload from `probeStatus`
  */
 export const initRuntime = status => {
   apiOrigin = __API_ORIGIN__ || window.location.origin;
   appendAnalytics(status.analytics);
-  applyPack(status.brand?.pack);
+  paintBrand(status.brand);
   ({ session, returnTo } = createSession(status, events));
   client = createApiClient({
     baseUrl: apiOrigin,

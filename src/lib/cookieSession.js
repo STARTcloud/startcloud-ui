@@ -17,6 +17,7 @@ const DROPPED_PREFIXES = ['table_prefs_', 'sidebar_open_', 'sidebar_view_'];
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
 const THEME_VALUES = ['auto', 'light', 'dark'];
+const PACK_NAME = /^[a-z0-9-]+$/;
 const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 const SAFE_PATH = /^\/(?![/\\])/;
 const OPTIONAL = { auth: 'optional' };
@@ -39,6 +40,11 @@ const applyAccountPreferences = preferences => {
   }
   if (preferences.language) {
     localStorage.setItem('language', preferences.language);
+  }
+  if (typeof preferences.pack === 'string' && PACK_NAME.test(preferences.pack)) {
+    localStorage.setItem('pack', preferences.pack);
+  } else if (preferences.pack === null) {
+    localStorage.removeItem('pack');
   }
 };
 
@@ -109,7 +115,7 @@ export const accountMemberships = user =>
  * the moment it answers, not only the one that noticed it first.
  * `load({ navigate })` sets that holder once before reading `GET /api/user`
  * and falls back to the cached profile on any failure but a `401`, which
- * clears it instead. `savePreferences` writes the chrome's theme and
+ * clears it instead. `savePreferences` writes the chrome's theme, look and
  * language through `PATCH /api/user/preferences` except for a guest-only
  * account, which the issuer refuses `403 guest_only`, so its choices stay
  * the browser's. `begin({ method, navigate })` with no method, `local`

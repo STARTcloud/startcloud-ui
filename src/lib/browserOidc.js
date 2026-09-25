@@ -5,6 +5,7 @@ import { audienceOf, decodeJwt } from './jwt';
 
 const PREFERENCES_PATH = '/api/user/preferences';
 const THEME_VALUES = ['auto', 'light', 'dark'];
+const PACK_NAME = /^[a-z0-9-]+$/;
 
 const randomUrlSafe = byteCount => {
   const bytes = new Uint8Array(byteCount);
@@ -26,6 +27,11 @@ const applyAccountPreferences = preferences => {
   }
   if (preferences.language) {
     localStorage.setItem('language', preferences.language);
+  }
+  if (typeof preferences.pack === 'string' && PACK_NAME.test(preferences.pack)) {
+    localStorage.setItem('pack', preferences.pack);
+  } else if (preferences.pack === null) {
+    localStorage.removeItem('pack');
   }
 };
 
