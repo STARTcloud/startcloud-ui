@@ -1,0 +1,5 @@
+{
+  "frame_urls": ["https://app.example/logout?iss=…&sid=…"],
+  "continuation": "https://app.example/",
+  "timeout_seconds": 5
+}

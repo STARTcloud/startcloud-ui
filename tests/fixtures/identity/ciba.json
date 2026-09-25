@@ -1,0 +1,13 @@
+{
+  "client_name": "Conductor",
+  "binding_message": "WDJB-MJHT",
+  "scopes": [
+    { "id": "openid", "label": "openid", "description": "Authenticate your identity" },
+    {
+      "id": "organizations",
+      "label": "organizations",
+      "description": "See your organization memberships and roles"
+    }
+  ],
+  "authorization_details": []
+}

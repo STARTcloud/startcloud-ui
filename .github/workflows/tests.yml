@@ -1,0 +1,174 @@
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      class:
+        description: 'The repository class: shared-ui, node, python, java or worker'
+        required: true
+        type: string
+      runs-on:
+        description: 'The runner label'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+      node-version:
+        description: 'Node.js version for shared-ui, node and worker'
+        required: false
+        type: string
+        default: '22'
+      python-version:
+        description: 'Python version for python'
+        required: false
+        type: string
+        default: '3.11'
+      java-version:
+        description: 'Java version for java'
+        required: false
+        type: string
+        default: '25'
+      working-directory:
+        description: 'The directory holding package.json, requirements-dev.txt or gradlew'
+        required: false
+        type: string
+        default: '.'
+      ui-version:
+        description: 'The pinned startcloud-ui release to unpack into ui/; empty for shared-ui'
+        required: false
+        type: string
+        default: ''
+      config-dir:
+        description: 'The CONFIG_DIR the live instance boots from; empty when the runner writes it'
+        required: false
+        type: string
+        default: ''
+      boot:
+        description: 'The command that boots the live instance in the background; empty for shared-ui'
+        required: false
+        type: string
+        default: ''
+      origin:
+        description: 'The origin the live instance listens on'
+        required: false
+        type: string
+        default: 'http://127.0.0.1:3000'
+      unit:
+        description: 'The unit test command of the class'
+        required: false
+        type: string
+        default: ''
+      features:
+        description: 'The directory holding the .feature files and their steps'
+        required: false
+        type: string
+        default: 'tests/features'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (${{ inputs.class }})
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      CI: 'true'
+      BASE_URL: ${{ inputs.class == 'shared-ui' && '' || inputs.origin }}
+      CONFIG_DIR: ${{ inputs.config-dir }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        if: ${{ inputs.class != 'python' && inputs.class != 'java' }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Setup Python
+        if: ${{ inputs.class == 'python' }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+
+      - name: Setup Java
+        if: ${{ inputs.class == 'java' }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Install dependencies
+        if: ${{ inputs.class != 'python' && inputs.class != 'java' }}
+        run: npm ci
+
+      - name: Install Python dependencies
+        if: ${{ inputs.class == 'python' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Fetch the pinned STARTcloud UI release
+        if: ${{ inputs.ui-version != '' }}
+        env:
+          UI_VERSION: ${{ inputs.ui-version }}
+        run: |
+          mkdir -p ui
+          curl -fsSL "https://github.com/STARTcloud/startcloud-ui/releases/download/v${UI_VERSION}/startcloud-ui-${UI_VERSION}.tar.gz" | tar -xz -C ui
+
+      - name: Build
+        if: ${{ inputs.class == 'shared-ui' }}
+        run: npm run build
+
+      - name: Unit tests
+        if: ${{ inputs.unit != '' }}
+        run: ${{ inputs.unit }}
+
+      - name: Install Playwright browsers
+        run: npx --yes playwright@1.56.0 install --with-deps chromium
+
+      - name: Boot the live instance
+        if: ${{ inputs.boot != '' }}
+        env:
+          ORIGIN: ${{ inputs.origin }}
+        run: |
+          nohup ${{ inputs.boot }} > live-instance.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS "${ORIGIN}/api/status" > /dev/null; then
+              echo "Live instance answered after ${attempt} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Live instance did not answer /api/status" >&2
+          cat live-instance.log >&2
+          exit 1
+
+      - name: Feature tests
+        if: ${{ inputs.class == 'shared-ui' }}
+        run: npm run test:features
+
+      - name: Feature tests against the live instance
+        if: ${{ inputs.class != 'shared-ui' }}
+        env:
+          FEATURES: ${{ inputs.features }}
+        run: npx --yes playwright-bdd@8.5.1 --config "${FEATURES}/playwright.config.js" && npx --yes playwright@1.56.0 test --config "${FEATURES}/playwright.config.js"
+
+      - name: Upload the reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: tests-${{ inputs.class }}-${{ github.run_attempt }}
+          path: |
+            ${{ inputs.working-directory }}/playwright-report
+            ${{ inputs.working-directory }}/test-results
+            ${{ inputs.working-directory }}/coverage
+            ${{ inputs.working-directory }}/live-instance.log
+          if-no-files-found: ignore
+          retention-days: 14

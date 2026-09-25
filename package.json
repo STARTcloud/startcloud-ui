@@ -39,11 +39,17 @@
     "format:check": "prettier --check .",
     "format:fix": "prettier --write . --log-level warn",
     "quality": "npm run lint && npm run format:check",
-    "fix": "npm run lint:fix && npm run format:fix"
+    "fix": "npm run lint:fix && npm run format:fix",
+    "test": "npm run test:unit && npm run test:features",
+    "test:unit": "vitest run --coverage",
+    "test:features": "bddgen && playwright test",
+    "test:features:ui": "bddgen && playwright test --ui"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "1.56.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
@@ -52,8 +58,10 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
+    "playwright-bdd": "8.5.1",
     "prettier": "^3.9.8",
     "vite": "^8.3.0",
-    "vite-plugin-svgr": "^5.0.0"
+    "vite-plugin-svgr": "^5.0.0",
+    "vitest": "^4.0.0"
   }
 }

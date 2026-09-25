@@ -1,0 +1,31 @@
+{
+  "client_id": "conductor",
+  "client_name": "Conductor",
+  "state": "…",
+  "user_code": null,
+  "action": "/oauth2/authorize",
+  "principal": "mark@m4kr.net",
+  "consent_text": null,
+  "scopes": [
+    { "id": "openid", "label": "openid", "description": "Authenticate your identity" },
+    {
+      "id": "organizations",
+      "label": "organizations",
+      "description": "See your organization memberships and roles"
+    }
+  ],
+  "granted_scopes": [
+    { "id": "email", "label": "email", "description": "Access your email address" }
+  ],
+  "authorization_details": [
+    {
+      "type": "domino_vault",
+      "description": "Access an ID Vault",
+      "locations": ["https://vault.example"],
+      "actions": ["read"],
+      "datatypes": null,
+      "identifier": null,
+      "privileges": null
+    }
+  ]
+}

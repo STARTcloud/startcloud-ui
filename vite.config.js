@@ -138,6 +138,9 @@ export default defineConfig(({ command }) => ({
       ...issuerProxy(),
     },
   },
+  preview: {
+    proxy: {},
+  },
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1000,

@@ -42,6 +42,57 @@ html {
   --bs-btn-border-color: #807769;
 }
 
+[data-brand] .btn-primary {
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--brand-primary) 85%, black);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--brand-primary) 80%, black);
+  --bs-btn-hover-color: var(--brand-on-primary);
+  --bs-btn-active-bg: color-mix(in srgb, var(--brand-primary) 80%, black);
+  --bs-btn-active-border-color: color-mix(in srgb, var(--brand-primary) 75%, black);
+  --bs-btn-active-color: var(--brand-on-primary);
+  --bs-btn-disabled-bg: var(--brand-primary);
+  --bs-btn-disabled-border-color: var(--brand-primary);
+  --bs-btn-disabled-color: var(--brand-on-primary);
+}
+
+[data-brand] .btn-outline-primary {
+  --bs-btn-color: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: var(--brand-primary);
+  --bs-btn-hover-border-color: var(--brand-primary);
+  --bs-btn-hover-color: var(--brand-on-primary);
+  --bs-btn-active-bg: var(--brand-primary);
+  --bs-btn-active-border-color: var(--brand-primary);
+  --bs-btn-active-color: var(--brand-on-primary);
+  --bs-btn-disabled-color: var(--brand-primary);
+  --bs-btn-disabled-border-color: var(--brand-primary);
+}
+
+[data-brand] .form-check-input:checked {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+[data-brand] .nav-pills {
+  --bs-nav-pills-link-active-bg: var(--brand-primary);
+  --bs-nav-pills-link-active-color: var(--brand-on-primary);
+}
+
+[data-brand] .pagination {
+  --bs-pagination-active-bg: var(--brand-primary);
+  --bs-pagination-active-border-color: var(--brand-primary);
+  --bs-pagination-active-color: var(--brand-on-primary);
+  --bs-pagination-color: var(--brand-primary);
+}
+
+[data-brand] .badge.text-bg-primary,
+[data-brand] .bg-primary {
+  background-color: var(--brand-primary) !important;
+  color: var(--brand-on-primary) !important;
+}
+
 .list {
   text-align: left;
   max-width: 90vw;
@@ -82,6 +133,15 @@ h6,
 .navbar-brand,
 .card-title {
   font-family: 'Montserrat', 'Open Sans', sans-serif;
+}
+
+[data-brand] .navbar-brand,
+[data-brand] .sidebar-top,
+[data-brand] h1,
+[data-brand] h2,
+[data-brand] h3,
+[data-brand] .card-title {
+  font-family: var(--brand-auth-display, 'Montserrat', 'Open Sans', sans-serif);
 }
 
 button::-moz-focus-inner {
@@ -1966,6 +2026,15 @@ button::-moz-focus-inner {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+}
+
+.auth-btn-primary .auth-provider-icon {
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--auth-accent-fg);
+  object-fit: contain;
 }
 
 .auth-tiles {

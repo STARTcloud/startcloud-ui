@@ -1431,7 +1431,20 @@ but `shared` and `auth`. A feature's heavy libraries (a map, an
 address autocomplete, a chart) are imported lazily by the route that
 draws them and never enter the build's first load, because the one build
 serves every UI backend and a visitor pays only for the routes of the UI
-backend they are on.
+backend they are on. The same boundary holds for every page the router
+mounts: a feature's `index.js` exports each page as
+`lazy(() => import('./components/<Page>'))`, so each page is its own
+chunk (`assets/<Page>.js`) fetched the first time its route draws, under
+the one `Suspense` of `src/app/provider.jsx`; the API calls, adapters,
+shapes, `sidebar` and hooks stay static exports, and a name the router
+or the shell reads before any page draws (`IDENTITY_ADMIN_PAGES`,
+`ORG_CONSOLE_SEGMENTS`, `PROFILE_ROUTE_SECTIONS`, `accountShape`,
+`sectionsFor`, `setupShape`, `hasAbout`) lives in a small module beside
+the page (`pages.js`, `segments.js`, `sections.js`, `shape.js`,
+`hasAbout.js`), never in the page module, because a name exported from
+a page module pulls the page into the first load; `CallbackPage` stays
+a static export, being the whole of the `/callback/` entry. A page
+imported statically by a barrel is a defect.
 
 ---
 

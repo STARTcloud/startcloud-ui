@@ -1,0 +1,5 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["session","notifications","health"]}
+

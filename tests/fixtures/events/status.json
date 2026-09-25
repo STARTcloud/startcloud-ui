@@ -1,0 +1,13 @@
+{
+  "role": "auth-server",
+  "version": "1.9.1",
+  "brand": {
+    "name": "STARTcloud",
+    "logo_url": "/brand/startcloud/mark.svg"
+  },
+  "auth": ["cookie"],
+  "collections": [],
+  "features": ["health", "events", "footer"],
+  "links": { "docs": "", "contact": "" },
+  "events": { "path": "/api/events", "topics": ["session", "notifications", "health"] }
+}

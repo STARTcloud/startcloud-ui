@@ -403,22 +403,29 @@ purple-black) and the stock variant is the fallback wherever a pack names
 nothing. A pack does not set geometry, radius or spacing — the moment it
 can, it can break layouts it has never been tested against; layout is the
 feature's. The one typographic value it may carry is `--brand-auth-display`,
-the headline face of the shared auth column (decision 5 of the Universal
-Identity Contract); the chrome's own faces are never a pack's to change.
+the brand's display face (decision 5 of the Universal Identity Contract):
+the headline of the shared auth column, and, while a pack is stamped, the
+brand name in the header's `.navbar-brand` and the sidebar's top, every
+page's `h1`, `h2` and `h3` and every card title, so the face of the wordmark
+is the face of the site's headings; the body face, the table face and every
+control's face stay the chrome's, because a display face is drawn for size
+and a monospace or a geometric face at 13px in a table is not readable, and
+a pack that names no face leaves Montserrat on the chrome and Source Serif 4
+on the auth column.
 
 ### Variable contract
 
 Neutral prefix so a pack is authored once for the whole estate:
 
-| Variable               | Purpose                                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `--brand-primary`      | brand color                                                                                            |
-| `--brand-on-primary`   | text/icon color ON primary                                                                             |
-| `--brand-warning`      | brand warning color                                                                                    |
-| `--brand-on-warning`   | text/icon color ON warning                                                                             |
-| `--brand-logo`         | stencil URL for the mask pattern (optional)                                                            |
-| `--brand-logo-color`   | paint color for the stencil (optional)                                                                 |
-| `--brand-auth-display` | the auth column's headline face (optional; Source Serif 4 when absent), its files served with the pack |
+| Variable               | Purpose                                                                                                                                                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--brand-primary`      | brand color                                                                                                                                                                                                                                                 |
+| `--brand-on-primary`   | text/icon color ON primary                                                                                                                                                                                                                                  |
+| `--brand-warning`      | brand warning color                                                                                                                                                                                                                                         |
+| `--brand-on-warning`   | text/icon color ON warning                                                                                                                                                                                                                                  |
+| `--brand-logo`         | stencil URL for the mask pattern (optional)                                                                                                                                                                                                                 |
+| `--brand-logo-color`   | paint color for the stencil (optional)                                                                                                                                                                                                                      |
+| `--brand-auth-display` | the brand's display face: the auth column's headline, the brand name in the header and the sidebar top, `h1` to `h3` and card titles (optional; Source Serif 4 on the auth column and Montserrat on the chrome when absent), its files served with the pack |
 
 `--brand-on-*` exists because a single color cannot express its own
 contrast pairing: a light brand needs dark text on it, a dark brand needs
@@ -768,7 +775,9 @@ Recorded so they surface as decisions rather than discoveries:
 
 - **Typography.** v1 is colors and marks, with the one exception above:
   `--brand-auth-display` and its files on the theme host, `font-src`
-  joining the CSP list for it. No other face is a pack's. Every face,
+  joining the CSP list for it, the one face reaching the auth headline,
+  the brand name in the chrome and the headings. No other face is a
+  pack's. Every face,
   bundled or a pack's, is declared with `font-display: swap`, and the
   shared build preloads the auth column's two faces from `index.html`,
   so text paints in the fallback at once and settles without a blank

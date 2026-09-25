@@ -1,3 +1,7 @@
 dist/
 package-lock.json
 CHANGELOG.md
+.features-gen/
+playwright-report/
+test-results/
+coverage/

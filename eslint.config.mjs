@@ -18,6 +18,9 @@ export default [
       '*.min.js',
       '.next/**/*',
       '.vite/**/*',
+      '.features-gen/**/*',
+      'playwright-report/**/*',
+      'test-results/**/*',
       'public/**/*',
       '*.log',
       '**/*.json',
@@ -342,6 +345,7 @@ export default [
             '**/*.config.mjs',
             '**/vitest.config.js',
             '**/vite.config.js',
+            '**/tests/**',
           ],
         },
       ],
@@ -369,7 +373,12 @@ export default [
 
   // Vite configuration files - Special handling
   {
-    files: ['**/vite.config.js', '**/vite.config.mjs', '**/vitest.config.js'],
+    files: [
+      '**/vite.config.js',
+      '**/vite.config.mjs',
+      '**/vitest.config.js',
+      '**/playwright.config.js',
+    ],
     languageOptions: {
       ecmaVersion: 2024, // Support for import assertions
       sourceType: 'module',
@@ -405,6 +414,7 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
+        ...globals.node,
         ...globals.jest,
         describe: 'readonly',
         it: 'readonly',

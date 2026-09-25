@@ -12,5 +12,5 @@
     "docs": "/docs",
     "contact": ""
   },
-  "config": ["app", "auth", "db", "mail"]
+  "config": ["app"]
 }

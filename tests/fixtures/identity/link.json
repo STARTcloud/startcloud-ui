@@ -1,0 +1,9 @@
+{
+  "email": "mark@m4kr.net",
+  "provider_id": "github",
+  "provider_name": "GitHub",
+  "provider_username": "markgilbert",
+  "has_local_auth": true,
+  "proof": "password",
+  "account": { "name": "Mark Gilbert", "email": "mark@m4kr.net" }
+}

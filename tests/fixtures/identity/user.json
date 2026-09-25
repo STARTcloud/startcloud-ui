@@ -1,0 +1,67 @@
+{
+  "id": 42,
+  "uuid": "8f2c…",
+  "email": "mark@m4kr.net",
+  "email_verified": true,
+  "name": "Mark Gilbert",
+  "given_name": "Mark",
+  "family_name": "Gilbert",
+  "middle_name": null,
+  "salutation": null,
+  "gender": null,
+  "website": null,
+  "birthdate": null,
+  "picture": "/api/user/avatar/8f2c…",
+  "mobile_number": { "masked": "+1 *** *** 4242", "verified": true },
+  "address": {
+    "line1": "",
+    "line2": "",
+    "city": "",
+    "state": "",
+    "postal_code": "",
+    "country": "",
+    "country_code": "",
+    "formatted": "",
+    "latitude": null,
+    "longitude": null
+  },
+  "has_local_auth": true,
+  "requires_password_setup": false,
+  "tfa": {
+    "enabled": true,
+    "preferred_method": "APP",
+    "preferred_authenticator_id": 3,
+    "locked": []
+  },
+  "roles": ["ROLE_USER"],
+  "organizations": [
+    {
+      "uuid": "…",
+      "name": "Acme",
+      "roles": ["OWNER"],
+      "primary": true,
+      "personal": false,
+      "logo_url": "https://…",
+      "email_hash": "…"
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "theme": "dark",
+    "pack": null,
+    "timezone": "America/Chicago",
+    "region": null,
+    "ciba_channel": "PUSH",
+    "ciba_user_code_set": false
+  },
+  "favorite_apps": [
+    {
+      "client_id": "conductor",
+      "client_name": "Conductor",
+      "icon_url": "…",
+      "home_url": "…",
+      "custom_label": null,
+      "order": 0
+    }
+  ]
+}

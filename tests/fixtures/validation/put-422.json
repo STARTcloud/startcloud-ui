@@ -1,0 +1,19 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The configuration did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/boxvault/api_listen_port_encrypted",
+      "rule": "maximum",
+      "params": { "maximum": 65535 },
+      "detail": "api_listen_port_encrypted must be at most 65535"
+    },
+    {
+      "pointer": "/logging/log_directory",
+      "rule": "writable",
+      "params": { "user": "boxvault" },
+      "detail": "/var/log/boxvault is not writable by boxvault"
+    }
+  ]
+}

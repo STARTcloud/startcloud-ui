@@ -1,0 +1,10 @@
+{
+  "status": "ok",
+  "timestamp": "2026-09-06T13:58:00Z",
+  "services": {
+    "database": "ok",
+    "mail": "ok",
+    "sms": "ok",
+    "signing_keys": "ok"
+  }
+}

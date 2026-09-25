@@ -1,0 +1,8 @@
+{
+  "name": "Mark",
+  "email": "mark@m4kr.net",
+  "picture": "",
+  "roles": ["ROLE_ADMIN"],
+  "organizations": [],
+  "has_local_auth": true
+}

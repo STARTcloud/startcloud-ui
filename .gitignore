@@ -12,6 +12,9 @@ dist/
 
 # Testing
 /coverage
+/.features-gen
+/playwright-report
+/test-results
 
 # Local env overrides (Vite) — committed config.yaml holds the shared dev defaults
 .env.local

@@ -1,0 +1,38 @@
+{
+  "role": "auth-server",
+  "version": "1.9.1",
+  "brand": {
+    "name": "STARTcloud",
+    "logo_url": "/brand/startcloud/mark.svg",
+    "changelog": "https://github.com/STARTcloud/authorization-server-private/releases",
+    "theme": "light",
+    "pack": { "name": "startcloud", "css": "/themes/startcloud/startcloud.css" }
+  },
+  "auth": ["cookie"],
+  "collections": [],
+  "features": [
+    "local-accounts",
+    "tfa",
+    "onboarding",
+    "interstitials",
+    "policies",
+    "org-console",
+    "discover",
+    "invitations",
+    "integrations",
+    "search",
+    "inbox",
+    "admin",
+    "notifications",
+    "health",
+    "events",
+    "footer"
+  ],
+  "links": { "docs": "", "contact": "" },
+  "ticket": {
+    "base_url": "https://xd.prominic.net/app/apprequest.nsf/router?openagent",
+    "req_type": "sso",
+    "fallback_customer_id": "A55DF1"
+  },
+  "events": { "path": "/api/events", "topics": ["notifications", "session", "health", "admin"] }
+}

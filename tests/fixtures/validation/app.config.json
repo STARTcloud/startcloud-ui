@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "boxvault": {
+    "origin": "https://boxvault.startcloud.com",
+    "api_listen_port_unencrypted": 80,
+    "api_listen_port_encrypted": 443,
+    "box_storage_directory": "/var/lib/boxvault/storage",
+    "trust_proxy": true
+  },
+  "gravatar": {
+    "api_key": "3f9c…"
+  },
+  "logging": {
+    "level": "info",
+    "categories": {
+      "app": "info",
+      "api": "info"
+    }
+  }
+}
