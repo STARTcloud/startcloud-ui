@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import SignInPlacard from '../../../components/common/SignInPlacard';
 import SubTable from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -210,7 +211,11 @@ const NO_WATCH = { ids: NO_IDS, toggle: null };
  * its select checkbox while the collection has bulk actions the viewer may
  * run; with nothing to show, either draws the one `EmptyState` placard,
  * titled `pages.noMatches` over `pages.noMatchesBody` while a filter is on
- * and `pages.empty` over `pages.emptyBody` otherwise.
+ * and `pages.empty` over `pages.emptyBody` otherwise, except that a
+ * signed-out visitor with no filter on sees `pages.empty` as the
+ * `SignInPlacard`, the hint and the Sign in control under it, because an
+ * empty page with the only Sign in at the far right of the navbar reads
+ * as an empty site.
  */
 const CollectionSection = ({
   collection,
@@ -236,35 +241,43 @@ const CollectionSection = ({
   };
   const emptyText = ctx.filtering ? t('pages.noMatches') : t('pages.empty');
   const emptyBody = ctx.filtering ? t('pages.noMatchesBody') : t('pages.emptyBody');
-  const list =
-    view === 'cards' ? (
-      <ItemCards {...shared} emptyBody={emptyBody} />
-    ) : (
-      <SubTable
-        columns={collection.columns}
-        rows={items}
-        rowKey={itemKey}
-        rowProp="item"
-        RowActions={RowActions}
-        actionsProps={{ ctx }}
-        selection={shared.selection}
-        watches={common.watches || NO_WATCH}
-        groups={common.groups}
-        collapsed={common.collapsed}
-        onToggleGroup={common.onToggleGroup}
-        countKey={collection.countKey}
-        sort={table.sort}
-        onSort={table.onSort}
-        hiddenColumns={table.hiddenColumns}
-        widths={table.widths}
-        sharedWidths={table.sharedWidths}
-        onResize={table.onResize}
-        onNeeds={table.onNeeds}
-        ctx={ctx}
-        emptyText={emptyText}
-        emptyBody={emptyBody}
-      />
+  const signedOutEmpty = items.length === 0 && !ctx.filtering && !ctx.user;
+  let list = null;
+  if (signedOutEmpty) {
+    list = (
+      <SignInPlacard title={emptyText} user={ctx.user} onSignIn={ctx.signIn} body={emptyBody} />
     );
+  } else {
+    list =
+      view === 'cards' ? (
+        <ItemCards {...shared} emptyBody={emptyBody} />
+      ) : (
+        <SubTable
+          columns={collection.columns}
+          rows={items}
+          rowKey={itemKey}
+          rowProp="item"
+          RowActions={RowActions}
+          actionsProps={{ ctx }}
+          selection={shared.selection}
+          watches={common.watches || NO_WATCH}
+          groups={common.groups}
+          collapsed={common.collapsed}
+          onToggleGroup={common.onToggleGroup}
+          countKey={collection.countKey}
+          sort={table.sort}
+          onSort={table.onSort}
+          hiddenColumns={table.hiddenColumns}
+          widths={table.widths}
+          sharedWidths={table.sharedWidths}
+          onResize={table.onResize}
+          onNeeds={table.onNeeds}
+          ctx={ctx}
+          emptyText={emptyText}
+          emptyBody={emptyBody}
+        />
+      );
+  }
   return (
     <div className="mb-4">
       <CollectionHeading collection={collection} count={items.length} picked={picked.length}>

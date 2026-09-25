@@ -2911,10 +2911,11 @@ button::-moz-focus-inner {
   letter-spacing: 0.04em;
 }
 
-.auth-brand-mark {
+.auth-brand-wordmark {
   display: block;
-  width: 56px;
-  height: 56px;
+  height: 64px;
+  width: auto;
+  max-width: 100%;
   margin: 0 auto 16px;
 }
 

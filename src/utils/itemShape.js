@@ -282,6 +282,7 @@ export const collectionShape = PropTypes.shape({
 
 export const pageContextShape = PropTypes.shape({
   user: PropTypes.object,
+  signIn: PropTypes.func,
   orgMark: PropTypes.node,
   prefsPrefix: PropTypes.string.isRequired,
   appName: PropTypes.string.isRequired,

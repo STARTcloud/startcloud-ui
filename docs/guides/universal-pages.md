@@ -296,7 +296,18 @@ adapter, registers the search binding, and renders:
   `pages.emptyBody`, or `pages.noMatches` over `pages.noMatchesBody`
   while the page is narrowed, no column headers above it, so the page
   never changes shape; an organization group with no items keeps its
-  heading over one compact placard row.
+  heading over one compact placard row. When the user is not signed in,
+  and no resources are publicly available to show, the placard is the
+  `SignInPlacard`: `pages.empty` over the hint `pages.signInToSee` and
+  the navbar's own Sign in control, a link to the sign-in page carrying
+  the page as its return path or the one-click sign-in of an `idp` host,
+  drawn only while no filter is on and only on a host whose `auth` names
+  a session; an item, version or provider page whose record the host
+  refused answers the same placard titled `pages.notFound`, the hint and
+  the control for a signed-out visitor and the title alone for a
+  signed-in one, in place of the red toast over a blank page, and never
+  confirms whether the record exists behind the sign-in, because probing
+  existence would leak private names to anyone holding a URL.
 - **Heading rows carry the actions.** A collection heading row holds the
   collection's icon, label and count on the left and the collection's
   `ListActions` slot on the right, the same pair for every collection

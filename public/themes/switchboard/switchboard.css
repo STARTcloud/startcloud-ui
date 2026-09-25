@@ -36,7 +36,8 @@
   --bs-btn-color: var(--brand-on-primary);
   --bs-link-color: #0f6f96;
   --bs-link-color-rgb: 15, 111, 150;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
+  --bs-link-hover-color: #0c5978;
+  --bs-link-hover-color-rgb: 12, 89, 120;
 }
 
 [data-brand='switchboard'][data-bs-theme='dark'] {
@@ -44,5 +45,6 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-link-color: #7fd0f5;
   --bs-link-color-rgb: 127, 208, 245;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
+  --bs-link-hover-color: #99d9f7;
+  --bs-link-hover-color-rgb: 153, 217, 247;
 }

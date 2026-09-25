@@ -132,7 +132,7 @@ const useCopied = () => {
 
 /**
  * The issuer's error page at `/error` and for a route the router does not
- * know: the brand mark, the title and body by status (`403`, `404`, `500`,
+ * know: the brand wordmark, the title and body by status (`403`, `404`, `500`,
  * any other "{{status}} error"), the reference line, Go home, Go back while
  * the history holds a page, Report this issue while signed in (the menu's
  * ticket URL with `type=Backend` and the reference alone as `context`) and
@@ -168,7 +168,11 @@ const ErrorPage = ({ ticketUrl = '', admin = false, notFound = false }) => {
   }, [title]);
 
   return (
-    <AuthShell title={title} subtitle={body} icon={<BrandLogo className="auth-brand-mark" />}>
+    <AuthShell
+      title={title}
+      subtitle={body}
+      icon={<BrandLogo className="auth-brand-wordmark" wordmark />}
+    >
       <div className="auth-ack">
         <span>
           {fault.reference ? (

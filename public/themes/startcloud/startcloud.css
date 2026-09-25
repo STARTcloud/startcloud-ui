@@ -11,7 +11,8 @@
   --bs-btn-color: var(--brand-on-primary);
   --bs-link-color: #0a58ca;
   --bs-link-color-rgb: 10, 88, 202;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
+  --bs-link-hover-color: #0846a2;
+  --bs-link-hover-color-rgb: 8, 70, 162;
 }
 
 [data-brand='startcloud'][data-bs-theme='dark'] {
@@ -23,5 +24,6 @@
   --bs-border-color-rgb: 77, 86, 94;
   --bs-link-color: #6ea8fe;
   --bs-link-color-rgb: 110, 168, 254;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
+  --bs-link-hover-color: #8bb9fe;
+  --bs-link-hover-color-rgb: 139, 185, 254;
 }

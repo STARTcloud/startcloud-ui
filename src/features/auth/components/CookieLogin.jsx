@@ -175,7 +175,7 @@ PolicyLinks.propTypes = {
 };
 
 const SiteMark = ({ answer }) =>
-  answer?.mark_enabled ? <BrandLogo className="auth-brand-mark" /> : null;
+  answer?.mark_enabled ? <BrandLogo className="auth-brand-wordmark" wordmark /> : null;
 
 SiteMark.propTypes = {
   answer: PropTypes.object,
@@ -508,8 +508,9 @@ const useLoginActions = ({
  * provider button per `oidc-` method; the sent state at `/login?sent` with
  * the address in router state; the query alerts; the foot with "Create an
  * account", the policy links and Cancel while the answer says `cancel`,
- * a request parked and the client not hiding it; the site's mark above
- * the heading while the answer says `mark_enabled`. The closable
+ * a request parked and the client not hiding it; the site's wordmark,
+ * `logo.svg` beside its mark, above the heading while the answer says
+ * `mark_enabled`. The closable
  * affordances, Create an account, Forgot password, the sign-in link mode
  * and Keep me logged in, are drawn per `signInAffordances` from the
  * booleans on the methods answer. The

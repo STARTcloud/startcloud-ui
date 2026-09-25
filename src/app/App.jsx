@@ -219,6 +219,7 @@ const App = ({ getSupportedLanguages }) => {
 
   const context = {
     user,
+    signIn: account.signIn,
     orgMark: <BrandLogo className="logo-xl icon-with-margin-sm" />,
     prefsPrefix: PREFS_PREFIX,
     appName: status.brand.name,

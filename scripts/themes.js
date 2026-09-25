@@ -242,7 +242,15 @@ const bridgeLines = source => {
   return lines;
 };
 
-const HOVER_TOWARD = { light: 'black', dark: 'white' };
+const HOVER_SHARE = 0.2;
+
+const hoverOf = (link, variant) =>
+  mixToward(link, NUDGE_TARGET[variant], HOVER_SHARE).map(Math.round);
+
+const colorLines = (key, rgb) => {
+  const hex = `#${rgb.map(value => value.toString(16).padStart(2, '0')).join('')}`;
+  return [`  --bs-${key}: ${hex};`, `  --bs-${key}-rgb: ${rgb.join(', ')};`];
+};
 
 const surfaceLines = (source, variant) =>
   Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => {
@@ -251,9 +259,7 @@ const surfaceLines = (source, variant) =>
       `  --bs-${key}-rgb: ${rgbList(value)};`,
     ];
     if (key === 'link-color') {
-      lines.push(
-        `  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, ${HOVER_TOWARD[variant]});`
-      );
+      lines.push(...colorLines('link-hover-color', hoverOf(value, variant)));
     }
     return lines;
   });
@@ -338,9 +344,11 @@ const writePack = (pack, css) => {
  * and `dark` maps of Bootstrap color names without the `--bs-` prefix,
  * such as `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`,
  * `body-color`, `emphasis-color`, `secondary-color`, `link-color`; a
- * `link-color` also emits `--bs-link-hover-color`, the link color mixed
- * a fifth toward black on light and white on dark, so a brand's links
- * never hover in Bootstrap's blue).
+ * `link-color` also emits `--bs-link-hover-color` and its `-rgb` triplet,
+ * the link color mixed a fifth toward black on light and white on dark,
+ * computed here because Bootstrap paints a hovered link from the triplet
+ * and a `color-mix()` cannot be split into one, so a brand's links never
+ * hover in Bootstrap's blue).
  *
  * A pack is refused, and the process exits non-zero naming every failing
  * pair, when `primary` against `on_primary` (or `warning` against

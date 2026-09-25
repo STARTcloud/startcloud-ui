@@ -6,6 +6,7 @@ import { FaRegStar, FaStar } from 'react-icons/fa6';
 import { versionLevelMatches } from '../../../components/common/levelColumns';
 import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
+import SignInPlacard from '../../../components/common/SignInPlacard';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -350,13 +351,12 @@ const ItemPage = ({ collection, org, name, context }) => {
       .catch(() => {
         if (mounted) {
           setData({ key, item: null });
-          notify('danger', t('pages.notFound'));
         }
       });
     return () => {
       mounted = false;
     };
-  }, [key, collection, org, name, notify, t]);
+  }, [key, collection, org, name]);
 
   useEffect(() => {
     document.title = ready && item ? item.label || item.name : name;
@@ -372,7 +372,11 @@ const ItemPage = ({ collection, org, name, context }) => {
     );
   }
   if (!item) {
-    return <div className="list row" />;
+    return (
+      <div className="list row">
+        <SignInPlacard title={t('pages.notFound')} user={context.user} onSignIn={context.signIn} />
+      </div>
+    );
   }
 
   const actions = ItemActions ? <ItemActions item={item} ctx={ctx} /> : null;

@@ -22,7 +22,8 @@
   --bs-btn-color: var(--brand-on-primary);
   --bs-link-color: #67142c;
   --bs-link-color-rgb: 103, 20, 44;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
+  --bs-link-hover-color: #521023;
+  --bs-link-hover-color-rgb: 82, 16, 35;
 }
 
 [data-brand='prominic'][data-bs-theme='dark'] {
@@ -31,5 +32,6 @@
   --brand-logo-color: #e07a9a;
   --bs-link-color: #ee9ab5;
   --bs-link-color-rgb: 238, 154, 181;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
+  --bs-link-hover-color: #f1aec4;
+  --bs-link-hover-color-rgb: 241, 174, 196;
 }

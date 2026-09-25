@@ -10,6 +10,7 @@ import {
 } from '../../../components/common/levelColumns';
 import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
+import SignInPlacard from '../../../components/common/SignInPlacard';
 import StatusChips from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -330,13 +331,12 @@ const VersionPage = ({ collection, org, name, version, context }) => {
       .catch(() => {
         if (mounted) {
           setData({ key, item: null, entry: null });
-          notify('danger', t('pages.notFound'));
         }
       });
     return () => {
       mounted = false;
     };
-  }, [key, collection, org, name, version, notify, t]);
+  }, [key, collection, org, name, version]);
 
   useEffect(() => {
     document.title = `${name} v${version}`;
@@ -353,7 +353,11 @@ const VersionPage = ({ collection, org, name, version, context }) => {
     );
   }
   if (!entry) {
-    return <div className="list row" />;
+    return (
+      <div className="list row">
+        <SignInPlacard title={t('pages.notFound')} user={context.user} onSignIn={context.signIn} />
+      </div>
+    );
   }
 
   const slotProps = { item, version: entry, ctx };

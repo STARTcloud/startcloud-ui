@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="panagenda">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .pa-blue { fill: #008acc; fill: light-dark(#008acc, #ffffff); }
+    .pa-mid { fill: #b0d2ec; fill: light-dark(#b0d2ec, #ffffff); }
+    .pa-pale { fill: #e4eff9; fill: light-dark(#e4eff9, #ffffff); }
+  </style>
+  <g class="brand-mark-root" transform="translate(41 41) scale(2.4884)">
+    <polygon class="pa-pale" points="42.3,87.5 26.9,83.4 16.2,123.3 56.1,134 59.5,121.2 32,105.3"/>
+    <polygon class="pa-blue" points="112.5,39.4 156.5,83.1 112.7,126.7 69.2,82.8"/>
+    <polygon class="pa-mid" points="36.9,104.1 63.4,58.2 79.2,67.5 63.2,82.9 93.1,113 82.9,130.7"/>
+  </g>
+</svg>

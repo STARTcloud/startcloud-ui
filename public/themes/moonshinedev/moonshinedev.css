@@ -12,7 +12,8 @@
   --bs-btn-color: var(--brand-on-primary);
   --bs-link-color: #146c3c;
   --bs-link-color-rgb: 20, 108, 60;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
+  --bs-link-hover-color: #105630;
+  --bs-link-hover-color-rgb: 16, 86, 48;
 }
 
 [data-brand='moonshinedev'][data-bs-theme='dark'] {
@@ -34,5 +35,6 @@
   --bs-secondary-color-rgb: 154, 161, 168;
   --bs-link-color: #5fd38d;
   --bs-link-color-rgb: 95, 211, 141;
-  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
+  --bs-link-hover-color: #7fdca4;
+  --bs-link-hover-color-rgb: 127, 220, 164;
 }

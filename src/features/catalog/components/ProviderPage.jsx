@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { DownloadAction, architectureLevelMatches } from '../../../components/common/levelColumns';
 import MarkdownText from '../../../components/common/MarkdownText';
 import PageHeader from '../../../components/common/PageHeader';
+import SignInPlacard from '../../../components/common/SignInPlacard';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -80,13 +81,12 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
       .catch(() => {
         if (mounted) {
           setData({ key, item: null, entry: null });
-          notify('danger', t('pages.notFound'));
         }
       });
     return () => {
       mounted = false;
     };
-  }, [key, collection, org, name, version, provider, notify, t]);
+  }, [key, collection, org, name, version, provider]);
 
   useEffect(() => {
     document.title = `${provider} - ${name}`;
@@ -113,7 +113,11 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
     );
   }
   if (!entry) {
-    return <div className="list row" />;
+    return (
+      <div className="list row">
+        <SignInPlacard title={t('pages.notFound')} user={context.user} onSignIn={context.signIn} />
+      </div>
+    );
   }
 
   const parent = (item.versions || []).find(row => row.version === version) || null;
