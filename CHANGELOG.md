@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.45.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.44.0...v0.45.0) (2026-09-25)
+
+
+### Features
+
+* a Group by group in the filter panel picks the field a listing groups by, every pack names its link color per variant with its hover a complement of it, the sign-in and error cards draw the brand wordmark, a signed-out visitor with nothing to see gets the sign-in placard, and the panagenda vendor mark and wordmark ship under public/brand/vendors ([5f67be9](https://github.com/STARTcloud/startcloud-ui/commit/5f67be945f5f06863bdaf8c000a3726f90f86606))
+
+
+### Bug Fixes
+
+* the user record page draws a column without a render from its value instead of throwing on the Name row ([0fe0e4e](https://github.com/STARTcloud/startcloud-ui/commit/0fe0e4e434c0a43a251498f1046924628603118e))
+
 ## [0.44.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.43.0...v0.44.0) (2026-09-25)
 
 
