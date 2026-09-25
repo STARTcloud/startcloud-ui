@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { GuardProvider } from '../../../contexts/GuardContext';
 import { returnToShape } from '../../../utils/auth';
 import { useAdminGate } from '../hooks/useAdminGate';
+import { IDENTITY_ADMIN_PAGES, IDENTITY_RECORD_PAGES } from '../pages';
 
 import BlockedIpsPage from './BlockedIpsPage';
 import ClientHealthPage from './ClientHealthPage';
@@ -41,10 +42,6 @@ const RECORD_PAGES = {
 };
 
 const ADAPTER_OF = { users: 'users', user: 'users', organizations: 'organizations' };
-
-export const IDENTITY_ADMIN_PAGES = Object.keys(PAGES);
-
-export const IDENTITY_RECORD_PAGES = Object.keys(RECORD_PAGES);
 
 /**
  * The adapters the Users and All organizations pages read and act
