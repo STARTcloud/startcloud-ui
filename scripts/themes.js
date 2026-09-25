@@ -242,11 +242,21 @@ const bridgeLines = source => {
   return lines;
 };
 
+const HOVER_TOWARD = { light: 'black', dark: 'white' };
+
 const surfaceLines = (source, variant) =>
-  Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => [
-    `  --bs-${key}: ${String(value).toLowerCase()};`,
-    `  --bs-${key}-rgb: ${rgbList(value)};`,
-  ]);
+  Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => {
+    const lines = [
+      `  --bs-${key}: ${String(value).toLowerCase()};`,
+      `  --bs-${key}-rgb: ${rgbList(value)};`,
+    ];
+    if (key === 'link-color') {
+      lines.push(
+        `  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, ${HOVER_TOWARD[variant]});`
+      );
+    }
+    return lines;
+  });
 
 const darkLogoLines = source =>
   source.logo && source.logo_color?.dark
@@ -327,7 +337,10 @@ const writePack = (pack, css) => {
  * each declared with font-display swap) and `surfaces` (optional, `light`
  * and `dark` maps of Bootstrap color names without the `--bs-` prefix,
  * such as `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`,
- * `body-color`, `emphasis-color`, `secondary-color`, `link-color`).
+ * `body-color`, `emphasis-color`, `secondary-color`, `link-color`; a
+ * `link-color` also emits `--bs-link-hover-color`, the link color mixed
+ * a fifth toward black on light and white on dark, so a brand's links
+ * never hover in Bootstrap's blue).
  *
  * A pack is refused, and the process exits non-zero naming every failing
  * pair, when `primary` against `on_primary` (or `warning` against

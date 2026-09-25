@@ -2,6 +2,8 @@ primary: '#1f9d57'
 on_primary: '#000000'
 display: "'IBM Plex Sans', system-ui, sans-serif"
 surfaces:
+  light:
+    link-color: '#146c3c'
   dark:
     body-bg: '#23272b'
     tertiary-bg: '#2b3034'
@@ -10,3 +12,4 @@ surfaces:
     body-color: '#d8dde1'
     emphasis-color: '#ffffff'
     secondary-color: '#9aa1a8'
+    link-color: '#5fd38d'

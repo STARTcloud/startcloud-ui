@@ -11,3 +11,8 @@ fonts:
   - family: Poppins
     file: poppins-700.woff2
     weight: 700
+surfaces:
+  light:
+    link-color: '#0f6f96'
+  dark:
+    link-color: '#7fd0f5'

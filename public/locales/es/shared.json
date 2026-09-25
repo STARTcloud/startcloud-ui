@@ -1819,7 +1819,8 @@
       "kind": "Tipo",
       "perPage": "Por página",
       "columns": "Columnas",
-      "sort": "Orden"
+      "sort": "Orden",
+      "group": "Agrupar por"
     },
     "group": {
       "other": "Otros"

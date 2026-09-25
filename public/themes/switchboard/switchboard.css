@@ -34,9 +34,15 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-link-color: #0f6f96;
+  --bs-link-color-rgb: 15, 111, 150;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
 }
 
 [data-brand='switchboard'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(36, 173, 227, 0.6);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --bs-link-color: #7fd0f5;
+  --bs-link-color-rgb: 127, 208, 245;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
 }

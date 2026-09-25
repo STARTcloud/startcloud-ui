@@ -1,4 +1,4 @@
-import { sortStackOf } from './prefs';
+import { GROUP_FIELDS, sortStackOf } from './prefs';
 
 /**
  * Whether the host behind `status` advertises a feature token; a host
@@ -69,8 +69,6 @@ export const hostSort = (status, collection, level) => {
   const stack = sortStackOf(status?.sorts?.[collection]?.[level]);
   return stack.length > 0 ? stack : null;
 };
-
-const GROUP_FIELDS = ['family', 'vendor'];
 
 /**
  * The field the host behind `status` groups one level of one collection

@@ -282,7 +282,7 @@ adapter, registers the search binding, and renders:
   organization draw none.
   There is no Private / Public level: the Visibility column and the
   Visibility pill tell public, guests and private apart. Folds persist per page with the
-  filters, the sort, the view and the hidden columns under
+  filters, the sort, the Group by pick, the view and the hidden columns under
   `table_prefs_<the keys of the collections the page lists joined by +>_<org or home>`
   (`table_prefs_boxes+isos_home`, `table_prefs_isos_home`,
   `table_prefs_boxes+isos_STARTcloud`), so the home page, each
@@ -342,8 +342,8 @@ adapter, registers the search binding, and renders:
   collection's heading row beside the page's actions, home carrying the
   toggle alone there, so no page carries an empty row above its first
   heading; stored per page; as `view` inside the page's one
-  `table_prefs_*` object beside its sort, hidden columns, filters and
-  folds, never under a key of its own; the collection's `defaultView`
+  `table_prefs_*` object beside its sort, Group by pick, hidden columns,
+  filters and folds, never under a key of its own; the collection's `defaultView`
   seeds it (the catalog's provisioners and BoxVault's downloads cards,
   boxes and ISOs list).
 - **The row's identity is the vendor's where a row names one.** A record
@@ -505,7 +505,11 @@ status payload standing before either, so one site orders one level its
 own way (downloads.prominic.net's patches by name descending, the base
 install first and the newest fix pack under it) and no other host and no
 other table changes, because a site's preference is that site's status
-and never a rule in the shared definitions. A column may carry
+and never a rule in the shared definitions. The host's `groups` names the
+field a listing groups one collection's items by the same way, `family`
+or `vendor` under `groups.<collection>.items`, and the viewer changes the
+view through the Group by group in the filter panel, the pick persisting
+as `group` beside the sort. A column may carry
 `defaultHidden` (Created, Updated and Architectures do), and in list view
 the viewer shows or hides any column of a table through that collection's
 Columns group in the filter panel; the hidden set persists per page
@@ -1253,6 +1257,7 @@ this order:
 | Watched              | signed in, and a watched row of any collection is on the page             | Watched, one pill narrowing every collection at once                                                                                                                                                                                                                                                                                                                                          |
 | the collection's own | always, prefixed by the collection name when several are listed           | BoxVault boxes: Provider (primary) · Architecture (info) · OS (success); BoxVault ISOs: Organization (primary) across organizations · Architecture (info) · OS (success); catalog provisioners: Tier (badge colors) · Provider (primary); BoxVault downloads: Family (primary) · Vendor (secondary) · Platform (info) · Kind (success), narrowing client-side over the rows the list answered |
 | Columns              | list view, one per collection after its own groups, prefixed the same way | one pill per column of that collection's table, active while the column is shown, no counts; not a filter, so it never counts as one and Clear filters leaves it alone                                                                                                                                                                                                                        |
+| Group by             | a collection that groups its items (downloads), after Columns or Sort     | one pill per field the collection groups by, Family · Vendor, the active one the field in force; a click on another picks it, a click on the active one turns grouping off; the pick persists as `group` beside the sort, and with no pick the host's `groups` entry for the collection's items stands; not a filter, so Clear filters leaves it alone                                        |
 
 Query matches: BoxVault name, label, description and organization; the
 catalog also the repository. Picking a Collection pill hides the other

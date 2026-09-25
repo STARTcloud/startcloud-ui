@@ -4,14 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { drawnColumns } from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { hostSort } from '../../../utils/capabilities';
+import { hostGroup, hostSort } from '../../../utils/capabilities';
 import {
   VISIBILITY_GROUP,
   WATCHED_GROUP,
   defaultMatches,
   filterGroupsOf,
 } from '../../../utils/itemShape';
-import { emptyFilters, readPrefs, toggleIn, withWidth, writePrefs } from '../../../utils/prefs';
+import {
+  GROUP_FIELDS,
+  emptyFilters,
+  readPrefs,
+  toggleIn,
+  withWidth,
+  writePrefs,
+} from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
 
 const groupShown = (group, { signedIn, org, items }) =>
@@ -116,6 +123,9 @@ const effectiveSort = (prefs, collection, status) =>
     ? prefs.sort[collection.key]
     : hostSort(status, collection.key, 'items') || collection.defaultSort || [];
 
+const effectiveGroup = (prefs, collection, status) =>
+  prefs.group[collection.key] ?? hostGroup(status, collection.key, 'items');
+
 const groupLabel = (collection, labelKey, prefixed, t) =>
   prefixed ? `${t(collection.labelKey)} · ${t(labelKey)}` : t(labelKey);
 
@@ -178,6 +188,17 @@ const sortGroup = ({ collection, columns, sort, prefixed, setSort, t }) => ({
   onToggle: key => setSort(collection.key, key),
 });
 
+const groupByGroup = ({ collection, groupBy, prefixed, setGroup, t }) => ({
+  key: `${collection.key}.group`,
+  label: groupLabel(collection, 'pages.filter.group', prefixed, t),
+  entries: Object.fromEntries(GROUP_FIELDS.map(field => [field, null])),
+  activeSet: new Set(groupBy ? [groupBy] : []),
+  activeClass: 'bg-secondary',
+  columns: true,
+  labelFor: field => t(`pages.filter.${field}`),
+  onToggle: field => setGroup(collection.key, field === groupBy ? '' : field),
+});
+
 /**
  * Registers one navbar search binding for a page that lists one or more
  * collections, and returns the collections left visible by the Collection
@@ -189,13 +210,20 @@ const sortGroup = ({ collection, columns, sort, prefixed, setSort, t }) => ({
  * one its table receives), in card view a Sort group per collection in
  * its place, one pill per drawn column that a click cycles through
  * ascending, descending and off, the active pills marked with the
- * direction, never counted as a filter. Watched ids arrive as one Set per
- * collection key, because item ids only mean something inside their own
- * collection. Filters, sort, the one view, the hidden columns, the column
- * widths (per collection, set through `setColumnWidth(collectionKey,
- * column, pixels)`, null resetting one) and the collapsed groups persist
- * per page under the app's prefs prefix. A collection with no saved sort
- * draws the host's `sorts` for its items, else its `defaultSort`.
+ * direction, never counted as a filter, and, for a collection that can
+ * group its items, a Group by group after it, one pill per group field,
+ * the active one the field the items are grouped by, a click on another
+ * picking it and a click on the active one turning grouping off. Watched
+ * ids arrive as one Set per collection key, because item ids only mean
+ * something inside their own collection. Filters, sort, the Group by
+ * pick, the one view, the hidden columns, the column widths (per
+ * collection, set through `setColumnWidth(collectionKey, column,
+ * pixels)`, null resetting one) and the collapsed groups persist per page
+ * under the app's prefs prefix. A collection with no saved sort draws the
+ * host's `sorts` for its items, else its `defaultSort`; one with no Group
+ * by pick groups by the host's `groups` entry for its items, else not at
+ * all, `groupBy` answering the field per collection and `ctxFor` receiving
+ * it beside the collection.
  */
 export const useCatalogSearch = ({
   collections,
@@ -252,6 +280,11 @@ export const useCatalogSearch = ({
         [collectionKey]: nextSort(current.sort[collectionKey], column, options),
       },
     }));
+  const groupBy = Object.fromEntries(
+    visible.map(collection => [collection.key, effectiveGroup(prefs, collection, status)])
+  );
+  const setGroup = (collectionKey, field) =>
+    setPrefs(current => ({ ...current, group: { ...current.group, [collectionKey]: field } }));
   let matched = 0;
   visible.forEach(collection => {
     const items = itemsByCollection[collection.key] || [];
@@ -269,7 +302,7 @@ export const useCatalogSearch = ({
         passesWatched(item, prefs.watched, ctx.watchedIds) &&
         passesGroups(item, shown, filters, ctx)
     );
-    const tableCtx = ctxFor(collection);
+    const tableCtx = ctxFor(collection, groupBy[collection.key]);
     filtered[collection.key] = sortItems(
       passing,
       sort[collection.key],
@@ -289,6 +322,11 @@ export const useCatalogSearch = ({
     } else {
       groups.push(
         sortGroup({ collection, columns, sort: sort[collection.key], prefixed, setSort, t })
+      );
+    }
+    if (collection.groupsOf) {
+      groups.push(
+        groupByGroup({ collection, groupBy: groupBy[collection.key], prefixed, setGroup, t })
       );
     }
   });
@@ -335,6 +373,7 @@ export const useCatalogSearch = ({
     filtering,
     sort,
     setSort,
+    groupBy,
     view: prefs.view,
     setView,
     collapsed: prefs.collapsed,

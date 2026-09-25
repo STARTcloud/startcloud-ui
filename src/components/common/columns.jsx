@@ -263,6 +263,7 @@ export const vendorColumn = {
   kind: 'text',
   labelKey: 'pages.table.vendor',
   priority: 7,
+  when: (rows, ctx) => rows.length > 0 && ctx.groupedBy !== 'vendor',
   value: item => item.vendor || '',
 };
 

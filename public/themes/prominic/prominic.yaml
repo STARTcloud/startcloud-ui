@@ -9,3 +9,8 @@ fonts:
   - family: OCR A Tribute
     file: ocr-a-tribute-400.woff2
     weight: 400
+surfaces:
+  light:
+    link-color: '#67142c'
+  dark:
+    link-color: '#ee9ab5'

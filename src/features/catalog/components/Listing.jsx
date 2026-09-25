@@ -7,7 +7,6 @@ import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useSelection } from '../../../hooks/useSelection';
-import { hostGroup } from '../../../utils/capabilities';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { isGuestOnly, isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
@@ -35,12 +34,12 @@ const NO_IDS = new Set();
 
 /**
  * The groups one collection's table or grid draws: one per organization
- * while the page spans organizations, each carrying the host's own groups
- * of its items nested under it while the host names a field to group by
- * and the collection knows how; the host's groups alone on a page of one
+ * while the page spans organizations, each carrying the collection's own
+ * groups of its items nested under it while a field to group by stands
+ * and the collection knows how; those groups alone on a page of one
  * organization; nothing while neither applies.
  *
- * @param {Object} inputs - The `collection`, its sorted `items`, whether the page `spansOrgs`, the field `by` the host named and the translator `t`
+ * @param {Object} inputs - The `collection`, its sorted `items`, whether the page `spansOrgs`, the field `by` in force and the translator `t`
  * @returns {Array<Object>|null} The groups, or null
  */
 const groupsFor = ({ collection, items, spansOrgs, by, t }) => {
@@ -307,9 +306,10 @@ CollectionSection.propTypes = {
  * heading row per collection carrying that collection's list actions, one
  * table or card grid per collection with organization group rows when the
  * page spans organizations and the host's status names no organization of
- * its own, the collection's `groupsOf` groups by the field the host's
- * `groups` names nested under them or standing alone (`ctx.groupedBy`
- * naming which), the leading columns the visible tables
+ * its own, the collection's `groupsOf` groups by the field in force, the
+ * viewer's Group by pick else the host's `groups` entry, nested under them
+ * or standing alone (`ctx.groupedBy` naming which), the leading columns
+ * the visible tables
  * share held at one width across them, and the one view toggle on the
  * header row when the page has a header, else on the first collection's
  * heading row.
@@ -356,8 +356,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
 
   const watches = useWatches({ collections, user: context.user, notify });
   const spansOrgs = grouped && !status.organization;
-  const groupFieldOf = collection => hostGroup(status, collection.key, 'items');
-  const baseCtxFor = collection => ({
+  const baseCtxFor = (collection, by) => ({
     ...context,
     t,
     language: i18n.language,
@@ -367,7 +366,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     member,
     reload,
     notify,
-    groupedBy: groupedByOf(spansOrgs, groupFieldOf(collection)),
+    groupedBy: groupedByOf(spansOrgs, by),
   });
   const search = useCatalogSearch({
     collections,
@@ -384,6 +383,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     filtering,
     sort,
     setSort,
+    groupBy,
     view,
     setView,
     collapsed,
@@ -397,7 +397,10 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
 
   const toggle = <ViewToggle view={view} onChange={setView} />;
 
-  const ctxFor = collection => ({ ...baseCtxFor(collection), filtering });
+  const ctxFor = collection => ({
+    ...baseCtxFor(collection, groupBy[collection.key]),
+    filtering,
+  });
 
   const manages = org ? isOrgManager(context.user, org) : managesAnyOrganization(context.user);
 
@@ -416,7 +419,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
         view={view}
         ctx={ctxFor(collection)}
         common={{
-          groups: groupsFor({ collection, items, spansOrgs, by: groupFieldOf(collection), t }),
+          groups: groupsFor({ collection, items, spansOrgs, by: groupBy[collection.key], t }),
           collapsed,
           onToggleGroup: toggleCollapsed,
           watches:

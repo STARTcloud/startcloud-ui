@@ -2,6 +2,22 @@ import { filterGroupsOf } from './itemShape';
 
 const VIEWS = ['table', 'cards'];
 
+/**
+ * The fields a listing can group its items by, the words a host's
+ * `groups` entry and a person's Group by pick may carry.
+ */
+export const GROUP_FIELDS = ['family', 'vendor'];
+
+/**
+ * The stored Group by pick of one collection: a group field as itself,
+ * the empty string as no grouping, anything else as no pick, so the
+ * host's `groups` entry stands.
+ *
+ * @param {*} saved - The stored value
+ * @returns {string|null} The field, '' for none, or null for no pick
+ */
+export const groupPickOf = saved => (saved === '' || GROUP_FIELDS.includes(saved) ? saved : null);
+
 const parse = key => {
   try {
     return JSON.parse(localStorage.getItem(key) || 'null') || {};
@@ -75,6 +91,7 @@ export const readPrefs = (key, collections) => {
   const saved = parse(key);
   const filters = {};
   const sort = {};
+  const groupBy = {};
   const hiddenColumns = {};
   const widths = {};
   collections.forEach(collection => {
@@ -85,6 +102,7 @@ export const readPrefs = (key, collections) => {
       ])
     );
     sort[collection.key] = sortStackOf(saved.sort?.[collection.key]);
+    groupBy[collection.key] = groupPickOf(saved.group?.[collection.key]);
     hiddenColumns[collection.key] = setOf(
       saved.hiddenColumns?.[collection.key] ?? defaultHidden(collection.columns)
     );
@@ -96,6 +114,7 @@ export const readPrefs = (key, collections) => {
     visibility: setOf(saved.visibility),
     watched: setOf(saved.watched),
     sort,
+    group: groupBy,
     view: VIEWS.includes(saved.view) ? saved.view : collections[0].defaultView,
     collapsed: saved.collapsed || {},
     hiddenColumns,
@@ -105,7 +124,7 @@ export const readPrefs = (key, collections) => {
 
 export const writePrefs = (
   key,
-  { filters, collection, visibility, watched, sort, view, collapsed, hiddenColumns, widths }
+  { filters, collection, visibility, watched, sort, group, view, collapsed, hiddenColumns, widths }
 ) => {
   localStorage.setItem(
     key,
@@ -117,6 +136,7 @@ export const writePrefs = (
       visibility: [...visibility],
       watched: [...watched],
       sort,
+      group: Object.fromEntries(Object.entries(group).filter(([, pick]) => pick !== null)),
       view,
       collapsed,
       hiddenColumns: plainSets(hiddenColumns),

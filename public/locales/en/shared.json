@@ -1819,7 +1819,8 @@
       "kind": "Kind",
       "perPage": "Per page",
       "columns": "Columns",
-      "sort": "Sort"
+      "sort": "Sort",
+      "group": "Group by"
     },
     "group": {
       "other": "Other"

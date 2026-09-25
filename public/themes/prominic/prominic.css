@@ -20,10 +20,16 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-link-color: #67142c;
+  --bs-link-color-rgb: 103, 20, 44;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
 }
 
 [data-brand='prominic'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(156, 102, 118, 0.91);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --brand-logo-color: #e07a9a;
+  --bs-link-color: #ee9ab5;
+  --bs-link-color-rgb: 238, 154, 181;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
 }

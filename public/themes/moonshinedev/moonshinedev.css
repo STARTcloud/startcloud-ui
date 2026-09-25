@@ -10,6 +10,9 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-link-color: #146c3c;
+  --bs-link-color-rgb: 20, 108, 60;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, black);
 }
 
 [data-brand='moonshinedev'][data-bs-theme='dark'] {
@@ -29,4 +32,7 @@
   --bs-emphasis-color-rgb: 255, 255, 255;
   --bs-secondary-color: #9aa1a8;
   --bs-secondary-color-rgb: 154, 161, 168;
+  --bs-link-color: #5fd38d;
+  --bs-link-color-rgb: 95, 211, 141;
+  --bs-link-hover-color: color-mix(in srgb, var(--bs-link-color) 80%, white);
 }
