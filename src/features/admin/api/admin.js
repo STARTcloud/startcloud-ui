@@ -32,6 +32,24 @@ export const suspendUser = userId => client.put(`${user(userId)}/suspend`, {});
 
 export const resumeUser = userId => client.put(`${user(userId)}/resume`, {});
 
+/**
+ * The global role names the backend holds, `GET /api/roles`, its
+ * `{ roles }` answer unwrapped to the array the Roles dialog's catalog
+ * reads.
+ *
+ * @returns {Promise<string[]>} The role names in table order
+ */
+export const roleNames = () => client.get('/api/roles').then(answer => answer.roles);
+
+/**
+ * Writes one user's whole set of global roles, `PUT /api/users/{id}/roles`.
+ *
+ * @param {string|number} userId - The user's id
+ * @param {string[]} roles - The whole set
+ * @returns {Promise<Object>} The answer, `{ message, roles }`
+ */
+export const setUserRoles = (userId, roles) => client.put(`${user(userId)}/roles`, { roles });
+
 export const adminConfig = {
   get: configName => client.get(encodePath('api', 'config', configName)),
   schema: configSchema,

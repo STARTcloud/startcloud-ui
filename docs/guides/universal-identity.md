@@ -2333,7 +2333,11 @@ problem body with `code`.
   `{ list(params), get(id), roles?, update?, setRoles?, suspend?, resume?, remove?, bulk?, rateLimit?: { read, unlockSignIn, unlockMethod, ban, unban }, exportUrl? }`,
   `get(id)` the issuer's `GET /api/admin/users/{id}` and, on a `backend`
   host, the row found in the organizations-with-users answer the adapter
-  already holds, a missing id failing as a `404`,
+  already holds, a missing id failing as a `404`, `roles` and `setRoles`
+  the issuer's `GET /api/admin/roles` and `PUT /api/admin/users/{id}/roles`
+  and on BoxVault `GET /api/roles` (`{ roles: ["user", "admin"] }`) and
+  `PUT /api/users/{id}/roles { roles: [] }` (`422` `lastAdmin` on `/roles`
+  when the write would take `admin` off the last administrator),
   and `organizations` is
   `{ list, update(id, patch), remove(id), suspend?, resume?, bulk? }`;
   an action, a filter group or a column the host cannot answer is drawn

@@ -23,6 +23,8 @@ import {
   organizationRowOf,
   pageOf,
   resumeUser,
+  roleNames,
+  setUserRoles,
   sidebar as adminSidebar,
   storage,
   suspendUser,
@@ -345,8 +347,9 @@ const notFoundError = () =>
  * The Users page's adapter of a `backend` host over the
  * organizations-with-users answer: the paged list and the single record
  * by id read from the same rows, a missing id failing as a 404 the way
- * the client's own not-found does; the suspend, resume and delete calls
- * by id.
+ * the client's own not-found does; the role catalog from `GET /api/roles`
+ * and the whole-set roles write through `PUT /api/users/{id}/roles`, so
+ * the Roles dialog draws; the suspend, resume and delete calls by id.
  */
 const backendUsers = {
   list: params => organizationsWithUsers().then(rows => pageOf(usersOf(rows), params)),
@@ -359,6 +362,8 @@ const backendUsers = {
     }
     return row;
   },
+  roles: roleNames,
+  setRoles: setUserRoles,
   suspend: suspendUser,
   resume: resumeUser,
   remove: removeAccount,

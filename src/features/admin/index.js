@@ -1,6 +1,14 @@
 import { lazy } from 'react';
 
-export { adminConfig, resumeUser, storage, suspendUser, updateStatus } from './api/admin';
+export {
+  adminConfig,
+  resumeUser,
+  roleNames,
+  setUserRoles,
+  storage,
+  suspendUser,
+  updateStatus,
+} from './api/admin';
 export { sidebar } from './sidebar';
 export { organizationBodyOf, organizationRowOf, pageOf, usersOf } from './utils/accounts';
 
