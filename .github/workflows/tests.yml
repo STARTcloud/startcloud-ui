@@ -131,7 +131,7 @@ jobs:
         run: ${{ inputs.unit }}
 
       - name: Install Playwright browsers
-        run: npx --yes playwright@1.56.0 install --with-deps chromium
+        run: npx --yes playwright@1.63.0 install --with-deps chromium
 
       - name: Boot the live instance
         if: ${{ inputs.boot != '' }}
@@ -158,7 +158,7 @@ jobs:
         if: ${{ inputs.class != 'shared-ui' }}
         env:
           FEATURES: ${{ inputs.features }}
-        run: npx --yes playwright-bdd@8.5.1 --config "${FEATURES}/playwright.config.js" && npx --yes playwright@1.56.0 test --config "${FEATURES}/playwright.config.js"
+        run: npx --yes playwright-bdd@9.2.1 --config "${FEATURES}/playwright.config.js" && npx --yes playwright@1.63.0 test --config "${FEATURES}/playwright.config.js"
 
       - name: Upload the reports
         if: ${{ always() }}
