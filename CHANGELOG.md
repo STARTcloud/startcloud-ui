@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.39.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.38.0...v0.39.0) (2026-09-25)
+
+
+### Features
+
+* every brand and product mark as one SVG under public/brand/&lt;name&gt;/ with a header beside it, each painting its own light and dark through light-dark(), the theme pack naming its mark by root path, the favicon, the Powered-by mark and every BrandLogo drawn from that one file, a web app manifest, the push worker installing with the build's version in its query and dropping the previous version's cache, and a Reload banner when a new version of the site is ready ([6037202](https://github.com/STARTcloud/startcloud-ui/commit/603720289f2d2c44b49e22fa3bb66f6a3b3c3695))
+* every brand folder carrying its 64, 192 and 512 icons and small logo rendered from its own SVG, the web app manifest and the touch icon naming them, and the manifest answered per host so an installed site carries its own name and mark ([78a63c9](https://github.com/STARTcloud/startcloud-ui/commit/78a63c9ea89b78724f079fd7bace748de400354d))
+
+
+### Bug Fixes
+
+* removing notifications.md ([c0ff23f](https://github.com/STARTcloud/startcloud-ui/commit/c0ff23fa2f954b191bcca9308b1469b88b22df56))
+
 ## [0.38.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.37.0...v0.38.0) (2026-09-25)
 
 
