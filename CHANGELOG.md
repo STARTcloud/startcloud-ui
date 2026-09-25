@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.41.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.40.0...v0.41.0) (2026-09-25)
+
+
+### Features
+
+* one test system for the shared UI, Vitest unit tests with coverage and Gherkin scenarios run by Playwright over the built app and a fixture host, the reusable tests workflow every repository calls from its ci.yml, the pack's display face on the brand name and headings and every Bootstrap primary control following the pack, the provider mark on a disc of the button's foreground, and the exact Playwright and playwright-bdd pair pinned ([8616ff2](https://github.com/STARTcloud/startcloud-ui/commit/8616ff2af43c41837bee206b29793c7379a974b5))
+* the sign-in page hides Keep me logged in while the client hides it and draws the site's mark above the heading while the client shows it, the file rows carry a download icon and a copy-link icon with tooltips, a downloads file may be a link with a source URL drawn beside its name, one table of the client's sign-in switches in the identity contract, and the shared-ui tests job points at its own preview server ([e0d32df](https://github.com/STARTcloud/startcloud-ui/commit/e0d32dfd74b865dd37532d194fcd796d51124f0d))
+
 ## [0.40.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.39.0...v0.40.0) (2026-09-25)
 
 
