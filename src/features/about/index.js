@@ -1,2 +1,6 @@
+import { lazy } from 'react';
+
 export { default as AboutPage } from './components/AboutPage';
-export { default as AboutRoute, hasAbout } from './components/AboutRoute';
+export { hasAbout } from './hasAbout';
+
+export const AboutRoute = lazy(() => import('./components/AboutRoute'));

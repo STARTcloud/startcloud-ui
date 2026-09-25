@@ -1,3 +1,5 @@
+import { lazy } from 'react';
+
 export {
   fetchFleet,
   fetchGrafana,
@@ -6,6 +8,7 @@ export {
   fetchStats,
   fetchVm,
 } from './api/fleet';
-export { default as FleetPage } from './components/FleetPage';
-export { default as VmPage } from './components/VmPage';
 export { sidebar } from './sidebar';
+
+export const FleetPage = lazy(() => import('./components/FleetPage'));
+export const VmPage = lazy(() => import('./components/VmPage'));

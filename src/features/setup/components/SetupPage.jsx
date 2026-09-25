@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,26 +10,12 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
 import { patchOf, schemaSections, setValueAt } from '../../../utils/schemaSections';
+import { setupShape } from '../shape';
 
 const EMPTY = {};
 const EMPTY_SCHEMA = { properties: {} };
 const EMPTY_NAMES = [];
 const TOKEN_ID = 'setup-token';
-
-/**
- * The app's side of the shared setup page: the setup status, the token
- * check, the configuration files and their schemas read under that token,
- * the write of every file's merge patch, and the one
- * `action(token, route, method, body)` every schema-declared action calls.
- */
-export const setupShape = PropTypes.shape({
-  status: PropTypes.func.isRequired,
-  verify: PropTypes.func.isRequired,
-  get: PropTypes.func.isRequired,
-  schema: PropTypes.func.isRequired,
-  update: PropTypes.func.isRequired,
-  action: PropTypes.func.isRequired,
-});
 
 const combinedSchema = schemas => ({
   properties: Object.fromEntries(

@@ -1,8 +1,11 @@
-export { default as CollectionPage } from './components/CollectionPage';
-export { default as HomePage } from './components/HomePage';
-export { default as ItemPage } from './components/ItemPage';
-export { default as OrgPage } from './components/OrgPage';
-export { default as ProviderPage } from './components/ProviderPage';
-export { default as VersionPage } from './components/VersionPage';
+import { lazy } from 'react';
+
 export { collectionShape, pageContextShape } from '../../utils/itemShape';
 export { sidebar } from './sidebar';
+
+export const CollectionPage = lazy(() => import('./components/CollectionPage'));
+export const HomePage = lazy(() => import('./components/HomePage'));
+export const ItemPage = lazy(() => import('./components/ItemPage'));
+export const OrgPage = lazy(() => import('./components/OrgPage'));
+export const ProviderPage = lazy(() => import('./components/ProviderPage'));
+export const VersionPage = lazy(() => import('./components/VersionPage'));

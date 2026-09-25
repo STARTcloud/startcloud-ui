@@ -25,6 +25,7 @@ import { isOwner } from '../../../utils/membership';
 import { membershipsOf, organizationsShape } from '../../../utils/organizations';
 import { sortItems } from '../../../utils/sort';
 import { issuerOrganizationsShape } from '../api/issuer';
+import { ORG_CONSOLE_SEGMENTS } from '../segments';
 
 import IssuerOrgConsole from './IssuerOrgConsole';
 
@@ -69,8 +70,6 @@ const JOIN_REQUEST_COLUMNS = [
     render: request => localeDate(request.created_at),
   },
 ];
-
-export const ORG_CONSOLE_SEGMENTS = ['members', 'requests'];
 
 const TAB_OF_SEGMENT = { members: 'organization', requests: 'joinRequests' };
 

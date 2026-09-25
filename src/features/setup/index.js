@@ -1,2 +1,6 @@
+import { lazy } from 'react';
+
 export { setupApi } from './api/setup';
-export { default as SetupPage, setupShape } from './components/SetupPage';
+export { setupShape } from './shape';
+
+export const SetupPage = lazy(() => import('./components/SetupPage'));

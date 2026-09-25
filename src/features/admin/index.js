@@ -1,4 +1,7 @@
+import { lazy } from 'react';
+
 export { adminConfig, resumeUser, storage, suspendUser, updateStatus } from './api/admin';
-export { default as AdminPage } from './components/AdminPage';
 export { sidebar } from './sidebar';
 export { organizationBodyOf, organizationRowOf, pageOf, usersOf } from './utils/accounts';
+
+export const AdminPage = lazy(() => import('./components/AdminPage'));

@@ -1,10 +1,12 @@
-export { default as AccountTypeStep } from './components/AccountTypeStep';
-export { default as BackupCodesPage } from './components/BackupCodesPage';
-export { default as EmailCodeStep } from './components/EmailCodeStep';
-export { default as NameStep } from './components/NameStep';
-export { default as OnboardingHub } from './components/OnboardingHub';
-export { default as PhoneStep } from './components/PhoneStep';
-export { default as TeamNameStep } from './components/TeamNameStep';
-export { default as TermsPage } from './components/TermsPage';
-export { default as TfaEnrollChoiceStep } from './components/TfaEnrollChoiceStep';
-export { default as TotpEnrollPage } from './components/TotpEnrollPage';
+import { lazy } from 'react';
+
+export const AccountTypeStep = lazy(() => import('./components/AccountTypeStep'));
+export const BackupCodesPage = lazy(() => import('./components/BackupCodesPage'));
+export const EmailCodeStep = lazy(() => import('./components/EmailCodeStep'));
+export const NameStep = lazy(() => import('./components/NameStep'));
+export const OnboardingHub = lazy(() => import('./components/OnboardingHub'));
+export const PhoneStep = lazy(() => import('./components/PhoneStep'));
+export const TeamNameStep = lazy(() => import('./components/TeamNameStep'));
+export const TermsPage = lazy(() => import('./components/TermsPage'));
+export const TfaEnrollChoiceStep = lazy(() => import('./components/TfaEnrollChoiceStep'));
+export const TotpEnrollPage = lazy(() => import('./components/TotpEnrollPage'));

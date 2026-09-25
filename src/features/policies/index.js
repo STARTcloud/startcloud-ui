@@ -1,1 +1,3 @@
-export { default as PolicyPage } from './components/PolicyPage';
+import { lazy } from 'react';
+
+export const PolicyPage = lazy(() => import('./components/PolicyPage'));

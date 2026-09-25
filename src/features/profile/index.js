@@ -1,3 +1,5 @@
+import { lazy } from 'react';
+
 export {
   backupCodesCount,
   changePassword as changeIssuerPassword,
@@ -54,10 +56,7 @@ export {
   setPrimaryOrganization,
   verifyMail,
 } from './api/profile';
-export {
-  PROFILE_ROUTE_SECTIONS,
-  default as ProfilePage,
-  accountShape,
-  sectionsFor,
-} from './components/ProfilePage';
+export { PROFILE_ROUTE_SECTIONS, accountShape, sectionsFor } from './sections';
 export { sidebar } from './sidebar';
+
+export const ProfilePage = lazy(() => import('./components/ProfilePage'));

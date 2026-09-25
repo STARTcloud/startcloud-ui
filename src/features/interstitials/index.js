@@ -1,9 +1,11 @@
-export { default as CibaApprovePage } from './components/CibaApprovePage';
-export { default as CodeDisplayPage } from './components/CodeDisplayPage';
-export { default as ConsentPage } from './components/ConsentPage';
-export { default as DesktopContinuePage } from './components/DesktopContinuePage';
-export { default as DeviceActivatedPage } from './components/DeviceActivatedPage';
-export { default as DeviceActivatePage } from './components/DeviceActivatePage';
-export { default as FrontChannelLogoutPage } from './components/FrontChannelLogoutPage';
-export { default as LinkAccountPage } from './components/LinkAccountPage';
-export { default as LogoutConfirmPage } from './components/LogoutConfirmPage';
+import { lazy } from 'react';
+
+export const CibaApprovePage = lazy(() => import('./components/CibaApprovePage'));
+export const CodeDisplayPage = lazy(() => import('./components/CodeDisplayPage'));
+export const ConsentPage = lazy(() => import('./components/ConsentPage'));
+export const DesktopContinuePage = lazy(() => import('./components/DesktopContinuePage'));
+export const DeviceActivatedPage = lazy(() => import('./components/DeviceActivatedPage'));
+export const DeviceActivatePage = lazy(() => import('./components/DeviceActivatePage'));
+export const FrontChannelLogoutPage = lazy(() => import('./components/FrontChannelLogoutPage'));
+export const LinkAccountPage = lazy(() => import('./components/LinkAccountPage'));
+export const LogoutConfirmPage = lazy(() => import('./components/LogoutConfirmPage'));

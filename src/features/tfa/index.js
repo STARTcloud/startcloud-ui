@@ -1,2 +1,4 @@
-export { default as TfaCodePage } from './components/TfaCodePage';
-export { default as TfaMethodPage } from './components/TfaMethodPage';
+import { lazy } from 'react';
+
+export const TfaCodePage = lazy(() => import('./components/TfaCodePage'));
+export const TfaMethodPage = lazy(() => import('./components/TfaMethodPage'));

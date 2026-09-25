@@ -15,8 +15,8 @@ import { authMethod, hasFeature } from '../../utils/capabilities';
 import { guestOnly } from '../../utils/membership';
 import { isGlobalAdmin } from '../../utils/permissions';
 
-import { sectionPath, sectionsFor } from './components/ProfilePage';
 import { useIntegrationsTree } from './hooks/useIntegrationsTree';
+import { sectionPath, sectionsFor } from './sections';
 
 const SECTION_ICONS = {
   security: FaShieldHalved,

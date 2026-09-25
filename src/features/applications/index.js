@@ -1,3 +1,5 @@
+import { lazy } from 'react';
+
 export {
   applicationsShape,
   issuerApplications,
@@ -5,4 +7,5 @@ export {
   removeAppScope,
   revokeApp,
 } from './api/applications';
-export { default as ApplicationsPage } from './components/ApplicationsPage';
+
+export const ApplicationsPage = lazy(() => import('./components/ApplicationsPage'));

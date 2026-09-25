@@ -1,2 +1,5 @@
+import { lazy } from 'react';
+
 export { integrationsShape, issuerIntegrations, listIntegrations } from './api/integrations';
-export { default as IntegrationsPage } from './components/IntegrationsPage';
+
+export const IntegrationsPage = lazy(() => import('./components/IntegrationsPage'));
