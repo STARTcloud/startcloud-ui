@@ -193,7 +193,7 @@ const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, hostO
   };
 };
 
-const useSessionEndedBanner = (ended, signInTo) => {
+const useSessionEndedBanner = ended => {
   const { t } = useTranslation();
   const notify = useNotify();
 
@@ -207,9 +207,8 @@ const useSessionEndedBanner = (ended, signInTo) => {
         <strong>{t('sessionEnded.title')}</strong> {t('sessionEnded.body')}
       </>
     );
-    const action = signInTo ? { label: t('navbar.signIn'), to: signInTo } : null;
-    notify('warning', text, { tier: 'banner', key: SESSION_ENDED_KEY, action });
-  }, [ended, notify, signInTo, t]);
+    notify('warning', text, { tier: 'banner', key: SESSION_ENDED_KEY });
+  }, [ended, notify, t]);
 };
 
 const useSidebarOverlay = pathname => {
@@ -234,9 +233,6 @@ const signInFor = ({ account, anonymous, onAuthPage, pathname, search }) => {
   const returnPath = account.sessionEnded?.returnTo || `${pathname}${search}`;
   return { onSignIn: account.signIn, signInTo: returnTo.signInTo(returnPath) };
 };
-
-const bannerSignInFor = ({ account, onAuthPage }) =>
-  onAuthPage ? returnTo.signInTo(account.sessionEnded?.returnTo || '') : '';
 
 const columnGates = ({ cookie, showAbout, showOrgConsole }) => ({
   showAbout,
@@ -341,8 +337,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * the chrome; and the footer while the host lists the `footer` token. The
  * column and the app section are hidden on the auth routes of the
  * session's return-path helper, and on every host the cluster's Sign in
- * button is hidden there too, the page below carrying the sign-in and the
- * session-ended banner carrying its own Sign in in its place; on a
+ * button is hidden there too, the page below carrying the sign-in, and
+ * the session-ended banner carries no button anywhere, the cluster's
+ * Sign in or the page's own form being the thing to press; on a
  * `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
  * destination, its app section holding the About row, an in-router link
@@ -443,10 +440,7 @@ const AppShell = ({
     titleKey: routeTitleKey ? routeTitleKey(pathname) : '',
     t,
   });
-  useSessionEndedBanner(
-    Boolean(account.sessionEnded) && !signedIn && !anonymous,
-    bannerSignInFor({ account, onAuthPage })
-  );
+  useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn && !anonymous);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);

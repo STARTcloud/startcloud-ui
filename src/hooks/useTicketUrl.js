@@ -23,7 +23,12 @@ const ticketOf = ({ status, ticketConfig }) => {
       context: ticketConfig.context || '',
     };
   }
-  return { ...status.ticket, context: `${appOf(status)}|${status.version}` };
+  return {
+    base_url: status.ticket.base_url || '',
+    req_type: firstValue(status.ticket.req_type, 'sso'),
+    fallback_customer_id: status.ticket.fallback_customer_id || '',
+    context: firstValue(status.ticket.context, `${appOf(status)}|${status.version}`),
+  };
 };
 
 const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
@@ -51,10 +56,12 @@ const helpUrlOf = ({ ticket, user, claims, activeOrgCode }) => {
 /**
  * The support-ticket link: the plain `ticket_system` section from
  * `/api/config/ticket` on a host whose status answers `ticket: null`, else
- * the host's `status.ticket`; signed in it is the account menu's Help URL
+ * the host's `status.ticket`, its `context` when it names one and the
+ * app and version otherwise; signed in it is the account menu's Help URL
  * resolved with the active organization's customer code and the identity,
  * signed out the cluster's ticket icon URL with the fallback customer id
- * alone and no user or email; empty when there is no ticket system.
+ * alone and no user or email; empty when there is no ticket system, and
+ * never carrying a member the host answered as null.
  *
  * @param {Object} options - The ticket inputs
  * @param {Object} options.status - The payload from `probeStatus`

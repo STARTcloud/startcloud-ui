@@ -74,7 +74,8 @@ export const statusShape = PropTypes.shape({
   ticket: PropTypes.shape({
     base_url: PropTypes.string.isRequired,
     req_type: PropTypes.string.isRequired,
-    fallback_customer_id: PropTypes.string.isRequired,
+    fallback_customer_id: PropTypes.string,
+    context: PropTypes.string,
   }),
 });
 
