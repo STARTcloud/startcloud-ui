@@ -69,3 +69,21 @@ export const hostSort = (status, collection, level) => {
   const stack = sortStackOf(status?.sorts?.[collection]?.[level]);
   return stack.length > 0 ? stack : null;
 };
+
+const GROUP_FIELDS = ['family', 'vendor'];
+
+/**
+ * The field the host behind `status` groups one level of one collection
+ * by, `status.groups[collection][level]`, `family` or `vendor`; null
+ * while the host names none or names a word the page cannot group by, so
+ * a host that says nothing groups nothing below the organization.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} collection - Collection key, e.g. 'downloads'
+ * @param {string} level - 'items', 'versions', 'providers' or 'architectures'
+ * @returns {string|null} The field, or null
+ */
+export const hostGroup = (status, collection, level) => {
+  const field = status?.groups?.[collection]?.[level];
+  return GROUP_FIELDS.includes(field) ? field : null;
+};

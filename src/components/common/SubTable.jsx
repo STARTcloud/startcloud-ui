@@ -649,9 +649,78 @@ GroupRows.propTypes = {
   rowProps: PropTypes.object.isRequired,
 };
 
-const TableBody = ({ rows, groups, collapsed, onToggleGroup, countKey, emptyText, rowProps }) => {
+const GroupBlock = ({ group, nested, collapsed, onToggleGroup, countKey, emptyText, rowProps }) => {
   const { t } = useTranslation();
-  const { rowKey, columnCount, ctx } = rowProps;
+  const { columnCount, ctx } = rowProps;
+  const folded = Boolean(collapsed[group.key]);
+  return (
+    <>
+      <tr className="table-group-row">
+        <td colSpan={columnCount}>
+          <div className={nested ? 'ps-4' : undefined}>
+            <GroupHeading
+              group={group}
+              collapsed={folded}
+              onToggle={() => onToggleGroup(group.key)}
+              countLabel={t(countKey, { count: group.items.length })}
+              orgMark={ctx.orgMark}
+            />
+          </div>
+        </td>
+      </tr>
+      {folded ? null : (
+        <GroupRowsOrGroups
+          group={group}
+          collapsed={collapsed}
+          onToggleGroup={onToggleGroup}
+          countKey={countKey}
+          emptyText={emptyText}
+          rowProps={rowProps}
+        />
+      )}
+    </>
+  );
+};
+
+GroupBlock.propTypes = {
+  group: groupShape.isRequired,
+  nested: PropTypes.bool.isRequired,
+  collapsed: PropTypes.object.isRequired,
+  onToggleGroup: PropTypes.func,
+  countKey: PropTypes.string.isRequired,
+  emptyText: PropTypes.node.isRequired,
+  rowProps: PropTypes.object.isRequired,
+};
+
+const GroupRowsOrGroups = ({ group, collapsed, onToggleGroup, countKey, emptyText, rowProps }) => {
+  if (!group.groups) {
+    return <GroupRows group={group} emptyText={emptyText} rowProps={rowProps} />;
+  }
+  return group.groups.map(sub => (
+    <GroupBlock
+      key={sub.key}
+      group={sub}
+      nested
+      collapsed={collapsed}
+      onToggleGroup={onToggleGroup}
+      countKey={countKey}
+      emptyText={emptyText}
+      rowProps={rowProps}
+    />
+  ));
+};
+
+GroupRowsOrGroups.propTypes = {
+  group: groupShape.isRequired,
+  collapsed: PropTypes.object.isRequired,
+  onToggleGroup: PropTypes.func,
+  countKey: PropTypes.string.isRequired,
+  emptyText: PropTypes.node.isRequired,
+  rowProps: PropTypes.object.isRequired,
+};
+
+const TableBody = ({ rows, groups, collapsed, onToggleGroup, countKey, emptyText, rowProps }) => {
+  const { rowKey } = rowProps;
   if (!groups) {
     return (
       <tbody>
@@ -663,20 +732,15 @@ const TableBody = ({ rows, groups, collapsed, onToggleGroup, countKey, emptyText
   }
   return groups.map(group => (
     <tbody key={group.key}>
-      <tr className="table-group-row">
-        <td colSpan={columnCount}>
-          <GroupHeading
-            group={group}
-            collapsed={Boolean(collapsed[group.key])}
-            onToggle={() => onToggleGroup(group.key)}
-            countLabel={t(countKey, { count: group.items.length })}
-            orgMark={ctx.orgMark}
-          />
-        </td>
-      </tr>
-      {collapsed[group.key] ? null : (
-        <GroupRows group={group} emptyText={emptyText} rowProps={rowProps} />
-      )}
+      <GroupBlock
+        group={group}
+        nested={false}
+        collapsed={collapsed}
+        onToggleGroup={onToggleGroup}
+        countKey={countKey}
+        emptyText={emptyText}
+        rowProps={rowProps}
+      />
     </tbody>
   ));
 };
@@ -793,7 +857,9 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * key is in `expandedKeys` (rendering `Detail` with `detailProps` plus
  * the row under `rowProp`), one `tbody` per group with a `GroupHeading`
  * row when `groups` is given (`collapsed[group.key]` folding it through
- * `onToggleGroup`, the count from `countKey`), a group with no items
+ * `onToggleGroup`, the count from `countKey`), a group carrying `groups`
+ * drawing one indented heading row per sub-group with that sub-group's
+ * rows under it, each folding under its own key, a group with no items
  * keeping its heading over one full-width compact `EmptyState` row titled
  * `emptyText`, and, when there are no rows and no groups, the
  * `EmptyState` placard titled `emptyText` with `emptyBody` under it drawn

@@ -163,14 +163,27 @@ WatchStar.propTypes = {
   watches: watchesShape.isRequired,
 };
 
-const bylineOf = item =>
-  [item.vendor || item.organization.name, item.family].filter(Boolean).join(' · ');
+/**
+ * The line under a card's title: the vendor, or the organization while
+ * the item names no vendor, and nothing while the item's family equals
+ * or begins with that word, since the family heading above the card
+ * already says it.
+ *
+ * @param {Object} item - An item of the item shape
+ * @returns {string} The byline, or an empty string
+ */
+const bylineOf = item => {
+  const owner = item.vendor || item.organization.name;
+  const family = (item.family || '').toLowerCase();
+  return family.startsWith(owner.toLowerCase()) ? '' : owner;
+};
 
 /**
  * One card of the grid: the media, the title (a stretched link over the
  * whole card while the collection routes to an item page, so the card
- * itself is the thing to click), the vendor or organization and the
- * family under it, the chips a manager sees, the description, then the
+ * itself is the thing to click), the vendor or organization under it
+ * unless the family already names it, the chips a manager sees, the
+ * description, then the
  * foot line, the links, the extras and the actions, every control its
  * own target above the card link so a star, a link or a checkbox never
  * opens the item.
@@ -203,7 +216,9 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
                 title
               )}
             </Card.Title>
-            <div className="small text-body-secondary">{bylineOf(item)}</div>
+            {bylineOf(item) ? (
+              <div className="small text-body-secondary">{bylineOf(item)}</div>
+            ) : null}
             {item.label && item.label !== item.name ? (
               <code className="checksum">{item.name}</code>
             ) : null}
@@ -272,6 +287,54 @@ CardGrid.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+/**
+ * One group of the grid: its heading, then, while it is not folded, the
+ * grid of its items, or one nested `CardGroup` per sub-group one level in
+ * while it carries `groups`.
+ */
+const CardGroup = ({ group, nested, grid, collapsed, onToggleGroup, countKey, ctx }) => {
+  const { t } = useTranslation();
+  const folded = Boolean(collapsed[group.key]);
+  return (
+    <div className={nested ? 'mb-3 ms-4' : 'mb-3'}>
+      <div className="mb-2">
+        <GroupHeading
+          group={group}
+          collapsed={folded}
+          onToggle={() => onToggleGroup(group.key)}
+          countLabel={t(countKey, { count: group.items.length })}
+          orgMark={ctx.orgMark}
+        />
+      </div>
+      {!folded && !group.groups ? grid(group.items) : null}
+      {!folded && group.groups
+        ? group.groups.map(sub => (
+            <CardGroup
+              key={sub.key}
+              group={sub}
+              nested
+              grid={grid}
+              collapsed={collapsed}
+              onToggleGroup={onToggleGroup}
+              countKey={countKey}
+              ctx={ctx}
+            />
+          ))
+        : null}
+    </div>
+  );
+};
+
+CardGroup.propTypes = {
+  group: groupShape.isRequired,
+  nested: PropTypes.bool.isRequired,
+  grid: PropTypes.func.isRequired,
+  collapsed: PropTypes.object.isRequired,
+  onToggleGroup: PropTypes.func.isRequired,
+  countKey: PropTypes.string.isRequired,
+  ctx: PropTypes.object.isRequired,
+};
+
 const ItemCards = ({
   collection,
   items,
@@ -303,27 +366,26 @@ const ItemCards = ({
       />
     );
   }
+  const grid = list => (
+    <CardGrid
+      collection={collection}
+      items={list}
+      watches={watches}
+      selection={selection}
+      ctx={ctx}
+    />
+  );
   return groups.map(group => (
-    <div key={group.key} className="mb-3">
-      <div className="mb-2">
-        <GroupHeading
-          group={group}
-          collapsed={Boolean(collapsed[group.key])}
-          onToggle={() => onToggleGroup(group.key)}
-          countLabel={t(collection.countKey, { count: group.items.length })}
-          orgMark={ctx.orgMark}
-        />
-      </div>
-      {collapsed[group.key] ? null : (
-        <CardGrid
-          collection={collection}
-          items={group.items}
-          watches={watches}
-          selection={selection}
-          ctx={ctx}
-        />
-      )}
-    </div>
+    <CardGroup
+      key={group.key}
+      group={group}
+      nested={false}
+      grid={grid}
+      collapsed={collapsed}
+      onToggleGroup={onToggleGroup}
+      countKey={collection.countKey}
+      ctx={ctx}
+    />
   ));
 };
 

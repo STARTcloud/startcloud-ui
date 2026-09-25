@@ -7,6 +7,7 @@ import ViewToggle from '../../../components/common/ViewToggle';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useSelection } from '../../../hooks/useSelection';
+import { hostGroup } from '../../../utils/capabilities';
 import { collectionShape, pageContextShape } from '../../../utils/itemShape';
 import { isGuestOnly, isOrgManager, managesAnyOrganization } from '../../../utils/permissions';
 import { useCatalogSearch } from '../hooks/useCatalogSearch';
@@ -32,18 +33,30 @@ const groupByOrganization = (collection, items) => {
 
 const NO_IDS = new Set();
 
-const groupsFor = ({ collection, items, grouped, t }) => {
-  if (grouped) {
-    return groupByOrganization(collection, items);
+/**
+ * The groups one collection's table or grid draws: one per organization
+ * while the page spans organizations, each carrying the host's own groups
+ * of its items nested under it while the host names a field to group by
+ * and the collection knows how; the host's groups alone on a page of one
+ * organization; nothing while neither applies.
+ *
+ * @param {Object} inputs - The `collection`, its sorted `items`, whether the page `spansOrgs`, the field `by` the host named and the translator `t`
+ * @returns {Array<Object>|null} The groups, or null
+ */
+const groupsFor = ({ collection, items, spansOrgs, by, t }) => {
+  const own = by && collection.groupsOf ? list => collection.groupsOf(list, t, by) : null;
+  if (spansOrgs) {
+    const orgs = groupByOrganization(collection, items);
+    return own ? orgs.map(group => ({ ...group, groups: own(group.items) })) : orgs;
   }
-  return collection.groupsOf ? collection.groupsOf(items, t) : null;
+  return own ? own(items) : null;
 };
 
-const groupedByOf = (collection, grouped) => {
-  if (grouped) {
+const groupedByOf = (spansOrgs, by) => {
+  if (spansOrgs) {
     return 'organization';
   }
-  return collection.groupsOf ? 'family' : '';
+  return by || '';
 };
 
 /**
@@ -293,8 +306,10 @@ CollectionSection.propTypes = {
  * every collection it is given, registers the search binding, and draws one
  * heading row per collection carrying that collection's list actions, one
  * table or card grid per collection with organization group rows when the
- * page spans organizations (else the collection's own `groupsOf` groups,
- * `ctx.groupedBy` naming which), the leading columns the visible tables
+ * page spans organizations and the host's status names no organization of
+ * its own, the collection's `groupsOf` groups by the field the host's
+ * `groups` names nested under them or standing alone (`ctx.groupedBy`
+ * naming which), the leading columns the visible tables
  * share held at one width across them, and the one view toggle on the
  * header row when the page has a header, else on the first collection's
  * heading row.
@@ -340,6 +355,8 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
   }, [key, collections, org, member, notify, t]);
 
   const watches = useWatches({ collections, user: context.user, notify });
+  const spansOrgs = grouped && !status.organization;
+  const groupFieldOf = collection => hostGroup(status, collection.key, 'items');
   const baseCtxFor = collection => ({
     ...context,
     t,
@@ -350,7 +367,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     member,
     reload,
     notify,
-    groupedBy: groupedByOf(collection, grouped),
+    groupedBy: groupedByOf(spansOrgs, groupFieldOf(collection)),
   });
   const search = useCatalogSearch({
     collections,
@@ -399,7 +416,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
         view={view}
         ctx={ctxFor(collection)}
         common={{
-          groups: groupsFor({ collection, items, grouped, t }),
+          groups: groupsFor({ collection, items, spansOrgs, by: groupFieldOf(collection), t }),
           collapsed,
           onToggleGroup: toggleCollapsed,
           watches:

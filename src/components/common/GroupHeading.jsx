@@ -34,14 +34,18 @@ export const groupShape = PropTypes.shape({
   items: PropTypes.array.isRequired,
   organization: organizationShape,
   label: PropTypes.string,
+  icon: PropTypes.string,
   description: PropTypes.string,
+  groups: PropTypes.array,
 });
 
 /**
  * The heading of one group of a table or a card grid: the fold button,
  * the organization's logo and link while the group is an organization's,
- * else the group's label, the count badge, and under the line the group's
- * description as Markdown while it carries one.
+ * else the group's icon while it carries one and its label, the count
+ * badge, and under the line the group's description as Markdown while it
+ * carries one; a group carrying `groups` draws each of them the same way
+ * beneath it, one level in.
  */
 const GroupHeading = ({ group, collapsed, onToggle, countLabel, orgMark }) => (
   <>
@@ -60,7 +64,12 @@ const GroupHeading = ({ group, collapsed, onToggle, countLabel, orgMark }) => (
           </Link>
         </>
       ) : (
-        <span className="fw-semibold">{group.label}</span>
+        <>
+          {group.icon ? (
+            <img src={group.icon} alt="" className="avatar-lg rounded" loading="lazy" />
+          ) : null}
+          <span className="fw-semibold">{group.label}</span>
+        </>
       )}
       <span className="badge bg-secondary bg-opacity-50">{countLabel}</span>
     </div>

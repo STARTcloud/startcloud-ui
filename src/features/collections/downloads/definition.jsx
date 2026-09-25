@@ -48,40 +48,50 @@ import {
   DownloadVersionRowActions,
 } from './components/DownloadRelease';
 
-const FAMILY_GROUP = 'downloads:family:';
+const GROUP_PREFIX = 'downloads:';
+
+const groupOf = (by, name, item) => ({
+  key: `${GROUP_PREFIX}${by}:${name}`,
+  label: name,
+  icon: by === 'family' ? item.familyDetails?.iconUrl || '' : '',
+  description: by === 'family' ? item.familyDetails?.description || '' : '',
+  items: [],
+});
 
 /**
- * The listing's groups by family: one per family name in the order the
- * items first name them, each carrying the family's description from the
- * first item that names it, then, last and only while such items exist,
- * one group of the items without a family.
+ * The listing's groups by the field the host named, `family` or
+ * `vendor`: one per value in the order the items first carry it, a
+ * family group carrying the family's icon and description; the items
+ * without the field follow, under their vendor when the field was the
+ * family and one exists, else under one "Other" group.
  *
- * @param {Array<Object>} items - The listing's items
+ * @param {Array<Object>} items - The listing's items, already sorted
  * @param {Function} t - The translator
+ * @param {string} by - `family` or `vendor`
  * @returns {Array<Object>} The groups
  */
-const groupsByFamily = (items, t) => {
+const groupsBy = (items, t, by) => {
   const groups = new Map();
-  const other = [];
+  const rest = [];
   items.forEach(item => {
-    if (!item.family) {
-      other.push(item);
+    const name = item[by] || '';
+    if (!name) {
+      rest.push(item);
       return;
     }
-    if (!groups.has(item.family)) {
-      groups.set(item.family, {
-        key: `${FAMILY_GROUP}${item.family}`,
-        label: item.family,
-        description: item.familyDetails?.description || '',
-        items: [],
-      });
+    if (!groups.has(name)) {
+      groups.set(name, groupOf(by, name, item));
     }
-    groups.get(item.family).items.push(item);
+    groups.get(name).items.push(item);
   });
-  if (other.length > 0) {
-    groups.set('', { key: FAMILY_GROUP, label: t('pages.group.other'), items: other });
+  const own = [...groups.values()];
+  if (rest.length === 0) {
+    return own;
   }
-  return [...groups.values()];
+  if (by === 'family') {
+    return [...own, ...groupsBy(rest, t, 'vendor')];
+  }
+  return [...own, { key: `${GROUP_PREFIX}${by}:`, label: t('pages.group.other'), items: rest }];
 };
 
 export const downloads = {
@@ -140,7 +150,7 @@ export const downloads = {
     platformsColumn,
   ],
   defaultSort: [{ column: 'name', direction: 'asc' }],
-  groupsOf: groupsByFamily,
+  groupsOf: groupsBy,
   levels: {
     versions: {
       labelKey: 'pages.table.releases',
