@@ -417,15 +417,16 @@ on the auth column.
 
 Neutral prefix so a pack is authored once for the whole estate:
 
-| Variable               | Purpose                                                                                                                                                                                                                                                     |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--brand-primary`      | brand color                                                                                                                                                                                                                                                 |
-| `--brand-on-primary`   | text/icon color ON primary                                                                                                                                                                                                                                  |
-| `--brand-warning`      | brand warning color                                                                                                                                                                                                                                         |
-| `--brand-on-warning`   | text/icon color ON warning                                                                                                                                                                                                                                  |
-| `--brand-logo`         | stencil URL for the mask pattern (optional)                                                                                                                                                                                                                 |
-| `--brand-logo-color`   | paint color for the stencil (optional)                                                                                                                                                                                                                      |
-| `--brand-auth-display` | the brand's display face: the auth column's headline, the brand name in the header and the sidebar top, `h1` to `h3` and card titles (optional; Source Serif 4 on the auth column and Montserrat on the chrome when absent), its files served with the pack |
+| Variable               | Purpose                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--brand-primary`      | brand color                                                                                                                                                                                                                                                                                                                                                 |
+| `--brand-on-primary`   | text/icon color ON primary                                                                                                                                                                                                                                                                                                                                  |
+| `--brand-icon-filter`  | the CSS filter that paints an image icon on the filled accent button in the on-primary color, `brightness(0) invert(1)` for a light `on_primary` and `brightness(0)` for a dark one, generated beside it because an SVG loaded through `img` cannot be recolored by the page any other way; the provider mark on the filled sign-in button is drawn with it |
+| `--brand-warning`      | brand warning color                                                                                                                                                                                                                                                                                                                                         |
+| `--brand-on-warning`   | text/icon color ON warning                                                                                                                                                                                                                                                                                                                                  |
+| `--brand-logo`         | stencil URL for the mask pattern (optional)                                                                                                                                                                                                                                                                                                                 |
+| `--brand-logo-color`   | paint color for the stencil (optional)                                                                                                                                                                                                                                                                                                                      |
+| `--brand-auth-display` | the brand's display face: the auth column's headline, the brand name in the header and the sidebar top, `h1` to `h3` and card titles (optional; Source Serif 4 on the auth column and Montserrat on the chrome when absent), its files served with the pack                                                                                                 |
 
 `--brand-on-*` exists because a single color cannot express its own
 contrast pairing: a light brand needs dark text on it, a dark brand needs
@@ -487,6 +488,7 @@ manages packs and none offers a UI for them.
 [data-brand='moonshinedev'] {
   --brand-primary: #8b5cf6;
   --brand-on-primary: #ffffff;
+  --brand-icon-filter: brightness(0) invert(1);
   --brand-logo: url('https://…/mark.svg');
   --brand-logo-color: #8b5cf6;
 
@@ -651,7 +653,9 @@ The identity provider's four sites resolve to: `moonshinedev` (`#1f9d57`)
 `nomadservices` (`#6c5ce7`) `#ffffff` at 4.86:1, and `startcloud`
 (`#0d6efd`, Bootstrap's own blue) `#ffffff` at 4.50:1 as named;
 `--brand-on-primary` is also the auth column's button text, so those
-buttons read black on the two light accents.
+buttons read black on the two light accents, and the provider mark on
+the filled button follows it through `--brand-icon-filter`, white on
+Prominic's maroon and black on the two light accents.
 
 `lang` on `<html>` must carry the user's language: screen readers take
 pronunciation from it, and the value is already stored, published and

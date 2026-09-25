@@ -2,6 +2,7 @@
   --brand-primary: #1f9d57;
   --brand-primary-rgb: 31, 157, 87;
   --brand-on-primary: #000000;
+  --brand-icon-filter: brightness(0);
   --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
   --brand-focus-ring: rgba(31, 157, 87, 0.89);
   --bs-primary: var(--brand-primary);

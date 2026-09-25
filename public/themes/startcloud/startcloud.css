@@ -2,6 +2,7 @@
   --brand-primary: #0d6efd;
   --brand-primary-rgb: 13, 110, 253;
   --brand-on-primary: #ffffff;
+  --brand-icon-filter: brightness(0) invert(1);
   --brand-focus-ring: rgba(13, 110, 253, 0.74);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 13, 110, 253;

@@ -2029,12 +2029,10 @@ button::-moz-focus-inner {
 }
 
 .auth-btn-primary .auth-provider-icon {
-  width: 22px;
-  height: 22px;
-  padding: 3px;
-  border-radius: 50%;
-  background: var(--auth-accent-fg);
+  width: 20px;
+  height: 20px;
   object-fit: contain;
+  filter: var(--brand-icon-filter, brightness(0) invert(1));
 }
 
 .auth-tiles {

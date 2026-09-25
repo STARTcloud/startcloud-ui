@@ -200,11 +200,17 @@ const fontFace = (pack, font) => {
   return lines.join('\n');
 };
 
+const ICON_FILTERS = { light: 'brightness(0) invert(1)', dark: 'brightness(0)' };
+
+const iconFilterOf = onPrimary =>
+  luminance(onPrimary) >= 0.5 ? ICON_FILTERS.light : ICON_FILTERS.dark;
+
 const brandLines = (pack, source) => {
   const lines = [
     `  --brand-primary: ${source.primary.toLowerCase()};`,
     `  --brand-primary-rgb: ${rgbList(source.primary)};`,
     `  --brand-on-primary: ${source.on_primary.toLowerCase()};`,
+    `  --brand-icon-filter: ${iconFilterOf(source.on_primary)};`,
   ];
   if (source.warning) {
     lines.push(`  --brand-warning: ${source.warning.toLowerCase()};`);
@@ -304,7 +310,11 @@ const writePack = (pack, css) => {
  * The YAML source carries `primary` (six-digit hex, required), `on_primary`
  * (hex, optional: when absent the generator takes `#ffffff` or `#000000`,
  * whichever contrasts more with `primary`, and refuses the pack only when
- * that better one is under 4.5:1), `warning` and `on_warning` (hex,
+ * that better one is under 4.5:1; `--brand-icon-filter` is emitted beside
+ * it, the CSS filter that paints an image icon on the filled accent button
+ * in that color, white for a light `on_primary` and black for a dark one,
+ * because an SVG loaded through `img` cannot be recolored by the page's
+ * CSS any other way), `warning` and `on_warning` (hex,
  * optional, together), `logo`
  * (optional: a root path such as `/brand/<name>/mark.svg`, the one home of
  * every mark the build ships, or a file name in the pack directory) with
