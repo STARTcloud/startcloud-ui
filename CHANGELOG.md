@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.44.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.43.0...v0.44.0) (2026-09-25)
+
+
+### Features
+
+* every pack names its link color per variant so hyperlinks follow the brand ([24ec65b](https://github.com/STARTcloud/startcloud-ui/commit/24ec65b1f686dbbbfc2a1fb13459ad9bb7f9cadd))
+
 ## [0.43.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.42.0...v0.43.0) (2026-09-25)
 
 
