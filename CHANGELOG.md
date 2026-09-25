@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.43.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.42.0...v0.43.0) (2026-09-25)
+
+
+### Features
+
+* the provider mark on the filled sign-in button is painted in the pack's on-primary color through a generated icon filter, white on Prominic and black on the light accents ([4965173](https://github.com/STARTcloud/startcloud-ui/commit/4965173a0e91986e121118779e46b150be92c68d))
+
+
+### Bug Fixes
+
+* ci/cd ([7d4dc9b](https://github.com/STARTcloud/startcloud-ui/commit/7d4dc9bfbf741bc75120ba9c993e02cc08400c9d))
+* the session-ended banner carries no Sign in button on any page, the ticket link leaves a null customer out and carries the host's context, and the site's own show_mark switch draws the mark on every visit beside the client's ([810bcc9](https://github.com/STARTcloud/startcloud-ui/commit/810bcc906e33d64d71674f0393431865c74da6e9))
+
 ## [0.42.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.41.0...v0.42.0) (2026-09-25)
 
 
