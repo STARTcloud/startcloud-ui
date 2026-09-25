@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.37.0...v0.38.0) (2026-09-25)
+
+
+### Features
+
+* every column carrying a priority its kind seeds, the one table measuring what its columns need and folding the lowest priority first until the rest fit whole, a chevron at the start of every line opening the folded columns as label and value pairs under it, the organization in front of a name folding before any column, the leading columns of the home page's tables sharing one width, the Language column drawn only while a file names a language, a download product's details as a Details card on its page and a textarea on its edit and bulk Edit forms, families as their own pane with add, edit and delete, the family offered as a pick in the product and bulk forms, the family's description under the links on the product page and under each family heading of the organization's downloads grouped by family, and a Sort group of pills in card view ([e258b3e](https://github.com/STARTcloud/startcloud-ui/commit/e258b3e5e9baedef391a7fd8e91f8d4950ef0de9))
+
 ## [0.37.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.36.1...v0.37.0) (2026-09-23)
 
 
