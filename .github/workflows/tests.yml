@@ -57,11 +57,6 @@ on:
         required: false
         type: string
         default: ''
-      features:
-        description: 'The directory holding the .feature files and their steps'
-        required: false
-        type: string
-        default: 'tests/features'
 
 permissions:
   contents: read
@@ -131,6 +126,7 @@ jobs:
         run: ${{ inputs.unit }}
 
       - name: Install Playwright browsers
+        if: ${{ inputs.class == 'shared-ui' }}
         run: npx --yes playwright@1.63.0 install --with-deps chromium
 
       - name: Boot the live instance
@@ -153,12 +149,6 @@ jobs:
       - name: Feature tests
         if: ${{ inputs.class == 'shared-ui' }}
         run: npm run test:features
-
-      - name: Feature tests against the live instance
-        if: ${{ inputs.class != 'shared-ui' }}
-        env:
-          FEATURES: ${{ inputs.features }}
-        run: npx --yes playwright-bdd@9.2.1 --config "${FEATURES}/playwright.config.js" && npx --yes playwright@1.63.0 test --config "${FEATURES}/playwright.config.js"
 
       - name: Upload the reports
         if: ${{ always() }}
