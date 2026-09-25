@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.42.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.41.0...v0.42.0) (2026-09-25)
+
+
+### Features
+
+* the sign-in page hides Keep me logged in while the client hides it and draws the site's mark above the heading while the client shows it, the file rows carry a download icon and a copy-link icon with tooltips, a downloads file may be a link with a source URL beside its name, the listing groups a level by the field the host's status names beside its sorts with family sub-headers in both views and the lone organization header gone on a one-organization host, one table of the client's sign-in switches in the identity contract, the shared-ui tests job points at its own preview server, and Playwright and playwright-bdd move to 1.63.0 and 9.2.1 ([8007624](https://github.com/STARTcloud/startcloud-ui/commit/8007624d8455400442a87d5b8bfc549681c92c8a))
+
 ## [0.41.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.40.0...v0.41.0) (2026-09-25)
 
 
