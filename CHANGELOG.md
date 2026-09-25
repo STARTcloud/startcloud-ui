@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.40.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.39.0...v0.40.0) (2026-09-25)
+
+
+### Features
+
+* every router page loaded as its own chunk behind lazy, the route names and shapes the router reads kept in small modules beside the pages, and the testing contract settled on Playwright, playwright-bdd and one unit runner per class ([47fa8a0](https://github.com/STARTcloud/startcloud-ui/commit/47fa8a01df07f2e74f7334493fc8aeab011edc43))
+
+
+### Bug Fixes
+
+* updating testing and identity loading for lazy laod split wrok ([8ab70f8](https://github.com/STARTcloud/startcloud-ui/commit/8ab70f8c650c803ae9559cdde5dbbcf1656d2826))
+
 ## [0.39.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.38.0...v0.39.0) (2026-09-25)
 
 
