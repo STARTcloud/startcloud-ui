@@ -2,7 +2,7 @@
   --brand-primary: #67142c;
   --brand-primary-rgb: 103, 20, 44;
   --brand-on-primary: #ffffff;
-  --brand-logo: url('/themes/prominic/mark.svg');
+  --brand-logo: url('/brand/prominic/mark.svg');
   --brand-logo-color: #67142c;
   --brand-focus-ring: rgba(103, 20, 44, 0.5);
   --bs-primary: var(--brand-primary);

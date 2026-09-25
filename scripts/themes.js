@@ -77,6 +77,8 @@ const textFailures = (pack, source, variant) => {
   );
 };
 
+const logoUrlOf = (pack, logo) => (logo.startsWith('/') ? logo : `/themes/${pack}/${logo}`);
+
 const logoColorsOf = source => {
   const light = source.logo_color?.light || source.primary;
   return { light, dark: source.logo_color?.dark || light };
@@ -210,7 +212,7 @@ const brandLines = (pack, source) => {
     lines.push(`  --brand-on-warning: ${source.on_warning.toLowerCase()};`);
   }
   if (source.logo) {
-    lines.push(`  --brand-logo: url('/themes/${pack}/${source.logo}');`);
+    lines.push(`  --brand-logo: url('${logoUrlOf(pack, source.logo)}');`);
     lines.push(`  --brand-logo-color: ${logoColorsOf(source).light.toLowerCase()};`);
   }
   if (source.display) {
@@ -304,7 +306,9 @@ const writePack = (pack, css) => {
  * whichever contrasts more with `primary`, and refuses the pack only when
  * that better one is under 4.5:1), `warning` and `on_warning` (hex,
  * optional, together), `logo`
- * (a file in the pack directory, optional) with `logo_color` (optional,
+ * (optional: a root path such as `/brand/<name>/mark.svg`, the one home of
+ * every mark the build ships, or a file name in the pack directory) with
+ * `logo_color` (optional,
  * `light` and `dark` hex values, the light one the primary when absent and
  * the dark one the light one when absent, emitted under the dark selector
  * only when named), `display` (the auth column's headline face as a

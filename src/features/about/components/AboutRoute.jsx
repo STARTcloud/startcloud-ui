@@ -160,7 +160,7 @@ const useFavorite = ({ enabled, clientId, appName }) => {
  * the whole ordered list is written back with in `snake_case`; a role
  * with no `about.<role>.*` keys answers `NotAvailableStub`.
  */
-const AboutRoute = ({ theme, oidc, clientId }) => {
+const AboutRoute = ({ oidc, clientId }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const favorite = useFavorite({
@@ -177,7 +177,7 @@ const AboutRoute = ({ theme, oidc, clientId }) => {
 
   return (
     <AboutPage
-      brand={<BrandLogo theme={theme} className="prov-icon" />}
+      brand={<BrandLogo className="prov-icon" />}
       title={content.title}
       description={content.description}
       version={status.version}
@@ -195,7 +195,6 @@ const AboutRoute = ({ theme, oidc, clientId }) => {
 };
 
 AboutRoute.propTypes = {
-  theme: PropTypes.string.isRequired,
   oidc: PropTypes.bool.isRequired,
   clientId: PropTypes.string.isRequired,
 };

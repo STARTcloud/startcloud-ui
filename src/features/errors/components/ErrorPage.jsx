@@ -143,7 +143,7 @@ const useCopied = () => {
  * fold draws `GET /api/admin/errors/{reference}`, its rows labeled from
  * `errors.detail.*` and its trace copied, never sent in a URL.
  */
-const ErrorPage = ({ theme, ticketUrl = '', admin = false, notFound = false }) => {
+const ErrorPage = ({ ticketUrl = '', admin = false, notFound = false }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
@@ -168,11 +168,7 @@ const ErrorPage = ({ theme, ticketUrl = '', admin = false, notFound = false }) =
   }, [title]);
 
   return (
-    <AuthShell
-      title={title}
-      subtitle={body}
-      icon={<BrandLogo theme={theme} className="auth-brand-mark" />}
-    >
+    <AuthShell title={title} subtitle={body} icon={<BrandLogo className="auth-brand-mark" />}>
       <div className="auth-ack">
         <span>
           {fault.reference ? (
@@ -234,7 +230,6 @@ const ErrorPage = ({ theme, ticketUrl = '', admin = false, notFound = false }) =
 };
 
 ErrorPage.propTypes = {
-  theme: PropTypes.string.isRequired,
   ticketUrl: PropTypes.string,
   admin: PropTypes.bool,
   notFound: PropTypes.bool,

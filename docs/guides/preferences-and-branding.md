@@ -432,8 +432,10 @@ must invert the derivation to keep one source of truth:
 
 **A pack is a package of files a developer writes, and it belongs to the
 shared UI.** A pack is one directory under the STARTcloud UI's
-`public/themes/<pack>/`, beside `public/brand/`: its stylesheet, the artwork
-`--brand-logo` names and the font files `--brand-auth-display` names, so a
+`public/themes/<pack>/`, beside `public/brand/`: its stylesheet and the font
+files `--brand-auth-display` names, the artwork `--brand-logo` names living
+under `public/brand/<name>/mark.svg` and named by root path in the YAML's
+`logo`, since a mark is the brand's and not the pack's, so a
 pack is authored once, versioned with the build, and served by whatever
 origin serves the build, which is what the standalone rule above requires.
 No UI backend holds a pack file or renders one; the authorization server is
@@ -545,15 +547,16 @@ The files the identity provider's sites need in the shared build, every
 one supplied by the estate's owner and none drawn by the UI work; the
 shell ships the fallbacks until each lands:
 
-| File                                                                                                                         | Size                                                                    | Used by                                                                                                               |
-| ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `public/brand/<site>/icon.png`, one per site                                                                                 | 64×64                                                                   | `brand.logo_url`: the chrome's mark, the org mark, the favicon                                                        |
-| `public/brand/<site>/logo-small.png`, one per site                                                                           | 640×104                                                                 | the branding endpoint's `small` slot for relying apps                                                                 |
-| `public/brand/providers/<id>.svg`, one per federated provider                                                                | square, monochrome                                                      | `icon_url` of `GET /api/auth/methods`; the provider button falls back to its name until the file lands                |
-| `public/themes/<pack>/mark.svg`, optional                                                                                    | 512×512, monochrome                                                     | `--brand-logo` when the pack's YAML names it                                                                          |
-| `public/themes/switchboard/poppins-<weight>.woff2`                                                                           | weights 500, 600, 700                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land   |
-| `public/themes/startcloud/startcloud.css` and its YAML source                                                                | the fourth pack, the shared UI's own base look under its name           | the `startcloud` site and every BoxVault host that names it as `brand.pack`                                           |
-| `public/themes/prominic/prominic.css`, its YAML source and `mark.svg`, `public/brand/prominic/icon.png` and `logo-small.png` | the fifth pack, the Prominic accent `#67142c`, the asterisk as the mark | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url` |
+| File                                                                                        | Size                                                                                                                                                                    | Used by                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `public/brand/<name>/mark.svg`, one per brand or product the estate owns                    | 512×512, its light and dark paint through `light-dark()` under `color-scheme: light dark`, so an `<img>` follows the machine and an inline copy follows `data-bs-theme` | `brand.logo_url` (the chrome's mark, the org mark, the favicon), a pack's `logo` as a root path (`--brand-logo`), and the `icon_url` of a sign-in provider of our own; one file, no dark twin |
+| `public/brand/<name>/header.svg`, one per brand or product                                  | 4608×512, the mark centred                                                                                                                                              | the README header of that brand's repositories                                                                                                                                                |
+| `public/brand/<site>/icon.png`, one per site                                                | 64×64                                                                                                                                                                   | kept beside the mark for a host that still names a PNG; the SVG is preferred everywhere                                                                                                       |
+| `public/brand/<site>/logo-small.png`, one per site                                          | 640×104                                                                                                                                                                 | the branding endpoint's `small` slot for relying apps                                                                                                                                         |
+| `public/brand/providers/<id>.svg`, one per federated provider that is not ours              | square                                                                                                                                                                  | `icon_url` of `GET /api/auth/methods` (google, github, microsoft); our own providers name `/brand/<name>/mark.svg`                                                                            |
+| `public/themes/switchboard/poppins-<weight>.woff2`                                          | weights 500, 600, 700                                                                                                                                                   | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land                                                                           |
+| `public/themes/startcloud/startcloud.css` and its YAML source                               | the fourth pack, the shared UI's own base look under its name                                                                                                           | the `startcloud` site and every BoxVault host that names it as `brand.pack`                                                                                                                   |
+| `public/themes/prominic/prominic.css` and its YAML source, `logo: /brand/prominic/mark.svg` | the fifth pack, the Prominic accent `#67142c`, the p and asterisk as the mark                                                                                           | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url`                                                                         |
 
 The sites are `startcloud`, `moonshinedev`, `switchboard`,
 `nomadservices` and, on BoxVault's downloads face alone, `prominic`.
@@ -654,7 +657,8 @@ nonce today and the published hash after the cutover.
   132).
 - **A re-brand reaches reloads, not live sessions** — absent app-shell
   caching of the served HTML, which a service worker with a `fetch` handler
-  would introduce.
+  would introduce; the estate's worker caches only the manifest and the
+  marks and never the served HTML or assets.
 
 A conditional request per load is the price and it is paid everywhere: the
 pack revalidates the way `/assets/` and every other served file does, on

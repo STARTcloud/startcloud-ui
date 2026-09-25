@@ -1,4 +1,5 @@
 import { PUSH_ENABLED_KEY } from '../../../config/constants';
+import { serviceWorkerUrl } from '../../../hooks/usePwa';
 import { authMethod } from '../../../utils/capabilities';
 
 import { createNotificationsClient } from './inbox';
@@ -50,7 +51,8 @@ export const createNotificationsAdapter = ({ status, client, hubClient }) => ({
 /**
  * The browser push subscription behind the notifications switch and the
  * adapter the modal drives it through, the host's push paths chosen by the
- * first `auth` token and the service worker tagged with the brand name.
+ * first `auth` token and the service worker the same URL `usePwa`
+ * registers, the brand name and the UI build's version in its query.
  *
  * @param {Object} options - The runtime pieces
  * @param {Object} options.status - The payload from `probeStatus`
@@ -61,7 +63,7 @@ export const createPushAdapter = ({ status, client }) => {
   const paths = PATHS[authMethod(status)];
   const push = createPush({
     storageKey: PUSH_ENABLED_KEY,
-    serviceWorkerUrl: `/notification-sw.js?app=${encodeURIComponent(status.brand.name)}`,
+    serviceWorkerUrl: serviceWorkerUrl(status.brand.name),
     getVapidKey: () => client.get(paths.vapidKey, PUBLIC).then(data => data.public_key),
     createSubscription: subscription => client.post(paths.subscriptions, subscription),
     deleteSubscription: endpoint =>

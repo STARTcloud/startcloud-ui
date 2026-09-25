@@ -405,8 +405,8 @@ const AppShell = ({
     activeUuid: activeOrgUuid,
     onPick: account.pickOrg,
     load: loadOrganizations,
-    mark: <BrandLogo theme={theme} className="logo-md icon-with-margin" />,
-    crumbMark: <BrandLogo theme={theme} className="logo-sm" />,
+    mark: <BrandLogo className="logo-md icon-with-margin" />,
+    crumbMark: <BrandLogo className="logo-sm" />,
     logoFor: logoResolver(primary),
   };
   const onAuthPage = returnTo.onAuthPage(pathname);
@@ -457,7 +457,7 @@ const AppShell = ({
     <Avatar
       picture={avatarUrl}
       size={size}
-      fallback={<BrandLogo theme={theme} className="logo-xl flex-shrink-0" />}
+      fallback={<BrandLogo className="logo-xl flex-shrink-0" />}
     />
   );
 
@@ -489,7 +489,7 @@ const AppShell = ({
 
   const brand = {
     name: status.brand.name,
-    logo: <BrandLogo theme={theme} className="logo-cluster icon-with-margin-sm" />,
+    logo: <BrandLogo className="logo-cluster icon-with-margin-sm" />,
     to: '/',
   };
 

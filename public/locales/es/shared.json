@@ -68,6 +68,10 @@
   "notice": {
     "dismiss": "Descartar"
   },
+  "pwa": {
+    "newVersion": "Hay una nueva versión de {{app}} disponible.",
+    "reload": "Recargar"
+  },
   "status": {
     "unreachable": "No se pudo contactar con el servidor detrás de esta página. Comprueba que está en marcha y reintenta.",
     "retry": "Reintentar"

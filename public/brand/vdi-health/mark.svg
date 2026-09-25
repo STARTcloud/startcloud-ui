@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VDI Health">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .vh-teal { fill: #14b8a6; }
+  </style>
+  <g class="brand-mark-root" transform="translate(41 41) scale(17.9167)">
+    <rect class="vh-teal" x="9" y="9" width="6" height="6"/>
+    <rect class="vh-teal" x="9" y="3" width="6" height="6"/>
+    <rect class="vh-teal" x="9" y="15" width="6" height="6"/>
+    <rect class="vh-teal" x="3" y="9" width="6" height="6"/>
+    <rect class="vh-teal" x="15" y="9" width="6" height="6"/>
+  </g>
+</svg>

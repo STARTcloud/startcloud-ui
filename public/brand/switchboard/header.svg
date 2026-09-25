@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4608 512" role="img" aria-label="Switchboard">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .sw-blue { fill: #24ade3; }
+    .sw-handset { fill: #a6a6a6; fill: light-dark(#a6a6a6, #ffffff); }
+    .sw-gap { stroke: #ffffff; stroke: light-dark(#ffffff, #121212); stroke-width: 1.2; }
+  </style>
+  <g class="brand-mark-root" transform="translate(2089 41) scale(6.71875)">
+    <path class="sw-blue" d="M 7,38 Q 7,34.4 10.5,34.4 H 30 V 49 H 9.5 Q 8.2,49 8,47.5 Z"/>
+    <path class="sw-blue" d="M 60.2,38 Q 60.2,34.4 56.7,34.4 H 37.2 V 49 H 57.7 Q 59,49 59.2,47.5 Z"/>
+    <circle class="sw-blue sw-gap" cx="13.2" cy="32.6" r="6.4"/>
+    <circle class="sw-blue sw-gap" cx="54" cy="32.6" r="6.4"/>
+    <path class="sw-handset sw-gap" d="M 10,42.7 H 15 Q 20.3,42.7 21,46.5 Q 21.5,51 26,51 H 41.5 Q 46,51 46.5,46.5 Q 47.2,42.7 52.5,42.7 H 57.5 Q 60.5,42.7 60.5,45.7 V 49.5 C 60.5,62 7,62 7,49.5 V 45.7 Q 7,42.7 10,42.7 Z"/>
+    <path class="sw-blue sw-gap" d="M 24,29.4 H 43.2 Q 46.5,29.4 46.5,32.7 V 47.5 Q 46.5,51.5 42.5,51.5 H 24.7 Q 20.7,51.5 20.7,47.5 V 32.7 Q 20.7,29.4 24,29.4 Z"/>
+    <circle class="sw-blue sw-gap" cx="33.6" cy="22.3" r="13.2"/>
+  </g>
+</svg>

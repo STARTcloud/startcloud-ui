@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Moonshine">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .mo-fg { fill: #2F3C42; fill: light-dark(#2F3C42, #EFE5AE); }
+  </style>
+  <g class="brand-mark-root" transform="translate(41 41) scale(1.075)">
+    <mask id="mo-crescent-cut">
+      <rect x="0" y="0" width="400" height="400" fill="white"/>
+      <circle cx="218" cy="190" r="150" fill="black"/>
+    </mask>
+    <circle class="mo-fg" cx="190" cy="200" r="172" mask="url(#mo-crescent-cut)"/>
+    <path class="mo-fg" transform="translate(-10 0)" d="M 145,282 L 145,120 L 189,120 L 217.5,212 L 246,120 L 290,120 L 290,282 L 254,282 L 254,182 L 231,252 L 204,252 L 181,182 L 181,282 Z"/>
+    <text class="mo-fg" x="298" y="142" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="36">&#8482;</text>
+  </g>
+</svg>

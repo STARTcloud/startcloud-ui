@@ -1031,17 +1031,9 @@ OrgConsoleRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
 };
 
-const signedInRoutes = ({
-  status,
-  cookie,
-  account,
-  globalAdmin,
-  notifications,
-  theme,
-  ticketUrl,
-}) => {
+const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications, ticketUrl }) => {
   const profile = issuerProfile({ account, globalAdmin });
-  const notFound = <ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} notFound />;
+  const notFound = <ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} notFound />;
   return gatedRoutes([
     { path: '/user/profile/:section?', open: cookie, element: profile, token: 'cookie' },
     {
@@ -1236,10 +1228,7 @@ const AppRoutes = ({
           )
         }
       />
-      <Route
-        path="/about"
-        element={<AboutRoute theme={theme} oidc={oidc} clientId={account.clientId} />}
-      />
+      <Route path="/about" element={<AboutRoute oidc={oidc} clientId={account.clientId} />} />
       <Route
         path="/search"
         element={
@@ -1258,7 +1247,7 @@ const AppRoutes = ({
               session={session}
               returnTo={returnTo}
               organizations={cookie ? issuerOrganizations : organizationsAdapter}
-              orgMark={<BrandLogo theme={theme} className="logo-lg icon-with-margin" />}
+              orgMark={<BrandLogo className="logo-lg icon-with-margin" />}
               joinIntentKey={JOIN_INTENT_KEY}
             />
           ) : (
@@ -1345,7 +1334,6 @@ const AppRoutes = ({
         account,
         globalAdmin,
         notifications,
-        theme,
         ticketUrl,
       })}
       <Route
@@ -1364,16 +1352,13 @@ const AppRoutes = ({
         collectionRoutes({ collection, collections, organizations, context })
       )}
       {cookie ? (
-        <Route
-          path="/error"
-          element={<ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} />}
-        />
+        <Route path="/error" element={<ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} />} />
       ) : null}
       <Route
         path="*"
         element={
           cookie ? (
-            <ErrorPage theme={theme} ticketUrl={ticketUrl} admin={globalAdmin} notFound />
+            <ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} notFound />
           ) : (
             <Navigate to="/" />
           )

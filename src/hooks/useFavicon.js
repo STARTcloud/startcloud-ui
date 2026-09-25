@@ -1,20 +1,18 @@
 import { useEffect } from 'react';
 
 /**
- * Point the `favicon` link element at the icon for the resolved theme;
- * nothing happens when the element or either URL is missing.
+ * Point the `favicon` link element at the brand mark, whose file paints
+ * its own light and dark variant; nothing happens when the element or the
+ * URL is missing.
  *
- * @param {string} theme - The resolved theme from `useTheme`, 'light' or 'dark'
- * @param {Object} icons - The icon URLs
- * @param {string} icons.light - The icon for the light theme
- * @param {string} icons.dark - The icon for the dark theme
+ * @param {string} url - The mark's path
  */
-export const useFavicon = (theme, { light, dark }) => {
+export const useFavicon = url => {
   useEffect(() => {
     const favicon = document.getElementById('favicon');
-    if (!favicon || !light || !dark) {
+    if (!favicon || !url) {
       return;
     }
-    favicon.href = theme === 'dark' ? dark : light;
-  }, [theme, light, dark]);
+    favicon.href = url;
+  }, [url]);
 };

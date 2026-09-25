@@ -1,4 +1,33 @@
-const APP_NAME = new URL(self.location.href).searchParams.get('app') || 'Notification';
+const PARAMS = new URL(self.location.href).searchParams;
+const APP_NAME = PARAMS.get('app') || 'Notification';
+const CACHE_NAME = `startcloud-ui-${PARAMS.get('v') || '0'}`;
+const PRECACHE = ['/manifest.json', '/brand/startcloud/mark.svg', '/brand/startcloud/icon.png'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then(names =>
+        Promise.all(names.filter(name => name !== CACHE_NAME).map(name => caches.delete(name)))
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener('push', event => {
   if (!event.data) {

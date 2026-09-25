@@ -68,6 +68,10 @@
   "notice": {
     "dismiss": "Dismiss"
   },
+  "pwa": {
+    "newVersion": "A new version of {{app}} is available.",
+    "reload": "Reload"
+  },
   "status": {
     "unreachable": "The server behind this page could not be reached. Check that it is running and retry.",
     "retry": "Retry"

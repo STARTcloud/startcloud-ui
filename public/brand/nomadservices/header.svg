@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4608 512" role="img" aria-label="Nomad.services">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .no-violet { fill: #7D72F2; }
+  </style>
+  <defs>
+    <linearGradient id="no-gold-tip" gradientUnits="userSpaceOnUse" x1="125" y1="90" x2="148.8" y2="51.2">
+      <stop offset="0" stop-color="#E9A427"/>
+      <stop offset="1" stop-color="#F7CE58"/>
+    </linearGradient>
+    <path id="no-glyph-n" d="M 71 57 L 83 68 L 117 111.5 L 117 90 L 133 90 L 133 132 L 129 143 L 117 132 L 83 88.5 L 83 110 L 51.2 148.8 L 67 110 L 67 68 Z"/>
+    <path id="no-glyph-gold" d="M 117 90 L 133 90 L 148.8 51.2 Z"/>
+    <mask id="no-glyph-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">
+      <rect width="200" height="200" fill="#FFFFFF"/>
+      <use href="#no-glyph-n" fill="#000000" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+      <use href="#no-glyph-gold" fill="#000000" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g class="brand-mark-root" transform="translate(2089 41) scale(2.15)">
+    <path class="no-violet" stroke="#7D72F2" stroke-width="4" stroke-linejoin="round" fill-rule="evenodd" mask="url(#no-glyph-gap)"
+          d="M 85.03 29.58 L 86.11 7.03 A 94 94 0 0 1 113.89 7.03 L 114.97 29.58 A 72 72 0 0 1 139.21 39.61 L 155.91 24.43 A 94 94 0 0 1 175.57 44.09 L 160.39 60.79 A 72 72 0 0 1 170.42 85.03 L 192.97 86.11 A 94 94 0 0 1 192.97 113.89 L 170.42 114.97 A 72 72 0 0 1 160.39 139.21 L 175.57 155.91 A 94 94 0 0 1 155.91 175.57 L 139.21 160.39 A 72 72 0 0 1 114.97 170.42 L 113.89 192.97 A 94 94 0 0 1 86.11 192.97 L 85.03 170.42 A 72 72 0 0 1 60.79 160.39 L 44.09 175.57 A 94 94 0 0 1 24.43 155.91 L 39.61 139.21 A 72 72 0 0 1 29.58 114.97 L 7.03 113.89 A 94 94 0 0 1 7.03 86.11 L 29.58 85.03 A 72 72 0 0 1 39.61 60.79 L 24.43 44.09 A 94 94 0 0 1 44.09 24.43 L 60.79 39.61 A 72 72 0 0 1 85.03 29.58 Z M 160 100 A 60 60 0 1 0 40 100 A 60 60 0 1 0 160 100 Z"/>
+    <use class="no-violet" href="#no-glyph-n"/>
+    <use href="#no-glyph-gold" fill="url(#no-gold-tip)"/>
+  </g>
+</svg>

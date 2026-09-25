@@ -30,6 +30,7 @@ import { useAccountAvatar } from '../hooks/useAccountAvatar';
 import { useAccountPreferences } from '../hooks/useAccountPreferences';
 import { useActiveOrganization } from '../hooks/useActiveOrganization';
 import { useFavicon } from '../hooks/useFavicon';
+import { usePwa } from '../hooks/usePwa';
 import { useSession } from '../hooks/useSession';
 import { useSessionKeepalive } from '../hooks/useSessionKeepalive';
 import { useSetupGate } from '../hooks/useSetupGate';
@@ -151,10 +152,8 @@ const App = ({ getSupportedLanguages }) => {
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
   const appSearch = useAppSearch(collections, isGlobalAdmin(user));
 
-  useFavicon(theme, {
-    light: brandLogoUrl(status.brand, 'light'),
-    dark: brandLogoUrl(status.brand, 'dark'),
-  });
+  useFavicon(brandLogoUrl(status.brand));
+  usePwa(status.brand.name);
   useAccountPreferences({ user, setThemePreference });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
   useEffect(() => {
@@ -198,7 +197,7 @@ const App = ({ getSupportedLanguages }) => {
 
   const context = {
     user,
-    orgMark: <BrandLogo theme={theme} className="logo-xl icon-with-margin-sm" />,
+    orgMark: <BrandLogo className="logo-xl icon-with-margin-sm" />,
     prefsPrefix: PREFS_PREFIX,
     appName: status.brand.name,
     formatFileSize,
