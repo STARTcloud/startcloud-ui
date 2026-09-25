@@ -117,6 +117,7 @@ export const createDeployControls = ({ fetchHyperweaverUrl, canDeploy, hrefFor }
     key: 'deploy',
     kind: 'badge',
     labelKey: 'pages.table.deploy',
+    priority: 2,
     when: (rows, ctx) =>
       hasFeature(ctx.status, 'deploy') &&
       canDeploy(ctx.user) &&

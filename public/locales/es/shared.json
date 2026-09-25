@@ -1803,7 +1803,11 @@
       "platform": "Plataforma",
       "kind": "Tipo",
       "perPage": "Por página",
-      "columns": "Columnas"
+      "columns": "Columnas",
+      "sort": "Orden"
+    },
+    "group": {
+      "other": "Otros"
     },
     "view": {
       "label": "Vista",
@@ -2171,6 +2175,7 @@
     "product": {
       "name": "Nombre del producto",
       "description": "Descripción",
+      "details": "Detalles",
       "family": "Familia",
       "vendor": "Fabricante",
       "iconUrl": "URL del icono",
@@ -2201,6 +2206,23 @@
       "where": "Dónde",
       "copies": "Copias",
       "original": "Original"
+    },
+    "families": {
+      "button": "Familias",
+      "title": "Familias",
+      "none": "Aún no hay familias.",
+      "products": "Productos",
+      "created": "La familia se creó.",
+      "updated": "La familia se actualizó.",
+      "deleted": "La familia se eliminó."
+    },
+    "family": {
+      "name": "Nombre de la familia",
+      "description": "Descripción",
+      "vendor": "Fabricante",
+      "docsUrl": "URL de la documentación",
+      "notesUrl": "URL de las notas de la versión",
+      "iconUrl": "URL del icono"
     },
     "file": {
       "key": "Clave",

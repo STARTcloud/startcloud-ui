@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom';
 import { organizationShape } from '../../utils/itemShape';
 import { OrgLogo } from '../layout/OrgSwitcherModal';
 
+import MarkdownText from './MarkdownText';
+
 export const CollapseButton = ({ collapsed, onToggle }) => {
   const { t } = useTranslation();
   return (
@@ -29,24 +31,43 @@ CollapseButton.propTypes = {
 
 export const groupShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
-  organization: organizationShape.isRequired,
   items: PropTypes.array.isRequired,
+  organization: organizationShape,
+  label: PropTypes.string,
+  description: PropTypes.string,
 });
 
+/**
+ * The heading of one group of a table or a card grid: the fold button,
+ * the organization's logo and link while the group is an organization's,
+ * else the group's label, the count badge, and under the line the group's
+ * description as Markdown while it carries one.
+ */
 const GroupHeading = ({ group, collapsed, onToggle, countLabel, orgMark }) => (
-  <div className="d-flex align-items-center gap-2">
-    <CollapseButton collapsed={collapsed} onToggle={onToggle} />
-    <OrgLogo
-      org={group.organization}
-      size={30}
-      className="rounded-circle avatar-lg"
-      fallback={orgMark}
-    />
-    <Link to={`/${group.organization.name}`} className="fw-semibold">
-      {group.organization.name}
-    </Link>
-    <span className="badge bg-secondary bg-opacity-50">{countLabel}</span>
-  </div>
+  <>
+    <div className="d-flex align-items-center gap-2">
+      <CollapseButton collapsed={collapsed} onToggle={onToggle} />
+      {group.organization ? (
+        <>
+          <OrgLogo
+            org={group.organization}
+            size={30}
+            className="rounded-circle avatar-lg"
+            fallback={orgMark}
+          />
+          <Link to={`/${group.organization.name}`} className="fw-semibold">
+            {group.organization.name}
+          </Link>
+        </>
+      ) : (
+        <span className="fw-semibold">{group.label}</span>
+      )}
+      <span className="badge bg-secondary bg-opacity-50">{countLabel}</span>
+    </div>
+    {group.description ? (
+      <MarkdownText text={group.description} className="small text-body-secondary group-lead" />
+    ) : null}
+  </>
 );
 
 GroupHeading.propTypes = {

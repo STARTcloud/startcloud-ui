@@ -324,6 +324,7 @@ const tierColumn = {
   key: 'tier',
   kind: 'badge',
   labelKey: 'pages.table.tier',
+  priority: 4,
   value: (item, ctx) => ctx.t(`provisioners.tiers.${item.extras.tier}`),
   render: item => <TierBadge item={item} />,
 };
@@ -332,6 +333,7 @@ const coverageColumn = {
   key: 'providers',
   kind: 'badges',
   labelKey: 'pages.table.providers',
+  priority: 7,
   value: item => badgesText(coverageProviders(item), NONE),
   render: item => (coverageProviders(item).length > 0 ? <CoverageChips item={item} /> : NONE),
 };

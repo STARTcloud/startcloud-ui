@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import SubTable from '../../../components/common/SubTable';
@@ -31,6 +31,64 @@ const groupByOrganization = (collection, items) => {
 };
 
 const NO_IDS = new Set();
+
+const groupsFor = ({ collection, items, grouped, t }) => {
+  if (grouped) {
+    return groupByOrganization(collection, items);
+  }
+  return collection.groupsOf ? collection.groupsOf(items, t) : null;
+};
+
+const groupedByOf = (collection, grouped) => {
+  if (grouped) {
+    return 'organization';
+  }
+  return collection.groupsOf ? 'family' : '';
+};
+
+/**
+ * The widths the visible collections' tables share: walking the drawn
+ * column keys of the first collection from the left, a key is shared
+ * while every collection draws a column with that key at that index, the
+ * walk stopping at the first mismatch, and each shared key takes the
+ * widest need across the collections; nothing while fewer than two
+ * collections are visible or one has not measured yet.
+ *
+ * @param {Array<string>} visibleKeys - The visible collection keys, in page order
+ * @param {Object<string, Object<string, number>>} needsByCollection - Each table's needs, keyed by drawn column in table order
+ * @returns {Object<string, Object<string, number>>|null} The shared widths per collection key, or null
+ */
+const sharedWidthsOf = (visibleKeys, needsByCollection) => {
+  const needs = visibleKeys.map(key => needsByCollection[key]);
+  if (needs.length < 2 || needs.some(entry => !entry)) {
+    return null;
+  }
+  const orders = needs.map(entry => Object.keys(entry));
+  const shared = {};
+  orders[0].every((columnKey, index) => {
+    if (!orders.every(order => order[index] === columnKey)) {
+      return false;
+    }
+    shared[columnKey] = Math.max(...needs.map(entry => entry[columnKey]));
+    return true;
+  });
+  return Object.fromEntries(visibleKeys.map(key => [key, shared]));
+};
+
+const useSharedWidths = visible => {
+  const [needsByCollection, setNeedsByCollection] = useState({});
+  const visibleKeys = visible.map(collection => collection.key).join(',');
+  const onNeedsFor = collection => needs =>
+    setNeedsByCollection(current => {
+      const next = { ...current, [collection.key]: needs };
+      return JSON.stringify(next) === JSON.stringify(current) ? current : next;
+    });
+  const byCollection = useMemo(
+    () => sharedWidthsOf(visibleKeys.split(',').filter(Boolean), needsByCollection),
+    [visibleKeys, needsByCollection]
+  );
+  return { byCollection, onNeedsFor };
+};
 
 const useWatches = ({ collections, user, notify }) => {
   const { t } = useTranslation();
@@ -134,8 +192,9 @@ const NO_WATCH = { ids: NO_IDS, toggle: null };
  * collection's one `SubTable` (the watch column drawn star or blank, the
  * collection's columns with `ctx` carrying the host status so a column's
  * `when` can read the host's features, the collection's row actions from
- * its slots, one group per organization when the page spans them) or card
- * grid, each row carrying
+ * its slots, one group per organization when the page spans them, else
+ * the collection's own groups, the widths the page's tables share and
+ * the table's needs handed back for them) or card grid, each row carrying
  * its select checkbox while the collection has bulk actions the viewer may
  * run; with nothing to show, either draws the one `EmptyState` placard,
  * titled `pages.noMatches` over `pages.noMatchesBody` while a filter is on
@@ -186,7 +245,9 @@ const CollectionSection = ({
         onSort={table.onSort}
         hiddenColumns={table.hiddenColumns}
         widths={table.widths}
+        sharedWidths={table.sharedWidths}
         onResize={table.onResize}
+        onNeeds={table.onNeeds}
         ctx={ctx}
         emptyText={emptyText}
         emptyBody={emptyBody}
@@ -232,8 +293,11 @@ CollectionSection.propTypes = {
  * every collection it is given, registers the search binding, and draws one
  * heading row per collection carrying that collection's list actions, one
  * table or card grid per collection with organization group rows when the
- * page spans organizations, and the one view toggle on the header row when
- * the page has a header, else on the first collection's heading row.
+ * page spans organizations (else the collection's own `groupsOf` groups,
+ * `ctx.groupedBy` naming which), the leading columns the visible tables
+ * share held at one width across them, and the one view toggle on the
+ * header row when the page has a header, else on the first collection's
+ * heading row.
  */
 const Listing = ({ collections, org, member, grouped, context, header = null }) => {
   const { t, i18n } = useTranslation();
@@ -286,6 +350,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     member,
     reload,
     notify,
+    groupedBy: groupedByOf(collection, grouped),
   });
   const search = useCatalogSearch({
     collections,
@@ -311,6 +376,8 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     setColumnWidth,
   } = search;
 
+  const shared = useSharedWidths(visible);
+
   const toggle = <ViewToggle view={view} onChange={setView} />;
 
   const ctxFor = collection => ({ ...baseCtxFor(collection), filtering });
@@ -332,7 +399,7 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
         view={view}
         ctx={ctxFor(collection)}
         common={{
-          groups: grouped ? groupByOrganization(collection, items) : null,
+          groups: groupsFor({ collection, items, grouped, t }),
           collapsed,
           onToggleGroup: toggleCollapsed,
           watches:
@@ -348,7 +415,9 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
           onSort: (column, options) => setSort(collection.key, column, options),
           hiddenColumns: hiddenColumns[collection.key],
           widths: widths[collection.key],
+          sharedWidths: shared.byCollection ? shared.byCollection[collection.key] : null,
           onResize: (column, pixels) => setColumnWidth(collection.key, column, pixels),
+          onNeeds: collections.length > 1 ? shared.onNeedsFor(collection) : null,
         }}
         toggle={!header && index === 0 ? toggle : null}
       />

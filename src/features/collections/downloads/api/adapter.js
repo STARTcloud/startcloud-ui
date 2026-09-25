@@ -69,6 +69,25 @@ const releaseSummary = entry => {
   };
 };
 
+/**
+ * One family of an organization's products as the wire answers it: its
+ * name, prose, vendor, the three links and how many products name it.
+ *
+ * @param {Object} entry - The wire family
+ * @returns {Object} The family
+ */
+const familyItem = entry => ({
+  name: entry.name,
+  description: entry.description || '',
+  vendor: entry.vendor || '',
+  docsUrl: entry.docs_url || '',
+  notesUrl: entry.notes_url || '',
+  iconUrl: entry.icon_url || '',
+  products: countOf(entry.products) ?? 0,
+  createdAt: entry.created_at || null,
+  updatedAt: entry.updated_at || null,
+});
+
 const downloadItem = (entry, orgName, logo) => {
   const versions = rows(entry.releases).map(releaseSummary);
   return {
@@ -77,6 +96,7 @@ const downloadItem = (entry, orgName, logo) => {
     name: entry.name,
     label: entry.name,
     description: entry.description || '',
+    details: entry.details || '',
     icon: entry.icon_url || '',
     artwork: '',
     isPublic: Boolean(entry.is_public),
@@ -87,6 +107,7 @@ const downloadItem = (entry, orgName, logo) => {
     latestReleaseAt: entry.latest_release_at || null,
     downloads: countOf(entry.download_count),
     family: entry.family || '',
+    familyDetails: entry.family_details ? familyItem(entry.family_details) : null,
     vendor: entry.vendor || '',
     metadata: null,
     readme: null,
@@ -188,6 +209,17 @@ const duplicates = org =>
       rows(data).flatMap(group => rows(group.files).map(entry => duplicateFile(group, entry)))
     );
 
+/**
+ * The organization's families: listed as family rows, created, updated
+ * and removed by name.
+ */
+const families = {
+  list: org => api.families.list(org).then(data => rows(data).map(familyItem)),
+  create: (org, body) => api.families.create(org, body),
+  update: (org, name, body) => api.families.update(org, name, body),
+  remove: (org, name) => api.families.remove(org, name),
+};
+
 export const downloadsAdapter = {
   listAll: () =>
     api.downloads.discover().then(data => withLogos(rows(data), 'Unknown', downloadItem)),
@@ -200,5 +232,6 @@ export const downloadsAdapter = {
   pending: api.pending,
   bulk,
   duplicates,
+  families,
   watches,
 };

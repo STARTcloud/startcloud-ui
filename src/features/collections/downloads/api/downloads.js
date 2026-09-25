@@ -56,6 +56,8 @@ const uploadPending = (organization, { file: picked, onUploadProgress }) => {
  * level upload routes are a program's and no page calls them. The
  * organization's `duplicates` answers every checksum more than one file
  * row carries, the largest group first, for a writer of the organization.
+ * The organization's `families` are listed, created, updated and removed
+ * by name on their own route, a product naming its family by that name.
  */
 export const api = {
   downloads: {
@@ -68,6 +70,14 @@ export const api = {
     unwatch: (organization, name) => client.delete(`${product(organization, name)}/watch`),
     watches: () => client.get('/api/user/download-watches'),
     duplicates: organization => client.get(`${org(organization)}/download/duplicates`),
+  },
+  families: {
+    list: organization => client.get(`${org(organization)}/download-family`),
+    create: (organization, body) => client.post(`${org(organization)}/download-family`, body),
+    update: (organization, name, body) =>
+      client.put(`${org(organization)}${encodePath('download-family', name)}`, body),
+    remove: (organization, name) =>
+      client.delete(`${org(organization)}${encodePath('download-family', name)}`),
   },
   releases: {
     get: (organization, name, number) => client.get(release(organization, name, number)),

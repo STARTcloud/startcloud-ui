@@ -21,9 +21,16 @@ const carriesAccess = hasAny(row => typeof row.isPublic === 'boolean');
 
 const managedAccess = (rows, ctx) => carriesAccess(rows) && managesRows(rows, ctx);
 
+const withPriority = (column, priority) => ({ ...column, priority });
+
 const rowVisibilityColumn = { ...visibilityColumn, when: managedAccess };
 
 const rowStatusColumn = { ...statusColumn, when: managedAccess };
+
+const accessColumns = (visibility, status) => [
+  withPriority(rowVisibilityColumn, visibility),
+  withPriority(rowStatusColumn, status),
+];
 
 const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
 
@@ -61,6 +68,7 @@ const downloadsColumn = {
   key: 'downloads',
   kind: 'count',
   labelKey: 'pages.table.downloads',
+  priority: 3,
   when: hasAny(row => typeof row.downloadCount === 'number'),
   value: row => (typeof row.downloadCount === 'number' ? row.downloadCount : ''),
 };
@@ -78,6 +86,7 @@ const checksumColumn = {
   key: 'checksum',
   kind: 'checksum',
   labelKey: 'pages.table.checksum',
+  priority: 9,
   when: hasAny(row => row.checksum),
   value: row => row.checksum || '',
   render: row =>
@@ -92,6 +101,8 @@ const detailsColumn = {
   key: 'details',
   kind: 'text',
   labelKey: 'pages.table.details',
+  priority: 4,
+  prose: true,
   when: hasAny(row => row.description),
   value: row => row.description || '',
   render: row => <MarkdownText text={row.description} />,
@@ -151,12 +162,12 @@ const providerLinkColumn = (labelKey, { org, name, version }) => ({
  */
 export const versionLevelColumns = ({ org, name }) => [
   versionLinkColumn('pages.table.version', { org, name }),
-  rowVisibilityColumn,
-  rowStatusColumn,
+  ...accessColumns(6, 5),
   {
     key: 'released',
     kind: 'date',
     labelKey: 'pages.version.released',
+    priority: 2,
     when: hasAny(version => version.createdAt),
     value: version => timeOf(version.createdAt),
     render: version => localeDate(version.createdAt),
@@ -166,6 +177,7 @@ export const versionLevelColumns = ({ org, name }) => [
     key: 'providers',
     kind: 'badges',
     labelKey: 'pages.table.providers',
+    priority: 3,
     when: hasAny(version => (version.providers || []).length > 0),
     value: version => badgesText(namesOf(version.providers)),
     render: (version, ctx) =>
@@ -183,6 +195,7 @@ export const versionLevelColumns = ({ org, name }) => [
     key: 'artifacts',
     kind: 'badges',
     labelKey: 'pages.version.artifacts',
+    priority: 3,
     when: hasAny(version => (version.artifacts || []).length > 0),
     value: version => badgesText(namesOf(version.artifacts)),
     render: (version, ctx) =>
@@ -217,13 +230,13 @@ const providerDownloads = provider =>
  */
 export const providerLevelColumns = ({ org, name, version }) => [
   providerLinkColumn('pages.table.name', { org, name, version }),
-  rowVisibilityColumn,
-  rowStatusColumn,
+  ...accessColumns(6, 5),
   detailsColumn,
   {
     key: 'downloads',
     kind: 'count',
     labelKey: 'pages.table.downloads',
+    priority: 3,
     when: hasAny(provider =>
       (provider.architectures || []).some(
         architecture => typeof architecture.downloadCount === 'number'
@@ -235,6 +248,7 @@ export const providerLevelColumns = ({ org, name, version }) => [
     key: 'architectures',
     kind: 'badges',
     labelKey: 'pages.table.architectures',
+    priority: 2,
     when: hasAny(provider => (provider.architectures || []).length > 0),
     value: provider => badgesText(namesOf(provider.architectures)),
     render: provider => nameBadges(namesOf(provider.architectures)),
@@ -268,15 +282,25 @@ export const architectureLevelColumns = ({ org, name, version, provider = '' }) 
         </Link>
       ),
   },
-  rowVisibilityColumn,
-  rowStatusColumn,
-  { ...createdColumn, defaultHidden: false, when: hasAny(architecture => architecture.createdAt) },
-  { ...updatedColumn, defaultHidden: false, when: hasAny(architecture => architecture.updatedAt) },
+  ...accessColumns(8, 7),
+  {
+    ...createdColumn,
+    priority: 5,
+    defaultHidden: false,
+    when: hasAny(architecture => architecture.createdAt),
+  },
+  {
+    ...updatedColumn,
+    priority: 6,
+    defaultHidden: false,
+    when: hasAny(architecture => architecture.updatedAt),
+  },
   downloadsColumn,
   {
     key: 'defaultBox',
     kind: 'word',
     labelKey: 'pages.table.defaultBox',
+    priority: 4,
     when: hasAny(architecture => typeof architecture.defaultBox === 'boolean'),
     value: (architecture, ctx) => ctx.t(architecture.defaultBox ? 'yes' : 'no'),
   },
@@ -297,14 +321,14 @@ const countCell = entries => (entries || []).length;
  */
 export const releaseLevelColumns = ({ org, name }) => [
   versionLinkColumn('pages.table.release', { org, name }),
-  rowVisibilityColumn,
-  rowStatusColumn,
-  releasedAtColumn,
+  ...accessColumns(6, 5),
+  withPriority(releasedAtColumn, 2),
   detailsColumn,
   {
     key: 'patches',
     kind: 'count',
     labelKey: 'pages.table.patches',
+    priority: 3,
     value: release => countCell(release.providers),
   },
 ];
@@ -320,12 +344,12 @@ export const releaseLevelColumns = ({ org, name }) => [
  */
 export const patchLevelColumns = ({ org, name, version }) => [
   providerLinkColumn('pages.table.name', { org, name, version }),
-  rowVisibilityColumn,
-  rowStatusColumn,
+  ...accessColumns(6, 5),
   {
     key: 'kind',
     kind: 'badge',
     labelKey: 'pages.table.kind',
+    priority: 2,
     when: hasAny(patch => patch.kind),
     value: (patch, ctx) => (patch.kind ? listWord(ctx.t, 'kind', patch.kind) : ''),
     render: (patch, ctx) =>
@@ -335,19 +359,21 @@ export const patchLevelColumns = ({ org, name, version }) => [
         ''
       ),
   },
-  releasedAtColumn,
+  withPriority(releasedAtColumn, 3),
   {
     key: 'files',
     kind: 'count',
     labelKey: 'pages.table.files',
+    priority: 4,
     value: patch => countCell(patch.architectures),
   },
 ];
 
-const wordColumn = (key, labelKey, group) => ({
+const wordColumn = (key, labelKey, group, priority) => ({
   key,
   kind: 'word',
   labelKey,
+  priority,
   value: (file, ctx) => listWord(ctx.t, group, file[group]),
 });
 
@@ -358,9 +384,10 @@ const wordColumn = (key, labelKey, group) => ({
  * shape `labelColumn` gives the catalog's label and slug), its visibility
  * and status badges where the host answers the row's own access words,
  * the date its patch shipped, its kind, platform, architecture and
- * language as closed-list words, the downloads, the size and the
- * checksum; the tokened download is the table's `DownloadAction` in the
- * Actions column.
+ * language as closed-list words (the language drawn only while a file of
+ * the table names one other than `any`, and the first column to fold
+ * while it is drawn), the downloads, the size and the checksum; the
+ * tokened download is the table's `DownloadAction` in the Actions column.
  *
  * @param {{org: string, name: string, version: string, provider: string}} scope - The patch the files belong to
  * @returns {Array<Object>} The columns
@@ -380,17 +407,20 @@ export const fileLevelColumns = () => [
       </>
     ),
   },
-  rowVisibilityColumn,
-  rowStatusColumn,
-  releasedAtColumn,
-  wordColumn('kind', 'pages.table.kind', 'kind'),
-  wordColumn('platform', 'pages.table.platform', 'platform'),
-  wordColumn('architecture', 'pages.table.architecture', 'architecture'),
-  wordColumn('language', 'pages.table.language', 'language'),
+  ...accessColumns(8, 7),
+  withPriority(releasedAtColumn, 3),
+  wordColumn('kind', 'pages.table.kind', 'kind', 4),
+  wordColumn('platform', 'pages.table.platform', 'platform', 5),
+  wordColumn('architecture', 'pages.table.architecture', 'architecture', 6),
+  {
+    ...wordColumn('language', 'pages.table.language', 'language', 11),
+    when: hasAny(file => file.language && file.language !== 'any'),
+  },
   {
     key: 'variant',
     kind: 'text',
     labelKey: 'pages.table.variant',
+    priority: 10,
     defaultHidden: true,
     value: file => file.variant || '',
   },

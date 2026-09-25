@@ -48,6 +48,42 @@ import {
   DownloadVersionRowActions,
 } from './components/DownloadRelease';
 
+const FAMILY_GROUP = 'downloads:family:';
+
+/**
+ * The listing's groups by family: one per family name in the order the
+ * items first name them, each carrying the family's description from the
+ * first item that names it, then, last and only while such items exist,
+ * one group of the items without a family.
+ *
+ * @param {Array<Object>} items - The listing's items
+ * @param {Function} t - The translator
+ * @returns {Array<Object>} The groups
+ */
+const groupsByFamily = (items, t) => {
+  const groups = new Map();
+  const other = [];
+  items.forEach(item => {
+    if (!item.family) {
+      other.push(item);
+      return;
+    }
+    if (!groups.has(item.family)) {
+      groups.set(item.family, {
+        key: `${FAMILY_GROUP}${item.family}`,
+        label: item.family,
+        description: item.familyDetails?.description || '',
+        items: [],
+      });
+    }
+    groups.get(item.family).items.push(item);
+  });
+  if (other.length > 0) {
+    groups.set('', { key: FAMILY_GROUP, label: t('pages.group.other'), items: other });
+  }
+  return [...groups.values()];
+};
+
 export const downloads = {
   key: 'downloads',
   labelKey: 'collections.downloads',
@@ -104,6 +140,7 @@ export const downloads = {
     platformsColumn,
   ],
   defaultSort: [{ column: 'name', direction: 'asc' }],
+  groupsOf: groupsByFamily,
   levels: {
     versions: {
       labelKey: 'pages.table.releases',

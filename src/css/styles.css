@@ -1428,11 +1428,10 @@ button::-moz-focus-inner {
 }
 
 .items-table {
-  --col-w-narrow: 6.5rem;
-  --col-w-medium: 10rem;
   --col-w-side: 2.5rem;
-  --col-w-actions: 14rem;
-  table-layout: fixed;
+  --col-w-fold: 2rem;
+  table-layout: auto;
+  width: 100%;
 }
 
 .items-table th {
@@ -1441,33 +1440,61 @@ button::-moz-focus-inner {
 }
 
 .items-table td .cell {
-  container-type: inline-size;
   min-width: 0;
+  white-space: nowrap;
 }
 
-.items-table .col-k-name .cell,
-.items-table .col-k-text .cell,
+.items-table .col-k-text .cell.prose {
+  white-space: normal;
+  max-width: 24rem;
+}
+
 .items-table .col-k-checksum .cell {
+  max-width: 14rem;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.items-table.measuring .cell {
+  display: inline-block;
   white-space: nowrap;
+  max-width: none;
+}
+
+.items-table.measuring .folded {
+  display: table-cell;
+}
+
+.items-table .folded {
+  display: none;
+}
+
+.items-table th.col-sized {
+  width: var(--col-width);
+}
+
+.items-table .col-fold {
+  width: var(--col-w-fold);
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.items-table.fold-owner .name-org {
+  display: none;
+}
+
+.name-org {
+  color: var(--bs-secondary-color);
+}
+
+.items-table tr.detail-row .record-folded {
+  padding: 0.5rem 0.875rem 0.625rem;
 }
 
 .items-table .col-k-count {
   text-align: right;
   padding-right: 1.25rem;
-}
-
-.items-table col.col-sized {
-  width: var(--col-width);
-}
-
-.items-table .col-w-narrow {
-  width: var(--col-w-narrow);
-}
-
-.items-table .col-w-medium {
-  width: var(--col-w-medium);
 }
 
 .items-table th:has(.col-resize.dragging) {
@@ -1536,10 +1563,6 @@ button::-moz-focus-inner {
   width: var(--col-w-side);
 }
 
-.items-table .col-actions {
-  width: var(--col-w-actions);
-}
-
 .items-table tr.standby {
   opacity: 0.35;
 }
@@ -1568,6 +1591,15 @@ button::-moz-focus-inner {
   --bs-table-accent-bg: transparent;
   background-color: var(--bs-tertiary-bg);
   padding: 0;
+}
+
+.family-line p {
+  display: inline;
+  margin: 0;
+}
+
+.group-lead p:last-child {
+  margin-bottom: 0;
 }
 
 .empty-state {

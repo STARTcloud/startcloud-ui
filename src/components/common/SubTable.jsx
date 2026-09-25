@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaRegStar, FaStar } from 'react-icons/fa6';
@@ -7,9 +7,10 @@ import { FaRegStar, FaStar } from 'react-icons/fa6';
 import { useCssVar } from '../../hooks/useCssVar';
 import { sortShape } from '../../utils/itemShape';
 
-import { KIND_NAMES, isFlexKind, kindClasses, kindWidth } from './columnKinds';
+import { KIND_NAMES, kindClasses, kindPriority } from './columnKinds';
 import EmptyState from './EmptyState';
-import GroupHeading, { groupShape } from './GroupHeading';
+import GroupHeading, { CollapseButton, groupShape } from './GroupHeading';
+import RecordRows from './RecordRows';
 import { RowCheckbox, SelectAllCheckbox, selectionShape } from './SelectCheckbox';
 import SortHeader from './SortHeader';
 
@@ -19,12 +20,11 @@ const MIN_WIDTH = 48;
 const KEY_STEP = 16;
 const NO_WIDTHS = {};
 const NO_COLLAPSED = {};
-
-const CHAR_REM = 0.5;
-const FLOOR_REM = 8;
-const CEIL_REM = 32;
-const SIDE_WIDTH = 'var(--col-w-side)';
-const ACTIONS_WIDTH = 'var(--col-w-actions)';
+const NO_FOLD = new Set();
+const NO_NEEDS = {};
+const PROSE_CAP_REM = 24;
+const CHECKSUM_CAP_REM = 14;
+const EMPTY_LAYOUT = { folded: NO_FOLD, ownerFolded: false, needs: NO_NEEDS };
 
 export const watchesShape = PropTypes.shape({
   ids: PropTypes.instanceOf(Set).isRequired,
@@ -57,101 +57,213 @@ const hasGroups = groups => Boolean(groups && groups.length > 0);
 
 const columnClass = column => `col-${column.key} ${kindClasses(column.kind)}`;
 
-const cellClass = column =>
-  column.className ? `${columnClass(column)} ${column.className}` : columnClass(column);
-
-const cellText = (column, row, ctx) => String(column.value(row, ctx) ?? '');
-
-const measureRem = (column, rows, ctx) => {
-  const longest = rows.reduce((max, row) => Math.max(max, cellText(column, row, ctx).length), 0);
-  return Math.min(CEIL_REM, Math.max(FLOOR_REM, longest * CHAR_REM));
+const cellClass = (column, folded) => {
+  const base = column.className
+    ? `${columnClass(column)} ${column.className}`
+    : columnClass(column);
+  return folded ? `${base} folded` : base;
 };
 
-const takenWidths = ({ drawn, widths, selection, watches, actions }) => [
-  ...(selection ? [SIDE_WIDTH] : []),
-  ...(watches ? [SIDE_WIDTH] : []),
-  ...(actions ? [ACTIONS_WIDTH] : []),
-  ...drawn
-    .filter(column => widths[column.key] || !isFlexKind(column.kind))
-    .map(column =>
-      widths[column.key] ? `${widths[column.key]}px` : `var(--col-w-${kindWidth(column.kind)})`
-    ),
-];
+const columnPriority = column => column.priority ?? kindPriority(column.kind);
 
-/**
- * The width of every flex column the viewer has not resized, as a CSS
- * width: the room the fixed columns, the leading select and watch cells,
- * the Actions column and every stored width leave is split among them by
- * the longest text their `value` answers over the rows drawn, each
- * measured in rem and clamped between a floor, so a name never starves,
- * and a ceiling, so a checksum or a path gets what it needs and no more;
- * the first of them takes no width and so absorbs the room the others
- * leave, the way a fixed layout hands its leftover to an unsized column.
- *
- * @param {Object} shape - The `drawn` columns, the `rows`, the stored `widths`, `selection`, `watches`, `actions` and `ctx`
- * @returns {Object<string, string>} The CSS width per flex column key
- */
-const flexWidths = ({ drawn, rows, widths, selection, watches, actions, ctx }) => {
-  const sharers = drawn.filter(column => isFlexKind(column.kind) && !widths[column.key]);
-  if (sharers.length < 2) {
-    return NO_WIDTHS;
+const rectWidth = element => element.getBoundingClientRect().width;
+
+const remOf = () => parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+const cssVarRem = (element, name, rem) =>
+  parseFloat(getComputedStyle(element).getPropertyValue(name)) * rem;
+
+const paddingOf = element => {
+  const style = getComputedStyle(element);
+  return parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+};
+
+const capOf = (column, rem) => {
+  if (column.prose) {
+    return PROSE_CAP_REM * rem;
   }
-  const measures = sharers.map(column => measureRem(column, rows, ctx));
-  const total = measures.reduce((sum, rem) => sum + rem, 0);
-  const taken = takenWidths({ drawn, widths, selection, watches, actions });
-  const room = taken.length > 0 ? `(100% - ${taken.join(' - ')})` : '100%';
-  return Object.fromEntries(
-    sharers
-      .slice(1)
-      .map((column, index) => [column.key, `calc(${room} * ${measures[index + 1] / total})`])
+  if (column.kind === 'checksum') {
+    return CHECKSUM_CAP_REM * rem;
+  }
+  return Infinity;
+};
+
+const measureColumn = (tableEl, className, cap) => {
+  const header = tableEl.querySelector(`thead th.${className}`);
+  if (!header) {
+    return 0;
+  }
+  const cells = [header, ...tableEl.querySelectorAll(`tbody td.${className}`)];
+  const widest = cells.reduce(
+    (max, cell) =>
+      cell.firstElementChild ? Math.max(max, rectWidth(cell.firstElementChild)) : max,
+    0
   );
+  return Math.min(Math.ceil(widest) + paddingOf(header), cap);
 };
 
-const assertFlexFirst = drawn => {
-  if (import.meta.env.DEV && drawn.length > 0 && !isFlexKind(drawn[0].kind)) {
-    console.error(`SubTable: the first drawn column, ${drawn[0].key}, is not a flex kind`);
-  }
+const measureAll = ({ tableEl, drawn, actions, rem }) => {
+  tableEl.classList.add('measuring');
+  const needs = {};
+  drawn.forEach(column => {
+    needs[column.key] = measureColumn(tableEl, `col-${column.key}`, capOf(column, rem));
+  });
+  const actionsNeed = actions ? measureColumn(tableEl, 'col-actions', Infinity) : 0;
+  tableEl.classList.remove('measuring');
+  return { needs, actionsNeed };
 };
+
+const foldOrder = drawn =>
+  drawn
+    .map((column, index) => ({ column, index, priority: columnPriority(column) }))
+    .filter(entry => entry.priority > 1)
+    .sort((a, b) => b.priority - a.priority || b.index - a.index)
+    .map(entry => entry.column);
 
 /**
- * The shape one render of the table takes from its props: the columns
- * drawn (not hidden, and their `when` true for the rows and `ctx`), the
- * CSS width of every column that takes one (a stored resize in pixels,
- * else a flex column's share), whether an Actions column draws, and the
- * count of cells a full-width row spans.
+ * One layout of a table against the room its wrap gives it: every drawn
+ * column measured at the widest of its header button and its cells while
+ * the table carries `measuring`, a prose column capped at 24rem and a
+ * checksum at 14rem, the Actions column measured the same way; then the
+ * columns folded, the highest priority number first and, among equals,
+ * the rightmost first, until the sizes left (a stored resize over a
+ * shared width over the need) fit the room, the organization in front of
+ * the name folded before any column while the table draws one, and the
+ * walk run again with the fold cell's width taken from the room once
+ * anything folded.
  *
- * @param {Object} props - The table's `columns`, `rows`, `hiddenColumns`, `widths`, `selection`, `watches`, `LeadActions`, `RowActions` and `ctx`
- * @returns {{ drawn: Array, colWidths: Object, actions: boolean, columnCount: number }} The shape
+ * @param {Object} inputs - The `tableEl`, its `wrapEl`, the `drawn` columns, the stored `widths`, the `sharedWidths`, whether `actions` draw, `selection` and `watches`
+ * @returns {{ folded: Set<string>, ownerFolded: boolean, needs: Object<string, number> }} The layout
  */
-const shapeOf = ({
-  columns,
-  rows,
-  hiddenColumns,
+const layoutTable = ({
+  tableEl,
+  wrapEl,
+  drawn,
   widths,
+  sharedWidths,
+  actions,
   selection,
   watches,
-  LeadActions,
-  RowActions,
-  ctx,
 }) => {
-  const drawn = drawnColumns(
-    columns.filter(column => !hiddenColumns.has(column.key)),
-    rows,
-    ctx
-  );
-  assertFlexFirst(drawn);
-  const actions = Boolean(LeadActions || RowActions);
-  const flex = flexWidths({ drawn, rows, widths, selection, watches, actions, ctx });
-  const colWidths = Object.fromEntries(
-    drawn
-      .filter(column => widths[column.key] || flex[column.key])
-      .map(column => [
-        column.key,
-        widths[column.key] ? `${widths[column.key]}px` : flex[column.key],
-      ])
-  );
-  const columnCount = drawn.length + [selection, watches, actions].filter(Boolean).length;
-  return { drawn, colWidths, actions, columnCount };
+  const rem = remOf();
+  const side = cssVarRem(tableEl, '--col-w-side', rem);
+  const foldWidth = cssVarRem(tableEl, '--col-w-fold', rem);
+  const room = wrapEl.clientWidth - (selection ? side : 0) - (watches ? side : 0) - 1;
+  const owner = Boolean(tableEl.querySelector('.name-org'));
+  tableEl.classList.remove('fold-owner');
+  let ownerFolded = false;
+  let measured = measureAll({ tableEl, drawn, actions, rem });
+  const sizeOf = column =>
+    widths[column.key] || sharedWidths?.[column.key] || measured.needs[column.key];
+  const totalOf = () =>
+    drawn.reduce((sum, column) => sum + sizeOf(column), 0) + measured.actionsNeed;
+  const order = foldOrder(drawn);
+  const walk = available => {
+    const folded = new Set();
+    let total = totalOf();
+    if (total > available && owner && !ownerFolded) {
+      ownerFolded = true;
+      tableEl.classList.add('fold-owner');
+      measured = measureAll({ tableEl, drawn, actions, rem });
+      total = totalOf();
+    }
+    order.forEach(column => {
+      if (total > available) {
+        folded.add(column.key);
+        total -= sizeOf(column);
+      }
+    });
+    return folded;
+  };
+  let folded = walk(room);
+  if (folded.size > 0) {
+    folded = walk(room - foldWidth);
+  }
+  return { folded, ownerFolded, needs: measured.needs };
+};
+
+const sameSet = (a, b) => a.size === b.size && [...a].every(key => b.has(key));
+
+const sameNeeds = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+const sameLayout = (a, b) =>
+  a.ownerFolded === b.ownerFolded && sameSet(a.folded, b.folded) && sameNeeds(a.needs, b.needs);
+
+/**
+ * The table's own layout: lays the table out through `layoutTable`
+ * before paint whenever the drawn keys, the rows, the stored or shared
+ * widths or the language change, whenever the wrap resizes and once the
+ * fonts are ready, hands `onNeeds` the needs each time a value changed,
+ * and answers the folded column keys, whether the organization in front
+ * of the name is folded and the needs.
+ *
+ * @param {Object} inputs - The `wrapRef` and `tableRef`, the `drawn` columns, `rows`, `widths`, `sharedWidths`, whether `actions` draw, `selection`, `watches`, the `language` and `onNeeds`
+ * @returns {{ folded: Set<string>, ownerFolded: boolean, needs: Object<string, number> }} The layout
+ */
+const useFold = ({
+  wrapRef,
+  tableRef,
+  drawn,
+  rows,
+  widths,
+  sharedWidths,
+  actions,
+  selection,
+  watches,
+  language,
+  onNeeds,
+}) => {
+  const inputs = useRef(null);
+  const handed = useRef(NO_NEEDS);
+  const [layout, setLayout] = useState(EMPTY_LAYOUT);
+  const [tick, setTick] = useState(0);
+  const keys = drawn.map(column => column.key).join(',');
+
+  useLayoutEffect(() => {
+    inputs.current = { drawn, widths, sharedWidths, actions, selection, watches, onNeeds };
+  });
+
+  useEffect(() => {
+    const element = wrapRef.current;
+    if (!element || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(() => setTick(current => current + 1));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [wrapRef]);
+
+  useEffect(() => {
+    if (!document.fonts) {
+      return undefined;
+    }
+    let mounted = true;
+    document.fonts.ready.then(() => {
+      if (mounted) {
+        setTick(current => current + 1);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const tableEl = tableRef.current;
+    const wrapEl = wrapRef.current;
+    if (!tableEl || !wrapEl) {
+      return;
+    }
+    const next = layoutTable({ tableEl, wrapEl, ...inputs.current });
+    setLayout(current => (sameLayout(current, next) ? current : next));
+    const { onNeeds: hand } = inputs.current;
+    if (hand && !sameNeeds(handed.current, next.needs)) {
+      handed.current = next.needs;
+      hand(next.needs);
+    }
+  }, [wrapRef, tableRef, keys, rows, widths, sharedWidths, language, tick]);
+
+  return layout;
 };
 
 const WatchStar = ({ watched, onToggle }) => {
@@ -268,45 +380,17 @@ ResizeHandle.propTypes = {
   onResize: PropTypes.func.isRequired,
 };
 
-const SizedCol = ({ column, width }) => {
-  const col = useRef(null);
-  useCssVar(col, '--col-width', width);
-  const base = columnClass(column);
-  return <col ref={col} className={width ? `${base} col-sized` : base} />;
+const headerClass = (column, width, folded) => {
+  const base = width ? `${columnClass(column)} col-sized` : columnClass(column);
+  return folded ? `${base} folded` : base;
 };
 
-SizedCol.propTypes = {
-  column: PropTypes.shape({
-    key: PropTypes.string.isRequired,
-    kind: PropTypes.oneOf(KIND_NAMES).isRequired,
-  }).isRequired,
-  width: PropTypes.string,
-};
-
-const ColumnGroup = ({ drawn, selection, watches, actions, colWidths }) => (
-  <colgroup>
-    {selection ? <col className="col-select" /> : null}
-    {watches ? <col className="col-watch" /> : null}
-    {drawn.map(column => (
-      <SizedCol key={column.key} column={column} width={colWidths[column.key] || null} />
-    ))}
-    {actions ? <col className="col-actions" /> : null}
-  </colgroup>
-);
-
-ColumnGroup.propTypes = {
-  drawn: PropTypes.array.isRequired,
-  selection: selectionShape,
-  watches: watchesShape,
-  actions: PropTypes.bool.isRequired,
-  colWidths: PropTypes.objectOf(PropTypes.string).isRequired,
-};
-
-const HeaderCell = ({ column, sort, onSort, onResize }) => {
+const HeaderCell = ({ column, width, folded, sort, onSort, onResize }) => {
   const { t } = useTranslation();
   const cell = useRef(null);
+  useCssVar(cell, '--col-width', width);
   return (
-    <th ref={cell} className={columnClass(column)}>
+    <th ref={cell} className={headerClass(column, width, folded)}>
       <SortHeader column={column.key} sort={sort} onSort={onSort}>
         {t(column.labelKey)}
       </SortHeader>
@@ -321,15 +405,29 @@ HeaderCell.propTypes = {
     kind: PropTypes.oneOf(KIND_NAMES).isRequired,
     labelKey: PropTypes.string.isRequired,
   }).isRequired,
+  width: PropTypes.string,
+  folded: PropTypes.bool.isRequired,
   sort: sortShape.isRequired,
   onSort: PropTypes.func.isRequired,
   onResize: PropTypes.func,
 };
 
-const HeaderRow = ({ drawn, selection, watches, actions, sort, onSort, onResize }) => {
+const HeaderRow = ({
+  drawn,
+  sized,
+  folded,
+  foldCell,
+  selection,
+  watches,
+  actions,
+  sort,
+  onSort,
+  onResize,
+}) => {
   const { t } = useTranslation();
   return (
     <tr>
+      {foldCell ? <th className="col-fold" /> : null}
       {selection ? (
         <th className="col-select">
           <SelectAllCheckbox selection={selection} />
@@ -340,18 +438,27 @@ const HeaderRow = ({ drawn, selection, watches, actions, sort, onSort, onResize 
         <HeaderCell
           key={column.key}
           column={column}
+          width={sized[column.key] || null}
+          folded={folded.has(column.key)}
           sort={sort}
           onSort={onSort}
           onResize={onResize}
         />
       ))}
-      {actions ? <th className="col-actions">{t('pages.table.actions')}</th> : null}
+      {actions ? (
+        <th className="col-actions">
+          <span>{t('pages.table.actions')}</span>
+        </th>
+      ) : null}
     </tr>
   );
 };
 
 HeaderRow.propTypes = {
   drawn: PropTypes.array.isRequired,
+  sized: PropTypes.objectOf(PropTypes.string).isRequired,
+  folded: PropTypes.instanceOf(Set).isRequired,
+  foldCell: PropTypes.bool.isRequired,
   selection: selectionShape,
   watches: watchesShape,
   actions: PropTypes.bool.isRequired,
@@ -380,9 +487,51 @@ ActionsCell.propTypes = {
 const cellContent = (column, row, ctx) =>
   column.render ? column.render(row, ctx) : column.value(row, ctx);
 
+/**
+ * The folded columns of one line as label and value pairs, in table
+ * order, the value the cell would have drawn.
+ */
+const FoldedRecord = ({ drawn, folded, row, ctx }) => {
+  const { t } = useTranslation();
+  const rows = drawn
+    .filter(column => folded.has(column.key))
+    .map(column => ({
+      key: column.key,
+      label: t(column.labelKey),
+      value: cellContent(column, row, ctx),
+    }));
+  return <RecordRows rows={rows} className="mb-0 record-folded" />;
+};
+
+FoldedRecord.propTypes = {
+  drawn: PropTypes.array.isRequired,
+  folded: PropTypes.instanceOf(Set).isRequired,
+  row: PropTypes.object.isRequired,
+  ctx: PropTypes.object.isRequired,
+};
+
+const DetailRow = ({ columnCount, record, detail }) => (
+  <tr className="detail-row">
+    <td colSpan={columnCount}>
+      {record}
+      {detail}
+    </td>
+  </tr>
+);
+
+DetailRow.propTypes = {
+  columnCount: PropTypes.number.isRequired,
+  record: PropTypes.node,
+  detail: PropTypes.node,
+};
+
 const BodyRow = ({
   row,
   drawn,
+  folded,
+  foldCell,
+  openKeys,
+  onToggleOpen,
   rowKey,
   rowId,
   rowRef,
@@ -400,15 +549,22 @@ const BodyRow = ({
   ctx,
 }) => {
   const own = { [rowProp]: row };
-  const expanded = Boolean(Detail && expandedKeys && expandedKeys.has(rowKey(row)));
+  const key = rowKey(row);
+  const expanded = Boolean(Detail && expandedKeys && expandedKeys.has(key));
+  const open = foldCell && openKeys.has(key);
   return (
     <>
       <tr
-        ref={rowRef ? rowRef(rowKey(row)) : undefined}
+        ref={rowRef ? rowRef(key) : undefined}
         tabIndex={rowRef ? -1 : undefined}
         id={rowId ? rowId(row) : undefined}
         className={rowClass ? rowClass(row) : undefined}
       >
+        {foldCell ? (
+          <td className="col-fold">
+            <CollapseButton collapsed={!open} onToggle={() => onToggleOpen(key)} />
+          </td>
+        ) : null}
         {selection ? (
           <td className="col-select">
             <RowCheckbox selection={selection} row={row} />
@@ -417,16 +573,15 @@ const BodyRow = ({
         {watches ? (
           <td className="col-watch text-center align-middle">
             {watches.toggle ? (
-              <WatchStar
-                watched={watches.ids.has(rowKey(row))}
-                onToggle={() => watches.toggle(row)}
-              />
+              <WatchStar watched={watches.ids.has(key)} onToggle={() => watches.toggle(row)} />
             ) : null}
           </td>
         ) : null}
         {drawn.map(column => (
-          <td key={column.key} className={cellClass(column)}>
-            <div className="cell">{cellContent(column, row, ctx)}</div>
+          <td key={column.key} className={cellClass(column, folded.has(column.key))}>
+            <div className={column.prose ? 'cell prose' : 'cell'}>
+              {cellContent(column, row, ctx)}
+            </div>
           </td>
         ))}
         {LeadActions || RowActions ? (
@@ -439,12 +594,12 @@ const BodyRow = ({
           />
         ) : null}
       </tr>
-      {expanded ? (
-        <tr className="detail-row">
-          <td colSpan={columnCount}>
-            <Detail {...detailProps} {...own} />
-          </td>
-        </tr>
+      {open || expanded ? (
+        <DetailRow
+          columnCount={columnCount}
+          record={open ? <FoldedRecord drawn={drawn} folded={folded} row={row} ctx={ctx} /> : null}
+          detail={expanded ? <Detail {...detailProps} {...own} /> : null}
+        />
       ) : null}
     </>
   );
@@ -453,6 +608,10 @@ const BodyRow = ({
 BodyRow.propTypes = {
   row: PropTypes.object.isRequired,
   drawn: PropTypes.array.isRequired,
+  folded: PropTypes.instanceOf(Set).isRequired,
+  foldCell: PropTypes.bool.isRequired,
+  openKeys: PropTypes.instanceOf(Set).isRequired,
+  onToggleOpen: PropTypes.func.isRequired,
   rowKey: PropTypes.func.isRequired,
   rowId: PropTypes.func,
   rowRef: PropTypes.func,
@@ -533,65 +692,124 @@ TableBody.propTypes = {
 };
 
 /**
+ * The shape one render of the table takes from its props: the columns
+ * drawn (not hidden, and their `when` true for the rows and `ctx`),
+ * whether an Actions column draws, and the count of cells a full-width
+ * line spans, the fold cell added to it while anything is folded.
+ *
+ * @param {Object} props - The table's `columns`, `rows`, `hiddenColumns`, `selection`, `watches`, `LeadActions`, `RowActions` and `ctx`
+ * @returns {{ drawn: Array, actions: boolean, columnCount: number }} The shape
+ */
+const shapeOf = ({
+  columns,
+  rows,
+  hiddenColumns,
+  selection,
+  watches,
+  LeadActions,
+  RowActions,
+  ctx,
+}) => {
+  const drawn = drawnColumns(
+    columns.filter(column => !hiddenColumns.has(column.key)),
+    rows,
+    ctx
+  );
+  const actions = Boolean(LeadActions || RowActions);
+  const columnCount = drawn.length + [selection, watches, actions].filter(Boolean).length;
+  return { drawn, actions, columnCount };
+};
+
+const sizedWidths = (drawn, widths, sharedWidths) =>
+  Object.fromEntries(
+    drawn
+      .map(column => [column.key, widths[column.key] || sharedWidths?.[column.key] || 0])
+      .filter(([, pixels]) => pixels > 0)
+      .map(([key, pixels]) => [key, `${pixels}px`])
+  );
+
+const toggledIn = (set, key) => {
+  const next = new Set(set);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    next.add(key);
+  }
+  return next;
+};
+
+const tableClass = ownerFolded =>
+  ownerFolded ? 'table items-table fold-owner' : 'table items-table';
+
+const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : shape.columnCount);
+
+/**
  * The one table of the estate: the collection listings, the item, version
  * and provider detail pages, the admin lists, the fleet, the search page
  * and the organization console's lists. Draws the given columns in order,
  * each only when it is not in `hiddenColumns` and its `when` is absent or
  * true for the rows and `ctx` (so a column can read the viewer and the
  * host from `ctx` as well as the rows). A column is `{ key, kind,
- * labelKey, value, render? }`: `value(row, ctx)` answers the one thing
- * the cell shows, a string, a number, the instant of a date or relative
- * kind, the word of a badge or word kind, the joined labels of a badges
- * kind, and is what the cell draws unless `render(row, ctx)` is given, a
- * link or a composite that shows exactly what `value` names; every
- * header sorts by `value` through `sortItems`, ascending, descending,
- * then off, a Shift-click adding to the stack. Each cell is one
- * `td.col-<key>`, its content in one `.cell` block the stylesheet styles
- * by the column's kind, every `col`, `th` and `td` also carrying the
- * width and kind classes of that `kind` (`columnKinds`, `col-w-narrow`,
- * `col-w-medium` or `col-w-flex` and `col-k-<kind>`) so the width and
- * the look come from the kind alone, never from a column key, and a
- * column without a `kind` is a defect. The first drawn column of every
- * table is a flex kind, asserted in development; the flex columns split
- * the room the fixed ones leave by the longest `value` text each shows
- * over the rows drawn, measured once per render and clamped between a
- * floor and a ceiling in rem, the first of them unsized so the fixed
- * layout hands it the leftover, a stored resize winning over the split.
- * A leading select column draws when `selection`
- * is given (a real checkbox header, checked, unchecked or indeterminate,
- * the select-all for the page, and one row checkbox per cell), the watch
- * column after it when `watches` is given (a star header sorting by
- * `watch` and one star per row while `watches.toggle` is set, the header
- * star alone and blank cells otherwise, so a listing keeps its shape
- * signed out), an actions column when `LeadActions` or `RowActions` is
- * given, `LeadActions` the actions every viewer of the row gets (a
- * download), rendered with `ctx` plus the row under `rowProp` and drawn
- * first, `RowActions` the host's own, rendered with
+ * labelKey, value, render?, priority?, prose? }`: `value(row, ctx)`
+ * answers the one thing the cell shows, a string, a number, the instant
+ * of a date or relative kind, the word of a badge or word kind, the
+ * joined labels of a badges kind, and is what the cell draws unless
+ * `render(row, ctx)` is given, a link or a composite that shows exactly
+ * what `value` names; every header sorts by `value` through `sortItems`,
+ * ascending, descending, then off, a Shift-click adding to the stack.
+ * Each cell is one `td.col-<key>`, its content in one `.cell` block the
+ * stylesheet styles by the column's kind (`prose` added while the column
+ * is), every `th` and `td` also carrying the kind class of that `kind`
+ * (`columnKinds`, `col-k-<kind>`) so the look comes from the kind alone,
+ * never from a column key, and a column without a `kind` is a defect.
+ * The table lays itself out (`table-layout: auto`, full width): every
+ * column carries a priority, its own `priority` or the one its kind
+ * seeds, 1 never folding; before paint the table measures what each
+ * column needs, the widest of its header button and its cells (a `prose`
+ * column, one whose cell wraps, capped at 24rem and a checksum at 14rem,
+ * the one cell that keeps an ellipsis), and while the sizes of the drawn
+ * columns and the Actions column exceed the wrap's room it folds the
+ * highest priority number first, the rightmost among equals, the
+ * organization in front of a name folding before any column; the size a
+ * column counts is its stored resize over its `sharedWidths` entry over
+ * its need. While anything is folded a leading fold cell opens each line
+ * as a record of the folded columns under it, label and value pairs in
+ * table order, the page's `Detail` drawn under that record in the same
+ * cell when the line is expanded too; the wrap's resizes and the fonts'
+ * readiness lay the table out again, and `onNeeds`, where given, is
+ * handed the needs whenever a value changed, so a page listing several
+ * tables can hand back `sharedWidths`. A leading select column draws
+ * when `selection` is given (a real checkbox header, checked, unchecked
+ * or indeterminate, the select-all for the page, and one row checkbox
+ * per cell), the watch column after it when `watches` is given (a star
+ * header sorting by `watch` and one star per row while `watches.toggle`
+ * is set, the header star alone and blank cells otherwise, so a listing
+ * keeps its shape signed out), an actions column when `LeadActions` or
+ * `RowActions` is given, `LeadActions` the actions every viewer of the
+ * row gets (a download), rendered with `ctx` plus the row under `rowProp`
+ * and drawn first, `RowActions` the host's own, rendered with
  * `actionsProps` plus the row under `rowProp`, the class `rowClass`
- * answers on each row, one full-width detail row under every row whose key
- * is in `expandedKeys` (rendering `Detail` with `detailProps` plus the row
- * under `rowProp`), one `tbody` per group with a `GroupHeading` row when
- * `groups` is given (`collapsed[group.key]` folding it through
+ * answers on each row, one full-width detail row under every row whose
+ * key is in `expandedKeys` (rendering `Detail` with `detailProps` plus
+ * the row under `rowProp`), one `tbody` per group with a `GroupHeading`
+ * row when `groups` is given (`collapsed[group.key]` folding it through
  * `onToggleGroup`, the count from `countKey`), a group with no items
  * keeping its heading over one full-width compact `EmptyState` row titled
- * `emptyText`, and, when there are no rows and no groups, the `EmptyState`
- * placard titled `emptyText` with `emptyBody` under it drawn inside the
- * wrap in place of the whole table, no column group and no header, so an
- * empty collection reads as a placard and not as a headed blank. `rowId`, where given, is the DOM
- * id each row carries, so a page can bring one row into view; `rowRef`,
- * where given, is `useArrival`'s `ref`, called with each row's key, and
- * every row then takes focus (`tabIndex` -1) so the arrival rule's scroll
- * and focus both land on it. Every data
- * column's header carries a resize handle on its right edge while
- * `onResize` is given, a button the way the sortable list's grip is: a
- * drag calls `onResize(key, pixels)` and shows the width, Left and Right
- * nudge it by 16px, a double-click, Enter or Home
- * call `onResize(key, null)` to reset; `widths` (column key to pixels)
- * sets each column's width over the kind's, a hidden column keeping
- * its entry. The widths live on a `colgroup`, one `col` per cell carrying
- * the cell's `col-<key>`, width and kind classes and, when sized, the
- * width as `--col-width`, so the fixed leading cells sit at one x on
- * every table and a drag takes room from the flex columns alone.
+ * `emptyText`, and, when there are no rows and no groups, the
+ * `EmptyState` placard titled `emptyText` with `emptyBody` under it drawn
+ * inside the wrap in place of the whole table, no header, so an empty
+ * collection reads as a placard and not as a headed blank. `rowId`, where
+ * given, is the DOM id each row carries, so a page can bring one row into
+ * view; `rowRef`, where given, is `useArrival`'s `ref`, called with each
+ * row's key, and every row then takes focus (`tabIndex` -1) so the
+ * arrival rule's scroll and focus both land on it. Every data column's
+ * header carries a resize handle on its right edge while `onResize` is
+ * given, a button the way the sortable list's grip is: a drag calls
+ * `onResize(key, pixels)` and shows the width, Left and Right nudge it by
+ * 16px, a double-click, Enter or Home call `onResize(key, null)` to
+ * reset; `widths` (column key to pixels) sets each column's width over
+ * the measure, a hidden column keeping its entry; a sized header carries
+ * `col-sized` and its width as `--col-width`.
  */
 const SubTable = ({ emptyBody = null, ...table }) => {
   if (table.rows.length === 0 && !hasGroups(table.groups)) {
@@ -622,7 +840,9 @@ const FullTable = ({
   onSort,
   hiddenColumns,
   widths = NO_WIDTHS,
+  sharedWidths,
   onResize = null,
+  onNeeds,
   ctx,
   emptyText,
   selection = null,
@@ -632,19 +852,41 @@ const FullTable = ({
   onToggleGroup = null,
   countKey = '',
 }) => {
-  const { drawn, colWidths, actions, columnCount } = shapeOf({
+  const wrapRef = useRef(null);
+  const tableRef = useRef(null);
+  const [openKeys, setOpenKeys] = useState(NO_FOLD);
+  const shape = shapeOf({
     columns,
     rows,
     hiddenColumns,
-    widths,
     selection,
     watches,
     LeadActions,
     RowActions,
     ctx,
   });
+  const { drawn, actions } = shape;
+  const { folded, ownerFolded } = useFold({
+    wrapRef,
+    tableRef,
+    drawn,
+    rows,
+    widths,
+    sharedWidths,
+    actions,
+    selection,
+    watches,
+    language: ctx.language,
+    onNeeds,
+  });
+  const foldCell = folded.size > 0;
+  const columnCount = countWithFold(shape, foldCell);
   const rowProps = {
     drawn,
+    folded,
+    foldCell,
+    openKeys,
+    onToggleOpen: key => setOpenKeys(current => toggledIn(current, key)),
     rowKey,
     rowId,
     rowRef,
@@ -662,18 +904,14 @@ const FullTable = ({
     ctx,
   };
   return (
-    <div className="items-table-wrap">
-      <Table striped className="table items-table">
-        <ColumnGroup
-          drawn={drawn}
-          selection={selection}
-          watches={watches}
-          actions={actions}
-          colWidths={colWidths}
-        />
+    <div ref={wrapRef} className="items-table-wrap">
+      <Table ref={tableRef} striped className={tableClass(ownerFolded)}>
         <thead>
           <HeaderRow
             drawn={drawn}
+            sized={sizedWidths(drawn, widths, sharedWidths)}
+            folded={folded}
+            foldCell={foldCell}
             selection={selection}
             watches={watches}
             actions={actions}
@@ -707,6 +945,8 @@ const tableShape = {
       defaultHidden: PropTypes.bool,
       when: PropTypes.func,
       className: PropTypes.string,
+      priority: PropTypes.number,
+      prose: PropTypes.bool,
     })
   ).isRequired,
   rows: PropTypes.array.isRequired,
@@ -725,7 +965,9 @@ const tableShape = {
   onSort: PropTypes.func.isRequired,
   hiddenColumns: PropTypes.instanceOf(Set).isRequired,
   widths: PropTypes.objectOf(PropTypes.number),
+  sharedWidths: PropTypes.objectOf(PropTypes.number),
   onResize: PropTypes.func,
+  onNeeds: PropTypes.func,
   ctx: PropTypes.object.isRequired,
   emptyText: PropTypes.node.isRequired,
   selection: selectionShape,

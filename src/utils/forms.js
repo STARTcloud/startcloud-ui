@@ -176,6 +176,7 @@ export const DOWNLOAD_SCHEMA = {
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
+    details: { type: 'string' },
     is_public: { type: 'boolean' },
     guest_access: { type: 'boolean' },
     family: { type: 'string' },
@@ -189,11 +190,33 @@ export const DOWNLOAD_SCHEMA = {
 export const DOWNLOAD_LABELS = {
   name: 'downloads.product.name',
   description: 'downloads.product.description',
+  details: 'downloads.product.details',
   family: 'downloads.product.family',
   vendor: 'downloads.product.vendor',
   icon_url: 'downloads.product.iconUrl',
   docs_url: 'downloads.product.docsUrl',
   notes_url: 'downloads.product.notesUrl',
+};
+
+export const FAMILY_SCHEMA = {
+  required: ['name'],
+  properties: {
+    name: { type: 'string' },
+    description: { type: 'string' },
+    vendor: { type: 'string' },
+    docs_url: { type: 'string' },
+    notes_url: { type: 'string' },
+    icon_url: { type: 'string' },
+  },
+};
+
+export const FAMILY_LABELS = {
+  name: 'downloads.family.name',
+  description: 'downloads.family.description',
+  vendor: 'downloads.family.vendor',
+  docs_url: 'downloads.family.docsUrl',
+  notes_url: 'downloads.family.notesUrl',
+  icon_url: 'downloads.family.iconUrl',
 };
 
 export const RELEASE_SCHEMA = {

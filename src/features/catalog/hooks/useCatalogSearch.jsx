@@ -158,6 +158,26 @@ const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) =>
     })),
 });
 
+const directionMark = (sort, key) => {
+  const entry = sort.find(candidate => candidate.column === key);
+  if (!entry) {
+    return '';
+  }
+  return entry.direction === 'asc' ? ' ↑' : ' ↓';
+};
+
+const sortGroup = ({ collection, columns, sort, prefixed, setSort, t }) => ({
+  key: `${collection.key}.sort`,
+  label: groupLabel(collection, 'pages.filter.sort', prefixed, t),
+  entries: Object.fromEntries(columns.map(column => [column.key, null])),
+  activeSet: new Set(sort.map(entry => entry.column)),
+  activeClass: 'bg-secondary',
+  columns: true,
+  labelFor: key =>
+    `${t(columns.find(column => column.key === key).labelKey)}${directionMark(sort, key)}`,
+  onToggle: key => setSort(collection.key, key),
+});
+
 /**
  * Registers one navbar search binding for a page that lists one or more
  * collections, and returns the collections left visible by the Collection
@@ -166,7 +186,10 @@ const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) =>
  * own groups follow them and, in list view, a Columns group per collection
  * that shows or hides the columns that table is drawing (their `when`
  * true for its rows and the context `ctxFor(collection)` answers, the
- * one its table receives). Watched ids arrive as one Set per
+ * one its table receives), in card view a Sort group per collection in
+ * its place, one pill per drawn column that a click cycles through
+ * ascending, descending and off, the active pills marked with the
+ * direction, never counted as a filter. Watched ids arrive as one Set per
  * collection key, because item ids only mean something inside their own
  * collection. Filters, sort, the one view, the hidden columns, the column
  * widths (per collection, set through `setColumnWidth(collectionKey,
@@ -221,6 +244,14 @@ export const useCatalogSearch = ({
   const sort = Object.fromEntries(
     visible.map(collection => [collection.key, effectiveSort(prefs, collection, status)])
   );
+  const setSort = (collectionKey, column, options) =>
+    setPrefs(current => ({
+      ...current,
+      sort: {
+        ...current.sort,
+        [collectionKey]: nextSort(current.sort[collectionKey], column, options),
+      },
+    }));
   let matched = 0;
   visible.forEach(collection => {
     const items = itemsByCollection[collection.key] || [];
@@ -252,16 +283,12 @@ export const useCatalogSearch = ({
         groups.push(own);
       }
     });
+    const columns = drawnColumns(collection.columns, filtered[collection.key], tableCtx);
     if (prefs.view === 'table') {
+      groups.push(columnsGroup({ collection, columns, hidden, prefixed, setPrefs, t }));
+    } else {
       groups.push(
-        columnsGroup({
-          collection,
-          columns: drawnColumns(collection.columns, filtered[collection.key], tableCtx),
-          hidden,
-          prefixed,
-          setPrefs,
-          t,
-        })
+        sortGroup({ collection, columns, sort: sort[collection.key], prefixed, setSort, t })
       );
     }
   });
@@ -284,15 +311,6 @@ export const useCatalogSearch = ({
     Object.values(prefs.filters).some(groupsOfCollection =>
       Object.values(groupsOfCollection).some(set => set.size > 0)
     );
-
-  const setSort = (collectionKey, column, options) =>
-    setPrefs(current => ({
-      ...current,
-      sort: {
-        ...current.sort,
-        [collectionKey]: nextSort(current.sort[collectionKey], column, options),
-      },
-    }));
 
   const setColumnWidth = (collectionKey, column, pixels) =>
     setPrefs(current => ({

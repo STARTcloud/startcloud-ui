@@ -37,12 +37,15 @@ const columnsFor = appSearch => [
     key: 'where',
     kind: 'text',
     labelKey: 'search.columns.where',
+    priority: 2,
+    prose: true,
     value: row => row.subtitle,
   },
   {
     key: 'matched',
     kind: 'badge',
     labelKey: 'search.columns.matched',
+    priority: 3,
     value: matchedWord,
     render: (row, ctx) => (
       <span className="badge bg-secondary badge-xs">{matchedWord(row, ctx)}</span>

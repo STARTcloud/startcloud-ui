@@ -29,22 +29,27 @@ import ItemFacts from './ItemFacts';
 
 const DEFAULT_SORT = [{ column: 'version', direction: 'desc' }];
 
-const Readme = ({ readme }) => {
+/**
+ * One prose card of the item page, the details or the README: the card
+ * titled `titleKey` over `text` drawn as Markdown.
+ */
+const ProseCard = ({ titleKey, text }) => {
   const { t } = useTranslation();
   return (
     <div className="card h-100">
       <div className="card-header">
-        <h5 className="mb-0">{t('pages.item.readme')}</h5>
+        <h5 className="mb-0">{t(titleKey)}</h5>
       </div>
       <div className="card-body">
-        <MarkdownText text={readme} />
+        <MarkdownText text={text} />
       </div>
     </div>
   );
 };
 
-Readme.propTypes = {
-  readme: PropTypes.string.isRequired,
+ProseCard.propTypes = {
+  titleKey: PropTypes.string.isRequired,
+  text: PropTypes.string.isRequired,
 };
 
 const WatchStar = ({ watched, busy, onToggle }) => {
@@ -191,9 +196,14 @@ ItemHeading.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+/**
+ * The cards under an item's heading: the facts card while the item
+ * carries metadata, the details card while it carries details, the
+ * README card while it carries one; nothing while it carries none.
+ */
 const ItemDetails = ({ item }) => {
   const facts = Boolean(item.metadata);
-  if (!facts && !item.readme) {
+  if (!facts && !item.details && !item.readme) {
     return null;
   }
   return (
@@ -203,9 +213,14 @@ const ItemDetails = ({ item }) => {
           <ItemFacts item={item} />
         </div>
       ) : null}
+      {item.details ? (
+        <div className="col">
+          <ProseCard titleKey="pages.item.details" text={item.details} />
+        </div>
+      ) : null}
       {item.readme ? (
         <div className="col">
-          <Readme readme={item.readme} />
+          <ProseCard titleKey="pages.item.readme" text={item.readme} />
         </div>
       ) : null}
     </div>

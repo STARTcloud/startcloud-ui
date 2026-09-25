@@ -26,6 +26,7 @@ export const BULK_FORMS = {
     labels: DOWNLOAD_LABELS,
     fields: [
       area('description'),
+      area('details'),
       text('family'),
       text('vendor'),
       text('docs_url', { type: 'url' }),

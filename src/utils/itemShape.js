@@ -93,12 +93,23 @@ export const organizationShape = PropTypes.shape({
   description: PropTypes.string,
 });
 
+export const familyShape = PropTypes.shape({
+  name: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  vendor: PropTypes.string,
+  docsUrl: PropTypes.string,
+  notesUrl: PropTypes.string,
+  iconUrl: PropTypes.string,
+  products: PropTypes.number,
+});
+
 export const itemShape = PropTypes.shape({
   id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   organization: organizationShape.isRequired,
   name: PropTypes.string.isRequired,
   label: PropTypes.string,
   description: PropTypes.string,
+  details: PropTypes.string,
   icon: PropTypes.string,
   artwork: PropTypes.string,
   isPublic: PropTypes.bool,
@@ -110,6 +121,7 @@ export const itemShape = PropTypes.shape({
   downloads: PropTypes.number,
   os: PropTypes.shape({ label: PropTypes.string, iconUrl: PropTypes.string }),
   family: PropTypes.string,
+  familyDetails: familyShape,
   vendor: PropTypes.string,
   metadata: PropTypes.object,
   readme: PropTypes.string,
@@ -215,6 +227,8 @@ export const columnShape = PropTypes.shape({
   render: PropTypes.func,
   when: PropTypes.func,
   defaultHidden: PropTypes.bool,
+  priority: PropTypes.number,
+  prose: PropTypes.bool,
 });
 
 export const levelShape = PropTypes.shape({
@@ -261,6 +275,7 @@ export const collectionShape = PropTypes.shape({
   }),
   matches: PropTypes.func,
   canManage: PropTypes.func,
+  groupsOf: PropTypes.func,
   slots: PropTypes.object.isRequired,
 });
 

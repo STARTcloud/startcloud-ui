@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import MarkdownText from '../../../../components/common/MarkdownText';
 import VisibilityPicker, {
   StatusMenu,
   VisibilityMenu,
@@ -22,12 +23,15 @@ import { api } from '../api/downloads';
 
 import DownloadZone, { useUpload } from './DownloadZone';
 import DuplicatesPane from './DuplicatesPane';
+import FamiliesPane from './FamiliesPane';
 import { TextAreaField, TextField } from './fields';
+import { useOrgFamilies } from './orgLists';
 import { PlacePane } from './PlaceForm';
 
 const draftFrom = product => ({
   name: product.name ?? '',
   description: product.description ?? '',
+  details: product.details ?? '',
   is_public: product.is_public ?? false,
   guest_access: product.guest_access ?? false,
   family: product.family ?? '',
@@ -62,15 +66,15 @@ const slotCtxShape = PropTypes.shape({
 /**
  * The action pane of an organization's downloads listing for a writing
  * member: the Add New zone with its placing form, and beside it the
- * Duplicates button that opens the Duplicates view under the heading row
- * in place of the zone until it is closed.
+ * Duplicates and Families buttons, each opening its view under the
+ * heading row in place of the zone, one at a time, until it is closed.
  */
 export const DownloadListActions = ({ ctx }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const { user, org, notify, reload } = ctx;
   const upload = useUpload({ notify });
-  const [duplicates, setDuplicates] = useState(false);
+  const [pane, setPane] = useState('');
 
   if (!org || !user || !hasFeature(status, 'uploads') || !isOrgMember(user, org)) {
     return null;
@@ -93,8 +97,12 @@ export const DownloadListActions = ({ ctx }) => {
     );
   }
 
-  if (duplicates) {
-    return <DuplicatesPane org={org} ctx={ctx} onClose={() => setDuplicates(false)} />;
+  if (pane === 'duplicates') {
+    return <DuplicatesPane org={org} ctx={ctx} onClose={() => setPane('')} />;
+  }
+
+  if (pane === 'families') {
+    return <FamiliesPane org={org} ctx={ctx} onClose={() => setPane('')} />;
   }
 
   return (
@@ -102,9 +110,16 @@ export const DownloadListActions = ({ ctx }) => {
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
-        onClick={() => setDuplicates(true)}
+        onClick={() => setPane('duplicates')}
       >
         {t('downloads.duplicates.button')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => setPane('families')}
+      >
+        {t('downloads.families.button')}
       </button>
       <DownloadZone
         uploading={upload.uploading}
@@ -121,31 +136,48 @@ export const DownloadListActions = ({ ctx }) => {
 
 DownloadListActions.propTypes = { ctx: slotCtxShape.isRequired };
 
+/**
+ * Under a product's heading: the docs and release notes links while the
+ * product carries them, then, while it names a family the host knows, the
+ * family's name and description on one line; nothing while it has
+ * neither links nor a family.
+ */
 export const DownloadItemHeaderExtra = ({ item }) => {
   const { t } = useTranslation();
   const { docs, notes } = item.links || {};
-  if (!docs && !notes) {
+  const family = item.familyDetails;
+  if (!docs && !notes && !family) {
     return null;
   }
   return (
-    <div className="d-flex align-items-center gap-3 mt-1 small">
-      {docs ? (
-        <a href={docs} target="_blank" rel="noopener noreferrer">
-          {t('downloads.actions.docs')}
-        </a>
+    <>
+      {docs || notes ? (
+        <div className="d-flex align-items-center gap-3 mt-1 small">
+          {docs ? (
+            <a href={docs} target="_blank" rel="noopener noreferrer">
+              {t('downloads.actions.docs')}
+            </a>
+          ) : null}
+          {notes ? (
+            <a href={notes} target="_blank" rel="noopener noreferrer">
+              {t('downloads.actions.notes')}
+            </a>
+          ) : null}
+        </div>
       ) : null}
-      {notes ? (
-        <a href={notes} target="_blank" rel="noopener noreferrer">
-          {t('downloads.actions.notes')}
-        </a>
+      {family ? (
+        <div className="family-line mt-1 small">
+          <span className="fw-semibold text-body-secondary me-2">{family.name}</span>
+          <MarkdownText text={family.description} className="d-inline text-body-secondary" />
+        </div>
       ) : null}
-    </div>
+    </>
   );
 };
 
 DownloadItemHeaderExtra.propTypes = { item: itemShape.isRequired };
 
-const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => {
+const ProductEditForm = ({ draft, rules, families, onChange, onVisibility, onSubmit }) => {
   const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -158,7 +190,8 @@ const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => 
         hint={t('downloads.hints.slug')}
       />
       <TextAreaField name="description" draft={draft} rules={rules} onChange={onChange} />
-      <TextField name="family" draft={draft} rules={rules} onChange={onChange} />
+      <TextAreaField name="details" rows="8" draft={draft} rules={rules} onChange={onChange} />
+      <TextField name="family" draft={draft} rules={rules} onChange={onChange} options={families} />
       <TextField name="vendor" draft={draft} rules={rules} onChange={onChange} />
       <TextField name="icon_url" type="url" draft={draft} rules={rules} onChange={onChange} />
       <TextField name="docs_url" type="url" draft={draft} rules={rules} onChange={onChange} />
@@ -176,6 +209,7 @@ const ProductEditForm = ({ draft, rules, onChange, onVisibility, onSubmit }) => 
 ProductEditForm.propTypes = {
   draft: PropTypes.object.isRequired,
   rules: formRulesShape.isRequired,
+  families: PropTypes.arrayOf(PropTypes.string).isRequired,
   onChange: PropTypes.func.isRequired,
   onVisibility: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
@@ -186,6 +220,7 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
   const { reload, notify, setEditor } = ctx;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(() => draftFrom(product));
+  const families = useOrgFamilies(org);
   const rules = useFormRules({
     formKey: 'download',
     schema: DOWNLOAD_SCHEMA,
@@ -245,13 +280,14 @@ const useProductEditor = ({ org, product, ctx, onSaved }) => {
       <ProductEditForm
         draft={draft}
         rules={rules}
+        families={families}
         onChange={onChange}
         onVisibility={onVisibility}
         onSubmit={submit}
       />
     );
     return () => setEditor(null);
-  }, [editing, draft, rules, onChange, onVisibility, submit, setEditor]);
+  }, [editing, draft, rules, families, onChange, onVisibility, submit, setEditor]);
 
   const cancel = () => {
     setEditing(false);

@@ -85,6 +85,7 @@ export const nameColumn = {
   render: (item, ctx) => {
     const owner = item.vendor || item.organization.name;
     const text = `${owner}/${item.name}`;
+    const hostOrg = ctx.status?.organization === item.organization.name;
     return (
       <>
         {item.icon ? (
@@ -97,6 +98,7 @@ export const nameColumn = {
             fallback={ctx.orgMark}
           />
         )}
+        {hostOrg ? null : <span className="name-org">{owner}/</span>}
         {ctx.collection.itemRoute ? (
           <Link
             to={itemPath(ctx.collection, item.organization.name, item.name)}
@@ -140,6 +142,7 @@ export const osColumn = {
   key: 'os',
   kind: 'text',
   labelKey: 'pages.table.os',
+  priority: 6,
   value: item => item.os?.label || '',
   render: item => {
     const label = item.os?.label || '';
@@ -165,6 +168,7 @@ export const statusColumn = {
   key: 'status',
   kind: 'badge',
   labelKey: 'pages.table.status',
+  priority: 4,
   when: managesRows,
   value: statusWord,
   render: (item, ctx) => (
@@ -178,6 +182,7 @@ export const visibilityColumn = {
   key: 'visibility',
   kind: 'badge',
   labelKey: 'pages.table.visibility',
+  priority: 5,
   when: managesRows,
   value: (item, ctx) => {
     const visibility = visibilityOf(item);
@@ -190,6 +195,7 @@ export const createdColumn = {
   key: 'created',
   kind: 'date',
   labelKey: 'pages.table.created',
+  priority: 9,
   defaultHidden: true,
   value: item => timeOf(item.createdAt),
   render: item => localeDate(item.createdAt),
@@ -199,6 +205,7 @@ export const updatedColumn = {
   key: 'updated',
   kind: 'date',
   labelKey: 'pages.table.updated',
+  priority: 9,
   defaultHidden: true,
   value: item => timeOf(item.updatedAt),
   render: item => localeDate(item.updatedAt),
@@ -208,6 +215,7 @@ export const releasedColumn = {
   key: 'released',
   kind: 'relative',
   labelKey: 'pages.table.released',
+  priority: 2,
   value: item => latestReleaseTime(item) || 0,
   render: (item, ctx) => {
     const time = latestReleaseTime(item);
@@ -219,6 +227,7 @@ export const downloadsColumn = {
   key: 'downloads',
   kind: 'count',
   labelKey: 'pages.table.downloads',
+  priority: 3,
   when: hasAny(item => typeof item.downloads === 'number'),
   value: item => (typeof item.downloads === 'number' ? item.downloads : ''),
 };
@@ -227,6 +236,7 @@ export const versionsColumn = {
   key: 'versions',
   kind: 'count',
   labelKey: 'pages.table.versions',
+  priority: 3,
   value: item => (item.versions || []).length,
 };
 
@@ -234,6 +244,7 @@ export const providersColumn = {
   key: 'providers',
   kind: 'badges',
   labelKey: 'pages.table.providers',
+  priority: 7,
   value: item => badgesText(providerNames(item), NONE),
   render: item => nameBadges(providerNames(item), NONE),
 };
@@ -242,6 +253,8 @@ export const familyColumn = {
   key: 'family',
   kind: 'text',
   labelKey: 'pages.table.family',
+  priority: 6,
+  when: (rows, ctx) => rows.length > 0 && ctx.groupedBy !== 'family',
   value: item => item.family || '',
 };
 
@@ -249,6 +262,7 @@ export const vendorColumn = {
   key: 'vendor',
   kind: 'text',
   labelKey: 'pages.table.vendor',
+  priority: 7,
   value: item => item.vendor || '',
 };
 
@@ -256,6 +270,7 @@ export const releasesColumn = {
   key: 'releases',
   kind: 'count',
   labelKey: 'pages.table.releases',
+  priority: 3,
   value: item => (item.versions || []).length,
 };
 
@@ -263,6 +278,7 @@ export const platformsColumn = {
   key: 'platforms',
   kind: 'badges',
   labelKey: 'pages.table.platforms',
+  priority: 9,
   defaultHidden: true,
   value: item => badgesText(platformNames(item), NONE),
   render: item => nameBadges(platformNames(item), NONE),
@@ -272,6 +288,7 @@ export const architecturesColumn = {
   key: 'architectures',
   kind: 'badges',
   labelKey: 'pages.table.architectures',
+  priority: 8,
   defaultHidden: true,
   value: item => badgesText(architectureNames(item), NONE),
   render: item => nameBadges(architectureNames(item), NONE),

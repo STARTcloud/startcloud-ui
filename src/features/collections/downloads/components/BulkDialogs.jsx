@@ -1,22 +1,24 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import Field from '../../../../components/common/Field';
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import { useFormRules } from '../../../../hooks/useFormRules';
-import { downloadsAdapter } from '../api/adapter';
 import { BULK_FORMS, MOVE_LEVELS, bulkSchemaOf } from '../bulkForms';
 
 import { SelectField, TextAreaField, TextField } from './fields';
+import { useOrgFamilies, useOrgProducts } from './orgLists';
 
 const DIALOG_LEVELS = ['items', 'versions', 'providers', 'architectures'];
+
+const NO_OPTIONS = [];
 
 const emptyDraft = level =>
   Object.fromEntries(BULK_FORMS[level].fields.map(field => [field.name, '']));
 
-const BulkField = ({ field, draft, rules, onChange, blank }) => {
+const BulkField = ({ field, draft, rules, onChange, blank, families }) => {
   if (field.control === 'textarea') {
     return <TextAreaField name={field.name} draft={draft} rules={rules} onChange={onChange} />;
   }
@@ -40,6 +42,7 @@ const BulkField = ({ field, draft, rules, onChange, blank }) => {
       draft={draft}
       rules={rules}
       onChange={onChange}
+      options={field.name === 'family' ? families : NO_OPTIONS}
     />
   );
 };
@@ -56,18 +59,28 @@ BulkField.propTypes = {
   rules: PropTypes.object.isRequired,
   onChange: PropTypes.func.isRequired,
   blank: PropTypes.string.isRequired,
+  families: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
+
+const scopeShape = PropTypes.shape({
+  org: PropTypes.string.isRequired,
+  name: PropTypes.string,
+  version: PropTypes.string,
+  provider: PropTypes.string,
+});
 
 /**
  * The Edit dialog of one downloads level: the level's fields from
  * `BULK_FORMS`, validated against the host's bulk form, every member
  * blank until typed and only the touched ones sent as `values`, so a
  * member left alone stays as it is on every picked row and a link typed
- * then emptied clears.
+ * then emptied clears; on the products level the family field offers the
+ * organization's family names.
  */
-export const SetValuesDialog = ({ level, count, onSubmit, onClose }) => {
+export const SetValuesDialog = ({ level, scope, count, onSubmit, onClose }) => {
   const { t } = useTranslation();
   const form = BULK_FORMS[level];
+  const families = useOrgFamilies(level === 'items' ? scope.org : '');
   const schema = useMemo(() => bulkSchemaOf(level), [level]);
   const [draft, setDraft] = useState(() => emptyDraft(level));
   const [touched, setTouched] = useState(() => new Set());
@@ -110,6 +123,7 @@ export const SetValuesDialog = ({ level, count, onSubmit, onClose }) => {
               rules={rules}
               onChange={onChange}
               blank={t('pages.bulk.unchanged')}
+              families={families}
             />
           ))}
         </Modal.Body>
@@ -128,28 +142,10 @@ export const SetValuesDialog = ({ level, count, onSubmit, onClose }) => {
 
 SetValuesDialog.propTypes = {
   level: PropTypes.oneOf(DIALOG_LEVELS).isRequired,
+  scope: scopeShape.isRequired,
   count: PropTypes.number.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
-};
-
-const useOrgProducts = org => {
-  const [items, setItems] = useState([]);
-  useEffect(() => {
-    let mounted = true;
-    downloadsAdapter
-      .listOrg(org)
-      .then(loaded => {
-        if (mounted) {
-          setItems(loaded);
-        }
-      })
-      .catch(() => null);
-    return () => {
-      mounted = false;
-    };
-  }, [org]);
-  return items;
 };
 
 const releasesOf = (items, product) => items.find(item => item.name === product)?.versions || [];
@@ -270,12 +266,7 @@ export const MoveDialog = ({ level, scope, count, onSubmit, onClose }) => {
 
 MoveDialog.propTypes = {
   level: PropTypes.oneOf(Object.keys(MOVE_LEVELS)).isRequired,
-  scope: PropTypes.shape({
-    org: PropTypes.string.isRequired,
-    name: PropTypes.string,
-    version: PropTypes.string,
-    provider: PropTypes.string,
-  }).isRequired,
+  scope: scopeShape.isRequired,
   count: PropTypes.number.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
@@ -284,7 +275,7 @@ MoveDialog.propTypes = {
 /**
  * The downloads collection's `BulkDialog` slot: the Edit dialog for an
  * action naming `values`, the Move to dialog for one naming `move`,
- * the picked rows' one scope handed to the latter.
+ * the picked rows' one scope handed to both.
  */
 export const DownloadBulkDialog = ({ action, level, groups, count, onSubmit, onClose }) => {
   if (action.dialog === 'move') {
@@ -298,7 +289,15 @@ export const DownloadBulkDialog = ({ action, level, groups, count, onSubmit, onC
       />
     );
   }
-  return <SetValuesDialog level={level} count={count} onSubmit={onSubmit} onClose={onClose} />;
+  return (
+    <SetValuesDialog
+      level={level}
+      scope={groups[0].scope}
+      count={count}
+      onSubmit={onSubmit}
+      onClose={onClose}
+    />
+  );
 };
 
 DownloadBulkDialog.propTypes = {

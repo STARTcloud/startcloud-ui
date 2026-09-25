@@ -7,7 +7,8 @@ import { listWord } from '../../../../utils/closedLists';
 
 /**
  * One labelled text control of a downloads form, its label and its error
- * read from the form's rules.
+ * read from the form's rules; `options`, while non-empty, are offered
+ * through a datalist under the input, one option per string.
  */
 export const TextField = ({
   name,
@@ -18,6 +19,7 @@ export const TextField = ({
   type = 'text',
   className = 'mb-2',
   readOnly = false,
+  options = [],
 }) => (
   <Field
     id={rules.idFor(name)}
@@ -27,16 +29,26 @@ export const TextField = ({
     className={className}
   >
     {aria => (
-      <input
-        {...aria}
-        type={type}
-        className="form-control"
-        name={name}
-        value={draft[name] || ''}
-        onChange={onChange}
-        onBlur={() => rules.onBlur(name)}
-        readOnly={readOnly}
-      />
+      <>
+        <input
+          {...aria}
+          type={type}
+          className="form-control"
+          name={name}
+          value={draft[name] || ''}
+          onChange={onChange}
+          onBlur={() => rules.onBlur(name)}
+          readOnly={readOnly}
+          list={options.length > 0 ? `${aria.id}-options` : undefined}
+        />
+        {options.length > 0 ? (
+          <datalist id={`${aria.id}-options`}>
+            {options.map(option => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+        ) : null}
+      </>
     )}
   </Field>
 );
@@ -50,6 +62,7 @@ TextField.propTypes = {
   type: PropTypes.string,
   className: PropTypes.string,
   readOnly: PropTypes.bool,
+  options: PropTypes.arrayOf(PropTypes.string),
 };
 
 /**

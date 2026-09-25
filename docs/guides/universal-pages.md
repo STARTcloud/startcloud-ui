@@ -409,36 +409,51 @@ header and one per row (Bulk on every table); the watch cell is drawn
 after it on every table, star or blank,
 so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
-the viewer can watch it sorts watched rows first. The table is
-fixed-layout and every column declares a `kind`, the content its cells
-draw, and takes its width and its look from that kind alone
-(`columnKinds`): `name` (text with an optional icon or logo and a muted
-code beside it, flex, ellipsized), `text` (a plain string, flex,
-ellipsized), `badge` (one status badge, narrow), `badges` (a list of
-small badges, flex), `date` (a locale date, narrow), `relative` (a
-relative time, medium), `count` (a right-aligned integer with a wider
-right gutter, narrow), `size` (formatted bytes, narrow), `checksum` (the
-`ChecksumCell`, flex, ellipsized), `link` (a link cell, the version and
-release names, medium) and `word` (a closed-list word, narrow); the
-widths are `col-w-narrow` 6.5rem and `col-w-medium` 10rem, declared once
-in the shared stylesheet beside the fixed select and star cells at
-2.5rem and Actions at 11rem, and `col-w-flex`, no width, the
-flex columns sharing whatever room the fixed ones leave (CSS 2.1
-§17.5.2.1), so a wide table fills its width and a narrow one shrinks the
-text that can shrink; every cell also carries `col-k-<kind>` and its
+the viewer can watch it sorts watched rows first. The table is a normal
+table, auto layout at the full width of its wrap, and every column
+declares a `kind`, the content its cells draw, and takes its look and
+the priority it starts with from that kind alone (`columnKinds`): `name`
+(text with an optional icon or logo and a muted code beside it, 1),
+`link` (a link cell, the version and release names, 1), `badge` (one
+status badge, 2), `count` (a right-aligned integer with a wider right
+gutter, 2), `size` (formatted bytes, 2), `date` (a locale date, 3),
+`relative` (a relative time, 3), `badges` (a list of small badges, 4),
+`text` (a plain string, 5), `word` (a closed-list word, 5) and
+`checksum` (the `ChecksumCell`, 6); a column may name its own
+`priority` over the kind's, and 1 never folds. Columns have a priority,
+so that if the screen is too small to show it all, the columns are
+removed one by one as it shrinks, with an indicator to get to the other
+information: a column shows as much of its content as it needs and never
+more, so the table measures what each column's widest cell and header
+need, and while the sum is more than the room the wrap gives it folds the
+column with the highest priority number first, ties from the right,
+until everything left fits whole; nothing is ever cut but a checksum,
+which keeps its ellipsis at 14rem, a Markdown details cell wraps at
+24rem, and no table ever scrolls sideways. While anything is folded a
+2rem chevron cell leads every line, before the select cell, and opens
+the folded columns under that line as label and value pairs through the
+shared `RecordRows`; the Actions column is priority 1 and measured like
+any other. The organization in front of a name, `org/`, shows in the
+Name cell while there is room and folds before any column does, muted,
+and is not drawn at all on a host whose status names the one
+organization it serves; on a page listing more than one collection the
+leading columns every table draws in the same place take one width, the
+widest need across them, so the select, star, mark and name of the home
+page's tables hold one line. The measure runs once per data change and
+on every resize of the wrap; every cell carries `col-k-<kind>` and its
 content sits in one `.cell` block, so the stylesheet styles a kind's
-cells and never a column's key; no column carries a width of its own; a
-column without a `kind` is a defect; a width the viewer dragged overrides
-the kind's and takes its room from the flex columns; header cells never
-wrap. The columns come in one order on every table: select, watch, Name,
+cells and never a column's key; a column without a `kind` is a defect; a
+width the viewer dragged overrides the measure; header cells never wrap.
+The columns come in one order on every table: select, watch, Name,
 Deploy on a collection Hyperweaver deploys, Visibility, Created, Updated,
 Downloads, Status, then the collection's own, then the badge lists, then
-Actions. The widths are declared on a
-`colgroup` with one `col` per cell, and a table drawing no unsized flex
-column gains a trailing unsized spacer `col` with an empty header and
-body cell, because fixed layout hands the leftover width to every column
-when none is left unsized; so the fixed leading cells sit at the same x
-on every table of both apps and the flex columns take the rest:
+Actions. The priorities the shared columns carry: Name 1, Deploy 2,
+Latest release 2, Versions and Releases 3, Downloads 3, Status 4,
+Visibility 5, OS 6, Family 6, Vendor 7, Providers 7, Architectures 8,
+Platforms, Created and Updated 9; a downloads file's Language is the
+lowest of its table, folds first, and is not drawn at all while every
+file of the table says `any`; the fleet folds Cycle, Pool, User, Last
+seen, Session, Icons then Drives, the hostname last:
 
 | Column      | Boxes                                                                                    | ISOs                                                                         | Provisioners                                                               |
 | ----------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -511,13 +526,16 @@ the select, star and Actions cells carries a handle straddling
 its right edge, 11px wide so a pointer finds it, its 3px bar shown on
 hover; a drag changes that column's width alone and
 shows the pixel width while dragging; a double-click resets the column to
-its kind's width; the widths persist per page under
+its measured need; the widths persist per page under
 `table_prefs_*` as `widths`, a map of column key to pixels beside sort,
 hidden columns and per page, a hidden column keeping its width for when
-it returns, and the stylesheet's widths stand wherever the map names
-none. Why: a fixed width fits the common value and never the long one,
-and a person who widens Name once should find it wide tomorrow on the
-same page.
+it returns, and the measure stands wherever the map names none. Why: a
+fixed width fits the common value and never the long one, and a person
+who widens Name once should find it wide tomorrow on the same page. In
+card view the panel carries a Sort group in place of the Columns group,
+one pill per column the table would draw, a click cycling that column
+ascending, descending, then off, the pill reading the direction, so a
+person on cards can sort as many ways as the table can.
 
 ---
 
@@ -532,7 +550,9 @@ item {
   organization, name, label, description, icon, artwork,
   isPublic, guestAccess, published, createdAt, updatedAt, latestReleaseAt, downloads,
   os { label, iconUrl } | null,
-  family | null, vendor | null,        downloads alone
+  family | null, vendor | null, details | null,
+  familyDetails { name, description, vendor, docsUrl, notesUrl, iconUrl } | null,
+                                       downloads alone
   metadata | null, readme | null,
   links { repo, homepage, issues, pipeline, badge, docs, notes },
   extras { ... }                       app-only data for slots, never read by a page
@@ -897,7 +917,25 @@ adds its own foldable section to an item page (the catalog's Quality).
   architecture's edit is. Because a file name is a guess and a rule that
   refuses the guess refuses the drop, the bytes go up first and the words
   are asked where the person can see them, never on a form before the
-  drop and never in a dialog.
+  drop and never in a dialog. A product carries two texts, a description
+  and a details field: `description`, the short Markdown line drawn on
+  the card and in the heading, and `details`, a longer Markdown text
+  drawn as a Details card on the product page beside the facts and the
+  README, never on a card, and edited as a Details textarea after the
+  description on the product form and the bulk Edit form. Families are
+  the organization's own: a Families pane opens under the downloads
+  heading beside Duplicates, listing each family's name, vendor,
+  description, links and product count with Add New, Edit and Delete
+  inline, over `GET`, `POST`, `PUT` and `DELETE
+…/organization/{org}/download-family`; the product form and the bulk
+  Edit form offer the family as a pick over the organization's families
+  with free text still allowed; a product's answer inherits the family's
+  vendor, links and icon wherever its own is empty and carries
+  `family_details`, so the product page draws the family's name and
+  description under its links, and the organization's downloads listing
+  groups its products by family with the family's description under each
+  heading, the products without one last under Other, the Family column
+  not drawn inside its own group.
 - **AboutPage**: the app's About at `/about`, drawn from props only: a
   page header in the PageHeader shape with the brand, the title, two
   version chips, the app's from `status.version` through `useStatus()`,

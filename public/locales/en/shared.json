@@ -1803,7 +1803,11 @@
       "platform": "Platform",
       "kind": "Kind",
       "perPage": "Per page",
-      "columns": "Columns"
+      "columns": "Columns",
+      "sort": "Sort"
+    },
+    "group": {
+      "other": "Other"
     },
     "view": {
       "label": "View",
@@ -2171,6 +2175,7 @@
     "product": {
       "name": "Product name",
       "description": "Description",
+      "details": "Details",
       "family": "Family",
       "vendor": "Vendor",
       "iconUrl": "Icon URL",
@@ -2201,6 +2206,23 @@
       "where": "Where",
       "copies": "Copies",
       "original": "Original"
+    },
+    "families": {
+      "button": "Families",
+      "title": "Families",
+      "none": "No families yet.",
+      "products": "Products",
+      "created": "The family was created.",
+      "updated": "The family was updated.",
+      "deleted": "The family was deleted."
+    },
+    "family": {
+      "name": "Family name",
+      "description": "Description",
+      "vendor": "Vendor",
+      "docsUrl": "Documentation URL",
+      "notesUrl": "Release notes URL",
+      "iconUrl": "Icon URL"
     },
     "file": {
       "key": "Key",
