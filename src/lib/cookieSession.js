@@ -59,6 +59,13 @@ const applyAccountPreferences = preferences => {
 const displayFieldsOf = profile =>
   Object.fromEntries(DISPLAY_FIELDS.map(field => [field, profile?.[field] ?? null]));
 
+const preferredOf = preferences => ({
+  preferred_theme: preferences?.theme ?? null,
+  preferred_pack: preferences?.pack ?? null,
+  preferred_motion: preferences?.motion ?? null,
+  preferred_language: preferences?.language ?? null,
+});
+
 const dropStorage = storageKey => {
   const keys = Object.keys(localStorage);
   keys
@@ -123,7 +130,13 @@ export const accountMemberships = user =>
  * the moment it answers, not only the one that noticed it first.
  * `load({ navigate })` sets that holder once before reading `GET /api/user`
  * and falls back to the cached profile on any failure but a `401`, which
- * clears it instead. `savePreferences` writes the chrome's theme, look,
+ * clears it instead; the session it answers carries the account's
+ * `preferences` beside the display fields as `preferred_theme`,
+ * `preferred_pack`, `preferred_motion` and `preferred_language`, never
+ * cached, so the chrome adopts the account's choices the moment the
+ * profile answers rather than on the next reload, while a guest-only
+ * account's are neither answered nor mirrored, the browser's own
+ * standing. `savePreferences` writes the chrome's theme, look,
  * motion switch and language through `PATCH /api/user/preferences`, the
  * answer's `theme`, `pack` and `motion` mirrored to local storage as
  * `load` mirrors them, except for a guest-only
@@ -216,9 +229,13 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     }
     try {
       const profile = await api.get('/api/user', OPTIONAL);
-      applyAccountPreferences(profile?.preferences);
+      const user = displayFieldsOf(profile);
       store(profile);
-      return restore();
+      if (guestOnly(accountMemberships(user))) {
+        return sessionOf(user);
+      }
+      applyAccountPreferences(profile?.preferences);
+      return sessionOf({ ...user, ...preferredOf(profile?.preferences) });
     } catch (error) {
       if (error.status === 401) {
         clear();

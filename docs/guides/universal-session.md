@@ -111,7 +111,7 @@ in-router.
 
 | Field                    | Meaning                                                                                                                                                                                                                                                                                                                             |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user`                   | the provider's user: the access token's claims on the browser OIDC provider, the stored profile on the backend provider; `null` signed out                                                                                                                                                                                          |
+| `user`                   | the provider's user: the access token's claims on the browser OIDC provider, the stored profile on the backend provider, the cached display fields with the account's preferences beside them as `preferred_theme`, `preferred_pack`, `preferred_motion` and `preferred_language` on the cookie provider, those four never cached; `null` signed out                                                                                                                                                                                          |
 | `claims`                 | the provider's memoized claims (`/userinfo` on the IdP, `/api/userinfo/claims` through a backend), `null` until loaded or signed out                                                                                                                                                                                                |
 | `favorites`              | the list `loadFavorites` answers, read once per session when the session is adopted or, when that adoption happens on an auth path (the sign-in page, the callback), the first time the page leaves the auth paths; reset on sign-out and on every reload; `[]` until loaded or signed out                                          |
 | `organizations`          | memberships in the chrome's organization shape `{ uuid, name, roles, primary }`                                                                                                                                                                                                                                                     |
@@ -369,7 +369,13 @@ cluster's Sign in carries that page, and dismissing the banner keeps it.
   `preferences.pack`, `preferences.motion` and `preferences.language` from
   `/userinfo` in `complete()`; BoxVault applies `preferred_theme`,
   `preferred_pack`, `preferred_motion` and `preferred_language` from the
-  profile whenever the session is adopted.
+  profile whenever the session is adopted, and the issuer's cookie
+  provider answers the same four beside the display fields on every
+  load, so the chrome adopts them the moment the profile answers and not
+  on the next reload; a member the account holds as null means "follow
+  this site" or the device and overwrites the browser's own value, except
+  for a guest-only account, whose browser values stand because the issuer
+  refuses its writes.
 - `claims()` is memoized per session and reset by a sign-out or a reload,
   so the user menu, the favorites and the ticket URL read one fetch.
 
