@@ -12,7 +12,11 @@ const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded &&
  * backend session, and the tab's event stream while the host advertises
  * `events` and either needs no session or has a signed-in user confirmed
  * by `load()`, never from the restored cache alone, with the stream's
- * `session-terminated` event ending the session on the bus.
+ * `session-terminated` event ending the session on the bus and its
+ * `profile-updated` event reloading the signed-in person's profile at
+ * once, so a look, theme, motion or language changed at the identity
+ * provider reaches the open tab through the stream and never waits on a
+ * refresh or the reload timer.
  *
  * @param {Object} options - The session
  * @param {boolean} options.enabled - Whether the session is the app's own backend
@@ -44,4 +48,11 @@ export const useSessionKeepalive = ({ enabled, user, loaded, reload }) => {
   }, [connected, status]);
 
   useEffect(() => eventHub.subscribe('session-terminated', () => events.endSession()), []);
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+    return eventHub.subscribe('profile-updated', () => reload());
+  }, [user, reload]);
 };
