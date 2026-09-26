@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.46.0...v0.47.0) (2026-09-26)
+
+
+### Features
+
+* a pack may carry its own rules file nested under its data-brand attribute with its keyframes hoisted, the LCARS pack with its elbow, segmented sidebar, blinking lights, cascade readout and Antonio face over the header row's host name, version and hostname, a host naming no packs offering every pack of the build, the auth column preloading its own two faces, and the callback page's pre-paint reading preferred_theme ([d1fcbec](https://github.com/STARTcloud/startcloud-ui/commit/d1fcbec71c20a986d95754b6ecc0ed9062953c7f))
+
 ## [0.46.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.45.0...v0.46.0) (2026-09-26)
 
 
