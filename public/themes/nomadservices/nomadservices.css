@@ -12,8 +12,8 @@
   --bs-btn-color: var(--brand-on-primary);
   --bs-link-color: #5243c7;
   --bs-link-color-rgb: 82, 67, 199;
-  --bs-link-hover-color: #42369f;
-  --bs-link-hover-color-rgb: 66, 54, 159;
+  --bs-link-hover-color: #6c5ce7;
+  --bs-link-hover-color-rgb: 108, 92, 231;
 }
 
 [data-brand='nomadservices'][data-bs-theme='dark'] {
@@ -35,6 +35,6 @@
   --bs-secondary-color-rgb: 160, 160, 184;
   --bs-link-color: #a99cf5;
   --bs-link-color-rgb: 169, 156, 245;
-  --bs-link-hover-color: #bab0f7;
-  --bs-link-hover-color-rgb: 186, 176, 247;
+  --bs-link-hover-color: #6c5ce7;
+  --bs-link-hover-color-rgb: 108, 92, 231;
 }

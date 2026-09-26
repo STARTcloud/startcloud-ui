@@ -242,15 +242,10 @@ const bridgeLines = source => {
   return lines;
 };
 
-const HOVER_SHARE = 0.2;
-
-const hoverOf = (link, variant) =>
-  mixToward(link, NUDGE_TARGET[variant], HOVER_SHARE).map(Math.round);
-
-const colorLines = (key, rgb) => {
-  const hex = `#${rgb.map(value => value.toString(16).padStart(2, '0')).join('')}`;
-  return [`  --bs-${key}: ${hex};`, `  --bs-${key}-rgb: ${rgb.join(', ')};`];
-};
+const hoverLines = source => [
+  `  --bs-link-hover-color: ${source.primary.toLowerCase()};`,
+  `  --bs-link-hover-color-rgb: ${rgbList(source.primary)};`,
+];
 
 const surfaceLines = (source, variant) =>
   Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => {
@@ -259,7 +254,7 @@ const surfaceLines = (source, variant) =>
       `  --bs-${key}-rgb: ${rgbList(value)};`,
     ];
     if (key === 'link-color') {
-      lines.push(...colorLines('link-hover-color', hoverOf(value, variant)));
+      lines.push(...hoverLines(source));
     }
     return lines;
   });
@@ -344,11 +339,11 @@ const writePack = (pack, css) => {
  * and `dark` maps of Bootstrap color names without the `--bs-` prefix,
  * such as `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`,
  * `body-color`, `emphasis-color`, `secondary-color`, `link-color`; a
- * `link-color` also emits `--bs-link-hover-color` and its `-rgb` triplet,
- * the link color mixed a fifth toward black on light and white on dark,
- * computed here because Bootstrap paints a hovered link from the triplet
- * and a `color-mix()` cannot be split into one, so a brand's links never
- * hover in Bootstrap's blue).
+ * `link-color` also emits `--bs-link-hover-color` and its `-rgb` triplet
+ * as the pack's `primary`, the brand color itself, on both variants,
+ * because Bootstrap paints a hovered link from the triplet and a hovered
+ * link is expected to go to the brand color, never brighter and never
+ * Bootstrap's blue).
  *
  * A pack is refused, and the process exits non-zero naming every failing
  * pair, when `primary` against `on_primary` (or `warning` against

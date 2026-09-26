@@ -1,0 +1,18 @@
+primary: '#764ca3'
+on_primary: '#ffffff'
+logo: /brand/shp/mark.svg
+logo_color:
+  light: '#764ca3'
+  dark: '#b3bcf5'
+surfaces:
+  light:
+    link-color: '#764ca3'
+  dark:
+    body-bg: '#020617'
+    tertiary-bg: '#0f172a'
+    secondary-bg: '#1e293b'
+    border-color: '#1e293b'
+    body-color: '#f8fafc'
+    emphasis-color: '#ffffff'
+    secondary-color: '#94a3b8'
+    link-color: '#b3bcf5'

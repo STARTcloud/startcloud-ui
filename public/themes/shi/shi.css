@@ -1,8 +1,10 @@
-[data-brand='startcloud'] {
+[data-brand='shi'] {
   --brand-primary: #0d6efd;
   --brand-primary-rgb: 13, 110, 253;
   --brand-on-primary: #ffffff;
   --brand-icon-filter: brightness(0) invert(1);
+  --brand-logo: url('/brand/shi/mark.svg');
+  --brand-logo-color: #0d6efd;
   --brand-focus-ring: rgba(13, 110, 253, 0.74);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 13, 110, 253;
@@ -15,7 +17,7 @@
   --bs-link-hover-color-rgb: 13, 110, 253;
 }
 
-[data-brand='startcloud'][data-bs-theme='dark'] {
+[data-brand='shi'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(13, 110, 253, 0.84);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
   --bs-body-bg: #1a1d20;

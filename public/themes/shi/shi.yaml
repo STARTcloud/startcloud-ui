@@ -1,0 +1,10 @@
+primary: '#0d6efd'
+on_primary: '#ffffff'
+logo: /brand/shi/mark.svg
+surfaces:
+  light:
+    link-color: '#0a58ca'
+  dark:
+    body-bg: '#1a1d20'
+    border-color: '#4d565e'
+    link-color: '#6ea8fe'

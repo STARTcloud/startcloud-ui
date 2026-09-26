@@ -402,10 +402,10 @@ surfaces are its own keeps them (Moonshine's neutral grays, Nomad's
 purple-black) and the stock variant is the fallback wherever a pack names
 nothing; every pack names a `link-color` per variant so hyperlinks follow
 the brand, and the generator emits its hover beside it,
-`--bs-link-hover-color` with its `-rgb` triplet, the link color mixed a
-fifth toward black on light and white on dark, a complement of the link
-and never Bootstrap's blue, computed at generation time because
-Bootstrap paints a hovered link from the triplet. A pack does not set geometry, radius or spacing — the moment it
+`--bs-link-hover-color` with its `-rgb` triplet, the pack's `primary` on
+both variants, because the brand color is the brand color, a hovered link
+is not expected to get brighter, and Bootstrap paints a hovered link from
+the triplet, never its own blue. A pack does not set geometry, radius or spacing — the moment it
 can, it can break layouts it has never been tested against; layout is the
 feature's. The one typographic value it may carry is `--brand-auth-display`,
 the brand's display face (decision 5 of the Universal Identity Contract):

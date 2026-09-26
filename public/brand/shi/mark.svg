@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Super.Human.Installer">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .shi-edge { fill: none; stroke: #ffffff; stroke-width: 48; stroke-linejoin: round; }
+    .shi-gem { fill: #0d6efd; fill: light-dark(#0d6efd, #3d8bfd); }
+    .shi-dot { fill: #ffffff; }
+  </style>
+  <g class="brand-mark-root">
+    <polygon class="shi-edge" points="111.7,75 400.3,75 471,148.6 256,437 41,148.6"/>
+    <polygon class="shi-gem" points="111.7,75 400.3,75 471,148.6 256,437 41,148.6"/>
+    <circle class="shi-dot" cx="162.6" cy="165.5" r="22.6"/>
+    <circle class="shi-dot" cx="256" cy="165.5" r="45.3"/>
+    <circle class="shi-dot" cx="349.4" cy="165.5" r="22.6"/>
+  </g>
+</svg>
