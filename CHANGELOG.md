@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.46.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.45.0...v0.46.0) (2026-09-26)
+
+
+### Features
+
+* one theme pack shape for every brand and product with its own label, description, brand, mark and link hover, the generator refusing a pack that leaves a key out and writing the packs manifest the UI completes brand.packs from, the theme menu and preferences offering Follow this site beside auto, light and dark, and the Super.Human.Installer and Super.Human.Portal brand folders and packs ([3f47959](https://github.com/STARTcloud/startcloud-ui/commit/3f479594adfb35265a9a6d7387463f671119f65f))
+* the Super.Human.Installer and Super.Human.Portal brand folders and their shi and shp theme packs ([74d31df](https://github.com/STARTcloud/startcloud-ui/commit/74d31dfc9b27e070dea948f1ae99ca6c2e1089e3))
+
 ## [0.45.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.44.0...v0.45.0) (2026-09-25)
 
 
