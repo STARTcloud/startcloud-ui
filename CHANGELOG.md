@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.49.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.48.0...v0.49.0) (2026-09-26)
+
+
+### Features
+
+* the LCARS pack's fields sit on the panel surface with an accent border so they read on the black ground, and the sidebar's readout, foot, hover and second group with the header's bar segments take butterscotch, sunflower and orange from the palette ([6b3b4f4](https://github.com/STARTcloud/startcloud-ui/commit/6b3b4f4a198710515c8e7ff72f0b2ce24825c9d5))
+
 ## [0.48.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.47.1...v0.48.0) (2026-09-26)
 
 
