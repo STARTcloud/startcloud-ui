@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.50.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.49.0...v0.50.0) (2026-09-26)
+
+
+### Features
+
+* the LCARS pack trades its orange for tans, almond, almond-creme and tan spread one hue per zone across the readout, band, groups, cards and tiles, the row hover a plain tint, and every blink and pulse rarer and shorter ([6e4f87b](https://github.com/STARTcloud/startcloud-ui/commit/6e4f87b8e599ad8533db6ab2e7020ac5eda7947d))
+
+
+### Bug Fixes
+
+* stuff ([c66cb33](https://github.com/STARTcloud/startcloud-ui/commit/c66cb3366db27ae4dafa9162daa92175669dc7a5))
+
 ## [0.49.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.48.0...v0.49.0) (2026-09-26)
 
 
