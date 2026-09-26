@@ -147,7 +147,7 @@ h6,
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 48px;
   height: 14px;
   z-index: -1;
   background-color: #4d80f0;
@@ -171,7 +171,7 @@ h6,
   content: '';
   position: absolute;
   left: 0;
-  bottom: 14px;
+  top: 23px;
   width: 25px;
   height: 25px;
   z-index: -1;
@@ -207,6 +207,8 @@ h6,
 }
 
 .navbar .crumb {
+  padding-top: 0;
+  padding-bottom: 0;
   color: #a9c6f5;
 }
 
@@ -244,17 +246,18 @@ h6,
 }
 
 .sidebar-nav {
-  padding: 4px 0 0;
+  padding: 0;
 }
 
 .sidebar-nav::before {
   content: attr(data-app) '\A' attr(data-version) '\A' attr(data-host);
   white-space: pre;
   position: sticky;
-  top: 4px;
+  top: 0;
   z-index: 2;
   display: block;
-  padding: 34px 14px 12px;
+  padding: 28px 14px 10px;
+  border-top: 4px solid #000000;
   border-radius: 62px 0 0 0;
   background: #a9c6f5;
   color: #000000;
@@ -443,7 +446,7 @@ h6,
 }
 
 .app-with-sidebar .app-scroll {
-  padding: 16px 20px 20px 24px;
+  padding: 0 20px 20px 24px !important;
 }
 
 .app-with-sidebar .app-scroll::before {
@@ -452,8 +455,8 @@ h6,
   top: 0;
   z-index: 5;
   display: block;
-  height: 54px;
-  margin: -16px -20px 16px -24px;
+  height: 45px;
+  margin: 0 -20px 0 -24px;
   background-color: #000000;
   background-image:
     radial-gradient(circle at 100% 100%, #000000 24px, transparent 25px),
@@ -472,7 +475,7 @@ h6,
     linear-gradient(#4d80f0, #4d80f0);
   background-size:
     25px 25px,
-    calc(100% - 25px) 34px,
+    calc(100% - 25px) 25px,
     74px 41px,
     658px 16px,
     100% 16px;
