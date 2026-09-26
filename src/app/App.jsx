@@ -101,9 +101,10 @@ const shellFlags = ({
 
 /**
  * The app behind the status: the session from the host's first `auth`
- * token, the theme, the look over the packs the host offers, the motion
- * switch written through to the account as the theme is and read by the
- * Preferences tab from its own store, and the
+ * token, the theme, the look over the packs the host offers, painted by
+ * the shared theme store and chosen on the profile's Preferences page
+ * alone, the motion switch written through to the account as the theme
+ * is and read by the Preferences tab from its own store, and the
  * favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
@@ -154,11 +155,7 @@ const App = ({ getSupportedLanguages }) => {
     siteVariant,
     setPreference: setThemePreference,
     toggleTheme,
-    pack,
-    packs,
     setPack,
-    previewPack,
-    endPreview,
   } = useTheme({
     siteTheme: status.brand.theme || '',
     sitePack: status.brand.pack || null,
@@ -250,7 +247,6 @@ const App = ({ getSupportedLanguages }) => {
             siteVariant={siteVariant}
             toggleTheme={toggleTheme}
             setThemePreference={setThemePreference}
-            look={{ pack, packs, setPack, previewPack, endPreview }}
             onSignOut={handleSignOut}
             getSupportedLanguages={getSupportedLanguages}
             collections={collections}

@@ -29,7 +29,6 @@ import ErrorBoundary from '../common/ErrorBoundary';
 
 import Footer from './Footer';
 import Header from './Header';
-import { lookShape } from './LookMenu';
 import { NoticeCards } from './Notices';
 import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModal';
 import { OrgLogo, organizationShape } from './OrgSwitcherModal';
@@ -353,8 +352,9 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * host advertises `discover` the cluster carries Discover, an in-router
  * link to the discovery page drawn as the compass cluster button; the
  * cluster keeps one order in both states, search, Discover, the ticket
- * icon, theme (a menu of the variant and the look while the host offers
- * packs), language, then the account menu or Sign in, each control
+ * icon, theme (the cycling button over the variant alone, the look chosen
+ * on the profile's Preferences page), language, then the account menu or
+ * Sign in, each control
  * drawn only in the state it belongs to: signed out the left of the bar
  * holds the brand alone and the cluster is Discover, the ticket icon
  * (the ticket link the app supplies, built from the fallback customer id
@@ -376,7 +376,6 @@ const AppShell = ({
   siteVariant = '',
   toggleTheme,
   setThemePreference,
-  look,
   onSignOut,
   getSupportedLanguages,
   collections,
@@ -514,7 +513,6 @@ const AppShell = ({
           resolved: theme,
           onToggle: toggleTheme,
           onPick: setThemePreference,
-          look,
         }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
@@ -563,7 +561,6 @@ AppShell.propTypes = {
   siteVariant: PropTypes.string,
   toggleTheme: PropTypes.func.isRequired,
   setThemePreference: PropTypes.func.isRequired,
-  look: lookShape.isRequired,
   onSignOut: PropTypes.func.isRequired,
   getSupportedLanguages: PropTypes.func.isRequired,
   collections: PropTypes.array.isRequired,

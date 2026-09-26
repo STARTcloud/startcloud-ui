@@ -57,11 +57,6 @@
       "auto": "Automático (seguir el dispositivo)",
       "light": "Claro",
       "dark": "Oscuro"
-    },
-    "look": {
-      "menu": "Tema y aspecto",
-      "title": "Aspecto",
-      "follow": "Seguir este sitio"
     }
   },
   "sessionEnded": {

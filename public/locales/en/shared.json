@@ -57,11 +57,6 @@
       "auto": "Auto (follow device)",
       "light": "Light",
       "dark": "Dark"
-    },
-    "look": {
-      "menu": "Theme and look",
-      "title": "Look",
-      "follow": "Follow this site"
     }
   },
   "sessionEnded": {

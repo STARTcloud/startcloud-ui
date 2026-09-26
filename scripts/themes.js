@@ -434,7 +434,7 @@ const writeManifest = entries => {
  * one public/themes/packs.json beside them, the manifest every host reads
  * to answer `brand.packs`: one entry per pack, `name`, `css`, `label`,
  * `description`, `brand` and `logo`, so a pack's own words and mark reach
- * the Look menu and no host echoes the bare name.
+ * the profile's Look select and no host echoes the bare name.
  *
  * Every pack names the same keys, the one shape, and a pack missing one
  * is refused: `label` and `description` (the pack's own words), `brand`

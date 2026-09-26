@@ -14,7 +14,6 @@ const store = {
   site: '',
   onPersist: null,
   pack: '',
-  preview: null,
   packs: [],
   sitePack: null,
   onPersistPack: null,
@@ -52,13 +51,6 @@ const offered = name => store.packs.some(pack => pack.name === name);
 
 const packOf = name => store.packs.find(pack => pack.name === name) || null;
 
-const resolvePack = () => {
-  if (store.preview !== null) {
-    return store.preview;
-  }
-  return store.pack;
-};
-
 const initStore = ({ siteTheme, sitePack, packs, onPersist, onPersistPack }) => {
   if (store.preference === null) {
     store.site = siteDefault(siteTheme);
@@ -88,8 +80,6 @@ const readPreference = () => store.preference;
 
 const readPack = () => store.pack;
 
-const readShownPack = () => resolvePack();
-
 const writePreference = next => {
   store.preference = next;
   notify();
@@ -97,11 +87,6 @@ const writePreference = next => {
 
 const writePack = next => {
   store.pack = next;
-  notify();
-};
-
-const writePreview = next => {
-  store.preview = next;
   notify();
 };
 
@@ -127,10 +112,10 @@ const writePreview = next => {
  * the host offers (`brand.packs`, handed in as packs) or every pack of the
  * build when the host names none, else the host's own pack (`brand.pack`,
  * handed in as sitePack), else none; the chosen pack is painted through
- * `applyPack`, a choice is mirrored to
- * localStorage.pack (an empty choice removes the key) and handed to
- * onPersistPack, and previewPack paints a pack transiently until
- * endPreview without touching the choice.
+ * `applyPack`, a choice is mirrored to localStorage.pack (an empty choice
+ * removes the key) and handed to onPersistPack, and the choice is made on
+ * the profile's Preferences page alone, the header's control cycling the
+ * variant and never the look.
  */
 export const useTheme = ({
   siteTheme = '',
@@ -142,7 +127,6 @@ export const useTheme = ({
   useState(() => initStore({ siteTheme, sitePack, packs, onPersist, onPersistPack }));
   const preference = useSyncExternalStore(subscribePreference, readPreference);
   const pack = useSyncExternalStore(subscribePreference, readPack);
-  const shownPack = useSyncExternalStore(subscribePreference, readShownPack);
   const prefersDark = useSyncExternalStore(subscribeToColorScheme, systemPrefersDark);
   const system = (prefersDark && 'dark') || 'light';
   const theme = resolveTheme({ preference, site: store.site, system });
@@ -158,8 +142,8 @@ export const useTheme = ({
   }, [theme, preference]);
 
   useEffect(() => {
-    applyPack(packOf(shownPack) || store.sitePack);
-  }, [shownPack]);
+    applyPack(packOf(pack) || store.sitePack);
+  }, [pack]);
 
   useEffect(() => {
     if (pack) {
@@ -195,16 +179,6 @@ export const useTheme = ({
     }
   }, []);
 
-  const previewPack = useCallback(next => {
-    writePreview(offered(next) ? next : '');
-  }, []);
-
-  const endPreview = useCallback(() => {
-    if (store.preview !== null) {
-      writePreview(null);
-    }
-  }, []);
-
   return {
     theme,
     preference: store.site ? preference : shown,
@@ -214,7 +188,5 @@ export const useTheme = ({
     pack,
     packs: store.packs,
     setPack,
-    previewPack,
-    endPreview,
   };
 };
