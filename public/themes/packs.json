@@ -3,7 +3,7 @@
     "name": "lcars",
     "css": "/themes/lcars/lcars.css",
     "label": "LCARS",
-    "description": "Black with blue and peach bars, set in Antonio, the Starfleet console look.",
+    "description": "Black or space-white ground with blue, peach and gold bars, set in Antonio, the Starfleet console look.",
     "brand": "startcloud",
     "logo": "/brand/startcloud/mark.svg"
   },

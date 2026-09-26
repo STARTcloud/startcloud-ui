@@ -1,9 +1,9 @@
 label: LCARS
-description: Black with blue and peach bars, set in Antonio, the Starfleet console look.
+description: Black or space-white ground with blue, peach and gold bars, set in Antonio, the Starfleet console look.
 brand: startcloud
 primary: '#4d80f0'
 on_primary: '#000000'
-warning: '#f5c59a'
+warning: '#ffcc33'
 on_warning: '#000000'
 logo: /brand/startcloud/mark.svg
 logo_color:
@@ -18,18 +18,18 @@ fonts:
 rules: lcars.rules.css
 surfaces:
   light:
-    body-bg: '#000000'
-    tertiary-bg: '#111111'
-    secondary-bg: '#1c1c20'
-    border-color: '#2c2c33'
-    body-color: '#b8bfd4'
-    emphasis-color: '#ffffff'
-    secondary-color: '#8f97b0'
-    link-color: '#80c8ec'
-    link-hover-color: '#5cb4de'
-    info: '#80c8ec'
-    success: '#0bd08a'
-    danger: '#f37052'
+    body-bg: '#f5f6fa'
+    tertiary-bg: '#e6e9f2'
+    secondary-bg: '#d7dcea'
+    border-color: '#b9c2d6'
+    body-color: '#10131c'
+    emphasis-color: '#000000'
+    secondary-color: '#4b5570'
+    link-color: '#1d4fd8'
+    link-hover-color: '#163ea8'
+    info: '#88ccff'
+    success: '#33cc99'
+    danger: '#ff5555'
   dark:
     body-bg: '#000000'
     tertiary-bg: '#111111'
@@ -38,8 +38,8 @@ surfaces:
     body-color: '#b8bfd4'
     emphasis-color: '#ffffff'
     secondary-color: '#8f97b0'
-    link-color: '#80c8ec'
+    link-color: '#88ccff'
     link-hover-color: '#5cb4de'
-    info: '#80c8ec'
-    success: '#0bd08a'
-    danger: '#f37052'
+    info: '#88ccff'
+    success: '#33cc99'
+    danger: '#ff5555'
