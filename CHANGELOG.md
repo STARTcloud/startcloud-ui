@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.48.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.47.1...v0.48.0) (2026-09-26)
+
+
+### Features
+
+* the LCARS pack's navbar carries the page band under its row so the page scrollbar starts below it, its menus paint over the page, the readout cap leaves the header row, the sidebar readout's corner hides the rows scrolling under it, thin scrollbars in the pack's colours, the canonical LCARS palette across sidebar groups, tiles, tables and controls, a light variant on a space-white ground, every blinking item steady under the pointer, and larger type for the condensed face ([a6443d0](https://github.com/STARTcloud/startcloud-ui/commit/a6443d0eff237041f07e81642191b06d5a779b4e))
+
 ## [0.47.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.47.0...v0.47.1) (2026-09-26)
 
 
