@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.47.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.47.0...v0.47.1) (2026-09-26)
+
+
+### Bug Fixes
+
+* the LCARS bars sit at the header strip's bottom so a banner or the search panel never breaks the elbow, the panel and the page band start on the same line, the crumb never grows the row, and the page content sits closer under its bar ([16cdf29](https://github.com/STARTcloud/startcloud-ui/commit/16cdf297d15d209d31ca3656421f1cc2edbe443d))
+* the navbar's theme button cycles the variant alone, the look chosen on the profile's Preferences page, and the LCARS bars hold under a banner or the search panel with the panel and the page band on one line ([fff1da9](https://github.com/STARTcloud/startcloud-ui/commit/fff1da9619b5c0028d7ecde57be1a5d1645e770b))
+
 ## [0.47.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.46.0...v0.47.0) (2026-09-26)
 
 
