@@ -154,8 +154,6 @@
     --lcars-ground: var(--bs-body-bg);
     --lcars-panel: var(--bs-tertiary-bg);
     --lcars-ink: #000000;
-    --lcars-light: #a9c6f5;
-    --lcars-deep: #1c3f8f;
     --lcars-ice: #88ccff;
     --lcars-sky: #aaaaff;
     --lcars-blue: #7788ff;
@@ -248,7 +246,7 @@
         var(--lcars-ground) 340px 344px,
         var(--brand-primary) 344px 600px,
         var(--lcars-ground) 600px 604px,
-        var(--lcars-light) 604px 654px,
+        var(--lcars-sunflower) 604px 654px,
         var(--lcars-ground) 654px 658px,
         transparent 658px
       );
@@ -277,7 +275,7 @@
         var(--lcars-ground) 340px 344px,
         var(--brand-primary) 344px 600px,
         var(--lcars-ground) 600px 604px,
-        var(--lcars-light) 604px 654px,
+        var(--lcars-sunflower) 604px 654px,
         var(--lcars-ground) 654px 658px,
         transparent 658px
       ),
@@ -286,7 +284,7 @@
       linear-gradient(var(--lcars-ground), var(--lcars-ground)),
       linear-gradient(
         to right,
-        var(--lcars-light) 70px,
+        var(--lcars-butterscotch) 70px,
         var(--lcars-ground) 70px 74px,
         transparent 74px
       ),
@@ -296,7 +294,7 @@
         var(--lcars-ground) 340px 344px,
         var(--brand-primary) 344px 600px,
         var(--lcars-ground) 600px 604px,
-        var(--lcars-deep) 604px 654px,
+        var(--lcars-orange) 604px 654px,
         var(--lcars-ground) 654px 658px,
         transparent 658px
       ),
@@ -381,7 +379,7 @@
   .sidebar-top-chevron:focus-visible,
   .sidebar-top-mark:hover,
   .sidebar-top-mark:focus-visible {
-    background: var(--lcars-light);
+    background: var(--lcars-sunflower);
     color: var(--lcars-ink);
   }
 
@@ -402,9 +400,9 @@
     border-top: 4px solid var(--lcars-ground);
     background-color: var(--lcars-ground);
     background-image:
-      radial-gradient(circle at 62px 62px, var(--lcars-light) 61.5px, transparent 62.5px),
-      linear-gradient(var(--lcars-light), var(--lcars-light)),
-      linear-gradient(var(--lcars-light), var(--lcars-light));
+      radial-gradient(circle at 62px 62px, var(--lcars-butterscotch) 61.5px, transparent 62.5px),
+      linear-gradient(var(--lcars-butterscotch), var(--lcars-butterscotch)),
+      linear-gradient(var(--lcars-butterscotch), var(--lcars-butterscotch));
     background-size:
       124px 124px,
       calc(100% - 62px) 100%,
@@ -438,17 +436,17 @@
   }
 
   .sidebar-group:nth-child(2) {
-    --lcars-hue: var(--lcars-sky);
+    --lcars-hue: var(--lcars-butterscotch);
     --lcars-seg-delay: 0.78s;
   }
 
   .sidebar-group:nth-child(3) {
-    --lcars-hue: var(--lcars-butterscotch);
+    --lcars-hue: var(--lcars-sky);
     --lcars-seg-delay: 0.96s;
   }
 
   .sidebar-group:nth-child(4) {
-    --lcars-hue: var(--lcars-almond);
+    --lcars-hue: var(--lcars-sunflower);
     --lcars-seg-delay: 1.1s;
   }
 
@@ -554,7 +552,7 @@
     border-radius: 0 0 0 62px;
     background: linear-gradient(
       to top,
-      var(--lcars-light) 62px,
+      var(--lcars-sunflower) 62px,
       var(--lcars-ground) 62px 66px,
       var(--brand-primary) 66px
     );
@@ -570,9 +568,9 @@
     height: 44px;
     padding: 0;
     background-image:
-      radial-gradient(circle at 24px 24px, var(--lcars-light) 23.5px, transparent 24.5px),
-      linear-gradient(var(--lcars-light), var(--lcars-light)),
-      linear-gradient(var(--lcars-light), var(--lcars-light));
+      radial-gradient(circle at 24px 24px, var(--lcars-butterscotch) 23.5px, transparent 24.5px),
+      linear-gradient(var(--lcars-butterscotch), var(--lcars-butterscotch)),
+      linear-gradient(var(--lcars-butterscotch), var(--lcars-butterscotch));
     background-size:
       48px 48px,
       calc(100% - 24px) 100%,
@@ -599,7 +597,7 @@
     border-radius: 0 0 0 24px;
     background: linear-gradient(
       to top,
-      var(--lcars-light) 24px,
+      var(--lcars-sunflower) 24px,
       var(--lcars-ground) 24px 28px,
       var(--brand-primary) 28px
     );
@@ -703,13 +701,29 @@
   .form-select,
   .navbar-search {
     border-radius: 999px;
-    background-color: var(--lcars-ground);
-    border-color: var(--bs-border-color);
+    background-color: var(--lcars-panel);
+    border-color: color-mix(in srgb, var(--brand-primary) 40%, var(--bs-border-color));
+    color: var(--bs-emphasis-color);
+  }
+
+  .form-control::placeholder,
+  .navbar-search input::placeholder {
+    color: var(--bs-secondary-color);
+  }
+
+  .navbar-search input {
+    color: var(--bs-emphasis-color);
   }
 
   .form-control:focus,
   .form-select:focus {
-    background-color: var(--lcars-ground);
+    background-color: var(--lcars-panel);
+    border-color: var(--brand-primary);
+    color: var(--bs-emphasis-color);
+  }
+
+  .form-label {
+    color: var(--bs-emphasis-color);
   }
 
   textarea.form-control {

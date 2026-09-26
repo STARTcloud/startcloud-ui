@@ -499,7 +499,7 @@
         "label": "Look",
         "follow": "Follow this site"
       },
-      "lookHint": "Saved as you change it, the same value the theme menu writes.",
+      "lookHint": "Saved as you change it and painted at once; this page is the one place the look is chosen.",
       "timezone": "Time zone",
       "timezoneHint": "The detected zone is preselected while none is set.",
       "region": "Region",

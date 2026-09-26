@@ -499,7 +499,7 @@
         "label": "Aspecto",
         "follow": "Seguir este sitio"
       },
-      "lookHint": "Se guarda al cambiarlo, el mismo valor que escribe el menú de tema.",
+      "lookHint": "Se guarda al cambiarlo y se aplica al momento; esta página es el único lugar donde se elige el aspecto.",
       "timezone": "Zona horaria",
       "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
       "region": "Región",
