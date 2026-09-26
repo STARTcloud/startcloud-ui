@@ -3,6 +3,8 @@
   --brand-primary-rgb: 31, 157, 87;
   --brand-on-primary: #000000;
   --brand-icon-filter: brightness(0);
+  --brand-logo: url('/brand/moonshinedev/mark.svg');
+  --brand-logo-color: #1f9d57;
   --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
   --brand-focus-ring: rgba(31, 157, 87, 0.89);
   --bs-primary: var(--brand-primary);
@@ -10,15 +12,30 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
   --bs-link-color: #146c3c;
   --bs-link-color-rgb: 20, 108, 60;
-  --bs-link-hover-color: #1f9d57;
-  --bs-link-hover-color-rgb: 31, 157, 87;
+  --bs-link-hover-color: #0f5230;
+  --bs-link-hover-color-rgb: 15, 82, 48;
 }
 
 [data-brand='moonshinedev'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(31, 157, 87, 0.75);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #1f9d57;
   --bs-body-bg: #23272b;
   --bs-body-bg-rgb: 35, 39, 43;
   --bs-tertiary-bg: #2b3034;
@@ -35,6 +52,6 @@
   --bs-secondary-color-rgb: 154, 161, 168;
   --bs-link-color: #5fd38d;
   --bs-link-color-rgb: 95, 211, 141;
-  --bs-link-hover-color: #1f9d57;
-  --bs-link-hover-color-rgb: 31, 157, 87;
+  --bs-link-hover-color: #3fbf76;
+  --bs-link-hover-color-rgb: 63, 191, 118;
 }

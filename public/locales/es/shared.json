@@ -53,6 +53,7 @@
     "light": "Tema: claro",
     "dark": "Tema: oscuro",
     "name": {
+      "follow": "Seguir este sitio",
       "auto": "Automático (seguir el dispositivo)",
       "light": "Claro",
       "dark": "Oscuro"
@@ -489,7 +490,8 @@
         "label": "Tema",
         "light": "Claro",
         "dark": "Oscuro",
-        "auto": "Automático (seguir el dispositivo)"
+        "auto": "Automático (seguir el dispositivo)",
+        "follow": "Seguir este sitio"
       },
       "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
       "look": {

@@ -53,6 +53,7 @@
     "light": "Theme: light",
     "dark": "Theme: dark",
     "name": {
+      "follow": "Follow this site",
       "auto": "Auto (follow device)",
       "light": "Light",
       "dark": "Dark"
@@ -489,7 +490,8 @@
         "label": "Theme",
         "light": "Light",
         "dark": "Dark",
-        "auto": "Auto (follow device)"
+        "auto": "Auto (follow device)",
+        "follow": "Follow this site"
       },
       "themeHint": "Saved as you change it, the same value the theme button writes.",
       "look": {

@@ -369,6 +369,7 @@ const AppShell = ({
   avatarUrl,
   theme,
   themePreference,
+  siteVariant = '',
   toggleTheme,
   setThemePreference,
   look,
@@ -499,6 +500,7 @@ const AppShell = ({
         LinkComponent={Link}
         theme={{
           preference: themePreference,
+          siteVariant,
           resolved: theme,
           onToggle: toggleTheme,
           onPick: setThemePreference,
@@ -546,6 +548,7 @@ AppShell.propTypes = {
   avatarUrl: PropTypes.string.isRequired,
   theme: PropTypes.string.isRequired,
   themePreference: PropTypes.string.isRequired,
+  siteVariant: PropTypes.string,
   toggleTheme: PropTypes.func.isRequired,
   setThemePreference: PropTypes.func.isRequired,
   look: lookShape.isRequired,

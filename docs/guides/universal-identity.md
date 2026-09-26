@@ -4002,6 +4002,9 @@ terms_required` and `next: "/oauth2/accept-terms"`, exactly the
      and in the `preferences` claim, everywhere `theme` is read back;
      a site lists the packs a person may pick in `sites.<id>.ui.packs` and
      answers them as `brand.packs`, `[{ name, css, label }]`, in its status,
+     the shared UI completing each name from the build's own
+     `public/themes/packs.json`, the pack's label, description, brand and
+     mark, so the issuer names packs and carries none of their words,
      absent while the list is empty; the server's `index.html` stamp stays
      the site's, because the shared build's pre-paint script paints the
      person's cached choice before first paint and a per-person stamp in

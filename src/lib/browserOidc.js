@@ -24,6 +24,8 @@ const applyAccountPreferences = preferences => {
   }
   if (THEME_VALUES.includes(preferences.theme)) {
     localStorage.setItem('theme', preferences.theme);
+  } else if (preferences.theme === null) {
+    localStorage.removeItem('theme');
   }
   if (preferences.language) {
     localStorage.setItem('language', preferences.language);

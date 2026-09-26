@@ -1,9 +1,24 @@
+label: Nomad.Services
+description: Nomad's violet on purple-black, set in IBM Plex Sans.
+brand: nomadservices
 primary: '#6c5ce7'
 on_primary: '#ffffff'
+logo: /brand/nomadservices/mark.svg
+logo_color:
+  light: '#6c5ce7'
+  dark: '#6c5ce7'
 display: "'IBM Plex Sans', system-ui, sans-serif"
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#5243c7'
+    link-hover-color: '#3d30a3'
   dark:
     body-bg: '#0e0c1f'
     tertiary-bg: '#15142a'
@@ -13,3 +28,4 @@ surfaces:
     emphasis-color: '#ffffff'
     secondary-color: '#a0a0b8'
     link-color: '#a99cf5'
+    link-hover-color: '#8f7ff0'

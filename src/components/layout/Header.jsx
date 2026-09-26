@@ -102,9 +102,9 @@ TicketButton.propTypes = {
 const ThemeButton = ({ theme }) => {
   const { t } = useTranslation();
   const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
-  const themeLabel = t(`theme.${theme.preference}`, {
-    variant: t(`theme.name.${theme.resolved}`),
-  });
+  const themeLabel = theme.preference
+    ? t(`theme.${theme.preference}`, { variant: t(`theme.name.${theme.resolved}`) })
+    : t('theme.name.follow');
   if (theme.look?.packs.length > 0) {
     return <LookMenu theme={theme} className={CLUSTER_BUTTON} />;
   }
@@ -126,6 +126,7 @@ const ThemeButton = ({ theme }) => {
 
 const themeShape = PropTypes.shape({
   preference: PropTypes.string.isRequired,
+  siteVariant: PropTypes.string,
   resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
   onToggle: PropTypes.func.isRequired,
   onPick: PropTypes.func,

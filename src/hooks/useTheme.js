@@ -5,6 +5,7 @@ import { applyPack } from '../lib/runtime';
 const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
 const THEME_VALUES = ['auto', 'light', 'dark'];
 const VARIANTS = ['light', 'dark'];
+const FOLLOW = '';
 const NEXT_PREFERENCE = { auto: 'light', light: 'dark', dark: 'auto' };
 const PACK_KEY = 'pack';
 
@@ -43,7 +44,9 @@ const resolveTheme = ({ preference, site, system }) => {
   return preference;
 };
 
-export const isThemePreference = value => THEME_VALUES.includes(value);
+export const isThemePreference = value => value === FOLLOW || THEME_VALUES.includes(value);
+
+const preferenceOf = value => (value === FOLLOW && !store.site ? 'auto' : value);
 
 const offered = name => store.packs.some(pack => pack.name === name);
 
@@ -111,10 +114,15 @@ const writePreview = next => {
  * in as siteTheme when the served page carries no attribute, else auto
  * against the operating system scheme; the account value arrives through
  * setPreference once the profile loads and overwrites the store. The
+ * empty preference is "Follow this site", the site's own variant, the
+ * state a person is in before choosing and the one the menu's Follow
+ * this site row returns them to, offered only while the site names a
+ * default (`siteVariant`) and answered as auto otherwise. The
  * result is stamped on the document as data-bs-theme; a preference the
  * person or the account holds is mirrored to localStorage.theme, the site
- * default never is, and every user toggle is handed to onPersist so the
- * app can write it through to the account. The look, the pack: the
+ * default never is (following removes the key), and every user toggle is
+ * handed to onPersist so the app can write it through to the account,
+ * the empty one as a cleared value. The look, the pack: the
  * person's choice under localStorage.pack while it names one of the packs
  * the host offers (`brand.packs`, handed in as packs), else the host's own
  * pack (`brand.pack`, handed in as sitePack), else none; the chosen pack
@@ -143,6 +151,8 @@ export const useTheme = ({
     document.documentElement.setAttribute('data-bs-theme', theme);
     if (preference) {
       localStorage.setItem('theme', preference);
+    } else {
+      localStorage.removeItem('theme');
     }
   }, [theme, preference]);
 
@@ -158,10 +168,11 @@ export const useTheme = ({
     }
   }, [pack]);
 
-  const setPreference = useCallback((next, { persist = true } = {}) => {
-    if (!isThemePreference(next)) {
+  const setPreference = useCallback((value, { persist = true } = {}) => {
+    if (!isThemePreference(value)) {
       return;
     }
+    const next = preferenceOf(value);
     writePreference(next);
     if (persist && store.onPersist) {
       store.onPersist(next);
@@ -195,7 +206,8 @@ export const useTheme = ({
 
   return {
     theme,
-    preference: shown,
+    preference: store.site ? preference : shown,
+    siteVariant: store.site,
     setPreference,
     toggleTheme,
     pack,

@@ -18,6 +18,44 @@ const StatusContext = createContext(null);
  */
 export const probeStatus = () => axios.get('/api/status').then(({ data }) => data);
 
+/**
+ * The build's pack manifest, `public/themes/packs.json`, written by the
+ * theme generator from every pack's YAML: one row per pack, `name`,
+ * `css`, `label`, `description`, `brand` and `logo`; an empty list when
+ * the file is missing or malformed, so a host without packs boots as it
+ * did.
+ *
+ * @returns {Promise<Array<Object>>} The rows
+ */
+export const fetchPackManifest = () =>
+  axios
+    .get('/themes/packs.json')
+    .then(({ data }) => (Array.isArray(data) ? data : []))
+    .catch(() => []);
+
+/**
+ * The status with every pack the host offers completed from the build's
+ * manifest by name, the host naming which packs a person may choose and
+ * the pack itself supplying its label, description, brand and mark, so
+ * no host carries a pack's words; a name the manifest does not hold keeps
+ * the host's row as it is.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Array<Object>} manifest - The rows from `fetchPackManifest`
+ * @returns {Object} The status, its `brand.packs` completed
+ */
+export const withPackManifest = (status, manifest) => {
+  const packs = status?.brand?.packs;
+  if (!Array.isArray(packs)) {
+    return status;
+  }
+  const rows = new Map(manifest.map(row => [row.name, row]));
+  return {
+    ...status,
+    brand: { ...status.brand, packs: packs.map(pack => ({ ...pack, ...rows.get(pack.name) })) },
+  };
+};
+
 export const statusShape = PropTypes.shape({
   role: PropTypes.string.isRequired,
   version: PropTypes.string.isRequired,
@@ -36,6 +74,9 @@ export const statusShape = PropTypes.shape({
         name: PropTypes.string.isRequired,
         css: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,
+        description: PropTypes.string,
+        brand: PropTypes.string,
+        logo: PropTypes.string,
       })
     ),
   }),

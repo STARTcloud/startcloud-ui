@@ -54,9 +54,14 @@ write path and claim as `theme`, resolved in the same order
 and never composed with the variant; a host that lets a person choose
 answers the packs it offers as `brand.packs` in its status payload
 (`[{ name, css, label }]`, the navbar contract's status row), the shared
-UI draws its Look picker from that list alone and constructs no
-stylesheet URL, and a host that answers no list offers no choice, so a
-white-label site never shows a sibling's look. The choice is cached in
+UI completes each row by name from the build's own
+`public/themes/packs.json`, the manifest the generator writes from every
+pack's YAML with the pack's `label`, `description`, `brand` and `logo`,
+before it boots, so a host names which packs it offers and the pack
+supplies its own words and mark; the shared UI draws its Look picker from
+that completed list alone and constructs no stylesheet URL, and a host
+that answers no list offers no choice, so a white-label site never shows
+a sibling's look. The choice is cached in
 local storage beside `theme` so the pre-paint script can stamp
 `data-brand` and append the chosen pack's `<link>` before first paint,
 after the host's own, and a guest-only account keeps it browser-local as
@@ -399,13 +404,28 @@ the whole `--bs-*` color set, surfaces included: `--bs-body-bg`,
 variables, each under `[data-brand="x"]` for the light variant and under
 `[data-brand="x"][data-bs-theme="dark"]` for the dark one, so a site whose
 surfaces are its own keeps them (Moonshine's neutral grays, Nomad's
-purple-black) and the stock variant is the fallback wherever a pack names
-nothing; every pack names a `link-color` per variant so hyperlinks follow
-the brand, and the generator emits its hover beside it,
-`--bs-link-hover-color` with its `-rgb` triplet, the pack's `primary` on
-both variants, because the brand color is the brand color, a hovered link
-is not expected to get brighter, and Bootstrap paints a hovered link from
-the triplet, never its own blue. A pack does not set geometry, radius or spacing — the moment it
+purple-black). Every pack is the same shape, no snowflakes: one YAML
+naming `label`, `description`, `brand` (the bare name of the brand the
+pack belongs to, a brand's own pack naming itself and a product's pack
+naming its owner, BoxVault, Super.Human.Installer and Super.Human.Portal
+naming `startcloud`, because some things are products, not brands, and a
+product belongs to a brand), `primary`, `on_primary`, `logo`,
+`logo_color` per variant, `display`, and under `surfaces` per variant
+`body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`, `body-color`,
+`emphasis-color`, `secondary-color`, `link-color` and `link-hover-color`,
+free to name any further Bootstrap color the same way, `warning` with
+`on_warning` and `fonts` the two optional members; the generator emits
+what a pack names, every color with its `-rgb` triplet because Bootstrap
+paints links and hovers from the triplet, refuses a pack that leaves a
+key out or fails contrast, and decides no color of its own, so a hover is
+the pack's own word, toward its brand and never brighter than its link,
+never Bootstrap's blue, and a new pack is one YAML copied from any other
+with every value swapped. Beside the packs the generator writes
+`public/themes/packs.json`, one row per pack, `name`, `css`, `label`,
+`description`, `brand` and `logo`, the manifest the shared UI reads at
+boot to complete every pack a host names in `brand.packs`, so the Look
+menu shows a pack's own name and mark and no host, no script and no page
+carries a pack's words. A pack does not set geometry, radius or spacing — the moment it
 can, it can break layouts it has never been tested against; layout is the
 feature's. The one typographic value it may carry is `--brand-auth-display`,
 the brand's display face (decision 5 of the Universal Identity Contract):

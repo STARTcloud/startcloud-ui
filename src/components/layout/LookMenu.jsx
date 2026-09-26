@@ -1,15 +1,18 @@
 import PropTypes from 'prop-types';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaCircleHalfStroke, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaCircleHalfStroke, FaHouse, FaMoon, FaSun } from 'react-icons/fa6';
 
 const VARIANTS = ['auto', 'light', 'dark'];
-const VARIANT_ICONS = { auto: FaCircleHalfStroke, light: FaSun, dark: FaMoon };
+const VARIANT_ICONS = { '': FaHouse, auto: FaCircleHalfStroke, light: FaSun, dark: FaMoon };
 
 export const packShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   css: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  brand: PropTypes.string,
+  logo: PropTypes.string,
 });
 
 export const lookShape = PropTypes.shape({
@@ -47,8 +50,10 @@ LookRow.propTypes = {
 
 /**
  * The cluster's theme control while the host offers packs: one menu with
- * the three variant rows, then a Look section, "Follow this site" first
- * and one row per offered pack carrying that brand's mark, hovering or
+ * the variant rows, "Follow this site" first while the site names a
+ * default variant, then auto, light and dark, then a Look section,
+ * "Follow this site" first and one row per offered pack carrying that
+ * pack's own mark and label from the host's `brand.packs`, hovering or
  * focusing a row previewing the look live and a click keeping it; closing
  * the menu ends any preview.
  */
@@ -57,6 +62,7 @@ const LookMenu = ({ theme, className }) => {
   const { look } = theme;
   const Icon = VARIANT_ICONS[theme.preference] || FaCircleHalfStroke;
   const label = t('theme.look.menu');
+  const variants = theme.siteVariant ? ['', ...VARIANTS] : VARIANTS;
 
   const pick = name => {
     look.endPreview();
@@ -85,18 +91,18 @@ const LookMenu = ({ theme, className }) => {
         <Icon />
       </Dropdown.Toggle>
       <Dropdown.Menu>
-        {VARIANTS.map(variant => {
+        {variants.map(variant => {
           const VariantIcon = VARIANT_ICONS[variant];
           return (
             <Dropdown.Item
-              key={variant}
+              key={variant || 'follow'}
               as="button"
               type="button"
               active={theme.preference === variant}
               onClick={() => theme.onPick(variant)}
             >
               <VariantIcon className="me-2" />
-              {t(`theme.name.${variant}`)}
+              {t(`theme.name.${variant || 'follow'}`)}
             </Dropdown.Item>
           );
         })}
@@ -120,7 +126,7 @@ const LookMenu = ({ theme, className }) => {
             onPreview={look.previewPack}
             onEndPreview={look.endPreview}
           >
-            <img src={`/brand/${pack.name}/mark.svg`} alt="" className="logo-sm me-2" />
+            {pack.logo ? <img src={pack.logo} alt="" className="logo-sm me-2" /> : null}
             {pack.label}
           </LookRow>
         ))}
@@ -132,6 +138,7 @@ const LookMenu = ({ theme, className }) => {
 LookMenu.propTypes = {
   theme: PropTypes.shape({
     preference: PropTypes.string.isRequired,
+    siteVariant: PropTypes.string,
     onPick: PropTypes.func.isRequired,
     look: lookShape.isRequired,
   }).isRequired,

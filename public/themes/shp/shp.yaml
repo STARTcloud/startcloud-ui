@@ -1,12 +1,24 @@
+label: Super.Human.Portal
+description: Super.Human.Portal's purple on slate, the portal's own dark ground.
+brand: startcloud
 primary: '#764ca3'
 on_primary: '#ffffff'
 logo: /brand/shp/mark.svg
 logo_color:
   light: '#764ca3'
   dark: '#b3bcf5'
+display: "'Montserrat', 'Open Sans', sans-serif"
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#764ca3'
+    link-hover-color: '#5b3a80'
   dark:
     body-bg: '#020617'
     tertiary-bg: '#0f172a'
@@ -16,3 +28,4 @@ surfaces:
     emphasis-color: '#ffffff'
     secondary-color: '#94a3b8'
     link-color: '#b3bcf5'
+    link-hover-color: '#9a8fe6'

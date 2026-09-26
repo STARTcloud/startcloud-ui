@@ -3,6 +3,8 @@
   --brand-primary-rgb: 108, 92, 231;
   --brand-on-primary: #ffffff;
   --brand-icon-filter: brightness(0) invert(1);
+  --brand-logo: url('/brand/nomadservices/mark.svg');
+  --brand-logo-color: #6c5ce7;
   --brand-auth-display: 'IBM Plex Sans', system-ui, sans-serif;
   --brand-focus-ring: rgba(108, 92, 231, 0.74);
   --bs-primary: var(--brand-primary);
@@ -10,15 +12,30 @@
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
   --bs-link-color: #5243c7;
   --bs-link-color-rgb: 82, 67, 199;
-  --bs-link-hover-color: #6c5ce7;
-  --bs-link-hover-color-rgb: 108, 92, 231;
+  --bs-link-hover-color: #3d30a3;
+  --bs-link-hover-color-rgb: 61, 48, 163;
 }
 
 [data-brand='nomadservices'][data-bs-theme='dark'] {
   --brand-focus-ring: rgba(108, 92, 231, 0.82);
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #6c5ce7;
   --bs-body-bg: #0e0c1f;
   --bs-body-bg-rgb: 14, 12, 31;
   --bs-tertiary-bg: #15142a;
@@ -35,6 +52,6 @@
   --bs-secondary-color-rgb: 160, 160, 184;
   --bs-link-color: #a99cf5;
   --bs-link-color-rgb: 169, 156, 245;
-  --bs-link-hover-color: #6c5ce7;
-  --bs-link-hover-color-rgb: 108, 92, 231;
+  --bs-link-hover-color: #8f7ff0;
+  --bs-link-hover-color-rgb: 143, 127, 240;
 }

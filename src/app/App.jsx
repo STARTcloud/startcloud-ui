@@ -53,7 +53,7 @@ import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
 
-const persistTheme = preference => session.savePreferences({ theme: preference });
+const persistTheme = preference => session.savePreferences({ theme: preference || null });
 
 const persistPack = pack => session.savePreferences({ pack: pack || null });
 
@@ -146,6 +146,7 @@ const App = ({ getSupportedLanguages }) => {
   const {
     theme,
     preference: themePreference,
+    siteVariant,
     setPreference: setThemePreference,
     toggleTheme,
     pack,
@@ -235,6 +236,7 @@ const App = ({ getSupportedLanguages }) => {
             avatarUrl={avatarUrl}
             theme={theme}
             themePreference={themePreference}
+            siteVariant={siteVariant}
             toggleTheme={toggleTheme}
             setThemePreference={setThemePreference}
             look={{ pack, packs, setPack, previewPack, endPreview }}

@@ -259,7 +259,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (saved && user) {
       store({
         ...user,
-        ...(patch.theme ? { preferred_theme: patch.theme } : {}),
+        ...('theme' in patch ? { preferred_theme: patch.theme } : {}),
         ...(patch.language ? { preferred_language: patch.language } : {}),
         ...('pack' in patch ? { preferred_pack: patch.pack } : {}),
       });

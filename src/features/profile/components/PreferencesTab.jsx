@@ -78,7 +78,7 @@ const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
   }
   if (!own) {
     patch.language = settings.language;
-    patch.theme = settings.theme;
+    patch.theme = settings.theme || null;
     patch.pack = settings.pack || null;
     return patch;
   }
@@ -129,6 +129,34 @@ ReadOnlyField.propTypes = {
   value: PropTypes.string.isRequired,
 };
 
+const ThemeSelect = ({ own, themePreference, recordTheme, siteVariant, onChange }) => {
+  const { t } = useTranslation();
+  const themes = siteVariant ? ['', ...THEMES] : THEMES;
+  return (
+    <SelectField
+      id="profile-preferences-theme"
+      label={t('profile.preferences.theme.label')}
+      hint={own ? t('profile.preferences.themeHint') : ''}
+      value={own ? themePreference : recordTheme}
+      onChange={event => onChange(event.target.value)}
+    >
+      {themes.map(theme => (
+        <option key={theme || 'follow'} value={theme}>
+          {t(`profile.preferences.theme.${theme || 'follow'}`)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+ThemeSelect.propTypes = {
+  own: PropTypes.bool.isRequired,
+  themePreference: PropTypes.string.isRequired,
+  recordTheme: PropTypes.string.isRequired,
+  siteVariant: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 const lookName = (packs, name) => packs.find(pack => pack.name === name)?.label || name;
 
 const ReadOnlyPreferences = ({ account, profile, folds }) => {
@@ -140,7 +168,7 @@ const ReadOnlyPreferences = ({ account, profile, folds }) => {
     [
       'theme',
       t('profile.preferences.theme.label'),
-      t(`profile.preferences.theme.${themePreference}`),
+      t(`profile.preferences.theme.${themePreference || 'follow'}`),
     ],
     ...(packs.length > 0
       ? [
@@ -245,6 +273,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const notify = useNotify();
   const {
     preference: themePreference,
+    siteVariant,
     setPreference: setThemePreference,
     pack,
     packs,
@@ -384,19 +413,13 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               </SelectField>
             </div>
             <div className="col-md-3">
-              <SelectField
-                id="profile-preferences-theme"
-                label={t('profile.preferences.theme.label')}
-                hint={own ? t('profile.preferences.themeHint') : ''}
-                value={own ? themePreference : settings.theme}
-                onChange={event => changeTheme(event.target.value)}
-              >
-                {THEMES.map(theme => (
-                  <option key={theme} value={theme}>
-                    {t(`profile.preferences.theme.${theme}`)}
-                  </option>
-                ))}
-              </SelectField>
+              <ThemeSelect
+                own={own}
+                themePreference={themePreference}
+                recordTheme={settings.theme}
+                siteVariant={siteVariant}
+                onChange={changeTheme}
+              />
             </div>
             <div className="col-md-3">
               <SelectField
@@ -521,7 +544,9 @@ EditablePreferences.propTypes = {
  * fold is kept under `table_prefs_profile_preferences`: language,
  * theme, time zone and region on one row, language and theme as selects
  * that write through on change, the same values the chrome's controls
- * write through the shared `useTheme` and the shared `i18n`; a Look
+ * write through the shared `useTheme` and the shared `i18n`, the theme
+ * select offering "Follow this site" first while the site names a default
+ * variant, saved as a cleared value; a Look
  * select on its own row while the host offers packs, "Follow this site"
  * or one of them, writing through on change as the theme does; the time
  * zone from the `Intl` list with the detected zone preselected while none

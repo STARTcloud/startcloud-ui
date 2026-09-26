@@ -5,16 +5,31 @@
   --brand-icon-filter: brightness(0) invert(1);
   --brand-logo: url('/brand/shp/mark.svg');
   --brand-logo-color: #764ca3;
+  --brand-auth-display: 'Montserrat', 'Open Sans', sans-serif;
   --brand-focus-ring: rgba(118, 76, 163, 0.66);
   --bs-primary: var(--brand-primary);
   --bs-primary-rgb: 118, 76, 163;
   --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
   --bs-btn-bg: var(--brand-primary);
   --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
   --bs-link-color: #764ca3;
   --bs-link-color-rgb: 118, 76, 163;
-  --bs-link-hover-color: #764ca3;
-  --bs-link-hover-color-rgb: 118, 76, 163;
+  --bs-link-hover-color: #5b3a80;
+  --bs-link-hover-color-rgb: 91, 58, 128;
 }
 
 [data-brand='shp'][data-bs-theme='dark'] {
@@ -37,6 +52,6 @@
   --bs-secondary-color-rgb: 148, 163, 184;
   --bs-link-color: #b3bcf5;
   --bs-link-color-rgb: 179, 188, 245;
-  --bs-link-hover-color: #764ca3;
-  --bs-link-hover-color-rgb: 118, 76, 163;
+  --bs-link-hover-color: #9a8fe6;
+  --bs-link-hover-color-rgb: 154, 143, 230;
 }

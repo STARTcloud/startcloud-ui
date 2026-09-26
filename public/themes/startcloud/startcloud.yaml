@@ -1,9 +1,31 @@
+label: STARTcloud
+description: STARTcloud's blue on the chrome's own faces.
+brand: startcloud
 primary: '#0d6efd'
 on_primary: '#ffffff'
+logo: /brand/startcloud/mark.svg
+logo_color:
+  light: '#0d6efd'
+  dark: '#0d6efd'
+display: "'Montserrat', 'Open Sans', sans-serif"
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#0a58ca'
+    link-hover-color: '#084298'
   dark:
     body-bg: '#1a1d20'
+    tertiary-bg: '#2b3035'
+    secondary-bg: '#343a40'
     border-color: '#4d565e'
+    body-color: '#dee2e6'
+    emphasis-color: '#ffffff'
+    secondary-color: '#adb5bd'
     link-color: '#6ea8fe'
+    link-hover-color: '#66a3fe'

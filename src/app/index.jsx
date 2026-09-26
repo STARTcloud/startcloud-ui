@@ -6,7 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import '../css/styles.css';
 import '../css/fonts.css';
 import StatusUnreachable from '../components/common/StatusUnreachable';
-import { probeStatus } from '../contexts/StatusContext';
+import { fetchPackManifest, probeStatus, withPackManifest } from '../contexts/StatusContext';
 import { createI18n } from '../lib/i18n';
 import { configureLogger, log } from '../lib/logger';
 import { fetchHealth, initRuntime, loadRules } from '../lib/runtime';
@@ -62,6 +62,10 @@ const unreachable = retry => {
   });
 };
 
-const start = () => probeStatus().then(boot, () => unreachable(start));
+const start = () =>
+  Promise.all([probeStatus(), fetchPackManifest()]).then(
+    ([status, manifest]) => boot(withPackManifest(status, manifest)),
+    () => unreachable(start)
+  );
 
 start();

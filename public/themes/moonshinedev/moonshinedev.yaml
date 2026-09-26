@@ -1,9 +1,24 @@
+label: Moonshine.dev
+description: Moonshine's green on neutral grays, set in IBM Plex Sans.
+brand: moonshinedev
 primary: '#1f9d57'
 on_primary: '#000000'
+logo: /brand/moonshinedev/mark.svg
+logo_color:
+  light: '#1f9d57'
+  dark: '#1f9d57'
 display: "'IBM Plex Sans', system-ui, sans-serif"
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#146c3c'
+    link-hover-color: '#0f5230'
   dark:
     body-bg: '#23272b'
     tertiary-bg: '#2b3034'
@@ -13,3 +28,4 @@ surfaces:
     emphasis-color: '#ffffff'
     secondary-color: '#9aa1a8'
     link-color: '#5fd38d'
+    link-hover-color: '#3fbf76'

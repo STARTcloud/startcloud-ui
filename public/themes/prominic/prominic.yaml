@@ -1,3 +1,6 @@
+label: Prominic.NET
+description: Maroon on OCR-A, Prominic.NET's own look.
+brand: prominic
 primary: '#67142c'
 on_primary: '#ffffff'
 logo: /brand/prominic/mark.svg
@@ -11,6 +14,22 @@ fonts:
     weight: 400
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#67142c'
+    link-hover-color: '#4a0e20'
   dark:
+    body-bg: '#212529'
+    tertiary-bg: '#2b3035'
+    secondary-bg: '#343a40'
+    border-color: '#495057'
+    body-color: '#dee2e6'
+    emphasis-color: '#ffffff'
+    secondary-color: '#adb5bd'
     link-color: '#ee9ab5'
+    link-hover-color: '#e6899f'

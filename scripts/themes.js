@@ -10,7 +10,35 @@ const TEXT_MIN = 4.5;
 const MARK_MIN = 3;
 const HEX = /^#(?<digits>[0-9a-f]{6})$/i;
 const VARIANTS = ['light', 'dark'];
-const TEXT_KEYS = ['body-color', 'emphasis-color', 'secondary-color', 'link-color'];
+const TEXT_KEYS = [
+  'body-color',
+  'emphasis-color',
+  'secondary-color',
+  'link-color',
+  'link-hover-color',
+];
+const REQUIRED = [
+  'label',
+  'description',
+  'brand',
+  'primary',
+  'on_primary',
+  'logo',
+  'logo_color',
+  'display',
+];
+const REQUIRED_SURFACES = [
+  'body-bg',
+  'tertiary-bg',
+  'secondary-bg',
+  'border-color',
+  'body-color',
+  'emphasis-color',
+  'secondary-color',
+  'link-color',
+  'link-hover-color',
+];
+const MANIFEST = path.join(THEMES_DIR, 'packs.json');
 const SURFACE_KEYS = ['body-bg', 'tertiary-bg', 'secondary-bg'];
 const STOCK = {
   light: { 'body-bg': '#ffffff', 'tertiary-bg': '#f8f9fa', 'secondary-bg': '#e9ecef' },
@@ -170,8 +198,23 @@ const onPrimaryFailure = (pack, source) => {
   return failing(pack, primary, { name: '--brand-on-primary', value: better }, TEXT_MIN);
 };
 
+const missingOf = (pack, source) => {
+  const missing = REQUIRED.filter(key => source[key] === undefined || source[key] === '');
+  VARIANTS.forEach(variant => {
+    if (!source.logo_color?.[variant]) {
+      missing.push(`logo_color.${variant}`);
+    }
+    REQUIRED_SURFACES.forEach(key => {
+      if (!source.surfaces?.[variant]?.[key]) {
+        missing.push(`surfaces.${variant}.${key}`);
+      }
+    });
+  });
+  return missing.map(key => `${pack}: ${key} is missing, every pack names it`);
+};
+
 const failuresOf = (pack, source) => {
-  const failures = [onPrimaryFailure(pack, source)];
+  const failures = [...missingOf(pack, source), onPrimaryFailure(pack, source)];
   if (source.warning || source.on_warning) {
     failures.push(
       failing(
@@ -242,22 +285,11 @@ const bridgeLines = source => {
   return lines;
 };
 
-const hoverLines = source => [
-  `  --bs-link-hover-color: ${source.primary.toLowerCase()};`,
-  `  --bs-link-hover-color-rgb: ${rgbList(source.primary)};`,
-];
-
 const surfaceLines = (source, variant) =>
-  Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => {
-    const lines = [
-      `  --bs-${key}: ${String(value).toLowerCase()};`,
-      `  --bs-${key}-rgb: ${rgbList(value)};`,
-    ];
-    if (key === 'link-color') {
-      lines.push(...hoverLines(source));
-    }
-    return lines;
-  });
+  Object.entries(source.surfaces?.[variant] || {}).flatMap(([key, value]) => [
+    `  --bs-${key}: ${String(value).toLowerCase()};`,
+    `  --bs-${key}-rgb: ${rgbList(value)};`,
+  ]);
 
 const darkLogoLines = source =>
   source.logo && source.logo_color?.dark
@@ -312,45 +344,61 @@ const writePack = (pack, css) => {
   fs.writeFileSync(path.join(THEMES_DIR, pack, `${pack}.css`), css);
 };
 
+const manifestEntry = (pack, source) => ({
+  name: pack,
+  css: `/themes/${pack}/${pack}.css`,
+  label: source.label,
+  description: source.description,
+  brand: source.brand,
+  logo: logoUrlOf(pack, source.logo),
+});
+
+const writeManifest = entries => {
+  fs.writeFileSync(MANIFEST, `${JSON.stringify(entries, null, 2)}\n`);
+};
+
 /**
  * Generate every pack stylesheet under public/themes: for each
  * public/themes/<pack>/<pack>.yaml, write <pack>.css in the branding
  * contract's generated shape and nothing beside it, since no file of the
- * estate is ever versioned by a hash, in its name or in its query.
+ * estate is ever versioned by a hash, in its name or in its query, and
+ * one public/themes/packs.json beside them, the manifest every host reads
+ * to answer `brand.packs`: one entry per pack, `name`, `css`, `label`,
+ * `description`, `brand` and `logo`, so a pack's own words and mark reach
+ * the Look menu and no host echoes the bare name.
  *
- * The YAML source carries `primary` (six-digit hex, required), `on_primary`
- * (hex, optional: when absent the generator takes `#ffffff` or `#000000`,
- * whichever contrasts more with `primary`, and refuses the pack only when
- * that better one is under 4.5:1; `--brand-icon-filter` is emitted beside
- * it, the CSS filter that paints an image icon on the filled accent button
- * in that color, white for a light `on_primary` and black for a dark one,
- * because an SVG loaded through `img` cannot be recolored by the page's
- * CSS any other way), `warning` and `on_warning` (hex,
- * optional, together), `logo`
- * (optional: a root path such as `/brand/<name>/mark.svg`, the one home of
+ * Every pack names the same keys, the one shape, and a pack missing one
+ * is refused: `label` and `description` (the pack's own words), `brand`
+ * (the bare name of the brand the pack belongs to, a brand's own pack
+ * naming itself and a product's pack naming its owner, BoxVault's and
+ * Super.Human.Installer's naming `startcloud`), `primary`
+ * and `on_primary` (six-digit hex, the accent and the text on it;
+ * `--brand-icon-filter` is emitted beside them, the CSS filter that paints
+ * an image icon on the filled accent button in the text color, white for
+ * a light `on_primary` and black for a dark one, because an SVG loaded
+ * through `img` cannot be recolored by the page's CSS any other way),
+ * `logo` (a root path such as `/brand/<name>/mark.svg`, the one home of
  * every mark the build ships, or a file name in the pack directory) with
- * `logo_color` (optional,
- * `light` and `dark` hex values, the light one the primary when absent and
- * the dark one the light one when absent, emitted under the dark selector
- * only when named), `display` (the auth column's headline face as a
- * CSS font-family list, optional), `fonts` (optional, one entry per file
- * served with the pack: `family`, `file`, `weight`, `style`, `format`,
- * each declared with font-display swap) and `surfaces` (optional, `light`
- * and `dark` maps of Bootstrap color names without the `--bs-` prefix,
- * such as `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`,
- * `body-color`, `emphasis-color`, `secondary-color`, `link-color`; a
- * `link-color` also emits `--bs-link-hover-color` and its `-rgb` triplet
- * as the pack's `primary`, the brand color itself, on both variants,
- * because Bootstrap paints a hovered link from the triplet and a hovered
- * link is expected to go to the brand color, never brighter and never
- * Bootstrap's blue).
+ * `logo_color` (`light` and `dark` hex values, the dark one emitted under
+ * the dark selector), `display` (the auth column's headline face as a CSS
+ * font-family list) and `surfaces`, the `light` and `dark` maps of
+ * Bootstrap color names without the `--bs-` prefix, each map naming
+ * `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`, `body-color`,
+ * `emphasis-color`, `secondary-color`, `link-color` and
+ * `link-hover-color` and free to name any other Bootstrap color the same
+ * way, every one emitted with its `-rgb` triplet because Bootstrap paints
+ * links and hovers from the triplet; the generator emits what a pack
+ * names and decides no color of its own. `warning` and `on_warning` (hex,
+ * together) and `fonts` (one entry per file served with the pack:
+ * `family`, `file`, `weight`, `style`, `format`, each declared with
+ * font-display swap) are the two optional members.
  *
  * A pack is refused, and the process exits non-zero naming every failing
- * pair, when `primary` against `on_primary` (or `warning` against
- * `on_warning`) is under 4.5:1, when a text color a variant sets is under
- * 4.5:1 against any surface of that variant, the pack's own or stock
- * Bootstrap's where the pack names none, or when a variant's mark color
- * is under 3:1 against that variant's body background.
+ * pair, when a required key is missing, when `primary` against
+ * `on_primary` (or `warning` against `on_warning`) is under 4.5:1, when a
+ * text color a variant sets, the hover included, is under 4.5:1 against
+ * any surface of that variant, or when a variant's mark color is under
+ * 3:1 against that variant's body background.
  *
  * The focus ring is the chrome's and never a pack input: for each variant
  * the generator emits `--brand-focus-ring` as an rgba of the accent, nudged
@@ -364,6 +412,7 @@ const writePack = (pack, css) => {
  */
 export const generateThemes = () => {
   const refused = [];
+  const entries = [];
   packNames().forEach(pack => {
     const source = readSource(pack);
     const failures = failuresOf(pack, source);
@@ -373,12 +422,18 @@ export const generateThemes = () => {
     }
     const rings = focusRingsOf(source);
     writePack(pack, stylesheetOf(pack, source, rings));
+    entries.push(manifestEntry(pack, source));
     console.log(
       `${pack}: public/themes/${pack}/${pack}.css light ${rings.light} dark ${rings.dark}`
     );
   });
   refused.forEach(line => console.error(`refused ${line}`));
-  return refused.length > 0 ? 1 : 0;
+  if (refused.length > 0) {
+    return 1;
+  }
+  writeManifest(entries);
+  console.log(`public/themes/packs.json: ${entries.map(entry => entry.name).join(', ')}`);
+  return 0;
 };
 
 process.exit(generateThemes());

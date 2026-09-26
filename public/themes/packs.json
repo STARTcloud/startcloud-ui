@@ -1,0 +1,58 @@
+[
+  {
+    "name": "moonshinedev",
+    "css": "/themes/moonshinedev/moonshinedev.css",
+    "label": "Moonshine.dev",
+    "description": "Moonshine's green on neutral grays, set in IBM Plex Sans.",
+    "brand": "moonshinedev",
+    "logo": "/brand/moonshinedev/mark.svg"
+  },
+  {
+    "name": "nomadservices",
+    "css": "/themes/nomadservices/nomadservices.css",
+    "label": "Nomad.Services",
+    "description": "Nomad's violet on purple-black, set in IBM Plex Sans.",
+    "brand": "nomadservices",
+    "logo": "/brand/nomadservices/mark.svg"
+  },
+  {
+    "name": "prominic",
+    "css": "/themes/prominic/prominic.css",
+    "label": "Prominic.NET",
+    "description": "Maroon on OCR-A, Prominic.NET's own look.",
+    "brand": "prominic",
+    "logo": "/brand/prominic/mark.svg"
+  },
+  {
+    "name": "shi",
+    "css": "/themes/shi/shi.css",
+    "label": "Super.Human.Installer",
+    "description": "The STARTcloud look with the Super.Human.Installer gem.",
+    "brand": "startcloud",
+    "logo": "/brand/shi/mark.svg"
+  },
+  {
+    "name": "shp",
+    "css": "/themes/shp/shp.css",
+    "label": "Super.Human.Portal",
+    "description": "Super.Human.Portal's purple on slate, the portal's own dark ground.",
+    "brand": "startcloud",
+    "logo": "/brand/shp/mark.svg"
+  },
+  {
+    "name": "startcloud",
+    "css": "/themes/startcloud/startcloud.css",
+    "label": "STARTcloud",
+    "description": "STARTcloud's blue on the chrome's own faces.",
+    "brand": "startcloud",
+    "logo": "/brand/startcloud/mark.svg"
+  },
+  {
+    "name": "switchboard",
+    "css": "/themes/switchboard/switchboard.css",
+    "label": "SwitchBoard Cloud",
+    "description": "SwitchBoard's sky blue set in Poppins.",
+    "brand": "switchboard",
+    "logo": "/brand/switchboard/mark.svg"
+  }
+]

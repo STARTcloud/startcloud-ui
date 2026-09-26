@@ -1,5 +1,12 @@
+label: SwitchBoard Cloud
+description: SwitchBoard's sky blue set in Poppins.
+brand: switchboard
 primary: '#24ade3'
 on_primary: '#000000'
+logo: /brand/switchboard/mark.svg
+logo_color:
+  light: '#1a8bb8'
+  dark: '#24ade3'
 display: "'Poppins', Helvetica, Arial, sans-serif"
 fonts:
   - family: Poppins
@@ -13,6 +20,22 @@ fonts:
     weight: 700
 surfaces:
   light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
     link-color: '#0f6f96'
+    link-hover-color: '#0b5573'
   dark:
+    body-bg: '#212529'
+    tertiary-bg: '#2b3035'
+    secondary-bg: '#343a40'
+    border-color: '#495057'
+    body-color: '#dee2e6'
+    emphasis-color: '#ffffff'
+    secondary-color: '#adb5bd'
     link-color: '#7fd0f5'
+    link-hover-color: '#4fc0ef'
