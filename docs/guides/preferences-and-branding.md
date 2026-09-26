@@ -31,12 +31,13 @@ paints them today.
 
 ## The model
 
-Two independent axes, never conflated:
+Three independent axes, never conflated:
 
 | Axis        | Values                                    | Owner              | Distribution            |
 | ----------- | ----------------------------------------- | ------------------ | ----------------------- |
 | **variant** | `light` \| `dark` \| `auto`               | the user           | claims, SCIM, write API |
 | **pack**    | a bare brand name (`moonshinedev`, `shi`) | client/site config | branding endpoint       |
+| **motion**  | `auto` \| `reduce`                        | the user           | claims, SCIM, write API |
 
 Plus two more user preferences carried the same way: `language` (BCP 47) and
 `timezone` (IANA name).
@@ -59,10 +60,11 @@ UI completes each row by name from the build's own
 pack's YAML with the pack's `label`, `description`, `brand` and `logo`,
 before it boots, so a host names which packs it offers and the pack
 supplies its own words and mark; the shared UI draws its Look picker from
-that completed list alone and constructs no stylesheet URL, and a host
-that answers no list offers no choice, so a white-label site never shows
-a sibling's look. The choice is cached in
-local storage beside `theme` so the pre-paint script can stamp
+that completed list alone and constructs no stylesheet URL, a host that
+answers no list offers every pack of the build, an empty list offers
+none, and a list offers exactly those, so a host exposes everything by
+default and a white-label site lists none or only its own. The choice is
+cached in local storage beside `theme` so the pre-paint script can stamp
 `data-brand` and append the chosen pack's `<link>` before first paint,
 after the host's own, and a guest-only account keeps it browser-local as
 it keeps `theme`.
@@ -351,6 +353,10 @@ Content-Type: application/json
   it so they follow the host's own pack, and a name the host does not
   offer answers `422` `enum` at `/pack`; read back as `preferences.pack`
   wherever `preferences.theme` is read back.
+- `motion` is writable beside `theme`: `auto` or `reduce`, the person's
+  own reduced-motion switch, `null` clearing it so they follow the
+  device; read back as `preferences.motion` wherever `preferences.theme`
+  is read back.
 - `region` is writable beside `language`, `theme` and `timezone`: the
   person's chosen legal region, a two-letter ISO 3166-1 country code or
   one of `EU`, `EEA`, `UK`, `null` clears it, used by the identity
@@ -364,8 +370,8 @@ Content-Type: application/json
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
-- `GET` on the same path returns the seven members the identity provider
-  stores: `language`, `theme`, `pack`, `timezone`, `region`,
+- `GET` on the same path returns the eight members the identity provider
+  stores: `language`, `theme`, `pack`, `motion`, `timezone`, `region`,
   `ciba_channel` and `ciba_user_code_set`, the last two the sign-in
   approval channel and whether an approval PIN is set.
 - The shared Preferences tab sends `timezone` only when the person chose
@@ -397,7 +403,8 @@ including the button component variables. That is what makes a pack
 self-sufficient and a re-brand a file swap; if each app owned its bridge,
 every new override would mean touching every app.
 
-**Scope: colors, artwork and one face — never geometry.** A pack may set
+**Scope: colors, artwork and one face by variables, anything further by
+a pack's own rules.** A pack may set
 the whole `--bs-*` color set, surfaces included: `--bs-body-bg`,
 `--bs-tertiary-bg`, `--bs-secondary-bg`, `--bs-border-color`,
 `--bs-body-color`, `--bs-emphasis-color`, `--bs-link-color` and the button
@@ -414,7 +421,7 @@ product belongs to a brand), `primary`, `on_primary`, `logo`,
 `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`, `body-color`,
 `emphasis-color`, `secondary-color`, `link-color` and `link-hover-color`,
 free to name any further Bootstrap color the same way, `warning` with
-`on_warning` and `fonts` the two optional members; the generator emits
+`on_warning`, `fonts` and `rules` the three optional members; the generator emits
 what a pack names, every color with its `-rgb` triplet because Bootstrap
 paints links and hovers from the triplet, refuses a pack that leaves a
 key out or fails contrast, and decides no color of its own, so a hover is
@@ -425,9 +432,19 @@ with every value swapped. Beside the packs the generator writes
 `description`, `brand` and `logo`, the manifest the shared UI reads at
 boot to complete every pack a host names in `brand.packs`, so the Look
 menu shows a pack's own name and mark and no host, no script and no page
-carries a pack's words. A pack does not set geometry, radius or spacing — the moment it
-can, it can break layouts it has never been tested against; layout is the
-feature's. The one typographic value it may carry is `--brand-auth-display`,
+carries a pack's words. The variables reach colors, one mark and one face;
+a pack that needs more names `rules`, a stylesheet in its own directory the
+generator appends to the pack's stylesheet nested under
+`[data-brand='<pack>']`, so every selector it holds is scoped to that pack
+and none leaks, the way the system exposes more options so people can make
+new things and customize existing ones more easily, nothing hard-coded
+except where it is explicitly supposed to be; a rules file is bound to the
+chrome's class names and can break a layout it was never tested against,
+which is that pack's own risk; `@import` is refused because a pack loads
+nothing from elsewhere, `@font-face` because a face is named under
+`fonts`, and a top-level `@keyframes` block is hoisted above the wrapper,
+since a nested block cannot hold one, its name global and prefixed by the
+pack. The one typographic value the variables carry is `--brand-auth-display`,
 the brand's display face (decision 5 of the Universal Identity Contract):
 the headline of the shared auth column, and, while a pack is stamped, the
 brand name in the header's `.navbar-brand` and the sidebar's top, every
@@ -809,12 +826,19 @@ Recorded so they surface as decisions rather than discoveries:
   the brand name in the chrome and the headings. No other face is a
   pack's. Every face,
   bundled or a pack's, is declared with `font-display: swap`, and the
-  shared build preloads the auth column's two faces from `index.html`,
-  so text paints in the fallback at once and settles without a blank
-  gap; a face that blocks paint or swaps late on the sign-in page is the
+  auth column asks the browser for its two faces through React's
+  `preload` the moment its shell module loads, so no other page requests
+  them and its text paints in the fallback at once and settles without a
+  blank gap; a face that blocks paint or swaps late on the sign-in page is the
   most visible flash a visitor can meet.
-- **`prefers-reduced-motion`.** The same user-preference shape as the
-  variant axis, and a WCAG 2.3.3 concern, but not modeled here.
+- **`prefers-reduced-motion`.** Modeled now, as the `motion` preference,
+  the same user-preference shape as the variant axis: `auto` follows the
+  device and `reduce` stamps `data-motion="reduce"` on `<html>` from the
+  account value, local storage or the pre-paint script, and one rule of
+  the chrome stops every animation and transition under it so a pack
+  needs nothing, because a user may set animations off for accessibility
+  or performance reasons and the choice must stay sticky for them, so the
+  end user's wishes are preserved.
 
 ---
 

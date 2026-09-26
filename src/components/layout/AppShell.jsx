@@ -339,7 +339,11 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * session's return-path helper, and on every host the cluster's Sign in
  * button is hidden there too, the page below carrying the sign-in, and
  * the session-ended banner carries no button anywhere, the cluster's
- * Sign in or the page's own form being the thing to press; on a
+ * Sign in or the page's own form being the thing to press; the header
+ * row carries the host's name, version and hostname as `data-app`,
+ * `data-version` and `data-host`, drawn by nothing until a pack's rules
+ * give them a place, so a pack can show real, relevant data instead of
+ * decoration; on a
  * `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
  * destination, its app section holding the About row, an in-router link
@@ -492,6 +496,12 @@ const AppShell = ({
     to: '/',
   };
 
+  const readout = {
+    app: status.brand.name,
+    version: status.version,
+    host: window.location.hostname,
+  };
+
   const stack = (
     <>
       <Header
@@ -514,6 +524,7 @@ const AppShell = ({
         onSidebarToggle={showSidebar ? overlay.toggle : null}
         discoverTo={discoverTo}
         ticketUrl={ticketUrl}
+        readout={readout}
       />
       <NoticeCards LinkComponent={Link} />
       <div ref={scrollRef} className="container-fluid app-scroll py-3">
@@ -537,6 +548,7 @@ const AppShell = ({
         badges={badges}
         open={overlay.open}
         onClose={overlay.close}
+        readout={readout}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>

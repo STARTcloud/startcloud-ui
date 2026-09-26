@@ -34,11 +34,16 @@ export const fetchPackManifest = () =>
     .catch(() => []);
 
 /**
- * The status with every pack the host offers completed from the build's
- * manifest by name, the host naming which packs a person may choose and
- * the pack itself supplying its label, description, brand and mark, so
- * no host carries a pack's words; a name the manifest does not hold keeps
- * the host's row as it is.
+ * The status with the packs the host offers completed from the build's
+ * manifest by name: a host whose `brand.packs` is absent or not a list
+ * offers every pack of the build in the manifest's order, an empty list
+ * offers none, and a list offers exactly those names, the host naming
+ * which packs a person may choose and the pack itself supplying its
+ * label, description, brand and mark, so no host carries a pack's words;
+ * a name the manifest does not hold is dropped, because a build cannot
+ * paint a pack it does not ship and a site config can run ahead of the
+ * build it serves, the host's rows kept as they are only while the
+ * manifest could not be read at all.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Array<Object>} manifest - The rows from `fetchPackManifest`
@@ -47,12 +52,20 @@ export const fetchPackManifest = () =>
 export const withPackManifest = (status, manifest) => {
   const packs = status?.brand?.packs;
   if (!Array.isArray(packs)) {
+    return { ...status, brand: { ...status?.brand, packs: manifest } };
+  }
+  if (manifest.length === 0) {
     return status;
   }
   const rows = new Map(manifest.map(row => [row.name, row]));
   return {
     ...status,
-    brand: { ...status.brand, packs: packs.map(pack => ({ ...pack, ...rows.get(pack.name) })) },
+    brand: {
+      ...status.brand,
+      packs: packs.flatMap(pack =>
+        rows.has(pack.name) ? [{ ...pack, ...rows.get(pack.name) }] : []
+      ),
+    },
   };
 };
 

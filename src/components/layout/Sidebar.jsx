@@ -583,8 +583,11 @@ const useResize = (asideRef, setWidth) => {
  * Right on a node, Escape closing a menu; and under 900px an overlay from
  * the left the header toggle opens. Every entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
+ * The entries' `nav` carries the host's name, version and hostname as
+ * `data-app`, `data-version` and `data-host`, the same three the header
+ * row carries, drawn by nothing until a pack's rules give them a place.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose }) => {
+const Sidebar = ({ entries, brand, badges, open, onClose, readout = null }) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
   const asideRef = useRef(null);
@@ -657,7 +660,13 @@ const Sidebar = ({ entries, brand, badges, open, onClose }) => {
             </>
           )}
         </div>
-        <nav className="sidebar-nav" aria-label={t('navbar.sidebar.navigation')}>
+        <nav
+          className="sidebar-nav"
+          aria-label={t('navbar.sidebar.navigation')}
+          data-app={readout?.app}
+          data-version={readout?.version}
+          data-host={readout?.host}
+        >
           <div ref={navRef} role="presentation" onKeyDown={onKeyDown}>
             {entries.map(group => (
               <GroupView
@@ -700,6 +709,11 @@ Sidebar.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  readout: PropTypes.shape({
+    app: PropTypes.string.isRequired,
+    version: PropTypes.string.isRequired,
+    host: PropTypes.string.isRequired,
+  }),
 };
 
 export default Sidebar;

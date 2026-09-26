@@ -21,7 +21,8 @@ const validPack = pack =>
   Boolean(pack?.css) && SAME_ORIGIN_PATH.test(pack.css) && PACK_NAME.test(pack.name || '');
 
 /**
- * The packs a person may choose on this host, `brand.packs` of the status
+ * The packs a person may choose on this host, `brand.packs` of the status,
+ * the host's own list or every pack of the build when the host names none,
  * with every malformed entry dropped.
  *
  * @param {Object} brand - `status.brand`
@@ -188,7 +189,8 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * `data-brand` stamped from its `name` and its `css` appended as a
  * stylesheet link after the app's own, unless the served page already
  * carries `data-brand`, in which case nothing is touched; the packs the
- * host offers a person, `brand.packs`, cached under `packs` for the
+ * host offers a person, `brand.packs`, the host's own list or every pack
+ * of the build when the host names none, cached under `packs` for the
  * pre-paint script, and the person's own choice under `pack`, when it
  * names an offered pack, painted over the host's. Runs once per entry
  * before anything renders; the exports are live bindings.

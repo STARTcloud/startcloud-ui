@@ -30,6 +30,7 @@ import { useAccountAvatar } from '../hooks/useAccountAvatar';
 import { useAccountPreferences } from '../hooks/useAccountPreferences';
 import { useActiveOrganization } from '../hooks/useActiveOrganization';
 import { useFavicon } from '../hooks/useFavicon';
+import { useMotion } from '../hooks/useMotion';
 import { usePwa } from '../hooks/usePwa';
 import { useSession } from '../hooks/useSession';
 import { useSessionKeepalive } from '../hooks/useSessionKeepalive';
@@ -56,6 +57,8 @@ import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './ro
 const persistTheme = preference => session.savePreferences({ theme: preference || null });
 
 const persistPack = pack => session.savePreferences({ pack: pack || null });
+
+const persistMotion = value => session.savePreferences({ motion: value === 'auto' ? null : value });
 
 const adoptMemberships = next => setMemberships(next?.organizations || []);
 
@@ -98,7 +101,9 @@ const shellFlags = ({
 
 /**
  * The app behind the status: the session from the host's first `auth`
- * token, the theme, the look over the packs the host offers, and the
+ * token, the theme, the look over the packs the host offers, the motion
+ * switch written through to the account as the theme is and read by the
+ * Preferences tab from its own store, and the
  * favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
@@ -161,6 +166,7 @@ const App = ({ getSupportedLanguages }) => {
     onPersist: persistTheme,
     onPersistPack: persistPack,
   });
+  const { setMotion } = useMotion({ onPersist: persistMotion });
   const setupComplete = useSetupGate({
     enabled: hasFeature(status, 'setup'),
     checkStatus: setupApi.status,
@@ -177,7 +183,12 @@ const App = ({ getSupportedLanguages }) => {
 
   useFavicon(brandLogoUrl(status.brand));
   usePwa(status.brand.name);
-  useAccountPreferences({ user, setThemePreference, setPackPreference: setPack });
+  useAccountPreferences({
+    user,
+    setThemePreference,
+    setPackPreference: setPack,
+    setMotionPreference: setMotion,
+  });
   useSessionKeepalive({ enabled: backend, user, loaded, reload });
   useEffect(() => {
     if (!returnTo.onAuthPage(location.pathname)) {

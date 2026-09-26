@@ -40,8 +40,8 @@ const failure = (message, messageKey) => {
  * (`access_token` of the sign-in answer) stored under `storageKey` and
  * sent as `x-access-token`, refreshed through the refresh endpoint while
  * `stay_logged_in` is kept, the profile, claims and preferences
- * (`preferred_theme`, `preferred_language`, `preferred_pack`) read and written through the
- * backend, and the backend's logout route for signing out everywhere. A
+ * (`preferred_theme`, `preferred_language`, `preferred_pack`, `preferred_motion`) read and
+ * written through the backend, and the backend's logout route for signing out everywhere. A
  * session it restores or completes is
  * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being the
  * stored profile, the sign-in answer in the backend's snake_case wire
@@ -262,6 +262,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
         ...('theme' in patch ? { preferred_theme: patch.theme } : {}),
         ...(patch.language ? { preferred_language: patch.language } : {}),
         ...('pack' in patch ? { preferred_pack: patch.pack } : {}),
+        ...('motion' in patch ? { preferred_motion: patch.motion } : {}),
       });
     }
   };

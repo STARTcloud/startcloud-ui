@@ -5,6 +5,7 @@ import { audienceOf, decodeJwt } from './jwt';
 
 const PREFERENCES_PATH = '/api/user/preferences';
 const THEME_VALUES = ['auto', 'light', 'dark'];
+const MOTION_VALUES = ['auto', 'reduce'];
 const PACK_NAME = /^[a-z0-9-]+$/;
 
 const randomUrlSafe = byteCount => {
@@ -34,6 +35,11 @@ const applyAccountPreferences = preferences => {
     localStorage.setItem('pack', preferences.pack);
   } else if (preferences.pack === null) {
     localStorage.removeItem('pack');
+  }
+  if (MOTION_VALUES.includes(preferences.motion)) {
+    localStorage.setItem('motion', preferences.motion);
+  } else if (preferences.motion === null) {
+    localStorage.removeItem('motion');
   }
 };
 
@@ -78,8 +84,10 @@ const tokenFailure = requestError => {
  * The browser as the OIDC public client: authorization code with PKCE and
  * DPoP against the identity provider, tokens in localStorage under the
  * app's prefix, the refresh grant a minute before expiry, the provider's
- * userinfo as the claims, and the end-session form POST for signing out
- * everywhere. A session it restores or completes is
+ * userinfo as the claims, whose `preferences.theme`, `preferences.pack`,
+ * `preferences.motion` and `preferences.language` are mirrored to local
+ * storage when a sign-in completes, and the end-session form POST for
+ * signing out everywhere. A session it restores or completes is
  * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being
  * the access token's claims and `clientId` the ID token's `aud`, the
  * configured client id until an ID token is held.

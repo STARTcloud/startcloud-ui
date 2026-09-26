@@ -3,6 +3,14 @@ html {
   opacity: 1;
 }
 
+[data-motion='reduce'] *,
+[data-motion='reduce'] *::before,
+[data-motion='reduce'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
 :root {
   --brand-focus-ring: rgba(13, 110, 253, 0.74);
   --chrome-row: 62px;

@@ -198,12 +198,18 @@ const Header = ({
   onSidebarToggle = null,
   discoverTo = '',
   ticketUrl = '',
+  readout = null,
 }) => {
   const { t } = useTranslation();
 
   return (
     <nav className="navbar navbar-expand-lg shadow-sm bg-body-tertiary border-bottom">
-      <div className="container-fluid">
+      <div
+        className="container-fluid"
+        data-app={readout?.app}
+        data-version={readout?.version}
+        data-host={readout?.host}
+      >
         {onSidebarToggle ? (
           <button
             type="button"
@@ -253,6 +259,11 @@ Header.propTypes = {
   onSidebarToggle: PropTypes.func,
   discoverTo: PropTypes.string,
   ticketUrl: PropTypes.string,
+  readout: PropTypes.shape({
+    app: PropTypes.string.isRequired,
+    version: PropTypes.string.isRequired,
+    host: PropTypes.string.isRequired,
+  }),
 };
 
 export default Header;

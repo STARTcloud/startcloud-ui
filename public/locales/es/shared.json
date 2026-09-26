@@ -493,7 +493,13 @@
         "auto": "Automático (seguir el dispositivo)",
         "follow": "Seguir este sitio"
       },
+      "motion": {
+        "label": "Movimiento",
+        "auto": "Seguir este dispositivo",
+        "reduce": "Reducido"
+      },
       "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
+      "motionHint": "Reducido desactiva las animaciones y transiciones de todos los estilos para ti, en todos los hosts, y te sigue al iniciar sesión.",
       "look": {
         "label": "Aspecto",
         "follow": "Seguir este sitio"

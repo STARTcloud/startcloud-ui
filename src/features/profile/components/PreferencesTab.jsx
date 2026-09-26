@@ -9,6 +9,7 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
+import { MOTION_VALUES, useMotion } from '../../../hooks/useMotion';
 import { useTheme } from '../../../hooks/useTheme';
 import { loadCountries } from '../../../lib/countries';
 
@@ -63,6 +64,7 @@ const settingsOf = preferences => ({
   language: preferences?.language || '',
   theme: preferences?.theme || 'auto',
   pack: preferences?.pack || '',
+  motion: preferences?.motion || 'auto',
   timezone: preferences?.timezone || '',
   region: preferences?.region || '',
   ciba_channel: preferences?.ciba_channel || 'PUSH',
@@ -80,6 +82,7 @@ const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
     patch.language = settings.language;
     patch.theme = settings.theme || null;
     patch.pack = settings.pack || null;
+    patch.motion = settings.motion === 'auto' ? null : settings.motion;
     return patch;
   }
   if (pin) {
@@ -157,11 +160,38 @@ ThemeSelect.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+const MotionSelect = ({ own, motion, recordMotion, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      id="profile-preferences-motion"
+      label={t('profile.preferences.motion.label')}
+      hint={own ? t('profile.preferences.motionHint') : ''}
+      value={own ? motion : recordMotion}
+      onChange={event => onChange(event.target.value)}
+    >
+      {MOTION_VALUES.map(value => (
+        <option key={value} value={value}>
+          {t(`profile.preferences.motion.${value}`)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+MotionSelect.propTypes = {
+  own: PropTypes.bool.isRequired,
+  motion: PropTypes.string.isRequired,
+  recordMotion: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 const lookName = (packs, name) => packs.find(pack => pack.name === name)?.label || name;
 
 const ReadOnlyPreferences = ({ account, profile, folds }) => {
   const { t, i18n } = useTranslation();
   const { preference: themePreference, pack, packs } = useTheme();
+  const { motion } = useMotion();
   const preferences = profile.preferences || {};
   const fields = [
     ['language', t('profile.preferences.language'), languageName(i18n.language)],
@@ -170,6 +200,7 @@ const ReadOnlyPreferences = ({ account, profile, folds }) => {
       t('profile.preferences.theme.label'),
       t(`profile.preferences.theme.${themePreference || 'follow'}`),
     ],
+    ['motion', t('profile.preferences.motion.label'), t(`profile.preferences.motion.${motion}`)],
     ...(packs.length > 0
       ? [
           [
@@ -279,6 +310,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
     packs,
     setPack,
   } = useTheme();
+  const { motion, setMotion } = useMotion();
   const own = session !== null;
   const languages = supportedLanguages(i18n);
   const preferences = profile.preferences || {};
@@ -346,6 +378,14 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
       return;
     }
     setPack(name);
+  };
+
+  const changeMotion = value => {
+    if (!own) {
+      set('motion', value);
+      return;
+    }
+    setMotion(value);
   };
 
   const setPinMode = () => {
@@ -422,6 +462,34 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               />
             </div>
             <div className="col-md-3">
+              <MotionSelect
+                own={own}
+                motion={motion}
+                recordMotion={settings.motion}
+                onChange={changeMotion}
+              />
+            </div>
+          </div>
+          <div className="row">
+            {packs.length > 0 ? (
+              <div className="col-md-3">
+                <SelectField
+                  id="profile-preferences-look"
+                  label={t('profile.preferences.look.label')}
+                  hint={own ? t('profile.preferences.lookHint') : ''}
+                  value={own ? pack : settings.pack}
+                  onChange={event => changeLook(event.target.value)}
+                >
+                  <option value="">{t('profile.preferences.look.follow')}</option>
+                  {packs.map(entry => (
+                    <option key={entry.name} value={entry.name}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            ) : null}
+            <div className="col-md-3">
               <SelectField
                 id={rules.idFor('timezone')}
                 label={t('profile.preferences.timezone')}
@@ -463,26 +531,6 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               </SelectField>
             </div>
           </div>
-          {packs.length > 0 ? (
-            <div className="row">
-              <div className="col-md-3">
-                <SelectField
-                  id="profile-preferences-look"
-                  label={t('profile.preferences.look.label')}
-                  hint={own ? t('profile.preferences.lookHint') : ''}
-                  value={own ? pack : settings.pack}
-                  onChange={event => changeLook(event.target.value)}
-                >
-                  <option value="">{t('profile.preferences.look.follow')}</option>
-                  {packs.map(entry => (
-                    <option key={entry.name} value={entry.name}>
-                      {entry.label}
-                    </option>
-                  ))}
-                </SelectField>
-              </div>
-            </div>
-          ) : null}
           <div className="row">
             <div className="col-md-6">
               <SelectField
@@ -541,18 +589,20 @@ EditablePreferences.propTypes = {
 /**
  * The Preferences section of the identity contract at
  * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
- * fold is kept under `table_prefs_profile_preferences`: language,
- * theme, time zone and region on one row, language and theme as selects
- * that write through on change, the same values the chrome's controls
- * write through the shared `useTheme` and the shared `i18n`, the theme
- * select offering "Follow this site" first while the site names a default
- * variant, saved as a cleared value; a Look
- * select on its own row while the host offers packs, "Follow this site"
- * or one of them, writing through on change as the theme does; the time
- * zone from the `Intl` list with the detected zone preselected while none
- * is set; region as a select of the two-letter country list plus `EU`,
- * `EEA` and `UK`, the legal region the terms and policy variants resolve
- * to, blank clearing it; on the next row the sign-in approval channel
+ * fold is kept under `table_prefs_profile_preferences`: language, theme
+ * and motion on one row, each a select that writes through on change,
+ * language and theme the same values the chrome's controls write through
+ * the shared `useTheme` and the shared `i18n`, the theme select offering
+ * "Follow this site" first while the site names a default variant, saved
+ * as a cleared value, and motion the person's own reduced-motion switch
+ * through the shared `useMotion`, "Follow this device" or "Reduced",
+ * following saved as a cleared value; on the next row a Look select while
+ * the host offers packs, "Follow this site" or one of them, writing
+ * through on change as the theme does, the time zone from the `Intl` list
+ * with the detected zone preselected while none is set, and region as a
+ * select of the two-letter country list plus `EU`, `EEA` and `UK`, the
+ * legal region the terms and policy variants resolve to, blank clearing
+ * it; on the next row the sign-in approval channel
  * (SMS disabled with a hint while no verified number exists, the stored
  * value kept selected) and the approval PIN as one input with its own Set
  * and Clear buttons beside it, "A PIN is set" drawn as muted text above the
@@ -562,14 +612,14 @@ EditablePreferences.propTypes = {
  * value, so a detected preselection is never written, while the rules
  * evaluate the zone and region the selects hold; the page remounts it
  * with every re-read of the record. While `readOnly`, the record an
- * identity provider owns, the language, theme, time zone and region draw
- * as `readonly` fields in the same card with the Manage at identity
- * provider link as its action, the approval channel and PIN being the
- * issuer's own and not drawn. Without a `session`, the record another
- * person's on the admin record page, language and theme are the record's
- * own values saved with the rest through `account.preferences` and never
- * the viewer's chrome, and the PIN is not drawn because the admin route
- * takes none.
+ * identity provider owns, the language, theme, motion, time zone and
+ * region draw as `readonly` fields in the same card with the Manage at
+ * identity provider link as its action, the approval channel and PIN
+ * being the issuer's own and not drawn. Without a `session`, the record
+ * another person's on the admin record page, language, theme and motion
+ * are the record's own values saved with the rest through
+ * `account.preferences` and never the viewer's chrome, and the PIN is not
+ * drawn because the admin route takes none.
  */
 const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null }) => {
   const folds = useFolds(PREFS_KEY);

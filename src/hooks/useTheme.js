@@ -124,9 +124,10 @@ const writePreview = next => {
  * handed to onPersist so the app can write it through to the account,
  * the empty one as a cleared value. The look, the pack: the
  * person's choice under localStorage.pack while it names one of the packs
- * the host offers (`brand.packs`, handed in as packs), else the host's own
- * pack (`brand.pack`, handed in as sitePack), else none; the chosen pack
- * is painted through `applyPack`, a choice is mirrored to
+ * the host offers (`brand.packs`, handed in as packs) or every pack of the
+ * build when the host names none, else the host's own pack (`brand.pack`,
+ * handed in as sitePack), else none; the chosen pack is painted through
+ * `applyPack`, a choice is mirrored to
  * localStorage.pack (an empty choice removes the key) and handed to
  * onPersistPack, and previewPack paints a pack transiently until
  * endPreview without touching the choice.

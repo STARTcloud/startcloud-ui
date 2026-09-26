@@ -39,6 +39,9 @@ const REQUIRED_SURFACES = [
   'link-hover-color',
 ];
 const MANIFEST = path.join(THEMES_DIR, 'packs.json');
+const RULES_IMPORT = /@import\b/;
+const RULES_FONT_FACE = /@font-face\b/;
+const KEYFRAMES = '@keyframes';
 const SURFACE_KEYS = ['body-bg', 'tertiary-bg', 'secondary-bg'];
 const STOCK = {
   light: { 'body-bg': '#ffffff', 'tertiary-bg': '#f8f9fa', 'secondary-bg': '#e9ecef' },
@@ -213,8 +216,31 @@ const missingOf = (pack, source) => {
   return missing.map(key => `${pack}: ${key} is missing, every pack names it`);
 };
 
+const rulesPath = (pack, source) => path.join(THEMES_DIR, pack, String(source.rules));
+
+const rulesFailure = (pack, source) => {
+  if (!source.rules) {
+    return '';
+  }
+  if (!fs.existsSync(rulesPath(pack, source))) {
+    return `${pack}: rules names ${source.rules}, which is not in the pack directory`;
+  }
+  const text = fs.readFileSync(rulesPath(pack, source), 'utf8');
+  if (RULES_IMPORT.test(text)) {
+    return `${pack}: rules ${source.rules} carries @import, a pack loads nothing from elsewhere`;
+  }
+  if (RULES_FONT_FACE.test(text)) {
+    return `${pack}: rules ${source.rules} carries @font-face, a face is named under fonts`;
+  }
+  return '';
+};
+
 const failuresOf = (pack, source) => {
-  const failures = [...missingOf(pack, source), onPrimaryFailure(pack, source)];
+  const failures = [
+    ...missingOf(pack, source),
+    onPrimaryFailure(pack, source),
+    rulesFailure(pack, source),
+  ];
   if (source.warning || source.on_warning) {
     failures.push(
       failing(
@@ -299,6 +325,48 @@ const darkLogoLines = source =>
 const focusRingsOf = source =>
   Object.fromEntries(VARIANTS.map(variant => [variant, focusRingOf(source, variant)]));
 
+const blockEnd = (text, open) => {
+  let depth = 0;
+  for (let index = open; index < text.length; index += 1) {
+    if (text[index] === '{') {
+      depth += 1;
+    } else if (text[index] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+  return text.length - 1;
+};
+
+const hoistKeyframes = text => {
+  const hoisted = [];
+  let rest = '';
+  let index = 0;
+  while (index < text.length) {
+    const at = text.indexOf(KEYFRAMES, index);
+    if (at < 0) {
+      rest += text.slice(index);
+      break;
+    }
+    const end = blockEnd(text, text.indexOf('{', at));
+    rest += text.slice(index, at);
+    hoisted.push(text.slice(at, end + 1));
+    index = end + 1;
+  }
+  return { hoisted, rest: rest.replace(/\n{3,}/g, '\n\n').trim() };
+};
+
+const rulesBlocks = (pack, source) => {
+  if (!source.rules) {
+    return [];
+  }
+  const { hoisted, rest } = hoistKeyframes(fs.readFileSync(rulesPath(pack, source), 'utf8'));
+  const lines = rest.split('\n').map(line => (line ? `  ${line}` : line));
+  return [...hoisted, [`[data-brand='${pack}'] {`, ...lines, '}'].join('\n')];
+};
+
 const stylesheetOf = (pack, source, rings) => {
   const blocks = (source.fonts || []).map(font => fontFace(pack, font));
   blocks.push(
@@ -321,6 +389,7 @@ const stylesheetOf = (pack, source, rings) => {
       '}',
     ].join('\n')
   );
+  blocks.push(...rulesBlocks(pack, source));
   return `${blocks.join('\n\n')}\n`;
 };
 
@@ -389,12 +458,22 @@ const writeManifest = entries => {
  * way, every one emitted with its `-rgb` triplet because Bootstrap paints
  * links and hovers from the triplet; the generator emits what a pack
  * names and decides no color of its own. `warning` and `on_warning` (hex,
- * together) and `fonts` (one entry per file served with the pack:
+ * together), `fonts` (one entry per file served with the pack:
  * `family`, `file`, `weight`, `style`, `format`, each declared with
- * font-display swap) are the two optional members.
+ * font-display swap) and `rules` (the name of a stylesheet in the pack
+ * directory, appended to the generated stylesheet nested under
+ * `[data-brand='<pack>']` so every selector it holds is scoped to that
+ * pack and none leaks, the way a pack brings its own shapes, faces on
+ * the chrome and any rule the variables cannot express, bound to the
+ * chrome's class names at the pack's own risk; a top-level `@keyframes`
+ * block in it is hoisted above the wrapper, since a nested block cannot
+ * hold one, so its name is global and a pack prefixes it) are the three
+ * optional members.
  *
  * A pack is refused, and the process exits non-zero naming every failing
- * pair, when a required key is missing, when `primary` against
+ * pair, when a required key is missing, when `rules` names a file the
+ * pack directory does not hold or one carrying `@import` or `@font-face`
+ * (a face is named under `fonts`), when `primary` against
  * `on_primary` (or `warning` against `on_warning`) is under 4.5:1, when a
  * text color a variant sets, the hover included, is under 4.5:1 against
  * any surface of that variant, or when a variant's mark color is under

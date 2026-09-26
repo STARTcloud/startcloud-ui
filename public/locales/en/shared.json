@@ -493,7 +493,13 @@
         "auto": "Auto (follow device)",
         "follow": "Follow this site"
       },
+      "motion": {
+        "label": "Motion",
+        "auto": "Follow this device",
+        "reduce": "Reduced"
+      },
       "themeHint": "Saved as you change it, the same value the theme button writes.",
+      "motionHint": "Reduced turns off the animations and transitions of every look for you, on every host, and follows you when you sign in.",
       "look": {
         "label": "Look",
         "follow": "Follow this site"

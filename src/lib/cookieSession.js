@@ -17,6 +17,7 @@ const DROPPED_PREFIXES = ['table_prefs_', 'sidebar_open_', 'sidebar_view_'];
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
 const THEME_VALUES = ['auto', 'light', 'dark'];
+const MOTION_VALUES = ['auto', 'reduce'];
 const PACK_NAME = /^[a-z0-9-]+$/;
 const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 const SAFE_PATH = /^\/(?![/\\])/;
@@ -47,6 +48,11 @@ const applyAccountPreferences = preferences => {
     localStorage.setItem('pack', preferences.pack);
   } else if (preferences.pack === null) {
     localStorage.removeItem('pack');
+  }
+  if (MOTION_VALUES.includes(preferences.motion)) {
+    localStorage.setItem('motion', preferences.motion);
+  } else if (preferences.motion === null) {
+    localStorage.removeItem('motion');
   }
 };
 
@@ -117,8 +123,10 @@ export const accountMemberships = user =>
  * the moment it answers, not only the one that noticed it first.
  * `load({ navigate })` sets that holder once before reading `GET /api/user`
  * and falls back to the cached profile on any failure but a `401`, which
- * clears it instead. `savePreferences` writes the chrome's theme, look and
- * language through `PATCH /api/user/preferences` except for a guest-only
+ * clears it instead. `savePreferences` writes the chrome's theme, look,
+ * motion switch and language through `PATCH /api/user/preferences`, the
+ * answer's `theme`, `pack` and `motion` mirrored to local storage as
+ * `load` mirrors them, except for a guest-only
  * account, which the issuer refuses `403 guest_only`, so its choices stay
  * the browser's. `begin({ method, navigate })` with no method, `local`
  * or `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a

@@ -9,7 +9,7 @@
           var site = document.documentElement.getAttribute('data-brand-theme');
           var siteDefault = site === 'light' || site === 'dark' ? site : 'auto';
           var preference =
-            (session && session.preferredTheme) || localStorage.getItem('theme') || siteDefault;
+            (session && session.preferred_theme) || localStorage.getItem('theme') || siteDefault;
           var resolved =
             preference === 'auto'
               ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -20,6 +20,10 @@
           var lang = localStorage.getItem('language');
           if (lang) {
             document.documentElement.lang = lang;
+          }
+          var motion = localStorage.getItem('motion');
+          if (motion === 'reduce') {
+            document.documentElement.setAttribute('data-motion', 'reduce');
           }
           var packName = localStorage.getItem('pack') || '';
           var packs = JSON.parse(localStorage.getItem('packs') || '[]');

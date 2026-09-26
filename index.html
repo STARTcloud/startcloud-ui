@@ -19,6 +19,10 @@
           if (lang) {
             document.documentElement.lang = lang;
           }
+          var motion = localStorage.getItem('motion');
+          if (motion === 'reduce') {
+            document.documentElement.setAttribute('data-motion', 'reduce');
+          }
           var packName = localStorage.getItem('pack') || '';
           var packs = JSON.parse(localStorage.getItem('packs') || '[]');
           var pack = /^[a-z0-9-]+$/.test(packName)
@@ -48,14 +52,6 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/brand/startcloud/mark-192.png" />
     <meta name="theme-color" content="#0d6efd" />
-    <link rel="preload" href="/fonts/ibm-plex-sans-400.ttf" as="font" type="font/ttf" crossorigin />
-    <link
-      rel="preload"
-      href="/fonts/source-serif-4-500.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin
-    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="STARTcloud" />
     <title>STARTcloud</title>
