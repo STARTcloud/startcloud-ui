@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.51.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.51.0...v0.51.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* the pre-paint script resolves the operating system's scheme when it fails, never light, and the branding contract fixes the no-site-default rule and the SCIM preferences shape ([c8b5d9a](https://github.com/STARTcloud/startcloud-ui/commit/c8b5d9ab518cf6fc4b0e8748f0a91a5b29c96156))
+
 ## [0.51.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.50.0...v0.51.0) (2026-09-27)
 
 
