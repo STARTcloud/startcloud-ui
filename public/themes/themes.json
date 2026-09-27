@@ -1,5 +1,13 @@
 [
   {
+    "name": "hyperweaver",
+    "css": "/themes/hyperweaver/hyperweaver.css",
+    "label": "Hyperweaver",
+    "description": "Hyperweaver's orange and yellow on square corners, the hypervisor console's own look.",
+    "brand": "hyperweaver",
+    "logo": "/brand/hyperweaver/mark.svg"
+  },
+  {
     "name": "lcars",
     "css": "/themes/lcars/lcars.css",
     "label": "LCARS",

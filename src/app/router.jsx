@@ -63,6 +63,7 @@ import {
   sidebar as catalogSidebar,
 } from '../features/catalog';
 import { ErrorPage } from '../features/errors';
+import { HostPage, HostsPage, MachinePage, sidebar as hostsSidebar } from '../features/hosts';
 import {
   IDENTITY_ADMIN_PAGES,
   IdentityAdminPage,
@@ -459,6 +460,8 @@ const PAGE_TITLES = {
   '/admin/email-templates': 'admin.emailTemplates.title',
   '/setup': 'setup.title',
   '/vm/:instance': 'vdi.vm.title',
+  '/hosts/:id': 'hosts.host.title',
+  '/hosts/:id/machines/:name': 'hosts.machine.title',
   '/authenticator': 'auth:tfa.title',
   '/authenticator-method': 'auth:tfa.choose.title',
   '/passwordRecovery': 'auth:recovery.title',
@@ -565,9 +568,11 @@ export const routeTitleKey = pathname => {
  * from), the identity feature's operator group while the host's first
  * `auth` token is `cookie` (its Configuration row reaching the shared
  * configuration page in place of the shared admin feature's entries), the
- * vdi feature's Fleet group while the host advertises `fleet`, and on
+ * vdi feature's Fleet group while the host advertises `fleet`, the hosts
+ * feature's Hosts group while the host advertises `hosts`, and on
  * every other host the shared admin feature's entries over the admin
- * adapter the host gets; empty means no column.
+ * adapter the host gets, in the order catalog, profile, identity, vdi,
+ * hosts, admin; empty means no column.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -586,6 +591,7 @@ export const sidebarEntries = ({ status, account, collections }) => {
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
+    ...hostsSidebar(status, account),
     ...(cookie ? [] : adminSidebar(status, account, admin)),
   ];
 };
@@ -757,6 +763,20 @@ const VmRoute = ({ mode, user }) => {
 VmRoute.propTypes = {
   mode: PropTypes.string.isRequired,
   user: PropTypes.object,
+};
+
+const HostRoute = ({ context }) => {
+  const { id } = useParams();
+  return <HostPage id={id} context={context} />;
+};
+
+HostRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const MachineRoute = () => {
+  const { id, name } = useParams();
+  return <MachinePage id={id} name={name} />;
 };
 
 const ProviderRoute = ({ collection, context }) => {
@@ -1136,7 +1156,37 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
   )),
 ];
 
-const homeElementFor = ({ cookie, fleet, account, collections, context, mode, globalAdmin }) => {
+/**
+ * The hosts feature's two routes, the host page at `/hosts/:id` and the
+ * machine page at `/hosts/:id/machines/:name`, each open while the host
+ * advertises `hosts` and the not-available stub otherwise.
+ *
+ * @param {Object} options - The router's side
+ * @param {boolean} options.hosts - Whether the host advertises `hosts`
+ * @param {Object} options.context - The page context
+ * @returns {Array} The two routes
+ */
+const hostsRoutes = ({ hosts, context }) =>
+  gatedRoutes([
+    { path: '/hosts/:id', open: hosts, element: <HostRoute context={context} />, token: 'hosts' },
+    {
+      path: '/hosts/:id/machines/:name',
+      open: hosts,
+      element: <MachineRoute />,
+      token: 'hosts',
+    },
+  ]);
+
+const homeElementFor = ({
+  cookie,
+  fleet,
+  hosts,
+  account,
+  collections,
+  context,
+  mode,
+  globalAdmin,
+}) => {
   if (cookie) {
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
@@ -1146,12 +1196,17 @@ const homeElementFor = ({ cookie, fleet, account, collections, context, mode, gl
   if (fleet) {
     return <FleetPage context={context} mode={mode} />;
   }
+  if (hosts) {
+    return <HostsPage context={context} />;
+  }
   return <HomePage collections={collections} context={context} />;
 };
 
 /**
  * Every route the app serves: the fleet page at `/` and the VM page at
- * `/vm/:instance` while the host advertises `fleet`, else the home page
+ * `/vm/:instance` while the host advertises `fleet`, the hosts page at
+ * `/` with the host page at `/hosts/:id` and the machine page at
+ * `/hosts/:id/machines/:name` while the host advertises `hosts`, else the home page
  * and the collection routes from the registry in the host's order (the
  * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
  * to sign in with `/` as the return path), the setup page at `/setup` while the host
@@ -1195,6 +1250,7 @@ const AppRoutes = ({
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
   const fleet = hasFeatureStrict(status, 'fleet');
+  const hosts = hasFeatureStrict(status, 'hosts');
   const { organizations, oidc } = account;
   const setupRoute = hasFeature(status, 'setup') ? (
     <Route path="/setup" element={<SetupPage setup={setupApi} />} />
@@ -1212,6 +1268,7 @@ const AppRoutes = ({
   const homeElement = homeElementFor({
     cookie,
     fleet,
+    hosts,
     account,
     collections,
     context,
@@ -1233,6 +1290,7 @@ const AppRoutes = ({
           )
         }
       />
+      {hostsRoutes({ hosts, context })}
       <Route path="/about" element={<AboutRoute oidc={oidc} clientId={account.clientId} />} />
       <Route
         path="/search"

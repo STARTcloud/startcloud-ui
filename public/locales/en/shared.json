@@ -1790,6 +1790,55 @@
       "publication": "Publication"
     }
   },
+  "hosts": {
+    "sidebar": {
+      "title": "Hosts",
+      "hosts": "Hosts",
+      "open": "Open"
+    },
+    "page": {
+      "title": "Hosts",
+      "search": "Search hosts",
+      "loadError": "The hosts could not be read.",
+      "name": "Name",
+      "hostname": "Hostname",
+      "hypervisors": "Hypervisors",
+      "platform": "Platform",
+      "version": "Version",
+      "machines": "Machines",
+      "machinesYes": "Yes",
+      "machinesNo": "No"
+    },
+    "empty": {
+      "title": "No hosts",
+      "body": "No agent is registered with this server."
+    },
+    "host": {
+      "title": "Host",
+      "search": "Search machines",
+      "hostname": "Hostname",
+      "platform": "Platform",
+      "arch": "Architecture",
+      "uptime": "Uptime",
+      "machines": "{{running}} of {{total}} running",
+      "loadError": "The host could not be read."
+    },
+    "machine": {
+      "title": "Machine",
+      "host": "Host",
+      "state": "State"
+    },
+    "state": {
+      "running": "Running",
+      "stopped": "Stopped"
+    },
+    "noun": {
+      "machine_one": "machine",
+      "machine_other": "machines",
+      "zone_one": "zone",
+      "zone_other": "zones"
+    }
+  },
   "pages": {
     "loading": "Loading…",
     "notFound": "Not found.",

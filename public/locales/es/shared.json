@@ -1790,6 +1790,55 @@
       "publication": "Publicación"
     }
   },
+  "hosts": {
+    "sidebar": {
+      "title": "Hosts",
+      "hosts": "Hosts",
+      "open": "Abrir"
+    },
+    "page": {
+      "title": "Hosts",
+      "search": "Buscar hosts",
+      "loadError": "No se pudieron leer los hosts.",
+      "name": "Nombre",
+      "hostname": "Nombre de host",
+      "hypervisors": "Hipervisores",
+      "platform": "Plataforma",
+      "version": "Versión",
+      "machines": "Máquinas",
+      "machinesYes": "Sí",
+      "machinesNo": "No"
+    },
+    "empty": {
+      "title": "Sin hosts",
+      "body": "Ningún agente está registrado en este servidor."
+    },
+    "host": {
+      "title": "Host",
+      "search": "Buscar máquinas",
+      "hostname": "Nombre de host",
+      "platform": "Plataforma",
+      "arch": "Arquitectura",
+      "uptime": "Tiempo encendido",
+      "machines": "{{running}} de {{total}} en ejecución",
+      "loadError": "No se pudo leer el host."
+    },
+    "machine": {
+      "title": "Máquina",
+      "host": "Host",
+      "state": "Estado"
+    },
+    "state": {
+      "running": "En ejecución",
+      "stopped": "Detenida"
+    },
+    "noun": {
+      "machine_one": "máquina",
+      "machine_other": "máquinas",
+      "zone_one": "zona",
+      "zone_other": "zonas"
+    }
+  },
   "pages": {
     "loading": "Cargando…",
     "notFound": "No encontrado.",
