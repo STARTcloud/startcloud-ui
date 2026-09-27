@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaClock } from 'react-icons/fa6';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
@@ -16,6 +17,32 @@ import { returnToShape } from '../../../utils/auth';
 import { resendTfa, sendTfa, tfaState, verifyTfa } from '../api/tfa';
 
 const CODE_METHODS = ['SMS', 'APP'];
+
+/**
+ * The period of a time-based code while the tfa answer names none, the
+ * thirty seconds RFC 6238 defaults to; a mismatch shorter than one period
+ * never moves the code, so the clock glyph draws from one period up and
+ * never below it, the period the answer's `code_period_seconds` when the
+ * issuer carries it.
+ */
+const TOTP_PERIOD_SECONDS = 30;
+
+const periodOf = state =>
+  Number.isFinite(state?.code_period_seconds) && state.code_period_seconds > 0
+    ? state.code_period_seconds
+    : TOTP_PERIOD_SECONDS;
+
+const skewOf = date => {
+  const server = Date.parse(date);
+  return Number.isNaN(server) ? 0 : Math.round((server - Date.now()) / 1000);
+};
+
+const pad = value => String(value).padStart(2, '0');
+
+const clockOf = seconds => {
+  const total = Math.abs(seconds);
+  return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+};
 
 const subheadOf = (state, t) => {
   switch (state.method) {
@@ -36,6 +63,7 @@ const useTfaState = ({ method, onLocked }) => {
   const report = useProblemReporter();
   const [state, setState] = useState(null);
   const [loadedAt, setLoadedAt] = useState(0);
+  const [skew, setSkew] = useState(0);
   const [problem, setProblem] = useState(null);
 
   useEffect(() => {
@@ -67,8 +95,15 @@ const useTfaState = ({ method, onLocked }) => {
     };
     tfaState(method)
       .then(answer => {
-        adopt(answer);
-        if (CODE_METHODS.includes(answer.method) && !answer.sent && !answer.wait_seconds) {
+        if (active) {
+          setSkew(skewOf(answer.date));
+        }
+        adopt(answer.data);
+        if (
+          CODE_METHODS.includes(answer.data.method) &&
+          !answer.data.sent &&
+          !answer.data.wait_seconds
+        ) {
           return sendTfa().then(adopt);
         }
         return null;
@@ -79,7 +114,25 @@ const useTfaState = ({ method, onLocked }) => {
     };
   }, [method, onLocked, report]);
 
-  return { state, loadedAt, problem, setProblem };
+  return { state, loadedAt, skew, problem, setProblem };
+};
+
+const ClockSkew = ({ seconds, period }) => {
+  const { t } = useTranslation(['auth']);
+  if (Math.abs(seconds) < period) {
+    return null;
+  }
+  const label = t('tfa.clockSkew', { time: clockOf(seconds) });
+  return (
+    <span className="ms-1 text-warning" role="img" title={label} aria-label={label}>
+      <FaClock aria-hidden />
+    </span>
+  );
+};
+
+ClockSkew.propTypes = {
+  seconds: PropTypes.number.isRequired,
+  period: PropTypes.number.isRequired,
 };
 
 const ResendButton = ({ after, since, onResend }) => {
@@ -108,10 +161,17 @@ ResendButton.propTypes = {
 /**
  * `/authenticator`: the code entry for the method the server resolved,
  * the `CodeInput` for SMS and APP (a six-digit paste submits, typed entry
- * only through Sign in and never while the gate is armed), a text field
- * for a backup code, the passkey button for PASSKEY, Resend under SMS
- * throttled by `resend_after_seconds`, the danger alert from `code` with
- * the gate's countdown, and the foot links to the picker and Cancel.
+ * only through Sign in and never while the gate is armed), a small clock
+ * glyph beside the code label only while the state answer's `Date`
+ * header and this browser's clock differ by a code period or more, the
+ * answer's `code_period_seconds` else RFC 6238's thirty, its
+ * tooltip "Time Mismatch: ~00:00:00" as hours, minutes and seconds,
+ * drawn from the first frame and never from a refusal, so a refused code
+ * tells nobody anything the public header did not, a text field for a
+ * backup code, the passkey button for PASSKEY,
+ * Resend under SMS throttled by `resend_after_seconds`, the danger alert
+ * from `code` with the gate's countdown, and the foot links to the picker
+ * and Cancel.
  */
 const TfaCodePage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -126,7 +186,7 @@ const TfaCodePage = ({ returnTo, events }) => {
     () => navigate('/authenticator-method', { replace: true }),
     [navigate]
   );
-  const { state, loadedAt, problem, setProblem } = useTfaState({ method, onLocked });
+  const { state, loadedAt, skew, problem, setProblem } = useTfaState({ method, onLocked });
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
@@ -190,6 +250,12 @@ const TfaCodePage = ({ returnTo, events }) => {
       .catch(fail);
 
   const codeEntry = state && CODE_METHODS.includes(state.method);
+  const codeLabel = (
+    <>
+      {t('tfa.code')}
+      <ClockSkew seconds={skew} period={periodOf(state)} />
+    </>
+  );
 
   return (
     <AuthShell title={t('tfa.title')} subtitle={state ? subheadOf(state, t) : ''}>
@@ -201,7 +267,7 @@ const TfaCodePage = ({ returnTo, events }) => {
           {codeEntry ? (
             <CodeInput
               id="tfa-code"
-              label={t('tfa.code')}
+              label={codeLabel}
               value={code}
               onChange={setCode}
               onComplete={verify}

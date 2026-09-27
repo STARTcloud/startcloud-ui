@@ -489,6 +489,8 @@ member is the site's own answer.
   "sent": true,
   "wait_seconds": 0,
   "resend_after_seconds": 30,
+  "code_period_seconds": 30,
+  "drift_steps": 1,
   "can_change_method": true
 }
 ```
@@ -500,7 +502,14 @@ outstanding, so the page never asks for another while one is live;
 `wait_seconds` is non-zero while the guessing gate is armed for this
 method; `resend_after_seconds` is the sending limit, the seconds before
 another message may go to the target, and the two are never one number
-because a person waiting on a slow SMS is not a person guessing.
+because a person waiting on a slow SMS is not a person guessing;
+`code_period_seconds` is the period a time-based code is minted on, 30,
+and `drift_steps` the steps either side of now the issuer accepts,
+`security.tfa_gate.totp_drift_steps`, default 1, so the page's clock
+glyph draws from the issuer's own period and no number of its own,
+because, in Mark's words, "some admins would want to change or have a
+longer period, sure 30 is the fine default, but configurable would have
+been nice".
 
 `GET /api/auth/tfa/methods`, the same session:
 
@@ -674,7 +683,19 @@ by `wait_seconds`, which is the guessing gate; the danger alert from
 `code`; while `wait_seconds` is non-zero the submit is disabled and a
 `role="timer"` span beside the alert counts down "Try again in {{n}}s",
 the alert itself announced once and the count never re-announced, and at
-zero the alert becomes an info "You can try again now."; the foot links
+zero the alert becomes an info "You can try again now."; beside the code
+label a small clock glyph, drawn only while the `Date` header of the
+`GET /api/auth/tfa` answer and the browser's own clock differ by one code
+period or more, the answer's `code_period_seconds`, RFC 6238's thirty
+while the answer names none, below which a mismatch never moves the code,
+its tooltip exactly "Time Mismatch: ~00:00:00", the gap
+as hours, minutes and seconds, from the first frame and never from a
+refusal, because, in Mark's words, "this needs to be a small unobtrusive
+thing like a small unobtrusive icon that with a tooltip says your time is
+off by X, so that hackers or something don't abuse it" and "we seriously
+need the least and most unobtrusive thing", a code minted on a clock a
+minute out being refused as `invalid` until the windows meet while the
+header it is read from is public already; the foot links
 "Choose a different method" and "Cancel", the latter posting
 `/auth-cancel` like the sign-in page's. Every code entry on the issuer,
 the SMS, app and backup codes here, the email and phone codes of
@@ -741,7 +762,7 @@ validation follows the validation contract on every field.
 `magic.title`, `magic.invalid`, `magic.requestAnother`; `tfa.*`
 (`title`, `subhead.sms`, `subhead.app`,
 `subhead.backup`, `subhead.passkey`, `code`, `backupCode`, `resend`,
-`resendIn`, `resent`, `locked`, `waitCountdown`, `waitReady`,
+`resendIn`, `resent`, `locked`, `waitCountdown`, `waitReady`, `clockSkew`,
 `changeMethod`,
 `choose.title`, `choose.subhead`, `method.sms`, `method.smsHelp`,
 `method.smsRisk`, `method.app`, `method.passkey`, `method.passkeyHelp`,

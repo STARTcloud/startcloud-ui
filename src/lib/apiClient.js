@@ -26,6 +26,7 @@ const withEtag = (headers, etag) => (etag ? { ...headers, 'If-None-Match': etag 
 const conditionalAnswer = response => ({
   status: response.status,
   etag: textOf(response.headers?.etag),
+  date: textOf(response.headers?.date),
   data: response.status === NOT_MODIFIED ? null : response.data,
 });
 
@@ -109,9 +110,10 @@ export class ApiError extends Error {
  * call that asks whether anyone is signed in at all. A request given
  * `etag`, a string, is conditional: `If-None-Match` carries it when it is
  * non-empty, a `304` is accepted for that request alone, and the promise
- * resolves to `{ status, etag, data }`, `etag` the answer's `ETag` header
- * or `''` and `data` `null` on a `304`; every other request resolves to
- * the body as before.
+ * resolves to `{ status, etag, date, data }`, `etag` the answer's `ETag`
+ * header or `''`, `date` its `Date` header or `''`, the server's clock as
+ * it answered, and `data` `null` on a `304`; every other request resolves
+ * to the body as before.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.baseUrl - The public origin the API is reached at, the one the session signs its headers for
