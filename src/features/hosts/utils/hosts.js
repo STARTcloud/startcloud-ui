@@ -46,7 +46,7 @@ export const agentIdOf = data =>
 export const withoutAgentId = data =>
   Object.fromEntries(Object.entries(data || {}).filter(([key]) => key !== 'agent_id'));
 
-export const hostLabel = server => server.entityName || server.hostname;
+export const hostLabel = server => server.entity_name || server.hostname;
 
 export const hostKey = server => String(server.id);
 
@@ -76,7 +76,7 @@ export const machineNoun = servers => {
 export const selfServer = status => ({
   id: SELF,
   hostname: status.hostname || window.location.hostname,
-  entityName: '',
+  entity_name: '',
   capabilities: status,
 });
 

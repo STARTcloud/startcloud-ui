@@ -5,6 +5,7 @@ import { socketUrl, wsTicket } from '../api/terminal';
 
 const store = {
   restarts: 0,
+  reconnects: 0,
   prefsOpen: false,
   listeners: new Set(),
 };
@@ -18,7 +19,20 @@ const announce = () => store.listeners.forEach(listener => listener());
 
 const readRestarts = () => store.restarts;
 
+const readReconnects = () => store.reconnects;
+
 const readPrefsOpen = () => store.prefsOpen;
+
+/**
+ * Ask the open shell to reconnect: its socket is closed and a new one
+ * opened to the same session with a new ticket, the session itself left
+ * running, the Reconnect shell row of the pane's menu and of the
+ * toggle's drop-up.
+ */
+export const requestTerminalReconnect = () => {
+  store.reconnects += 1;
+  announce();
+};
 
 /**
  * Ask the open shell to restart: its session is stopped and a new one
@@ -54,10 +68,69 @@ export const useTerminalPrefsOpen = () => useSyncExternalStore(subscribe, readPr
 
 const IDLE = { key: '', socket: null, state: 'idle' };
 
+const UNSTARTED = { key: '', row: null, failed: false };
+
 const stopQuietly = ({ status, id, source, sessionId }) =>
   source.stop(status, id, sessionId).catch(error => {
     log.api.warn('Error stopping terminal session', { error: error.message });
   });
+
+const waitingState = ({ opened, failed }) => {
+  if (failed) {
+    return 'closed';
+  }
+  return opened ? 'connecting' : 'idle';
+};
+
+/**
+ * The session row of a terminal source for one `key`, started when the
+ * view first opens and stopped when the key changes or the pane goes.
+ *
+ * @param {Object} options - The session's side
+ * @param {boolean} options.opened - Whether the view has opened
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {Object} options.source - The terminal source
+ * @param {string} options.key - The session's key
+ * @returns {{ row: Object|null, failed: boolean }} The row, and whether the start failed
+ */
+const useSessionRow = ({ opened, status, id, source, key }) => {
+  const [started, setStarted] = useState(UNSTARTED);
+
+  useEffect(() => {
+    if (!opened) {
+      return undefined;
+    }
+    let live = true;
+    let sessionId = '';
+
+    source
+      .start(status, id)
+      .then(row => {
+        sessionId = row.id;
+        if (live) {
+          setStarted({ key, row, failed: false });
+        } else {
+          stopQuietly({ status, id, source, sessionId });
+        }
+      })
+      .catch(error => {
+        log.api.error('Error starting terminal session', { error: error.message });
+        if (live) {
+          setStarted({ key, row: null, failed: true });
+        }
+      });
+
+    return () => {
+      live = false;
+      if (sessionId) {
+        stopQuietly({ status, id, source, sessionId });
+      }
+    };
+  }, [opened, status, id, source, key]);
+
+  return started.key === key ? started : UNSTARTED;
+};
 
 /**
  * One terminal session over a terminal source, `{ key, start, stop,
@@ -67,10 +140,13 @@ const stopQuietly = ({ status, id, source, sessionId }) =>
  * hook is written against the source and never against one kind of
  * shell. The session starts when the view first opens on a host, is
  * stopped and started again when the host in focus changes or the
- * person restarts, and is stopped when the pane goes. `state` reads
- * `idle` before the view opened, `connecting` until the socket is open,
- * `open`, and `closed` once the start failed or the socket closed; a
- * closed socket is not opened again on a clock, `restart` opens a new
+ * person restarts, and is stopped when the pane goes; its socket is
+ * opened with a ticket of its own once the session answers, and closed
+ * and opened again to the same session when the person reconnects.
+ * `state` reads `idle` before the view opened, `connecting` until the
+ * socket is open, `open`, and `closed` once the start failed or the
+ * socket closed; a closed socket is not opened again on a clock,
+ * `reconnect` opens a new socket to the session and `restart` a new
  * session.
  *
  * @param {Object} options - The pane's side
@@ -78,33 +154,29 @@ const stopQuietly = ({ status, id, source, sessionId }) =>
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {Object} options.source - The terminal source
  * @param {boolean} options.open - Whether the view shows
- * @returns {{ socket: WebSocket|null, state: string, restart: Function }} The session's socket and state
+ * @returns {{ socket: WebSocket|null, state: string, reconnect: Function, restart: Function }} The session's socket and state
  */
 export const useTerminal = ({ status, id, source, open }) => {
   const restarts = useSyncExternalStore(subscribe, readRestarts);
+  const reconnects = useSyncExternalStore(subscribe, readReconnects);
   const [opened, setOpened] = useState(false);
   const [session, setSession] = useState(IDLE);
   const key = `${source.key}|${id}|${restarts}`;
+  const link = `${key}|${reconnects}`;
+  const { row, failed } = useSessionRow({ opened, status, id, source, key });
 
   if (open && !opened) {
     setOpened(true);
   }
 
   useEffect(() => {
-    if (!opened) {
+    if (!row) {
       return undefined;
     }
     let live = true;
-    let sessionId = '';
     let socket = null;
 
     const connect = async () => {
-      const row = await source.start(status, id);
-      sessionId = row.id;
-      if (!live) {
-        stopQuietly({ status, id, source, sessionId });
-        return;
-      }
       const { ticket } = await wsTicket(status, id, source.ticketMachine);
       if (!live) {
         return;
@@ -112,35 +184,37 @@ export const useTerminal = ({ status, id, source, open }) => {
       socket = new WebSocket(socketUrl(status, id, source.socketPath(row), ticket));
       socket.addEventListener('open', () => {
         if (live) {
-          setSession({ key, socket, state: 'open' });
+          setSession({ key: link, socket, state: 'open' });
         }
       });
       socket.addEventListener('close', () => {
         if (live) {
-          setSession({ key, socket: null, state: 'closed' });
+          setSession({ key: link, socket: null, state: 'closed' });
         }
       });
-      setSession({ key, socket, state: 'connecting' });
+      setSession({ key: link, socket, state: 'connecting' });
     };
 
     connect().catch(error => {
-      log.api.error('Error starting terminal session', { error: error.message });
+      log.api.error('Error connecting terminal session', { error: error.message });
       if (live) {
-        setSession({ key, socket: null, state: 'closed' });
+        setSession({ key: link, socket: null, state: 'closed' });
       }
     });
 
     return () => {
       live = false;
       socket?.close();
-      if (sessionId) {
-        stopQuietly({ status, id, source, sessionId });
-      }
     };
-  }, [opened, status, id, source, key]);
+  }, [status, id, source, row, link]);
 
-  const waiting = { ...IDLE, state: opened ? 'connecting' : 'idle' };
-  const current = session.key === key ? session : waiting;
+  const waiting = { ...IDLE, state: waitingState({ opened, failed }) };
+  const current = session.key === link ? session : waiting;
 
-  return { socket: current.socket, state: current.state, restart: requestTerminalRestart };
+  return {
+    socket: current.socket,
+    state: current.state,
+    reconnect: requestTerminalReconnect,
+    restart: requestTerminalRestart,
+  };
 };

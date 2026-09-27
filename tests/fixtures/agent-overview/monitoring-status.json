@@ -1,0 +1,7 @@
+{
+  "isRunning": true,
+  "isInitialized": true,
+  "config": { "storage_enabled": true, "collection_interval": 60, "retention_days": 7 },
+  "stats": { "collections": 60, "last_collection": "2026-09-27T12:00:00Z" },
+  "note": "Storage mode: a background collector writes time series into per-datatype database files."
+}

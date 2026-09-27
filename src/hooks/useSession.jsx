@@ -8,9 +8,12 @@ import { currentPath } from '../lib/returnTo';
 
 const EMPTY = { user: null, organizations: [], oidc: false, issuerUrl: '', clientId: '' };
 
-const resolveActiveOrg = (organizations, stored) => {
+const resolveActiveOrg = (organizations, stored, allOrganizations) => {
   if (stored && organizations.some(org => org.uuid === stored)) {
     return stored;
+  }
+  if (allOrganizations) {
+    return '';
   }
   return (organizations.find(org => org.primary) || organizations[0])?.uuid || '';
 };
@@ -47,7 +50,11 @@ export const sessionStateShape = PropTypes.shape({
  * runs it once the app reports the page has left the auth paths),
  * the memberships in the chrome's organization shape,
  * the active organization resolved stored → primary → first and persisted
- * under the app's key, whether `load()` has confirmed the session, the
+ * under the app's key (with `allOrganizations`, the option of a host
+ * that narrows by organization, All organizations is a choice of its
+ * own: the active organization is the empty uuid while nothing stored
+ * names a membership, `pickOrg('')` chooses it, and the key is absent
+ * while it stands), whether `load()` has confirmed the session, the
  * ended state with the page to return to, the sign-in and sign-out
  * handlers, and the push subscription kept in sync while signed in. The
  * bus's `login` listener is the one `load()` a sign-in or a change runs,
@@ -62,6 +69,7 @@ export const sessionStateShape = PropTypes.shape({
  * @param {Object} options.returnTo - The helper from `createReturnTo`
  * @param {Function} options.navigate - The router's `navigate`, handed to the provider's `load`, `reload`, `refresh` and `begin`
  * @param {string} options.activeOrgKey - localStorage key of the active organization
+ * @param {boolean} [options.allOrganizations] - Whether All organizations, the empty uuid, is a choice and the one nothing stored falls to, decided by the app from the status
  * @param {Object} [options.push] - The functions from `createPush`
  * @param {Function} [options.onAdopt] - Called with the session, or null, before it is rendered
  * @param {Function} [options.loadFavorites] - Answers `GET /api/user/favorites` for the signed-in person
@@ -73,6 +81,7 @@ export const useSession = ({
   returnTo,
   navigate,
   activeOrgKey,
+  allOrganizations = false,
   push = null,
   onAdopt = null,
   loadFavorites = null,
@@ -93,7 +102,7 @@ export const useSession = ({
   const [claims, setClaims] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [activeOrgUuid, setActiveOrgUuid] = useState(() =>
-    resolveActiveOrg(session.organizations, localStorage.getItem(activeOrgKey))
+    resolveActiveOrg(session.organizations, localStorage.getItem(activeOrgKey), allOrganizations)
   );
   const [ended, setEnded] = useState(null);
   const [loaded, setLoaded] = useState(false);
@@ -146,7 +155,11 @@ export const useSession = ({
         onAdoptRef.current(next);
       }
       setSession(current);
-      const resolved = resolveActiveOrg(current.organizations, localStorage.getItem(activeOrgKey));
+      const resolved = resolveActiveOrg(
+        current.organizations,
+        localStorage.getItem(activeOrgKey),
+        allOrganizations
+      );
       setActiveOrgUuid(resolved);
       persistActiveOrg(resolved);
       favoritesPromise.current = null;
@@ -164,7 +177,7 @@ export const useSession = ({
         setFavorites([]);
       }
     },
-    [activeOrgKey, persistActiveOrg, provider, readFavorites, returnTo]
+    [activeOrgKey, allOrganizations, persistActiveOrg, provider, readFavorites, returnTo]
   );
 
   useEffect(() => {
@@ -200,7 +213,8 @@ export const useSession = ({
   }, [loaded, notify, push, session.user, t]);
 
   const pickOrg = uuid => {
-    if (!session.organizations.some(org => org.uuid === uuid)) {
+    const all = allOrganizations && uuid === '';
+    if (!all && !session.organizations.some(org => org.uuid === uuid)) {
       return;
     }
     setActiveOrgUuid(uuid);

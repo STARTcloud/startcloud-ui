@@ -1,0 +1,26 @@
+{
+  "hostname": "zone-1",
+  "platform": "omnios",
+  "type": "SunOS",
+  "release": "5.11",
+  "version": "omnios-r151054",
+  "arch": "x86_64",
+  "uptime": 1036800,
+  "totalmem": 68719476736,
+  "freemem": 17179869184,
+  "loadavg": [0.42, 0.37, 0.31],
+  "cpus": [
+    {
+      "model": "Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
+      "speed": 2100,
+      "times": { "user": 5120400, "nice": 0, "sys": 2210300, "idle": 96357300, "irq": 1840200 }
+    },
+    {
+      "model": "Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
+      "speed": 2100,
+      "times": { "user": 4980100, "nice": 0, "sys": 2304800, "idle": 96403100, "irq": 1790500 }
+    }
+  ],
+  "allmachines": ["web-1", "web-2"],
+  "runningmachines": ["web-1"]
+}

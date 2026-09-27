@@ -1,0 +1,7 @@
+{
+  "isRunning": true,
+  "isInitialized": true,
+  "config": { "storage_enabled": false, "collection_interval": 60, "retention_days": 7 },
+  "stats": {},
+  "note": "Realtime mode: every request samples the OS live; enable monitoring.storage_enabled for stored history."
+}

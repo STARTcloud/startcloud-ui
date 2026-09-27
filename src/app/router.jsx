@@ -156,7 +156,7 @@ import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
 import { gravatarProfile } from '../utils/gravatar';
-import { guestOnly, isMember } from '../utils/membership';
+import { guestOnly, isMember, routeNameOf } from '../utils/membership';
 import { collectionPath } from '../utils/routes';
 
 const authAdapter = {
@@ -569,17 +569,18 @@ export const routeTitleKey = pathname => {
  * account and the mounted collection definitions its tree walks: the
  * group for every visitor while the host advertises `browse`, for a
  * `ROLE_ADMIN` account alone while it advertises `admin` instead, else
- * none), the profile feature's Account
+ * none), the hosts feature's Hosts group while the host advertises
+ * `hosts`, above the Account group because what a UI backend is for
+ * draws before the person's own account, the profile feature's Account
  * group (handed the integrations adapter its Integrations entry reads
  * once and the host's profile adapter its Profile children are built
  * from), the identity feature's operator group while the host's first
  * `auth` token is `cookie` (its Configuration row reaching the shared
  * configuration page in place of the shared admin feature's entries), the
- * vdi feature's Fleet group while the host advertises `fleet`, the hosts
- * feature's Hosts group while the host advertises `hosts`, and on
+ * vdi feature's Fleet group while the host advertises `fleet`, and on
  * every other host the shared admin feature's entries over the admin
- * adapter the host gets, in the order catalog, profile, identity, vdi,
- * hosts, admin; empty means no column.
+ * adapter the host gets, in the order catalog, hosts, profile, identity,
+ * vdi, admin; empty means no column.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -595,10 +596,10 @@ export const sidebarEntries = ({ status, account, collections }) => {
   const admin = adminAdapterFor(status);
   return [
     ...catalogSidebar(status, account, collections),
+    ...hostsSidebar(status, account),
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
-    ...hostsSidebar(status, account),
     ...(cookie ? [] : adminSidebar(status, account, admin)),
   ];
 };
@@ -1092,7 +1093,7 @@ const OrgConsoleRoute = ({ cookie, account, globalAdmin }) => {
       session={session}
       activeOrgKey={ACTIVE_ORG_KEY}
       organizations={organizationsAdapter}
-      org={account.activeOrgUuid}
+      org={routeNameOf(account.organizations, account.activeOrgUuid)}
       admin={globalAdmin}
       tab={segment}
     />

@@ -28,20 +28,23 @@ const oneHost = (id, server) => ({
  * status's own; on the server role the host the route names, `/hosts/{id}`
  * and below, its tokens the registry row's `capabilities.features`, and
  * with no host in the route every host whose row lists `tasks`, `kind`
- * reading `all`. `key` names the focus, so a read is made again only when
- * the focus itself changed.
+ * reading `all`. The host the route names is found among `held`, every
+ * row the server answered, so its focus holds under any chosen
+ * organization; the hosts of `all` are the ones the choice narrows to.
+ * `key` names the focus, so a read is made again only when the focus
+ * itself changed.
  *
- * @param {Object} options - The status, the servers of `useServers` and the pathname
+ * @param {Object} options - The status, the servers and the held rows of `useServers` and the pathname
  * @returns {{ kind: string, key: string, id: string, server: Object|null, features: Array<string>, hosts: Array<Object> }} The focus
  */
-export const focusOf = ({ status, servers, pathname }) => {
+export const focusOf = ({ status, servers, held, pathname }) => {
   if (!isServerRole(status)) {
-    return oneHost(SELF, servers[0] || null);
+    return oneHost(SELF, held[0] || null);
   }
   const match = matchPath(HOST_ROUTE, pathname);
   if (match) {
     const { id } = match.params;
-    return oneHost(id, servers.find(row => String(row.id) === id) || null);
+    return oneHost(id, held.find(row => String(row.id) === id) || null);
   }
   const hosts = servers.filter(row => featuresOf(row).includes('tasks'));
   return {
@@ -63,6 +66,9 @@ export const focusOf = ({ status, servers, pathname }) => {
 export const useFocus = () => {
   const status = useStatus();
   const { pathname } = useLocation();
-  const { servers } = useServers();
-  return useMemo(() => focusOf({ status, servers, pathname }), [status, servers, pathname]);
+  const { servers, held } = useServers();
+  return useMemo(
+    () => focusOf({ status, servers, held, pathname }),
+    [status, servers, held, pathname]
+  );
 };

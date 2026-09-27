@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useEventStream } from '../../hooks/useEventStream';
 import { useFooterPane } from '../../hooks/useFooterPane';
 
-import FooterPane, { FooterGrip, FooterTools } from './FooterPane';
+import FooterPane, { FooterGrip, FooterHandles, FooterTools, sidebarSizeShape } from './FooterPane';
 
 const GAME_SCRIPT = '//hi.kickassapp.com/kickass.js';
 const GAME_VERSION = '2.0';
@@ -219,6 +219,7 @@ const FooterRow = ({
   streamed,
   grip = null,
   tools = null,
+  handles = null,
 }) => {
   const name = (
     <>
@@ -227,6 +228,7 @@ const FooterRow = ({
   );
   return (
     <footer className="footer mt-auto bg-body-tertiary border-top">
+      {handles}
       <div className="container-fluid position-relative d-flex align-items-center">
         <div className="footer-edge-start d-flex align-items-center">
           {grip ? <PoweredMark poweredBy={poweredBy} /> : null}
@@ -259,6 +261,7 @@ FooterRow.propTypes = {
   streamed: PropTypes.bool.isRequired,
   grip: PropTypes.node,
   tools: PropTypes.node,
+  handles: PropTypes.node,
 };
 
 const rowShape = PropTypes.shape({
@@ -270,7 +273,7 @@ const rowShape = PropTypes.shape({
   streamed: PropTypes.bool.isRequired,
 });
 
-const PanedFooter = ({ useViews, row }) => {
+const PanedFooter = ({ useViews, row, sidebar }) => {
   const views = useViews();
   const pane = useFooterPane(views);
   if (views.length === 0) {
@@ -282,6 +285,7 @@ const PanedFooter = ({ useViews, row }) => {
         {...row}
         grip={<FooterGrip pane={pane} />}
         tools={<FooterTools pane={pane} views={views} />}
+        handles={<FooterHandles pane={pane} sidebar={sidebar} />}
       />
       <FooterPane pane={pane} />
     </>
@@ -291,6 +295,7 @@ const PanedFooter = ({ useViews, row }) => {
 PanedFooter.propTypes = {
   useViews: PropTypes.func.isRequired,
   row: rowShape.isRequired,
+  sidebar: sidebarSizeShape,
 };
 
 /**
@@ -311,7 +316,11 @@ PanedFooter.propTypes = {
  * name with the Powered by words as its tooltip, the right cluster draws
  * the pane's toggles, the tools of the view that shows and the chevron
  * after the heart, and the pane draws under the row; with no view the
- * row is the one every other UI backend draws.
+ * row is the one every other UI backend draws. With a view the row's top
+ * edge is a handle the pointer drags to set the pane's height, and while
+ * the shell hands `sidebar`, the sidebar's size, the corner where the
+ * sidebar's edge meets that top edge is one handle for both, the pane's
+ * height and the sidebar's width from one drag.
  */
 const Footer = ({
   appName,
@@ -321,9 +330,14 @@ const Footer = ({
   fetchHealth = null,
   streamed = false,
   pane = null,
+  sidebar = null,
 }) => {
   const row = { appName, version, about, poweredBy, fetchHealth, streamed };
-  return pane ? <PanedFooter useViews={pane} row={row} /> : <FooterRow {...row} />;
+  return pane ? (
+    <PanedFooter useViews={pane} row={row} sidebar={sidebar} />
+  ) : (
+    <FooterRow {...row} />
+  );
 };
 
 Footer.propTypes = {
@@ -334,6 +348,7 @@ Footer.propTypes = {
   fetchHealth: PropTypes.func,
   streamed: PropTypes.bool,
   pane: PropTypes.func,
+  sidebar: sidebarSizeShape,
 };
 
 export default Footer;

@@ -1,0 +1,59 @@
+{
+  "memory": [
+    {
+      "id": 17278,
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "total_memory_bytes": "68719476736",
+      "used_memory_bytes": "51539607552",
+      "free_memory_bytes": "17179869184",
+      "available_memory_bytes": "17179869184",
+      "memory_utilization_pct": "75.00",
+      "swap_total_bytes": "8589934592",
+      "swap_used_bytes": "858993459",
+      "swap_free_bytes": "7730941133",
+      "swap_utilization_pct": "10.00"
+    },
+    {
+      "id": 17279,
+      "scan_timestamp": "2026-09-27T12:00:05.000Z",
+      "total_memory_bytes": "68719476736",
+      "used_memory_bytes": "34359738368",
+      "free_memory_bytes": "34359738368",
+      "available_memory_bytes": "34359738368",
+      "memory_utilization_pct": "50.00",
+      "swap_total_bytes": "8589934592",
+      "swap_used_bytes": "858993459",
+      "swap_free_bytes": "7730941133",
+      "swap_utilization_pct": "10.00"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "latest": {
+    "id": 17279,
+    "scan_timestamp": "2026-09-27T12:00:05.000Z",
+    "total_memory_bytes": "68719476736",
+    "used_memory_bytes": "34359738368",
+    "free_memory_bytes": "34359738368",
+    "available_memory_bytes": "34359738368",
+    "memory_utilization_pct": "50.00",
+    "swap_total_bytes": "8589934592",
+    "swap_used_bytes": "858993459",
+    "swap_free_bytes": "7730941133",
+    "swap_utilization_pct": "10.00"
+  },
+  "sampling": {
+    "applied": true,
+    "strategy": "javascript-time-sampling",
+    "samplesRequested": 38,
+    "samplesReturned": 2
+  },
+  "metadata": {
+    "timeSpan": {
+      "start": "2026-09-27T12:00:00.000Z",
+      "end": "2026-09-27T12:00:05.000Z",
+      "durationMinutes": 0
+    }
+  },
+  "queryTime": 7
+}

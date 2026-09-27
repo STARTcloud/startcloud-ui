@@ -1,0 +1,41 @@
+{
+  "usage": [
+    {
+      "host": "lab-1",
+      "link": "eth0",
+      "ipackets": 820344,
+      "rbytes": 1104887123,
+      "ierrors": 0,
+      "opackets": 412455,
+      "obytes": 210442871,
+      "oerrors": 0,
+      "rx_bps": 375000,
+      "tx_bps": 125000,
+      "rx_mbps": 3,
+      "tx_mbps": 1,
+      "time_delta_seconds": 60,
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    },
+    {
+      "host": "lab-1",
+      "link": "eth0",
+      "ipackets": 800144,
+      "rbytes": 1082387123,
+      "ierrors": 0,
+      "opackets": 402255,
+      "obytes": 202942871,
+      "oerrors": 0,
+      "rx_bps": 250000,
+      "tx_bps": 62500,
+      "rx_mbps": 2,
+      "tx_mbps": 0.5,
+      "time_delta_seconds": 60,
+      "scan_timestamp": "2026-09-27T11:59:00Z"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "sampling": { "applied": false, "strategy": "stored", "samplesReturned": 2 },
+  "metadata": { "activeInterfacesCount": 1, "interfaceList": ["eth0"] },
+  "queryTime": 2
+}

@@ -1,0 +1,7 @@
+{
+  "status": "healthy",
+  "uptime": 93784,
+  "version": "1.2.0",
+  "service": { "storage_enabled": false, "collector": false, "stats": {} },
+  "lastUpdate": null
+}

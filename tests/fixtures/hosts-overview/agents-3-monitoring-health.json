@@ -1,0 +1,35 @@
+{
+  "status": "degraded",
+  "lastUpdate": "2026-09-27T12:00:00.000Z",
+  "networkErrors": 0,
+  "storageErrors": 0,
+  "faultStatus": {
+    "hasFaults": true,
+    "faultCount": 1,
+    "severityLevels": ["Minor"],
+    "lastCheck": "2026-09-27T11:58:00.000Z",
+    "faults": [],
+    "error": null
+  },
+  "recentActivity": { "network": true, "storage": true },
+  "uptime": 1036800,
+  "reboot_required": false,
+  "reboot_info": null,
+  "service": {
+    "isRunning": true,
+    "isInitialized": true,
+    "discoveryMode": "direct",
+    "config": {
+      "enabled": true,
+      "intervals": {
+        "network_config": 60,
+        "network_usage": 20,
+        "storage": 300,
+        "system_metrics": 5
+      },
+      "retention": { "network_usage": 7, "storage": 30, "system_metrics": 7, "tasks": 30 }
+    },
+    "stats": { "totalErrors": 0, "uptime": 86400 },
+    "note": "Collections run directly on their timers; progress via host_info last_*_scan timestamps"
+  }
+}

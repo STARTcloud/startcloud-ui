@@ -1,7 +1,7 @@
 {
   "machines": [
-    { "name": "dev-1", "status": "running", "brand": "bhyve" },
-    { "name": "dev-2", "status": "installed", "brand": "bhyve" }
+    { "name": "dev-1", "status": "running", "hypervisor": "virtualbox" },
+    { "name": "dev-2", "status": "stopped", "hypervisor": "virtualbox" }
   ],
   "total": 2
 }

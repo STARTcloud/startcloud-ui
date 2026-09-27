@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { SELF, agentPath, isServerRole, selfServer } from '../../src/features/hosts/utils/hosts.js';
+import {
+  SELF,
+  agentPath,
+  hostLabel,
+  isServerRole,
+  selfServer,
+} from '../../src/features/hosts/utils/hosts.js';
 
 const server = { role: 'hyperweaver-server' };
 const goAgent = { role: 'hyperweaver-agent', hostname: 'lab-1' };
@@ -31,12 +37,24 @@ describe('agentPath', () => {
   });
 });
 
+describe('hostLabel', () => {
+  it('answers the entity_name of the registry row', () => {
+    expect(hostLabel({ entity_name: 'Desk', hostname: 'vbox-1.example.com' })).toBe('Desk');
+  });
+
+  it('answers the hostname of a row that names no entity', () => {
+    expect(hostLabel({ entity_name: '', hostname: 'store-1.example.com' })).toBe(
+      'store-1.example.com'
+    );
+  });
+});
+
 describe('selfServer', () => {
   it('answers the self id with the status as its capabilities row', () => {
     const row = selfServer(goAgent);
     expect(row.id).toBe('self');
     expect(row.hostname).toBe('lab-1');
-    expect(row.entityName).toBe('');
+    expect(row.entity_name).toBe('');
     expect(row.capabilities).toBe(goAgent);
   });
 });

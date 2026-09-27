@@ -1,0 +1,19 @@
+{
+  "ansible": true,
+  "vagrant": true,
+  "isc-dhcp": true,
+  "zrepl": false,
+  "dtrace": true,
+  "git": true,
+  "mtr": true,
+  "lsof": true,
+  "sysstat": true,
+  "tree": true,
+  "tmux": true,
+  "ooce/library/libarchive": true,
+  "htop": true,
+  "ncdu": true,
+  "zadm": true,
+  "rsync": true,
+  "nano": true
+}

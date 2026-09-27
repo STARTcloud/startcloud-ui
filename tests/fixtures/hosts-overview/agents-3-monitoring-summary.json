@@ -1,0 +1,33 @@
+{
+  "host": "zone-1",
+  "summary": {
+    "networkAccountingEnabled": true,
+    "networkErrors": 0,
+    "storageErrors": 0,
+    "platform": "sunos",
+    "uptime": 1036800
+  },
+  "lastCollected": {
+    "networkInterfaces": "2026-09-27T11:59:00.000Z",
+    "networkUsage": "2026-09-27T12:00:00.000Z",
+    "storage": "2026-09-27T11:55:00.000Z"
+  },
+  "recordCounts": {
+    "networkInterfaces": 2880,
+    "networkUsage": 8640,
+    "ipAddresses": 4320,
+    "routes": 0,
+    "zfsPools": 576,
+    "zfsDatasets": 1728,
+    "disks": 2304
+  },
+  "latestData": {
+    "networkInterfaces": "2026-09-27T11:59:00.000Z",
+    "networkUsage": "2026-09-27T12:00:00.000Z",
+    "ipAddresses": "2026-09-27T11:59:00.000Z",
+    "zfsPools": "2026-09-27T11:55:00.000Z",
+    "zfsDatasets": "2026-09-27T11:55:00.000Z",
+    "disks": "2026-09-27T11:55:00.000Z"
+  },
+  "queryTime": "12ms"
+}

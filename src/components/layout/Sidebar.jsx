@@ -6,24 +6,12 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { useCssVar } from '../../hooks/useCssVar';
 
-const WIDTH_KEY = 'sidebar_width';
-const MINIMIZED_KEY = 'sidebar_minimized';
-const MIN_WIDTH = 180;
-const MAX_WIDTH = 400;
-const DEFAULT_WIDTH = 260;
+import ContextMenu from './ContextMenu';
+
 const ROW_SELECTOR = '[data-sidebar-row]';
 
 const openKeyOf = group => `sidebar_open_${group}`;
 const viewKeyOf = group => `sidebar_view_${group}`;
-
-const clampWidth = value => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, value));
-
-const storedWidth = () => {
-  const value = Number(localStorage.getItem(WIDTH_KEY));
-  return value ? clampWidth(value) : DEFAULT_WIDTH;
-};
-
-const storedMinimized = () => localStorage.getItem(MINIMIZED_KEY) === 'true';
 
 const storedOpen = group => {
   try {
@@ -31,14 +19,6 @@ const storedOpen = group => {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
-  }
-};
-
-const persistMinimized = minimized => {
-  if (minimized) {
-    localStorage.setItem(MINIMIZED_KEY, 'true');
-  } else {
-    localStorage.removeItem(MINIMIZED_KEY);
   }
 };
 
@@ -151,7 +131,7 @@ const SectionRow = ({ row, badges, depth = 0, fold = null }) => {
   const link = useRef(null);
   const Icon = row.icon;
   const label = t(row.labelKey);
-  useCssVar(link, '--sidebar-depth', depth ? String(depth) : null);
+  useCssVar(link, '--sidebar-steps', depth ? String(depth) : null);
   const body = (
     <>
       <Icon className="sidebar-row-icon" />
@@ -291,7 +271,14 @@ StatusDot.propTypes = {
   status: PropTypes.string,
 };
 
-const TreeNode = ({ node, depth, tree, current }) => {
+const NO_INSET = { icons: 0, steps: 0 };
+
+const insetUnder = (node, inset) => ({
+  icons: inset.icons + (node.icon ? 1 : 0),
+  steps: inset.steps + (node.status || !node.icon ? 1 : 0),
+});
+
+const TreeNode = ({ node, inset, tree, current }) => {
   const navigate = useNavigate();
   const Icon = node.icon || null;
   const branch = Boolean(node.children);
@@ -301,7 +288,8 @@ const TreeNode = ({ node, depth, tree, current }) => {
   const fresh = Boolean(kids) && (tree.seen[node.key] || 0) === (node.revision || 0);
   const { load } = tree;
   const row = useRef(null);
-  useCssVar(row, '--sidebar-depth', String(depth));
+  useCssVar(row, '--sidebar-icons', String(inset.icons));
+  useCssVar(row, '--sidebar-steps', String(inset.steps));
 
   useEffect(() => {
     if (branch && (open || !node.to) && !fresh) {
@@ -330,8 +318,12 @@ const TreeNode = ({ node, depth, tree, current }) => {
     if (!tree.menu) {
       return;
     }
+    const items = tree.menu(node);
+    if (items.length === 0) {
+      return;
+    }
     event.preventDefault();
-    tree.openMenu({ x: event.clientX, y: event.clientY, items: tree.menu(node) });
+    tree.openMenu({ x: event.clientX, y: event.clientY, title: node.label, items });
   };
 
   return (
@@ -358,7 +350,7 @@ const TreeNode = ({ node, depth, tree, current }) => {
             <TreeNode
               key={child.key}
               node={child}
-              depth={depth + 1}
+              inset={insetUnder(node, inset)}
               tree={tree}
               current={current}
             />
@@ -371,7 +363,10 @@ const TreeNode = ({ node, depth, tree, current }) => {
 
 TreeNode.propTypes = {
   node: nodeShape.isRequired,
-  depth: PropTypes.number.isRequired,
+  inset: PropTypes.shape({
+    icons: PropTypes.number.isRequired,
+    steps: PropTypes.number.isRequired,
+  }).isRequired,
   tree: PropTypes.shape({
     open: PropTypes.arrayOf(PropTypes.string).isRequired,
     kids: PropTypes.object.isRequired,
@@ -384,49 +379,9 @@ TreeNode.propTypes = {
   current: PropTypes.string.isRequired,
 };
 
-const ContextMenu = ({ menu, onClose }) => {
-  const { t } = useTranslation();
-  const list = useRef(null);
-  useCssVar(list, '--sidebar-menu-x', `${menu.x}px`);
-  useCssVar(list, '--sidebar-menu-y', `${menu.y}px`);
-  return (
-    <ul ref={list} className="dropdown-menu show sidebar-menu">
-      {menu.items.map(item => (
-        <li key={item.key}>
-          <button
-            type="button"
-            className="dropdown-item"
-            onClick={() => {
-              onClose();
-              item.onClick();
-            }}
-          >
-            {t(item.labelKey)}
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
-ContextMenu.propTypes = {
-  menu: PropTypes.shape({
-    x: PropTypes.number.isRequired,
-    y: PropTypes.number.isRequired,
-    items: PropTypes.arrayOf(
-      PropTypes.shape({
-        key: PropTypes.string.isRequired,
-        labelKey: PropTypes.string.isRequired,
-        onClick: PropTypes.func.isRequired,
-      })
-    ).isRequired,
-  }).isRequired,
-  onClose: PropTypes.func.isRequired,
-};
-
 const TreeView = ({ useTree, current, opened }) => {
   const { t } = useTranslation();
-  const { nodes, menu = null, labelKey = null } = useTree();
+  const { nodes, menu = null, labelKey = null, dialogs = null } = useTree();
   const [kids, setKids] = useState({});
   const [seen, setSeen] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
@@ -456,9 +411,10 @@ const TreeView = ({ useTree, current, opened }) => {
     >
       {labelKey ? <div className="sidebar-section-label">{t(labelKey)}</div> : null}
       {nodes.map(node => (
-        <TreeNode key={node.key} node={node} depth={0} tree={tree} current={current} />
+        <TreeNode key={node.key} node={node} inset={NO_INSET} tree={tree} current={current} />
       ))}
       {contextMenu ? <ContextMenu menu={contextMenu} onClose={() => setContextMenu(null)} /> : null}
+      {dialogs}
     </div>
   );
 };
@@ -527,38 +483,17 @@ GroupView.propTypes = {
   pathname: PropTypes.string.isRequired,
 };
 
-const useResize = (asideRef, setWidth) => {
-  const dragging = useRef(false);
-
-  useEffect(() => {
-    const onMove = event => {
-      if (!dragging.current || !asideRef.current) {
-        return;
-      }
-      setWidth(clampWidth(event.clientX - asideRef.current.getBoundingClientRect().left));
-    };
-    const onUp = () => {
-      if (!dragging.current) {
-        return;
-      }
-      dragging.current = false;
-      setWidth(current => {
-        localStorage.setItem(WIDTH_KEY, String(current));
-        return current;
-      });
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-  }, [asideRef, setWidth]);
-
-  return () => {
-    dragging.current = true;
-  };
-};
+const sizeShape = PropTypes.shape({
+  asideRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
+  width: PropTypes.number.isRequired,
+  minimized: PropTypes.bool.isRequired,
+  limits: PropTypes.shape({
+    min: PropTypes.number.isRequired,
+    max: PropTypes.number.isRequired,
+  }).isRequired,
+  toggleMinimized: PropTypes.func.isRequired,
+  startResize: PropTypes.func.isRequired,
+});
 
 /**
  * The sidebar of the navbar contract's Sidebar section: the 62px top row
@@ -571,9 +506,16 @@ const useResize = (asideRef, setWidth) => {
  * a top-level navigation and never active, a row with `children` folding
  * them like a tree node with a caret at the row's right end, open while a
  * child is the current route, the row's own link still navigating) and the
- * tree entries (a hook answering `{ nodes, menu, labelKey }`, the
- * `labelKey` drawn as a section heading above the nodes when the answer
- * carries one, nodes with a caret at the row's right end, `children()`
+ * tree entries (a hook answering `{ nodes, menu, labelKey, dialogs }`,
+ * the `labelKey` drawn as a section heading above the nodes when the
+ * answer carries one, `dialogs` the node a feature draws the dialogs of
+ * its menu's rows in, nodes with a caret at the row's right end, a
+ * child's row beginning where its parent's label begins, its left
+ * padding the 20px gutter plus, for every node above it, 28px for the
+ * icon that node draws, 18px for its status dot and one 18px step for a
+ * node that draws neither, so a machine's dot sits under its host's name
+ * and no child begins left of its parent's label,
+ * `children()`
  * called on
  * expand and for the node the current route descends from (its `to` a
  * prefix of the route, or its `matches(pathname)` answering true when the
@@ -584,7 +526,9 @@ const useResize = (asideRef, setWidth) => {
  * children changed, moved since they were asked for, a node without `to` folding on click and never
  * navigating, its children loaded on mount because only they say
  * whether the current route lies under it, a status dot for `up` and `idle`, the right-click
- * rows from `menu(node)`, the selection driven by the route, a view select
+ * rows from `menu(node)` drawn by `ContextMenu`, the one presenter the
+ * footer's pane shares, titled by the node's label, no menu opening for
+ * a node without rows, the selection driven by the route, a view select
  * when the group exports more than one shape); the rail, the width, the
  * open rows and nodes under one `sidebar_open_<group>` and the
  * chosen view persisted per origin; arrow keys between rows, Left and
@@ -593,29 +537,22 @@ const useResize = (asideRef, setWidth) => {
  * node the shell hands while a feature's action menu holds the header's
  * account slot, a function of the rail state drawn in a row under the
  * nav and above the resize handle, the user menu as a drop-up with the
- * avatar alone while minimized. Every entry comes from the mounted
+ * avatar alone while minimized, the foot as tall as the footer's row.
+ * The width and the rail are `size`, the shell's `useSidebarSize`, so the
+ * column's own edge and the footer's corner handle move one value. Every
+ * entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
  * The entries' `nav` carries the host's name, version and hostname as
  * `data-app`, `data-version` and `data-host`, the same three the header
  * row carries, drawn by nothing until a pack's rules give them a place.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose, readout = null, foot = null }) => {
+const Sidebar = ({ entries, brand, badges, open, onClose, size, readout = null, foot = null }) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
-  const asideRef = useRef(null);
   const navRef = useRef(null);
-  const [minimized, setMinimized] = useState(storedMinimized);
-  const [width, setWidth] = useState(storedWidth);
-  const startResize = useResize(asideRef, setWidth);
+  const { asideRef, width, minimized, limits, toggleMinimized, startResize } = size;
   const current = `${pathname}${search}`;
   useCssVar(asideRef, '--sidebar-width', minimized ? null : `${width}px`);
-
-  const toggleMinimized = () => {
-    setMinimized(previous => {
-      persistMinimized(!previous);
-      return !previous;
-    });
-  };
 
   const onKeyDown = event => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -699,8 +636,8 @@ const Sidebar = ({ entries, brand, badges, open, onClose, readout = null, foot =
             aria-orientation="vertical"
             aria-label={t('navbar.sidebar.resize')}
             aria-valuenow={width}
-            aria-valuemin={MIN_WIDTH}
-            aria-valuemax={MAX_WIDTH}
+            aria-valuemin={limits.min}
+            aria-valuemax={limits.max}
             onPointerDown={event => {
               event.preventDefault();
               startResize();
@@ -722,6 +659,7 @@ Sidebar.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  size: sizeShape.isRequired,
   readout: PropTypes.shape({
     app: PropTypes.string.isRequired,
     version: PropTypes.string.isRequired,

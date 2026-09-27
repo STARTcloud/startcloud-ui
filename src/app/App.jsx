@@ -18,7 +18,7 @@ import {
   setMemberships,
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
-import { ServersProvider } from '../features/hosts';
+import { ServersProvider, filtersByOrganization } from '../features/hosts';
 import {
   createNotificationsAdapter,
   createPushAdapter,
@@ -50,7 +50,7 @@ import {
 } from '../lib/runtime';
 import { authMethod, hasFeature } from '../utils/capabilities';
 import { formatFileSize } from '../utils/formatFileSize';
-import { guestOnly, isManager } from '../utils/membership';
+import { guestOnly, isManager, routeNameOf } from '../utils/membership';
 import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, {
@@ -88,6 +88,17 @@ const notificationsFor = ({ status, cookie, claims, user, memberships, notificat
   return notifications;
 };
 
+/**
+ * The shell's flags from the status and the session. On a host that
+ * narrows by organization, `orgFilter`, the switcher draws the session's
+ * own memberships under All organizations and reads no list when it
+ * opens, because the profile of such a host answers every member the
+ * switcher draws and the host has no route that lists them again; on
+ * every other `backend` host the switcher reads the memberships as it
+ * opens. The Organization console row draws for a manager of the active
+ * organization, the membership found by its uuid and judged by its
+ * name.
+ */
 const shellFlags = ({
   status,
   i18n,
@@ -96,12 +107,15 @@ const shellFlags = ({
   globalAdmin,
   memberships,
   activeOrgUuid,
+  orgFilter,
 }) => ({
-  loadOrganizations: backend ? loadOrganizations : null,
+  allOrganizations: orgFilter,
+  loadOrganizations: backend && !orgFilter ? loadOrganizations : null,
   showAbout: hasAbout(status, i18n),
   showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
   showOrgConsole:
-    hasFeature(status, 'org-console') && isManager(memberships, activeOrgUuid, globalAdmin),
+    hasFeature(status, 'org-console') &&
+    isManager(memberships, routeNameOf(memberships, activeOrgUuid), globalAdmin),
   appRows: hasFeature(status, 'rebuild') && globalAdmin ? <RebuildItem /> : null,
   fetchHealth: hasFeature(status, 'health') ? fetchHealth : null,
 });
@@ -124,7 +138,11 @@ const shellFlags = ({
  * one context around them both, neither drawn for a guest-only
  * account), the hosts feature's one list of servers in its context
  * around the shell, dropped and asked for again when a person signs in
- * or out, the sidebar entries the mounted
+ * or out, handed the active organization on a host that narrows by
+ * organization (`filtersByOrganization`, the `hyperweaver-server` role
+ * that lists `hosts`), where the session takes All organizations as a
+ * choice and the hosts and machines every surface draws are the ones
+ * under the choice, the sidebar entries the mounted
  * features export, the action menu the first mounted feature exports for
  * the header's account slot while one does, the views hook the first
  * mounted feature exports for the footer's pane while one does, the
@@ -138,6 +156,7 @@ const App = ({ getSupportedLanguages }) => {
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
+  const orgFilter = filtersByOrganization(status);
   const [collections] = useState(() => collectionsFor(status));
   const [{ notifications, push, pushAdapter }] = useState(() => createRuntimeAdapters(status));
   const account = useSession({
@@ -146,6 +165,7 @@ const App = ({ getSupportedLanguages }) => {
     returnTo,
     navigate,
     activeOrgKey: ACTIVE_ORG_KEY,
+    allOrganizations: orgFilter,
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
     loadFavorites: menuFavorites,
@@ -221,6 +241,7 @@ const App = ({ getSupportedLanguages }) => {
     globalAdmin,
     memberships,
     activeOrgUuid,
+    orgFilter,
   });
   const inbox = notificationsFor({ status, cookie, claims, user, memberships, notifications });
 
@@ -243,7 +264,7 @@ const App = ({ getSupportedLanguages }) => {
 
   return (
     <UnreadProvider>
-      <ServersProvider signedIn={Boolean(user)}>
+      <ServersProvider signedIn={Boolean(user)} organization={orgFilter ? activeOrgUuid : ''}>
         <NavbarSearchProvider appSearch={appSearch}>
           <CrumbProvider>
             <AppShell

@@ -1,0 +1,30 @@
+{
+  "isRunning": true,
+  "isInitialized": true,
+  "discoveryMode": "direct",
+  "config": {
+    "enabled": true,
+    "intervals": {
+      "network_config": 60,
+      "network_usage": 20,
+      "storage": 300,
+      "system_metrics": 5
+    },
+    "retention": { "network_usage": 7, "storage": 30, "system_metrics": 7, "tasks": 30 }
+  },
+  "stats": {
+    "networkConfigRuns": 1440,
+    "networkUsageRuns": 4320,
+    "storageRuns": 288,
+    "deviceRuns": 24,
+    "systemMetricsRuns": 17280,
+    "lastNetworkConfigSuccess": "2026-09-27T11:59:00.000Z",
+    "lastNetworkUsageSuccess": "2026-09-27T12:00:00.000Z",
+    "lastStorageSuccess": "2026-09-27T11:55:00.000Z",
+    "lastDeviceSuccess": "2026-09-27T11:00:00.000Z",
+    "lastSystemMetricsSuccess": "2026-09-27T12:00:10.000Z",
+    "totalErrors": 0,
+    "uptime": 86400
+  },
+  "note": "Collections run directly on their timers; progress via host_info last_*_scan timestamps"
+}

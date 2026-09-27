@@ -1,0 +1,10 @@
+{
+  "pending_tasks": 0,
+  "running_tasks": 2,
+  "completed_tasks": 128,
+  "completed_with_errors_tasks": 1,
+  "failed_tasks": 0,
+  "cancelled_tasks": 4,
+  "max_concurrent_tasks": 5,
+  "task_processor_running": true
+}

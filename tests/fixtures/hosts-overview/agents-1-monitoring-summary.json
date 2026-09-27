@@ -1,0 +1,8 @@
+{
+  "host": "vbox-1",
+  "summary": { "storage_enabled": false, "collector": false },
+  "recordCounts": {},
+  "latestData": {},
+  "lastCollected": null,
+  "queryTime": 0
+}

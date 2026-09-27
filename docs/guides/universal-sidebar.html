@@ -294,12 +294,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 20px;
+    height: 37px;
+    box-sizing: border-box;
+    padding: 0 20px;
     font-size: 13px;
     background: var(--header);
     border-top: 1px solid var(--border);
     color: var(--muted);
     margin-top: auto;
+    position: relative;
+  }
+  .site-footer .corner {
+    position: absolute;
+    top: -8px;
+    left: -6px;
+    z-index: 3;
+    width: 12px;
+    height: 12px;
+    cursor: move;
+  }
+  .site-footer .corner:hover {
+    background: rgba(var(--primary-rgb), 0.25);
   }
   .site-footer .m {
     width: 20px;
@@ -515,11 +530,11 @@
     padding: 8px 0;
   }
   .kids .row {
-    padding-left: 34px;
+    padding-left: 64px;
     font-size: 13px;
   }
   .kids .kids .row {
-    padding-left: 52px;
+    padding-left: 116px;
   }
   .dot {
     width: 8px;
@@ -534,11 +549,12 @@
   }
   .sb-foot {
     border-top: 1px solid var(--border);
-    padding: 8px 10px;
+    padding: 0 10px;
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 56px;
+    height: 37px;
+    flex-shrink: 0;
     box-sizing: border-box;
     cursor: pointer;
   }
@@ -573,7 +589,7 @@
   }
   .sb.rail .sb-foot {
     justify-content: center;
-    padding: 8px 0;
+    padding: 0;
   }
   .sb.rail .sb-foot .id,
   .sb.rail .sb-foot .chev {
@@ -895,10 +911,10 @@
       <div class="callout">
         <strong>The swap.</strong> While any mounted feature exports `actionMenu`, the header's
         account slot draws that menu (the same toggle shape, a label and a glyph) and the user menu
-        moves to the sidebar foot as a drop-up whose toggle is the identity card, the avatar alone
-        in the rail. No flag: the export is the switch. Hyperweaver is the first fit, its
-        scope-aware Controls (Machine, Host actions, Bulk actions) taking the slot; the frame shows
-        it as the fifth backend.
+        moves to the sidebar foot as a drop-up whose toggle is the avatar on the left, then the name
+        over the email, as hyperweaver's foot draws it, the avatar alone in the rail. No flag: the
+        export is the switch. Hyperweaver is the first fit, its scope-aware Controls (Machine, Host
+        actions, Bulk actions) taking the slot; the frame shows it as the fifth backend.
       </div>
     </div>
   </div>
@@ -1252,20 +1268,22 @@
             >
             <span class="c k">tree</span
             ><span class="c"
-              >nodes with a caret, lazy `children()`, called again for an open node whose optional
-              `revision` moved, the number a feature raises when the data behind the children
-              changed, an optional `matches(pathname)` opening the
-              node on a deep link whose route does not nest under the node's `to` (the catalog's
-              Browse tree), a status dot, a right-click menu from the presenter; the selection is
-              route-driven, never checkboxes; `views: [{ key, labelKey, useTree }]` draws a select
-              at the tree's top and the chosen view persists under
-              `sidebar_view_&lt;group&gt;`</span
+              >nodes with a caret, a child's row beginning where its parent's label begins, so a
+              machine's dot sits under its host's name and no child begins left of its parent's
+              label, lazy `children()`, called again for an open node whose optional `revision`
+              moved, the number a feature raises when the data behind the children changed, an
+              optional `matches(pathname)` opening the node on a deep link whose route does not nest
+              under the node's `to` (the catalog's Browse tree), a status dot, a right-click menu
+              from the presenter; the selection is route-driven, never checkboxes; `views: [{ key,
+              labelKey, useTree }]` draws a select at the tree's top and the chosen view persists
+              under `sidebar_view_&lt;group&gt;`</span
             >
             <span class="c k">foot</span
             ><span class="c"
               >bare; the column ends at its last entry and page actions stay on the page. One
               exception: while a feature exports `actionMenu` the header's account slot draws it and
-              the foot draws the user menu as a drop-up (the swap)</span
+              the foot draws the user menu as a drop-up (the swap), the foot as tall as the footer's
+              row, 36px under a 1px top border, so the two top borders are one line</span
             >
             <span class="c k">gates</span
             ><span class="c"
@@ -1358,6 +1376,15 @@
         timer. The hosts feature raises a host's revision on every answer of its stats, so a
         machine's dot follows a Power on from the Controls menu and a Refresh on the page; a tree
         without the member reads once, as the catalog's and the fleet's do.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: the corner.</strong> Where the column's right edge meets the top edge of
+        the footer's row the corner is one handle for both, "a 2 axis resize to control both": one
+        drag sets the column's width and the height of the footer's pane together, the pointer over
+        it the four-way arrows, the width stored when the pointer lifts. It draws only while the
+        footer carries a pane; while the column is the rail it moves the pane alone. The shell holds
+        the column's size, so the column's own edge and the corner move one value. The live frame
+        above marks the corner, the pointer changing over it; the drag itself is the app's.
       </div>
       <div class="callout">
         <strong>Entries only from features.</strong> `/api/status` adds no links today; an ad-hoc
@@ -1953,7 +1980,9 @@
             : 'the page this entry routes to; the column never draws page content') +
         '</div><div class="ghost">page content, scrolling in this region alone</div><div class="ghost"></div><div class="ghost"></div><div class="ghost">the footer below never moves</div></div>';
       h +=
-        '<div class="site-footer"><span>' +
+        '<div class="site-footer">' +
+        (b.none ? '' : '<span class="corner" title="Resize the sidebar and the pane"></span>') +
+        '<span>' +
         esc(b.brand) +
         ' © 2026 · v1.10.0</span><span>Powered by <span class="m"></span> STARTcloud</span><span></span></div></div></div>';
       live.innerHTML = h;

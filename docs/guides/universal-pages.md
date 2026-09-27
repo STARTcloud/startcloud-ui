@@ -810,6 +810,42 @@ adds its own foldable section to an item page (the catalog's Quality).
   wrap never clips, so the menu draws over the rows under it and flips
   upward near the bottom of the scroll region, because a menu pinned to
   the viewport loses its row when the page scrolls inside its own region.
+- **Chart**: the estate's one chart, `Chart` in
+  `src/components/common/Chart.jsx`, the component every feature draws a
+  series over time with: a smoothed line per series over a time axis, one
+  or two value axes, a shared tooltip whose every value carries its unit,
+  the legend under the plot and the zoom where asked for. A feature hands
+  it `series`,
+  `[{ key, name, points, tone?, dash?, width?, opacity?, axis?, unit?, digits?, hidden? }]`
+  with `points` as `[[ms, value]]`, and `axes`,
+  `[{ name?, min?, max?, unit? }]`, and never an option of the library,
+  because the library is the component's own and a feature that wrote
+  its options would be rewritten with it. Apache ECharts draws it, its
+  core with the line chart, the grid, the tooltip, the legend, the zoom,
+  the `aria` component and the canvas renderer and nothing else of it, in
+  `ChartCanvas.jsx`, which `Chart` imports lazily the first time a chart
+  with a point draws, the chunk `assets/echarts.js`, so a UI backend that
+  draws no chart never downloads it. Every colour is a token of the
+  theme: the text, the lines, the tooltip's surface and the ten tones a
+  series is drawn in (`blue`, `orange`, `green`, `purple`, `red`, `teal`,
+  `pink`, `yellow`, `indigo`, `cyan`) are read from the stylesheet's
+  `chart-tone-*` rules as the page computed them, and read again when the
+  mode, the theme or the motion switch changes, heard through a
+  `MutationObserver` and never asked for on a clock, because a canvas is
+  the one surface the stylesheet cannot repaint; no chart carries a
+  colour of its own. The box is sized by a class, `sm` the 200px of a
+  panel and `lg` the expanded dialog's `calc(90vh - 200px)`,
+  hyperweaver-ui's two heights, and the chart follows its box through a
+  `ResizeObserver`. The `aria` option describes the chart in words,
+  opened by the chart's `title`, with decal patterns, so two series are
+  told apart without colour, and the chart does not animate while the
+  person reduced motion. A chart without a point draws its `emptyText`
+  in the same box and loads nothing. `SeriesToggles` are the buttons
+  that show and hide the groups of a chart's series, pressed and in
+  their tone while the group shows, and `ChartDialog` is the expanded
+  chart dialog, the same series and the same toggles at size with the
+  legend and the zoom; it takes the form dialog's metric, `form-modal`,
+  because a chart needs the width a form does.
 - **HomePage**: `Listing` over every collection, grouped by organization,
   the toggle on the first collection's heading row.
 - **OrgPage**: the org header (logo, display name, slug and description)
@@ -1321,7 +1357,7 @@ every node carrying `matches(pathname)` over the shared `parseRoute`
 against `reservedSegments(collections)`, so a deep link opens the path
 down to the item the crumbs read. The router hands the concatenation of
 every mounted feature's answer to `AppShell` in the order catalog,
-profile, identity (on a `cookie` host), vdi, then the shared admin
+hosts, profile, identity (on a `cookie` host), vdi, then the shared admin
 feature (on every other host), the empty list while the host does not
 list `sidebar`. A feature with no sidebar of its own exports nothing. The
 reserved first segments are unchanged: a sidebar entry never adds a

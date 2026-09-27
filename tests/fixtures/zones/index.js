@@ -1,0 +1,16 @@
+export default {
+  'GET /api/status': { status: 200, file: 'status.json' },
+  'GET /api/user': { status: 200, file: 'user.json' },
+  'GET /api/health': { status: 200, file: 'health.json' },
+  'GET /api/stats': { status: 200, file: 'stats.json' },
+  'GET /api/machines': { status: 200, file: 'machines.json' },
+  'GET /api/tasks/stats': { status: 200, file: 'task-stats-200.json' },
+  'POST /api/machines/web-2/ready': { status: 200, file: 'action-200.json' },
+  'POST /api/machines/web-2/verify': { status: 200, file: 'verify-200.json' },
+  'POST /api/machines/web-2/mark-incomplete': { status: 200, file: 'action-200.json' },
+  'POST /api/machines/web-2/detach': { status: 200, file: 'queued-200.json' },
+  'POST /api/machines/web-2/attach': { status: 200, file: 'queued-200.json' },
+  'POST /api/machines/web-2/move': { status: 200, file: 'queued-200.json' },
+  'POST /api/machines/web-1/guest/shutdown': { status: 200, file: 'action-200.json' },
+  'POST /api/machines/web-1/suspend': { status: 200, file: 'action-200.json' },
+};

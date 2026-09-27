@@ -207,10 +207,21 @@ HostShutdownOptions.propTypes = {
 };
 
 /**
- * The list dialog an action's options are collected in before its
- * confirmation: the title, the options as its body, Cancel and Continue.
+ * The list dialog an action's options are collected in: the title, the
+ * options as its body, Cancel and the button that goes on, Continue
+ * before a confirmation or the action's own word, `continueKey`, when the
+ * dialog is the last step, held `disabled` while the options are not yet
+ * complete.
  */
-export const ActionOptionsModal = ({ show, title, onHide, onContinue, children }) => {
+export const ActionOptionsModal = ({
+  show,
+  title,
+  onHide,
+  onContinue,
+  continueKey = 'hosts.controls.continue',
+  disabled = false,
+  children,
+}) => {
   const { t } = useTranslation();
   return (
     <Modal show={show} onHide={onHide} dialogClassName="list-modal" scrollable>
@@ -222,8 +233,8 @@ export const ActionOptionsModal = ({ show, title, onHide, onContinue, children }
         <Button variant="secondary" onClick={onHide}>
           {t('pages.confirm.cancel')}
         </Button>
-        <Button variant="primary" onClick={onContinue}>
-          {t('hosts.controls.continue')}
+        <Button variant="primary" disabled={disabled} onClick={onContinue}>
+          {t(continueKey)}
         </Button>
       </Modal.Footer>
     </Modal>
@@ -235,16 +246,33 @@ ActionOptionsModal.propTypes = {
   title: PropTypes.string.isRequired,
   onHide: PropTypes.func.isRequired,
   onContinue: PropTypes.func.isRequired,
+  continueKey: PropTypes.string,
+  disabled: PropTypes.bool,
   children: PropTypes.node.isRequired,
 };
 
 /**
- * One row of the Controls menu: a fa6 glyph in its tone and the label.
+ * One row of the Controls menu: a fa6 glyph in its tone and the label,
+ * `titleKey` the sentence its tooltip carries when the label alone does
+ * not say what the row does.
  */
-export const ActionRow = ({ icon: Icon, tone, labelKey, disabled = false, onClick }) => {
+export const ActionRow = ({
+  icon: Icon,
+  tone,
+  labelKey,
+  titleKey = '',
+  disabled = false,
+  onClick,
+}) => {
   const { t } = useTranslation();
   return (
-    <Dropdown.Item as="button" type="button" disabled={disabled} onClick={onClick}>
+    <Dropdown.Item
+      as="button"
+      type="button"
+      disabled={disabled}
+      title={titleKey ? t(titleKey) : undefined}
+      onClick={onClick}
+    >
       <Icon className={`${tone} me-2`} />
       {t(labelKey)}
     </Dropdown.Item>
@@ -255,6 +283,7 @@ ActionRow.propTypes = {
   icon: PropTypes.elementType.isRequired,
   tone: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
+  titleKey: PropTypes.string,
   disabled: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
 };

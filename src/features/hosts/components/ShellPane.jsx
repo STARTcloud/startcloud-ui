@@ -94,8 +94,9 @@ const fitTerminal = ({ terminal, addons, socket }) => {
  * telling the PTY its size in a NUL-prefixed `{ type: 'resize', cols,
  * rows }` frame both agents accept. The states with nothing to type
  * into, no session, connecting and closed, draw as text over the
- * terminal; a closed session is opened again by Restart shell and never
- * on a clock. The terminal preferences dialog draws here.
+ * terminal; a closed socket is opened again by Reconnect shell, to the
+ * same session, or by Restart shell, on a new one, and never on a clock.
+ * The terminal preferences dialog draws here.
  */
 const ShellPane = ({ active, height }) => {
   const { t } = useTranslation();

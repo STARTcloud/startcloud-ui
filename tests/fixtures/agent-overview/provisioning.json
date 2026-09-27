@@ -1,0 +1,9 @@
+{
+  "vagrant": true,
+  "virtualbox": true,
+  "git": true,
+  "ansible": true,
+  "rsync": true,
+  "scp": true,
+  "builtin_sync": true
+}

@@ -239,21 +239,42 @@ snapshot event: a connecting client reads
 `GET /api/admin/brute-force/count` once, and the stream carries every
 change after.
 
-### Hyperweaver family: topics `tasks` and `hosts`
+### Hyperweaver family: topics `tasks`, `hosts` and `monitoring`
 
 The UI backends whose `role` is `hyperweaver-server`, `hyperweaver-agent`
-or `zoneweaver-agent` stream two app topics. An agent sends the events of
+or `zoneweaver-agent` stream three app topics. An agent sends the events of
 its own host; the server sends every registered agent's events on its one
 stream and adds `agent_id` to the data of each, the registry id
 `GET /api/servers` answers for that agent, so a page tells the hosts
 apart and a tab still holds one connection. Every other member keeps the
 name the agent's REST routes use.
 
-| Topic   | Event             | Data                                                                                                                                                                                  | Snapshot                                                          |
-| ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `tasks` | `task-updated`    | one task row as `GET /api/tasks` answers it, sent when a task is created and on every change of its `status`, `progress_percent`, `progress_info` or `error_message`                  | none; the client reads `GET /api/tasks` on connect and on `reset` |
-| `hosts` | `stats-updated`   | the `GET /api/stats` shape of one agent, sent when a machine is created or removed and when one starts or stops                                                                       | none; the client reads `GET /api/stats` on connect and on `reset` |
-| `hosts` | `servers-updated` | `{}`, the server role alone, sent when a registry row is added, removed or its `capabilities` change; the client reads `GET /api/servers` again, the list being the person's own view | none                                                              |
+| Topic        | Event             | Data                                                                                                                                                                                  | Snapshot                                                          |
+| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `tasks`      | `task-updated`    | one task row as `GET /api/tasks` answers it, sent when a task is created and on every change of its `status`, `progress_percent`, `progress_info` or `error_message`                  | none; the client reads `GET /api/tasks` on connect and on `reset` |
+| `hosts`      | `stats-updated`   | the `GET /api/stats` shape of one agent, sent when a machine is created or removed and when one starts or stops                                                                       | none; the client reads `GET /api/stats` on connect and on `reset` |
+| `hosts`      | `servers-updated` | `{}`, the server role alone, sent when a registry row is added, removed or its `capabilities` change; the client reads `GET /api/servers` again, the list being the person's own view | none                                                              |
+| `monitoring` | `cpu-sample`      | `{ "cpu": [sample] }`, the samples of one collection as `GET /api/monitoring/system/cpu` answers them with `include_cores=true`, sent when the agent took them                        | none; the client reads the history on connect and on `reset`      |
+| `monitoring` | `memory-sample`   | `{ "memory": [sample] }`, as `GET /api/monitoring/system/memory` answers them, sent when the agent took them                                                                          | none; the client reads the history on connect and on `reset`      |
+| `monitoring` | `network-sample`  | `{ "usage": [sample] }`, one sample an interface as `GET /api/monitoring/network/usage` answers them, sent when the agent took them                                                   | none; the client reads the history on connect and on `reset`      |
+| `monitoring` | `pool-io-sample`  | `{ "poolio": [sample] }`, one sample a pool as `GET /api/monitoring/storage/pool-io` answers them, sent by an agent that lists `zfs` when it took them                                | none; the client reads the history on connect and on `reset`      |
+| `monitoring` | `arc-sample`      | `{ "arc": [sample] }`, as `GET /api/monitoring/storage/arc` answers them, sent by an agent that lists `zfs` when it took them                                                         | none; the client reads the history on connect and on `reset`      |
+
+The `monitoring` topic carries what an agent's collector took, so a chart
+grows by push and no page asks on a timer. An agent sends each sample
+once, when it took it, under the member its REST route answers the rows
+in, because a read and a pushed sample are then taken with the same code.
+A client keeps of a frame the samples newer than the newest it holds of
+that host and, of a network or a pool sample, of that interface or pool,
+because a read that overlaps the stream and a frame replayed from the
+ring must add nothing twice. The topic has no snapshot event: on connect
+and on `reset` a chart reads its history again, `since` the start of its
+window and `limit` the samples of its resolution. A UI backend lists
+`monitoring` in `events.topics` only while an agent behind it lists the
+feature token `monitoring`. An agent that keeps no history and takes a
+sample only when it is asked sends nothing on the topic; its charts draw
+the one sample a read answers and say so, and no page asks again on a
+timer in its place.
 
 A task's output and every terminal are not events: they keep the
 WebSocket the agent pushes them on, one per open task or terminal, the

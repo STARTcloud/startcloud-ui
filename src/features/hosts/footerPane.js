@@ -1,17 +1,27 @@
 import { lazy, useMemo } from 'react';
-import { FaListCheck, FaRotate, FaSliders, FaTerminal } from 'react-icons/fa6';
+import { FaListCheck, FaPlug, FaRotate, FaSliders, FaTerminal } from 'react-icons/fa6';
 
 import { hasFeatureStrict } from '../../utils/capabilities';
 
 import { useFocus } from './hooks/useFocus';
 import { requestTasksRefresh } from './hooks/useTasks';
-import { openTerminalPrefs, requestTerminalRestart } from './hooks/useTerminal';
+import {
+  openTerminalPrefs,
+  requestTerminalReconnect,
+  requestTerminalRestart,
+} from './hooks/useTerminal';
 
 const ShellPane = lazy(() => import('./components/ShellPane'));
 const TasksPane = lazy(() => import('./components/TasksPane'));
 const TasksTools = lazy(() => import('./components/TasksTools'));
 
 const SHELL_ROWS = [
+  {
+    key: 'reconnect',
+    labelKey: 'footer.pane.reconnectShell',
+    icon: FaPlug,
+    onClick: requestTerminalReconnect,
+  },
   {
     key: 'restart',
     labelKey: 'footer.pane.restartShell',
@@ -49,6 +59,7 @@ const TASKS_VIEW = {
   labelKey: 'footer.pane.tasks',
   icon: FaListCheck,
   Component: TasksPane,
+  first: true,
   tools: TasksTools,
   menu: TASKS_ROWS,
 };
@@ -58,13 +69,16 @@ const listsToken = (focus, token) => focus.kind === 'host' && focus.features.inc
 /**
  * The views the footer's pane offers for the host in focus, in the order
  * the row draws their toggles: the shell view while the focus is one
- * host that lists `host-terminal`, its rows Restart shell and Terminal
+ * host that lists `host-terminal`, its rows Reconnect shell, a new
+ * socket to the same session, Restart shell, a new session, and Terminal
  * preferences on the right-click menu and on the toggle's drop-up alike,
  * and the tasks view while the focus lists `tasks` or, with every host
  * in focus, while any host does, its tools Refresh, the priority
- * filter and the Columns picker and its menu row Refresh. An empty list means no pane.
+ * filter and the Columns picker and its menu row Refresh. The tasks view
+ * is marked `first`, the view a pane with no saved view opens on, as
+ * hyperweaver-ui's footer does. An empty list means no pane.
  *
- * @returns {Array<Object>} The views, `[{ key, labelKey, icon, Component, tools?, menu?, dropUp? }]`
+ * @returns {Array<Object>} The views, `[{ key, labelKey, icon, Component, first?, tools?, menu?, dropUp? }]`
  */
 export const useFooterViews = () => {
   const focus = useFocus();

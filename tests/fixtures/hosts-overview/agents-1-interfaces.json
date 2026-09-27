@@ -1,0 +1,22 @@
+{
+  "interfaces": [
+    {
+      "link": "Ethernet",
+      "class": "phys",
+      "mtu": 1500,
+      "state": "up",
+      "macaddress": "08:00:27:4f:1a:01",
+      "addresses": ["10.0.0.11/24"]
+    },
+    {
+      "link": "Wi-Fi",
+      "class": "phys",
+      "mtu": 1500,
+      "state": "down",
+      "macaddress": "08:00:27:4f:1a:02",
+      "addresses": []
+    }
+  ],
+  "totalCount": 2,
+  "pagination": { "limit": 100, "offset": 0, "hasMore": false }
+}

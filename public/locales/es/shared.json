@@ -27,6 +27,7 @@
     "profileModeTitle": "Cambiar entre el perfil del proveedor de identidad y el perfil local",
     "about": "Acerca de",
     "docs": "Documentación",
+    "api": "Referencia de la API",
     "contact": "Contacto",
     "discover": "Descubrir",
     "admin": "Admin",
@@ -198,7 +199,8 @@
     "title": "Cambiar Organización",
     "noOrgsFound": "No se encontraron organizaciones. Contacta a tu administrador si esto es inesperado.",
     "loadError": "Error al cargar tus organizaciones. Por favor intenta de nuevo.",
-    "primaryOrg": "Organización Principal"
+    "primaryOrg": "Organización Principal",
+    "allOrganizations": "Todas las organizaciones"
   },
   "roles": {
     "guest": "Invitado",
@@ -1531,6 +1533,152 @@
       "store": "Almacén privado",
       "uds": "Base de datos UDS",
       "events": "Flujo de eventos"
+    },
+    "pane": {
+      "priorityAll": "Todas",
+      "priorityLowPlus": "Baja+",
+      "priorityMediumPlus": "Media+",
+      "priorityHighPlus": "Alta+",
+      "priorityCritical": "Crítica",
+      "versionSurprise": "¡Haz clic en mí 3 veces para una sorpresa!",
+      "shell": "Shell",
+      "reconnectShell": "Reconectar Shell",
+      "restartShell": "Reiniciar Shell",
+      "tasks": "Tareas",
+      "priorityFilter": "Filtro de prioridad",
+      "toggleColumns": "Mostrar u ocultar columnas",
+      "collapse": "Contraer",
+      "expand": "Expandir",
+      "resize": "Arrastra para cambiar el tamaño",
+      "refresh": "Actualizar",
+      "resizeBoth": "Cambiar el tamaño de la barra lateral y del panel"
+    },
+    "terminal": {
+      "title": "Preferencias del terminal",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "resetDefaults": "Restablecer valores predeterminados",
+      "fontSize": "Tamaño de fuente",
+      "scrollback": "Líneas de desplazamiento hacia atrás",
+      "cursorStyle": "Estilo del cursor",
+      "cursorBlock": "Bloque",
+      "cursorUnderline": "Subrayado",
+      "cursorBar": "Barra",
+      "cursorBlink": "Parpadeo del cursor",
+      "on": "Activado",
+      "off": "Desactivado",
+      "fontFamily": "Familia de fuente (pila CSS)",
+      "fontHint": "Cualquier fuente monoespaciada instalada sirve — la pila se recorre de izquierda a derecha.",
+      "preview": "vista previa: ls -la /var/log | grep -i weaver 0123456789",
+      "applyNote": "El shell del host del pie de página se actualiza de inmediato; los demás terminales toman los nuevos valores la próxima vez que se abren."
+    },
+    "tasks": {
+      "priorityCritical": "CRÍTICA",
+      "priorityHigh": "ALTA",
+      "priorityMedium": "MEDIA",
+      "priorityService": "SERVICIO",
+      "priorityLow": "BAJA",
+      "priorityBg": "2.º PLANO",
+      "columnId": "ID",
+      "columnOperation": "Operación",
+      "columnTarget": "Destino",
+      "columnStatus": "Estado",
+      "columnProgress": "Progreso",
+      "columnPriority": "Prioridad",
+      "columnCreatedBy": "Creada por",
+      "columnCreated": "Creada",
+      "columnStarted": "Iniciada",
+      "columnCompleted": "Completada",
+      "columnError": "Error",
+      "loading": "Cargando tareas...",
+      "columnHost": "Host",
+      "menuRefresh": "Actualizar tareas"
+    },
+    "task": {
+      "priorityCritical": "CRÍTICA",
+      "priorityHigh": "ALTA",
+      "priorityMedium": "MEDIA",
+      "priorityService": "SERVICIO",
+      "priorityLow": "BAJA",
+      "priorityBackground": "SEGUNDO PLANO",
+      "cancelling": "Cancelando...",
+      "cancelTask": "Cancelar tarea",
+      "taskTitle": "Tarea",
+      "details": "Detalles",
+      "labelId": "ID",
+      "labelOperation": "Operación",
+      "labelTarget": "Destino",
+      "labelStatus": "Estado",
+      "labelPriority": "Prioridad",
+      "labelCreatedBy": "Creada por",
+      "labelCreated": "Creada",
+      "labelStarted": "Iniciada",
+      "labelCompleted": "Completada",
+      "labelError": "Error",
+      "labelDependsOn": "Depende de",
+      "labelParentTask": "Tarea padre",
+      "progress": "Progreso",
+      "inGuest": "en el invitado",
+      "metadata": "Metadatos",
+      "output": "Salida",
+      "copyOutput": "Copiar la salida de la consola al portapapeles",
+      "copied": "Copiado",
+      "copy": "Copiar",
+      "noOutput": "No hay salida disponible",
+      "subtasks": "Subtareas ({{count}})",
+      "columnOperation": "Operación",
+      "columnTarget": "Destino",
+      "columnStatus": "Estado",
+      "columnProgress": "Progreso",
+      "confirmCancelTitle": "Cancelar tarea",
+      "confirmCancelWithSubtasks": "¿Cancelar esta tarea {{status}}? Toda su cadena ({{count}} subtareas) se cancela con ella.",
+      "confirmCancel": "¿Cancelar esta tarea {{status}}?",
+      "cancelFailed": "La cancelación falló: {{message}}",
+      "streamClosed": "El flujo de salida se cerró."
+    },
+    "operation": {
+      "provisionerImport": "Importación de provisioner",
+      "machinePrepare": "Renderizar + materializar el directorio de trabajo",
+      "machineCreateOrchestration": "Creación de máquina",
+      "machineCreateStorage": "Crear almacenamiento",
+      "machineCreateConfig": "Configurar VM",
+      "machineCreateFinalize": "Finalizar máquina",
+      "templateDownload": "Descarga de plantilla",
+      "machineProvisionOrchestration": "Pipeline de aprovisionamiento",
+      "machineWaitSsh": "Esperar SSH",
+      "machineSyncParent": "Sincronizar carpetas",
+      "machineSync": "Sincronizar carpeta",
+      "machineProvisionParent": "Ejecutar playbooks",
+      "machineProvision": "Ejecutar playbook",
+      "machineModify": "Modificar máquina",
+      "reset": "Restablecer",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "snapshotTake": "Tomar instantánea",
+      "snapshotRestore": "Restaurar instantánea",
+      "snapshotDelete": "Eliminar instantánea",
+      "machineCloneCurrent": "Clonar el estado actual",
+      "templateDelete": "Eliminación de plantilla",
+      "templateExport": "Exportación de plantilla",
+      "templateUpload": "Publicación de plantilla",
+      "templateMove": "Traslado de plantilla",
+      "zoneModify": "Modificar zona",
+      "provisioningNetworkSetup": "Configuración de la red de aprovisionamiento",
+      "provisioningNetworkTeardown": "Desmontaje de la red de aprovisionamiento",
+      "artifactScan": "Escaneo de la caché de archivos",
+      "artifactDownload": "Descarga de archivo",
+      "hclDownload": "Descarga del portal HCL",
+      "agentUpdate": "Actualización del agente"
+    },
+    "shell": {
+      "noSession": "No hay sesión disponible",
+      "selectServer": "Selecciona un servidor para iniciar el terminal",
+      "loadingTerminal": "Cargando terminal...",
+      "initializing": "Inicializando xterm.js",
+      "connecting": "Conectando...",
+      "waitingForServer": "Esperando al servidor",
+      "ready": "Terminal del host listo...",
+      "closed": "La sesión del shell se cerró. Reiniciar shell abre una nueva."
     }
   },
   "collections": {
@@ -1807,7 +1955,8 @@
       "version": "Versión",
       "machines": "Máquinas",
       "machinesYes": "Sí",
-      "machinesNo": "No"
+      "machinesNo": "No",
+      "refresh": "Actualizar"
     },
     "empty": {
       "title": "Sin hosts",
@@ -1854,6 +2003,21 @@
       "powerOffHost": "Apagar host",
       "privilege": "Los controles avanzados necesitan una cuenta de administrador.",
       "failed": "La acción falló.",
+      "resetTitle": "Reinicio forzado — como pulsar el botón de reinicio; solo válido mientras está en ejecución",
+      "injectNmi": "Inyectar NMI",
+      "injectNmiTitle": "Inyecta una interrupción no enmascarable en la máquina en ejecución — fuerza un volcado de memoria del invitado / entra en el depurador del kernel; solo válido mientras está en ejecución",
+      "pause": "Pausar",
+      "pauseTitle": "Congela la máquina en la RAM; solo válido mientras está en ejecución",
+      "suspend": "Suspender",
+      "suspendTitle": "Suspende a disco; Iniciar o Reanudar continúa donde se quedó",
+      "resume": "Reanudar",
+      "resumeTitle": "Reanuda una máquina pausada o suspendida",
+      "guestShutdown": "Apagado del invitado",
+      "guestShutdownTitle": "Apagado ordenado dentro del invitado mediante el agente del invitado",
+      "guestReboot": "Reinicio del invitado",
+      "guestRebootTitle": "Reinicio ordenado dentro del invitado mediante el agente del invitado",
+      "openInApplication": "Abrir en la aplicación",
+      "applicationMissing": "{{path}} — no se encontró en el host del agente",
       "done": {
         "start": "{{name}} se está iniciando.",
         "shutdown": "{{name}} se está apagando.",
@@ -1862,7 +2026,19 @@
         "kill": "{{name}} se terminó.",
         "destroy": "{{name}} se destruyó.",
         "host-restart": "El host se está reiniciando.",
-        "host-shutdown": "El host se está apagando."
+        "host-shutdown": "El host se está apagando.",
+        "nmi": "La interrupción se envió a {{name}}.",
+        "pause": "{{name}} se está pausando.",
+        "suspend": "{{name}} se está suspendiendo.",
+        "resume": "{{name}} se está reanudando.",
+        "guest-powerdown": "Se pidió al invitado de {{name}} que se apague.",
+        "guest-reboot": "Se pidió al invitado de {{name}} que se reinicie.",
+        "launch": "{{application}} se abrió para {{name}}.",
+        "zone-ready": "{{name}} está lista.",
+        "zone-mark-incomplete": "{{name}} se marcó como incompleta.",
+        "zone-detach": "{{name}} se está desacoplando.",
+        "zone-attach": "{{name}} se está acoplando.",
+        "zone-move": "{{name}} se está moviendo."
       },
       "destroyOptions": {
         "title": "Destruir {{name}}",
@@ -1896,6 +2072,211 @@
         "message": "Mensaje (opcional)",
         "messagePlaceholder": "Mensaje personalizado de apagado",
         "messageNote": "Mensaje opcional para los registros del sistema (máx. 200 caracteres)"
+      }
+    },
+    "zone": {
+      "header": "Ciclo de vida de la zona",
+      "ready": "Lista",
+      "verify": "Verificar configuración",
+      "markIncomplete": "Marcar como incompleta",
+      "detach": "Desacoplar",
+      "attach": "Acoplar…",
+      "move": "Mover zonepath…",
+      "attachTitle": "Acoplar {{name}}",
+      "attachSubmit": "Acoplar",
+      "attachUpdate": "Actualizar la zona al acoplar (-u)",
+      "attachForce": "Forzar el acoplamiento (-F)",
+      "moveTitle": "Mover {{name}}",
+      "moveSubmit": "Mover",
+      "movePath": "Nuevo zonepath (absoluto)",
+      "movePathPlaceholder": "/rpool/zones/new-home",
+      "verifyTitle": "Verificar {{name}}",
+      "verifyValid": "Configuración válida",
+      "verifyInvalid": "Configuración NO VÁLIDA",
+      "resultOutput": "Salida"
+    },
+    "bulk": {
+      "menu": "Acciones en bloque",
+      "acrossAllHosts": "En todos los hosts",
+      "header": {
+        "machine": "Acciones en bloque de máquinas",
+        "zone": "Acciones en bloque de zonas"
+      },
+      "start": {
+        "machine": "Iniciar máquinas…",
+        "zone": "Iniciar zonas…"
+      },
+      "stop": {
+        "machine": "Apagar máquinas…",
+        "zone": "Apagar zonas…"
+      },
+      "restart": {
+        "machine": "Reiniciar máquinas…",
+        "zone": "Reiniciar zonas…"
+      },
+      "title": {
+        "start": {
+          "machine": "Iniciar máquinas",
+          "zone": "Iniciar zonas"
+        },
+        "stop": {
+          "machine": "Apagar máquinas",
+          "zone": "Apagar zonas"
+        },
+        "restart": {
+          "machine": "Reiniciar máquinas",
+          "zone": "Reiniciar zonas"
+        }
+      },
+      "filterByName": "Filtrar por nombre…",
+      "allStates": "Todos los estados",
+      "allHosts": "Todos los hosts",
+      "count_one": "{{count}} listada",
+      "count_other": "{{count}} listadas",
+      "done": "{{action}}: {{count}} enviadas, {{failed}} fallidas."
+    },
+    "overview": {
+      "title": "Resumen del host",
+      "systemInfo": "Información del sistema",
+      "osBuild": "Compilación del SO",
+      "uptimeValue": "{{days}}d {{hours}}h {{minutes}}m",
+      "notAvailable": "N/D",
+      "monitoringService": "Servicio de monitorización",
+      "initialized": "Inicializado",
+      "serviceHealth": "Salud del servicio",
+      "taskQueue": "Cola de tareas",
+      "pending": "{{number}} pendientes",
+      "done": "{{number}} completadas",
+      "failed": "{{number}} fallidas",
+      "provisioningTools": "Herramientas de aprovisionamiento",
+      "toolInstalled": "{{tool}} instalado",
+      "toolMissingSoft": "Falta {{tool}} — el transporte integrado del agente cubre la sincronización de carpetas",
+      "toolMissing": "Falta {{tool}}",
+      "toolsMissing_one": "Falta {{count}} herramienta — el aprovisionamiento puede fallar hasta que se instale.",
+      "toolsMissing_other": "Faltan {{count}} herramientas — el aprovisionamiento puede fallar hasta que se instalen.",
+      "resources": "Uso de recursos",
+      "cpuUsage": "Uso de CPU",
+      "cores": "(Núcleos: {{cores}})",
+      "memoryUsage": "Uso de memoria",
+      "memorySummary": "(Total: {{total}}{{arc}})",
+      "arcSegment": ", ARC: {{arc}}",
+      "swapUsage": "Uso de swap",
+      "swapSummary": "(Total: {{total}}, Usado: {{used}}, Libre: {{free}})",
+      "zfsArc": "ZFS ARC",
+      "interfaces": "Interfaces de red",
+      "interface": "Interfaz",
+      "class": "Clase",
+      "unknown": "desconocido",
+      "noInterfaces": "No se encontraron interfaces de red",
+      "readError": "No se pudo leer esto del host",
+      "interfaceCounts": "{{total}} en total, {{physical}} físicas, {{virtual}} virtuales, {{up}} activas, {{down}} inactivas",
+      "storage": "Resumen de almacenamiento",
+      "zfsPools": "Pools ZFS",
+      "datasets": "Datasets",
+      "storageUnavailable": "Los datos de monitorización del almacenamiento no están disponibles",
+      "database": "Base de datos de monitorización",
+      "collectionInterval": "Intervalo de recogida: {{seconds}}s",
+      "retention_one": "Retención: {{count}} día",
+      "retention_other": "Retención: {{count}} días",
+      "colData": "Datos",
+      "colRecords": "Registros",
+      "colLatest": "Última muestra"
+    },
+    "charts": {
+      "heading": "Monitorización del rendimiento",
+      "windowTitle": "Selecciona la ventana de tiempo de las gráficas",
+      "resolutionTitle": "Resolución de la gráfica - controla el número de puntos de datos",
+      "window": {
+        "1min": "1 minuto",
+        "5min": "5 minutos",
+        "10min": "10 minutos",
+        "15min": "15 minutos",
+        "30min": "30 minutos",
+        "1hour": "1 hora",
+        "3hour": "3 horas",
+        "6hour": "6 horas",
+        "12hour": "12 horas",
+        "24hour": "24 horas"
+      },
+      "resolution": {
+        "realtime": "Tiempo real (125 puntos)",
+        "high": "Alta (38 puntos)",
+        "medium": "Media (13 puntos)",
+        "low": "Baja (5 puntos)"
+      },
+      "expand": "Expandir la gráfica a tamaño completo",
+      "dialogTitle": "{{title}} - {{host}}",
+      "entitySeries": "{{name}} {{series}}",
+      "oneSample": "Una muestra. Este host no guarda historial, así que la gráfica crece a medida que llegan las muestras.",
+      "loadError": "No se pudieron leer los datos de esta gráfica",
+      "cpu": {
+        "title": "Uso de CPU",
+        "chartTitle": "Rendimiento de CPU",
+        "expanded": "Rendimiento de CPU",
+        "empty": "No hay datos de CPU disponibles",
+        "usageAxis": "Uso %",
+        "loadAxis": "Carga",
+        "overall": "Uso total",
+        "ioDelay": "Retardo de E/S %",
+        "load1": "Carga 1m",
+        "load5": "Carga 5m",
+        "load15": "Carga 15m",
+        "avg": "Media",
+        "toggleAvg": "Mostrar u ocultar la media histórica",
+        "cores": "Núcleos",
+        "toggleCores": "Mostrar u ocultar todos los núcleos",
+        "load": "Carga",
+        "toggleLoad": "Mostrar u ocultar la carga"
+      },
+      "memory": {
+        "title": "Uso de memoria",
+        "chartTitle": "Uso de memoria",
+        "expanded": "Rendimiento de memoria",
+        "empty": "No hay datos de memoria disponibles",
+        "axis": "GB",
+        "used": "Usada",
+        "free": "Libre",
+        "cached": "En caché",
+        "toggleUsed": "Mostrar u ocultar la memoria usada",
+        "toggleFree": "Mostrar u ocultar la memoria libre",
+        "toggleCached": "Mostrar u ocultar la memoria en caché"
+      },
+      "arc": {
+        "title": "ZFS ARC",
+        "chartTitle": "Estadísticas de ZFS ARC",
+        "expanded": "Rendimiento de ZFS ARC",
+        "empty": "No hay datos de ARC disponibles",
+        "sizeAxis": "Tamaño (GB)",
+        "hitAxis": "Tasa de aciertos (%)",
+        "size": "Tamaño de ARC",
+        "target": "Objetivo de ARC",
+        "hitRate": "Tasa de aciertos"
+      },
+      "network": {
+        "title": "Red",
+        "chartTitle": "Ancho de banda de red",
+        "expanded": "Rendimiento de red",
+        "empty": "No hay datos de interfaces reales disponibles",
+        "axis": "Mbps",
+        "rx": "RX",
+        "tx": "TX",
+        "total": "Total",
+        "toggleRx": "Mostrar u ocultar el ancho de banda RX",
+        "toggleTx": "Mostrar u ocultar el ancho de banda TX",
+        "toggleTotal": "Mostrar u ocultar el ancho de banda total"
+      },
+      "poolIo": {
+        "title": "E/S de almacenamiento",
+        "chartTitle": "E/S de pools ZFS",
+        "expanded": "Rendimiento de E/S de almacenamiento",
+        "empty": "No hay datos de E/S de pools disponibles",
+        "axis": "MB/s",
+        "read": "Lectura",
+        "write": "Escritura",
+        "total": "Total",
+        "toggleRead": "Mostrar u ocultar el ancho de banda de lectura",
+        "toggleWrite": "Mostrar u ocultar el ancho de banda de escritura",
+        "toggleTotal": "Mostrar u ocultar el ancho de banda total"
       }
     }
   },
@@ -2272,6 +2653,105 @@
       },
       "support": {
         "intro": "El monitor se mantiene de forma privada; informa de problemas en su repositorio."
+      }
+    },
+    "hyperweaver-server": {
+      "description": "El plano de control de un entorno Hyperweaver: un servidor Node.js que sirve esta UI, inicia la sesión de las personas, mantiene el registro de agentes de host y llega a cada agente registrado a través de su propio origen.",
+      "goal": "Un solo lugar para ver y gestionar cada host y cada máquina, sea cual sea el agente que los ejecute.",
+      "features": {
+        "registry": "Un registro de agentes de host, cada uno añadido con su clave de API",
+        "signIn": "Inicio de sesión con cuentas locales, LDAP u OpenID Connect",
+        "organizations": "Organizaciones e invitaciones",
+        "proxy": "Cada solicitud a un agente y cada consola se reenvían al agente por su id de registro",
+        "assignment": "Hosts y máquinas asignados a organizaciones"
+      },
+      "components": {
+        "server": {
+          "title": "Servidor",
+          "nodejs": "Node.js con Express",
+          "database": "Cuentas, organizaciones y el registro en la base de datos: SQLite, PostgreSQL, MySQL o MariaDB"
+        },
+        "agents": {
+          "title": "Agentes",
+          "hyperweaver": "hyperweaver-agent en hosts VirtualBox",
+          "zoneweaver": "zoneweaver-agent en hosts OmniOS"
+        },
+        "ui": {
+          "title": "Interfaz web",
+          "shared": "La UI compartida de STARTcloud, la misma barra que cada aplicación del entorno"
+        }
+      },
+      "docs": {
+        "intro": "Lee cómo se registran los agentes de host, cómo inician sesión las personas y cómo se asignan los hosts y las máquinas a las organizaciones."
+      },
+      "support": {
+        "intro": "Lee qué cambió en cada versión o informa de un problema."
+      }
+    },
+    "hyperweaver-agent": {
+      "description": "El agente que se ejecuta en un host Windows, macOS o Linux y gestiona las máquinas que hay en él: máquinas VirtualBox en todos ellos y máquinas UTM en macOS.",
+      "goal": "Cada máquina del host creada, aprovisionada y controlada desde una sola página, por sí solo o bajo un Hyperweaver Server.",
+      "features": {
+        "machines": "Crea, modifica, clona y toma instantáneas de máquinas",
+        "provisioning": "Aprovisionamiento desde paquetes provisioner, con el progreso del playbook informado en vivo",
+        "templates": "Plantillas de box descargadas de un registro",
+        "consoles": "Consolas en el navegador por RDP, y por VNC donde el host lo tenga",
+        "terminals": "Un terminal SSH por máquina y un shell en el host",
+        "tasks": "Una cola de tareas con salida en vivo para todo lo que hace"
+      },
+      "components": {
+        "agent": {
+          "title": "Agente",
+          "go": "Escrito en Go",
+          "virtualbox": "Maneja VirtualBox mediante VBoxManage"
+        },
+        "tasks": {
+          "title": "Tareas",
+          "queue": "Cada cambio se ejecuta como una tarea y su salida se conserva"
+        },
+        "ui": {
+          "title": "Interfaz web",
+          "shared": "La UI compartida de STARTcloud, la misma barra que cada aplicación del entorno"
+        }
+      },
+      "docs": {
+        "intro": "Lee cómo se crean, aprovisionan y controlan las máquinas en el host."
+      },
+      "support": {
+        "intro": "Lee qué cambió en cada versión o informa de un problema."
+      }
+    },
+    "zoneweaver-agent": {
+      "description": "El agente que se ejecuta en un host OmniOS y gestiona sus zonas bhyve y el host que hay debajo.",
+      "goal": "Cada zona y cada superficie del host, almacenamiento, red, paquetes y servicios, gestionadas desde una sola página, por sí solo o bajo un Hyperweaver Server.",
+      "features": {
+        "zones": "Crea, modifica, clona y toma instantáneas de zonas",
+        "host": "Pools y datasets ZFS, VNICs, entornos de arranque, paquetes y servicios",
+        "provisioning": "Aprovisionamiento desde paquetes provisioner, con el progreso del playbook informado en vivo",
+        "consoles": "Consolas en el navegador por VNC y zlogin",
+        "terminals": "Un terminal SSH por zona y un shell en el host",
+        "tasks": "Una cola de tareas con salida en vivo para todo lo que hace"
+      },
+      "components": {
+        "agent": {
+          "title": "Agente",
+          "nodejs": "Node.js en OmniOS",
+          "zones": "Maneja las zonas con las herramientas propias de la plataforma"
+        },
+        "tasks": {
+          "title": "Tareas",
+          "queue": "Cada cambio se ejecuta como una tarea y su salida se conserva"
+        },
+        "ui": {
+          "title": "Interfaz web",
+          "shared": "La UI compartida de STARTcloud, la misma barra que cada aplicación del entorno"
+        }
+      },
+      "docs": {
+        "intro": "Lee cómo se crean y aprovisionan las zonas y cómo se gestionan el almacenamiento, la red, los paquetes y los servicios del host."
+      },
+      "support": {
+        "intro": "Lee qué cambió en cada versión o informa de un problema."
       }
     }
   },

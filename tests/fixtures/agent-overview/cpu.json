@@ -1,0 +1,62 @@
+{
+  "cpu": [
+    {
+      "host": "lab-1",
+      "cpu_count": 1,
+      "cpu_utilization_pct": 18,
+      "user_pct": 12,
+      "system_pct": 6,
+      "idle_pct": 82,
+      "load_avg_1min": 0.2,
+      "load_avg_5min": 0.15,
+      "load_avg_15min": 0.1,
+      "processes_running": 1,
+      "processes_blocked": 0,
+      "io_delay_pct": 0.5,
+      "per_core_parsed": [
+        { "core": 0, "utilization_pct": 18, "user_pct": 12, "system_pct": 6, "idle_pct": 82 }
+      ],
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    },
+    {
+      "host": "lab-1",
+      "cpu_count": 1,
+      "cpu_utilization_pct": 9,
+      "user_pct": 6,
+      "system_pct": 3,
+      "idle_pct": 91,
+      "load_avg_1min": 0.1,
+      "load_avg_5min": 0.12,
+      "load_avg_15min": 0.1,
+      "processes_running": 1,
+      "processes_blocked": 0,
+      "io_delay_pct": 0.25,
+      "per_core_parsed": [
+        { "core": 0, "utilization_pct": 9, "user_pct": 6, "system_pct": 3, "idle_pct": 91 }
+      ],
+      "scan_timestamp": "2026-09-27T11:59:00Z"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "sampling": { "applied": false, "strategy": "stored", "samplesReturned": 2 },
+  "queryTime": 2,
+  "latest": {
+    "host": "lab-1",
+    "cpu_count": 1,
+    "cpu_utilization_pct": 18,
+    "user_pct": 12,
+    "system_pct": 6,
+    "idle_pct": 82,
+    "load_avg_1min": 0.2,
+    "load_avg_5min": 0.15,
+    "load_avg_15min": 0.1,
+    "processes_running": 1,
+    "processes_blocked": 0,
+    "io_delay_pct": 0.5,
+    "per_core_parsed": [
+      { "core": 0, "utilization_pct": 18, "user_pct": 12, "system_pct": 6, "idle_pct": 82 }
+    ],
+    "scan_timestamp": "2026-09-27T12:00:00Z"
+  }
+}

@@ -269,7 +269,7 @@ RowActions.propTypes = {
  * group shows or hides them under `table_prefs_profile`, and a `#<id>` in
  * the URL lands on that row.
  */
-const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
+const ServiceAccountsTab = ({ account, activeOrgName, admin }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const folds = useFolds(PREFS_KEY);
@@ -332,14 +332,14 @@ const ServiceAccountsTab = ({ account, activeOrgUuid, admin }) => {
         }
         const orgs = Array.isArray(list) ? list : [];
         setOrganizations(orgs);
-        const active = orgs.find(org => org.name === activeOrgUuid) || orgs[0];
+        const active = orgs.find(org => org.name === activeOrgName) || orgs[0];
         setForm(previous => ({ ...previous, organization_id: active ? String(active.id) : '' }));
       })
       .catch(() => null);
     return () => {
       mounted = false;
     };
-  }, [activeOrgUuid, serviceAccounts]);
+  }, [activeOrgName, serviceAccounts]);
 
   const resetRules = rules.reset;
 
@@ -480,7 +480,7 @@ ServiceAccountsTab.propTypes = {
       remove: PropTypes.func.isRequired,
     }).isRequired,
   }).isRequired,
-  activeOrgUuid: PropTypes.string.isRequired,
+  activeOrgName: PropTypes.string.isRequired,
   admin: PropTypes.bool.isRequired,
 };
 

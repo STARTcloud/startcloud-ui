@@ -1,0 +1,21 @@
+{
+  "host": "lab-1",
+  "totalSwapBytes": 4294967296,
+  "usedSwapBytes": 0,
+  "freeSwapBytes": 4294967296,
+  "overallUtilization": 0,
+  "swapAreaCount": 1,
+  "swapAreas": [
+    {
+      "path": "/dev/sda2",
+      "pool": null,
+      "sizeBytes": 4294967296,
+      "usedBytes": 0,
+      "utilization": 0
+    }
+  ],
+  "poolDistribution": {},
+  "recommendations": [],
+  "lastScanned": "2026-09-27T12:00:00Z",
+  "memoryStatsReference": null
+}

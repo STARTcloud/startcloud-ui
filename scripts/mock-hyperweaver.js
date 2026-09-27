@@ -1,37 +1,31 @@
-import { Buffer } from 'buffer';
-import { createHash, randomBytes, randomUUID } from 'crypto';
 import fs from 'fs';
 import http from 'http';
 import path from 'path';
-import process from 'process';
 
-const [, , ROLE_WORD = 'server', PORT_WORD = ''] = process.argv;
-const AGENT_MODE = ROLE_WORD === 'agent';
-const PORT = Number(PORT_WORD) || 9595;
-const FIXTURES = path.resolve('tests/fixtures');
+import { mountAccount } from './mock/account.js';
+import { mountAgents, socketMachine, startFlapping } from './mock/agents.js';
+import { SETUP_TOKEN, mountConfig } from './mock/config.js';
+import { hostFor } from './mock/fleet.js';
+import { mountInbox } from './mock/inbox.js';
+import { PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
+import { startSampling } from './mock/monitoring.js';
+import { mountOrgs } from './mock/orgs.js';
+import {
+  adminRoute,
+  admit,
+  agentRoute,
+  matchRoute,
+  matchSocket,
+  publicRoute,
+  sessionRoute,
+  socketRoute,
+} from './mock/router.js';
+import { STATUS, mountSite, startHealth } from './mock/site.js';
+import { refuseSocket } from './mock/socket.js';
+import { openStream } from './mock/stream.js';
+import { ticketFits } from './mock/terminal.js';
+
 const DIST = path.resolve('dist');
-const SELF = 'self';
-const TOPICS = ['health', 'tasks', 'hosts'];
-const STREAM_FEATURES = ['health', 'events'];
-const AGENT_FEATURES = ['machines', 'tasks', 'host-terminal', 'host-power'];
-const AGENT_PREFIX = AGENT_MODE ? '/api' : '/api/agents/:agent';
-const RETRY_MS = 3000;
-const HEARTBEAT_MS = 25000;
-const RING_MAX_EVENTS = 500;
-const RING_MAX_AGE_MS = 5 * 60 * 1000;
-const STEP_MS = 900;
-const TASK_LIMIT = 50;
-const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-const OP_TEXT = 1;
-const OP_BINARY = 2;
-const OP_CLOSE = 8;
-const OP_PING = 9;
-const OP_PONG = 10;
-const ACTIVE = ['pending', 'running'];
-const GREEN = '\u001b[32m';
-const BLUE = '\u001b[34m';
-const YELLOW = '\u001b[33m';
-const RESET = '\u001b[0m';
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -45,767 +39,17 @@ const CONTENT_TYPES = {
   '.woff2': 'font/woff2',
   '.webmanifest': 'application/manifest+json',
 };
-const LINES = {
-  start: [
-    'Powering the machine on',
-    `${GREEN}ok${RESET} the hypervisor accepted the start`,
-    'Waiting for the guest agent',
-    `${GREEN}ok${RESET} the guest agent answered`,
-  ],
-  stop: [
-    'Asking the guest to shut down',
-    'Waiting for the machine to power off',
-    `${GREEN}ok${RESET} the machine is off`,
-  ],
-  restart: [
-    'Asking the guest to restart',
-    'Waiting for the machine to power off',
-    'Powering the machine on',
-    `${GREEN}ok${RESET} the guest agent answered`,
-  ],
-  reset: [`${YELLOW}Hard reset${RESET} of the machine`, `${GREEN}ok${RESET} the machine is up`],
-  delete: [
-    'Stopping the machine',
-    'Removing the media the agent created',
-    `${GREEN}ok${RESET} the machine is gone`,
-  ],
-  host: [
-    'Warning every signed-in person',
-    'Waiting out the grace period',
-    `${YELLOW}The mock keeps the host up${RESET}`,
-  ],
-};
-
-const now = () => new Date().toISOString();
-
-const fixture = (folder, file) =>
-  JSON.parse(fs.readFileSync(path.join(FIXTURES, folder, file), 'utf8'));
-
-const uniqueOf = list => [...new Set(list)];
-
-const STATUS = (() => {
-  const base = fixture(AGENT_MODE ? 'agent' : 'hosts', 'status.json');
-  const own = AGENT_MODE ? AGENT_FEATURES : [];
-  return {
-    ...base,
-    features: uniqueOf([...base.features, ...own, ...STREAM_FEATURES]),
-    events: { path: '/api/events', topics: TOPICS },
-  };
-})();
-
-const USER = fixture(AGENT_MODE ? 'agent' : 'hosts', 'user.json');
-
-const hostFrom = ({ id, folder, stats, machines, tasks = [], outputs = [] }) => ({
-  id,
-  stats: fixture(folder, stats),
-  machines: fixture(folder, machines).machines,
-  tasks,
-  outputs: new Map(outputs),
-  runs: new Map(),
-  streams: new Map(),
-  terminals: new Map(),
-});
-
-const fixtureTasks = () => fixture('hosts', 'tasks-200.json').tasks;
-
-const fixtureOutputs = () => {
-  const answer = fixture('hosts', 'task-output-200.json');
-  return [[answer.task_id, answer.output]];
-};
-
-const hosts = new Map(
-  AGENT_MODE
-    ? [
-        [
-          SELF,
-          hostFrom({
-            id: SELF,
-            folder: 'agent',
-            stats: 'stats.json',
-            machines: 'machines.json',
-            tasks: fixtureTasks(),
-            outputs: fixtureOutputs(),
-          }),
-        ],
-      ]
-    : [
-        [
-          '1',
-          hostFrom({
-            id: 1,
-            folder: 'hosts',
-            stats: 'agents-1-stats.json',
-            machines: 'agents-1-machines.json',
-            tasks: fixtureTasks(),
-            outputs: fixtureOutputs(),
-          }),
-        ],
-        [
-          '2',
-          hostFrom({ id: 2, folder: 'agent', stats: 'stats.json', machines: 'machines.json' }),
-        ],
-      ]
-);
-
-const REGISTRY = (() => {
-  if (AGENT_MODE) {
-    return [];
-  }
-  const [first] = fixture('hosts', 'servers.json').servers;
-  const agent = fixture('agent', 'status.json');
-  const desk = {
-    ...first,
-    capabilities: {
-      ...first.capabilities,
-      features: uniqueOf([...first.capabilities.features, ...AGENT_FEATURES]),
-    },
-  };
-  const lab = {
-    ...first,
-    id: 2,
-    hostname: 'lab-1.example.com',
-    entityName: 'Lab',
-    capabilities: {
-      role: 'agent',
-      agent: agent.agent,
-      hypervisors: agent.hypervisors,
-      platform: agent.platform,
-      arch: agent.arch,
-      version: agent.version,
-      hostname: agent.hostname,
-      features: AGENT_FEATURES,
-    },
-  };
-  return [desk, lab];
-})();
-
-const tickets = new Set();
-const ring = [];
-const subscribers = new Set();
-
-let lastMs = 0;
-let seq = 0;
-
-const nextId = () => {
-  const current = Math.max(Date.now(), lastMs);
-  if (current === lastMs) {
-    seq += 1;
-  } else {
-    lastMs = current;
-    seq = 0;
-  }
-  return `${current}-${seq}`;
-};
-
-const floorId = nextId();
-
-const newestId = () => `${lastMs}-${seq}`;
-
-const parseId = id => {
-  const [ms, sequence] = String(id).split('-');
-  return [Number(ms), Number(sequence)];
-};
-
-const compareIds = (first, second) => {
-  const [firstMs, firstSeq] = parseId(first);
-  const [secondMs, secondSeq] = parseId(second);
-  return firstMs === secondMs ? firstSeq - secondSeq : firstMs - secondMs;
-};
-
-const isValidId = id => parseId(id).every(Number.isFinite);
-
-const oldestId = () => (ring.length ? ring[0].id : floorId);
-
-const sseFrame = (id, event, data) =>
-  `id: ${id}\nevent: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-
-const requestedTopics = query => {
-  const requested = String(query || '')
-    .split(',')
-    .map(topic => topic.trim())
-    .filter(topic => TOPICS.includes(topic));
-  return new Set(requested.length ? requested : TOPICS);
-};
-
-const armHeartbeat = subscriber => {
-  clearInterval(subscriber.heartbeat);
-  subscriber.heartbeat = setInterval(() => {
-    subscriber.res.write(':hb\n\n');
-  }, HEARTBEAT_MS);
-  subscriber.heartbeat.unref();
-};
-
-const writeStream = (subscriber, text) => {
-  subscriber.res.write(text);
-  armHeartbeat(subscriber);
-};
-
-const trimRing = () => {
-  const cutoff = Date.now() - RING_MAX_AGE_MS;
-  while (ring.length > RING_MAX_EVENTS && ring[0].at < cutoff) {
-    ring.shift();
-  }
-};
-
-const replay = (subscriber, lastEventId) => {
-  if (!lastEventId) {
-    return;
-  }
-  if (
-    !isValidId(lastEventId) ||
-    compareIds(lastEventId, oldestId()) < 0 ||
-    compareIds(lastEventId, newestId()) > 0
-  ) {
-    writeStream(subscriber, sseFrame(nextId(), 'reset', { topics: [...subscriber.topics] }));
-    return;
-  }
-  ring
-    .filter(entry => compareIds(entry.id, lastEventId) > 0 && subscriber.topics.has(entry.topic))
-    .forEach(entry => writeStream(subscriber, sseFrame(entry.id, entry.event, entry.data)));
-};
-
-const openStream = ctx => {
-  const { req, res, url } = ctx;
-  const topics = requestedTopics(url.searchParams.get('topics'));
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
-    'X-Accel-Buffering': 'no',
-  });
-  res.flushHeaders();
-  req.setTimeout(0);
-  res.setTimeout(0);
-  const subscriber = { res, topics, heartbeat: null };
-  subscribers.add(subscriber);
-  res.on('close', () => {
-    clearInterval(subscriber.heartbeat);
-    subscribers.delete(subscriber);
-  });
-  const id = nextId();
-  writeStream(
-    subscriber,
-    `retry: ${RETRY_MS}\n${sseFrame(id, 'ready', { id, topics: [...topics] })}`
-  );
-  replay(subscriber, req.headers['last-event-id']);
-  return null;
-};
-
-const broadcast = (topic, event, data) => {
-  const entry = { id: nextId(), at: Date.now(), topic, event, data };
-  ring.push(entry);
-  trimRing();
-  subscribers.forEach(subscriber => {
-    if (subscriber.topics.has(topic)) {
-      writeStream(subscriber, sseFrame(entry.id, event, data));
-    }
-  });
-};
-
-const emit = ({ host, topic, event, data }) =>
-  broadcast(topic, event, AGENT_MODE ? { ...data } : { ...data, agent_id: host.id });
-
-const acceptKey = key => createHash('sha1').update(`${key}${WS_GUID}`).digest('base64');
-
-const encodeFrame = (payload, opcode) => {
-  const body = Buffer.from(payload);
-  const first = 0x80 | opcode;
-  if (body.length < 126) {
-    return Buffer.concat([Buffer.from([first, body.length]), body]);
-  }
-  if (body.length < 65536) {
-    const header = Buffer.alloc(4);
-    header[0] = first;
-    header[1] = 126;
-    header.writeUInt16BE(body.length, 2);
-    return Buffer.concat([header, body]);
-  }
-  const header = Buffer.alloc(10);
-  header[0] = first;
-  header[1] = 127;
-  header.writeBigUInt64BE(BigInt(body.length), 2);
-  return Buffer.concat([header, body]);
-};
-
-const lengthOf = buffer => {
-  const short = buffer[1] & 0x7f;
-  if (short === 126) {
-    return buffer.length < 4 ? null : { length: buffer.readUInt16BE(2), offset: 4 };
-  }
-  if (short === 127) {
-    return buffer.length < 10 ? null : { length: Number(buffer.readBigUInt64BE(2)), offset: 10 };
-  }
-  return { length: short, offset: 2 };
-};
-
-const readFrame = buffer => {
-  const size = buffer.length < 2 ? null : lengthOf(buffer);
-  if (!size) {
-    return null;
-  }
-  const masked = (buffer[1] & 0x80) !== 0;
-  const start = size.offset + (masked ? 4 : 0);
-  const end = start + size.length;
-  if (buffer.length < end) {
-    return null;
-  }
-  const payload = Buffer.from(buffer.subarray(start, end));
-  if (masked) {
-    const mask = buffer.subarray(size.offset, size.offset + 4);
-    payload.forEach((byte, index) => {
-      payload[index] = byte ^ mask[index % 4];
-    });
-  }
-  return { opcode: buffer[0] & 0x0f, payload, rest: buffer.subarray(end) };
-};
-
-const openSocket = ({ req, socket, onText, onClose }) => {
-  let pending = Buffer.alloc(0);
-  const send = (payload, opcode = OP_TEXT) => {
-    if (!socket.destroyed) {
-      socket.write(encodeFrame(payload, opcode));
-    }
-  };
-  const close = () => {
-    send('', OP_CLOSE);
-    socket.end();
-  };
-  const dispatch = received => {
-    if (received.opcode === OP_CLOSE) {
-      close();
-    } else if (received.opcode === OP_PING) {
-      send(received.payload, OP_PONG);
-    } else if (received.opcode === OP_TEXT || received.opcode === OP_BINARY) {
-      onText(received.payload.toString('utf8'));
-    }
-  };
-  const drain = () => {
-    let received = readFrame(pending);
-    while (received) {
-      pending = received.rest;
-      dispatch(received);
-      received = readFrame(pending);
-    }
-  };
-  socket.write(
-    [
-      'HTTP/1.1 101 Switching Protocols',
-      'Upgrade: websocket',
-      'Connection: Upgrade',
-      `Sec-WebSocket-Accept: ${acceptKey(req.headers['sec-websocket-key'])}`,
-      '',
-      '',
-    ].join('\r\n')
-  );
-  socket.on('data', chunk => {
-    pending = Buffer.concat([pending, chunk]);
-    drain();
-  });
-  socket.on('close', onClose);
-  socket.on('error', () => socket.destroy());
-  return { send, close };
-};
-
-const refuseSocket = (socket, line) => {
-  socket.write(`HTTP/1.1 ${line}\r\nConnection: close\r\n\r\n`);
-  socket.destroy();
-};
-
-const setRunning = (host, name, running) => {
-  const others = host.stats.runningmachines.filter(entry => entry !== name);
-  host.stats = { ...host.stats, runningmachines: running ? [...others, name] : others };
-  host.machines = host.machines.map(machine =>
-    machine.name === name ? { ...machine, status: running ? 'running' : 'installed' } : machine
-  );
-};
-
-const removeMachine = (host, name) => {
-  host.stats = {
-    ...host.stats,
-    allmachines: host.stats.allmachines.filter(entry => entry !== name),
-    runningmachines: host.stats.runningmachines.filter(entry => entry !== name),
-  };
-  host.machines = host.machines.filter(machine => machine.name !== name);
-};
-
-const SETTLES = {
-  start: (host, name) => setRunning(host, name, true),
-  stop: (host, name) => setRunning(host, name, false),
-  restart: (host, name) => setRunning(host, name, true),
-  reset: (host, name) => setRunning(host, name, true),
-  delete: removeMachine,
-};
-
-const pushOutput = (host, task, text) => {
-  const entry = { stream: 'stdout', data: text, timestamp: Date.now() };
-  host.outputs.set(task.id, [...(host.outputs.get(task.id) || []), entry]);
-  (host.streams.get(task.id) || []).forEach(connection =>
-    connection.send(JSON.stringify({ type: 'output', ...entry }))
-  );
-};
-
-const finish = (host, task, status) => {
-  const run = host.runs.get(task.id);
-  if (run) {
-    clearInterval(run.timer);
-    host.runs.delete(task.id);
-  }
-  task.status = status;
-  task.completed_at = now();
-  emit({ host, topic: 'tasks', event: 'task-updated', data: task });
-  (host.streams.get(task.id) || []).forEach(connection => {
-    connection.send(JSON.stringify({ type: 'status', status }));
-    connection.close();
-  });
-  host.streams.delete(task.id);
-};
-
-const settle = (host, task) => {
-  const change = SETTLES[task.operation];
-  if (!change || !host.stats.allmachines.includes(task.machine_name)) {
-    return;
-  }
-  change(host, task.machine_name);
-  emit({ host, topic: 'hosts', event: 'stats-updated', data: host.stats });
-};
-
-const runTask = ({ host, task, lines, from = 0 }) => {
-  const run = { index: from, timer: null };
-  const step = () => {
-    pushOutput(host, task, lines[run.index]);
-    run.index += 1;
-    task.progress_percent = Math.round((run.index / lines.length) * 100);
-    if (run.index < lines.length) {
-      emit({ host, topic: 'tasks', event: 'task-updated', data: task });
-      return;
-    }
-    finish(host, task, 'completed');
-    settle(host, task);
-  };
-  run.timer = setInterval(step, STEP_MS);
-  host.runs.set(task.id, run);
-};
-
-const resume = (host, task) => {
-  if (task.status !== 'running' || host.runs.has(task.id)) {
-    return;
-  }
-  const lines = LINES[task.operation] || LINES.host;
-  const from = Math.min(
-    lines.length - 1,
-    Math.floor((Number(task.progress_percent) / 100) * lines.length)
-  );
-  runTask({ host, task, lines, from });
-};
-
-const ok = (body, status = 200) => ({ status, body });
-
-const problem = (status, title) => ({
-  status,
-  problem: true,
-  body: { type: 'about:blank', title, status },
-});
-
-const queue = ({ host, operation, target, priority, lines }) => {
-  const stamp = now();
-  const task = {
-    id: randomUUID(),
-    machine_name: target,
-    operation,
-    status: 'running',
-    priority,
-    created_by: USER.username,
-    depends_on: null,
-    parent_task_id: null,
-    error_message: null,
-    progress_percent: 0,
-    progress_info: null,
-    metadata: null,
-    created_at: stamp,
-    started_at: stamp,
-    completed_at: null,
-  };
-  host.tasks = [task, ...host.tasks];
-  emit({ host, topic: 'tasks', event: 'task-updated', data: task });
-  runTask({ host, task, lines });
-  return ok({ success: true, task_id: task.id, message: 'queued' });
-};
-
-const machineAction = operation => ctx => {
-  const { host, params } = ctx;
-  const name = decodeURIComponent(params.name);
-  if (!host.stats.allmachines.includes(name)) {
-    return problem(404, `No machine named ${name}`);
-  }
-  return queue({ host, operation, target: name, priority: 60, lines: LINES[operation] });
-};
-
-const hostAction = operation => ctx =>
-  queue({ host: ctx.host, operation, target: 'system', priority: 100, lines: LINES.host });
-
-const listedTasks = ctx => {
-  const { host, url } = ctx;
-  const floor = Number(url.searchParams.get('min_priority')) || 0;
-  const parent = url.searchParams.get('parent_task_id') || '';
-  const limit = Number(url.searchParams.get('limit')) || TASK_LIMIT;
-  const tasks = host.tasks
-    .filter(task => Number(task.priority) >= floor)
-    .filter(task => (parent ? task.parent_task_id === parent : true))
-    .slice(0, limit);
-  return ok({
-    tasks,
-    running_count: host.tasks.filter(task => task.status === 'running').length,
-  });
-};
-
-const taskOf = ctx => ctx.host.tasks.find(task => task.id === ctx.params.task) || null;
-
-const cancelled = ctx => {
-  const task = taskOf(ctx);
-  if (!task) {
-    return problem(404, 'No such task');
-  }
-  if (!ACTIVE.includes(task.status)) {
-    return problem(409, 'The task already ended');
-  }
-  finish(ctx.host, task, 'cancelled');
-  return ok({ success: true, task_id: task.id, message: 'Task cancellation requested' });
-};
-
-const promptOf = host => `${GREEN}mark@${host.stats.hostname}${RESET}:${BLUE}~${RESET}$ `;
-
-const machineLines = host =>
-  host.machines.map(machine =>
-    machine.status === 'running'
-      ? `${GREEN}running${RESET}    ${machine.name}`
-      : `installed  ${machine.name}`
-  );
-
-const taskLines = host =>
-  host.tasks.map(
-    task => `${String(task.progress_percent).padStart(3)}%  ${task.status.padEnd(10)} ${task.operation} ${task.machine_name}`
-  );
-
-const COMMANDS = {
-  help: () => ['help  hostname  whoami  uptime  machines  tasks  clear  exit'],
-  hostname: host => [host.stats.hostname],
-  whoami: () => [USER.username],
-  uptime: host => [`up ${host.stats.uptime} seconds`],
-  machines: machineLines,
-  tasks: taskLines,
-};
-
-const runCommand = ({ host, connection, line }) => {
-  const word = line.trim();
-  if (word === 'exit') {
-    connection.send('\r\nlogout\r\n');
-    connection.close();
-    return;
-  }
-  if (word === 'clear') {
-    connection.send(`\u001b[2J\u001b[H${promptOf(host)}`);
-    return;
-  }
-  const answer = COMMANDS[word];
-  const lines = answer ? answer(host) : [`mock: ${word}: command not found`];
-  const body = word ? `${lines.join('\r\n')}\r\n` : '';
-  connection.send(`\r\n${body}${promptOf(host)}`);
-};
-
-const shellInput = ({ host, connection, shell }) => {
-  const keys = {
-    '\r': () => {
-      const { line } = shell;
-      shell.line = '';
-      runCommand({ host, connection, line });
-    },
-    '\u007f': () => {
-      if (shell.line) {
-        shell.line = shell.line.slice(0, -1);
-        connection.send('\b \b');
-      }
-    },
-    '\u0003': () => {
-      shell.line = '';
-      connection.send(`^C\r\n${promptOf(host)}`);
-    },
-  };
-  keys['\n'] = keys['\r'];
-  return text => {
-    if (text.startsWith('\0')) {
-      return;
-    }
-    [...text].forEach(key => {
-      if (keys[key]) {
-        keys[key]();
-      } else if (key >= ' ') {
-        shell.line += key;
-        connection.send(key);
-      }
-    });
-  };
-};
-
-const openShell = ({ req, socket, host, session }) => {
-  const shell = { line: '' };
-  const held = { connection: null };
-  const connection = openSocket({
-    req,
-    socket,
-    onText: text => shellInput({ host, connection: held.connection, shell })(text),
-    onClose: () => host.terminals.set(session, null),
-  });
-  held.connection = connection;
-  host.terminals.set(session, connection);
-  connection.send(`Host terminal ready on ${host.stats.hostname}, a mock, try help\r\n`);
-};
-
-const openTaskStream = ({ req, socket, host, task }) => {
-  const held = { connection: null };
-  const connection = openSocket({
-    req,
-    socket,
-    onText: () => null,
-    onClose: () => host.streams.get(task.id)?.delete(held.connection),
-  });
-  held.connection = connection;
-  (host.outputs.get(task.id) || []).forEach(entry =>
-    connection.send(JSON.stringify({ type: 'output', ...entry }))
-  );
-  if (!ACTIVE.includes(task.status)) {
-    connection.send(JSON.stringify({ type: 'status', status: task.status }));
-    connection.close();
-    return;
-  }
-  host.streams.set(task.id, new Set([...(host.streams.get(task.id) || []), connection]));
-  resume(host, task);
-};
-
-const routes = [];
-const sockets = [];
-
-const toRegex = pattern =>
-  new RegExp(`^${pattern.replace(/:(?<name>[a-z_]+)/g, '(?<$<name>>[^/]+)')}$`);
-
-const route = (method, pattern, handler, gate = {}) => {
-  routes.push({ method, regex: toRegex(pattern), handler, gate });
-};
-
-const publicRoute = (method, pattern, handler) => route(method, pattern, handler);
-
-const sessionRoute = (method, pattern, handler) =>
-  route(method, pattern, handler, { session: true });
-
-const hostOf = params => hosts.get(AGENT_MODE ? SELF : params.agent) || null;
-
-const agentRoute = (method, pattern, handler) =>
-  sessionRoute(method, `${AGENT_PREFIX}/${pattern}`, ctx => {
-    const host = hostOf(ctx.params);
-    return host ? handler({ ...ctx, host }) : problem(404, 'No such agent');
-  });
-
-const socketRoute = (pattern, handler) => {
-  sockets.push({ regex: toRegex(`${AGENT_PREFIX}/${pattern}`), handler });
-};
-
-const issueToken = () => `mock.${randomBytes(24).toString('hex')}`;
-
-publicRoute('GET', '/api/status', () => ok(STATUS));
-publicRoute('GET', '/api/health', () => ok({ ...fixture('hosts', 'health.json'), timestamp: now() }));
-publicRoute('GET', '/api/config/ticket', () => ok({ ticket_system: { enabled: false } }));
-publicRoute('GET', '/api/auth/oidc/issuers', () => ok({ issuers: [] }));
-publicRoute('GET', '/api/auth/methods', () =>
-  ok({
-    methods: [{ id: 'local', name: 'Password', enabled: true }],
-    default_provider: null,
-    silent_login: false,
-    local_registration_enabled: false,
-  })
-);
-publicRoute('POST', '/api/auth/signin', ctx => {
-  if (!ctx.body.username || !ctx.body.password || ctx.body.password === 'wrong') {
-    return problem(401, 'The name or the password is wrong');
-  }
-  return ok({ ...USER, username: String(ctx.body.username), access_token: issueToken() });
-});
-publicRoute('POST', '/api/client-errors', ctx => {
-  (Array.isArray(ctx.body.entries) ? ctx.body.entries : []).forEach(entry => {
-    console.log(`client error [${entry.category}] ${entry.url}: ${entry.message}`);
-  });
-  return { status: 204 };
-});
-
-sessionRoute('POST', '/api/auth/refresh-token', ctx =>
-  ok({ access_token: issueToken(), stay_logged_in: Boolean(ctx.body.stay_logged_in) })
-);
-sessionRoute('GET', '/api/user', () => ok(USER));
-sessionRoute('GET', '/api/userinfo/claims', () =>
-  ok({ name: USER.name, email: USER.email, preferred_username: USER.username })
-);
-sessionRoute('GET', '/api/user/favorites', () => ok([]));
-sessionRoute('PATCH', '/api/user/preferences', () => ok(USER));
+const SIGN_IN_NAMES = 'user, admin, super, guest, or any other name';
+
+const router = { publicRoute, sessionRoute, adminRoute, agentRoute, socketRoute };
+
+mountSite(router);
+mountAccount(router);
+mountInbox(router);
+mountOrgs(router);
+mountConfig(router);
+mountAgents(router);
 sessionRoute('GET', '/api/events', openStream);
-
-if (!AGENT_MODE) {
-  sessionRoute('GET', '/api/servers', () => ok({ success: true, servers: REGISTRY }));
-}
-
-agentRoute('GET', 'stats', ctx => ok(ctx.host.stats));
-agentRoute('GET', 'machines', ctx =>
-  ok({ machines: ctx.host.machines, total: ctx.host.machines.length })
-);
-agentRoute('POST', 'machines/:name/start', machineAction('start'));
-agentRoute('POST', 'machines/:name/stop', machineAction('stop'));
-agentRoute('POST', 'machines/:name/restart', machineAction('restart'));
-agentRoute('POST', 'machines/:name/reset', machineAction('reset'));
-agentRoute('DELETE', 'machines/:name', machineAction('delete'));
-agentRoute('POST', 'system/host/restart', hostAction('host_restart'));
-agentRoute('POST', 'system/host/shutdown', hostAction('host_shutdown'));
-agentRoute('POST', 'system/host/poweroff', hostAction('host_poweroff'));
-agentRoute('POST', 'system/host/halt', hostAction('host_halt'));
-agentRoute('POST', 'system/host/reboot/fast', hostAction('host_fast_reboot'));
-agentRoute('GET', 'tasks', listedTasks);
-agentRoute('GET', 'tasks/:task', ctx => {
-  const task = taskOf(ctx);
-  return task ? ok({ ...task, output: null }) : problem(404, 'No such task');
-});
-agentRoute('GET', 'tasks/:task/output', ctx => {
-  const task = taskOf(ctx);
-  return task
-    ? ok({ task_id: task.id, status: task.status, output: ctx.host.outputs.get(task.id) || [] })
-    : problem(404, 'No such task');
-});
-agentRoute('DELETE', 'tasks/:task', cancelled);
-agentRoute('GET', 'ws-ticket', () => {
-  const ticket = randomBytes(16).toString('hex');
-  tickets.add(ticket);
-  return ok({ ticket, expires_in: 30 });
-});
-agentRoute('POST', 'term/start', ctx => {
-  const id = randomUUID();
-  ctx.host.terminals.set(id, null);
-  return ok({ id, status: 'active', created_at: now() });
-});
-agentRoute('DELETE', 'term/sessions/:session/stop', ctx => {
-  ctx.host.terminals.get(ctx.params.session)?.close();
-  ctx.host.terminals.delete(ctx.params.session);
-  return ok({ success: true });
-});
-
-socketRoute('term/:session', ({ req, socket, host, params }) => {
-  if (!host.terminals.has(params.session)) {
-    refuseSocket(socket, '404 Not Found');
-    return;
-  }
-  openShell({ req, socket, host, session: params.session });
-});
-socketRoute('tasks/:task/stream', ({ req, socket, host, params }) => {
-  const task = host.tasks.find(entry => entry.id === params.task);
-  if (!task) {
-    refuseSocket(socket, '404 Not Found');
-    return;
-  }
-  openTaskStream({ req, socket, host, task });
-});
 
 const readBody = req =>
   new Promise(resolve => {
@@ -825,42 +69,47 @@ const parseBody = text => {
   }
 };
 
-const matchRoute = (method, pathname) => {
-  const entry = routes.find(
-    candidate => candidate.method === method && candidate.regex.test(pathname)
-  );
-  return entry ? { entry, params: entry.regex.exec(pathname).groups || {} } : null;
-};
-
 const send = (res, answer) => {
+  const headers = { 'Cache-Control': 'no-store', ...answer.headers };
   if (answer.body === undefined) {
-    res.writeHead(answer.status, { 'Cache-Control': 'no-store' });
+    res.writeHead(answer.status, headers);
     res.end();
     return;
   }
   res.writeHead(answer.status, {
     'Content-Type': answer.problem ? 'application/problem+json' : 'application/json',
-    'Cache-Control': 'no-store',
+    ...headers,
   });
   res.end(JSON.stringify(answer.body));
 };
 
-const answerApi = async (req, res, url) => {
-  const found = matchRoute(req.method, url.pathname);
-  if (!found) {
-    send(res, problem(404, 'Not Found'));
-    return 404;
-  }
-  if (found.entry.gate.session && !req.headers['x-access-token']) {
-    send(res, problem(401, 'Sign in first'));
-    return 401;
-  }
-  const body = parseBody(await readBody(req));
-  const answer = found.entry.handler({ req, res, url, body, params: found.params });
+const answerRoute = async ({ req, res, url, found, session }) => {
+  const raw = await readBody(req);
+  const answer = found.entry.handler({
+    req,
+    res,
+    url,
+    raw,
+    body: parseBody(raw),
+    params: found.params,
+    person: session?.person || null,
+    token: session?.payload || null,
+  });
   if (answer) {
     send(res, answer);
   }
   return answer ? answer.status : 200;
+};
+
+const answerApi = (req, res, url) => {
+  const found = matchRoute(req.method, url.pathname);
+  const { refused, session } = found ? admit(found.entry.gate, req) : { refused: null };
+  const refusal = found ? refused : missing('Not Found');
+  if (refusal) {
+    send(res, refusal);
+    return refusal.status;
+  }
+  return answerRoute({ req, res, url, found, session });
 };
 
 const fileFor = pathname => {
@@ -897,64 +146,155 @@ const handle = async (req, res) => {
 
 const upgrade = (req, socket) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  const entry = sockets.find(candidate => candidate.regex.test(url.pathname));
-  const params = entry ? entry.regex.exec(url.pathname).groups || {} : {};
-  const host = entry ? hostOf(params) : null;
+  const found = matchSocket(url.pathname);
+  const host = found ? hostFor(found.params.agent) : null;
   const ticket = url.searchParams.get('ticket') || '';
-  if (!host) {
+  if (!host?.online) {
     refuseSocket(socket, '404 Not Found');
-  } else if (!tickets.delete(ticket)) {
+  } else if (!ticketFits({ ticket, host, machine: socketMachine(host, found.params) })) {
     refuseSocket(socket, '401 Unauthorized');
   } else {
-    entry.handler({ req, socket, host, params });
+    found.entry.handler({ req, socket, host, params: found.params });
   }
   console.log(`ws ${url.pathname}`);
 };
 
+const announce = () => {
+  console.log(`mock ${STATUS.role} listening on http://localhost:${PORT}`);
+  console.log(`sign in as ${SIGN_IN_NAMES}, any password but wrong`);
+  if (SETUP_MODE) {
+    console.log(`setup token: ${SETUP_TOKEN}`);
+  }
+};
+
 /**
- * A development-only mock of the hyperweaver family so the shared UI's
- * hosts feature can be clicked through before a real backend answers the
- * status payload: the registry, the agents' stats, machines, tasks, power
- * routes, host terminal and task output, the backend session's sign-in,
- * and the one event stream of the events contract with the `tasks` and
- * `hosts` topics. Deleted when a real backend answers, as the issuer's
- * mock was.
+ * A development-only mock of the hyperweaver family, so every surface the
+ * shared UI draws for a hyperweaver backend has data behind it before a
+ * real backend answers the shared `backend` wire. Its parts live under
+ * `scripts/mock/`; this file mounts them and serves. Deleted when a real
+ * backend answers, as the issuer's mock was.
  *
- * Run it inside WSL with `npm run mock` for the `hyperweaver-server` role,
- * the aggregated view over two agents, Desk and Lab, addressed as
- * `/api/agents/{id}/…`, or `npm run mock -- agent` for the
- * `hyperweaver-agent` role, the one serving agent at `/api/…`; a second
- * word is the port, 9595 when absent, where config.yaml's `api_target`
- * points, so `npm run dev` on 8080 reaches it through the dev proxy. It
- * also serves `dist/` with the `index.html` fallback, so
+ * Run it inside WSL with `npm run mock`; the first word after `--` is the
+ * role and the second the port, 9595 when absent, where config.yaml's
+ * `api_target` points, so `npm run dev` on 8080 reaches it through the
+ * dev proxy. It also serves `dist/` with the `index.html` fallback, so
  * `http://localhost:9595` is the UI as a backend serves it.
  *
- * Every answer starts from the test fixtures under `tests/fixtures/hosts`
- * and `tests/fixtures/agent`, the same JSON the scenarios read, so the
- * mock and the tests cannot drift apart: the status with `health`,
- * `events` and, on the agent role, the agent's pane tokens added; the
- * registry's first row with `host-power` added and a second row made of
- * the agent fixture; the three tasks and the one task's output. Sign in
- * with any name and any password; the password `wrong` answers 401.
+ * - `npm run mock`: the `hyperweaver-server` role, the aggregated view
+ *   over six hosts addressed as `/api/agents/{id}/…`.
+ * - `npm run mock -- agent`: the `hyperweaver-agent` role, one VirtualBox
+ *   agent at `/api/…`.
+ * - `npm run mock -- zone`: the `zoneweaver-agent` role, one bhyve agent
+ *   at `/api/…`.
+ * - `npm run mock -- setup`: the server role with setup not complete, the
+ *   whole app held at `/setup` until the setup page saves; the token is
+ *   printed at start.
  *
- * State lives in memory and moves like the real thing: a power row
- * queues a task, the task runs on a timer, one output line and one
- * `task-updated` event a step, and when it ends the machine's state
- * changes and `stats-updated` is sent, so the tasks pane, the page, the
- * Controls menu and the tree's dots follow by push. The fixture's running
- * task starts moving when its dialog opens its stream. Cancel task ends a
- * running task as `cancelled`. On the server role every event carries
- * `agent_id`.
+ * The status starts from the role's fixture under `tests/fixtures` and
+ * adds every token of the shared chrome a hyperweaver backend can answer:
+ * `local-accounts`, `setup`, `admin`, `org-console`, `discover`,
+ * `invitations`, `favorites`, `notifications`, `search`, `health` and
+ * `events`, with `links.docs`, `links.contact`, `links.community`,
+ * `brand.repo`, `brand.changelog`, the config names `app`, `auth`, `db`
+ * and `mail`, and the topics `session`, `notifications`, `health`,
+ * `profile`, `tasks`, `hosts` and `monitoring`. The ticket system answers
+ * at `/api/config/ticket`.
  *
- * The stream is the contract's: `retry`, `ready`, ids of
+ * Sign in with a password, any but `wrong`, which answers 401; the
+ * password `short` makes a token that lives 90 seconds, so a kept session
+ * refreshes before its next request, and `expired` one that already
+ * ended, so the next request answers 401. The name decides the person:
+ *
+ * - `user`: Sam Rivera, role `user`, a member of acme; start, stop and
+ *   restart alone, no admin pages, the hosts of acme and the unassigned
+ *   ones.
+ * - `admin`: Dana Whitfield, role `admin` with `ROLE_ADMIN`; the zone
+ *   verbs, kill, delete and host power, and the admin pages.
+ * - `super`: Priya Natarajan, role `super-admin` with `ROLE_ADMIN`, an
+ *   owner of two organizations, one of them managed at the provider.
+ * - `guest`: a guest-only account, which draws no notifications.
+ * - any other name: the fixture's person under that name, a super-admin
+ *   with four memberships.
+ *
+ * Sign in through a provider on the sign-in page: `GET
+ * /api/auth/oidc/{provider}` answers 302 to `/auth/callback?code=`, the
+ * code is exchanged once for a token whose `provider` starts `oidc-` and
+ * whose `id_token` names the issuer `https://auth.example.com` and the
+ * client `hyperweaver`. STARTcloud signs the fixture's person in, GitHub
+ * the admin, Google the user and Microsoft the guest; an unknown provider
+ * lands on `/login?error=no_provider`. Tokens are unsigned JWTs the UI
+ * reads and the mock trusts, so a session outlives a restart of the mock.
+ *
+ * Six hosts on the server role. Desk, VirtualBox on Windows from the
+ * hosts fixtures, with launchers, suspend and the guest agent. Lab,
+ * VirtualBox on Linux from the agent fixtures, without `host-terminal`.
+ * Zones, bhyve on OmniOS from the zones fixtures, with the zone verbs;
+ * Verify answers `valid: false` for `web-2`. Studio, macOS with `utm`
+ * machines, without `host-power`. `store-1`, bhyve, without `tasks` and
+ * without a label. Attic, which the server cannot reach: its row has no
+ * capabilities and its routes answer 502, and every two minutes it comes
+ * or goes, `servers-updated` sent and the admins notified.
+ *
+ * The organization filter has data on the server role. A person's
+ * memberships ride the record in the identity provider's shape, keyed by
+ * uuid. Desk and Attic belong to acme, Zones to acme and prominic, Studio
+ * to nomad-field-team, and Lab and `store-1` to none, open to everyone.
+ * Some machines of Desk, Lab, Zones and `store-1` belong to acme,
+ * prominic or nomad-field-team in `org_uuids` of `GET machines`, the rest
+ * to none. An admin reads every uuid of a row, every other person their
+ * own of it.
+ *
+ * Every machine route answers as the agent of the host's kind answers
+ * it, read from zoneweaver-agent's controllers and hyperweaver-agent's
+ * handlers: a refusal is the agent's own status and body, `{ error,
+ * current_status }`, a route one agent lacks answers 404 on its hosts,
+ * and what the agent queues is a task here. A task is created pending,
+ * runs on a timer, one output line and one `task-updated` a step, and
+ * when it ends the machine's state changes and `stats-updated` is sent.
+ * Restart is two tasks, the start waiting for the stop. Every host
+ * starts with tasks of every status and priority, parents with their
+ * subtasks, transfers with byte counts and failures with coloured
+ * output; a seeded running task starts moving when its stream opens.
+ *
+ * Every host that lists `monitoring` answers the reads of the host page's
+ * Overview and of its charts as the agent of its kind answers them, the
+ * pools, the datasets, the pool I/O and the ARC on the hosts that list
+ * `zfs` alone. A host keeps an hour of samples, one every five seconds,
+ * and each sample is sent on the `monitoring` topic as `cpu-sample`,
+ * `memory-sample`, `network-sample`, `pool-io-sample` and `arc-sample`.
+ * Lab keeps no history and sends no sample: it answers the one sample it
+ * took, `realtime`, so its charts draw one point until Refresh reads
+ * another.
+ *
+ * The stream is the events contract's: `retry`, `ready`, ids of
  * `<epoch-ms>-<seq>`, a ring of 500 events or 5 minutes, `Last-Event-ID`
  * replayed from the ring or answered `reset`, `:hb` after 25 idle
- * seconds. The two WebSockets are hand-written over the upgrade, text
- * frames alone: `/term/{id}` is a line shell that knows `help`,
- * `hostname`, `whoami`, `uptime`, `machines`, `tasks`, `clear` and
- * `exit`, a resize frame read and dropped; `/tasks/{id}/stream` replays
- * the task's output, then sends each new line and a `status` frame at
- * the end. Each upgrade spends one ticket of `GET ws-ticket`.
+ * seconds. `unread-count`, `profile-updated` and `session-terminated`
+ * reach the one person they are for, in the ring as on the wire. The
+ * health takes a new state every 45 seconds and is sent on `health`.
+ *
+ * The two WebSockets are hand-written over the upgrade, text frames
+ * alone. A ticket of `GET ws-ticket` is good for 60 seconds, may be used
+ * again inside them, and is bound to the machine it was asked for: a
+ * task stream takes the ticket of the task's machine, the stream of a
+ * host-level task and the shell an unbound one. `/tasks/{id}/stream`
+ * replays the task's output, then sends each new line and a `status`
+ * frame at the end. `/term/{id}` is a line shell that knows `help`,
+ * `hostname`, `whoami`, `uptime`, `uname`, `machines`, `tasks`,
+ * `features`, `clear` and `exit`, a resize frame read and dropped; on a
+ * host of the zoneweaver kind the session keeps its shell and a new
+ * socket is greeted with the last 50 lines between the agent's two
+ * banners, as zoneweaver-agent does, and on a host of the hyperweaver
+ * kind every socket starts a new shell and `exit` writes `Terminal
+ * session closed.`, as hyperweaver-agent does.
+ *
+ * Writes are evaluated against the rules of `GET /api/rules` and refused
+ * as the validation contract's problem body: 422 with pointers, 409 for
+ * a taken name. A config test fails with the `reachable` rule while a
+ * host value holds `unreachable.example.com`; the Rotate logs action of
+ * the app configuration steps up first, and the step-up refuses the
+ * password `wrong` and the code `000000`. The password
+ * `correct horse battery staple` is on the blocklist.
  *
  * @returns {http.Server} The listening server
  */
@@ -966,9 +306,10 @@ export const startMockHyperweaver = () => {
     });
   });
   server.on('upgrade', upgrade);
-  server.listen(PORT, () => {
-    console.log(`mock ${STATUS.role} listening on http://localhost:${PORT}`);
-  });
+  server.listen(PORT, announce);
+  startHealth();
+  startFlapping();
+  startSampling();
   return server;
 };
 

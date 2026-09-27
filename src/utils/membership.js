@@ -10,6 +10,18 @@ const MANAGER_ROLES = ['OWNER', 'ADMIN'];
 export const membershipOf = (organizations, name) =>
   organizations.find(entry => entry.name === name) || null;
 
+/**
+ * The route name of the membership that carries that uuid, the word the
+ * predicates below and a UI backend's organization routes are keyed by,
+ * empty when the list holds no such membership, as under All
+ * organizations.
+ * @param {Array<{ uuid: string, name: string }>} organizations - The chrome's organization list
+ * @param {string} uuid - The organization's uuid, the active one's
+ * @returns {string}
+ */
+export const routeNameOf = (organizations, uuid) =>
+  organizations.find(entry => entry.uuid === uuid)?.name || '';
+
 const hasRole = (organizations, name, roles) =>
   (membershipOf(organizations, name)?.roles || []).some(role => roles.includes(role));
 

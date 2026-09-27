@@ -11,6 +11,7 @@ import { isPendingGate } from '../../../lib/gates';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { userDisplayName, userSecondaryLine } from '../../../utils/identity';
+import { routeNameOf } from '../../../utils/membership';
 import { PROFILE_ROUTE_SECTIONS, accountShape, sectionPath, sectionsFor } from '../sections';
 
 import FavoritesTab from './FavoritesTab';
@@ -69,7 +70,11 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
   }
   if (active === 'serviceAccounts') {
     return (
-      <ServiceAccountsTab account={account} activeOrgUuid={page.activeOrgUuid} admin={page.admin} />
+      <ServiceAccountsTab
+        account={account}
+        activeOrgName={routeNameOf(page.organizations, page.activeOrgUuid)}
+        admin={page.admin}
+      />
     );
   }
   return (
@@ -254,8 +259,9 @@ const usePlacesKey = places => {
  * the URL replaced with the bare profile path; every
  * stepped-up call passes through the one step-up dialog while the adapter
  * carries `stepUp`, and runs plainly otherwise; `admin` is the app's
- * global-admin flag and `activeOrgUuid` the switcher's organization, both
- * read by the Service accounts section, and `organizations` the session's
+ * global-admin flag and `activeOrgUuid` the switcher's organization, the
+ * Service accounts section reading the flag and the name of the
+ * membership that carries that uuid, and `organizations` the session's
  * memberships in the chrome's shape, deciding with `admin` whether that
  * section draws at all and lending the Organizations section each
  * membership's logo; `user` and `loaded` are the

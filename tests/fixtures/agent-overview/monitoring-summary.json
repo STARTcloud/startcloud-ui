@@ -1,0 +1,12 @@
+{
+  "host": "lab-1",
+  "summary": { "storage_enabled": true, "collector": true },
+  "recordCounts": { "cpu_samples": 60, "memory_samples": 60, "network_samples": 120 },
+  "latestData": {
+    "cpu_samples": "2026-09-27T12:00:00Z",
+    "memory_samples": "2026-09-27T12:00:00Z",
+    "network_samples": "2026-09-27T12:00:00Z"
+  },
+  "lastCollected": "2026-09-27T12:00:00Z",
+  "queryTime": 2
+}

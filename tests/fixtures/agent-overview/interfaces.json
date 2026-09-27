@@ -1,0 +1,22 @@
+{
+  "interfaces": [
+    {
+      "link": "eth0",
+      "class": "phys",
+      "mtu": 1500,
+      "state": "up",
+      "macaddress": "08:00:27:4f:2b:01",
+      "addresses": ["10.0.0.21/24"]
+    },
+    {
+      "link": "lo",
+      "class": "phys",
+      "mtu": 65536,
+      "state": "up",
+      "macaddress": "",
+      "addresses": ["127.0.0.1/8"]
+    }
+  ],
+  "totalCount": 2,
+  "pagination": { "limit": 100, "offset": 0, "hasMore": false }
+}

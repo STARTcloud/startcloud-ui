@@ -64,24 +64,35 @@ const safeNext = (next, origin) => {
 };
 
 /**
+ * One membership in the identity provider's shape, `{ uuid, name, roles,
+ * primary, personal, logo_url, email_hash }`, as the chrome's
+ * organization: the uuid as the uuid, the roles list as it is, the
+ * primary and personal flags, the stored logo when it is an `https:` URL
+ * and the organization's email hash, the switcher's logo chain being the
+ * logo, then the Gravatar behind the hash, then the app's mark. The one
+ * mapping of that shape, read by the issuer's own session and by a
+ * backend session whose profile answers it.
+ * @param {Object} org - The membership row
+ * @returns {{ uuid: string, name: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string }}
+ */
+export const accountMembership = org => ({
+  uuid: org.uuid,
+  name: org.name,
+  roles: Array.isArray(org.roles) ? org.roles.map(role => String(role).toUpperCase()) : [],
+  primary: Boolean(org.primary),
+  personal: Boolean(org.personal),
+  logo: httpsUrl(org.logo_url),
+  emailHash: typeof org.email_hash === 'string' ? org.email_hash : '',
+});
+
+/**
  * The memberships of the issuer's profile in the chrome's organization
- * shape: the uuid as the uuid, the roles list as it is, the primary and
- * personal flags, the stored logo when it is an `https:` URL and the
- * organization's email hash, the switcher's logo chain being the logo,
- * then the Gravatar behind the hash, then the app's mark.
+ * shape, each row through `accountMembership`.
  * @param {Object|null|undefined} user - The cached profile
  * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string }>}
  */
 export const accountMemberships = user =>
-  (Array.isArray(user?.organizations) ? user.organizations : []).map(org => ({
-    uuid: org.uuid,
-    name: org.name,
-    roles: Array.isArray(org.roles) ? org.roles.map(role => String(role).toUpperCase()) : [],
-    primary: Boolean(org.primary),
-    personal: Boolean(org.personal),
-    logo: httpsUrl(org.logo_url),
-    emailHash: typeof org.email_hash === 'string' ? org.email_hash : '',
-  }));
+  (Array.isArray(user?.organizations) ? user.organizations : []).map(accountMembership);
 
 const cachedOf = profile => {
   const user = displayFieldsOf(profile);

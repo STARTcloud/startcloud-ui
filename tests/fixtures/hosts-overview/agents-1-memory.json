@@ -1,0 +1,34 @@
+{
+  "memory": [
+    {
+      "host": "vbox-1",
+      "total_memory_bytes": 34359738368,
+      "available_memory_bytes": 12884901888,
+      "used_memory_bytes": 21474836480,
+      "free_memory_bytes": 12884901888,
+      "memory_utilization_pct": 62.5,
+      "swap_total_bytes": 8589934592,
+      "swap_used_bytes": 1073741824,
+      "swap_free_bytes": 7516192768,
+      "swap_utilization_pct": 12.5,
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "returnedCount": 1,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 1 },
+  "queryTime": 3,
+  "latest": {
+    "host": "vbox-1",
+    "total_memory_bytes": 34359738368,
+    "available_memory_bytes": 12884901888,
+    "used_memory_bytes": 21474836480,
+    "free_memory_bytes": 12884901888,
+    "memory_utilization_pct": 62.5,
+    "swap_total_bytes": 8589934592,
+    "swap_used_bytes": 1073741824,
+    "swap_free_bytes": 7516192768,
+    "swap_utilization_pct": 12.5,
+    "scan_timestamp": "2026-09-27T12:00:00Z"
+  }
+}

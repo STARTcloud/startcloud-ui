@@ -1,0 +1,11 @@
+{
+  "status": "healthy",
+  "uptime": 3600,
+  "version": "1.2.0",
+  "service": {
+    "storage_enabled": true,
+    "collector": true,
+    "stats": { "collections": 60, "last_collection": "2026-09-27T12:00:00Z" }
+  },
+  "lastUpdate": "2026-09-27T12:00:00Z"
+}

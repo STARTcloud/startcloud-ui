@@ -1,0 +1,11 @@
+{
+  "id": 42,
+  "username": "mark",
+  "role": "admin",
+  "email": "mark@m4kr.net",
+  "email_verified": true,
+  "name": "Mark Gilbert",
+  "has_local_auth": true,
+  "roles": ["ROLE_USER"],
+  "organizations": []
+}

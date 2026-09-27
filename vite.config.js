@@ -172,6 +172,9 @@ export default defineConfig(({ command }) => ({
           if (id.includes('node_modules/@xterm') || id.includes('node_modules/react-xtermjs')) {
             return 'xterm';
           }
+          if (id.includes('node_modules/echarts') || id.includes('node_modules/zrender')) {
+            return 'echarts';
+          }
           if (
             id.includes('node_modules/react-bootstrap') ||
             id.includes('node_modules/@restart') ||

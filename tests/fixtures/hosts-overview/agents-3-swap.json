@@ -1,0 +1,32 @@
+{
+  "host": "zone-1",
+  "totalSwapBytes": 8589934592,
+  "usedSwapBytes": 858993459,
+  "freeSwapBytes": 7730941133,
+  "overallUtilization": 10,
+  "swapAreaCount": 1,
+  "swapAreas": [
+    {
+      "path": "/dev/zvol/dsk/rpool/swap",
+      "pool": "rpool",
+      "sizeBytes": 8589934592,
+      "usedBytes": 858993459,
+      "utilization": 10
+    }
+  ],
+  "poolDistribution": {
+    "rpool": {
+      "count": 1,
+      "totalSizeGB": 8,
+      "usedSizeGB": 0.8,
+      "areas": ["/dev/zvol/dsk/rpool/swap"]
+    }
+  },
+  "recommendations": [],
+  "lastScanned": "2026-09-27T11:55:00.000Z",
+  "memoryStatsReference": {
+    "total_swap_bytes": 8589934592,
+    "used_swap_bytes": 858993459,
+    "utilization_pct": "10.00"
+  }
+}

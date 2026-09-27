@@ -4,4 +4,5 @@ export default {
   'GET /api/health': { status: 200, file: 'health.json' },
   'GET /api/stats': { status: 200, file: 'stats.json' },
   'GET /api/machines': { status: 200, file: 'machines.json' },
+  'GET /api/tasks/stats': { status: 200, file: 'task-stats-200.json' },
 };

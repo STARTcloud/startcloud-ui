@@ -4,15 +4,22 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
-import RecordRows from '../../../components/common/RecordRows';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
+import { useHostReadingsRefresh } from '../hooks/useHostReadings';
+import { useHostSeriesRefresh } from '../hooks/useHostSeries';
 import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 
+import HostOverview from './HostOverview';
+import MonitoringDatabase from './MonitoringDatabase';
+import NetworkStorageSummary from './NetworkStorageSummary';
+import PerformanceCharts from './PerformanceCharts';
 import RefreshButton from './RefreshButton';
 
 const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
@@ -57,48 +64,47 @@ const machinesOf = stats =>
   [...(stats?.allmachines || [])].sort().map(name => ({ name, running: isRunning(stats, name) }));
 
 /**
- * The label of one host: the registry row's on the server role, the
- * agent's own reported hostname on an agent role, the id while neither
- * has answered.
+ * The label of one host: the registry row's on the server role, found
+ * among every row the server answered, the agent's own reported hostname
+ * on an agent role, the id while neither has answered.
  *
- * @param {Object} options - The status, the servers, the id and the stats
+ * @param {Object} options - The status, the held rows, the id and the stats
  * @returns {string} The label
  */
-const labelOf = ({ status, servers, id, stats }) => {
+const labelOf = ({ status, held, id, stats }) => {
   if (isServerRole(status)) {
-    const server = servers.find(row => String(row.id) === String(id));
+    const server = held.find(row => String(row.id) === String(id));
     return server ? hostLabel(server) : String(id);
   }
   return stats?.hostname || String(id);
 };
 
-const factRows = (stats, t) =>
-  [
-    ['hostname', stats.hostname],
-    ['platform', stats.platform],
-    ['arch', stats.arch],
-    ['uptime', stats.uptime],
-  ]
-    .filter(([, value]) => value !== undefined && value !== null && value !== '')
-    .map(([key, value]) => ({ key, label: t(`hosts.host.${key}`), value: String(value) }));
-
 /**
- * One host at `/hosts/{id}`: the host's label as the title, the agent's
- * hostname, platform, architecture and uptime as record rows when its
- * stats carry them with the machine count under them, then the machines
- * of `stats.allmachines` sorted in the one `SubTable` over Name and
- * State, running or stopped from `stats.runningmachines`, narrowed by
- * the navbar binding of `useDetailSearch` under `table_prefs_host`,
- * Refresh in the heading's actions reading the list of servers and the
- * host's stats again; the loading line while the stats have not
- * answered and the danger alert when they failed, the stats the copy
- * `useHostStats` shares with the Controls menu and the tree.
+ * One host at `/hosts/{id}`, hyperweaver-ui's host overview in its
+ * order: the host's label as the title; the host overview card, the
+ * system information beside the resource utilization; the machines of
+ * `stats.allmachines` sorted in the one `SubTable` over Name and State,
+ * running or stopped from `stats.runningmachines`, under a heading that
+ * counts them, narrowed by the navbar binding of `useDetailSearch` under
+ * `table_prefs_host`; then, on a host whose own row lists `monitoring`,
+ * the network and storage summary, the performance charts and the
+ * monitoring database, each gated by the host's own tokens. The folds of
+ * the page's cards are kept under the same `table_prefs_host`. Refresh
+ * in the heading's actions reads again the list of servers, the host's
+ * stats, every answer the panels hold of the host and the history of
+ * every series its charts draw, and nothing reads on a clock; the
+ * loading line while the stats have not answered and the danger alert
+ * when they failed, the stats the copy `useHostStats` shares with the
+ * Controls menu and the tree.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
-  const { servers, refresh: refreshServers } = useServers();
+  const { held, refresh: refreshServers } = useServers();
   const { stats, loaded, failed, refresh: refreshStats } = useHostStats(id);
+  const refreshReadings = useHostReadingsRefresh();
+  const refreshSeries = useHostSeriesRefresh();
+  const folds = useFolds(`${context.prefsPrefix}_host`);
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
   const ctx = { ...context, t, language: i18n.language };
@@ -111,7 +117,7 @@ const HostPage = ({ id, context }) => {
     prefsKey: `${context.prefsPrefix}_host`,
     defaultSort: DEFAULT_SORT,
   });
-  const label = labelOf({ status, servers, id, stats });
+  const label = labelOf({ status, held, id, stats });
 
   useEffect(() => {
     document.title = label;
@@ -130,6 +136,8 @@ const HostPage = ({ id, context }) => {
   const refresh = () => {
     refreshServers();
     refreshStats();
+    refreshReadings(id);
+    refreshSeries(id);
   };
 
   return (
@@ -140,16 +148,11 @@ const HostPage = ({ id, context }) => {
           {t('hosts.host.loadError')}
         </div>
       ) : null}
+      {stats ? <HostOverview id={id} stats={stats} folds={folds} /> : null}
       {stats ? (
-        <RecordRows
-          rows={[
-            ...factRows(stats, t),
-            {
-              key: 'machines',
-              label: t('hosts.page.machines'),
-              value: t('hosts.host.machines', { running, total: machines.length }),
-            },
-          ]}
+        <SectionHeading
+          title={t('hosts.page.machines')}
+          count={t('hosts.host.machines', { running, total: machines.length })}
         />
       ) : null}
       {stats ? (
@@ -166,6 +169,9 @@ const HostPage = ({ id, context }) => {
           emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
         />
       ) : null}
+      <NetworkStorageSummary id={id} />
+      <PerformanceCharts id={id} host={label} folds={folds} />
+      <MonitoringDatabase id={id} />
     </div>
   );
 };

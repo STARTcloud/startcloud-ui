@@ -1,0 +1,41 @@
+{
+  "usage": [
+    {
+      "host": "vbox-1",
+      "link": "Ethernet",
+      "ipackets": 1820344,
+      "rbytes": 2104887123,
+      "ierrors": 0,
+      "opackets": 912455,
+      "obytes": 310442871,
+      "oerrors": 0,
+      "rx_bps": 562500,
+      "tx_bps": 156250,
+      "rx_mbps": 4.5,
+      "tx_mbps": 1.25,
+      "time_delta_seconds": 0.25,
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    },
+    {
+      "host": "vbox-1",
+      "link": "Wi-Fi",
+      "ipackets": 0,
+      "rbytes": 0,
+      "ierrors": 0,
+      "opackets": 0,
+      "obytes": 0,
+      "oerrors": 0,
+      "rx_bps": 0,
+      "tx_bps": 0,
+      "rx_mbps": 0,
+      "tx_mbps": 0,
+      "time_delta_seconds": 0.25,
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 2 },
+  "metadata": { "activeInterfacesCount": 2, "interfaceList": ["Ethernet", "Wi-Fi"] },
+  "queryTime": 251
+}

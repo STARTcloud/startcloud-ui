@@ -27,6 +27,7 @@
     "profileModeTitle": "Switch between identity provider and local profile",
     "about": "About",
     "docs": "Docs",
+    "api": "API reference",
     "contact": "Contact",
     "discover": "Discover",
     "admin": "Admin",
@@ -198,7 +199,8 @@
     "title": "Switch Organization",
     "noOrgsFound": "No organizations found. Contact your administrator if this is unexpected.",
     "loadError": "Failed to load your organizations. Please try again.",
-    "primaryOrg": "Primary Organization"
+    "primaryOrg": "Primary Organization",
+    "allOrganizations": "All organizations"
   },
   "roles": {
     "guest": "Guest",
@@ -1540,6 +1542,7 @@
       "priorityCritical": "Critical",
       "versionSurprise": "Click me 3 times for a surprise!",
       "shell": "Shell",
+      "reconnectShell": "Reconnect Shell",
       "restartShell": "Restart Shell",
       "tasks": "Tasks",
       "priorityFilter": "Priority filter",
@@ -1547,7 +1550,8 @@
       "collapse": "Collapse",
       "expand": "Expand",
       "resize": "Drag to resize",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "resizeBoth": "Resize the sidebar and the pane"
     },
     "terminal": {
       "title": "Terminal preferences",
@@ -1999,6 +2003,21 @@
       "powerOffHost": "Power off host",
       "privilege": "Advanced controls need an administrator account.",
       "failed": "The action failed.",
+      "resetTitle": "Hard reboot — like pressing the reset button; only valid while running",
+      "injectNmi": "Inject NMI",
+      "injectNmiTitle": "Inject a non-maskable interrupt into the running machine — forces a guest crash dump / breaks into the kernel debugger; only valid while running",
+      "pause": "Pause",
+      "pauseTitle": "Freeze the machine in RAM; only valid while running",
+      "suspend": "Suspend",
+      "suspendTitle": "Suspend to disk; Start or Resume continues where it left off",
+      "resume": "Resume",
+      "resumeTitle": "Resume a paused or suspended machine",
+      "guestShutdown": "Guest shutdown",
+      "guestShutdownTitle": "Clean in-guest shutdown via the guest agent",
+      "guestReboot": "Guest reboot",
+      "guestRebootTitle": "Clean in-guest reboot via the guest agent",
+      "openInApplication": "Open in application",
+      "applicationMissing": "{{path}} — not found on the agent host",
       "done": {
         "start": "{{name}} is starting.",
         "shutdown": "{{name}} is shutting down.",
@@ -2007,7 +2026,19 @@
         "kill": "{{name}} was killed.",
         "destroy": "{{name}} was destroyed.",
         "host-restart": "The host is restarting.",
-        "host-shutdown": "The host is shutting down."
+        "host-shutdown": "The host is shutting down.",
+        "nmi": "The interrupt was sent to {{name}}.",
+        "pause": "{{name}} is pausing.",
+        "suspend": "{{name}} is suspending.",
+        "resume": "{{name}} is resuming.",
+        "guest-powerdown": "The guest of {{name}} was asked to shut down.",
+        "guest-reboot": "The guest of {{name}} was asked to restart.",
+        "launch": "{{application}} was opened for {{name}}.",
+        "zone-ready": "{{name}} is ready.",
+        "zone-mark-incomplete": "{{name}} was marked incomplete.",
+        "zone-detach": "{{name}} is detaching.",
+        "zone-attach": "{{name}} is attaching.",
+        "zone-move": "{{name}} is moving."
       },
       "destroyOptions": {
         "title": "Destroy {{name}}",
@@ -2041,6 +2072,211 @@
         "message": "Message (Optional)",
         "messagePlaceholder": "Custom shutdown message",
         "messageNote": "Optional message for system logs (max 200 characters)"
+      }
+    },
+    "zone": {
+      "header": "Zone lifecycle",
+      "ready": "Ready",
+      "verify": "Verify config",
+      "markIncomplete": "Mark incomplete",
+      "detach": "Detach",
+      "attach": "Attach…",
+      "move": "Move zonepath…",
+      "attachTitle": "Attach {{name}}",
+      "attachSubmit": "Attach",
+      "attachUpdate": "Update zone on attach (-u)",
+      "attachForce": "Force attach (-F)",
+      "moveTitle": "Move {{name}}",
+      "moveSubmit": "Move",
+      "movePath": "New zonepath (absolute)",
+      "movePathPlaceholder": "/rpool/zones/new-home",
+      "verifyTitle": "Verify {{name}}",
+      "verifyValid": "Configuration valid",
+      "verifyInvalid": "Configuration INVALID",
+      "resultOutput": "Output"
+    },
+    "bulk": {
+      "menu": "Bulk actions",
+      "acrossAllHosts": "Across all hosts",
+      "header": {
+        "machine": "Bulk machine actions",
+        "zone": "Bulk zone actions"
+      },
+      "start": {
+        "machine": "Start machines…",
+        "zone": "Start zones…"
+      },
+      "stop": {
+        "machine": "Shutdown machines…",
+        "zone": "Shutdown zones…"
+      },
+      "restart": {
+        "machine": "Restart machines…",
+        "zone": "Restart zones…"
+      },
+      "title": {
+        "start": {
+          "machine": "Start machines",
+          "zone": "Start zones"
+        },
+        "stop": {
+          "machine": "Shutdown machines",
+          "zone": "Shutdown zones"
+        },
+        "restart": {
+          "machine": "Restart machines",
+          "zone": "Restart zones"
+        }
+      },
+      "filterByName": "Filter by name…",
+      "allStates": "All statuses",
+      "allHosts": "All hosts",
+      "count_one": "{{count}} listed",
+      "count_other": "{{count}} listed",
+      "done": "{{action}}: {{count}} sent, {{failed}} failed."
+    },
+    "overview": {
+      "title": "Host Overview",
+      "systemInfo": "System Information",
+      "osBuild": "OS Build",
+      "uptimeValue": "{{days}}d {{hours}}h {{minutes}}m",
+      "notAvailable": "N/A",
+      "monitoringService": "Monitoring Service",
+      "initialized": "Initialized",
+      "serviceHealth": "Service Health",
+      "taskQueue": "Task Queue",
+      "pending": "{{number}} Pending",
+      "done": "{{number}} Done",
+      "failed": "{{number}} Failed",
+      "provisioningTools": "Provisioning Tools",
+      "toolInstalled": "{{tool}} installed",
+      "toolMissingSoft": "{{tool}} missing — the agent's built-in transport covers folder sync",
+      "toolMissing": "{{tool}} missing",
+      "toolsMissing_one": "{{count}} tool missing — provisioning may fail until installed.",
+      "toolsMissing_other": "{{count}} tools missing — provisioning may fail until installed.",
+      "resources": "Resource Utilization",
+      "cpuUsage": "CPU Usage",
+      "cores": "(Cores: {{cores}})",
+      "memoryUsage": "Memory Usage",
+      "memorySummary": "(Total: {{total}}{{arc}})",
+      "arcSegment": ", ARC: {{arc}}",
+      "swapUsage": "Swap Usage",
+      "swapSummary": "(Total: {{total}}, Used: {{used}}, Free: {{free}})",
+      "zfsArc": "ZFS ARC",
+      "interfaces": "Network Interfaces",
+      "interface": "Interface",
+      "class": "Class",
+      "unknown": "unknown",
+      "noInterfaces": "No network interfaces found",
+      "readError": "This could not be read from the host",
+      "interfaceCounts": "{{total}} total, {{physical}} physical, {{virtual}} virtual, {{up}} up, {{down}} down",
+      "storage": "Storage Summary",
+      "zfsPools": "ZFS Pools",
+      "datasets": "Datasets",
+      "storageUnavailable": "Storage monitoring data not available",
+      "database": "Monitoring Database",
+      "collectionInterval": "Collection interval: {{seconds}}s",
+      "retention_one": "Retention: {{count}} day",
+      "retention_other": "Retention: {{count}} days",
+      "colData": "Data",
+      "colRecords": "Records",
+      "colLatest": "Latest sample"
+    },
+    "charts": {
+      "heading": "Performance Monitoring",
+      "windowTitle": "Select time window for charts",
+      "resolutionTitle": "Chart resolution - controls the number of data points",
+      "window": {
+        "1min": "1 Minute",
+        "5min": "5 Minutes",
+        "10min": "10 Minutes",
+        "15min": "15 Minutes",
+        "30min": "30 Minutes",
+        "1hour": "1 Hour",
+        "3hour": "3 Hours",
+        "6hour": "6 Hours",
+        "12hour": "12 Hours",
+        "24hour": "24 Hours"
+      },
+      "resolution": {
+        "realtime": "Real-time (125 points)",
+        "high": "High (38 points)",
+        "medium": "Medium (13 points)",
+        "low": "Low (5 points)"
+      },
+      "expand": "Expand chart to full size",
+      "dialogTitle": "{{title}} - {{host}}",
+      "entitySeries": "{{name}} {{series}}",
+      "oneSample": "One sample. This host keeps no history, so the chart grows as samples arrive.",
+      "loadError": "This chart's data could not be read",
+      "cpu": {
+        "title": "CPU Usage",
+        "chartTitle": "CPU Performance",
+        "expanded": "CPU Performance",
+        "empty": "No CPU data available",
+        "usageAxis": "Usage %",
+        "loadAxis": "Load",
+        "overall": "Overall Usage",
+        "ioDelay": "IO delay %",
+        "load1": "Load 1m",
+        "load5": "Load 5m",
+        "load15": "Load 15m",
+        "avg": "Avg",
+        "toggleAvg": "Toggle Historical Average",
+        "cores": "Cores",
+        "toggleCores": "Toggle All Cores",
+        "load": "Load",
+        "toggleLoad": "Toggle Load"
+      },
+      "memory": {
+        "title": "Memory Usage",
+        "chartTitle": "Memory Usage",
+        "expanded": "Memory Performance",
+        "empty": "No memory data available",
+        "axis": "GB",
+        "used": "Used",
+        "free": "Free",
+        "cached": "Cached",
+        "toggleUsed": "Toggle Used visibility",
+        "toggleFree": "Toggle Free visibility",
+        "toggleCached": "Toggle Cached visibility"
+      },
+      "arc": {
+        "title": "ZFS ARC",
+        "chartTitle": "ZFS ARC Stats",
+        "expanded": "ZFS ARC Performance",
+        "empty": "No ARC data available",
+        "sizeAxis": "Size (GB)",
+        "hitAxis": "Hit Rate (%)",
+        "size": "ARC Size",
+        "target": "ARC Target",
+        "hitRate": "Hit Rate"
+      },
+      "network": {
+        "title": "Network",
+        "chartTitle": "Network Bandwidth",
+        "expanded": "Network Performance",
+        "empty": "No real interface data available",
+        "axis": "Mbps",
+        "rx": "RX",
+        "tx": "TX",
+        "total": "Total",
+        "toggleRx": "Toggle RX bandwidth visibility",
+        "toggleTx": "Toggle TX bandwidth visibility",
+        "toggleTotal": "Toggle Total bandwidth visibility"
+      },
+      "poolIo": {
+        "title": "Storage I/O",
+        "chartTitle": "ZFS Pool I/O",
+        "expanded": "Storage I/O Performance",
+        "empty": "No pool I/O data available",
+        "axis": "MB/s",
+        "read": "Read",
+        "write": "Write",
+        "total": "Total",
+        "toggleRead": "Toggle Read bandwidth visibility",
+        "toggleWrite": "Toggle Write bandwidth visibility",
+        "toggleTotal": "Toggle Total bandwidth visibility"
       }
     }
   },

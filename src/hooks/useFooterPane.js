@@ -37,18 +37,24 @@ const persistView = key => localStorage.setItem(VIEW_KEY, key);
  * The state of the footer's pane of the navbar contract's Footer status
  * section, knowing nothing of what a view draws: whether the pane is
  * open, the view that shows and the pane's height, each persisted per
- * origin under `footer_open`, `footer_view` and `footer_height`, a saved
- * view the host lacks falling to the first one it has. The pane opens at
+ * origin under `footer_open`, `footer_view` and `footer_height`; with no
+ * saved view, or a saved view the host lacks, the pane shows the view the
+ * feature marks `first`, and the first one the host has when none is
+ * marked. The pane opens at
  * 130px, a drag or a key that leaves it at 100px or under closes it and
  * resets the height to 130, and it grows to ninety percent of the
- * window's height. `grip` is the handlers of the grip alone, pointer
+ * window's height. `grip` is the handlers of the grip, pointer
  * events with the pointer captured and Up and Down moving the height by
- * 20px, all of them still while the pane is closed; `mounted` is the
+ * 20px, all of them still while the pane is closed; `edge` is the
+ * handlers of the row's top edge and of the corner, the same drag with
+ * the pointer captured, and from a closed pane it starts at no height
+ * and opens the pane as it is dragged up, closing again when released
+ * at 100px or under; `mounted` is the
  * views that have shown since the page loaded, so a view keeps what it
  * holds while another one shows or the pane is collapsed.
  *
- * @param {Array<Object>} views - The views the feature answers, `[{ key, ... }]`
- * @returns {Object} `{ open, view, shown, height, limits, mounted, show, expand, collapse, grip }`
+ * @param {Array<Object>} views - The views the feature answers, `[{ key, first?, ... }]`
+ * @returns {Object} `{ open, view, shown, height, limits, mounted, show, expand, collapse, grip, edge }`
  */
 export const useFooterPane = views => {
   const [open, setOpen] = useState(storedOpen);
@@ -56,7 +62,11 @@ export const useFooterPane = views => {
   const [height, setHeight] = useState(storedHeight);
   const [seen, setSeen] = useState([]);
   const drag = useRef(null);
-  const view = views.find(entry => entry.key === saved) || views[0] || null;
+  const view =
+    views.find(entry => entry.key === saved) ||
+    views.find(entry => entry.first) ||
+    views[0] ||
+    null;
   const shown = open && view ? view.key : '';
 
   if (shown && !seen.includes(shown)) {
@@ -85,6 +95,8 @@ export const useFooterPane = views => {
 
   const settle = next => {
     if (next > CLOSE_HEIGHT) {
+      setOpen(true);
+      persistOpen(true);
       setHeight(next);
       persistHeight(next);
       return;
@@ -103,23 +115,38 @@ export const useFooterPane = views => {
     settle(last);
   };
 
+  const press = (event, from) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = { y: event.clientY, from, last: from };
+  };
+
+  const follow = event => {
+    if (!drag.current) {
+      return;
+    }
+    const next = clampHeight(drag.current.from + (drag.current.y - event.clientY));
+    drag.current.last = next;
+    setHeight(next);
+    if (next > 0) {
+      setOpen(true);
+    }
+  };
+
+  const edge = {
+    onPointerDown: event => press(event, open ? height : 0),
+    onPointerMove: follow,
+    onPointerUp: release,
+    onPointerCancel: release,
+  };
+
   const grip = {
     onPointerDown: event => {
-      if (!open) {
-        return;
+      if (open) {
+        press(event, height);
       }
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      drag.current = { y: event.clientY, from: height, last: height };
     },
-    onPointerMove: event => {
-      if (!drag.current) {
-        return;
-      }
-      const next = clampHeight(drag.current.from + (drag.current.y - event.clientY));
-      drag.current.last = next;
-      setHeight(next);
-    },
+    onPointerMove: follow,
     onPointerUp: release,
     onPointerCancel: release,
     onKeyDown: event => {
@@ -142,5 +169,6 @@ export const useFooterPane = views => {
     expand,
     collapse,
     grip,
+    edge,
   };
 };

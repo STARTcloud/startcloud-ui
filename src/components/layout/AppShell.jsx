@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBook, FaBuilding, FaCircleInfo, FaEnvelope, FaGear } from 'react-icons/fa6';
+import { FaBook, FaBuilding, FaCircleInfo, FaCode, FaEnvelope, FaGear } from 'react-icons/fa6';
 import { Link, useLocation } from 'react-router-dom';
 
 import { POWERED_BY } from '../../config/brand';
@@ -11,6 +11,7 @@ import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { sessionStateShape } from '../../hooks/useSession';
 import { useSidebarBadges } from '../../hooks/useSidebarBadges';
+import { useSidebarSize } from '../../hooks/useSidebarSize';
 import { reportRenderError } from '../../lib/logger';
 import { returnTo } from '../../lib/runtime';
 import { authMethod, hasFeature } from '../../utils/capabilities';
@@ -28,6 +29,7 @@ import BrandLogo from '../common/BrandLogo';
 import ErrorBoundary from '../common/ErrorBoundary';
 
 import Footer from './Footer';
+import { sidebarSizeShape } from './FooterPane';
 import Header from './Header';
 import { NoticeCards } from './Notices';
 import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModal';
@@ -76,6 +78,7 @@ const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
     localProfile: localProfileFor(status),
     organizations: orgs.organizations,
     activeOrgUuid,
+    allOrganizations: orgs.all,
     onPickOrg: account.pickOrg,
     loadOrganizations: orgs.load,
     orgMark: orgs.mark,
@@ -264,9 +267,11 @@ const accountSlots = ({ actionMenu, signedIn, showSidebar, userMenu }) => {
  * the name and version from the status, `about` whether the role has
  * About text, resolved by the app and never by the footer, and `pane`
  * the views hook a mounted feature exported for the footer's pane, null
- * on a host no feature offers one for.
+ * on a host no feature offers one for, and `sidebar` the sidebar's size
+ * while the column draws, for the footer's corner handle, null without a
+ * column.
  */
-const ShellFooter = ({ fetchHealth, about, pane }) => {
+const ShellFooter = ({ fetchHealth, about, pane, sidebar }) => {
   const status = useStatus();
   if (!hasFeature(status, 'footer')) {
     return null;
@@ -280,6 +285,7 @@ const ShellFooter = ({ fetchHealth, about, pane }) => {
       fetchHealth={fetchHealth}
       streamed={hasFeature(status, 'events') && Boolean(status.events)}
       pane={pane}
+      sidebar={sidebar}
     />
   );
 };
@@ -288,6 +294,7 @@ ShellFooter.propTypes = {
   fetchHealth: PropTypes.func,
   about: PropTypes.bool.isRequired,
   pane: PropTypes.func,
+  sidebar: sidebarSizeShape,
 };
 
 const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, links, t }) => {
@@ -335,6 +342,14 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
       </Dropdown.Item>
     );
   }
+  if (links.api) {
+    rows.push(
+      <Dropdown.Item key="api" href={links.api}>
+        <FaCode className="me-2" />
+        {t('navbar.api')}
+      </Dropdown.Item>
+    );
+  }
   return rows.length > 0 ? rows : null;
 };
 
@@ -364,7 +379,10 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * and under its row the pane of the navbar contract's Footer status
  * section while the app hands a `footerPane`, the views hook a mounted
  * feature exported, and the hook answers a view, the pane the last child
- * of the column and the page region giving up the height. The
+ * of the column and the page region giving up the height; the shell
+ * holds the sidebar's size, `useSidebarSize`, and hands it to the column
+ * and to the footer, whose corner handle sets the column's width and the
+ * pane's height in one drag. The
  * column and the app section are hidden on the auth routes of the
  * session's return-path helper, and on every host the cluster's Sign in
  * button is hidden there too, the page below carrying the sign-in, and
@@ -377,7 +395,8 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * `cookie` host the menu draws no
  * Organization console row, the sidebar's Organizations row being that
  * destination, its app section holding the About row, an in-router link
- * to `/about`, with the docs and contact rows as on every other host, and
+ * to `/about`, with the docs, contact and API reference rows as on every
+ * other host, and
  * its Preferences row an in-router link to `/user/profile/preferences`,
  * the one destination drawn in both the column and the menu; while the
  * host advertises `discover` the cluster carries Discover, an in-router
@@ -398,7 +417,10 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * drawn, the header's account slot draws that menu in the user menu's
  * place and the user menu draws at the sidebar's foot as a drop-up, the
  * avatar alone in the rail; without a column the header keeps the user
- * menu and draws the action menu right before it. The app supplies
+ * menu and draws the action menu right before it. While the app hands
+ * `allOrganizations`, on a host that narrows by organization, the user
+ * menu's organization row draws from one membership on and the switcher
+ * carries All organizations as its first row. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries, the action menu, the
@@ -415,6 +437,7 @@ const AppShell = ({
   getSupportedLanguages,
   collections,
   organizations,
+  allOrganizations,
   loadOrganizations = null,
   ticketUrl,
   notifications = null,
@@ -446,6 +469,7 @@ const AppShell = ({
     organizations,
     activeUuid: activeOrgUuid,
     onPick: account.pickOrg,
+    all: allOrganizations,
     load: loadOrganizations,
     mark: <BrandLogo className="logo-md icon-with-margin" />,
     crumbMark: <BrandLogo className="logo-sm" />,
@@ -454,6 +478,7 @@ const AppShell = ({
   const onAuthPage = returnTo.onAuthPage(pathname);
   const showSidebar = sidebar.length > 0 && !onAuthPage;
   const overlay = useSidebarOverlay(pathname);
+  const sidebarSize = useSidebarSize();
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
   const route = useRouteCrumbs({
     pathname,
@@ -569,7 +594,12 @@ const AppShell = ({
           {children}
         </ErrorBoundary>
       </div>
-      <ShellFooter fetchHealth={fetchHealth} about={showAbout} pane={footerPane} />
+      <ShellFooter
+        fetchHealth={fetchHealth}
+        about={showAbout}
+        pane={footerPane}
+        sidebar={showSidebar ? sidebarSize : null}
+      />
     </>
   );
 
@@ -585,6 +615,7 @@ const AppShell = ({
         badges={badges}
         open={overlay.open}
         onClose={overlay.close}
+        size={sidebarSize}
         readout={readout}
         foot={slots.foot}
       />
@@ -604,6 +635,7 @@ AppShell.propTypes = {
   getSupportedLanguages: PropTypes.func.isRequired,
   collections: PropTypes.array.isRequired,
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
+  allOrganizations: PropTypes.bool.isRequired,
   loadOrganizations: PropTypes.func,
   ticketUrl: PropTypes.string.isRequired,
   notifications: notificationsAdapterShape,

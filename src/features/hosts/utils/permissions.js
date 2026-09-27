@@ -21,6 +21,9 @@ export const canStartStopMachines = role => hasMinPermission(role, 'user');
 /** Every role may restart and reset machines. */
 export const canRestartMachines = role => hasMinPermission(role, 'user');
 
+/** An admin alone may create, clone or reshape a machine. */
+export const canCreateMachines = role => hasMinPermission(role, 'admin');
+
 /** An admin alone may kill or destroy a machine. */
 export const canDestroyMachines = role => hasMinPermission(role, 'admin');
 

@@ -1,0 +1,21 @@
+{
+  "host": "vbox-1",
+  "totalSwapBytes": 8589934592,
+  "usedSwapBytes": 1073741824,
+  "freeSwapBytes": 7516192768,
+  "overallUtilization": 12.5,
+  "swapAreaCount": 1,
+  "swapAreas": [
+    {
+      "path": "C:\\pagefile.sys",
+      "pool": null,
+      "sizeBytes": 8589934592,
+      "usedBytes": 1073741824,
+      "utilization": 12.5
+    }
+  ],
+  "poolDistribution": {},
+  "recommendations": [],
+  "lastScanned": "2026-09-27T12:00:00Z",
+  "memoryStatsReference": null
+}

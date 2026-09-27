@@ -1,0 +1,8 @@
+{
+  "hostname": "zone-1",
+  "platform": "omnios",
+  "arch": "x86_64",
+  "uptime": 3600,
+  "allmachines": ["web-1", "web-2"],
+  "runningmachines": ["web-1"]
+}

@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "machine_name": "web-2",
+  "valid": false,
+  "output": "could not verify zonepath /zones/web-2: directory does not exist"
+}

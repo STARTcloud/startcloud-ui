@@ -1,0 +1,18 @@
+{
+  "machines": [
+    {
+      "name": "web-1",
+      "status": "running",
+      "hypervisor": "virtualbox",
+      "org_uuids": ["5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622"]
+    },
+    {
+      "name": "web-2",
+      "status": "running",
+      "hypervisor": "virtualbox",
+      "org_uuids": ["0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11"]
+    },
+    { "name": "web-3", "status": "stopped", "hypervisor": "virtualbox", "org_uuids": [] }
+  ],
+  "total": 3
+}

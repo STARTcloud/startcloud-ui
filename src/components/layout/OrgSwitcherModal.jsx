@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding, FaCheck, FaCrown } from 'react-icons/fa6';
+import { FaBuilding, FaCheck, FaCrown, FaLayerGroup } from 'react-icons/fa6';
 
 import { gravatarProfile } from '../../utils/gravatar';
 import MarkdownText from '../common/MarkdownText';
@@ -120,11 +120,51 @@ OrgRow.propTypes = {
   onPick: PropTypes.func.isRequired,
 };
 
+/**
+ * The switcher's All organizations row, the first row on a host that
+ * narrows by organization: the layers glyph and the words, the primary
+ * border and the green check while the choice is All, picking it the
+ * empty uuid.
+ */
+const AllRow = ({ active, onPick }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
+        active ? 'border-primary border-2' : ''
+      }`}
+      onClick={() => onPick('')}
+    >
+      <div className="d-flex align-items-center">
+        <FaLayerGroup className="logo-md icon-with-margin" aria-hidden />
+        <div className="fw-bold">{t('orgSwitcher.allOrganizations')}</div>
+      </div>
+      {active ? <FaCheck className="text-success" /> : null}
+    </button>
+  );
+};
+
+AllRow.propTypes = {
+  active: PropTypes.bool.isRequired,
+  onPick: PropTypes.func.isRequired,
+};
+
+/**
+ * The organization switcher modal of the navbar contract: one row per
+ * membership, personal organizations last, each its logo, name,
+ * description, role badges, the crown on the primary and the check on
+ * the active one; with `allOrganizations`, on a host that narrows by
+ * organization, the All organizations row first, active while
+ * `activeUuid` is empty. Picking a row answers `onPick` with its uuid,
+ * the empty uuid for All, and never navigates.
+ */
 export const OrgSwitcherModal = ({
   show,
   onHide,
   organizations,
   activeUuid = '',
+  allOrganizations = false,
   onPick,
   loading = false,
   loadFailed = false,
@@ -159,6 +199,7 @@ export const OrgSwitcherModal = ({
         ) : null}
         {!loading && rows.length > 0 ? (
           <div className="list-group">
+            {allOrganizations ? <AllRow active={activeUuid === ''} onPick={onPick} /> : null}
             {rows.map(org => (
               <OrgRow
                 key={org.uuid}
@@ -180,6 +221,7 @@ OrgSwitcherModal.propTypes = {
   onHide: PropTypes.func.isRequired,
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
   activeUuid: PropTypes.string,
+  allOrganizations: PropTypes.bool,
   onPick: PropTypes.func.isRequired,
   loading: PropTypes.bool,
   loadFailed: PropTypes.bool,

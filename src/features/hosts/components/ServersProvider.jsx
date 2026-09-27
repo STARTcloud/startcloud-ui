@@ -7,7 +7,11 @@ import { log } from '../../../lib/logger';
 import { fetchServers } from '../api/agents';
 import { ServersContext } from '../hooks/useServers';
 import { isServerRole, selfServer } from '../utils/hosts';
+import { visibleRows } from '../utils/organizations';
 
+import HostMachinesProvider from './HostMachinesProvider';
+import HostReadingsProvider from './HostReadingsProvider';
+import HostSeriesProvider from './HostSeriesProvider';
 import HostStatsProvider from './HostStatsProvider';
 
 const IDLE = -1;
@@ -34,10 +38,24 @@ const answered = (epoch, patch) => current =>
  * `signedIn` changes the held rows are dropped and the callers that draw
  * ask again, an answer of the session before it discarded. On an agent
  * role the list is the one serving agent and nothing is requested.
- * Inside it draws `HostStatsProvider`, the stats of each host held the
- * same way, so the app mounts one provider for the feature.
+ * `organization` is the uuid of the organization a person operates
+ * under, empty for All and on every host that narrows by none: the
+ * servers handed out are the held rows that show under it
+ * (`visibleUnder`, failing open), a view over what the server already
+ * answered, so the tree, the pages, the Controls menu and the footer's
+ * focus follow the choice without learning of organizations, and a
+ * change of the choice asks for nothing; the providers of the stats and
+ * of the machine rows are handed the same choice. `held` is every row
+ * the server answered, the choice aside: the list a host named by its id
+ * is found in, so the page, the Controls menu and the footer's focus of a
+ * host the person reached by its address draw whole under any choice, the
+ * server having answered for it.
+ * Inside it draws `HostStatsProvider`, `HostMachinesProvider`,
+ * `HostReadingsProvider` and `HostSeriesProvider`, the stats, the machine
+ * rows, the Overview's answers and the charts' series of each host held
+ * the same way, so the app mounts one provider for the feature.
  */
-const ServersProvider = ({ signedIn, children }) => {
+const ServersProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
   const server = isServerRole(status);
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
@@ -88,26 +106,35 @@ const ServersProvider = ({ signedIn, children }) => {
 
   const value = useMemo(() => {
     if (!server) {
-      return { servers: [selfServer(status)], loaded: true, failed: false, epoch: 0, read };
+      const servers = [selfServer(status)];
+      return { servers, held: servers, loaded: true, failed: false, epoch: 0, read };
     }
     return {
-      servers: state.servers,
+      servers: visibleRows(state.servers, organization),
+      held: state.servers,
       loaded: state.loaded,
       failed: state.failed,
       epoch: state.epoch,
       read,
     };
-  }, [server, status, state, read]);
+  }, [server, status, state, read, organization]);
 
   return (
     <ServersContext.Provider value={value}>
-      <HostStatsProvider signedIn={signedIn}>{children}</HostStatsProvider>
+      <HostStatsProvider signedIn={signedIn} organization={organization}>
+        <HostMachinesProvider signedIn={signedIn} organization={organization}>
+          <HostReadingsProvider signedIn={signedIn}>
+            <HostSeriesProvider signedIn={signedIn}>{children}</HostSeriesProvider>
+          </HostReadingsProvider>
+        </HostMachinesProvider>
+      </HostStatsProvider>
     </ServersContext.Provider>
   );
 };
 
 ServersProvider.propTypes = {
   signedIn: PropTypes.bool.isRequired,
+  organization: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
 };
 

@@ -1,0 +1,140 @@
+{
+  "cpu": [
+    {
+      "id": 17278,
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "cpu_utilization_pct": "21.40",
+      "load_avg_1min": "0.42",
+      "load_avg_5min": "0.37",
+      "load_avg_15min": "0.31",
+      "user_pct": "14.20",
+      "system_pct": "7.20",
+      "idle_pct": "78.60",
+      "iowait_pct": "0.00",
+      "io_delay_pct": "1.20",
+      "context_switches": "182044",
+      "interrupts": "90412",
+      "system_calls": "412880",
+      "processes_running": 2,
+      "processes_blocked": 0,
+      "cpu_count": 2,
+      "page_faults": "1204",
+      "page_ins": "0",
+      "page_outs": "0",
+      "per_core_parsed": [
+        {
+          "cpu_id": "cpu0",
+          "user_pct": 15.1,
+          "system_pct": 7.9,
+          "idle_pct": 77,
+          "iowait_pct": 0,
+          "utilization_pct": 23
+        },
+        {
+          "cpu_id": "cpu1",
+          "user_pct": 13.3,
+          "system_pct": 6.5,
+          "idle_pct": 80.2,
+          "iowait_pct": 0,
+          "utilization_pct": 19.8
+        }
+      ]
+    },
+    {
+      "id": 17279,
+      "scan_timestamp": "2026-09-27T12:00:05.000Z",
+      "cpu_utilization_pct": "34.00",
+      "load_avg_1min": "0.51",
+      "load_avg_5min": "0.39",
+      "load_avg_15min": "0.32",
+      "user_pct": "22.00",
+      "system_pct": "12.00",
+      "idle_pct": "66.00",
+      "iowait_pct": "0.00",
+      "io_delay_pct": "2.80",
+      "context_switches": "201120",
+      "interrupts": "98204",
+      "system_calls": "455102",
+      "processes_running": 3,
+      "processes_blocked": 0,
+      "cpu_count": 2,
+      "page_faults": "1422",
+      "page_ins": "0",
+      "page_outs": "0",
+      "per_core_parsed": [
+        {
+          "cpu_id": "cpu0",
+          "user_pct": 24,
+          "system_pct": 13,
+          "idle_pct": 63,
+          "iowait_pct": 0,
+          "utilization_pct": 37
+        },
+        {
+          "cpu_id": "cpu1",
+          "user_pct": 20,
+          "system_pct": 11,
+          "idle_pct": 69,
+          "iowait_pct": 0,
+          "utilization_pct": 31
+        }
+      ]
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "latest": {
+    "id": 17279,
+    "scan_timestamp": "2026-09-27T12:00:05.000Z",
+    "cpu_utilization_pct": "34.00",
+    "load_avg_1min": "0.51",
+    "load_avg_5min": "0.39",
+    "load_avg_15min": "0.32",
+    "user_pct": "22.00",
+    "system_pct": "12.00",
+    "idle_pct": "66.00",
+    "iowait_pct": "0.00",
+    "io_delay_pct": "2.80",
+    "context_switches": "201120",
+    "interrupts": "98204",
+    "system_calls": "455102",
+    "processes_running": 3,
+    "processes_blocked": 0,
+    "cpu_count": 2,
+    "page_faults": "1422",
+    "page_ins": "0",
+    "page_outs": "0",
+    "per_core_parsed": [
+      {
+        "cpu_id": "cpu0",
+        "user_pct": 24,
+        "system_pct": 13,
+        "idle_pct": 63,
+        "iowait_pct": 0,
+        "utilization_pct": 37
+      },
+      {
+        "cpu_id": "cpu1",
+        "user_pct": 20,
+        "system_pct": 11,
+        "idle_pct": 69,
+        "iowait_pct": 0,
+        "utilization_pct": 31
+      }
+    ]
+  },
+  "sampling": {
+    "applied": true,
+    "strategy": "javascript-time-sampling",
+    "samplesRequested": 38,
+    "samplesReturned": 2
+  },
+  "metadata": {
+    "timeSpan": {
+      "start": "2026-09-27T12:00:00.000Z",
+      "end": "2026-09-27T12:00:05.000Z",
+      "durationMinutes": 0
+    }
+  },
+  "queryTime": 9
+}

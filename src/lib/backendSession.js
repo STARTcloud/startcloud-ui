@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { createApiClient } from './apiClient';
+import { accountMembership } from './cookieSession';
 import { audienceOf, decodeJwt } from './jwt';
 
 const EXPIRY_MARGIN_MS = 60000;
@@ -20,21 +21,33 @@ const expiringSoon = user => {
   return typeof exp === 'number' && exp * 1000 - Date.now() < EXPIRY_MARGIN_MS;
 };
 
+const boxVaultMembership = org => ({
+  uuid: org.name,
+  name: org.name,
+  roles: org.role ? [String(org.role).toUpperCase()] : [],
+  primary: Boolean(org.is_primary),
+});
+
 /**
- * The memberships of a backend profile in the chrome's organization shape:
- * the name as the uuid, because local organizations have none, the role
- * upper-cased into the roles list, and the row's `is_primary` as the
- * primary flag.
+ * The memberships of a backend profile in the chrome's organization
+ * shape, read in two shapes. A row that carries a `uuid` is in the
+ * identity provider's shape, `{ uuid, name, roles, primary, personal,
+ * logo_url, email_hash }`, the shape hyperweaver-server's `GET /api/user`
+ * answers, and is read through `accountMembership`, the cookie session's
+ * own mapping, because the uuid is the organization's identity and the
+ * rows a resource server answers are keyed on it. A row without one is in
+ * BoxVault's shape, `{ name, role, is_primary }`: the name as the uuid,
+ * because BoxVault's routes are keyed by the name, the role upper-cased
+ * into the roles list, and `is_primary` as the primary flag. The BoxVault
+ * branch is the one that leaves when BoxVault's round converges its
+ * profile on the identity provider's shape.
  * @param {Object|null|undefined} user - The stored profile
- * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean }>}
+ * @returns {Array<{ uuid: string, name: string, roles: string[], primary: boolean, personal?: boolean, logo?: string, emailHash?: string }>}
  */
 export const profileMemberships = user =>
-  (Array.isArray(user?.organizations) ? user.organizations : []).map(org => ({
-    uuid: org.name,
-    name: org.name,
-    roles: org.role ? [String(org.role).toUpperCase()] : [],
-    primary: Boolean(org.is_primary),
-  }));
+  (Array.isArray(user?.organizations) ? user.organizations : []).map(org =>
+    org.uuid ? accountMembership(org) : boxVaultMembership(org)
+  );
 
 const failure = (message, messageKey) => {
   const error = new Error(message);

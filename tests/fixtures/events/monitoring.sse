@@ -1,0 +1,13 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["tasks","hosts","monitoring"]}
+
+id: 1757068805000-0
+event: cpu-sample
+data: {"agent_id":1,"cpu":[{"host":"vbox-1","cpu_count":2,"cpu_utilization_pct":41.5,"user_pct":30.25,"system_pct":11.25,"idle_pct":58.5,"load_avg_1min":0,"load_avg_5min":0,"load_avg_15min":0,"processes_running":0,"processes_blocked":0,"per_core_parsed":[{"core":0,"utilization_pct":44,"user_pct":32,"system_pct":12,"idle_pct":56},{"core":1,"utilization_pct":39,"user_pct":28.5,"system_pct":10.5,"idle_pct":61}],"scan_timestamp":"2026-09-27T12:00:05Z"}]}
+
+id: 1757068805000-1
+event: memory-sample
+data: {"agent_id":1,"memory":[{"host":"vbox-1","total_memory_bytes":34359738368,"available_memory_bytes":8589934592,"used_memory_bytes":25769803776,"free_memory_bytes":8589934592,"memory_utilization_pct":75,"swap_total_bytes":8589934592,"swap_used_bytes":2147483648,"swap_free_bytes":6442450944,"swap_utilization_pct":25,"scan_timestamp":"2026-09-27T12:00:05Z"}]}
+

@@ -1,0 +1,44 @@
+{
+  "cpu": [
+    {
+      "host": "vbox-1",
+      "cpu_count": 2,
+      "cpu_utilization_pct": 12.5,
+      "user_pct": 8.25,
+      "system_pct": 4.25,
+      "idle_pct": 87.5,
+      "load_avg_1min": 0,
+      "load_avg_5min": 0,
+      "load_avg_15min": 0,
+      "processes_running": 0,
+      "processes_blocked": 0,
+      "per_core_parsed": [
+        { "core": 0, "utilization_pct": 15, "user_pct": 10, "system_pct": 5, "idle_pct": 85 },
+        { "core": 1, "utilization_pct": 10, "user_pct": 6.5, "system_pct": 3.5, "idle_pct": 90 }
+      ],
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "returnedCount": 1,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 1 },
+  "queryTime": 252,
+  "latest": {
+    "host": "vbox-1",
+    "cpu_count": 2,
+    "cpu_utilization_pct": 12.5,
+    "user_pct": 8.25,
+    "system_pct": 4.25,
+    "idle_pct": 87.5,
+    "load_avg_1min": 0,
+    "load_avg_5min": 0,
+    "load_avg_15min": 0,
+    "processes_running": 0,
+    "processes_blocked": 0,
+    "per_core_parsed": [
+      { "core": 0, "utilization_pct": 15, "user_pct": 10, "system_pct": 5, "idle_pct": 85 },
+      { "core": 1, "utilization_pct": 10, "user_pct": 6.5, "system_pct": 3.5, "idle_pct": 90 }
+    ],
+    "scan_timestamp": "2026-09-27T12:00:00Z"
+  }
+}

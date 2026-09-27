@@ -46,17 +46,27 @@ const staled = current => ({
  * `reset` the held copies are marked stale and kept on screen, and only
  * the callers that draw a host ask for it again. The copies belong to
  * the session: when `signedIn` changes they are dropped, an answer of
- * the session before it discarded.
+ * the session before it discarded. `organization` is the uuid of the
+ * organization a person operates under, empty for All, the choice the
+ * hooks narrow a host's machine names by, and `turns` counts its
+ * changes, so a tree node's revision moves when the choice does; the
+ * provider holds the stats as the agent answered them and asks for none
+ * because of the choice.
  */
-const HostStatsProvider = ({ signedIn, children }) => {
+const HostStatsProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
+  const [choice, setChoice] = useState(() => ({ organization, turns: 0 }));
   const flights = useRef(null);
   const copies = useRef(null);
   const epochRef = useRef(state.epoch);
 
   if (state.signedIn !== signedIn) {
     setState(emptyFor(signedIn, state.epoch + 1));
+  }
+
+  if (choice.organization !== organization) {
+    setChoice({ organization, turns: choice.turns + 1 });
   }
 
   useEffect(() => {
@@ -123,8 +133,15 @@ const HostStatsProvider = ({ signedIn, children }) => {
   });
 
   const value = useMemo(
-    () => ({ epoch: state.epoch, hosts: state.hosts, read, load }),
-    [state, read, load]
+    () => ({
+      epoch: state.epoch,
+      hosts: state.hosts,
+      read,
+      load,
+      organization,
+      turns: choice.turns,
+    }),
+    [state, read, load, organization, choice.turns]
   );
 
   return <HostStatsContext.Provider value={value}>{children}</HostStatsContext.Provider>;
@@ -132,6 +149,7 @@ const HostStatsProvider = ({ signedIn, children }) => {
 
 HostStatsProvider.propTypes = {
   signedIn: PropTypes.bool.isRequired,
+  organization: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
 };
 

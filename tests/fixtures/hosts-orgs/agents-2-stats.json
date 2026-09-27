@@ -1,0 +1,8 @@
+{
+  "hostname": "lab-1",
+  "platform": "linux",
+  "arch": "x86_64",
+  "uptime": 3600,
+  "allmachines": ["web-1", "web-2", "web-3", "web-4"],
+  "runningmachines": ["web-1", "web-2"]
+}

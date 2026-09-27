@@ -1,0 +1,21 @@
+{
+  "hostname": "lab-1",
+  "platform": "linux",
+  "type": "Linux",
+  "release": "6.12.0",
+  "version": "Debian 13",
+  "arch": "x86_64",
+  "uptime": 3600,
+  "totalmem": 16777216000,
+  "freemem": 8388608000,
+  "loadavg": [0.2, 0.15, 0.1],
+  "cpus": [
+    {
+      "model": "Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz",
+      "speed": 3000,
+      "times": { "user": 120400, "nice": 200, "sys": 60300, "idle": 3419100, "irq": 0 }
+    }
+  ],
+  "allmachines": ["dev-1", "dev-2"],
+  "runningmachines": ["dev-1"]
+}

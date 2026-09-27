@@ -135,6 +135,7 @@ export const statusShape = PropTypes.shape({
   links: PropTypes.shape({
     docs: PropTypes.string.isRequired,
     contact: PropTypes.string.isRequired,
+    api: PropTypes.string,
     community: PropTypes.arrayOf(
       PropTypes.shape({
         label: PropTypes.string.isRequired,

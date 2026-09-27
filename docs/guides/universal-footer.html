@@ -463,13 +463,13 @@
     display: flex;
     align-items: center;
     position: relative;
-    padding: 12px 20px;
+    padding: 0 20px;
     font-size: 13px;
     background: var(--header);
     border-top: 1px solid var(--border);
     color: var(--muted);
     flex-shrink: 0;
-    height: 44px;
+    height: 37px;
     box-sizing: border-box;
   }
   .site-footer .edge-start {
@@ -481,10 +481,28 @@
   }
   .site-footer .edge-end {
     position: absolute;
+    top: 0;
     right: 20px;
+    bottom: 0;
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .site-footer .edge-end:has(.tools) {
+    right: 0;
+  }
+  .site-footer .edge-handle {
+    position: absolute;
+    top: -5px;
+    right: 0;
+    left: 0;
+    z-index: 3;
+    height: 6px;
+    cursor: row-resize;
+    touch-action: none;
+  }
+  .site-footer .edge-handle:hover {
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
   }
   .site-footer .center {
     margin: 0 auto;
@@ -564,11 +582,10 @@
     height: 18px;
   }
   .tool {
-    width: 28px;
-    height: 28px;
+    width: 36px;
     display: grid;
     place-items: center;
-    border-radius: 4px;
+    border-radius: 0;
     border: 0;
     background: var(--surface-2);
     color: var(--text);
@@ -587,9 +604,9 @@
     outline-offset: 2px;
   }
   .tools {
+    align-self: stretch;
     display: inline-flex;
-    gap: 3px;
-    align-items: center;
+    align-items: stretch;
   }
   .hidden {
     display: none !important;
@@ -597,7 +614,7 @@
   .dropup {
     position: absolute;
     right: 0;
-    bottom: 36px;
+    bottom: 40px;
     min-width: 200px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -993,13 +1010,23 @@
         mark and the left carries no mark.
       </div>
       <div class="callout">
-        <strong>The grip alone drags.</strong> While the pane is open the grip in the middle of the
-        row is the handle, and nothing else on the row, so a press on a button or a link is never a
-        drag: press the grip, hold and drag up to grow the pane, down to shrink it, under 100px it
-        closes, as hyperweaver's does; it grows to ninety percent of the window, hyperweaver's own
-        limit, the page region giving way; opened from closed it starts at 130px, hyperweaver's
-        number; the height persists per origin. Closed, the grip is still. No resizable library,
-        pointer events on the grip setting the pane's height.
+        <strong>Inside the row the grip alone drags.</strong> While the pane is open the grip in the
+        middle of the row is the handle, and nothing else in the row, so a press on a button or a
+        link is never a drag: press the grip, hold and drag up to grow the pane, down to shrink it,
+        under 100px it closes, as hyperweaver's does; it grows to ninety percent of the window,
+        hyperweaver's own limit, the page region giving way; opened from closed it starts at 130px,
+        hyperweaver's number; the height persists per origin. Closed, the grip is still. No
+        resizable library, pointer events on the grip setting the pane's height.
+      </div>
+      <div class="callout">
+        <strong>The top edge and the corner.</strong> The row's top bound is a handle too, "the same
+        resize thing" the sidebar has left to right, turned on its side: a strip over the row's top
+        border, above the row and never over a button, dragged up and down to set the pane's height;
+        dragged up from a closed pane it opens the pane at the height it is dragged to, and released
+        at 100px or under it closes. Beside a sidebar the corner where the sidebar's right edge
+        meets this top edge is one handle for both, "a 2 axis resize to control both": one drag sets
+        the sidebar's width and the pane's height, the pointer there the four-way arrows; the
+        sidebar's page draws it.
       </div>
       <div class="callout">
         <strong>Right cluster.</strong> The heart while <code>health</code> is listed, then the
@@ -1010,18 +1037,29 @@
         lacks falls to the one it has.
       </div>
       <div class="callout">
+        <strong>The row's height.</strong> 36px under a 1px top border, no vertical padding, because
+        "there is this padding on top and below the buttons the entire footer could do without"; the
+        sidebar's foot is the same 36px under the same border, so the two top borders are one line
+        across the column. The tools fill the row's height, joined with no gap between them, and sit
+        hard right, against the window's edge, hyperweaver's manner; a row without tools keeps the
+        20px gutter.
+      </div>
+      <div class="callout">
         <strong>One Shell, whatever opens it.</strong> The footer offers a Shell while the host in
         focus lists one: "a shell via a pty, a shell via ssh, a shell via some other mechanism", the
         mechanism the backend's own. The pane is written against a terminal source, the route that
         starts the session, its WebSocket, its ticket and the route that stops it, never against one
         kind of shell; today's source is the host shell behind <code>host-terminal</code>, as
-        hyperweaver's footer opens it, with Restart shell and Terminal preferences in the toggle's
-        drop-up. A terminal per machine and "a tabbed shell per vm" are later work.
+        hyperweaver's footer opens it, with Reconnect shell, Restart shell and Terminal preferences
+        in the toggle's drop-up. Reconnect shell opens a new socket to the same session, the session
+        left running; Restart shell stops the session and starts a new one; a closed socket is never
+        opened again on a clock. A terminal per machine and "a tabbed shell per vm" are later work.
       </div>
       <div class="callout">
         <strong>The pane's own menu.</strong> A right-click on the pane opens hyperweaver's menu at
-        the pointer, titled by the view: Restart shell and Terminal preferences on the shell,
-        Refresh on the tasks; Escape, a click away or a second right-click elsewhere closes it.
+        the pointer, titled by the view: Reconnect shell, Restart shell and Terminal preferences on
+        the shell, Refresh on the tasks; Escape, a click away or a second right-click elsewhere
+        closes it.
       </div>
       <div class="callout">
         <strong>A task row opens its dialog.</strong> Details, progress, metadata, the output in
@@ -1302,8 +1340,8 @@
         the shells": the UI writes it into each terminal's own WebSocket, the backend unchanged.
       </div>
       <div class="callout">
-        <strong>The drop-up and the pane's menu.</strong> Restart shell and Terminal preferences, as
-        in the one Shell, acting on the tab that shows.
+        <strong>The drop-up and the pane's menu.</strong> Reconnect shell, Restart shell and
+        Terminal preferences, as in the one Shell, acting on the tab that shows.
       </div>
     </div>
   </section>
@@ -1513,11 +1551,10 @@
           <td>
             the Tasks toggle, Refresh, the priority filter (All 20, Low+ 40, Medium+ 60, High+ 80,
             Critical 100, sent as <code>min_priority</code>), the Columns picker, and the tasks
-            pane: one
-            table of the agent's <code>GET /api/tasks</code> rows, fifty at most (ID, Operation,
-            Target, Status, Progress, Priority, Created by, Created, Started, Completed, Error; the
-            Host column first with no host in focus), a row opening the task detail dialog over
-            <code>GET /api/tasks/{id}</code>, <code>/output</code>, the
+            pane: one table of the agent's <code>GET /api/tasks</code> rows, fifty at most (ID,
+            Operation, Target, Status, Progress, Priority, Created by, Created, Started, Completed,
+            Error; the Host column first with no host in focus), a row opening the task detail
+            dialog over <code>GET /api/tasks/{id}</code>, <code>/output</code>, the
             <code>/tasks/{id}/stream</code> WebSocket and <code>DELETE /api/tasks/{id}</code>
           </td>
         </tr>
@@ -1796,6 +1833,7 @@
       down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
       refresh:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>',
+      plug: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></svg>',
       sliders:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10"/><path d="M18 6h2"/><path d="M4 12h2"/><path d="M10 12h10"/><path d="M4 18h12"/><path d="M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
     };
@@ -2037,6 +2075,8 @@
         var items =
           state.view === 'shell'
             ? '<button class="item js-close" type="button">' +
+              ICONS.plug +
+              'Reconnect shell</button><button class="item js-close" type="button">' +
               ICONS.refresh +
               'Restart shell</button><button class="item js-prefs" type="button">' +
               ICONS.sliders +
@@ -2133,7 +2173,9 @@
           html +=
             '<div class="dropup">' +
             (sources.length > 1 ? sourceRows() + '<div class="divider"></div>' : '') +
-            '<button class="item js-restart" type="button">' +
+            '<button class="item js-reconnect" type="button">' +
+            ICONS.plug +
+            'Reconnect shell</button><button class="item js-restart" type="button">' +
             ICONS.refresh +
             'Restart shell</button><button class="item js-prefs" type="button">' +
             ICONS.sliders +
@@ -2179,7 +2221,7 @@
             (hasTasks
               ? 'Tasks opens the queue, then Refresh, the filter and the columns appear, a row opens its dialog · '
               : '') +
-            'right-click the pane for its menu · with the pane open, press and drag the grip in the middle of the row to resize, drag it under 100px to close · the chevron collapses · click the version three times.';
+            "right-click the pane for its menu · with the pane open, press and drag the grip in the middle of the row to resize, drag it under 100px to close · press and drag the row's top edge, open or closed · the chevron collapses · click the version three times.";
         }
       };
 
@@ -2220,7 +2262,7 @@
           openPrefs();
           return;
         }
-        if (e.target.closest('.js-restart')) {
+        if (e.target.closest('.js-reconnect, .js-restart')) {
           state.menu = '';
           render();
           return;
@@ -2404,6 +2446,30 @@
       };
       grip.addEventListener('pointerup', dragEnd);
       grip.addEventListener('pointercancel', dragEnd);
+      var edge = document.createElement('div');
+      edge.className = 'edge-handle';
+      edge.title = 'Drag to resize';
+      edge.setAttribute('role', 'separator');
+      edge.setAttribute('aria-orientation', 'horizontal');
+      footer.appendChild(edge);
+      edge.addEventListener('pointerdown', function (e) {
+        dragStart = { y: e.clientY, h: state.open ? state.height : 0 };
+        edge.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+      edge.addEventListener('pointermove', function (e) {
+        if (!dragStart) {
+          return;
+        }
+        state.height = Math.max(0, Math.min(maxHeight(), dragStart.h + (dragStart.y - e.clientY)));
+        if (state.height > 0 && !state.open) {
+          state.open = true;
+          pane.classList.add('open');
+        }
+        pane.style.setProperty('--pane-h', state.height + 'px');
+      });
+      edge.addEventListener('pointerup', dragEnd);
+      edge.addEventListener('pointercancel', dragEnd);
       grip.addEventListener('keydown', function (e) {
         if (!state.open) {
           return;

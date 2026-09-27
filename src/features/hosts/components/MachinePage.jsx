@@ -14,9 +14,9 @@ import RefreshButton from './RefreshButton';
 
 const hostPath = id => `/hosts/${id}`;
 
-const labelOf = ({ status, servers, id, stats }) => {
+const labelOf = ({ status, held, id, stats }) => {
   if (isServerRole(status)) {
-    const server = servers.find(row => String(row.id) === String(id));
+    const server = held.find(row => String(row.id) === String(id));
     return server ? hostLabel(server) : String(id);
   }
   return stats?.hostname || String(id);
@@ -34,9 +34,9 @@ const labelOf = ({ status, servers, id, stats }) => {
 const MachinePage = ({ id, name }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const { servers, refresh: refreshServers } = useServers();
+  const { held, refresh: refreshServers } = useServers();
   const { stats, loaded, failed, refresh: refreshStats } = useHostStats(id);
-  const host = labelOf({ status, servers, id, stats });
+  const host = labelOf({ status, held, id, stats });
 
   useEffect(() => {
     document.title = name;

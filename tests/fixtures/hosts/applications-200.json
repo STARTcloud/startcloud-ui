@@ -1,0 +1,12 @@
+{
+  "applications": [
+    { "name": "putty", "path": "C:\\Program Files\\PuTTY\\putty.exe", "args": [], "exists": true },
+    {
+      "name": "winscp",
+      "path": "C:\\Program Files\\WinSCP\\WinSCP.exe",
+      "args": [],
+      "exists": false
+    }
+  ],
+  "total": 2
+}

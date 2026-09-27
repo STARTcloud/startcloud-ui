@@ -1,29 +1,22 @@
 import PropTypes from 'prop-types';
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaChevronUp, FaGripLines } from 'react-icons/fa6';
 
 import { useCssVar } from '../../hooks/useCssVar';
 
-const MENU_EDGE = 8;
-const MENU_MIN = 4;
-
-const rowShape = PropTypes.shape({
-  key: PropTypes.string.isRequired,
-  labelKey: PropTypes.string.isRequired,
-  icon: PropTypes.elementType,
-  onClick: PropTypes.func.isRequired,
-});
+import ContextMenu, { MenuRow, menuRowShape } from './ContextMenu';
 
 export const paneViewShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
   icon: PropTypes.elementType.isRequired,
   Component: PropTypes.elementType.isRequired,
+  first: PropTypes.bool,
   tools: PropTypes.elementType,
-  menu: PropTypes.arrayOf(rowShape),
-  dropUp: PropTypes.arrayOf(rowShape),
+  menu: PropTypes.arrayOf(menuRowShape),
+  dropUp: PropTypes.arrayOf(menuRowShape),
 });
 
 export const paneShape = PropTypes.shape({
@@ -40,32 +33,22 @@ export const paneShape = PropTypes.shape({
   expand: PropTypes.func.isRequired,
   collapse: PropTypes.func.isRequired,
   grip: PropTypes.objectOf(PropTypes.func).isRequired,
+  edge: PropTypes.objectOf(PropTypes.func).isRequired,
+});
+
+export const sidebarSizeShape = PropTypes.shape({
+  minimized: PropTypes.bool.isRequired,
+  dragTo: PropTypes.func.isRequired,
+  persist: PropTypes.func.isRequired,
 });
 
 const toolClass = on => (on ? 'footer-tool on' : 'footer-tool');
 
-const within = (value, room) => Math.max(MENU_MIN, Math.min(value, room - MENU_EDGE));
-
-const MenuRow = ({ row }) => {
-  const { t } = useTranslation();
-  const Icon = row.icon || null;
-  return (
-    <>
-      {Icon ? <Icon className="me-2" /> : null}
-      {t(row.labelKey)}
-    </>
-  );
-};
-
-MenuRow.propTypes = {
-  row: rowShape.isRequired,
-};
-
 /**
  * The grip of the footer's row, the bars alone in the center slot and
- * the one drag area of the row, so that a press on a button or a link is
- * never a drag: a button the pointer drags and, focused, Up and Down
- * move, disabled while the pane is closed.
+ * the one drag area inside the row, so that a press on a button or a
+ * link is never a drag: a button the pointer drags and, focused, Up and
+ * Down move, disabled while the pane is closed.
  */
 export const FooterGrip = ({ pane }) => {
   const { t } = useTranslation();
@@ -91,6 +74,95 @@ export const FooterGrip = ({ pane }) => {
 
 FooterGrip.propTypes = {
   pane: paneShape.isRequired,
+};
+
+/**
+ * The corner of the footer's row, where the sidebar's right edge meets
+ * the row's top edge: one handle for two axes, a drag setting the pane's
+ * height as the edge does and the sidebar's width from the same pointer,
+ * the width stored when the pointer lifts; while the sidebar is the rail
+ * the drag moves the pane alone.
+ */
+const FooterCorner = ({ pane, sidebar }) => {
+  const { t } = useTranslation();
+  const held = useRef(false);
+  const { edge, height, limits, open } = pane;
+
+  const onPointerDown = event => {
+    held.current = true;
+    edge.onPointerDown(event);
+  };
+
+  const onPointerMove = event => {
+    edge.onPointerMove(event);
+    if (held.current && !sidebar.minimized) {
+      sidebar.dragTo(event.clientX);
+    }
+  };
+
+  const release = event => {
+    edge.onPointerUp(event);
+    if (held.current) {
+      held.current = false;
+      sidebar.persist();
+    }
+  };
+
+  return (
+    <div
+      className="footer-corner"
+      role="separator"
+      aria-label={t('footer.pane.resizeBoth')}
+      aria-valuenow={open ? height : 0}
+      aria-valuemin={limits.min}
+      aria-valuemax={limits.max}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={release}
+      onPointerCancel={release}
+    />
+  );
+};
+
+FooterCorner.propTypes = {
+  pane: paneShape.isRequired,
+  sidebar: sidebarSizeShape.isRequired,
+};
+
+/**
+ * The handles of the footer's row beside the grip: the row's top edge, a
+ * strip above the row's border the pointer drags up and down to set the
+ * pane's height, opening a closed pane as it is dragged up, the sidebar's
+ * own edge turned on its side; and, while the shell hands the sidebar's
+ * size, the corner. The strip sits above the border, never over the row,
+ * so a press on a button or a link is never a drag.
+ */
+export const FooterHandles = ({ pane, sidebar = null }) => {
+  const { t } = useTranslation();
+  const { edge, height, limits, open } = pane;
+  return (
+    <>
+      <div
+        className="footer-resize"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label={t('footer.pane.resize')}
+        aria-valuenow={open ? height : 0}
+        aria-valuemin={limits.min}
+        aria-valuemax={limits.max}
+        onPointerDown={edge.onPointerDown}
+        onPointerMove={edge.onPointerMove}
+        onPointerUp={edge.onPointerUp}
+        onPointerCancel={edge.onPointerCancel}
+      />
+      {sidebar ? <FooterCorner pane={pane} sidebar={sidebar} /> : null}
+    </>
+  );
+};
+
+FooterHandles.propTypes = {
+  pane: paneShape.isRequired,
+  sidebar: sidebarSizeShape,
 };
 
 const toggled = (key, next) => current => {
@@ -207,75 +279,6 @@ FooterTools.propTypes = {
   views: PropTypes.arrayOf(paneViewShape).isRequired,
 };
 
-const PaneMenu = ({ menu, onClose }) => {
-  const list = useRef(null);
-
-  useLayoutEffect(() => {
-    const element = list.current;
-    const box = element.getBoundingClientRect();
-    const x = within(menu.x, window.innerWidth - box.width);
-    const y = within(menu.y, window.innerHeight - box.height);
-    element.style.setProperty('--sidebar-menu-x', `${x}px`);
-    element.style.setProperty('--sidebar-menu-y', `${y}px`);
-  }, [menu]);
-
-  useEffect(() => {
-    const onKey = event => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    const away = event => {
-      if (event.type === 'contextmenu' && event.defaultPrevented) {
-        return;
-      }
-      if (list.current && !list.current.contains(event.target)) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('mousedown', away);
-    window.addEventListener('contextmenu', away);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('mousedown', away);
-      window.removeEventListener('contextmenu', away);
-    };
-  }, [onClose]);
-
-  return (
-    <ul ref={list} className="dropdown-menu show sidebar-menu">
-      <li>
-        <h6 className="dropdown-header">{menu.title}</h6>
-      </li>
-      {menu.items.map(row => (
-        <li key={row.key}>
-          <button
-            type="button"
-            className="dropdown-item"
-            onClick={() => {
-              onClose();
-              row.onClick();
-            }}
-          >
-            <MenuRow row={row} />
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
-PaneMenu.propTypes = {
-  menu: PropTypes.shape({
-    x: PropTypes.number.isRequired,
-    y: PropTypes.number.isRequired,
-    title: PropTypes.string.isRequired,
-    items: PropTypes.arrayOf(rowShape).isRequired,
-  }).isRequired,
-  onClose: PropTypes.func.isRequired,
-};
-
 const PaneView = ({ view, active, height }) => {
   const View = view.Component;
   return (
@@ -302,9 +305,9 @@ PaneView.propTypes = {
  * The height reaches the stylesheet as a custom property, never a style
  * attribute; the pane is the last child of the app's column and scrolls
  * inside itself while the page region gives up the height. A right-click
- * opens the view's `menu` at the pointer in the sidebar tree's menu
- * shape, titled by the view's label; Escape, a click away or a
- * right-click elsewhere closes it.
+ * opens the view's `menu` at the pointer through `ContextMenu`, the one
+ * presenter the sidebar's tree shares, titled by the view's label;
+ * Escape, a click away or a right-click elsewhere closes it.
  */
 const FooterPane = ({ pane }) => {
   const { t } = useTranslation();
@@ -336,7 +339,7 @@ const FooterPane = ({ pane }) => {
           height={pane.height}
         />
       ))}
-      {menu ? <PaneMenu menu={menu} onClose={() => setMenu(null)} /> : null}
+      {menu ? <ContextMenu menu={menu} onClose={() => setMenu(null)} /> : null}
     </div>
   );
 };

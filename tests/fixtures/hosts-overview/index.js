@@ -1,0 +1,50 @@
+export default {
+  'GET /api/servers': { status: 200, file: 'servers.json' },
+  'GET /api/agents/1/stats': { status: 200, file: 'agents-1-stats.json' },
+  'GET /api/agents/1/monitoring/status': { status: 200, file: 'agents-1-monitoring-status.json' },
+  'GET /api/agents/1/monitoring/health': { status: 200, file: 'agents-1-monitoring-health.json' },
+  'GET /api/agents/1/monitoring/summary': {
+    status: 200,
+    file: 'agents-1-monitoring-summary.json',
+  },
+  'GET /api/agents/1/monitoring/network/interfaces': {
+    status: 200,
+    file: 'agents-1-interfaces.json',
+  },
+  'GET /api/agents/1/monitoring/network/usage': {
+    status: 200,
+    file: 'agents-1-network-usage.json',
+  },
+  'GET /api/agents/1/monitoring/system/cpu': { status: 200, file: 'agents-1-cpu.json' },
+  'GET /api/agents/1/monitoring/system/memory': { status: 200, file: 'agents-1-memory.json' },
+  'GET /api/agents/1/tasks/stats': { status: 200, file: 'agents-1-task-stats.json' },
+  'GET /api/agents/1/system/swap/summary': { status: 200, file: 'agents-1-swap.json' },
+  'GET /api/agents/1/provisioning/status': { status: 200, file: 'agents-1-provisioning.json' },
+  'GET /api/agents/3/stats': { status: 200, file: 'agents-3-stats.json' },
+  'GET /api/agents/3/monitoring/status': { status: 200, file: 'agents-3-monitoring-status.json' },
+  'GET /api/agents/3/monitoring/health': { status: 200, file: 'agents-3-monitoring-health.json' },
+  'GET /api/agents/3/monitoring/summary': {
+    status: 200,
+    file: 'agents-3-monitoring-summary.json',
+  },
+  'GET /api/agents/3/monitoring/network/interfaces': {
+    status: 200,
+    file: 'agents-3-interfaces.json',
+  },
+  'GET /api/agents/3/monitoring/network/usage': {
+    status: 200,
+    file: 'agents-3-network-usage.json',
+  },
+  'GET /api/agents/3/monitoring/system/cpu': { status: 200, file: 'agents-3-cpu.json' },
+  'GET /api/agents/3/monitoring/system/memory': { status: 200, file: 'agents-3-memory.json' },
+  'GET /api/agents/3/monitoring/storage/pools': { status: 200, file: 'agents-3-pools.json' },
+  'GET /api/agents/3/monitoring/storage/datasets': {
+    status: 200,
+    file: 'agents-3-datasets.json',
+  },
+  'GET /api/agents/3/monitoring/storage/pool-io': { status: 200, file: 'agents-3-pool-io.json' },
+  'GET /api/agents/3/monitoring/storage/arc': { status: 200, file: 'agents-3-arc.json' },
+  'GET /api/agents/3/tasks/stats': { status: 200, file: 'agents-3-task-stats.json' },
+  'GET /api/agents/3/system/swap/summary': { status: 200, file: 'agents-3-swap.json' },
+  'GET /api/agents/3/provisioning/status': { status: 200, file: 'agents-3-provisioning.json' },
+};
