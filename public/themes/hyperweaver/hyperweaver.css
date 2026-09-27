@@ -1,0 +1,72 @@
+[data-brand='hyperweaver'] {
+  --brand-primary: #ff6600;
+  --brand-primary-rgb: 255, 102, 0;
+  --brand-on-primary: #000000;
+  --brand-icon-filter: brightness(0);
+  --brand-warning: #ffe600;
+  --brand-warning-rgb: 255, 230, 0;
+  --brand-on-warning: #000000;
+  --brand-logo: url('/brand/hyperweaver/mark.svg');
+  --brand-logo-color: #cc5200;
+  --brand-auth-display: 'Montserrat', 'Open Sans', sans-serif;
+  --brand-focus-ring: rgba(242, 97, 0, 0.93);
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 255, 102, 0;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-warning: var(--brand-warning);
+  --bs-warning-rgb: 255, 230, 0;
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
+  --bs-link-color: #b34700;
+  --bs-link-color-rgb: 179, 71, 0;
+  --bs-link-hover-color: #993d00;
+  --bs-link-hover-color-rgb: 153, 61, 0;
+}
+
+[data-brand='hyperweaver'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(255, 102, 0, 0.67);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #ff6600;
+  --bs-body-bg: #212529;
+  --bs-body-bg-rgb: 33, 37, 41;
+  --bs-tertiary-bg: #2b3035;
+  --bs-tertiary-bg-rgb: 43, 48, 53;
+  --bs-secondary-bg: #343a40;
+  --bs-secondary-bg-rgb: 52, 58, 64;
+  --bs-border-color: #495057;
+  --bs-border-color-rgb: 73, 80, 87;
+  --bs-body-color: #dee2e6;
+  --bs-body-color-rgb: 222, 226, 230;
+  --bs-emphasis-color: #ffffff;
+  --bs-emphasis-color-rgb: 255, 255, 255;
+  --bs-secondary-color: #adb5bd;
+  --bs-secondary-color-rgb: 173, 181, 189;
+  --bs-link-color: #ffa366;
+  --bs-link-color-rgb: 255, 163, 102;
+  --bs-link-hover-color: #ff8c40;
+  --bs-link-hover-color-rgb: 255, 140, 64;
+}
+
+[data-brand='hyperweaver'] {
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --bs-border-radius-lg: 0;
+  --bs-border-radius-xl: 0;
+  --bs-border-radius-xxl: 0;
+  --bs-border-radius-2xl: 0;
+  --bs-border-radius-pill: 0;
+}
