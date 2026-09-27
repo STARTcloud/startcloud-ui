@@ -1837,6 +1837,66 @@
       "machine_other": "máquinas",
       "zone_one": "zona",
       "zone_other": "zonas"
+    },
+    "controls": {
+      "machineControls": "Controles de la máquina",
+      "zoneControls": "Controles de la zona",
+      "host": "Acciones del host",
+      "none": "Controles",
+      "continue": "Continuar",
+      "powerOn": "Encender",
+      "shutdown": "Apagar",
+      "restart": "Reiniciar",
+      "reset": "Restablecer",
+      "forceKill": "Forzar terminación",
+      "destroy": "Destruir",
+      "restartHost": "Reiniciar host",
+      "powerOffHost": "Apagar host",
+      "privilege": "Los controles avanzados necesitan una cuenta de administrador.",
+      "failed": "La acción falló.",
+      "done": {
+        "start": "{{name}} se está iniciando.",
+        "shutdown": "{{name}} se está apagando.",
+        "restart": "{{name}} se está reiniciando.",
+        "reset": "{{name}} se restableció.",
+        "kill": "{{name}} se terminó.",
+        "destroy": "{{name}} se destruyó.",
+        "host-restart": "El host se está reiniciando.",
+        "host-shutdown": "El host se está apagando."
+      },
+      "destroyOptions": {
+        "title": "Destruir {{name}}",
+        "message": "Todos los discos que el agente creó para ella se van con ella.",
+        "cleanupDisks": "Eliminar los discos de la máquina"
+      },
+      "restartOptions": {
+        "restartType": "Tipo de reinicio",
+        "standardRestart": "Reinicio estándar",
+        "fastReboot": "Reinicio rápido (solo x86)",
+        "fastRebootNote": "El reinicio rápido solo funciona en sistemas x86 y omite la inicialización del firmware",
+        "bootEnvironment": "Entorno de arranque (opcional)",
+        "bootEnvironmentPlaceholder": "Deja vacío para usar el BE actual",
+        "bootEnvironmentNote": "Especifica el nombre del entorno de arranque que se usará después del reinicio",
+        "gracePeriod": "Período de gracia (segundos)",
+        "gracePeriodNote": "Retraso antes del reinicio (0-7200 segundos)",
+        "message": "Mensaje (opcional)",
+        "messagePlaceholder": "Mensaje personalizado de reinicio",
+        "messageNote": "Mensaje opcional para los registros del sistema (máx. 200 caracteres)"
+      },
+      "shutdownOptions": {
+        "shutdownType": "Tipo de apagado",
+        "shutdown": "Apagado (a modo de usuario único)",
+        "powerOff": "Apagado total (apagado completo)",
+        "emergencyHalt": "Detención de emergencia (inmediata)",
+        "shutdownNote": "Apagado ordenado a modo de usuario único",
+        "powerOffNote": "Apagado completo: requiere reinicio manual",
+        "emergencyHaltNote": "Detención de emergencia: inmediata, sin período de gracia",
+        "gracePeriod": "Período de gracia (segundos)",
+        "gracePeriodNote": "Retraso antes del apagado (0-7200 segundos)",
+        "message": "Mensaje (opcional)",
+        "messagePlaceholder": "Mensaje personalizado de apagado",
+        "messageNote": "Mensaje opcional para los registros del sistema (máx. 200 caracteres)"
+      }
     }
   },
   "pages": {

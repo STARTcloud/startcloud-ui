@@ -137,7 +137,9 @@ ModeButton.propTypes = {
  * the theme being the profile's Preferences page's to choose), language,
  * then the account menu or Sign in, each control drawn only in the state
  * it belongs to: search and the menu signed in, the ticket icon and Sign
- * in signed out, the rest in both.
+ * in signed out, the rest in both; a feature's `actionMenu`, when the
+ * shell hands one, draws in the account slot before the user menu or in
+ * its place while the shell moved the user menu to the sidebar's foot.
  */
 const Cluster = ({
   signedIn,
@@ -146,6 +148,7 @@ const Cluster = ({
   mode,
   language,
   userMenu,
+  actionMenu,
   onSignIn,
   signInTo,
   LinkComponent,
@@ -156,6 +159,7 @@ const Cluster = ({
     {!signedIn && ticketUrl ? <TicketButton href={ticketUrl} /> : null}
     <ModeButton mode={mode} />
     <LanguageButton languages={language.languages} onPick={language.onPick} />
+    {signedIn && actionMenu ? actionMenu : null}
     {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
     {!signedIn && (onSignIn || signInTo) ? (
       <SignInButton onSignIn={onSignIn} signInTo={signInTo} LinkComponent={LinkComponent} />
@@ -175,6 +179,7 @@ Cluster.propTypes = {
   mode: modeShape.isRequired,
   language: languageShape.isRequired,
   userMenu: PropTypes.object,
+  actionMenu: PropTypes.node,
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string.isRequired,
   LinkComponent: PropTypes.elementType.isRequired,
@@ -190,6 +195,7 @@ const Header = ({
   onSignIn = null,
   signInTo = '',
   userMenu = null,
+  actionMenu = null,
   onSidebarToggle = null,
   discoverTo = '',
   ticketUrl = '',
@@ -230,6 +236,7 @@ const Header = ({
           mode={mode}
           language={language}
           userMenu={userMenu}
+          actionMenu={actionMenu}
           onSignIn={onSignIn}
           signInTo={signInTo}
           LinkComponent={LinkComponent}
@@ -251,6 +258,7 @@ Header.propTypes = {
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
   userMenu: PropTypes.object,
+  actionMenu: PropTypes.node,
   onSidebarToggle: PropTypes.func,
   discoverTo: PropTypes.string,
   ticketUrl: PropTypes.string,

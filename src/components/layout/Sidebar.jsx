@@ -581,13 +581,17 @@ const useResize = (asideRef, setWidth) => {
  * open rows and nodes under one `sidebar_open_<group>` and the
  * chosen view persisted per origin; arrow keys between rows, Left and
  * Right on a node, Escape closing a menu; and under 900px an overlay from
- * the left the header toggle opens. Every entry comes from the mounted
+ * the left the header toggle opens. The foot is bare but for `foot`, the
+ * node the shell hands while a feature's action menu holds the header's
+ * account slot, a function of the rail state drawn in a row under the
+ * nav and above the resize handle, the user menu as a drop-up with the
+ * avatar alone while minimized. Every entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
  * The entries' `nav` carries the host's name, version and hostname as
  * `data-app`, `data-version` and `data-host`, the same three the header
  * row carries, drawn by nothing until a pack's rules give them a place.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose, readout = null }) => {
+const Sidebar = ({ entries, brand, badges, open, onClose, readout = null, foot = null }) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
   const asideRef = useRef(null);
@@ -679,6 +683,7 @@ const Sidebar = ({ entries, brand, badges, open, onClose, readout = null }) => {
             ))}
           </div>
         </nav>
+        {foot ? <ul className="nav sidebar-foot">{foot(minimized)}</ul> : null}
         {minimized ? null : (
           <div
             className="sidebar-resize"
@@ -714,6 +719,7 @@ Sidebar.propTypes = {
     version: PropTypes.string.isRequired,
     host: PropTypes.string.isRequired,
   }),
+  foot: PropTypes.func,
 };
 
 export default Sidebar;

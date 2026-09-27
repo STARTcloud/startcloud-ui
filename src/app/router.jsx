@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Route, Routes, matchPath, useParams } from 'react-router-dom';
 
@@ -63,7 +63,13 @@ import {
   sidebar as catalogSidebar,
 } from '../features/catalog';
 import { ErrorPage } from '../features/errors';
-import { HostPage, HostsPage, MachinePage, sidebar as hostsSidebar } from '../features/hosts';
+import {
+  HostPage,
+  HostsPage,
+  MachinePage,
+  actionMenu as hostsActionMenu,
+  sidebar as hostsSidebar,
+} from '../features/hosts';
 import {
   IDENTITY_ADMIN_PAGES,
   IdentityAdminPage,
@@ -594,6 +600,31 @@ export const sidebarEntries = ({ status, account, collections }) => {
     ...hostsSidebar(status, account),
     ...(cookie ? [] : adminSidebar(status, account, admin)),
   ];
+};
+
+/**
+ * The first non-null `actionMenu(status, account)` answer of the mounted
+ * features, the navbar contract's Foot exception: while one answers, the
+ * header's account slot draws that menu and the user menu moves to the
+ * sidebar's foot; today the hosts feature's Controls menu alone, drawn
+ * here with the session's user under a `Suspense` around its lazy
+ * component. Null means the account slot keeps the user menu.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @returns {import('react').ReactElement|null} The menu `App` hands the shell
+ */
+export const actionMenuFor = ({ status, account }) => {
+  const Menu = [hostsActionMenu].map(menu => menu(status, account)).find(Boolean) || null;
+  if (!Menu) {
+    return null;
+  }
+  return (
+    <Suspense fallback={null}>
+      <Menu user={account.user} />
+    </Suspense>
+  );
 };
 
 const Stub = ({ titleKey, token }) => {

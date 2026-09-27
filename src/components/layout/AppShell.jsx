@@ -33,6 +33,7 @@ import { NoticeCards } from './Notices';
 import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModal';
 import { OrgLogo, organizationShape } from './OrgSwitcherModal';
 import Sidebar, { sidebarGroupShape } from './Sidebar';
+import UserMenu from './UserMenu';
 
 const SESSION_ENDED_KEY = 'session-ended';
 
@@ -243,6 +244,23 @@ const identityFor = ({ user, claims, t }) => {
   return { displayName, email: userSecondaryLine({ ...user, name: displayName }) };
 };
 
+/**
+ * The account slot's two placements of the navbar contract's Foot
+ * exception: while the app hands an `actionMenu`, a person is signed in,
+ * a column draws and there is a user menu, the header's slot takes the
+ * action menu and the user menu becomes the sidebar's foot, a drop-up
+ * with the avatar alone in the rail; otherwise the header keeps the user
+ * menu, the action menu beside it while signed in, and the foot is empty.
+ */
+const accountSlots = ({ actionMenu, signedIn, showSidebar, userMenu }) => {
+  const swap = Boolean(actionMenu) && signedIn && showSidebar && Boolean(userMenu);
+  return {
+    userMenu: swap ? null : userMenu,
+    actionMenu: signedIn ? actionMenu : null,
+    foot: swap ? minimized => <UserMenu {...userMenu} drop="up" rail={minimized} /> : null,
+  };
+};
+
 const ShellFooter = ({ fetchHealth }) => {
   const status = useStatus();
   if (!hasFeature(status, 'footer')) {
@@ -362,11 +380,16 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * mode control, language and Sign in, with no search icon because app-wide search
  * needs a session; signed in, the search icon, its box and the panel
  * under the bar draw only while the host lists `search`, a host without
- * the token drawing none of them. The app supplies
+ * the token drawing none of them. While the app hands an `actionMenu`,
+ * the navbar contract's Foot exception, signed in and with a column
+ * drawn, the header's account slot draws that menu in the user menu's
+ * place and the user menu draws at the sidebar's foot as a drop-up, the
+ * avatar alone in the rail; without a column the header keeps the user
+ * menu and draws the action menu right before it. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
- * notification adapters, the sidebar entries and the menu rows the host's
- * features unlock.
+ * notification adapters, the sidebar entries, the action menu and the
+ * menu rows the host's features unlock.
  */
 const AppShell = ({
   account,
@@ -389,6 +412,7 @@ const AppShell = ({
   appRows = null,
   fetchHealth = null,
   sidebar = [],
+  actionMenu = null,
   routeTitleKey = null,
   routeCrumbParent = null,
   children,
@@ -500,6 +524,8 @@ const AppShell = ({
     host: window.location.hostname,
   };
 
+  const slots = accountSlots({ actionMenu, signedIn, showSidebar, userMenu });
+
   const stack = (
     <>
       <Header
@@ -516,7 +542,8 @@ const AppShell = ({
         signedIn={signedIn}
         onSignIn={signIn.onSignIn}
         signInTo={signIn.signInTo}
-        userMenu={userMenu}
+        userMenu={slots.userMenu}
+        actionMenu={slots.actionMenu}
         onSidebarToggle={showSidebar ? overlay.toggle : null}
         discoverTo={discoverTo}
         ticketUrl={ticketUrl}
@@ -545,6 +572,7 @@ const AppShell = ({
         open={overlay.open}
         onClose={overlay.close}
         readout={readout}
+        foot={slots.foot}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>
@@ -572,6 +600,7 @@ AppShell.propTypes = {
   appRows: PropTypes.node,
   fetchHealth: PropTypes.func,
   sidebar: PropTypes.arrayOf(sidebarGroupShape),
+  actionMenu: PropTypes.node,
   routeTitleKey: PropTypes.func,
   routeCrumbParent: PropTypes.func,
   children: PropTypes.node.isRequired,

@@ -92,6 +92,71 @@ AvatarBadge.propTypes = {
   renderAvatar: PropTypes.func.isRequired,
 };
 
+/**
+ * The menu's toggle, the person's name beside the badged avatar, the
+ * avatar alone while the sidebar is the rail.
+ */
+const MenuToggle = ({ displayName, renderAvatar, rail }) => {
+  const { t } = useTranslation();
+  return (
+    <Dropdown.Toggle
+      as="button"
+      type="button"
+      bsPrefix="nav-link"
+      className="py-0 d-flex align-items-center gap-2 text-body"
+      aria-label={t('navbar.accountMenu')}
+    >
+      {rail ? null : <span className="fw-semibold">{displayName}</span>}
+      <AvatarBadge renderAvatar={renderAvatar} />
+    </Dropdown.Toggle>
+  );
+};
+
+MenuToggle.propTypes = {
+  displayName: PropTypes.string.isRequired,
+  renderAvatar: PropTypes.func.isRequired,
+  rail: PropTypes.bool.isRequired,
+};
+
+/**
+ * The active organization's row, opening the switcher, drawn only while
+ * the person belongs to two or more organizations.
+ */
+const ActiveOrgItem = ({ organizations, activeOrg, orgMark, onOpen }) => {
+  if (organizations.length < 2 || !activeOrg) {
+    return null;
+  }
+  return (
+    <Dropdown.Item as="button" type="button" onClick={onOpen} className="d-flex align-items-center">
+      <OrgLogo
+        org={activeOrg}
+        size={16}
+        className="rounded-circle avatar-sm me-2"
+        fallback={orgMark}
+      />
+      <span className="text-truncate">{activeOrg.name}</span>
+    </Dropdown.Item>
+  );
+};
+
+ActiveOrgItem.propTypes = {
+  organizations: PropTypes.arrayOf(organizationShape).isRequired,
+  activeOrg: organizationShape,
+  orgMark: PropTypes.node,
+  onOpen: PropTypes.func.isRequired,
+};
+
+const dropProps = drop => ({ align: drop === 'up' ? 'start' : 'end', drop });
+
+/**
+ * The user menu of the navbar contract's User menu section, the identity
+ * card, the organization row, Preferences, the favorites, the app
+ * section, Notifications, Help and Logout under one toggle of the
+ * person's name and avatar; `drop` opens it upward at the sidebar's foot
+ * while a feature's action menu holds the header's account slot, and
+ * `rail` draws the avatar alone as the toggle while the sidebar is the
+ * rail.
+ */
 const UserMenu = ({
   displayName,
   email,
@@ -118,6 +183,8 @@ const UserMenu = ({
   ticketUrl,
   onSignOut,
   onSignOutEverywhere,
+  drop = 'down',
+  rail = false,
 }) => {
   const { t } = useTranslation();
   const [showOrgs, setShowOrgs] = useState(false);
@@ -146,17 +213,8 @@ const UserMenu = ({
 
   return (
     <>
-      <Dropdown as="li" align="end" className="nav-item user-menu">
-        <Dropdown.Toggle
-          as="button"
-          type="button"
-          bsPrefix="nav-link"
-          className="py-0 d-flex align-items-center gap-2 text-body"
-          aria-label={t('navbar.accountMenu')}
-        >
-          <span className="fw-semibold">{displayName}</span>
-          <AvatarBadge renderAvatar={renderAvatar} />
-        </Dropdown.Toggle>
+      <Dropdown as="li" {...dropProps(drop)} className="nav-item user-menu">
+        <MenuToggle displayName={displayName} renderAvatar={renderAvatar} rail={rail} />
         <Dropdown.Menu>
           <IdentityCard
             displayName={displayName}
@@ -166,22 +224,12 @@ const UserMenu = ({
             localProfile={localProfile}
           />
 
-          {organizations.length >= 2 && activeOrg ? (
-            <Dropdown.Item
-              as="button"
-              type="button"
-              onClick={openSwitcher}
-              className="d-flex align-items-center"
-            >
-              <OrgLogo
-                org={activeOrg}
-                size={16}
-                className="rounded-circle avatar-sm me-2"
-                fallback={orgMark}
-              />
-              <span className="text-truncate">{activeOrg.name}</span>
-            </Dropdown.Item>
-          ) : null}
+          <ActiveOrgItem
+            organizations={organizations}
+            activeOrg={activeOrg}
+            orgMark={orgMark}
+            onOpen={openSwitcher}
+          />
 
           {showPreferences ? (
             <PreferencesItem
@@ -273,6 +321,8 @@ UserMenu.propTypes = {
   ticketUrl: PropTypes.string.isRequired,
   onSignOut: PropTypes.func.isRequired,
   onSignOutEverywhere: PropTypes.func.isRequired,
+  drop: PropTypes.oneOf(['down', 'up']),
+  rail: PropTypes.bool,
 };
 
 export default UserMenu;

@@ -52,7 +52,12 @@ import { formatFileSize } from '../utils/formatFileSize';
 import { guestOnly, isManager } from '../utils/membership';
 import { isGlobalAdmin } from '../utils/permissions';
 
-import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
+import AppRoutes, {
+  actionMenuFor,
+  routeCrumbParent,
+  routeTitleKey,
+  sidebarEntries,
+} from './router';
 
 const persistMode = mode => session.savePreferences({ mode });
 
@@ -116,8 +121,9 @@ const shellFlags = ({
  * the inbox route alike, its unread count in the notifications feature's
  * one context around them both, neither drawn for a guest-only
  * account), the sidebar entries the mounted
- * features export, the crumb context a page names its own crumb through,
- * and the shell around the routes.
+ * features export, the action menu the first mounted feature exports for
+ * the header's account slot while one does, the crumb context a page
+ * names its own crumb through, and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t, i18n } = useTranslation();
@@ -193,6 +199,7 @@ const App = ({ getSupportedLanguages }) => {
       }),
     [status, user, oidc, issuerUrl, memberships, collections]
   );
+  const actionMenu = actionMenuFor({ status, account: { user } });
 
   if (setupComplete === null) {
     return <div>{t('loading')}</div>;
@@ -246,6 +253,7 @@ const App = ({ getSupportedLanguages }) => {
             notifications={inbox}
             push={pushAdapter}
             sidebar={sidebar}
+            actionMenu={actionMenu}
             routeTitleKey={routeTitleKey}
             routeCrumbParent={routeCrumbParent}
             {...flags}

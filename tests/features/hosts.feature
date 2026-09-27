@@ -22,3 +22,19 @@ Feature: hosts
     Then I see "lab-1"
     And the host was sent GET to "/api/stats"
     And the host was not sent GET to "/api/agents/self/stats"
+
+  Scenario: The Controls menu takes the account slot on a machine route and Power on posts to the agent
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-2"
+    And I click "Machine controls"
+    And I click "Power on"
+    Then the host was sent POST to "/api/agents/1/machines/dev-2/start"
+    And I see "dev-2 is starting."
+
+  Scenario: The user menu draws at the sidebar's foot while the Controls menu holds the account slot
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    Then I see "Host actions"
+    And the sidebar foot holds the account menu

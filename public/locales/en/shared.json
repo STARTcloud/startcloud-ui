@@ -1837,6 +1837,66 @@
       "machine_other": "machines",
       "zone_one": "zone",
       "zone_other": "zones"
+    },
+    "controls": {
+      "machineControls": "Machine controls",
+      "zoneControls": "Zone controls",
+      "host": "Host actions",
+      "none": "Controls",
+      "continue": "Continue",
+      "powerOn": "Power on",
+      "shutdown": "Shutdown",
+      "restart": "Restart",
+      "reset": "Reset",
+      "forceKill": "Force kill",
+      "destroy": "Destroy",
+      "restartHost": "Restart host",
+      "powerOffHost": "Power off host",
+      "privilege": "Advanced controls need an administrator account.",
+      "failed": "The action failed.",
+      "done": {
+        "start": "{{name}} is starting.",
+        "shutdown": "{{name}} is shutting down.",
+        "restart": "{{name}} is restarting.",
+        "reset": "{{name}} was reset.",
+        "kill": "{{name}} was killed.",
+        "destroy": "{{name}} was destroyed.",
+        "host-restart": "The host is restarting.",
+        "host-shutdown": "The host is shutting down."
+      },
+      "destroyOptions": {
+        "title": "Destroy {{name}}",
+        "message": "Every disk the agent created for it goes with it.",
+        "cleanupDisks": "Delete the machine's disks"
+      },
+      "restartOptions": {
+        "restartType": "Restart Type",
+        "standardRestart": "Standard Restart",
+        "fastReboot": "Fast Reboot (x86 only)",
+        "fastRebootNote": "Fast reboot only works on x86 systems and skips firmware initialization",
+        "bootEnvironment": "Boot Environment (Optional)",
+        "bootEnvironmentPlaceholder": "Leave empty for current BE",
+        "bootEnvironmentNote": "Specify boot environment name to use after reboot",
+        "gracePeriod": "Grace Period (seconds)",
+        "gracePeriodNote": "Delay before restart (0-7200 seconds)",
+        "message": "Message (Optional)",
+        "messagePlaceholder": "Custom restart message",
+        "messageNote": "Optional message for system logs (max 200 characters)"
+      },
+      "shutdownOptions": {
+        "shutdownType": "Shutdown Type",
+        "shutdown": "Shutdown (to single-user mode)",
+        "powerOff": "Power Off (complete shutdown)",
+        "emergencyHalt": "Emergency Halt (immediate)",
+        "shutdownNote": "Graceful shutdown to single-user mode",
+        "powerOffNote": "Complete power off - requires manual restart",
+        "emergencyHaltNote": "Emergency halt - immediate, no grace period",
+        "gracePeriod": "Grace Period (seconds)",
+        "gracePeriodNote": "Delay before shutdown (0-7200 seconds)",
+        "message": "Message (Optional)",
+        "messagePlaceholder": "Custom shutdown message",
+        "messageNote": "Optional message for system logs (max 200 characters)"
+      }
     }
   },
   "pages": {

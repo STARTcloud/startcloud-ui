@@ -9,6 +9,7 @@ export {
   fetchStats,
   isServerRole,
 } from './api/agents';
+export { actionMenu } from './actionMenu';
 export { sidebar } from './sidebar';
 
 export const HostsPage = lazy(() => import('./components/HostsPage'));

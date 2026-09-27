@@ -1,0 +1,2062 @@
+<title>STARTcloud Universal Footer</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --header: #f6f9fc;
+    --surface: #ffffff;
+    --surface-2: #eaeff4;
+    --border: #dbe4ee;
+    --text: #46546e;
+    --heading: #2a3547;
+    --muted: #7c8fac;
+    --primary: #5d87ff;
+    --primary-contrast: #ffffff;
+    --danger: #e2533a;
+    --warning: #d99a16;
+    --success: #13a37f;
+    --info: #539bff;
+    --outline: #6c757d;
+    --shadow: 0 8px 24px rgba(42, 53, 71, 0.16);
+    --label: #5d87ff;
+    --term: #1b1f24;
+    --term-text: #d8dee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #212529;
+      --header: #2b3035;
+      --surface: #2b3035;
+      --surface-2: #343a40;
+      --border: #495057;
+      --text: #8b9bb4;
+      --heading: #ffffff;
+      --muted: #8b9bb4;
+      --primary: #5d87ff;
+      --primary-contrast: #ffffff;
+      --danger: #fa896b;
+      --warning: #f0b429;
+      --success: #13deb9;
+      --info: #539bff;
+      --outline: #8b9bb4;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      --label: #9eb7ff;
+      --term: #0f1216;
+      --term-text: #d8dee9;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #212529;
+    --header: #2b3035;
+    --surface: #2b3035;
+    --surface-2: #343a40;
+    --border: #495057;
+    --text: #8b9bb4;
+    --heading: #ffffff;
+    --muted: #8b9bb4;
+    --primary: #5d87ff;
+    --primary-contrast: #ffffff;
+    --danger: #fa896b;
+    --warning: #f0b429;
+    --success: #13deb9;
+    --info: #539bff;
+    --outline: #8b9bb4;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --label: #9eb7ff;
+    --term: #0f1216;
+    --term-text: #d8dee9;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+      'Open Sans',
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: 'Montserrat', 'Open Sans', sans-serif;
+    color: var(--heading);
+    text-wrap: balance;
+    margin: 0;
+  }
+  a {
+    color: var(--label);
+  }
+  code {
+    font-size: 12px;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  .intro {
+    max-width: 68ch;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .intro h1 {
+    font-size: 26px;
+  }
+  .intro p {
+    margin: 0;
+  }
+  .state {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .state-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--label);
+    font-weight: 600;
+  }
+  .state-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .frame {
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg);
+    overflow-x: auto;
+  }
+  .stage {
+    min-width: 940px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 420px;
+  }
+  .stage.short {
+    height: 150px;
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--header);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--heading);
+    text-decoration: none;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: grid;
+    place-items: center;
+    color: var(--primary-contrast);
+  }
+  .crumbs {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .crumbs .sep {
+    color: var(--muted);
+  }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5d87ff, #13deb9);
+    flex-shrink: 0;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 5px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+    color: var(--heading);
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .scroll h2 {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  .ghost {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    margin: 10px 0;
+  }
+  .ghost.w60 {
+    width: 60%;
+  }
+  .ghost.w80 {
+    width: 80%;
+  }
+
+  .pane {
+    flex-shrink: 0;
+    height: 0;
+    overflow: hidden;
+    background: var(--surface);
+    position: relative;
+  }
+  .pane.open {
+    border-top: 1px solid var(--border);
+  }
+  .pane.open {
+    height: var(--pane-h, 160px);
+  }
+  .pane .inner {
+    height: 100%;
+    overflow-y: auto;
+  }
+  .pane.shell .inner {
+    background: var(--term);
+    color: var(--term-text);
+    font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    padding: 8px 12px;
+    white-space: pre;
+    line-height: 1.5;
+  }
+  .pane table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 12.5px;
+  }
+  .pane th,
+  .pane td {
+    text-align: left;
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .pane th {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+  }
+  .pane td:first-child {
+    color: var(--heading);
+  }
+  .bar {
+    display: inline-block;
+    width: 90px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    vertical-align: middle;
+    margin-right: 6px;
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+  }
+  .pane tbody tr.selectable {
+    cursor: pointer;
+  }
+  .pane tbody tr.selectable:hover td {
+    color: var(--heading);
+  }
+  .pane tr.task-failed td {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+  }
+  .pane tr.task-running td {
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
+  }
+  .pane .placeholder {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    white-space: normal;
+    opacity: 0.75;
+  }
+  .ctx-menu {
+    position: absolute;
+    z-index: 6;
+    min-width: 190px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .ctx-title {
+    padding: 4px 14px 6px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .dialog-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    background: rgba(0, 0, 0, 0.45);
+    display: grid;
+    place-items: center;
+  }
+  .dialog {
+    width: min(560px, 92%);
+    max-height: 92%;
+    overflow: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    box-shadow: var(--shadow);
+  }
+  .dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dialog-head h3 {
+    font-size: 15px;
+  }
+  .dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .dialog-rows {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 14px;
+    margin: 0;
+  }
+  .dialog-rows dt {
+    color: var(--muted);
+  }
+  .dialog-rows dd {
+    margin: 0;
+    color: var(--heading);
+  }
+  .dialog-output {
+    max-height: 120px;
+    overflow: auto;
+    padding: 8px;
+    border-radius: 4px;
+    background: var(--term);
+    color: var(--term-text);
+    font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+  .dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .btn.outline {
+    border: 1px solid var(--outline);
+  }
+  .btn.danger {
+    border: 1px solid var(--danger);
+    color: var(--danger);
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .field-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .field-grid .wide {
+    grid-column: 1 / -1;
+  }
+  .field-grid input,
+  .field-grid select {
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--heading);
+    font: inherit;
+  }
+
+  .site-footer {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 12px 20px;
+    font-size: 13px;
+    background: var(--header);
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    flex-shrink: 0;
+    height: 44px;
+    box-sizing: border-box;
+  }
+  .site-footer .edge-start {
+    position: absolute;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .site-footer .edge-end {
+    position: absolute;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .site-footer .center {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .site-footer .mark {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #13deb9, #5d87ff);
+  }
+  .site-footer a {
+    color: var(--muted);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .site-footer .version {
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s ease;
+  }
+  .site-footer .version:hover {
+    transform: scale(1.05);
+    color: var(--heading);
+  }
+  .site-footer .heart {
+    color: var(--success);
+  }
+  .grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 60px;
+    height: 24px;
+    color: var(--muted);
+    border-radius: 4px;
+  }
+  .grip.draggable {
+    cursor: ns-resize;
+    user-select: none;
+    touch-action: none;
+    color: var(--heading);
+  }
+  .grip.draggable:hover {
+    background: var(--surface-2);
+  }
+  .dropup .divider {
+    height: 1px;
+    margin: 6px 0;
+    background: var(--border);
+  }
+  .dropup .item small {
+    margin-left: auto;
+    padding-left: 14px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .grip:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .grip .mark {
+    width: 16px;
+    height: 16px;
+  }
+  .grip svg {
+    width: 18px;
+    height: 18px;
+  }
+  .tool {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    border: 0;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    position: relative;
+  }
+  .tool:hover {
+    color: var(--heading);
+  }
+  .tool.on {
+    background: var(--info);
+    color: #fff;
+  }
+  .tool:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .tools {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+  }
+  .hidden {
+    display: none !important;
+  }
+  .dropup {
+    position: absolute;
+    right: 0;
+    bottom: 36px;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 4;
+  }
+  .dropup .item,
+  .ctx-menu .item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    color: var(--text);
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dropup .item:hover,
+  .ctx-menu .item:hover {
+    background: var(--surface-2);
+    color: var(--heading);
+  }
+  .dropup .item.active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .callouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .callout {
+    border: 1px dashed var(--label);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    background: var(--bg);
+    flex: 1 1 300px;
+  }
+  .callout strong {
+    color: var(--heading);
+  }
+  .try {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .spec.wide {
+    grid-template-columns: 1fr;
+  }
+  .spec-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .spec h2 {
+    font-size: 15px;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  .spec table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  .spec th,
+  .spec td {
+    text-align: left;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .spec th {
+    color: var(--heading);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .spec td:first-child {
+    color: var(--heading);
+    white-space: nowrap;
+  }
+  .same {
+    color: var(--success);
+    font-weight: 600;
+  }
+  @media (max-width: 760px) {
+    .spec {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="page">
+  <section class="intro">
+    <h1>STARTcloud Universal Footer</h1>
+    <p>
+      One footer for every UI backend, hyperweaver-ui's footer converged with the estate's row: the
+      three slots the estate already draws, grown by sub-configs the same way
+      <code>health</code> already grows the right slot: the <code>tasks</code> and
+      <code>host-terminal</code> tokens the agents list today add hyperweaver's pane under the row,
+      the grip in the middle of the row the handle the person presses, holds and drags to make the
+      pane taller, and the toggles that pick which pane shows. A UI backend that lists neither token sees today's row
+      with one change, the left slot linking to About. Every frame below is live: the toggles open
+      the pane, the row drags, the chevron collapses, a task row opens its dialog, a right-click on
+      the pane opens its menu, the third click on the version loads the game.
+    </p>
+  </section>
+
+  <section class="state">
+    <div class="state-label">footer only — BoxVault, the catalog, the VDI Health Monitor</div>
+    <div class="frame">
+      <div class="stage short">
+        <div class="scroll">
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+        </div>
+        <div class="site-footer">
+          <div class="edge-start"><a href="#/about">BoxVault © 2026 · v0.77.0</a></div>
+          <div class="center">
+            Powered by<a href="#"><span class="mark"></span>STARTcloud</a>
+          </div>
+          <div class="edge-end"></div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>One change.</strong> The left slot links to <code>/about</code>; Powered by stays in
+        the center as today, so no mark on the left; no pane token, no grip, no toggles; the right
+        slot is empty because <code>health</code> is not listed either.
+      </div>
+    </div>
+  </section>
+
+  <section class="state">
+    <div class="state-label">footer + health — the identity provider, BoxVault with its heart</div>
+    <div class="frame">
+      <div class="stage short">
+        <div class="scroll">
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+        </div>
+        <div class="site-footer">
+          <div class="edge-start"><a href="#/about">Prominic Identity © 2026 · v2.4.0</a></div>
+          <div class="center">
+            Powered by<a href="#"><span class="mark"></span>STARTcloud</a>
+          </div>
+          <div class="edge-end">
+            <svg
+              class="heart"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 12h4l2-5 3 10 2-5h7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>The heart as today.</strong> On the right, the per-service words on hover, its state
+        on the events stream; the left slot the About link.
+      </div>
+    </div>
+  </section>
+
+  <section class="state">
+    <div class="state-label">
+      footer + health + tasks + host-terminal, one host in focus — an agent role, or the server
+      role on a host's or a machine's route
+    </div>
+    <div class="frame">
+      <div class="stage js-stage" data-focus="machine">
+        <div class="navbar js-navbar">
+          <a class="brand" href="#"
+            ><span class="brand-mark"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+                /></svg></span
+            >Hyperweaver</a
+          >
+          <div class="crumbs">
+            <span class="sep">›</span><span>Hosts</span><span class="sep">›</span
+            ><span>host-1162.m4kr.net</span><span class="sep">›</span><span>8272--domino-n1</span>
+          </div>
+          <button class="btn" type="button">Machine controls</button>
+          <span class="avatar"></span>
+        </div>
+        <div class="scroll js-scroll">
+          <h2>8272--domino-n1</h2>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+        </div>
+        <div class="site-footer js-footer">
+          <div class="edge-start">
+            <a
+              href="https://startcloud.com/"
+              target="_blank"
+              rel="noreferrer"
+              title="Powered by STARTcloud"
+              aria-label="Powered by STARTcloud"
+              ><span class="mark"></span
+            ></a>
+            <a href="#/about">Hyperweaver © 2026 ·</a>
+            <button class="version js-version" type="button" title="Click three times">
+              v0.11.0
+            </button>
+          </div>
+          <div class="center">
+            <span
+              class="grip js-grip"
+              title="Drag to resize"
+              tabindex="0"
+              role="separator"
+              aria-orientation="horizontal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9h14" />
+                <path d="M5 15h14" />
+              </svg>
+            </span>
+          </div>
+          <div class="edge-end">
+            <svg
+              class="heart"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 12h4l2-5 3 10 2-5h7" />
+            </svg>
+            <span class="tools js-tools"></span>
+          </div>
+        </div>
+        <div class="pane js-pane tasks"><div class="inner js-inner"></div></div>
+      </div>
+    </div>
+    <div class="try js-try"></div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>Left slot: the mark, About, the game.</strong> Only while a pane token is listed,
+        because the bars took the center: the STARTcloud mark on the far left before the product
+        name, its tooltip "Powered by STARTcloud", linking to startcloud.com as the center mark does
+        today. Then name © year · version, one in-router link to <code>/about</code>, where the
+        repo, changelog, contact and community links and the version already live; the version is a
+        button and its third click loads hyperweaver's easter egg, the Kick Ass game from
+        <code>hi.kickassapp.com/kickass.js</code>, exactly as hyperweaver-ui's
+        <code>Footer.jsx</code> does today.
+      </div>
+      <div class="callout">
+        <strong>hyperweaver's order.</strong> The toolbar row sits above the pane and the pane opens
+        below it at the bottom of the screen, as hyperweaver-ui's <code>Footer.jsx</code> draws it;
+        the center of the row carries the grip bars alone, hyperweaver's sixty-pixel grip spot, the
+        mark moved to the far left. Without a pane token the center is today's Powered by text and
+        mark and the left carries no mark.
+      </div>
+      <div class="callout">
+        <strong>The grip alone drags.</strong> While the pane is open the grip in the middle of the
+        row is the handle, and nothing else on the row, so a press on a button or a link is never
+        a drag: press the grip, hold and drag up to grow the pane, down to shrink it, under 100px
+        it closes, as hyperweaver's does; it grows to ninety percent of the window, hyperweaver's
+        own limit, the page region giving way; opened from closed it starts at 130px,
+        hyperweaver's number; the height persists per origin. Closed, the grip is still. No
+        resizable library, pointer events on the grip setting the pane's height.
+      </div>
+      <div class="callout">
+        <strong>Right cluster.</strong> The heart while <code>health</code> is listed, then the
+        Shell toggle while the focus offers any terminal, the Tasks toggle while the host lists
+        <code>tasks</code>, the priority filter and the Columns picker while the tasks pane shows,
+        then the chevron that collapses or expands the pane. A saved view whose token the host
+        lacks falls to the one it has.
+      </div>
+      <div class="callout">
+        <strong>The shell is whatever the focus offers.</strong> More than the host's terminal:
+        the Shell drop-up lists every terminal the route's target has, each behind the token the
+        agent already lists for it, and the pane opens the one picked. On a host's route the host
+        shell (<code>host-terminal</code>); on a machine's route the host shell, the machine's
+        console (<code>zlogin</code> in <code>console</code>) and its SSH terminal
+        (<code>ssh</code>); Restart shell and Terminal preferences under them. hyperweaver's
+        footer opens the host's terminal alone today, the other two living on the machine's page.
+      </div>
+      <div class="callout">
+        <strong>The pane's own menu.</strong> A right-click on the pane opens hyperweaver's menu at
+        the pointer, titled by the view: Restart shell and Terminal preferences on the shell,
+        Refresh on the tasks; Escape, a click away or a second right-click elsewhere closes it.
+      </div>
+      <div class="callout">
+        <strong>A task row opens its dialog.</strong> Details, progress, metadata, the output in
+        terminal colors with Copy, the subtasks each opening its own dialog, and Cancel task behind
+        a confirmation while the task is pending or running. On the all-hosts view a row opens
+        nothing, as in hyperweaver.
+      </div>
+      <div class="callout">
+        <strong>Terminal preferences.</strong> Font size 6 to 32, scrollback to 200000, cursor
+        style, cursor blink, font family with suggestions, Reset to defaults; saving applies to the
+        open shell at once.
+      </div>
+      <div class="callout">
+        <strong>Scrolling.</strong> The page region above the row stays the one scroll container;
+        the pane scrolls inside itself; the row rides up as the pane grows. Opening the pane
+        shortens the page region, it never overlays it.
+      </div>
+      <div class="callout">
+        <strong>Nothing polls.</strong> hyperweaver asked every agent for its tasks every second
+        and the open dialog every two; both go. The pane reads once on open, on the stream's
+        <code>ready</code> and <code>reset</code>, on Refresh and after the person's own action,
+        then follows a <code>tasks</code> topic once the agents stream one. A task's output keeps
+        the WebSocket the agents already push it on, and the shell its own.
+      </div>
+    </div>
+  </section>
+
+  <section class="state">
+    <div class="state-label">
+      the same tokens, no host in focus — the server role on its home route: every host's tasks
+      under a Host column, the shell waiting for a host
+    </div>
+    <div class="frame">
+      <div class="stage js-stage" data-scope="all">
+        <div class="navbar js-navbar">
+          <a class="brand" href="#"
+            ><span class="brand-mark"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+                /></svg></span
+            >Hyperweaver</a
+          >
+          <div class="crumbs"><span class="sep">›</span><span>Hosts</span></div>
+          <button class="btn" type="button" disabled>Controls</button>
+          <span class="avatar"></span>
+        </div>
+        <div class="scroll js-scroll">
+          <h2>Hosts</h2>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+        </div>
+        <div class="site-footer js-footer">
+          <div class="edge-start">
+            <a
+              href="https://startcloud.com/"
+              target="_blank"
+              rel="noreferrer"
+              title="Powered by STARTcloud"
+              aria-label="Powered by STARTcloud"
+              ><span class="mark"></span
+            ></a>
+            <a href="#/about">Hyperweaver © 2026 ·</a>
+            <button class="version js-version" type="button" title="Click three times">
+              v0.11.0
+            </button>
+          </div>
+          <div class="center">
+            <span
+              class="grip js-grip"
+              title="Drag to resize"
+              tabindex="0"
+              role="separator"
+              aria-orientation="horizontal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9h14" />
+                <path d="M5 15h14" />
+              </svg>
+            </span>
+          </div>
+          <div class="edge-end">
+            <svg
+              class="heart"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 12h4l2-5 3 10 2-5h7" />
+            </svg>
+            <span class="tools js-tools"></span>
+          </div>
+        </div>
+        <div class="pane js-pane tasks"><div class="inner js-inner"></div></div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>The pane follows the host in focus.</strong> On the server role the two tokens are
+        read from the registry row of the host the route names, never from the server's own status,
+        because each agent lists its own; an agent role reads its own status. With no host in the
+        route the tasks of every host that lists <code>tasks</code> draw together, newest first,
+        under a Host column, and the shell has no host to open on.
+      </div>
+    </div>
+  </section>
+
+  <section class="state">
+    <div class="state-label">footer + tasks alone — an agent without a terminal surface</div>
+    <div class="frame">
+      <div class="stage js-stage" data-tokens="tasks" style="height: 260px">
+        <div class="scroll js-scroll">
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+        </div>
+        <div class="site-footer js-footer">
+          <div class="edge-start">
+            <a
+              href="https://startcloud.com/"
+              target="_blank"
+              rel="noreferrer"
+              title="Powered by STARTcloud"
+              aria-label="Powered by STARTcloud"
+              ><span class="mark"></span
+            ></a>
+            <a href="#/about">Hyperweaver © 2026 ·</a>
+            <button class="version js-version" type="button">v0.11.0</button>
+          </div>
+          <div class="center">
+            <span
+              class="grip js-grip"
+              title="Drag to resize"
+              tabindex="0"
+              role="separator"
+              aria-orientation="horizontal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9h14" />
+                <path d="M5 15h14" />
+              </svg>
+            </span>
+          </div>
+          <div class="edge-end"><span class="tools js-tools"></span></div>
+        </div>
+        <div class="pane js-pane tasks"><div class="inner js-inner"></div></div>
+      </div>
+    </div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>One toggle.</strong> No Shell button, no heart (no <code>health</code>); Tasks and
+        the chevron alone. The center slot is the grip because a pane token is listed.
+      </div>
+    </div>
+  </section>
+
+  <section class="spec wide">
+    <div class="spec-col">
+      <h2>What each UI backend lists, and what it gets</h2>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>UI backend</th>
+            <th>features</th>
+            <th>Footer drawn</th>
+            <th>Change</th>
+          </tr>
+          <tr>
+            <td>BoxVault</td>
+            <td><code>footer</code> <code>health</code></td>
+            <td>name · year · version → About; Powered by; heart</td>
+            <td>the left slot links to <code>/about</code> instead of the repo</td>
+          </tr>
+          <tr>
+            <td>Provisioner Catalog</td>
+            <td><code>footer</code> <code>health</code></td>
+            <td>the same</td>
+            <td>the About link</td>
+          </tr>
+          <tr>
+            <td>VDI Health Monitor</td>
+            <td><code>footer</code> <code>health</code></td>
+            <td>the same</td>
+            <td>the About link</td>
+          </tr>
+          <tr>
+            <td>Identity provider</td>
+            <td><code>footer</code> per site, <code>health</code></td>
+            <td>the same</td>
+            <td>the About link in place of the changelog</td>
+          </tr>
+          <tr>
+            <td>White-label site</td>
+            <td>no <code>footer</code></td>
+            <td>no footer; the version in the user menu's app header</td>
+            <td><span class="same">none</span></td>
+          </tr>
+          <tr>
+            <td>hyperweaver-server</td>
+            <td>
+              <code>footer</code> <code>health</code> of its own; <code>tasks</code> and
+              <code>host-terminal</code> from each host's registry row
+            </td>
+            <td>
+              the row plus the grip, Shell, Tasks, the filter and columns, the chevron, the pane
+            </td>
+            <td>
+              new: the pane; on <code>/</code> the tasks of every host with a Host column, on
+              <code>/hosts/{id}</code> and below that host's, addressed
+              <code>/api/agents/{id}/…</code>
+            </td>
+          </tr>
+          <tr>
+            <td>hyperweaver-agent</td>
+            <td>
+              <code>footer</code> <code>health</code> <code>tasks</code>
+              <code>host-terminal</code>
+            </td>
+            <td>the same</td>
+            <td>new: the pane over the serving agent at its own <code>/api</code></td>
+          </tr>
+          <tr>
+            <td>zoneweaver-agent</td>
+            <td>
+              <code>footer</code> <code>health</code>; <code>tasks</code> and
+              <code>host-terminal</code> it lists today
+            </td>
+            <td>the same</td>
+            <td>new: the pane over the serving agent at its own <code>/api</code></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="spec wide">
+    <div class="spec-col">
+      <h2>What the code says, read file by file</h2>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Finding</th>
+            <th>Where</th>
+            <th>What this page does with it</th>
+          </tr>
+          <tr>
+            <td>
+              The agents list <code>tasks</code>, <code>host-terminal</code> and <code>ssh</code>
+              today, and <code>zlogin</code> in <code>console</code>
+            </td>
+            <td>zoneweaver-agent <code>StatusController.js</code>, <code>MachineRoutes.js</code></td>
+            <td>each terminal draws behind its own name; no new token</td>
+          </tr>
+          <tr>
+            <td>The tokens are per host</td>
+            <td>hyperweaver-ui <code>Footer.jsx</code>, <code>FooterContext.jsx</code></td>
+            <td>the pane follows the host in focus; the all-hosts frame</td>
+          </tr>
+          <tr>
+            <td>The pane has a right-click menu</td>
+            <td><code>Footer.jsx</code>, <code>SidebarContextMenu.jsx</code></td>
+            <td>drawn, live</td>
+          </tr>
+          <tr>
+            <td>Opens at 130px, closes under 100px, grows to 90% of the window</td>
+            <td><code>Footer.jsx</code></td>
+            <td>the same three numbers</td>
+          </tr>
+          <tr>
+            <td>
+              Priority floor 20, 40, 60, 80, 100, default 40; a row's word from its number, Service
+              at 50
+            </td>
+            <td><code>Footer.jsx</code>, <code>Tasks.jsx</code>, <code>UserSettingsContext.jsx</code></td>
+            <td>the filter and the Priority column</td>
+          </tr>
+          <tr>
+            <td>
+              Eleven columns, six shown by default; failed rows tinted danger, running rows warning
+            </td>
+            <td><code>Tasks.jsx</code>, <code>_utilities.scss</code></td>
+            <td>the Columns picker and the row tints</td>
+          </tr>
+          <tr>
+            <td>A task row opens a dialog with output, subtasks and Cancel</td>
+            <td><code>TaskDetailModal.jsx</code></td>
+            <td>drawn, live</td>
+          </tr>
+          <tr>
+            <td>Terminal preferences, kept in the browser</td>
+            <td><code>TerminalPrefsModal.jsx</code>, <code>xtermPrefs.js</code></td>
+            <td>drawn, live</td>
+          </tr>
+          <tr>
+            <td>Tasks polled every second, the dialog every two</td>
+            <td><code>FooterContext.jsx</code>, <code>TaskDetailModal.jsx</code></td>
+            <td>dropped; reads on an event or a request alone</td>
+          </tr>
+          <tr>
+            <td>Task output is pushed over a WebSocket with a ticket</td>
+            <td>zoneweaver-agent <code>WebSocketHandler.js</code>, <code>WsTicketController.js</code></td>
+            <td>kept for the dialog's output and for the shell</td>
+          </tr>
+          <tr>
+            <td>hyperweaver's left slot links to <code>/docs</code></td>
+            <td><code>Footer.jsx</code></td>
+            <td>the link is About, where Docs is the first row</td>
+          </tr>
+          <tr>
+            <td>
+              The About page has no defaults; it draws the <code>about.&lt;role&gt;.*</code> keys of
+              the locale, written today for <code>auth-server</code>, <code>boxvault</code>,
+              <code>catalog</code> and <code>vdi-health</code>
+            </td>
+            <td><code>AboutRoute.jsx</code>, <code>hasAbout.js</code>, <code>shared.json</code></td>
+            <td>
+              three blocks of keys to add, one per hyperweaver role, in <code>en</code> and
+              <code>es</code>
+            </td>
+          </tr>
+          <tr>
+            <td>The test fixtures answer no WebSocket</td>
+            <td><code>tests/features/support/fixtures.js</code></td>
+            <td>the shell and the output stream are proven by hand until the fixtures grow</td>
+          </tr>
+          <tr>
+            <td>The easter egg is a script from another host</td>
+            <td><code>Footer.jsx</code></td>
+            <td>
+              drawn on every UI backend; the identity provider's page policy gains the game's
+              origin in <code>script-src</code>, <code>UiIndexHandler.groovy</code>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="spec">
+    <div class="spec-col">
+      <h2>The two tokens</h2>
+      <table>
+        <tr>
+          <th>Token</th>
+          <th>Surface</th>
+        </tr>
+        <tr>
+          <td><code>tasks</code></td>
+          <td>
+            the Tasks toggle, the priority filter (All 20, Low+ 40, Medium+ 60, High+ 80, Critical
+            100, sent as <code>min_priority</code>), the Columns picker, and the tasks pane: one
+            table of the agent's <code>GET /api/tasks</code> rows, fifty at most (ID, Operation,
+            Target, Status, Progress, Priority, Created by, Created, Started, Completed, Error; the
+            Host column first with no host in focus), a row opening the task detail dialog over
+            <code>GET /api/tasks/{id}</code>, <code>/output</code>, the
+            <code>/tasks/{id}/stream</code> WebSocket and <code>DELETE /api/tasks/{id}</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>host-terminal</code></td>
+          <td>
+            the host shell in the Shell drop-up: one xterm over the agent's
+            <code>POST /api/term/start</code> session, its <code>/term/{id}</code> WebSocket
+            opened with an unscoped ticket from <code>GET /api/ws-ticket</code>, fitted to the pane
+            on every drag, the PTY told its size, the session stopped at
+            <code>DELETE /api/term/sessions/{id}/stop</code> when the host changes
+          </td>
+        </tr>
+        <tr>
+          <td><code>zlogin</code> in <code>console</code></td>
+          <td>
+            the machine's console in the drop-up on a machine's route:
+            <code>POST /api/machines/{name}/zlogin/start</code>, the
+            <code>/zlogin/{id}</code> WebSocket with a ticket bound to that machine
+          </td>
+        </tr>
+        <tr>
+          <td><code>ssh</code></td>
+          <td>
+            the machine's SSH terminal in the drop-up on a machine's route:
+            <code>POST /api/machines/{name}/ssh/start</code>, the <code>/ssh/{id}</code>
+            WebSocket with a ticket bound to that machine
+          </td>
+        </tr>
+        <tr>
+          <td>the grip</td>
+          <td>
+            the center slot while the focus offers a pane, the grip bars alone, the one drag handle
+            while the pane is open; the Powered by text and mark otherwise, so no other UI backend
+            sees a change there
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="spec-col">
+      <h2>Storage, dependencies, bundle</h2>
+      <table>
+        <tr>
+          <th>Item</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td>Storage</td>
+          <td>
+            <code>footer_height</code>, <code>footer_open</code>, <code>footer_view</code> (<code
+              >tasks</code
+            >
+            | <code>shell</code>), <code>tasks_min_priority</code>, <code>tasks_columns</code>,
+            <code>terminal_prefs</code>, per origin beside <code>sidebar_width</code> in the session
+            contract's table
+          </td>
+        </tr>
+        <tr>
+          <td>Dependencies</td>
+          <td>
+            <code>@xterm/xterm</code> with <code>addon-fit</code>, <code>addon-attach</code>,
+            <code>addon-clipboard</code>, <code>addon-search</code>, <code>addon-serialize</code>,
+            <code>addon-web-links</code>, <code>addon-webgl</code>, and <code>react-xtermjs</code>;
+            no <code>react-resizable</code>, the grip is the row's own pointer events
+          </td>
+        </tr>
+        <tr>
+          <td>Bundle</td>
+          <td>
+            one more <code>manualChunks</code> entry in <code>vite.config.js</code>:
+            <code>xterm</code> for <code>node_modules/@xterm</code> and <code>react-xtermjs</code>,
+            lazy behind the shell pane, so a UI backend without the token never fetches it
+          </td>
+        </tr>
+        <tr>
+          <td>Easter egg</td>
+          <td>
+            the third click on the version appends a script tag for
+            <code>//hi.kickassapp.com/kickass.js</code>, hyperweaver's own line; it is the one
+            remote script the footer loads, and only on that click
+          </td>
+        </tr>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var task = function (row) {
+      return {
+        ID: row[0],
+        Operation: row[1],
+        Target: row[2],
+        Status: row[3],
+        percent: row[4],
+        priority: row[5],
+        'Created by': row[6],
+        Created: row[7],
+        Started: row[8],
+        Completed: row[9],
+        Error: row[10],
+        Host: row[11],
+        output: row[12],
+      };
+    };
+    var TASKS = [
+      [
+        '7f3a1c02',
+        'start',
+        '8272--domino-n1',
+        'running',
+        62,
+        60,
+        'mark',
+        'Today, 9:14 AM',
+        'Today, 9:14 AM',
+        '-',
+        '-',
+        'host-1162',
+        'Booting zone 8272--domino-n1\nzoneadm: zone is now running\nWaiting for the guest agent',
+      ],
+      [
+        '5b90e4d1',
+        'Take snapshot',
+        '8009--web-01',
+        'completed',
+        100,
+        40,
+        'mark',
+        'Today, 8:52 AM',
+        'Today, 8:52 AM',
+        'Today, 8:52 AM',
+        '-',
+        'host-1162',
+        'zfs snapshot rpool/zones/8009--web-01@before-upgrade',
+      ],
+      [
+        'c21d7a66',
+        'Provision machine',
+        '4448--zonetest8',
+        'failed',
+        35,
+        80,
+        'system',
+        'Today, 8:10 AM',
+        'Today, 8:11 AM',
+        'Today, 8:19 AM',
+        'ssh: connect to host 10.12.0.48 port 22: timed out',
+        'host-1162',
+        'TASK [wait for ssh]\nfatal: [4448--zonetest8]: UNREACHABLE',
+      ],
+      [
+        '0e55b9f3',
+        'Download artifact',
+        'artifact',
+        'running',
+        18,
+        50,
+        'system',
+        'Today, 7:58 AM',
+        'Today, 7:58 AM',
+        '-',
+        '-',
+        'desk-lab',
+        '412 MB / 2.3 GB',
+      ],
+      [
+        'a4c8d210',
+        'stop',
+        '8009--web-01',
+        'completed',
+        100,
+        60,
+        'mark',
+        'Yesterday, 11:40 PM',
+        'Yesterday, 11:40 PM',
+        'Yesterday, 11:41 PM',
+        '-',
+        'host-1162',
+        'zoneadm: zone halted',
+      ],
+      [
+        '9d17e0aa',
+        'Scan artifacts',
+        'system',
+        'completed',
+        100,
+        20,
+        'system',
+        'Yesterday, 11:00 PM',
+        'Yesterday, 11:00 PM',
+        'Yesterday, 11:00 PM',
+        '-',
+        'desk-lab',
+        '14 files, none changed',
+      ],
+      [
+        '3388fb5c',
+        'restart',
+        '8272--domino-n1',
+        'completed',
+        100,
+        60,
+        'mark',
+        'Yesterday, 9:32 PM',
+        'Yesterday, 9:32 PM',
+        'Yesterday, 9:33 PM',
+        '-',
+        'host-1162',
+        'zoneadm: zone rebooted',
+      ],
+      [
+        'e6021b47',
+        'delete',
+        '1234--scratch',
+        'completed',
+        100,
+        100,
+        'mark',
+        'Yesterday, 6:05 PM',
+        'Yesterday, 6:05 PM',
+        'Yesterday, 6:06 PM',
+        '-',
+        'desk-lab',
+        'zonecfg: zone deleted\nzfs destroy -r rpool/zones/1234--scratch',
+      ],
+    ].map(task);
+    var COLUMNS = [
+      'ID',
+      'Operation',
+      'Target',
+      'Status',
+      'Progress',
+      'Priority',
+      'Created by',
+      'Created',
+      'Started',
+      'Completed',
+      'Error',
+    ];
+    var DEFAULT_COLUMNS = ['Operation', 'Target', 'Status', 'Progress', 'Priority', 'Created'];
+    var ACTIVE = ['pending', 'running'];
+    var priorityWord = function (value) {
+      if (value >= 100) {
+        return 'Critical';
+      }
+      if (value >= 80) {
+        return 'High';
+      }
+      if (value >= 60) {
+        return 'Medium';
+      }
+      if (value >= 50) {
+        return 'Service';
+      }
+      if (value >= 40) {
+        return 'Low';
+      }
+      return 'Background';
+    };
+    var SHELL =
+      'Host terminal ready...\nroot@host-1162:~# zoneadm list -cv\n  ID NAME             STATUS      PATH                     BRAND\n   0 global           running     /                        ipkg\n  12 8272--domino-n1  running     /zones/8272--domino-n1   bhyve\n  14 8009--web-01     running     /zones/8009--web-01      bhyve\n   - 4448--zonetest8  installed   /zones/4448--zonetest8   bhyve\nroot@host-1162:~# ';
+    var SOURCES = [
+      { key: 'host', label: 'Host shell', target: 'host-1162.m4kr.net', text: SHELL },
+      {
+        key: 'zlogin',
+        label: 'Console',
+        target: '8272--domino-n1',
+        machine: true,
+        text: '[Connected to zone 8272--domino-n1 console]\n\ndomino-n1 login: ',
+      },
+      {
+        key: 'ssh',
+        label: 'SSH',
+        target: '8272--domino-n1',
+        machine: true,
+        text: 'Linux domino-n1 6.12.0 x86_64\nLast login: Sat Sep 26 21:04:11 2026\nstartcloud@domino-n1:~$ ',
+      },
+    ];
+    var ICONS = {
+      shell:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>',
+      tasks:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6l1 1 2-2"/><path d="M4 12l1 1 2-2"/><path d="M4 18l1 1 2-2"/></svg>',
+      filter:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>',
+      columns:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M15 4v16"/></svg>',
+      up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"/></svg>',
+      down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
+      refresh:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>',
+      sliders:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10"/><path d="M18 6h2"/><path d="M4 12h2"/><path d="M10 12h10"/><path d="M4 18h12"/><path d="M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+    };
+    var PRIORITY = [
+      { label: 'All', value: 20 },
+      { label: 'Low+', value: 40 },
+      { label: 'Medium+', value: 60 },
+      { label: 'High+', value: 80 },
+      { label: 'Critical', value: 100 },
+    ];
+    var priorityLabel = function (value) {
+      var hit = PRIORITY.filter(function (option) {
+        return option.value === value;
+      })[0];
+      return hit ? hit.label : 'Low+';
+    };
+
+    var stages = Array.prototype.slice.call(document.querySelectorAll('.js-stage'));
+    stages.forEach(function (stage) {
+      var tokens = (stage.dataset.tokens || 'tasks shell').split(' ');
+      var everyHost = stage.dataset.scope === 'all';
+      var onMachine = stage.dataset.focus === 'machine';
+      var sources = SOURCES.filter(function (source) {
+        return onMachine || !source.machine;
+      });
+      var sourceOf = function (key) {
+        return (
+          sources.filter(function (source) {
+            return source.key === key;
+          })[0] || sources[0]
+        );
+      };
+      var hasShell = tokens.indexOf('shell') !== -1;
+      var hasTasks = tokens.indexOf('tasks') !== -1;
+      var pane = stage.querySelector('.js-pane');
+      var inner = stage.querySelector('.js-inner');
+      var grip = stage.querySelector('.js-grip');
+      var tools = stage.querySelector('.js-tools');
+      var version = stage.querySelector('.js-version');
+      var tryLine = stage.parentNode.parentNode.querySelector('.js-try');
+      var overlay = document.createElement('div');
+      stage.appendChild(overlay);
+      var state = {
+        open: false,
+        view: hasTasks ? 'tasks' : 'shell',
+        height: 130,
+        priority: 40,
+        columns: DEFAULT_COLUMNS.slice(),
+        menu: '',
+        source: 'host',
+        clicks: 0,
+      };
+
+      var cellOf = function (row, column) {
+        if (column === 'Progress') {
+          return row.Status === 'running'
+            ? '<span class="bar"><i style="width:' +
+                row.percent +
+                '%"></i></span>' +
+                row.percent +
+                '%'
+            : '-';
+        }
+        if (column === 'Priority') {
+          return priorityWord(row.priority);
+        }
+        return row[column];
+      };
+
+      var rowClass = function (row) {
+        var tint = { failed: ' task-failed', running: ' task-running' }[row.Status] || '';
+        return (everyHost ? '' : 'selectable') + tint;
+      };
+
+      var renderTasks = function () {
+        var cols = (everyHost ? ['Host'] : []).concat(
+          COLUMNS.filter(function (c) {
+            return state.columns.indexOf(c) !== -1;
+          })
+        );
+        var html = '<table><thead><tr>';
+        cols.forEach(function (c) {
+          html += '<th>' + c + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+        TASKS.forEach(function (row, index) {
+          if (row.priority < state.priority) {
+            return;
+          }
+          html += '<tr class="js-task ' + rowClass(row) + '" data-i="' + index + '">';
+          cols.forEach(function (c) {
+            html += '<td>' + cellOf(row, c) + '</td>';
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        inner.innerHTML = html;
+      };
+
+      var renderShell = function () {
+        if (everyHost) {
+          inner.innerHTML =
+            '<div class="placeholder"><div>No shell session<br />Select a host to open its shell</div></div>';
+          return;
+        }
+        inner.textContent = sourceOf(state.source).text;
+      };
+
+      var sourceRows = function () {
+        return sources
+          .map(function (source) {
+            return (
+              '<button class="item js-source' +
+              (source.key === state.source ? ' active' : '') +
+              '" type="button" data-key="' +
+              source.key +
+              '">' +
+              ICONS.shell +
+              source.label +
+              '<small>' +
+              source.target +
+              '</small></button>'
+            );
+          })
+          .join('');
+      };
+
+      var closeOverlay = function () {
+        overlay.innerHTML = '';
+      };
+
+      var openDialog = function (title, body, foot) {
+        overlay.innerHTML =
+          '<div class="dialog-scrim js-scrim"><div class="dialog" role="dialog" aria-label="' +
+          title +
+          '"><div class="dialog-head"><h3>' +
+          title +
+          '</h3><button class="btn js-close" type="button" aria-label="Close">×</button></div><div class="dialog-body">' +
+          body +
+          '</div><div class="dialog-foot">' +
+          foot +
+          '</div></div></div>';
+      };
+
+      var openTask = function (row) {
+        var active = ACTIVE.indexOf(row.Status) !== -1;
+        var pairs = [
+          ['ID', row.ID],
+          ['Operation', row.Operation],
+          ['Target', row.Target],
+          ['Status', row.Status],
+          ['Priority', priorityWord(row.priority)],
+          ['Created by', row['Created by']],
+          ['Created', row.Created],
+          ['Started', row.Started],
+          ['Completed', row.Completed],
+        ];
+        if (row.Error !== '-') {
+          pairs.push(['Error', row.Error]);
+        }
+        var body = '<dl class="dialog-rows">';
+        pairs.forEach(function (pair) {
+          body += '<dt>' + pair[0] + '</dt><dd>' + pair[1] + '</dd>';
+        });
+        body += '</dl>';
+        if (row.Status === 'running') {
+          body +=
+            '<div><span class="bar"><i style="width:' +
+            row.percent +
+            '%"></i></span>' +
+            row.percent +
+            '%</div>';
+        }
+        body += '<div class="dialog-output">' + row.output + '</div>';
+        openDialog(
+          'Task: ' + row.Operation,
+          body,
+          (active ? '<button class="btn danger js-close" type="button">Cancel task</button>' : '') +
+            '<button class="btn outline js-close" type="button">Copy</button>'
+        );
+      };
+
+      var openPrefs = function () {
+        openDialog(
+          'Terminal preferences',
+          '<div class="field-grid"><label>Font size<input type="number" min="6" max="32" value="12" /></label><label>Scrollback<input type="number" min="0" max="200000" step="1000" value="10000" /></label><label>Cursor style<select><option>Block</option><option>Underline</option><option>Bar</option></select></label><label>Cursor blink<select><option>On</option><option>Off</option></select></label><label class="wide">Font family<input type="text" value="&quot;Cascadia Code&quot;, Consolas, &quot;Liberation Mono&quot;, Menlo, Courier, monospace" /></label></div>',
+          '<button class="btn outline js-close" type="button">Reset to defaults</button><button class="btn outline js-close" type="button">Cancel</button><button class="btn outline js-close" type="button">Save</button>'
+        );
+      };
+
+      var openPaneMenu = function (x, y) {
+        var items =
+          state.view === 'shell'
+            ? '<button class="item js-close" type="button">' +
+              ICONS.refresh +
+              'Restart shell</button><button class="item js-prefs" type="button">' +
+              ICONS.sliders +
+              'Terminal preferences</button>'
+            : '<button class="item js-close" type="button">' + ICONS.refresh + 'Refresh</button>';
+        overlay.innerHTML =
+          '<div class="ctx-menu js-ctx" role="menu"><div class="ctx-title">' +
+          (state.view === 'shell' ? 'Shell' : 'Tasks') +
+          '</div>' +
+          items +
+          '</div>';
+        var menu = overlay.querySelector('.js-ctx');
+        menu.style.left = Math.max(4, Math.min(x, stage.clientWidth - menu.offsetWidth - 8)) + 'px';
+        menu.style.top = Math.max(4, Math.min(y, stage.clientHeight - menu.offsetHeight - 8)) + 'px';
+      };
+
+      var tool = function (key, title, on, icon) {
+        return (
+          '<button class="tool js-tool' +
+          (on ? ' on' : '') +
+          '" type="button" data-key="' +
+          key +
+          '" title="' +
+          title +
+          '">' +
+          icon +
+          '</button>'
+        );
+      };
+
+      var render = function () {
+        pane.classList.toggle('open', state.open);
+        grip.classList.toggle('draggable', state.open);
+        pane.classList.toggle('shell', state.view === 'shell');
+        pane.classList.toggle('tasks', state.view === 'tasks');
+        pane.style.setProperty('--pane-h', state.height + 'px');
+        if (state.view === 'shell') {
+          renderShell();
+        } else {
+          renderTasks();
+        }
+        var html = '';
+        if (hasShell) {
+          html += tool('shell', 'Shell', state.open && state.view === 'shell', ICONS.shell);
+        }
+        if (hasTasks) {
+          html += tool('tasks', 'Tasks', state.open && state.view === 'tasks', ICONS.tasks);
+        }
+        if (hasTasks && state.open && state.view === 'tasks') {
+          html += tool(
+            'filter',
+            'Priority: ' + priorityLabel(state.priority),
+            state.menu === 'filter',
+            ICONS.filter
+          );
+          html += tool('columns', 'Columns', state.menu === 'columns', ICONS.columns);
+        }
+        html += tool(
+          'chevron',
+          state.open ? 'Collapse' : 'Expand',
+          false,
+          state.open ? ICONS.down : ICONS.up
+        );
+        if (state.menu === 'shell') {
+          html +=
+            '<div class="dropup">' +
+            sourceRows() +
+            '<div class="divider"></div><button class="item js-restart" type="button">' +
+            ICONS.refresh +
+            'Restart shell</button><button class="item js-prefs" type="button">' +
+            ICONS.sliders +
+            'Terminal preferences</button></div>';
+        }
+        if (state.menu === 'filter') {
+          html += '<div class="dropup">';
+          PRIORITY.forEach(function (option) {
+            html +=
+              '<button class="item js-priority' +
+              (option.value === state.priority ? ' active' : '') +
+              '" type="button" data-value="' +
+              option.value +
+              '">' +
+              option.label +
+              '</button>';
+          });
+          html += '</div>';
+        }
+        if (state.menu === 'columns') {
+          html += '<div class="dropup">';
+          COLUMNS.forEach(function (c) {
+            html +=
+              '<label class="item"><input type="checkbox" class="js-col" data-col="' +
+              c +
+              '"' +
+              (state.columns.indexOf(c) !== -1 ? ' checked' : '') +
+              '> ' +
+              c +
+              '</label>';
+          });
+          html += '</div>';
+        }
+        tools.innerHTML = html;
+        tools.style.position = 'relative';
+        if (tryLine) {
+          tryLine.textContent =
+            'Try: ' +
+            (hasShell
+              ? 'Shell opens the terminal, a second click lists every terminal the focus offers · '
+              : '') +
+            (hasTasks
+              ? 'Tasks opens the queue, then the filter and the columns appear, a row opens its dialog · '
+              : '') +
+            'right-click the pane for its menu · with the pane open, press and drag the grip in the middle of the row to resize, drag it under 100px to close · the chevron collapses · click the version three times.';
+        }
+      };
+
+      var openView = function (view) {
+        if (!state.open) {
+          state.height = Math.min(maxHeight(), 130);
+          state.open = true;
+          state.view = view;
+          state.menu = '';
+        } else if (state.view === view && view === 'shell') {
+          state.menu = state.menu === 'shell' ? '' : 'shell';
+        } else {
+          state.view = view;
+          state.menu = '';
+        }
+        render();
+      };
+
+      tools.addEventListener('click', function (e) {
+        var btn = e.target.closest('.js-tool');
+        var pri = e.target.closest('.js-priority');
+        if (pri) {
+          state.priority = Number(pri.dataset.value);
+          state.menu = '';
+          render();
+          return;
+        }
+        var picked = e.target.closest('.js-source');
+        if (picked) {
+          state.source = picked.dataset.key;
+          state.menu = '';
+          render();
+          return;
+        }
+        if (e.target.closest('.js-prefs')) {
+          state.menu = '';
+          render();
+          openPrefs();
+          return;
+        }
+        if (e.target.closest('.js-restart')) {
+          state.menu = '';
+          render();
+          return;
+        }
+        if (!btn) {
+          return;
+        }
+        var key = btn.dataset.key;
+        if (key === 'shell' || key === 'tasks') {
+          openView(key);
+        } else if (key === 'filter' || key === 'columns') {
+          state.menu = state.menu === key ? '' : key;
+          render();
+        } else if (key === 'chevron') {
+          state.open = !state.open;
+          state.menu = '';
+          if (state.open) {
+            state.height = Math.min(maxHeight(), 130);
+          }
+          render();
+        }
+      });
+      inner.addEventListener('click', function (e) {
+        var row = e.target.closest('.js-task');
+        if (row && !everyHost) {
+          openTask(TASKS[Number(row.dataset.i)]);
+        }
+      });
+      pane.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        var box = stage.getBoundingClientRect();
+        openPaneMenu(e.clientX - box.left, e.clientY - box.top);
+      });
+      overlay.addEventListener('click', function (e) {
+        if (e.target.closest('.js-prefs')) {
+          openPrefs();
+          return;
+        }
+        if (e.target.closest('.js-close') || e.target.classList.contains('js-scrim')) {
+          closeOverlay();
+        }
+      });
+      stage.addEventListener('mousedown', function (e) {
+        if (overlay.querySelector('.js-ctx') && !e.target.closest('.js-ctx')) {
+          closeOverlay();
+        }
+      });
+      stage.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          closeOverlay();
+        }
+      });
+      tools.addEventListener('change', function (e) {
+        var box = e.target.closest('.js-col');
+        if (!box) {
+          return;
+        }
+        var col = box.dataset.col;
+        var next = state.columns.filter(function (c) {
+          return c !== col;
+        });
+        if (next.length === state.columns.length) {
+          next.push(col);
+        }
+        if (next.length > 0) {
+          state.columns = next;
+        }
+        render();
+      });
+
+      var navbar = stage.querySelector('.js-navbar');
+      var footer = stage.querySelector('.js-footer');
+      var maxHeight = function () {
+        var chrome = (navbar ? navbar.offsetHeight : 0) + footer.offsetHeight;
+        return Math.max(
+          0,
+          Math.min(Math.floor(stage.clientHeight * 0.9), stage.clientHeight - chrome)
+        );
+      };
+      var dragStart = null;
+      grip.addEventListener('pointerdown', function (e) {
+        if (!state.open) {
+          return;
+        }
+        dragStart = { y: e.clientY, h: state.height };
+        grip.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+      grip.addEventListener('pointermove', function (e) {
+        if (!dragStart) {
+          return;
+        }
+        state.height = Math.max(0, Math.min(maxHeight(), dragStart.h + (dragStart.y - e.clientY)));
+        pane.style.setProperty('--pane-h', state.height + 'px');
+      });
+      var dragEnd = function () {
+        if (!dragStart) {
+          return;
+        }
+        dragStart = null;
+        if (state.height <= 100) {
+          state.open = false;
+          state.height = 130;
+        }
+        render();
+      };
+      grip.addEventListener('pointerup', dragEnd);
+      grip.addEventListener('pointercancel', dragEnd);
+      grip.addEventListener('keydown', function (e) {
+        if (!state.open) {
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          state.height = Math.min(maxHeight(), state.height + 20);
+          render();
+        } else if (e.key === 'ArrowDown') {
+          state.height = Math.max(0, state.height - 20);
+          if (state.height <= 100) {
+            state.open = false;
+            state.height = 130;
+          }
+          render();
+        }
+      });
+
+      if (version) {
+        version.addEventListener('click', function () {
+          state.clicks += 1;
+          if (state.clicks === 3) {
+            state.clicks = 0;
+            window.KICKASSVERSION = '2.0';
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = '//hi.kickassapp.com/kickass.js';
+            document.body.appendChild(script);
+          }
+        });
+      }
+
+      render();
+    });
+  })();
+</script>

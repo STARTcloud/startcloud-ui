@@ -1,6 +1,7 @@
 {
   "machines": [
-    { "name": "dev-1", "hypervisor": "virtualbox" },
-    { "name": "dev-2", "hypervisor": "virtualbox" }
-  ]
+    { "name": "dev-1", "status": "running", "brand": "virtualbox", "hypervisor": "virtualbox" },
+    { "name": "dev-2", "status": "installed", "brand": "virtualbox", "hypervisor": "virtualbox" }
+  ],
+  "total": 2
 }

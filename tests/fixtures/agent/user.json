@@ -1,6 +1,8 @@
 {
   "id": 42,
   "uuid": "8f2c…",
+  "username": "mark",
+  "role": "admin",
   "email": "mark@m4kr.net",
   "email_verified": true,
   "name": "Mark Gilbert",
