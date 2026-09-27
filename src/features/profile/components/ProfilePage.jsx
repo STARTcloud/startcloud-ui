@@ -172,7 +172,7 @@ AvatarCard.propTypes = {
   user: PropTypes.object.isRequired,
 };
 
-const useProfileRecord = ({ account, session, events, signedIn }) => {
+const useProfileRecord = ({ account, events, signedIn }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [record, setRecord] = useState({ profile: null, version: 0 });
@@ -199,12 +199,9 @@ const useProfileRecord = ({ account, session, events, signedIn }) => {
   }, [loadProfile, signedIn]);
 
   const refresh = useCallback(async () => {
+    await events.emit('login');
     await loadProfile();
-    const next = await session.reload();
-    if (next) {
-      events.emit('login');
-    }
-  }, [events, loadProfile, session]);
+  }, [events, loadProfile]);
 
   return { ...record, refresh };
 };
@@ -246,8 +243,10 @@ const usePlacesKey = places => {
  * provider link in each section's heading (RFC 7644 §3.5.2: a client
  * never writes a `readOnly` attribute); a
  * `#section` hash the estate still links is replaced by the section's
- * route; the record is read once through `account.profile` and re-read,
- * with the session, after every change the session must reflect; while
+ * route; the record is read once through `account.profile` and, after
+ * every change the session must reflect, one awaited `login` on the bus
+ * re-reads the session, its handler being the one `load()`, and then the
+ * record is read again; while
  * the adapter carries `verification` and the record's `email_verified` is
  * false the unverified notice with its Resend link draws above the
  * section, and a `?token=` in the URL is consumed through
@@ -285,7 +284,7 @@ const ProfilePage = ({
     [account, organizations, admin]
   );
   const signedIn = loaded && Boolean(user);
-  const { profile, version, refresh } = useProfileRecord({ account, session, events, signedIn });
+  const { profile, version, refresh } = useProfileRecord({ account, events, signedIn });
   const placesKey = usePlacesKey(account.places || null);
   const stepUp = useStepUp({
     stepUp: account.stepUp || noStepUp,
@@ -365,7 +364,6 @@ const ProfilePage = ({
 
 ProfilePage.propTypes = {
   session: PropTypes.shape({
-    reload: PropTypes.func.isRequired,
     endSession: PropTypes.func.isRequired,
     savePreferences: PropTypes.func.isRequired,
   }).isRequired,

@@ -253,7 +253,8 @@ MembershipCards.propTypes = {
  * view toggle, a row or a card per membership with its
  * badges, the person's role, Make primary, the invite code with Regenerate
  * while the person can manage it, and View or Manage, which makes that
- * organization the active one under `activeOrgKey` and opens the shared
+ * organization the active one under `activeOrgKey`, awaits `login` on the
+ * bus so the session is re-read and adopted, and opens the shared
  * console; a `#<uuid>` in the URL does the same on load, and the chosen
  * view persists as `view` inside the one prefs object under
  * `table_prefs_organizations`; the navbar search is bound with a query
@@ -304,11 +305,10 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const open = useCallback(
     async org => {
       localStorage.setItem(activeOrgKey, org.uuid);
-      await session.reload();
-      events.emit('login');
+      await events.emit('login');
       navigate('/org-console');
     },
-    [activeOrgKey, events, navigate, session]
+    [activeOrgKey, events, navigate]
   );
 
   useEffect(() => {
@@ -366,8 +366,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
 
   const makePrimary = async org => {
     await act(() => organizations.setPrimary(org.uuid), 'organizations.primarySet');
-    await session.reload();
-    events.emit('login');
+    await events.emit('login');
   };
 
   const regenerate = org =>
@@ -451,7 +450,6 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
 
 OrganizationsPage.propTypes = {
   session: PropTypes.shape({
-    reload: PropTypes.func.isRequired,
     restore: PropTypes.func.isRequired,
   }).isRequired,
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,

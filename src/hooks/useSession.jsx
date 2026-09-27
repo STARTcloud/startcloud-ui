@@ -49,7 +49,12 @@ export const sessionStateShape = PropTypes.shape({
  * the active organization resolved stored → primary → first and persisted
  * under the app's key, whether `load()` has confirmed the session, the
  * ended state with the page to return to, the sign-in and sign-out
- * handlers, and the push subscription kept in sync while signed in.
+ * handlers, and the push subscription kept in sync while signed in. The
+ * bus's `login` listener is the one `load()` a sign-in or a change runs,
+ * and it answers the adoption's promise, so an emitter that awaits
+ * `events.emit('login')` moves the page under the adopted session; the
+ * `logout` and `sessionEnded` listeners move the state before they
+ * return, so the same await covers them.
  *
  * @param {Object} options - The app's side
  * @param {Object} options.provider - A session provider such as `createBrowserOidc` or `createBackendSession`; a provider carrying `setNavigate(fn)` gets the router's `navigate` on every render, so a pending-gate refusal it sees outside `load` can still move the page in-router

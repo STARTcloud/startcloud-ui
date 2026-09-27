@@ -384,17 +384,16 @@
   }
 
   .sidebar-nav {
+    display: flex;
+    flex-direction: column;
     padding: 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--brand-primary) var(--lcars-ground);
+    overflow: hidden;
   }
 
   .sidebar-nav::before {
     content: attr(data-app) '\A' attr(data-version) '\A' attr(data-host);
     white-space: pre;
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    flex-shrink: 0;
     display: block;
     padding: 28px 14px 10px;
     border-top: 4px solid var(--lcars-ground);
@@ -422,7 +421,18 @@
   }
 
   .sidebar-nav > div {
+    flex: 1;
+    min-height: 0;
     gap: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    direction: rtl;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-primary) var(--lcars-ground);
+  }
+
+  .sidebar-nav > div > * {
+    direction: ltr;
   }
 
   .sidebar-section-label {

@@ -108,8 +108,8 @@ const shellFlags = ({
  * favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
- * identity-provider one), the profile reload and
- * the terminate stream a backend session keeps, the favorites read the
+ * identity-provider one), the event stream a session keeps, its
+ * terminate and profile events, the favorites read the
  * session deferred while it was adopted on an auth path, run the first
  * time the route leaves those paths, the ticket link, the
  * notification adapters (the inbox one handed to the shell's bell and to
@@ -186,7 +186,7 @@ const App = ({ getSupportedLanguages }) => {
     setPackPreference: setPack,
     setMotionPreference: setMotion,
   });
-  useSessionKeepalive({ enabled: backend, user, loaded, reload });
+  useSessionKeepalive({ user, loaded, reload });
   useEffect(() => {
     if (!returnTo.onAuthPage(location.pathname)) {
       readDeferredFavorites();

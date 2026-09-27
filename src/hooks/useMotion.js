@@ -43,13 +43,17 @@ const writeMotion = next => {
  * read and write the same preference, the person's own reduced-motion
  * switch beside the variant and the look: `auto` follows the device's
  * `prefers-reduced-motion`, `reduce` turns every animation and transition
- * off. The value: localStorage.motion, else auto; the account value
- * arrives through setMotion once the profile loads and overwrites the
- * store. `reduce` is stamped on the document as data-motion, the
- * attribute removed for auto and never composed with data-bs-theme or
- * data-brand; the value is mirrored to localStorage.motion, auto removing
- * the key, and every user change is handed to onPersist so the app can
- * write it through to the account, auto as a cleared value.
+ * off. The store holds the value in force; the browser's own key,
+ * localStorage.motion, holds the visitor's own choice, written by the
+ * person's own control alone, `persist` true, `reduce` set and auto
+ * removing the key, and never from an account, whose value arrives
+ * through setMotion with `persist` false once the profile loads and
+ * overwrites the store without touching the key. The initial value is
+ * localStorage.motion, else auto. `reduce` is stamped on the document as
+ * data-motion, the attribute removed for auto and never composed with
+ * data-bs-theme or data-brand, and every user change is handed to
+ * onPersist so the app can write it through to the account, auto as a
+ * cleared value.
  */
 export const useMotion = ({ onPersist = null } = {}) => {
   useState(() => initStore({ onPersist }));
@@ -58,10 +62,8 @@ export const useMotion = ({ onPersist = null } = {}) => {
   useEffect(() => {
     if (motion === 'reduce') {
       document.documentElement.setAttribute('data-motion', 'reduce');
-      localStorage.setItem(MOTION_KEY, 'reduce');
     } else {
       document.documentElement.removeAttribute('data-motion');
-      localStorage.removeItem(MOTION_KEY);
     }
   }, [motion]);
 
@@ -70,7 +72,15 @@ export const useMotion = ({ onPersist = null } = {}) => {
       return;
     }
     writeMotion(value);
-    if (persist && store.onPersist) {
+    if (!persist) {
+      return;
+    }
+    if (value === 'reduce') {
+      localStorage.setItem(MOTION_KEY, 'reduce');
+    } else {
+      localStorage.removeItem(MOTION_KEY);
+    }
+    if (store.onPersist) {
       store.onPersist(value);
     }
   }, []);

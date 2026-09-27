@@ -18,8 +18,9 @@ const FIELD_CODES = ['bad_password', 'invalid_code'];
  * `/link-account-consent`: "Link Your Account", the existing account, the
  * provider, the current password while `proof` is `password` and the
  * mailed code while it is `code`, "Link {{provider}} Account" posting the
- * proof and following `next`, Cancel declining, and the fine print;
- * nothing pending draws the danger alert with a link to sign in.
+ * proof, awaiting `login` on the bus so the session is re-read and adopted,
+ * and following `next`, Cancel declining, and the fine print; nothing
+ * pending draws the danger alert with a link to sign in.
  */
 const LinkAccountPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -58,9 +59,11 @@ const LinkAccountPage = ({ returnTo, events }) => {
     setBusy(true);
     setProblem(null);
     linkConfirm(body)
-      .then(result => {
-        onSuccess?.();
-        followNext({ next: result?.next, navigate, returnTo });
+      .then(async result => {
+        if (onSuccess) {
+          await onSuccess();
+        }
+        return followNext({ next: result?.next, navigate, returnTo });
       })
       .catch(error => {
         setBusy(false);

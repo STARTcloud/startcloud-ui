@@ -4,9 +4,9 @@ const noop = () => undefined;
 
 /**
  * The session of a host that needs none: everyone sees everything, no
- * sign-in exists, every request carries no headers, and a call that
- * decides the session is gone still ends it on the bus so the API client
- * and the stream keep one contract.
+ * sign-in exists, every request carries no headers, no storage key holds
+ * a session, and a call that decides the session is gone still ends it on
+ * the bus so the API client and the stream keep one contract.
  *
  * @param {Object} options - The app's side of the session
  * @param {Object} options.events - The bus from `createSessionEvents`
@@ -15,6 +15,7 @@ const noop = () => undefined;
 export const createAnonymousSession = ({ events }) => ({
   id: 'none',
   issuerUrl: '',
+  storageKey: '',
   restore: () => null,
   load: nothing,
   reload: nothing,

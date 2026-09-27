@@ -6,8 +6,6 @@ import { FaCircle, FaHeartPulse } from 'react-icons/fa6';
 
 import { useEventStream } from '../../hooks/useEventStream';
 
-const HEALTH_POLL_MS = 60000;
-
 const statusColor = status => {
   const lower = String(status).toLowerCase();
   if (lower === 'good' || lower.startsWith('ok')) {
@@ -36,14 +34,28 @@ const HealthIndicator = ({ fetchHealth, streamed }) => {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
     if (streamed) {
       return undefined;
     }
-    const interval = setInterval(load, HEALTH_POLL_MS);
-    return () => clearInterval(interval);
+    const onVisibility = () => {
+      if (!document.hidden) {
+        load();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [load, streamed]);
 
-  useEventStream('ready', () => {
+  useEventStream('ready', (data, resumed) => {
+    if (streamed && data && !resumed) {
+      load();
+    }
+  });
+
+  useEventStream('reset', () => {
     if (streamed) {
       load();
     }
@@ -97,9 +109,10 @@ HealthIndicator.propTypes = {
  * app's name, year and version on the left as the repository link, the
  * changelog link or plain text; "Powered by" in the center; and the health
  * heart on the right while the app hands a `fetchHealth`, its state read
- * once on mount, then while `streamed` read again on every `ready` of
- * the tab's stream and kept by its `health` event, and by a 60-second
- * poll otherwise.
+ * once on mount, then while `streamed` read again when the tab's stream
+ * opens fresh or answers `reset` and kept by its `health` event, an
+ * in-ring reconnect replaying what was missed, and while not `streamed`
+ * read once more each time the document becomes visible; no timer runs.
  */
 const Footer = ({
   appName,

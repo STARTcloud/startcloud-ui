@@ -83,14 +83,18 @@ const backoffMs = (retryMs, attempt) => {
  * exponential backoff capped at thirty seconds, the connection closed while
  * the document is hidden and reopened from the last id when it is visible
  * again, a 401 handed to `onUnauthorized`, and a 403, a 204 or a response
- * that is not an event stream stopping the stream for good.
+ * that is not an event stream stopping the stream for good. `onReady` is
+ * told whether the connection carried a `Last-Event-ID`, captured before
+ * the request because the `ready` frame's own id replaces the last id the
+ * moment it is parsed, so a subscriber reads its snapshot on a fresh
+ * connection and on `reset` and never on an in-ring reconnect.
  *
  * @param {Object} options - The stream
  * @param {string} options.url - Where the request is sent
  * @param {string[]} [options.topics] - The topics to subscribe, appended as `topics=`
  * @param {Object|(() => Promise<Object>)} [options.headers] - Request headers, or a function resolving them per connection
  * @param {(name: string, data: unknown, id: string|null) => void} options.onEvent - Every named event but `ready` and `reset`
- * @param {(data: unknown) => void} [options.onReady] - The `ready` frame that opens every connection
+ * @param {(data: unknown, resumed: boolean) => void} [options.onReady] - The `ready` frame that opens every connection, `resumed` true when the request carried a last id
  * @param {(data: unknown) => void} [options.onReset] - The `reset` frame when the server could not replay from the last id
  * @param {(state: string) => void} [options.onStatus] - `connecting`, `live`, `reconnecting`, `paused`, `stopped`
  * @param {() => void} [options.onUnauthorized] - The response was a 401
@@ -114,6 +118,7 @@ export const openEventStream = ({
   let attempt = 0;
   let retryMs = DEFAULT_RETRY_MS;
   let lastId = '';
+  let resumed = false;
   let controller = null;
   let timer = null;
   let connect = null;
@@ -164,7 +169,7 @@ export const openEventStream = ({
     }
     const parsed = parseData(data);
     if (event === 'ready') {
-      onReady?.(parsed);
+      onReady?.(parsed, resumed);
       return;
     }
     if (event === 'reset') {
@@ -210,6 +215,7 @@ export const openEventStream = ({
     setStatus(attempt === 0 ? 'connecting' : 'reconnecting');
     try {
       const requestHeaders = typeof headers === 'function' ? await headers() : headers;
+      resumed = Boolean(lastId);
       const response = await fetch(target, {
         headers: {
           ...requestHeaders,

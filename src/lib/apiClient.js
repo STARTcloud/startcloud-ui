@@ -15,8 +15,19 @@ const TYPE_KEYS = {
 };
 const PROBLEM_TYPE = 'application/problem+json';
 const OPTIONAL_AUTH = 'optional';
+const NOT_MODIFIED = 304;
 
 const textOf = value => (typeof value === 'string' ? value : '');
+
+const acceptedStatus = status => (status >= 200 && status < 300) || status === NOT_MODIFIED;
+
+const withEtag = (headers, etag) => (etag ? { ...headers, 'If-None-Match': etag } : headers);
+
+const conditionalAnswer = response => ({
+  status: response.status,
+  etag: textOf(response.headers?.etag),
+  data: response.status === NOT_MODIFIED ? null : response.data,
+});
 
 const isAbort = error =>
   isCancel(error) || error?.name === 'AbortError' || error?.name === 'CanceledError';
@@ -95,7 +106,12 @@ export class ApiError extends Error {
  * which is the 403's), and every failure thrown as `ApiError`. `auth` is `true` for
  * that, `false` to send no session headers, and `'optional'` to send them
  * while neither replaying nor ending the session on a 401, for the one
- * call that asks whether anyone is signed in at all.
+ * call that asks whether anyone is signed in at all. A request given
+ * `etag`, a string, is conditional: `If-None-Match` carries it when it is
+ * non-empty, a `304` is accepted for that request alone, and the promise
+ * resolves to `{ status, etag, data }`, `etag` the answer's `ETag` header
+ * or `''` and `data` `null` on a `304`; every other request resolves to
+ * the body as before.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.baseUrl - The public origin the API is reached at, the one the session signs its headers for
@@ -155,8 +171,10 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
     responseType = 'json',
     skipAuthRefresh = false,
     messageKeys = {},
+    etag,
   }) => {
     const url = resolve(path);
+    const conditional = typeof etag === 'string';
     const attempt = async () =>
       http.request({
         method,
@@ -166,7 +184,14 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
         signal,
         onUploadProgress,
         responseType,
-        headers: await buildHeaders({ method, url, auth, headers, contentType }),
+        ...(conditional ? { validateStatus: acceptedStatus } : {}),
+        headers: await buildHeaders({
+          method,
+          url,
+          auth,
+          headers: conditional ? withEtag(headers, etag) : headers,
+          contentType,
+        }),
       });
     try {
       if (signal?.aborted) {
@@ -176,7 +201,7 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
         recover({ error, auth, skipAuthRefresh, attempt })
       );
       session.adoptResponse?.(response.headers);
-      return response.data;
+      return conditional ? conditionalAnswer(response) : response.data;
     } catch (error) {
       if (isAbort(error)) {
         throw error;

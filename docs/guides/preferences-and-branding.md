@@ -128,8 +128,9 @@ and rediscovered.
 
 ## Variant resolution and precedence
 
-**The account value is authoritative. Local storage is its cache and the
-fallback when no account exists.**
+**The account value is authoritative. The cached record the session keeps
+is its cache; the browser's own keys hold the visitor's choices, are never
+written from the account, and are the fallback when no account exists.**
 
 - **On login the account value overwrites** whatever the browser held.
   Seed-when-unset is actively wrong: under seeding, a user who switches

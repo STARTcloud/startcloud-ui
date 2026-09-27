@@ -1196,7 +1196,9 @@ MembersTab.propTypes = {
  * and the invitation form are `SectionCard`s whose folds are kept under
  * `table_prefs_org_console`, and the members, the join requests and the
  * pending invitations are glass lists under a `SectionHeading`, the pages
- * contract's frame rule; every action re-fetches the record.
+ * contract's frame rule; every action re-fetches the record, and one that
+ * changes the memberships the session carries awaits `login` on the bus
+ * first, so the session is re-read and adopted once.
  */
 const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, places = null }) => {
   const { t } = useTranslation();
@@ -1220,10 +1222,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   const owners = ownerCount(members);
   const currentTab = tabs.some(entry => entry.key === tab) ? tab : 'organization';
 
-  const reloadSession = async () => {
-    await session.reload();
-    events.emit('login');
-  };
+  const reloadSession = () => events.emit('login');
 
   const leftOrganization = async () => {
     localStorage.removeItem(activeOrgKey);
@@ -1382,7 +1381,6 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
 IssuerOrgConsole.propTypes = {
   session: PropTypes.shape({
     restore: PropTypes.func.isRequired,
-    reload: PropTypes.func.isRequired,
   }).isRequired,
   events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   organizations: issuerOrganizationsShape.isRequired,

@@ -16,9 +16,7 @@ const DROPPED_KEYS = [
 const DROPPED_PREFIXES = ['table_prefs_', 'sidebar_open_', 'sidebar_view_'];
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
-const THEME_VALUES = ['auto', 'light', 'dark'];
-const MOTION_VALUES = ['auto', 'reduce'];
-const PACK_NAME = /^[a-z0-9-]+$/;
+const NOT_MODIFIED = 304;
 const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 const SAFE_PATH = /^\/(?![/\\])/;
 const OPTIONAL = { auth: 'optional' };
@@ -31,30 +29,6 @@ const cookieValue = name =>
     .map(entry => decodeURIComponent(entry.slice(name.length + 1)))[0] || '';
 
 const xsrfToken = () => XSRF_COOKIES.map(cookieValue).find(Boolean) || '';
-
-const applyAccountPreferences = preferences => {
-  if (!preferences) {
-    return;
-  }
-  if (THEME_VALUES.includes(preferences.theme)) {
-    localStorage.setItem('theme', preferences.theme);
-  } else if (preferences.theme === null) {
-    localStorage.removeItem('theme');
-  }
-  if (preferences.language) {
-    localStorage.setItem('language', preferences.language);
-  }
-  if (typeof preferences.pack === 'string' && PACK_NAME.test(preferences.pack)) {
-    localStorage.setItem('pack', preferences.pack);
-  } else if (preferences.pack === null) {
-    localStorage.removeItem('pack');
-  }
-  if (MOTION_VALUES.includes(preferences.motion)) {
-    localStorage.setItem('motion', preferences.motion);
-  } else if (preferences.motion === null) {
-    localStorage.removeItem('motion');
-  }
-};
 
 const displayFieldsOf = profile =>
   Object.fromEntries(DISPLAY_FIELDS.map(field => [field, profile?.[field] ?? null]));
@@ -109,17 +83,28 @@ export const accountMemberships = user =>
     emailHash: typeof org.email_hash === 'string' ? org.email_hash : '',
   }));
 
+const cachedOf = profile => {
+  const user = displayFieldsOf(profile);
+  const preferences = profile?.preferences;
+  if (!preferences || guestOnly(accountMemberships(user))) {
+    return user;
+  }
+  return { ...user, ...preferredOf(preferences) };
+};
+
 /**
  * The identity provider's own session on its own origin: the HttpOnly
  * session cookie the browser carries, the `XSRF-TOKEN` cookie echoed as
  * `X-XSRF-TOKEN` on every method but GET, HEAD and OPTIONS, the display
- * fields of the profile cached under `storageKey`, `GET /api/user` as the
- * one confirmation of a session, the form-encoded `POST /login` answering
- * `next` (the page that follows it emits `login` on the bus, through
+ * fields of the profile cached under `storageKey` with the account's
+ * `preferred_theme`, `preferred_pack`, `preferred_motion` and
+ * `preferred_language` beside them, `GET /api/user` as the one
+ * confirmation of a session, the form-encoded `POST /login` answering
+ * `next` (the page that follows it awaits `login` on the bus, through
  * `followNext`, only where it stays in-router), and `POST /user/logout`
- * for both sign-outs. A session it
- * restores or loads is `{ user, organizations, oidc, issuerUrl, clientId }`,
- * the user being the cached display fields, `oidc` always false and
+ * for both sign-outs. A session it restores or loads is
+ * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being the
+ * cached display fields and preferences, `oidc` always false and
  * `clientId` empty, the issuer being no client of itself. The API
  * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`,
  * and its `onError` is the one place every request's failure passes
@@ -128,22 +113,26 @@ export const accountMemberships = user =>
  * in-router to its `next` through the `navigate` `setNavigate(fn)` holds,
  * so `load` and every other call the session drives follow the same gate
  * the moment it answers, not only the one that noticed it first.
- * `load({ navigate })` sets that holder once before reading `GET /api/user`
- * and falls back to the cached profile on any failure but a `401`, which
- * clears it instead; the session it answers carries the account's
- * `preferences` beside the display fields as `preferred_theme`,
- * `preferred_pack`, `preferred_motion` and `preferred_language`, never
- * cached, so the chrome adopts the account's choices the moment the
- * profile answers rather than on the next reload, while a guest-only
- * account's are neither answered nor mirrored, the browser's own
- * standing. `savePreferences` writes the chrome's theme, look,
- * motion switch and language through `PATCH /api/user/preferences`, the
- * answer's `theme`, `pack` and `motion` mirrored to local storage as
- * `load` mirrors them, except for a guest-only
- * account, which the issuer refuses `403 guest_only`, so its choices stay
- * the browser's. `begin({ method, navigate })` with no method, `local`
- * or `magic-link` moves in-router to `/login`, while `oidc-<id>` stays a
- * top-level navigation.
+ * `load({ navigate })` sets that holder once before reading `GET /api/user`,
+ * conditionally on the last `ETag` the issuer answered, a `304` answering
+ * the session the last `200` produced, a `200` caching the display fields
+ * and the account's preferences, so the chrome adopts the account's
+ * choices the moment the profile answers and the pre-paint script paints
+ * them before the first frame, and falls back to the cached profile on
+ * any failure but a `401`, which clears it instead; a guest-only
+ * account's preferences are neither cached nor answered, the browser's
+ * own standing. The account's values are applied in memory while signed
+ * in and never mirrored into the browser's own `theme`, `pack`, `motion`
+ * and `language` keys, and leave with the cached profile at sign-out, so
+ * nothing spills. `savePreferences` writes the chrome's theme, look,
+ * motion switch and language through `PATCH /api/user/preferences` and
+ * updates the four cached members from the answer's `preferences`,
+ * except for a guest-only account, which the issuer refuses `403
+ * guest_only`, so its choices stay the browser's. `signOut` and
+ * `endSession` drop every storage key but the visitor's own, `theme`,
+ * `pack`, `packs`, `motion` and `language`. `begin({ method, navigate })`
+ * with no method, `local` or `magic-link` moves in-router to `/login`,
+ * while `oidc-<id>` stays a top-level navigation.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
@@ -154,6 +143,8 @@ export const accountMemberships = user =>
 export const createCookieSession = ({ baseUrl, events, storageKey = 'account' }) => {
   let claimsPromise = null;
   let navigateHolder = null;
+  let lastEtag = '';
+  let lastSession = null;
 
   const setNavigate = fn => {
     navigateHolder = fn;
@@ -162,12 +153,14 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
   const current = () => JSON.parse(localStorage.getItem(storageKey) || 'null');
 
   const store = profile => {
-    localStorage.setItem(storageKey, JSON.stringify(displayFieldsOf(profile)));
+    localStorage.setItem(storageKey, JSON.stringify(cachedOf(profile)));
   };
 
   const clear = () => {
     localStorage.removeItem(storageKey);
     claimsPromise = null;
+    lastEtag = '';
+    lastSession = null;
   };
 
   const headers = (method = 'GET') => {
@@ -228,14 +221,14 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
       setNavigate(navigate);
     }
     try {
-      const profile = await api.get('/api/user', OPTIONAL);
-      const user = displayFieldsOf(profile);
-      store(profile);
-      if (guestOnly(accountMemberships(user))) {
-        return sessionOf(user);
+      const answer = await api.get('/api/user', { ...OPTIONAL, etag: lastEtag });
+      if (answer.status === NOT_MODIFIED) {
+        return lastSession;
       }
-      applyAccountPreferences(profile?.preferences);
-      return sessionOf({ ...user, ...preferredOf(profile?.preferences) });
+      store(answer.data);
+      lastEtag = answer.etag;
+      lastSession = restore();
+      return lastSession;
     } catch (error) {
       if (error.status === 401) {
         clear();
@@ -286,7 +279,13 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
       return;
     }
     const saved = await api.patch('/api/user/preferences', patch).catch(() => null);
-    applyAccountPreferences(saved?.preferences);
+    const cached = current();
+    if (saved?.preferences && cached) {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ ...cached, ...preferredOf(saved.preferences) })
+      );
+    }
   };
 
   const signOut = async () => {
@@ -303,6 +302,7 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     id: 'cookie',
     issuerUrl: baseUrl,
     oidc: false,
+    storageKey,
     current,
     restore,
     load,

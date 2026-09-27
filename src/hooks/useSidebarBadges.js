@@ -22,11 +22,13 @@ const countOf = data => Math.max(0, Number(data?.count) || 0);
  * and never by an export: `unread` is the notifications feature's one
  * context, the same count the user menu's bell and the inbox page read,
  * read once from the notifications adapter's `unreadCount()` when the
- * stream connects and kept by the `notifications` topic's `unread-count`
- * event; `blockedCount` read once from `GET /api/admin/brute-force/count`
- * when the stream connects and kept by the `admin` topic's `blocked-count`
- * event. On a host without a stream each is read once on mount; no timer
- * runs, and a name no mounted row carries is never resolved.
+ * stream opens fresh or answers `reset` and kept by the `notifications`
+ * topic's `unread-count` event; `blockedCount` read once from
+ * `GET /api/admin/brute-force/count` on the same two occasions and kept by
+ * the `admin` topic's `blocked-count` event; an in-ring reconnect replays
+ * what was missed and reads nothing. On a host without a stream each is
+ * read once on mount; no timer runs, and a name no mounted row carries is
+ * never resolved.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -77,10 +79,18 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
     readRef.current = { readUnread, readBlocked };
   });
 
-  useEventStream('ready', () => {
+  const readAll = () => {
     readRef.current.readUnread();
     readRef.current.readBlocked();
+  };
+
+  useEventStream('ready', (data, resumed) => {
+    if (data && !resumed) {
+      readAll();
+    }
   });
+
+  useEventStream('reset', () => readAll());
 
   useEventStream('unread-count', data => {
     if (wantsUnread) {

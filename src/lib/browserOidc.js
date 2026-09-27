@@ -1,12 +1,11 @@
 import axios from 'axios';
 
+import { guestOnly } from '../utils/membership';
+
 import { base64url, createDpop } from './dpop';
 import { audienceOf, decodeJwt } from './jwt';
 
 const PREFERENCES_PATH = '/api/user/preferences';
-const THEME_VALUES = ['auto', 'light', 'dark'];
-const MOTION_VALUES = ['auto', 'reduce'];
-const PACK_NAME = /^[a-z0-9-]+$/;
 
 const randomUrlSafe = byteCount => {
   const bytes = new Uint8Array(byteCount);
@@ -19,29 +18,12 @@ const s256 = async text => {
   return base64url(digest);
 };
 
-const applyAccountPreferences = preferences => {
-  if (!preferences) {
-    return;
-  }
-  if (THEME_VALUES.includes(preferences.theme)) {
-    localStorage.setItem('theme', preferences.theme);
-  } else if (preferences.theme === null) {
-    localStorage.removeItem('theme');
-  }
-  if (preferences.language) {
-    localStorage.setItem('language', preferences.language);
-  }
-  if (typeof preferences.pack === 'string' && PACK_NAME.test(preferences.pack)) {
-    localStorage.setItem('pack', preferences.pack);
-  } else if (preferences.pack === null) {
-    localStorage.removeItem('pack');
-  }
-  if (MOTION_VALUES.includes(preferences.motion)) {
-    localStorage.setItem('motion', preferences.motion);
-  } else if (preferences.motion === null) {
-    localStorage.removeItem('motion');
-  }
-};
+const preferredOf = preferences => ({
+  preferred_theme: preferences?.theme ?? null,
+  preferred_pack: preferences?.pack ?? null,
+  preferred_motion: preferences?.motion ?? null,
+  preferred_language: preferences?.language ?? null,
+});
 
 const submitForm = (action, fields) => {
   const form = document.createElement('form');
@@ -84,12 +66,27 @@ const tokenFailure = requestError => {
  * The browser as the OIDC public client: authorization code with PKCE and
  * DPoP against the identity provider, tokens in localStorage under the
  * app's prefix, the refresh grant a minute before expiry, the provider's
- * userinfo as the claims, whose `preferences.theme`, `preferences.pack`,
- * `preferences.motion` and `preferences.language` are mirrored to local
- * storage when a sign-in completes, and the end-session form POST for
- * signing out everywhere. A session it restores or completes is
- * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being
- * the access token's claims and `clientId` the ID token's `aud`, the
+ * userinfo as the claims, refused when its `sub` differs from the access
+ * token's (OpenID Connect Core 1.0 section 5.3.2), whose `preferences`
+ * are cached under `<prefix>.preferences` beside the tokens on every
+ * `load()` and `reload()` and answered beside the user as
+ * `preferred_theme`, `preferred_pack`, `preferred_motion` and
+ * `preferred_language`, by `restore()` from the cache and by `load()`
+ * from the fresh userinfo, so a look, theme, motion or language changed
+ * at the identity provider is picked up on a normal page refresh of the
+ * app and never needs a hard refresh or a sign-out and back in; the
+ * account's values are applied in memory while signed in and never
+ * mirrored into the browser's own `theme`, `pack`, `motion` and
+ * `language` keys, and the cache leaves with the tokens at sign-out, so
+ * nothing spills; a guest-only account's are neither cached nor answered
+ * and a userinfo that does not answer leaves the browser's own. `complete()`
+ * stores the tokens, awaits `login` on the bus, whose handler is the one
+ * `load()` where the app is mounted, and answers the restored session,
+ * reading nothing itself; the callback entry then replaces the location
+ * and the app's own `load()` reads userinfo once. The end-session form
+ * POST signs out everywhere. A session it restores or completes is
+ * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being the
+ * access token's claims and `clientId` the ID token's `aud`, the
  * configured client id until an ID token is held.
  *
  * @param {Object} options - The app's side of the client
@@ -97,7 +94,7 @@ const tokenFailure = requestError => {
  * @param {string} options.clientId - The registered public client id
  * @param {string} options.scopes - Space-separated scopes to request
  * @param {string} options.storagePrefix - Prefix of every localStorage key and of the DPoP database
- * @param {Object} options.events - The bus from `createSessionEvents`; `login` is emitted after the exchange and `sessionEnded` when the token endpoint answers a refresh with `invalid_grant`
+ * @param {Object} options.events - The bus from `createSessionEvents`; `login` is awaited after the exchange and `sessionEnded` emitted when the token endpoint answers a refresh with `invalid_grant`
  * @param {string} [options.apiBase] - Origin the preferences write is sent to, empty when a dev proxy answers same-origin
  * @param {string} [options.redirectPath] - The registered callback path on this origin
  * @returns {Object} The session provider `useSession` and the callback page drive
@@ -117,6 +114,7 @@ export const createBrowserOidc = ({
     id: `${storagePrefix}.id_token`,
     tokenType: `${storagePrefix}.token_type`,
     expires: `${storagePrefix}.expires_at`,
+    preferences: `${storagePrefix}.preferences`,
     verifier: `${storagePrefix}.pkce_verifier`,
     state: `${storagePrefix}.pkce_state`,
     discovery: `${storagePrefix}.oidc_discovery`,
@@ -155,8 +153,11 @@ export const createBrowserOidc = ({
     localStorage.removeItem(STORE.id);
     localStorage.removeItem(STORE.tokenType);
     localStorage.removeItem(STORE.expires);
+    localStorage.removeItem(STORE.preferences);
     claimsPromise = null;
   };
+
+  const cachedPreferences = () => JSON.parse(localStorage.getItem(STORE.preferences) || 'null');
 
   const requestHeaders = async (method, url, token) => {
     if (localStorage.getItem(STORE.tokenType) !== 'DPoP') {
@@ -224,13 +225,15 @@ export const createBrowserOidc = ({
   };
 
   const sessionOf = token => {
-    const user = token ? decodeJwt(token) : null;
-    if (!user) {
+    const claims = token ? decodeJwt(token) : null;
+    if (!claims) {
       return null;
     }
+    const organizations = claims.organizations || [];
+    const preferences = guestOnly(organizations) ? null : cachedPreferences();
     return {
-      user,
-      organizations: user.organizations || [],
+      user: preferences ? { ...claims, ...preferredOf(preferences) } : claims,
+      organizations,
       oidc: true,
       issuerUrl: issuer,
       clientId: audienceOf(decodeJwt(localStorage.getItem(STORE.id))) || clientId,
@@ -239,20 +242,13 @@ export const createBrowserOidc = ({
 
   const restore = () => sessionOf(localStorage.getItem(STORE.access));
 
-  const load = async () => sessionOf(await getAccessToken());
-
-  const reload = () => {
-    claimsPromise = null;
-    return load();
-  };
-
   const fetchClaims = async token => {
     try {
       const { userinfo_endpoint } = await discover();
       const { data } = await axios.get(userinfo_endpoint, {
         headers: await requestHeaders('GET', userinfo_endpoint, token),
       });
-      return data;
+      return data?.sub && data.sub === decodeJwt(token)?.sub ? data : null;
     } catch {
       return null;
     }
@@ -261,6 +257,25 @@ export const createBrowserOidc = ({
   const claims = () => {
     claimsPromise ||= getAccessToken().then(token => (token ? fetchClaims(token) : null));
     return claimsPromise;
+  };
+
+  const load = async () => {
+    const token = await getAccessToken();
+    const session = sessionOf(token);
+    if (!session || guestOnly(session.organizations)) {
+      return session;
+    }
+    const info = await claims();
+    if (!info) {
+      return session;
+    }
+    localStorage.setItem(STORE.preferences, JSON.stringify(info.preferences || null));
+    return sessionOf(token);
+  };
+
+  const reload = () => {
+    claimsPromise = null;
+    return load();
   };
 
   const begin = async () => {
@@ -306,9 +321,7 @@ export const createBrowserOidc = ({
       code_verifier: verifier,
     });
     storeTokens(tokens);
-    const info = await claims();
-    applyAccountPreferences(info?.preferences);
-    events.emit('login');
+    await events.emit('login');
     return restore();
   };
 
@@ -382,6 +395,7 @@ export const createBrowserOidc = ({
   return {
     id: 'idp',
     issuerUrl: issuer,
+    storageKey: STORE.access,
     restore,
     load,
     reload,

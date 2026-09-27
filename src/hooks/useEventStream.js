@@ -8,7 +8,7 @@ import { eventHub } from '../lib/runtime';
  * closing over state never goes stale.
  *
  * @param {string} name - The event name, e.g. `vm-updated`
- * @param {(data: unknown, id: string|null) => void} handler - Called with the event's data
+ * @param {(data: unknown, id: string|boolean|null) => void} handler - Called with the event's data and its id, `resumed` for `ready`
  */
 export const useEventStream = (name, handler) => {
   const handlerRef = useRef(handler);

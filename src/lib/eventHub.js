@@ -4,7 +4,11 @@ import { openEventStream } from './sse';
  * The one event stream of a tab: pages and the chrome subscribe to named
  * events, the app connects the stream once the host advertises `events`
  * and a session exists, and the connection state is observable for a
- * live indicator.
+ * live indicator. A handler is called with the event's data and a second
+ * argument: the frame's id for a named event, `null` for `reset`, and for
+ * `ready` whether the connection resumed from a last id, so a subscriber
+ * reads its snapshot on a fresh connection and never on an in-ring
+ * reconnect.
  *
  * @returns {{ subscribe: Function, connect: Function, disconnect: Function, status: Function, onStatus: Function }} The hub
  */
@@ -47,7 +51,7 @@ export const createEventHub = () => {
       topics,
       headers,
       onEvent: dispatch,
-      onReady: data => dispatch('ready', data, null),
+      onReady: (data, resumed) => dispatch('ready', data, resumed),
       onReset: data => dispatch('reset', data, null),
       onStatus: setState,
       onUnauthorized,

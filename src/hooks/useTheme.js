@@ -7,6 +7,7 @@ const THEME_VALUES = ['auto', 'light', 'dark'];
 const VARIANTS = ['light', 'dark'];
 const FOLLOW = '';
 const NEXT_PREFERENCE = { auto: 'light', light: 'dark', dark: 'auto' };
+const THEME_KEY = 'theme';
 const PACK_KEY = 'pack';
 
 const store = {
@@ -51,10 +52,18 @@ const offered = name => store.packs.some(pack => pack.name === name);
 
 const packOf = name => store.packs.find(pack => pack.name === name) || null;
 
+const writeOwn = (key, value) => {
+  if (value) {
+    localStorage.setItem(key, value);
+  } else {
+    localStorage.removeItem(key);
+  }
+};
+
 const initStore = ({ siteTheme, sitePack, packs, onPersist, onPersistPack }) => {
   if (store.preference === null) {
     store.site = siteDefault(siteTheme);
-    store.preference = localStorage.getItem('theme') || (store.site ? '' : 'auto');
+    store.preference = localStorage.getItem(THEME_KEY) || (store.site ? '' : 'auto');
     store.packs = packs;
     store.sitePack = sitePack;
     const cached = localStorage.getItem(PACK_KEY) || '';
@@ -94,28 +103,34 @@ const writePack = next => {
  * Theme state shared by every estate app, one store behind every call so
  * the header's control and the profile's Preferences tab read and write
  * the same preferences, resolved in the order the pre-paint script uses.
- * The variant: localStorage.theme, else the site default the served page
- * carries as data-brand-theme, or as `brand.theme` of `/api/status` handed
- * in as siteTheme when the served page carries no attribute, else auto
- * against the operating system scheme; the account value arrives through
- * setPreference once the profile loads and overwrites the store. The
- * empty preference is "Follow this site", the site's own variant, the
- * state a person is in before choosing and the one the menu's Follow
- * this site row returns them to, offered only while the site names a
- * default (`siteVariant`) and answered as auto otherwise. The
- * result is stamped on the document as data-bs-theme; a preference the
- * person or the account holds is mirrored to localStorage.theme, the site
- * default never is (following removes the key), and every user toggle is
- * handed to onPersist so the app can write it through to the account,
- * the empty one as a cleared value. The look, the pack: the
- * person's choice under localStorage.pack while it names one of the packs
- * the host offers (`brand.packs`, handed in as packs) or every pack of the
- * build when the host names none, else the host's own pack (`brand.pack`,
- * handed in as sitePack), else none; the chosen pack is painted through
- * `applyPack`, a choice is mirrored to localStorage.pack (an empty choice
- * removes the key) and handed to onPersistPack, and the choice is made on
- * the profile's Preferences page alone, the header's control cycling the
- * variant and never the look.
+ * The store holds the value in force; the browser's own keys,
+ * localStorage.theme and localStorage.pack, hold the visitor's own
+ * choices, written by the person's own controls alone, `persist` true,
+ * and never from an account, whose values arrive through setPreference
+ * and setPack with `persist` false once the profile loads and overwrite
+ * the store without touching the keys, so the account's look never spills
+ * into the visitor's own. The variant: localStorage.theme, else the site
+ * default the served page carries as data-brand-theme, or as
+ * `brand.theme` of `/api/status` handed in as siteTheme when the served
+ * page carries no attribute, else auto against the operating system
+ * scheme. The empty preference is "Follow this site", the site's own
+ * variant, the state a person is in before choosing and the one the
+ * menu's Follow this site row returns them to, offered only while the
+ * site names a default (`siteVariant`) and answered as auto otherwise.
+ * The result is stamped on the document as data-bs-theme; a person's own
+ * choice is written to localStorage.theme, the site default never is
+ * (following removes the key), and every user toggle is handed to
+ * onPersist so the app can write it through to the account, the empty
+ * one as a cleared value. The look, the pack: the person's choice under
+ * localStorage.pack while it names one of the packs the host offers
+ * (`brand.packs`, handed in as packs) or every pack of the build when the
+ * host names none, else the host's own pack (`brand.pack`, handed in as
+ * sitePack), else none; a name the host does not offer is the host's own
+ * pack; the pack in force is painted through `applyPack`, a person's own
+ * choice is written to localStorage.pack (an empty choice removes the key)
+ * and handed to onPersistPack, and the choice is made on the profile's
+ * Preferences page alone, the header's control cycling the variant and
+ * never the look.
  */
 export const useTheme = ({
   siteTheme = '',
@@ -134,23 +149,10 @@ export const useTheme = ({
 
   useEffect(() => {
     document.documentElement.setAttribute('data-bs-theme', theme);
-    if (preference) {
-      localStorage.setItem('theme', preference);
-    } else {
-      localStorage.removeItem('theme');
-    }
-  }, [theme, preference]);
+  }, [theme]);
 
   useEffect(() => {
     applyPack(packOf(pack) || store.sitePack);
-  }, [pack]);
-
-  useEffect(() => {
-    if (pack) {
-      localStorage.setItem(PACK_KEY, pack);
-    } else {
-      localStorage.removeItem(PACK_KEY);
-    }
   }, [pack]);
 
   const setPreference = useCallback((value, { persist = true } = {}) => {
@@ -159,7 +161,11 @@ export const useTheme = ({
     }
     const next = preferenceOf(value);
     writePreference(next);
-    if (persist && store.onPersist) {
+    if (!persist) {
+      return;
+    }
+    writeOwn(THEME_KEY, next);
+    if (store.onPersist) {
       store.onPersist(next);
     }
   }, []);
@@ -170,12 +176,14 @@ export const useTheme = ({
   );
 
   const setPack = useCallback((next, { persist = true } = {}) => {
-    if (next && !offered(next)) {
+    const value = next && offered(next) ? next : '';
+    writePack(value);
+    if (!persist) {
       return;
     }
-    writePack(next || '');
-    if (persist && store.onPersistPack) {
-      store.onPersistPack(next || '');
+    writeOwn(PACK_KEY, value);
+    if (store.onPersistPack) {
+      store.onPersistPack(value);
     }
   }, []);
 

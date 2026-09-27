@@ -5,9 +5,50 @@
     <script>
       (function () {
         try {
+          var read = function (key) {
+            try {
+              return JSON.parse(localStorage.getItem(key) || 'null');
+            } catch (error) {
+              return null;
+            }
+          };
+          var stored = read('user') || read('account');
+          var account = null;
+          if (stored && typeof stored === 'object') {
+            account = {
+              theme: stored.preferred_theme,
+              pack: stored.preferred_pack,
+              motion: stored.preferred_motion,
+              language: stored.preferred_language,
+            };
+          } else {
+            for (var index = 0; index < localStorage.length; index += 1) {
+              var name = localStorage.key(index) || '';
+              if (name.slice(-12) === '.preferences') {
+                var cached = read(name);
+                if (cached && typeof cached === 'object') {
+                  account = {
+                    theme: cached.theme === undefined ? null : cached.theme,
+                    pack: cached.pack === undefined ? null : cached.pack,
+                    motion: cached.motion === undefined ? null : cached.motion,
+                    language: cached.language === undefined ? null : cached.language,
+                  };
+                }
+                break;
+              }
+            }
+          }
+          var member = function (field) {
+            if (account && account[field] !== undefined) {
+              return typeof account[field] === 'string' ? account[field] : '';
+            }
+            return localStorage.getItem(field) || '';
+          };
           var site = document.documentElement.getAttribute('data-brand-theme');
           var siteDefault = site === 'light' || site === 'dark' ? site : 'auto';
-          var preference = localStorage.getItem('theme') || siteDefault;
+          var chosen = member('theme');
+          var preference =
+            chosen === 'light' || chosen === 'dark' || chosen === 'auto' ? chosen : siteDefault;
           var resolved =
             preference === 'auto'
               ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -15,15 +56,14 @@
                 : 'light'
               : preference;
           document.documentElement.setAttribute('data-bs-theme', resolved);
-          var lang = localStorage.getItem('language');
+          var lang = member('language') || localStorage.getItem('language');
           if (lang) {
             document.documentElement.lang = lang;
           }
-          var motion = localStorage.getItem('motion');
-          if (motion === 'reduce') {
+          if (member('motion') === 'reduce') {
             document.documentElement.setAttribute('data-motion', 'reduce');
           }
-          var packName = localStorage.getItem('pack') || '';
+          var packName = member('pack');
           var packs = JSON.parse(localStorage.getItem('packs') || '[]');
           var pack = /^[a-z0-9-]+$/.test(packName)
             ? packs.filter(function (entry) {

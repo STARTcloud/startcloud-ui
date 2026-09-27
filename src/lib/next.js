@@ -66,8 +66,10 @@ export const isPagePath = target => {
  * against the client's registered URIs; anything else lands on the
  * consumed return path or home. A step that established a session hands
  * the bus as `events`, and `login` is emitted on it only where the page
- * stays in-router, so a page the browser is about to leave never redraws
- * as a signed-in one while the top-level navigation is under way.
+ * stays in-router and awaited before the page moves, so the bus's handler
+ * has loaded and adopted the session under the page it lands on, and a
+ * page the browser is about to leave never redraws as a signed-in one
+ * while the top-level navigation is under way.
  *
  * @param {Object} options - The step's answer and the router's side
  * @param {string} options.next - The answered `next`
@@ -75,26 +77,28 @@ export const isPagePath = target => {
  * @param {Object} options.returnTo - The helper from `createReturnTo`
  * @param {boolean} [options.trusted] - Follow an absolute URL of any origin
  * @param {{ emit: Function }|null} [options.events] - The session bus, when the step signed the person in
+ * @returns {Promise<void>} Resolves once the page moved, after the adoption when the bus was given
  */
 export const followNext = ({ next, navigate, returnTo, trusted = false, events = null }) => {
-  const stay = target => {
-    events?.emit('login');
+  const stay = async target => {
+    if (events) {
+      await events.emit('login');
+    }
     navigate(target, { replace: true });
   };
   const target = typeof next === 'string' ? next : '';
   if (SAFE_PATH.test(target)) {
     const resolved = pathnameOf(target) === '/' ? returnTo.consume() || '/' : target;
     if (isPagePath(resolved)) {
-      stay(resolved);
-    } else {
-      window.location.assign(resolved);
+      return stay(resolved);
     }
-    return;
+    window.location.assign(resolved);
+    return Promise.resolve();
   }
   const url = parseUrl(target);
   if (url && (trusted || url.origin === window.location.origin)) {
     window.location.assign(url.href);
-    return;
+    return Promise.resolve();
   }
-  stay(returnTo.consume() || '/');
+  return stay(returnTo.consume() || '/');
 };

@@ -3,14 +3,22 @@ import axios from 'axios';
 import { createApiClient } from './apiClient';
 import { audienceOf, decodeJwt } from './jwt';
 
-const REFRESH_AFTER_MS = 240000;
+const EXPIRY_MARGIN_MS = 60000;
+const NOT_MODIFIED = 304;
 const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 
 const normalizeUrl = url => url.replace(/\/+$/, '');
 
 const isOidc = user => Boolean(user?.provider?.startsWith('oidc-'));
 
+const kept = user => Boolean(user?.stay_logged_in || isOidc(user));
+
 const idTokenOf = user => (isOidc(user) ? decodeJwt(decodeJwt(user.access_token)?.id_token) : null);
+
+const expiringSoon = user => {
+  const exp = decodeJwt(user?.access_token)?.exp;
+  return typeof exp === 'number' && exp * 1000 - Date.now() < EXPIRY_MARGIN_MS;
+};
 
 /**
  * The memberships of a backend profile in the chrome's organization shape:
@@ -39,22 +47,40 @@ const failure = (message, messageKey) => {
  * provider redirect through the backend's OIDC routes, the backend's JWT
  * (`access_token` of the sign-in answer) stored under `storageKey` and
  * sent as `x-access-token`, refreshed through the refresh endpoint while
- * `stay_logged_in` is kept, the profile, claims and preferences
- * (`preferred_theme`, `preferred_language`, `preferred_pack`, `preferred_motion`) read and
- * written through the backend, and the backend's logout route for signing out everywhere. A
- * session it restores or completes is
- * `{ user, organizations, oidc, issuerUrl, clientId }`, the user being the
- * stored profile, the sign-in answer in the backend's snake_case wire
- * names, and `clientId` the `aud` of the ID token the backend embeds in
- * its JWT, empty for a local session. The API client drives `headers`, `retryAuth`,
- * `adoptResponse` and `endSession`, and the provider's own reads of the
- * profile, the claims, the preferences write and the trusted issuers go
- * through its own instance of that client, so a JWT the backend rotates
- * in an `x-refreshed-token` header on any of them is adopted.
+ * the session is kept, `stay_logged_in` or an OIDC session, which is kept
+ * by definition, the identity provider's refresh token deciding its life,
+ * before a request when the JWT's own `exp` claim is within a minute and
+ * once more on a `401` the client replays, a check of the token at
+ * request time and never a clock. The profile is read through
+ * `GET /api/user` on every `load()`, conditionally on the last `ETag` the
+ * backend answered, a `304` answering the session the last `200`
+ * produced, and merged over the stored record without its `access_token`
+ * member, so a profile read never replaces the JWT and never hands out a
+ * credential, the stored token and `stay_logged_in` kept as they are; a
+ * look, theme, motion or language changed at the identity provider is
+ * picked up on a normal page refresh, the stored record is the fallback on
+ * any failure but a `401`, which clears it, and `restore()` answers null
+ * while the record carries no `id`, so a token-only record never paints
+ * as signed in. The account's `preferred_theme`, `preferred_language`,
+ * `preferred_pack` and `preferred_motion` ride the stored record, applied
+ * in memory while signed in and never mirrored into the browser's own
+ * keys, and leave with the record at sign-out. `complete()` and `login()`
+ * store the credential, await `login` on the bus, whose handler is the one
+ * `load()`, and answer the restored session, reading nothing themselves.
+ * The backend's logout route signs out everywhere. A session it restores
+ * or completes is `{ user, organizations, oidc, issuerUrl, clientId }`,
+ * the user being the stored record, the sign-in answer in the backend's
+ * snake_case wire names, and `clientId` the `aud` of the ID token the
+ * backend embeds in its JWT, empty for a local session. The API client
+ * drives `headers`, `retryAuth`, `adoptResponse` and `endSession`, and the
+ * provider's own reads of the profile, the claims, the preferences write
+ * and the trusted issuers go through its own instance of that client, so
+ * a JWT the backend rotates in an `x-refreshed-token` header on any of
+ * them is adopted.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The backend origin
- * @param {Object} options.events - The bus from `createSessionEvents`; `login` is emitted after a sign-in and `sessionEnded` when the backend rejects the session
+ * @param {Object} options.events - The bus from `createSessionEvents`; `login` is awaited after a sign-in and `sessionEnded` emitted when the backend rejects the session
  * @param {string} [options.storageKey] - localStorage key of the stored user
  * @returns {Object} The session provider `useSession`, the callback page, the API client and the app's login page drive
  */
@@ -62,6 +88,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   const api = `${baseUrl}/api`;
   let claimsPromise = null;
   let issuersPromise = null;
+  let lastEtag = '';
+  let lastSession = null;
 
   const current = () => JSON.parse(localStorage.getItem(storageKey) || 'null');
 
@@ -70,6 +98,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   const clear = () => {
     localStorage.removeItem(storageKey);
     claimsPromise = null;
+    lastEtag = '';
+    lastSession = null;
   };
 
   const authHeader = () => {
@@ -99,7 +129,6 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       const next = {
         ...user,
         ...data,
-        tokenRefreshTime: Date.now(),
         stay_logged_in: data.stay_logged_in,
       };
       store(next);
@@ -111,7 +140,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
 
   const refreshIfNeeded = () => {
     const user = current();
-    if (!user?.stay_logged_in || Date.now() - user.tokenRefreshTime < REFRESH_AFTER_MS) {
+    if (!kept(user) || !expiringSoon(user)) {
       return Promise.resolve(null);
     }
     return refreshToken();
@@ -122,13 +151,13 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     return authHeader();
   };
 
-  const retryAuth = async () => Boolean(current()?.stay_logged_in && (await refreshToken()));
+  const retryAuth = async () => Boolean(kept(current()) && (await refreshToken()));
 
   const adoptResponse = responseHeaders => {
     const refreshed = responseHeaders?.['x-refreshed-token'];
     const user = refreshed ? current() : null;
     if (user) {
-      store({ ...user, access_token: refreshed, tokenRefreshTime: Date.now() });
+      store({ ...user, access_token: refreshed });
     }
   };
 
@@ -156,7 +185,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
 
   const restore = () => {
     const user = current();
-    return user
+    return user?.id
       ? {
           user,
           organizations: profileMemberships(user),
@@ -167,28 +196,40 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       : null;
   };
 
-  const load = async () => {
-    claimsPromise = null;
+  const resolved = async () => {
     const session = restore();
-    return session ? { ...session, issuerUrl: await issuerOf(session.user) } : null;
+    lastSession = session ? { ...session, issuerUrl: await issuerOf(session.user) } : null;
+    return lastSession;
   };
 
-  const reload = async () => {
-    const user = current();
-    if (!user) {
+  const load = async () => {
+    claimsPromise = null;
+    if (!current()) {
       return null;
     }
-    const profile = await client.get('/api/user').catch(() => null);
-    if (profile) {
-      store({
-        ...user,
-        ...profile,
-        stay_logged_in: user.stay_logged_in,
-        tokenRefreshTime: user.tokenRefreshTime,
-      });
+    try {
+      const answer = await client.get('/api/user', { etag: lastEtag });
+      if (answer.status === NOT_MODIFIED) {
+        return lastSession;
+      }
+      const profile = { ...answer.data };
+      delete profile.access_token;
+      const stored = current();
+      if (!stored) {
+        return null;
+      }
+      store({ ...stored, ...profile, stay_logged_in: stored.stay_logged_in });
+      lastEtag = answer.etag;
+    } catch (error) {
+      if (error.status === 401) {
+        clear();
+        return null;
+      }
     }
-    return load();
+    return resolved();
   };
+
+  const reload = load;
 
   const refresh = async () => ((await refreshToken()) ? load() : null);
 
@@ -206,8 +247,8 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
       stay_logged_in: stayLoggedIn,
     });
     if (data.access_token) {
-      store({ ...data, stay_logged_in: stayLoggedIn, tokenRefreshTime: Date.now() });
-      events.emit('login');
+      store({ ...data, stay_logged_in: stayLoggedIn });
+      await events.emit('login');
     }
     return data;
   };
@@ -228,18 +269,9 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (!token) {
       throw failure('login code exchange failed', 'auth:errors.failedToProcess');
     }
-    const profile = await axios
-      .get(`${api}/user`, { headers: { 'x-access-token': token } })
-      .then(({ data }) => data)
-      .catch(() => null);
-    store({
-      ...(profile || {}),
-      access_token: token,
-      tokenRefreshTime: Date.now(),
-      provider: decodeJwt(token)?.provider || null,
-    });
-    events.emit('login');
-    return load();
+    store({ access_token: token, provider: decodeJwt(token)?.provider || null });
+    await events.emit('login');
+    return restore();
   };
 
   const claims = () => {
@@ -280,6 +312,7 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   return {
     id: 'backend',
     issuerUrl: '',
+    storageKey,
     authHeader,
     current,
     restore,
