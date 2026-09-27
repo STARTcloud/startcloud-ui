@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBell } from 'react-icons/fa6';
@@ -14,8 +14,6 @@ import NotificationsModal, {
   pushAdapterShape,
 } from './NotificationsModal';
 
-const UNREAD_POLL_MS = 60000;
-
 const countOf = data => Math.max(0, Number(data?.count) || 0);
 
 const streamsUnread = status =>
@@ -23,10 +21,12 @@ const streamsUnread = status =>
 
 /**
  * The user menu's Notifications row: the bell with the unread badge from
- * the notifications feature's one context, read once on mount from the
- * adapter's `unreadCount()`, corrected by the `notifications` topic's
- * `unread-count` event where the host streams it and polled every 60 s
- * only where it does not, and the modal it opens.
+ * the notifications feature's one context, read from the adapter's
+ * `unreadCount()` as the row draws in the menu, corrected by the
+ * `notifications` topic's `unread-count` event where the host streams
+ * it, and where it does not read again when the person opens the modal
+ * and after the person's own read or dismiss; no timer runs. The row
+ * opens the modal.
  */
 const NotificationsItem = ({
   notifications,
@@ -41,31 +41,36 @@ const NotificationsItem = ({
   const [show, setShow] = useState(false);
   const streaming = streamsUnread(status);
 
+  const load = useCallback(() => {
+    notifications
+      .unreadCount()
+      .then(data => set(countOf(data)))
+      .catch(() => null);
+  }, [notifications, set]);
+
   useEffect(() => {
-    const load = () => {
-      notifications
-        .unreadCount()
-        .then(data => set(countOf(data)))
-        .catch(() => null);
-    };
     load();
-    if (streaming) {
-      return undefined;
-    }
-    const interval = setInterval(load, UNREAD_POLL_MS);
-    return () => clearInterval(interval);
-  }, [notifications, set, streaming]);
+  }, [load]);
 
   useEventStream('unread-count', data => set(countOf(data)));
 
+  const open = () => {
+    setShow(true);
+    if (!streaming) {
+      load();
+    }
+  };
+
+  const onUnreadDelta = delta => {
+    adjust(delta);
+    if (!streaming) {
+      load();
+    }
+  };
+
   return (
     <>
-      <Dropdown.Item
-        as="button"
-        type="button"
-        onClick={() => setShow(true)}
-        className="d-flex align-items-center"
-      >
+      <Dropdown.Item as="button" type="button" onClick={open} className="d-flex align-items-center">
         <FaBell className="me-2" />
         <span className="flex-grow-1">{t('navbar.notifications')}</span>
         {unread > 0 ? <span className="badge rounded-pill bg-danger ms-2">{unread}</span> : null}
@@ -73,7 +78,7 @@ const NotificationsItem = ({
       <NotificationsModal
         show={show}
         onHide={() => setShow(false)}
-        onUnreadDelta={adjust}
+        onUnreadDelta={onUnreadDelta}
         notifications={notifications}
         push={push}
         viewAllUrl={viewAllUrl}

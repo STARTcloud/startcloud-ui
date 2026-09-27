@@ -1,0 +1,11 @@
+{
+  "role": "hyperweaver-server",
+  "version": "0.9.6",
+  "brand": { "name": "Hyperweaver", "logo_url": "/brand/hyperweaver/mark.svg" },
+  "auth": ["backend"],
+  "collections": [],
+  "features": ["sidebar", "hosts", "footer", "events"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null,
+  "events": { "path": "/api/events", "topics": ["tasks", "hosts"] }
+}

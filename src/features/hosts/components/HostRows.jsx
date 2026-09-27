@@ -36,7 +36,7 @@ const DEFAULT_OPTIONS = {
 const HostRows = ({ status, id, powered, user = null }) => {
   const { t } = useTranslation();
   const role = user?.role;
-  const { refresh } = useHostStats(status, id);
+  const { refresh } = useHostStats(id);
   const { run, busy } = useHostActions({ status, id, name: '', onDone: refresh });
   const [stage, setStage] = useState(null);
   const [options, setOptions] = useState(DEFAULT_OPTIONS);

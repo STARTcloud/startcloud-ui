@@ -1252,7 +1252,9 @@
             >
             <span class="c k">tree</span
             ><span class="c"
-              >nodes with a caret, lazy `children()`, an optional `matches(pathname)` opening the
+              >nodes with a caret, lazy `children()`, called again for an open node whose optional
+              `revision` moved, the number a feature raises when the data behind the children
+              changed, an optional `matches(pathname)` opening the
               node on a deep link whose route does not nest under the node's `to` (the catalog's
               Browse tree), a status dot, a right-click menu from the presenter; the selection is
               route-driven, never checkboxes; `views: [{ key, labelKey, useTree }]` draws a select
@@ -1348,6 +1350,14 @@
         <strong>Views on a tree.</strong> A tree may export more than one shape and a select at its
         top switches between them, Proxmox's manner: VDI Health offers by pool and by session state,
         the same VMs under different parents; the open nodes are kept per view.
+      </div>
+      <div class="callout changed">
+        <strong>Changed: a tree follows its data.</strong> A node may carry `revision`, a number the
+        feature raises when the data behind the node's children changed; the column calls
+        `children()` again for an open node whose revision moved since it last asked, never on a
+        timer. The hosts feature raises a host's revision on every answer of its stats, so a
+        machine's dot follows a Power on from the Controls menu and a Refresh on the page; a tree
+        without the member reads once, as the catalog's and the fleet's do.
       </div>
       <div class="callout">
         <strong>Entries only from features.</strong> `/api/status` adds no links today; an ad-hoc

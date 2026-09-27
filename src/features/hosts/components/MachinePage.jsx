@@ -10,6 +10,8 @@ import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 
+import RefreshButton from './RefreshButton';
+
 const hostPath = id => `/hosts/${id}`;
 
 const labelOf = ({ status, servers, id, stats }) => {
@@ -24,14 +26,16 @@ const labelOf = ({ status, servers, id, stats }) => {
  * One machine at `/hosts/{id}/machines/{name}`: the machine's name as the
  * title and, as record rows, the name, the host as a link back to the
  * host's page and the state, running or stopped, from the host's stats
- * through `useHostStats`; the loading line while the stats have not
+ * through `useHostStats`, the copy the Controls menu renews after an
+ * action, Refresh in the heading's actions reading the list of servers
+ * and the stats again; the loading line while the stats have not
  * answered and the danger alert when they failed.
  */
 const MachinePage = ({ id, name }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const { servers } = useServers(status);
-  const { stats, loaded, failed } = useHostStats(status, id);
+  const { servers, refresh: refreshServers } = useServers();
+  const { stats, loaded, failed, refresh: refreshStats } = useHostStats(id);
   const host = labelOf({ status, servers, id, stats });
 
   useEffect(() => {
@@ -46,9 +50,14 @@ const MachinePage = ({ id, name }) => {
     );
   }
 
+  const refresh = () => {
+    refreshServers();
+    refreshStats();
+  };
+
   return (
     <div className="list row">
-      <PageHeader title={name} />
+      <PageHeader title={name} actions={<RefreshButton onRefresh={refresh} />} />
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('hosts.host.loadError')}

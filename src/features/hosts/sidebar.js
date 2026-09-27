@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStatus } from '../../contexts/StatusContext';
 import { authMethod, hasFeatureStrict } from '../../utils/capabilities';
 
-import { fetchStats } from './api/agents';
+import { useHostStatsLoad, useHostStatsRevision } from './hooks/useHostStats';
 import { useServers } from './hooks/useServers';
 import { hostLabel, isRunning, isServerRole } from './utils/hosts';
 
@@ -13,9 +13,9 @@ const menuOf = navigate => node => [
   { key: 'open', labelKey: 'hosts.sidebar.open', onClick: () => navigate(node.to) },
 ];
 
-const machineNodes = (status, id) =>
-  fetchStats(status, id).then(stats =>
-    (stats.allmachines || []).sort().map(name => ({
+const machineNodes = (load, id) =>
+  load(String(id)).then(stats =>
+    [...(stats?.allmachines || [])].sort().map(name => ({
       key: `machine:${id}:${name}`,
       label: name,
       to: `/hosts/${id}/machines/${encodeURIComponent(name)}`,
@@ -23,25 +23,28 @@ const machineNodes = (status, id) =>
     }))
   );
 
-const hostNode = (status, server) => ({
+const hostNode = ({ status, server, load, revisionOf }) => ({
   key: `host:${server.id}`,
   icon: FaServer,
   label: hostLabel(server),
   to: `/hosts/${server.id}`,
   status: server.capabilities?.role === 'agent' || !isServerRole(status) ? 'up' : 'idle',
-  children: () => machineNodes(status, server.id),
+  revision: revisionOf(String(server.id)),
+  children: () => machineNodes(load, server.id),
 });
 
 const useHostTree = () => {
   const status = useStatus();
   const navigate = useNavigate();
-  const { servers } = useServers(status);
+  const { servers } = useServers();
+  const load = useHostStatsLoad();
+  const revisionOf = useHostStatsRevision();
   return useMemo(
     () => ({
-      nodes: servers.map(server => hostNode(status, server)),
+      nodes: servers.map(server => hostNode({ status, server, load, revisionOf })),
       menu: menuOf(navigate),
     }),
-    [status, servers, navigate]
+    [status, servers, navigate, load, revisionOf]
   );
 };
 
@@ -52,9 +55,12 @@ const useHostTree = () => {
  * Hosts row at `/` (exact match) and a tree of one node per server of
  * `useServers` (the registry on the server role, the one serving agent on
  * an agent role), each routing to `/hosts/{id}` with an `up` dot while the
- * row is an agent, its machines from the agent's stats under it, each
+ * row is an agent, its machines from the agent's stats under it, the
+ * copy `useHostStatsLoad` holds for the page and the Controls menu, each
  * routing to `/hosts/{id}/machines/{name}` with an `up` dot while running,
- * and a right-click Open row on every node.
+ * the host's node carrying the copy's `revision` so the machines and
+ * their dots follow a read after an action or a Refresh, and a
+ * right-click Open row on every node.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`

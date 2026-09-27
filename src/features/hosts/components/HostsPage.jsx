@@ -5,11 +5,12 @@ import { Link } from 'react-router-dom';
 import EmptyState from '../../../components/common/EmptyState';
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
-import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useServers } from '../hooks/useServers';
 import { hostKey, hostLabel } from '../utils/hosts';
+
+import RefreshButton from './RefreshButton';
 
 const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
@@ -87,14 +88,14 @@ const columns = [
  * one `SubTable` over Name, Hostname, Hypervisors, Platform, Version and
  * Machines, every cell from the registry row alone so the table fires no
  * request per row, narrowed by the navbar binding of `useDetailSearch`
- * under `table_prefs_hosts`; the loading line while the list has not
+ * under `table_prefs_hosts`, Refresh in the heading's actions reading
+ * the list again; the loading line while the list has not
  * answered, the danger alert when it failed and the empty placard while
  * no agent is registered.
  */
 const HostsPage = ({ context }) => {
   const { t, i18n } = useTranslation();
-  const status = useStatus();
-  const { servers, loaded, failed } = useServers(status);
+  const { servers, loaded, failed, refresh } = useServers();
   const ctx = { ...context, t, language: i18n.language };
   const search = useDetailSearch({
     rows: servers,
@@ -120,7 +121,7 @@ const HostsPage = ({ context }) => {
 
   return (
     <div className="list row">
-      <PageHeader title={t('hosts.page.title')} />
+      <PageHeader title={t('hosts.page.title')} actions={<RefreshButton onRefresh={refresh} />} />
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('hosts.page.loadError')}

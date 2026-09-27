@@ -39,8 +39,6 @@ const SESSION_ENDED_KEY = 'session-ended';
 
 const DISCOVER_PATH = '/organizations/discover';
 
-const footerRepoUrl = brand => brand.repo || brand.changelog || '';
-
 const LOCAL_PROFILE_PATHS = { backend: '/profile', cookie: '/user/profile' };
 
 const localProfileFor = status => {
@@ -261,7 +259,14 @@ const accountSlots = ({ actionMenu, signedIn, showSidebar, userMenu }) => {
   };
 };
 
-const ShellFooter = ({ fetchHealth }) => {
+/**
+ * The footer while the host lists the `footer` token, nothing otherwise:
+ * the name and version from the status, `about` whether the role has
+ * About text, resolved by the app and never by the footer, and `pane`
+ * the views hook a mounted feature exported for the footer's pane, null
+ * on a host no feature offers one for.
+ */
+const ShellFooter = ({ fetchHealth, about, pane }) => {
   const status = useStatus();
   if (!hasFeature(status, 'footer')) {
     return null;
@@ -270,16 +275,19 @@ const ShellFooter = ({ fetchHealth }) => {
     <Footer
       appName={status.brand.name}
       version={status.version}
-      repoUrl={footerRepoUrl(status.brand)}
+      about={about}
       poweredBy={POWERED_BY}
       fetchHealth={fetchHealth}
       streamed={hasFeature(status, 'events') && Boolean(status.events)}
+      pane={pane}
     />
   );
 };
 
 ShellFooter.propTypes = {
   fetchHealth: PropTypes.func,
+  about: PropTypes.bool.isRequired,
+  pane: PropTypes.func,
 };
 
 const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, links, t }) => {
@@ -351,7 +359,12 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * the route parser's crumbs alone), the user
  * menu and the notice banners; the notice cards; the one scroll region
  * with the page inside its own error boundary so a page that throws keeps
- * the chrome; and the footer while the host lists the `footer` token. The
+ * the chrome; and the footer while the host lists the `footer` token,
+ * its name and year the link to `/about` while the role has About text,
+ * and under its row the pane of the navbar contract's Footer status
+ * section while the app hands a `footerPane`, the views hook a mounted
+ * feature exported, and the hook answers a view, the pane the last child
+ * of the column and the page region giving up the height. The
  * column and the app section are hidden on the auth routes of the
  * session's return-path helper, and on every host the cluster's Sign in
  * button is hidden there too, the page below carrying the sign-in, and
@@ -388,8 +401,8 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * menu and draws the action menu right before it. The app supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
- * notification adapters, the sidebar entries, the action menu and the
- * menu rows the host's features unlock.
+ * notification adapters, the sidebar entries, the action menu, the
+ * footer's pane and the menu rows the host's features unlock.
  */
 const AppShell = ({
   account,
@@ -413,6 +426,7 @@ const AppShell = ({
   fetchHealth = null,
   sidebar = [],
   actionMenu = null,
+  footerPane,
   routeTitleKey = null,
   routeCrumbParent = null,
   children,
@@ -555,7 +569,7 @@ const AppShell = ({
           {children}
         </ErrorBoundary>
       </div>
-      <ShellFooter fetchHealth={fetchHealth} />
+      <ShellFooter fetchHealth={fetchHealth} about={showAbout} pane={footerPane} />
     </>
   );
 
@@ -601,6 +615,7 @@ AppShell.propTypes = {
   fetchHealth: PropTypes.func,
   sidebar: PropTypes.arrayOf(sidebarGroupShape),
   actionMenu: PropTypes.node,
+  footerPane: PropTypes.func,
   routeTitleKey: PropTypes.func,
   routeCrumbParent: PropTypes.func,
   children: PropTypes.node.isRequired,

@@ -13,6 +13,8 @@ import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 
+import RefreshButton from './RefreshButton';
+
 const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
 const machinePath = (id, name) => `/hosts/${id}/machines/${encodeURIComponent(name)}`;
@@ -86,15 +88,17 @@ const factRows = (stats, t) =>
  * stats carry them with the machine count under them, then the machines
  * of `stats.allmachines` sorted in the one `SubTable` over Name and
  * State, running or stopped from `stats.runningmachines`, narrowed by
- * the navbar binding of `useDetailSearch` under `table_prefs_host`; the
- * loading line while the stats have not answered and the danger alert
- * when they failed, the stats read through `useHostStats`.
+ * the navbar binding of `useDetailSearch` under `table_prefs_host`,
+ * Refresh in the heading's actions reading the list of servers and the
+ * host's stats again; the loading line while the stats have not
+ * answered and the danger alert when they failed, the stats the copy
+ * `useHostStats` shares with the Controls menu and the tree.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
-  const { servers } = useServers(status);
-  const { stats, loaded, failed } = useHostStats(status, id);
+  const { servers, refresh: refreshServers } = useServers();
+  const { stats, loaded, failed, refresh: refreshStats } = useHostStats(id);
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
   const ctx = { ...context, t, language: i18n.language };
@@ -123,9 +127,14 @@ const HostPage = ({ id, context }) => {
 
   const running = machines.filter(machine => machine.running).length;
 
+  const refresh = () => {
+    refreshServers();
+    refreshStats();
+  };
+
   return (
     <div className="list row">
-      <PageHeader title={label} />
+      <PageHeader title={label} actions={<RefreshButton onRefresh={refresh} />} />
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('hosts.host.loadError')}

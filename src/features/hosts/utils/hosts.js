@@ -25,6 +25,27 @@ export const isServerRole = status => status?.role === SERVER_ROLE;
 export const agentPath = (status, id, path) =>
   isServerRole(status) ? `/api/agents/${encodeURIComponent(id)}/${path}` : `/api/${path}`;
 
+/**
+ * The host an event of the stream names: `agent_id`, the registry id the
+ * server role adds to every agent's event, and `self` on an agent role,
+ * whose own events carry none.
+ *
+ * @param {Object} data - The event's data
+ * @returns {string} The registry id, or `self`
+ */
+export const agentIdOf = data =>
+  data?.agent_id === undefined || data?.agent_id === null ? SELF : String(data.agent_id);
+
+/**
+ * An event's data as the REST route answers it, the `agent_id` the
+ * server role added left out.
+ *
+ * @param {Object} data - The event's data
+ * @returns {Object} The data without `agent_id`
+ */
+export const withoutAgentId = data =>
+  Object.fromEntries(Object.entries(data || {}).filter(([key]) => key !== 'agent_id'));
+
 export const hostLabel = server => server.entityName || server.hostname;
 
 export const hostKey = server => String(server.id);

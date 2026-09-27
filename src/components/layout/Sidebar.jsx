@@ -258,6 +258,7 @@ const nodeShape = PropTypes.shape({
   label: PropTypes.string.isRequired,
   to: PropTypes.string,
   status: PropTypes.oneOf(['up', 'idle']),
+  revision: PropTypes.number,
   children: PropTypes.func,
   matches: PropTypes.func,
 });
@@ -297,15 +298,16 @@ const TreeNode = ({ node, depth, tree, current }) => {
   const kids = tree.kids[node.key] || null;
   const open = nodeOpen({ node, tree, kids, current });
   const active = Boolean(node.to) && current === node.to;
+  const fresh = Boolean(kids) && (tree.seen[node.key] || 0) === (node.revision || 0);
   const { load } = tree;
   const row = useRef(null);
   useCssVar(row, '--sidebar-depth', String(depth));
 
   useEffect(() => {
-    if (branch && (open || !node.to) && !kids) {
+    if (branch && (open || !node.to) && !fresh) {
       load(node);
     }
-  }, [branch, open, kids, node, load]);
+  }, [branch, open, fresh, node, load]);
 
   const onKeyDown = event => {
     if (branch) {
@@ -373,6 +375,7 @@ TreeNode.propTypes = {
   tree: PropTypes.shape({
     open: PropTypes.arrayOf(PropTypes.string).isRequired,
     kids: PropTypes.object.isRequired,
+    seen: PropTypes.objectOf(PropTypes.number).isRequired,
     load: PropTypes.func.isRequired,
     toggle: PropTypes.func.isRequired,
     menu: PropTypes.func,
@@ -425,18 +428,21 @@ const TreeView = ({ useTree, current, opened }) => {
   const { t } = useTranslation();
   const { nodes, menu = null, labelKey = null } = useTree();
   const [kids, setKids] = useState({});
+  const [seen, setSeen] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
 
   const load = useCallback(node => {
+    const revision = node.revision || 0;
     Promise.resolve(node.children()).then(children => {
       setKids(previous => ({ ...previous, [node.key]: children }));
+      setSeen(previous => ({ ...previous, [node.key]: revision }));
     });
   }, []);
 
   const { toggle: toggleKey } = opened;
   const toggle = useCallback(node => toggleKey(node.key), [toggleKey]);
 
-  const tree = { open: opened.open, kids, load, toggle, menu, openMenu: setContextMenu };
+  const tree = { open: opened.open, kids, seen, load, toggle, menu, openMenu: setContextMenu };
 
   return (
     <div
@@ -573,7 +579,9 @@ const useResize = (asideRef, setWidth) => {
  * prefix of the route, or its `matches(pathname)` answering true when the
  * node carries one, for a tree whose routes do not nest under its nodes'
  * paths), so a deep link
- * crumbs down the tree, a node without `to` folding on click and never
+ * crumbs down the tree, and called again for an open node whose
+ * `revision`, the number a feature raises when the data behind the
+ * children changed, moved since they were asked for, a node without `to` folding on click and never
  * navigating, its children loaded on mount because only they say
  * whether the current route lies under it, a status dot for `up` and `idle`, the right-click
  * rows from `menu(node)`, the selection driven by the route, a view select

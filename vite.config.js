@@ -126,7 +126,7 @@ export default defineConfig(({ command }) => ({
     proxy: {
       '/api/user/preferences': proxyTo(authTarget),
       '/api/notifications': proxyTo(authTarget),
-      '/api': proxyTo(apiTarget),
+      '/api': { ...proxyTo(apiTarget), ws: true },
       '/catalog.json': proxyTo(apiTarget),
       '/health.json': proxyTo(apiTarget),
       '/private': proxyTo(apiTarget),
@@ -168,6 +168,9 @@ export default defineConfig(({ command }) => ({
             id.includes('node_modules/@intl-tel-input')
           ) {
             return 'tel-input';
+          }
+          if (id.includes('node_modules/@xterm') || id.includes('node_modules/react-xtermjs')) {
+            return 'xterm';
           }
           if (
             id.includes('node_modules/react-bootstrap') ||

@@ -77,7 +77,7 @@ PowerRows.propTypes = {
 const MachineRows = ({ status, id, name, user = null }) => {
   const { t } = useTranslation();
   const role = user?.role;
-  const { stats, refresh } = useHostStats(status, id);
+  const { stats, refresh } = useHostStats(id);
   const { run, busy } = useHostActions({ status, id, name, onDone: refresh });
   const [pending, setPending] = useState('');
   const [cleanupDisks, setCleanupDisks] = useState(true);

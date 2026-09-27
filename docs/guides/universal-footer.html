@@ -632,6 +632,113 @@
     color: var(--primary);
     font-weight: 600;
   }
+  .ctx-menu .item small {
+    margin-left: auto;
+    padding-left: 14px;
+    color: var(--muted);
+  }
+  .pane.tabbed.open {
+    display: flex;
+    flex-direction: column;
+  }
+  .pane.tabbed .inner {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+  .tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 4px 8px 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .tab:hover {
+    color: var(--heading);
+  }
+  .tab:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+  }
+  .tab.active {
+    background: var(--term);
+    color: var(--term-text);
+    border-color: var(--border);
+  }
+  .tab small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .tab svg {
+    width: 14px;
+    height: 14px;
+  }
+  .tab .x {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    line-height: 1;
+  }
+  .tab .x:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+  .ctx-menu .divider {
+    height: 1px;
+    margin: 6px 0;
+    background: var(--border);
+  }
+  .term-row .scope {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 4px;
+  }
+  .term-row .scope:hover {
+    background: var(--border);
+    color: var(--primary);
+  }
+  .term-row button {
+    flex: 1;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .page-console {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    background: var(--term);
+    color: var(--term-text);
+    font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    white-space: pre;
+    line-height: 1.5;
+  }
 
   .callouts {
     display: flex;
@@ -715,10 +822,10 @@
       <code>health</code> already grows the right slot: the <code>tasks</code> and
       <code>host-terminal</code> tokens the agents list today add hyperweaver's pane under the row,
       the grip in the middle of the row the handle the person presses, holds and drags to make the
-      pane taller, and the toggles that pick which pane shows. A UI backend that lists neither token sees today's row
-      with one change, the left slot linking to About. Every frame below is live: the toggles open
-      the pane, the row drags, the chevron collapses, a task row opens its dialog, a right-click on
-      the pane opens its menu, the third click on the version loads the game.
+      pane taller, and the toggles that pick which pane shows. A UI backend that lists neither token
+      sees today's row with one change, the left slot linking to About. Every frame below is live:
+      the toggles open the pane, the row drags, the chevron collapses, a task row opens its dialog,
+      a right-click on the pane opens its menu, the third click on the version loads the game.
     </p>
   </section>
 
@@ -785,8 +892,8 @@
 
   <section class="state">
     <div class="state-label">
-      footer + health + tasks + host-terminal, one host in focus — an agent role, or the server
-      role on a host's or a machine's route
+      footer + health + tasks + host-terminal, one host in focus — an agent role, or the server role
+      on a host's or a machine's route
     </div>
     <div class="frame">
       <div class="stage js-stage" data-focus="machine">
@@ -887,28 +994,29 @@
       </div>
       <div class="callout">
         <strong>The grip alone drags.</strong> While the pane is open the grip in the middle of the
-        row is the handle, and nothing else on the row, so a press on a button or a link is never
-        a drag: press the grip, hold and drag up to grow the pane, down to shrink it, under 100px
-        it closes, as hyperweaver's does; it grows to ninety percent of the window, hyperweaver's
-        own limit, the page region giving way; opened from closed it starts at 130px,
-        hyperweaver's number; the height persists per origin. Closed, the grip is still. No
-        resizable library, pointer events on the grip setting the pane's height.
+        row is the handle, and nothing else on the row, so a press on a button or a link is never a
+        drag: press the grip, hold and drag up to grow the pane, down to shrink it, under 100px it
+        closes, as hyperweaver's does; it grows to ninety percent of the window, hyperweaver's own
+        limit, the page region giving way; opened from closed it starts at 130px, hyperweaver's
+        number; the height persists per origin. Closed, the grip is still. No resizable library,
+        pointer events on the grip setting the pane's height.
       </div>
       <div class="callout">
         <strong>Right cluster.</strong> The heart while <code>health</code> is listed, then the
-        Shell toggle while the focus offers any terminal, the Tasks toggle while the host lists
-        <code>tasks</code>, the priority filter and the Columns picker while the tasks pane shows,
-        then the chevron that collapses or expands the pane. A saved view whose token the host
+        Shell toggle while the host lists <code>host-terminal</code>, the Tasks toggle while it
+        lists <code>tasks</code>, Refresh, the priority filter and the Columns picker while the
+        tasks pane shows, then the chevron that collapses or expands the pane. Refresh reads the
+        tasks again, the "just in case" read a person asks for. A saved view whose token the host
         lacks falls to the one it has.
       </div>
       <div class="callout">
-        <strong>The shell is whatever the focus offers.</strong> More than the host's terminal:
-        the Shell drop-up lists every terminal the route's target has, each behind the token the
-        agent already lists for it, and the pane opens the one picked. On a host's route the host
-        shell (<code>host-terminal</code>); on a machine's route the host shell, the machine's
-        console (<code>zlogin</code> in <code>console</code>) and its SSH terminal
-        (<code>ssh</code>); Restart shell and Terminal preferences under them. hyperweaver's
-        footer opens the host's terminal alone today, the other two living on the machine's page.
+        <strong>One Shell, whatever opens it.</strong> The footer offers a Shell while the host in
+        focus lists one: "a shell via a pty, a shell via ssh, a shell via some other mechanism", the
+        mechanism the backend's own. The pane is written against a terminal source, the route that
+        starts the session, its WebSocket, its ticket and the route that stops it, never against one
+        kind of shell; today's source is the host shell behind <code>host-terminal</code>, as
+        hyperweaver's footer opens it, with Restart shell and Terminal preferences in the toggle's
+        drop-up. A terminal per machine and "a tabbed shell per vm" are later work.
       </div>
       <div class="callout">
         <strong>The pane's own menu.</strong> A right-click on the pane opens hyperweaver's menu at
@@ -932,8 +1040,8 @@
         shortens the page region, it never overlays it.
       </div>
       <div class="callout">
-        <strong>Nothing polls.</strong> hyperweaver asked every agent for its tasks every second
-        and the open dialog every two; both go. The pane reads once on open, on the stream's
+        <strong>Nothing polls.</strong> hyperweaver asked every agent for its tasks every second and
+        the open dialog every two; both go. The pane reads once on open, on the stream's
         <code>ready</code> and <code>reset</code>, on Refresh and after the person's own action,
         then follows a <code>tasks</code> topic once the agents stream one. A task's output keeps
         the WebSocket the agents already push it on, and the shell its own.
@@ -1077,6 +1185,129 @@
     </div>
   </section>
 
+  <section class="state">
+    <div class="state-label">
+      later work, not this round — the tabbed shell: one tab per terminal, the host's and each
+      machine's
+    </div>
+    <div class="frame">
+      <div class="stage js-stage" data-tabs="1">
+        <div class="navbar js-navbar">
+          <a class="brand" href="#"
+            ><span class="brand-mark"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M4 15a4 4 0 0 1 1-7.9A6 6 0 0 1 16.5 8.5 3.5 3.5 0 0 1 17 15H4z"
+                /></svg></span
+            >Hyperweaver</a
+          >
+          <div class="crumbs">
+            <span class="sep">›</span><span>Hosts</span><span class="sep">›</span
+            ><span>host-1162.m4kr.net</span><span class="sep">›</span><span>8272--domino-n1</span>
+          </div>
+          <button class="btn js-controls" type="button">Machine controls</button>
+          <span class="avatar"></span>
+        </div>
+        <div class="scroll js-scroll">
+          <h2>8272--domino-n1</h2>
+          <div class="page-console js-page-console hidden"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+          <div class="ghost w80"></div>
+          <div class="ghost w60"></div>
+        </div>
+        <div class="site-footer js-footer">
+          <div class="edge-start">
+            <a
+              href="https://startcloud.com/"
+              target="_blank"
+              rel="noreferrer"
+              title="Powered by STARTcloud"
+              aria-label="Powered by STARTcloud"
+              ><span class="mark"></span
+            ></a>
+            <a href="#/about">Hyperweaver © 2026 ·</a>
+            <button class="version js-version" type="button">v0.11.0</button>
+          </div>
+          <div class="center">
+            <span
+              class="grip js-grip"
+              title="Drag to resize"
+              tabindex="0"
+              role="separator"
+              aria-orientation="horizontal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9h14" />
+                <path d="M5 15h14" />
+              </svg>
+            </span>
+          </div>
+          <div class="edge-end">
+            <svg
+              class="heart"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 12h4l2-5 3 10 2-5h7" />
+            </svg>
+            <span class="tools js-tools"></span>
+          </div>
+        </div>
+        <div class="pane js-pane shell">
+          <div class="tabs js-tabs" role="tablist"></div>
+          <div class="inner js-inner"></div>
+        </div>
+      </div>
+    </div>
+    <div class="try js-try"></div>
+    <div class="callouts">
+      <div class="callout">
+        <strong>Later work.</strong> Drawn so its shape is agreed before it is built; this round
+        builds the one Shell of the frames above, and "a tabbed shell per vm" follows in a round of
+        its own.
+      </div>
+      <div class="callout">
+        <strong>The strip.</strong> One row of tabs at the top of the shell pane, inside the pane,
+        on the shell view alone, drawn only while two or more terminals are open; a single shell
+        draws no strip and is the one Shell of the frames above. The footer's row is the row of
+        every other frame, the grip still the one handle, the Tasks view unchanged.
+      </div>
+      <div class="callout">
+        <strong>A tab is a session.</strong> Each tab is one terminal with its own session and its
+        own WebSocket, named by its target with its kind beside it; switching shows another terminal
+        and the rest keep running; the × closes the tab and stops its session.
+      </div>
+      <div class="callout">
+        <strong>Opened from the Controls menu.</strong> No button on the strip opens a terminal: the
+        navbar's Controls menu carries the row, Host actions for the host's shell and Machine
+        controls for the machine's terminal, beside the power rows. What the footer shows by default
+        is what the backend offers, the host terminal; nothing offered and nothing opened, nothing
+        shown.
+      </div>
+      <div class="callout">
+        <strong>Footer or page.</strong> The row works as the logout row does: its icon is a toggle
+        between the footer's shell, which persists from page to page, and the page's own console
+        area, which ends when the page is left; a click on the icon flips the target and keeps the
+        menu open, a click on the text opens the terminal there. A page without a console area draws
+        no toggle and the row opens in the footer.
+      </div>
+      <div class="callout">
+        <strong>Broadcast, later still.</strong> One menu that sends the same string at once to
+        every open shell, or to the ones marked to receive it, "just a dumb dump of the string into
+        the shells": the UI writes it into each terminal's own WebSocket, the backend unchanged.
+      </div>
+      <div class="callout">
+        <strong>The drop-up and the pane's menu.</strong> Restart shell and Terminal preferences, as
+        in the one Shell, acting on the tab that shows.
+      </div>
+    </div>
+  </section>
+
   <section class="spec wide">
     <div class="spec-col">
       <h2>What each UI backend lists, and what it gets</h2>
@@ -1125,7 +1356,8 @@
               <code>host-terminal</code> from each host's registry row
             </td>
             <td>
-              the row plus the grip, Shell, Tasks, the filter and columns, the chevron, the pane
+              the row plus the grip, Shell, Tasks, Refresh, the filter and columns, the chevron, the
+              pane
             </td>
             <td>
               new: the pane; on <code>/</code> the tasks of every host with a Host column, on
@@ -1168,11 +1400,16 @@
           </tr>
           <tr>
             <td>
-              The agents list <code>tasks</code>, <code>host-terminal</code> and <code>ssh</code>
-              today, and <code>zlogin</code> in <code>console</code>
+              The agents list <code>tasks</code>, <code>host-terminal</code> and
+              <code>ssh</code> today, and <code>zlogin</code> in <code>console</code>
             </td>
-            <td>zoneweaver-agent <code>StatusController.js</code>, <code>MachineRoutes.js</code></td>
-            <td>each terminal draws behind its own name; no new token</td>
+            <td>
+              zoneweaver-agent <code>StatusController.js</code>, <code>MachineRoutes.js</code>
+            </td>
+            <td>
+              the footer's Shell draws behind <code>host-terminal</code>, no new token; a terminal
+              per machine behind <code>ssh</code> and the console list is later work
+            </td>
           </tr>
           <tr>
             <td>The tokens are per host</td>
@@ -1194,7 +1431,9 @@
               Priority floor 20, 40, 60, 80, 100, default 40; a row's word from its number, Service
               at 50
             </td>
-            <td><code>Footer.jsx</code>, <code>Tasks.jsx</code>, <code>UserSettingsContext.jsx</code></td>
+            <td>
+              <code>Footer.jsx</code>, <code>Tasks.jsx</code>, <code>UserSettingsContext.jsx</code>
+            </td>
             <td>the filter and the Priority column</td>
           </tr>
           <tr>
@@ -1221,7 +1460,9 @@
           </tr>
           <tr>
             <td>Task output is pushed over a WebSocket with a ticket</td>
-            <td>zoneweaver-agent <code>WebSocketHandler.js</code>, <code>WsTicketController.js</code></td>
+            <td>
+              zoneweaver-agent <code>WebSocketHandler.js</code>, <code>WsTicketController.js</code>
+            </td>
             <td>kept for the dialog's output and for the shell</td>
           </tr>
           <tr>
@@ -1237,8 +1478,8 @@
             </td>
             <td><code>AboutRoute.jsx</code>, <code>hasAbout.js</code>, <code>shared.json</code></td>
             <td>
-              three blocks of keys to add, one per hyperweaver role, in <code>en</code> and
-              <code>es</code>
+              three blocks of keys, one per hyperweaver role, written in <code>en</code>; every
+              other language follows in one pass at the end
             </td>
           </tr>
           <tr>
@@ -1250,8 +1491,8 @@
             <td>The easter egg is a script from another host</td>
             <td><code>Footer.jsx</code></td>
             <td>
-              drawn on every UI backend; the identity provider's page policy gains the game's
-              origin in <code>script-src</code>, <code>UiIndexHandler.groovy</code>
+              drawn on every UI backend; the identity provider's page policy gains the game's origin
+              in <code>script-src</code>, <code>UiIndexHandler.groovy</code>
             </td>
           </tr>
         </table>
@@ -1270,8 +1511,9 @@
         <tr>
           <td><code>tasks</code></td>
           <td>
-            the Tasks toggle, the priority filter (All 20, Low+ 40, Medium+ 60, High+ 80, Critical
-            100, sent as <code>min_priority</code>), the Columns picker, and the tasks pane: one
+            the Tasks toggle, Refresh, the priority filter (All 20, Low+ 40, Medium+ 60, High+ 80,
+            Critical 100, sent as <code>min_priority</code>), the Columns picker, and the tasks
+            pane: one
             table of the agent's <code>GET /api/tasks</code> rows, fifty at most (ID, Operation,
             Target, Status, Progress, Priority, Created by, Created, Started, Completed, Error; the
             Host column first with no host in focus), a row opening the task detail dialog over
@@ -1282,27 +1524,11 @@
         <tr>
           <td><code>host-terminal</code></td>
           <td>
-            the host shell in the Shell drop-up: one xterm over the agent's
-            <code>POST /api/term/start</code> session, its <code>/term/{id}</code> WebSocket
-            opened with an unscoped ticket from <code>GET /api/ws-ticket</code>, fitted to the pane
-            on every drag, the PTY told its size, the session stopped at
+            the Shell toggle and the shell pane, today's terminal source: one xterm over the agent's
+            <code>POST /api/term/start</code> session, its <code>/term/{id}</code> WebSocket opened
+            with an unscoped ticket from <code>GET /api/ws-ticket</code>, fitted to the pane on
+            every drag, the PTY told its size, the session stopped at
             <code>DELETE /api/term/sessions/{id}/stop</code> when the host changes
-          </td>
-        </tr>
-        <tr>
-          <td><code>zlogin</code> in <code>console</code></td>
-          <td>
-            the machine's console in the drop-up on a machine's route:
-            <code>POST /api/machines/{name}/zlogin/start</code>, the
-            <code>/zlogin/{id}</code> WebSocket with a ticket bound to that machine
-          </td>
-        </tr>
-        <tr>
-          <td><code>ssh</code></td>
-          <td>
-            the machine's SSH terminal in the drop-up on a machine's route:
-            <code>POST /api/machines/{name}/ssh/start</code>, the <code>/ssh/{id}</code>
-            WebSocket with a ticket bound to that machine
           </td>
         </tr>
         <tr>
@@ -1539,24 +1765,25 @@
     };
     var SHELL =
       'Host terminal ready...\nroot@host-1162:~# zoneadm list -cv\n  ID NAME             STATUS      PATH                     BRAND\n   0 global           running     /                        ipkg\n  12 8272--domino-n1  running     /zones/8272--domino-n1   bhyve\n  14 8009--web-01     running     /zones/8009--web-01      bhyve\n   - 4448--zonetest8  installed   /zones/4448--zonetest8   bhyve\nroot@host-1162:~# ';
-    var SOURCES = [
-      { key: 'host', label: 'Host shell', target: 'host-1162.m4kr.net', text: SHELL },
+    var SOURCES = [{ key: 'host', label: 'Host shell', target: 'host-1162.m4kr.net', text: SHELL }];
+    var TERMINALS = [
+      { kind: 'Host shell', target: 'host-1162', text: SHELL },
       {
-        key: 'zlogin',
-        label: 'Console',
+        kind: 'SSH',
         target: '8272--domino-n1',
-        machine: true,
-        text: '[Connected to zone 8272--domino-n1 console]\n\ndomino-n1 login: ',
+        text: 'Connecting to SSH...\nLinux domino-n1 6.12.0 x86_64\nLast login: Sat Sep 26 21:04:11 2026\nstartcloud@domino-n1:~$ ',
       },
       {
-        key: 'ssh',
-        label: 'SSH',
-        target: '8272--domino-n1',
-        machine: true,
-        text: 'Linux domino-n1 6.12.0 x86_64\nLast login: Sat Sep 26 21:04:11 2026\nstartcloud@domino-n1:~$ ',
+        kind: 'SSH',
+        target: '8009--web-01',
+        text: 'Connecting to SSH...\nLinux web-01 6.12.0 x86_64\nstartcloud@web-01:~$ systemctl status nginx\n● nginx.service - A high performance web server\n     Active: active (running)\nstartcloud@web-01:~$ ',
       },
     ];
     var ICONS = {
+      inFooter:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15h18"/></svg>',
+      inPage:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>',
       shell:
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>',
       tasks:
@@ -1611,15 +1838,52 @@
       var tryLine = stage.parentNode.parentNode.querySelector('.js-try');
       var overlay = document.createElement('div');
       stage.appendChild(overlay);
+      var tabbed = stage.dataset.tabs === '1';
+      var tabsEl = stage.querySelector('.js-tabs');
+      var tabSeq = 0;
+      var makeTab = function (index) {
+        tabSeq += 1;
+        return { id: tabSeq, terminal: TERMINALS[index] };
+      };
+      var firstTabs = tabbed ? [0, 2].map(makeTab) : [];
+      var pageConsole = stage.querySelector('.js-page-console');
       var state = {
-        open: false,
-        view: hasTasks ? 'tasks' : 'shell',
-        height: 130,
+        open: tabbed,
+        view: tabbed || !hasTasks ? 'shell' : 'tasks',
+        height: tabbed ? 190 : 130,
         priority: 40,
         columns: DEFAULT_COLUMNS.slice(),
         menu: '',
         source: 'host',
         clicks: 0,
+        tabs: firstTabs,
+        tab: firstTabs.length ? firstTabs[0].id : 0,
+        target: 'footer',
+      };
+      var tabOf = function (id) {
+        return state.tabs.filter(function (tab) {
+          return tab.id === id;
+        })[0];
+      };
+      var renderTabs = function () {
+        tabsEl.innerHTML = state.tabs
+          .map(function (tab) {
+            return (
+              '<span class="tab js-tab' +
+              (tab.id === state.tab ? ' active' : '') +
+              '" role="tab" tabindex="0" data-id="' +
+              tab.id +
+              '">' +
+              ICONS.shell +
+              tab.terminal.target +
+              '<small>' +
+              tab.terminal.kind +
+              '</small><span class="x js-tab-close" role="button" aria-label="Close" data-id="' +
+              tab.id +
+              '">×</span></span>'
+            );
+          })
+          .join('');
       };
 
       var cellOf = function (row, column) {
@@ -1669,6 +1933,16 @@
       };
 
       var renderShell = function () {
+        if (tabbed) {
+          var showing = tabOf(state.tab);
+          if (showing) {
+            inner.textContent = showing.terminal.text;
+          } else {
+            inner.innerHTML =
+              '<div class="placeholder"><div>No terminal open<br />Open one from Machine controls</div></div>';
+          }
+          return;
+        }
         if (everyHost) {
           inner.innerHTML =
             '<div class="placeholder"><div>No shell session<br />Select a host to open its shell</div></div>';
@@ -1776,7 +2050,30 @@
           '</div>';
         var menu = overlay.querySelector('.js-ctx');
         menu.style.left = Math.max(4, Math.min(x, stage.clientWidth - menu.offsetWidth - 8)) + 'px';
-        menu.style.top = Math.max(4, Math.min(y, stage.clientHeight - menu.offsetHeight - 8)) + 'px';
+        menu.style.top =
+          Math.max(4, Math.min(y, stage.clientHeight - menu.offsetHeight - 8)) + 'px';
+      };
+
+      var openControls = function (x, y) {
+        var inFooter = state.target === 'footer';
+        overlay.innerHTML =
+          '<div class="ctx-menu js-ctx js-controls-menu" role="menu"><div class="ctx-title">Machine controls</div>' +
+          '<button class="item js-close" type="button">Shutdown</button>' +
+          '<button class="item js-close" type="button">Restart</button>' +
+          '<div class="divider"></div>' +
+          '<div class="item term-row"><span class="scope js-term-target" role="button" tabindex="0" title="' +
+          (inFooter
+            ? 'Opens in the footer, click to open on this page'
+            : 'Opens on this page, click to open in the footer') +
+          '">' +
+          (inFooter ? ICONS.inFooter : ICONS.inPage) +
+          '</span><button class="js-term-open" type="button">Open SSH terminal</button><small>' +
+          (inFooter ? 'footer' : 'this page') +
+          '</small></div></div>';
+        var menu = overlay.querySelector('.js-ctx');
+        menu.style.left = Math.max(4, Math.min(x, stage.clientWidth - menu.offsetWidth - 8)) + 'px';
+        menu.style.top =
+          Math.max(4, Math.min(y, stage.clientHeight - menu.offsetHeight - 8)) + 'px';
       };
 
       var tool = function (key, title, on, icon) {
@@ -1798,6 +2095,11 @@
         grip.classList.toggle('draggable', state.open);
         pane.classList.toggle('shell', state.view === 'shell');
         pane.classList.toggle('tasks', state.view === 'tasks');
+        pane.classList.toggle('tabbed', tabbed);
+        if (tabbed) {
+          tabsEl.classList.toggle('hidden', state.view !== 'shell' || state.tabs.length < 2);
+          renderTabs();
+        }
         pane.style.setProperty('--pane-h', state.height + 'px');
         if (state.view === 'shell') {
           renderShell();
@@ -1812,6 +2114,7 @@
           html += tool('tasks', 'Tasks', state.open && state.view === 'tasks', ICONS.tasks);
         }
         if (hasTasks && state.open && state.view === 'tasks') {
+          html += tool('refresh', 'Refresh', false, ICONS.refresh);
           html += tool(
             'filter',
             'Priority: ' + priorityLabel(state.priority),
@@ -1829,8 +2132,8 @@
         if (state.menu === 'shell') {
           html +=
             '<div class="dropup">' +
-            sourceRows() +
-            '<div class="divider"></div><button class="item js-restart" type="button">' +
+            (sources.length > 1 ? sourceRows() + '<div class="divider"></div>' : '') +
+            '<button class="item js-restart" type="button">' +
             ICONS.refresh +
             'Restart shell</button><button class="item js-prefs" type="button">' +
             ICONS.sliders +
@@ -1869,11 +2172,12 @@
         if (tryLine) {
           tryLine.textContent =
             'Try: ' +
-            (hasShell
-              ? 'Shell opens the terminal, a second click lists every terminal the focus offers · '
+            (hasShell ? 'Shell opens the terminal, a second click opens its menu · ' : '') +
+            (tabbed
+              ? 'click a tab to show its terminal, the × closes it and one tab left hides the strip · Machine controls, Open SSH terminal adds a tab, its icon flips between the footer and this page · '
               : '') +
             (hasTasks
-              ? 'Tasks opens the queue, then the filter and the columns appear, a row opens its dialog · '
+              ? 'Tasks opens the queue, then Refresh, the filter and the columns appear, a row opens its dialog · '
               : '') +
             'right-click the pane for its menu · with the pane open, press and drag the grip in the middle of the row to resize, drag it under 100px to close · the chevron collapses · click the version three times.';
         }
@@ -1930,6 +2234,9 @@
         } else if (key === 'filter' || key === 'columns') {
           state.menu = state.menu === key ? '' : key;
           render();
+        } else if (key === 'refresh') {
+          state.menu = '';
+          render();
         } else if (key === 'chevron') {
           state.open = !state.open;
           state.menu = '';
@@ -1950,7 +2257,79 @@
         var box = stage.getBoundingClientRect();
         openPaneMenu(e.clientX - box.left, e.clientY - box.top);
       });
+      if (tabsEl) {
+        var closeTab = function (id) {
+          state.tabs = state.tabs.filter(function (tab) {
+            return tab.id !== id;
+          });
+          if (state.tab === id) {
+            state.tab = state.tabs.length ? state.tabs[state.tabs.length - 1].id : 0;
+          }
+          render();
+        };
+        tabsEl.addEventListener('click', function (e) {
+          var close = e.target.closest('.js-tab-close');
+          if (close) {
+            closeTab(Number(close.dataset.id));
+            return;
+          }
+          var tab = e.target.closest('.js-tab');
+          if (tab) {
+            state.tab = Number(tab.dataset.id);
+            render();
+          }
+        });
+        tabsEl.addEventListener('keydown', function (e) {
+          var tab = e.target.closest('.js-tab');
+          if (tab && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            state.tab = Number(tab.dataset.id);
+            render();
+          }
+        });
+      }
+      var controls = stage.querySelector('.js-controls');
+      var controlsAt = function () {
+        var box = stage.getBoundingClientRect();
+        var at = controls.getBoundingClientRect();
+        return { x: at.right - box.left - 230, y: at.bottom - box.top + 4 };
+      };
+      if (controls) {
+        var controlsWasOpen = false;
+        controls.addEventListener('mousedown', function () {
+          controlsWasOpen = Boolean(overlay.querySelector('.js-controls-menu'));
+        });
+        controls.addEventListener('click', function () {
+          if (controlsWasOpen) {
+            closeOverlay();
+            return;
+          }
+          var at = controlsAt();
+          openControls(at.x, at.y);
+        });
+      }
       overlay.addEventListener('click', function (e) {
+        if (e.target.closest('.js-term-target')) {
+          state.target = state.target === 'footer' ? 'page' : 'footer';
+          var at = controlsAt();
+          openControls(at.x, at.y);
+          return;
+        }
+        if (e.target.closest('.js-term-open')) {
+          closeOverlay();
+          if (state.target === 'page') {
+            pageConsole.textContent = TERMINALS[1].text;
+            pageConsole.classList.remove('hidden');
+            return;
+          }
+          var opened = makeTab(1);
+          state.tabs.push(opened);
+          state.tab = opened.id;
+          state.open = true;
+          state.view = 'shell';
+          render();
+          return;
+        }
         if (e.target.closest('.js-prefs')) {
           openPrefs();
           return;

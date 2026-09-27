@@ -1,0 +1,8 @@
+{
+  "task_id": "7f3a1c02-5b90-4e4d-8c21-d7a660e55b9f",
+  "status": "running",
+  "output": [
+    { "stream": "stdout", "data": "Booting dev-2", "timestamp": 1790500442000 },
+    { "stream": "stdout", "data": "Waiting for the guest agent", "timestamp": 1790500445000 }
+  ]
+}

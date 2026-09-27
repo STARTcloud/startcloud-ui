@@ -994,6 +994,14 @@
   .site-footer .heart {
     color: var(--success);
   }
+  .site-footer .version {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+  }
 
   .notice-banner {
     padding: 8px 20px;
@@ -2875,7 +2883,10 @@
     <div class="frame">
       <div class="stage" style="min-height: 44px">
         <div class="site-footer">
-          <div class="edge-start"><a href="#">BoxVault © 2026 · v1.9.0</a></div>
+          <div class="edge-start">
+            <a href="#">BoxVault © 2026</a> ·
+            <button class="version" type="button">v1.9.0</button>
+          </div>
           <div class="center">
             Powered by<a href="#"><span class="mark"></span>STARTcloud</a>
           </div>
@@ -2899,8 +2910,9 @@
     >
       <div class="callout">
         <strong>Left:</strong> the app's name, the year computed and the version,
-        <code>&lt;name&gt; © &lt;year&gt; · v&lt;version&gt;</code>, no glyph, the whole thing one
-        link to the source repository; no public repo → the changelog; neither → plain text.
+        <code>&lt;name&gt; © &lt;year&gt; · v&lt;version&gt;</code>, no glyph, the name and year one
+        in-router link to <code>/about</code>, the version a button beside it whose third click
+        loads the game; while the role has no About text the slot is plain text.
       </div>
       <div class="callout">
         <strong>Center:</strong> "Powered by" + the STARTcloud mark linking to startcloud.com; the
@@ -2910,10 +2922,16 @@
         <strong>Right, the status cluster:</strong> the health indicator only where the app lists
         <code>health</code> beside <code>footer</code> — the heart colored by the overall state, the
         per-service words on hover, its state arriving on the events stream where the app advertises
-        <code>events</code> and by a 60-second poll only where it does not, one document shape for
-        every app (BoxVault <code>/api/health</code>, the catalog Worker's <code>/health</code>); no
-        health → the slot is empty; no <code>footer</code> → no footer at all, and the version moves
-        to the user menu's app-section header.
+        <code>events</code>, read once as the footer draws and again when the person opens the heart
+        where it does not, never on a timer, one document shape for every app (BoxVault
+        <code>/api/health</code>, the catalog Worker's <code>/health</code>); no health → the slot
+        is empty; no <code>footer</code> → no footer at all, and the version moves to the user
+        menu's app-section header.
+      </div>
+      <div class="callout">
+        <strong>The pane:</strong> while the host in focus offers tasks or a shell the center is the
+        grip and the pane opens under the row; every frame of it is live in
+        <a href="universal-footer.html">universal-footer.html</a>.
       </div>
     </div>
   </section>
@@ -3264,9 +3282,10 @@
           <tr>
             <td>Notifications row + modal</td>
             <td>
-              Unread count on the events stream where the app advertises <code>events</code>, a 60 s
-              poll only where it does not; list on open, mark read on click, dismiss, mark all,
-              "View all" → IdP <code>/notifications</code>.
+              Unread count on the events stream where the app advertises <code>events</code>, read
+              when the session is adopted, when the menu opens and after the person's own read or
+              dismiss where it does not, never on a timer; list on open, mark read on click,
+              dismiss, mark all, "View all" → IdP <code>/notifications</code>.
             </td>
             <td>
               BoxVault <code>NotificationsItem.component.jsx</code> +

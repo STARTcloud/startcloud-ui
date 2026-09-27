@@ -1531,6 +1531,150 @@
       "store": "Private store",
       "uds": "UDS database",
       "events": "Event stream"
+    },
+    "pane": {
+      "priorityAll": "All",
+      "priorityLowPlus": "Low+",
+      "priorityMediumPlus": "Medium+",
+      "priorityHighPlus": "High+",
+      "priorityCritical": "Critical",
+      "versionSurprise": "Click me 3 times for a surprise!",
+      "shell": "Shell",
+      "restartShell": "Restart Shell",
+      "tasks": "Tasks",
+      "priorityFilter": "Priority filter",
+      "toggleColumns": "Toggle columns",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "resize": "Drag to resize",
+      "refresh": "Refresh"
+    },
+    "terminal": {
+      "title": "Terminal preferences",
+      "save": "Save",
+      "cancel": "Cancel",
+      "resetDefaults": "Reset to defaults",
+      "fontSize": "Font size",
+      "scrollback": "Scrollback lines",
+      "cursorStyle": "Cursor style",
+      "cursorBlock": "Block",
+      "cursorUnderline": "Underline",
+      "cursorBar": "Bar",
+      "cursorBlink": "Cursor blink",
+      "on": "On",
+      "off": "Off",
+      "fontFamily": "Font family (CSS stack)",
+      "fontHint": "Any installed monospace font works — the stack falls through left to right.",
+      "preview": "preview: ls -la /var/log | grep -i weaver 0123456789",
+      "applyNote": "The footer host shell updates immediately; other terminals pick the new values up when they are next opened."
+    },
+    "tasks": {
+      "priorityCritical": "CRITICAL",
+      "priorityHigh": "HIGH",
+      "priorityMedium": "MEDIUM",
+      "priorityService": "SERVICE",
+      "priorityLow": "LOW",
+      "priorityBg": "BG",
+      "columnId": "ID",
+      "columnOperation": "Operation",
+      "columnTarget": "Target",
+      "columnStatus": "Status",
+      "columnProgress": "Progress",
+      "columnPriority": "Priority",
+      "columnCreatedBy": "Created By",
+      "columnCreated": "Created",
+      "columnStarted": "Started",
+      "columnCompleted": "Completed",
+      "columnError": "Error",
+      "loading": "Loading tasks...",
+      "columnHost": "Host",
+      "menuRefresh": "Refresh tasks"
+    },
+    "task": {
+      "priorityCritical": "CRITICAL",
+      "priorityHigh": "HIGH",
+      "priorityMedium": "MEDIUM",
+      "priorityService": "SERVICE",
+      "priorityLow": "LOW",
+      "priorityBackground": "BACKGROUND",
+      "cancelling": "Cancelling...",
+      "cancelTask": "Cancel Task",
+      "taskTitle": "Task",
+      "details": "Details",
+      "labelId": "ID",
+      "labelOperation": "Operation",
+      "labelTarget": "Target",
+      "labelStatus": "Status",
+      "labelPriority": "Priority",
+      "labelCreatedBy": "Created By",
+      "labelCreated": "Created",
+      "labelStarted": "Started",
+      "labelCompleted": "Completed",
+      "labelError": "Error",
+      "labelDependsOn": "Depends On",
+      "labelParentTask": "Parent Task",
+      "progress": "Progress",
+      "inGuest": "in the guest",
+      "metadata": "Metadata",
+      "output": "Output",
+      "copyOutput": "Copy console output to clipboard",
+      "copied": "Copied",
+      "copy": "Copy",
+      "noOutput": "No output available",
+      "subtasks": "Subtasks ({{count}})",
+      "columnOperation": "Operation",
+      "columnTarget": "Target",
+      "columnStatus": "Status",
+      "columnProgress": "Progress",
+      "confirmCancelTitle": "Cancel Task",
+      "confirmCancelWithSubtasks": "Cancel this {{status}} task? Its whole chain ({{count}} subtasks) cancels with it.",
+      "confirmCancel": "Cancel this {{status}} task?",
+      "cancelFailed": "Cancel failed: {{message}}",
+      "streamClosed": "The output stream closed."
+    },
+    "operation": {
+      "provisionerImport": "Provisioner Import",
+      "machinePrepare": "Render + Materialize Working Directory",
+      "machineCreateOrchestration": "Machine Creation",
+      "machineCreateStorage": "Create Storage",
+      "machineCreateConfig": "Configure VM",
+      "machineCreateFinalize": "Finalize Machine",
+      "templateDownload": "Template Download",
+      "machineProvisionOrchestration": "Provisioning Pipeline",
+      "machineWaitSsh": "Wait for SSH",
+      "machineSyncParent": "Sync Folders",
+      "machineSync": "Sync Folder",
+      "machineProvisionParent": "Run Playbooks",
+      "machineProvision": "Run Playbook",
+      "machineModify": "Modify Machine",
+      "reset": "Reset",
+      "pause": "Pause",
+      "resume": "Resume",
+      "snapshotTake": "Take Snapshot",
+      "snapshotRestore": "Restore Snapshot",
+      "snapshotDelete": "Delete Snapshot",
+      "machineCloneCurrent": "Clone Current State",
+      "templateDelete": "Template Delete",
+      "templateExport": "Template Export",
+      "templateUpload": "Template Publish",
+      "templateMove": "Template Move",
+      "zoneModify": "Modify Zone",
+      "provisioningNetworkSetup": "Provisioning Network Setup",
+      "provisioningNetworkTeardown": "Provisioning Network Teardown",
+      "artifactScan": "File Cache Scan",
+      "artifactDownload": "File Download",
+      "hclDownload": "HCL Portal Download",
+      "agentUpdate": "Agent Update"
+    },
+    "shell": {
+      "noSession": "No session available",
+      "selectServer": "Select a server to start terminal",
+      "loadingTerminal": "Loading terminal...",
+      "initializing": "Initializing xterm.js",
+      "connecting": "Connecting...",
+      "waitingForServer": "Waiting for server",
+      "ready": "Host terminal ready...",
+      "closed": "The shell session closed. Restart shell opens a new one."
     }
   },
   "collections": {
@@ -1807,7 +1951,8 @@
       "version": "Version",
       "machines": "Machines",
       "machinesYes": "Yes",
-      "machinesNo": "No"
+      "machinesNo": "No",
+      "refresh": "Refresh"
     },
     "empty": {
       "title": "No hosts",
@@ -2272,6 +2417,105 @@
       },
       "support": {
         "intro": "The monitor is maintained privately; report issues in its repository."
+      }
+    },
+    "hyperweaver-server": {
+      "description": "The control plane of a Hyperweaver estate: a Node.js server that serves this UI, signs people in, keeps the registry of host agents and reaches every registered agent through its own origin.",
+      "goal": "One place to see and manage every host and every machine, whichever agent runs them.",
+      "features": {
+        "registry": "A registry of host agents, each added by its API key",
+        "signIn": "Sign-in with local accounts, LDAP or OpenID Connect",
+        "organizations": "Organizations and invitations",
+        "proxy": "Every agent request and every console forwarded to the agent by its registry id",
+        "assignment": "Hosts and machines assigned to organizations"
+      },
+      "components": {
+        "server": {
+          "title": "Server",
+          "nodejs": "Node.js with Express",
+          "database": "Accounts, organizations and the registry in the database: SQLite, PostgreSQL, MySQL or MariaDB"
+        },
+        "agents": {
+          "title": "Agents",
+          "hyperweaver": "hyperweaver-agent on VirtualBox hosts",
+          "zoneweaver": "zoneweaver-agent on OmniOS hosts"
+        },
+        "ui": {
+          "title": "Web UI",
+          "shared": "The shared STARTcloud UI, the same chrome as every estate app"
+        }
+      },
+      "docs": {
+        "intro": "Read how host agents are registered, how people sign in and how hosts and machines are assigned to organizations."
+      },
+      "support": {
+        "intro": "Read what changed in each release or report an issue."
+      }
+    },
+    "hyperweaver-agent": {
+      "description": "The agent that runs on a Windows, macOS or Linux host and manages the machines on it: VirtualBox machines everywhere and UTM machines on macOS.",
+      "goal": "Every machine on the host created, provisioned and controlled from one page, alone or under a Hyperweaver Server.",
+      "features": {
+        "machines": "Create, modify, clone and snapshot machines",
+        "provisioning": "Provisioning from provisioner packages, with the playbook's progress reported live",
+        "templates": "Box templates pulled from a registry",
+        "consoles": "Consoles in the browser over RDP, and VNC where the host has it",
+        "terminals": "An SSH terminal per machine and a shell on the host",
+        "tasks": "A task queue with live output for everything it does"
+      },
+      "components": {
+        "agent": {
+          "title": "Agent",
+          "go": "Written in Go",
+          "virtualbox": "Drives VirtualBox through VBoxManage"
+        },
+        "tasks": {
+          "title": "Tasks",
+          "queue": "Every change runs as a task with its output kept"
+        },
+        "ui": {
+          "title": "Web UI",
+          "shared": "The shared STARTcloud UI, the same chrome as every estate app"
+        }
+      },
+      "docs": {
+        "intro": "Read how machines are created, provisioned and controlled on the host."
+      },
+      "support": {
+        "intro": "Read what changed in each release or report an issue."
+      }
+    },
+    "zoneweaver-agent": {
+      "description": "The agent that runs on an OmniOS host and manages its bhyve zones and the host under them.",
+      "goal": "Every zone and every host surface, storage, network, packages and services, managed from one page, alone or under a Hyperweaver Server.",
+      "features": {
+        "zones": "Create, modify, clone and snapshot zones",
+        "host": "ZFS pools and datasets, VNICs, boot environments, packages and services",
+        "provisioning": "Provisioning from provisioner packages, with the playbook's progress reported live",
+        "consoles": "Consoles in the browser over VNC and zlogin",
+        "terminals": "An SSH terminal per zone and a shell on the host",
+        "tasks": "A task queue with live output for everything it does"
+      },
+      "components": {
+        "agent": {
+          "title": "Agent",
+          "nodejs": "Node.js on OmniOS",
+          "zones": "Drives zones through the platform's own tools"
+        },
+        "tasks": {
+          "title": "Tasks",
+          "queue": "Every change runs as a task with its output kept"
+        },
+        "ui": {
+          "title": "Web UI",
+          "shared": "The shared STARTcloud UI, the same chrome as every estate app"
+        }
+      },
+      "docs": {
+        "intro": "Read how zones are created and provisioned and how the host's storage, network, packages and services are managed."
+      },
+      "support": {
+        "intro": "Read what changed in each release or report an issue."
       }
     }
   },

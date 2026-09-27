@@ -16,7 +16,7 @@
         "arch": "x86_64",
         "version": "1.2.0",
         "hostname": "vbox-1",
-        "features": ["machines", "tasks"]
+        "features": ["machines", "tasks", "host-terminal"]
       },
       "lastUsed": "2026-09-27T00:00:00.000Z",
       "createdAt": "2026-09-01T00:00:00.000Z",

@@ -68,6 +68,7 @@ import {
   HostsPage,
   MachinePage,
   actionMenu as hostsActionMenu,
+  footerPane as hostsFooterPane,
   sidebar as hostsSidebar,
 } from '../features/hosts';
 import {
@@ -626,6 +627,23 @@ export const actionMenuFor = ({ status, account }) => {
     </Suspense>
   );
 };
+
+/**
+ * The first non-null `footerPane(status, account)` answer of the mounted
+ * features, the pane of the navbar contract's Footer status section:
+ * while one answers, the footer calls the hook it answered for the
+ * pane's views, draws the grip in its center and the pane under its row
+ * while the hook answers a view, and draws the row of every other host
+ * while it answers none; today the hosts feature's tasks and shell
+ * views alone. Null means the footer draws no pane.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @returns {Function|null} The views hook `App` hands the shell
+ */
+export const footerPaneFor = ({ status, account }) =>
+  [hostsFooterPane].map(pane => pane(status, account)).find(Boolean) || null;
 
 const Stub = ({ titleKey, token }) => {
   const { t } = useTranslation();

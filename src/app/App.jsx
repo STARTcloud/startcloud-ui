@@ -18,6 +18,7 @@ import {
   setMemberships,
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
+import { ServersProvider } from '../features/hosts';
 import {
   createNotificationsAdapter,
   createPushAdapter,
@@ -54,6 +55,7 @@ import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, {
   actionMenuFor,
+  footerPaneFor,
   routeCrumbParent,
   routeTitleKey,
   sidebarEntries,
@@ -120,10 +122,14 @@ const shellFlags = ({
  * notification adapters (the inbox one handed to the shell's bell and to
  * the inbox route alike, its unread count in the notifications feature's
  * one context around them both, neither drawn for a guest-only
- * account), the sidebar entries the mounted
+ * account), the hosts feature's one list of servers in its context
+ * around the shell, dropped and asked for again when a person signs in
+ * or out, the sidebar entries the mounted
  * features export, the action menu the first mounted feature exports for
- * the header's account slot while one does, the crumb context a page
- * names its own crumb through, and the shell around the routes.
+ * the header's account slot while one does, the views hook the first
+ * mounted feature exports for the footer's pane while one does, the
+ * crumb context a page names its own crumb through, and the shell around
+ * the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t, i18n } = useTranslation();
@@ -200,6 +206,7 @@ const App = ({ getSupportedLanguages }) => {
     [status, user, oidc, issuerUrl, memberships, collections]
   );
   const actionMenu = actionMenuFor({ status, account: { user } });
+  const footerPane = footerPaneFor({ status, account: { user } });
 
   if (setupComplete === null) {
     return <div>{t('loading')}</div>;
@@ -236,42 +243,45 @@ const App = ({ getSupportedLanguages }) => {
 
   return (
     <UnreadProvider>
-      <NavbarSearchProvider appSearch={appSearch}>
-        <CrumbProvider>
-          <AppShell
-            account={account}
-            avatarUrl={avatarUrl}
-            mode={mode}
-            resolvedMode={resolved}
-            toggleMode={toggleMode}
-            setMode={setMode}
-            onSignOut={handleSignOut}
-            getSupportedLanguages={getSupportedLanguages}
-            collections={collections}
-            organizations={organizations}
-            ticketUrl={ticket}
-            notifications={inbox}
-            push={pushAdapter}
-            sidebar={sidebar}
-            actionMenu={actionMenu}
-            routeTitleKey={routeTitleKey}
-            routeCrumbParent={routeCrumbParent}
-            {...flags}
-          >
-            <AppRoutes
+      <ServersProvider signedIn={Boolean(user)}>
+        <NavbarSearchProvider appSearch={appSearch}>
+          <CrumbProvider>
+            <AppShell
               account={account}
+              avatarUrl={avatarUrl}
+              mode={mode}
+              resolvedMode={resolved}
+              toggleMode={toggleMode}
+              setMode={setMode}
+              onSignOut={handleSignOut}
+              getSupportedLanguages={getSupportedLanguages}
               collections={collections}
-              context={context}
-              mode={resolved}
-              setupComplete={Boolean(setupComplete)}
-              globalAdmin={globalAdmin}
-              afterSignIn={afterSignIn}
-              notifications={inbox}
+              organizations={organizations}
               ticketUrl={ticket}
-            />
-          </AppShell>
-        </CrumbProvider>
-      </NavbarSearchProvider>
+              notifications={inbox}
+              push={pushAdapter}
+              sidebar={sidebar}
+              actionMenu={actionMenu}
+              footerPane={footerPane}
+              routeTitleKey={routeTitleKey}
+              routeCrumbParent={routeCrumbParent}
+              {...flags}
+            >
+              <AppRoutes
+                account={account}
+                collections={collections}
+                context={context}
+                mode={resolved}
+                setupComplete={Boolean(setupComplete)}
+                globalAdmin={globalAdmin}
+                afterSignIn={afterSignIn}
+                notifications={inbox}
+                ticketUrl={ticket}
+              />
+            </AppShell>
+          </CrumbProvider>
+        </NavbarSearchProvider>
+      </ServersProvider>
     </UnreadProvider>
   );
 };

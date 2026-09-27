@@ -3183,3 +3183,279 @@ a.stat-card:focus-visible {
   white-space: nowrap;
   color: var(--bs-secondary-color);
 }
+
+.footer-version {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.footer-version:hover,
+.footer-version:focus-visible {
+  transform: scale(1.05);
+  color: var(--bs-emphasis-color);
+}
+
+.footer-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 20px;
+  border-radius: var(--bs-border-radius-sm);
+  color: var(--bs-secondary-color);
+  font-size: 18px;
+}
+
+.footer-grip.draggable {
+  color: var(--bs-emphasis-color);
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.footer-grip.draggable:hover {
+  background: var(--bs-secondary-bg);
+}
+
+.footer-grip:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem var(--brand-focus-ring);
+}
+
+.footer-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.footer-tool {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bs-border-radius-sm);
+  background: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+}
+
+.footer-tool:hover,
+.footer-tool:focus-visible {
+  color: var(--bs-emphasis-color);
+}
+
+.footer-tool:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem var(--brand-focus-ring);
+}
+
+.footer-tool.on {
+  background: var(--bs-info);
+  color: #fff;
+}
+
+.footer-pane {
+  flex-shrink: 0;
+  height: 0;
+  overflow: hidden;
+  background: var(--bs-body-bg);
+}
+
+.footer-pane.open {
+  height: var(--footer-pane-height);
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.footer-view {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.footer-tasks {
+  font-size: 12.5px;
+}
+
+.footer-tasks th,
+.footer-tasks td {
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.footer-tasks th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bs-body-bg);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.footer-tasks tbody tr {
+  position: relative;
+}
+
+.footer-tasks tr.task-failed > td {
+  background-color: rgba(var(--bs-danger-rgb), 0.1);
+}
+
+.footer-tasks tr.task-running > td {
+  background-color: rgba(var(--bs-warning-rgb), 0.1);
+}
+
+.task-open {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.task-open:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--bs-primary);
+}
+
+.task-progress {
+  height: 0.5rem;
+}
+
+.task-metadata {
+  max-height: 200px;
+  overflow: auto;
+}
+
+.task-output {
+  max-height: 300px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: var(--bs-border-radius-sm);
+  background: #1b1e22;
+  color: #e6edf3;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.task-output-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.task-output-empty {
+  opacity: 0.6;
+}
+
+.ansi-bold {
+  font-weight: 700;
+}
+
+.ansi-30,
+.ansi-90 {
+  color: #8888aa;
+}
+
+.ansi-31 {
+  color: #ff6b6b;
+}
+
+.ansi-32 {
+  color: #69db7c;
+}
+
+.ansi-33 {
+  color: #ffd43b;
+}
+
+.ansi-34 {
+  color: #74c0fc;
+}
+
+.ansi-35 {
+  color: #da77f2;
+}
+
+.ansi-36 {
+  color: #66d9e8;
+}
+
+.ansi-37 {
+  color: #f8f9fa;
+}
+
+.ansi-91 {
+  color: #ff8787;
+}
+
+.ansi-92 {
+  color: #8ce99a;
+}
+
+.ansi-93 {
+  color: #ffe066;
+}
+
+.ansi-94 {
+  color: #a5d8ff;
+}
+
+.ansi-95 {
+  color: #e599f7;
+}
+
+.ansi-96 {
+  color: #99e9f2;
+}
+
+.ansi-97 {
+  color: #ffffff;
+}
+
+.footer-shell {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: #1b1e22;
+  color: #e6edf3;
+}
+
+.footer-shell-term {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.footer-shell .terminal.xterm {
+  width: 100%;
+  height: 100%;
+}
+
+.footer-shell-notice {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: var(--bs-border-radius-sm);
+  background: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+  font-size: 12px;
+}
+
+.terminal-preview {
+  font-family: var(--terminal-preview-font, monospace);
+  font-size: var(--terminal-preview-size, 12px);
+}

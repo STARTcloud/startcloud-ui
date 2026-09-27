@@ -239,6 +239,29 @@ snapshot event: a connecting client reads
 `GET /api/admin/brute-force/count` once, and the stream carries every
 change after.
 
+### Hyperweaver family: topics `tasks` and `hosts`
+
+The UI backends whose `role` is `hyperweaver-server`, `hyperweaver-agent`
+or `zoneweaver-agent` stream two app topics. An agent sends the events of
+its own host; the server sends every registered agent's events on its one
+stream and adds `agent_id` to the data of each, the registry id
+`GET /api/servers` answers for that agent, so a page tells the hosts
+apart and a tab still holds one connection. Every other member keeps the
+name the agent's REST routes use.
+
+| Topic   | Event             | Data                                                                                                                                                                                  | Snapshot                                                          |
+| ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `tasks` | `task-updated`    | one task row as `GET /api/tasks` answers it, sent when a task is created and on every change of its `status`, `progress_percent`, `progress_info` or `error_message`                  | none; the client reads `GET /api/tasks` on connect and on `reset` |
+| `hosts` | `stats-updated`   | the `GET /api/stats` shape of one agent, sent when a machine is created or removed and when one starts or stops                                                                       | none; the client reads `GET /api/stats` on connect and on `reset` |
+| `hosts` | `servers-updated` | `{}`, the server role alone, sent when a registry row is added, removed or its `capabilities` change; the client reads `GET /api/servers` again, the list being the person's own view | none                                                              |
+
+A task's output and every terminal are not events: they keep the
+WebSocket the agent pushes them on, one per open task or terminal, the
+whole buffer replayed on connect, because "for task output speed and
+reliability is the key". What the stream carries of a task is its row, so
+the progress bar and the step name arrive by push and no page asks on a
+timer.
+
 ### Adding a topic
 
 A new topic lands in this table before any UI backend streams it: its name, its

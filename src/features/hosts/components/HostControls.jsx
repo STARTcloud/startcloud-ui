@@ -52,7 +52,7 @@ ControlsMenu.propTypes = {
 const RouteControls = ({ id, name, user }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const { servers } = useServers(status);
+  const { servers } = useServers();
   const server = serverOf(servers, id);
   const role = user?.role;
 
