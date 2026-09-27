@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.52.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.51.1...v0.52.0) (2026-09-27)
+
+
+### Features
+
+* the theme is the pack and the mode is light, dark or the operating system's, one store for both, the browser keys mode and theme, the status brand.theme object and brand.themes list with no mode member, the pre-paint script reading preferred_mode and preferred_theme and stamping no mode on the served page, the Preferences page's Mode and Theme selects writing mode and theme, and every contract, locale and fixture renamed to match ([872055c](https://github.com/STARTcloud/startcloud-ui/commit/872055c66d4d1104c449196a9fc9cede0adbcd2d))
+
 ## [0.51.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.51.0...v0.51.1) (2026-09-27)
 
 
