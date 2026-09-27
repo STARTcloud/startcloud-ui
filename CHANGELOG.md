@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.51.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.50.0...v0.51.0) (2026-09-27)
+
+
+### Features
+
+* the profile owned by the backend and cached by the UI, read conditionally on its ETag and re-read on profile-updated and reset, the account's look applied in memory and never mirrored into the browser's keys, every sign-in awaiting one load on the bus before it navigates, an OIDC session on BoxVault kept and refreshed a minute before its own exp, the stream's ready saying whether it resumed, the footer's timer gone, sign-out reaching sibling tabs through storage, the pre-paint reading the cached record first, and the LCARS sidebar scrollbar on the left over a tan palette ([3e6f45f](https://github.com/STARTcloud/startcloud-ui/commit/3e6f45ffa7cf433b510d46e5ffdf7be3059c7405))
+* the profile owned by the backend and cached by the UI, read conditionally on its ETag and re-read on profile-updated and reset, the account's look applied in memory and never mirrored into the browser's keys, every sign-in awaiting one load on the bus before it navigates, an OIDC session on BoxVault kept and refreshed a minute before its own exp, the stream's ready saying whether it resumed, the footer's timer gone, sign-out reaching sibling tabs through storage, the pre-paint reading the cached record first, the Name cell one link over org/name, and the LCARS sidebar scrollbar on the left over a tan palette ([717cdb5](https://github.com/STARTcloud/startcloud-ui/commit/717cdb5fecf096bda99cc725cf86df1ca9487f55))
+
 ## [0.50.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.49.0...v0.50.0) (2026-09-26)
 
 
