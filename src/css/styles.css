@@ -1552,10 +1552,6 @@ button::-moz-focus-inner {
   display: none;
 }
 
-.name-org {
-  color: var(--bs-secondary-color);
-}
-
 .items-table tr.detail-row .record-folded {
   padding: 0.5rem 0.875rem 0.625rem;
 }

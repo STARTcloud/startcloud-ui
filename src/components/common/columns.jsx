@@ -86,6 +86,12 @@ export const nameColumn = {
     const owner = item.vendor || item.organization.name;
     const text = `${owner}/${item.name}`;
     const hostOrg = ctx.status?.organization === item.organization.name;
+    const label = (
+      <>
+        {hostOrg ? null : <span className="name-org">{owner}/</span>}
+        <span className="fw-semibold">{item.name}</span>
+      </>
+    );
     return (
       <>
         {item.icon ? (
@@ -98,18 +104,17 @@ export const nameColumn = {
             fallback={ctx.orgMark}
           />
         )}
-        {hostOrg ? null : <span className="name-org">{owner}/</span>}
         {ctx.collection.itemRoute ? (
           <Link
             to={itemPath(ctx.collection, item.organization.name, item.name)}
             className="v-align-middle"
             title={text}
           >
-            {item.name}
+            {label}
           </Link>
         ) : (
           <span className="v-align-middle" title={text}>
-            {item.name}
+            {label}
           </span>
         )}
       </>

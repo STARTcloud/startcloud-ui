@@ -571,7 +571,7 @@ const BodyRow = ({
           </td>
         ) : null}
         {watches ? (
-          <td className="col-watch text-center align-middle">
+          <td className="col-watch text-center">
             {watches.toggle ? (
               <WatchStar watched={watches.ids.has(key)} onToggle={() => watches.toggle(row)} />
             ) : null}
@@ -803,7 +803,7 @@ const toggledIn = (set, key) => {
 };
 
 const tableClass = ownerFolded =>
-  ownerFolded ? 'table items-table fold-owner' : 'table items-table';
+  ownerFolded ? 'table items-table align-middle fold-owner' : 'table items-table align-middle';
 
 const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : shape.columnCount);
 
@@ -826,7 +826,9 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * is), every `th` and `td` also carrying the kind class of that `kind`
  * (`columnKinds`, `col-k-<kind>`) so the look comes from the kind alone,
  * never from a column key, and a column without a `kind` is a defect.
- * The table lays itself out (`table-layout: auto`, full width): every
+ * The table lays itself out (`table-layout: auto`, full width, every cell
+ * middle-aligned so a taller row keeps its checkbox, star and name on one
+ * line): every
  * column carries a priority, its own `priority` or the one its kind
  * seeds, 1 never folding; before paint the table measures what each
  * column needs, the widest of its header button and its cells (a `prose`

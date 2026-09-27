@@ -421,7 +421,9 @@ after it on every table, star or blank,
 so a table keeps its shape whether or not the viewer is signed in and rows
 under an organization group line up on it; its header is a star, and while
 the viewer can watch it sorts watched rows first. The table is a normal
-table, auto layout at the full width of its wrap, and every column
+table, auto layout at the full width of its wrap, every cell
+middle-aligned so a taller row keeps its checkbox, star and name on one
+line, and every column
 declares a `kind`, the content its cells draw, and takes its look and
 the priority it starts with from that kind alone (`columnKinds`): `name`
 (text with an optional icon or logo and a muted code beside it, 1),
@@ -445,9 +447,10 @@ which keeps its ellipsis at 14rem, a Markdown details cell wraps at
 the folded columns under that line as label and value pairs through the
 shared `RecordRows`; the Actions column is priority 1 and measured like
 any other. The organization in front of a name, `org/`, shows in the
-Name cell while there is room and folds before any column does, muted,
-and is not drawn at all on a host whose status names the one
-organization it serves; on a page listing more than one collection the
+Name cell when the space allows and drops before any column folds, so
+the actual item's name is never cut by it, and is not drawn at all on a
+host whose status names the one organization it serves; on a page
+listing more than one collection the
 leading columns every table draws in the same place take one width, the
 widest need across them, so the select, star, mark and name of the home
 page's tables hold one line. The measure runs once per data change and
@@ -466,28 +469,29 @@ lowest of its table, folds first, and is not drawn at all while every
 file of the table says `any`; the fleet folds Cycle, Pool, User, Last
 seen, Session, Icons then Drives, the hostname last:
 
-| Column      | Boxes                                                                                    | ISOs                                                                         | Provisioners                                                               |
-| ----------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| select      | checkbox, the header the select-all                                                      | checkbox, the header the select-all                                          | checkbox, the header the select-all                                        |
-| watch       | star signed in, blank signed out                                                         | star signed in, blank signed out                                             | star signed in, blank signed out                                           |
-| Name        | org logo + item name link, the full `org/name` in the title                              | org logo + item name link, the full `org/name` in the title                  | icon + label link, slug beside it                                          |
-| Deploy      | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled               | none                                                                         | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled |
-| Visibility  | Public / Guests / Private                                                                | Public / Guests / Private                                                    | Public / Private, the catalog marking nothing for guests                   |
-| Created     | `createdAt`, hidden until shown                                                          | `createdAt`, hidden until shown                                              | none                                                                       |
-| Updated     | `updatedAt`, hidden until shown                                                          | `updatedAt`, hidden until shown                                              | none                                                                       |
-| Downloads   | sum of file `downloadCount`                                                              | sum of file `downloadCount`                                                  | health downloads                                                           |
-| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown) | Status · OS · Latest release · Versions · Architectures (hidden until shown) | Tier · Latest release · Versions · Providers                               |
-| row actions | none                                                                                     | none                                                                         | none                                                                       |
+| Column      | Boxes                                                                                       | ISOs                                                                                        | Provisioners                                                               |
+| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| select      | checkbox, the header the select-all                                                         | checkbox, the header the select-all                                                         | checkbox, the header the select-all                                        |
+| watch       | star signed in, blank signed out                                                            | star signed in, blank signed out                                                            | star signed in, blank signed out                                           |
+| Name        | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | icon + label link, slug beside it                                          |
+| Deploy      | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled                  | none                                                                                        | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled |
+| Visibility  | Public / Guests / Private                                                                   | Public / Guests / Private                                                                   | Public / Private, the catalog marking nothing for guests                   |
+| Created     | `createdAt`, hidden until shown                                                             | `createdAt`, hidden until shown                                                             | none                                                                       |
+| Updated     | `updatedAt`, hidden until shown                                                             | `updatedAt`, hidden until shown                                                             | none                                                                       |
+| Downloads   | sum of file `downloadCount`                                                                 | sum of file `downloadCount`                                                                 | health downloads                                                           |
+| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown)    | Status · OS · Latest release · Versions · Architectures (hidden until shown)                | Tier · Latest release · Versions · Providers                               |
+| row actions | none                                                                                        | none                                                                                        | none                                                                       |
 
 Downloads draw the same shared columns, then Status · Family · Vendor ·
 Latest release · Releases · Platforms (hidden until shown), Downloads
 being the sum of its files' `downloadCount`.
 
 The Name cell draws the organization logo, the item's icon when it has
-one, then the item name alone as the link, the full `org/name` in the
-cell's title, because the organization is already the logo beside the
-name and the group row above it, and the name a person came for is the
-last thing a narrow cell may cut. A table whose rows are files draws the Download as the
+one, then `org/name` as one link in one color, `org/` at regular weight
+and the name semibold, the way GitHub, Vagrant Cloud, Docker Hub and npm
+draw an owner and a name, the full `org/name` in the cell's title; the
+organization shows when the space allows and drops before any column
+folds, so the actual item's name is never cut by it. A table whose rows are files draws the Download as the
 first control of the Actions column, the one shared `DownloadAction`
 handed to the table as `LeadActions` for every viewer the row is shown
 to, before the host's own row actions, which draw by the viewer's
