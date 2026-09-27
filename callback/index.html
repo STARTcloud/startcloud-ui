@@ -83,7 +83,10 @@
             document.head.appendChild(link);
           }
         } catch (error) {
-          document.documentElement.setAttribute('data-bs-theme', 'light');
+          document.documentElement.setAttribute(
+            'data-bs-theme',
+            window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          );
         }
       })();
     </script>

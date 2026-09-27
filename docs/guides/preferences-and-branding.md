@@ -197,7 +197,13 @@ value of its own in the site's configuration (`sites.<id>.ui.default_theme`
 on the authorization server), never inferred from a pack name; the
 shared UI applies it, in the script and at mount alike, only while neither
 an account value nor local storage holds a choice, so the site default never
-overrides a person.
+overrides a person. A UI backend whose site names no default answers no
+`brand.theme` and stamps nothing, never `light`, because, in Mark's
+words, the default theme of an app, when it is not following a user or
+part of a brand, is the operating system's default: a first-time visitor
+gets the operating system's scheme, `auto` resolved through
+`prefers-color-scheme` by the script and the mount alike, and the script
+resolves the same scheme when it fails, never a fixed variant.
 
 A UI backend that serves more than one site serves `index.html` per site and
 stamps that default on the `<html>` tag as it serves the file, by hostname,
@@ -241,7 +247,15 @@ Emitted on `/userinfo` and the ID token:
 User resources carry, in addition to the long-standing fields (RFC 7643
 §4.1.1, all omitted when unset): `displayName`, `name.formatted`,
 `preferredLanguage`, `locale`, `timezone`. Absent means null; receivers must
-not treat absence as an error.
+not treat absence as an error. The look rides the identity provider's User
+extension, `urn:startcloud:scim:schemas:extension:1.0:User`, as one
+`preferences` object, `{ theme, pack, motion }`, the shape of the
+`preferences` claim, always present on a push with `null` for an unset
+member, so a value cleared at the identity provider clears at the
+receiver; a receiver reads that object and nothing else, applies it as
+full desired state and sends its own `profile-updated` when a column
+changed, because a push that lands and changes nothing is the failure
+this sentence exists to prevent.
 
 ### Branding endpoint — anonymous-safe
 
