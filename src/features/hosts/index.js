@@ -10,6 +10,7 @@ export {
   isServerRole,
 } from './api/agents';
 export { actionMenu } from './actionMenu';
+export { apiReference } from './apiReference';
 export { default as ServersProvider } from './components/ServersProvider';
 export { footerPane } from './footerPane';
 export { sidebar } from './sidebar';

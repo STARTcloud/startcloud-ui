@@ -24,3 +24,22 @@ export const hostHasFeature = (server, token) =>
  */
 export const hostHasHypervisor = (server, name) =>
   listOf(server?.capabilities?.hypervisors).includes(name);
+
+/**
+ * Whether Resume draws for a machine: while its own row reads `paused`
+ * and the host lists `machine-suspend`, and while it reads `suspended`
+ * and the host lists `machine-resume-suspended`, the token of an agent
+ * whose resume route takes a suspended machine; an agent that resumes a
+ * paused machine alone lists the first and not the second, and a
+ * suspended machine there is brought back by Power on.
+ *
+ * @param {Object|null} server - The registry row, or the one serving agent's
+ * @param {Object|null} machine - The machine's own row, its `status`
+ * @returns {boolean} True when the row draws
+ */
+export const hostResumes = (server, machine) => {
+  if (machine?.status === 'paused') {
+    return hostHasFeature(server, 'machine-suspend');
+  }
+  return machine?.status === 'suspended' && hostHasFeature(server, 'machine-resume-suspended');
+};

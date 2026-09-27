@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { hostHasFeature, hostHasHypervisor } from '../../src/features/hosts/utils/capabilities.js';
+import {
+  hostHasFeature,
+  hostHasHypervisor,
+  hostResumes,
+} from '../../src/features/hosts/utils/capabilities.js';
 import {
   canCreateMachines,
   canDestroyMachines,
@@ -36,6 +40,29 @@ describe('hostHasHypervisor', () => {
   it('answers false for a row without the list and for no row', () => {
     expect(hostHasHypervisor(bare, 'bhyve')).toBe(false);
     expect(hostHasHypervisor(null, 'bhyve')).toBe(false);
+  });
+});
+
+describe('hostResumes', () => {
+  const both = {
+    capabilities: { features: ['machine-suspend', 'machine-resume-suspended'] },
+  };
+
+  it('resumes a paused machine behind machine-suspend', () => {
+    expect(hostResumes(vbox, { status: 'paused' })).toBe(true);
+    expect(hostResumes(bhyve, { status: 'paused' })).toBe(false);
+  });
+
+  it('resumes a suspended machine behind machine-resume-suspended alone', () => {
+    expect(hostResumes(vbox, { status: 'suspended' })).toBe(false);
+    expect(hostResumes(both, { status: 'suspended' })).toBe(true);
+  });
+
+  it('resumes nothing that runs, is stopped or has no row', () => {
+    expect(hostResumes(both, { status: 'running' })).toBe(false);
+    expect(hostResumes(both, { status: 'stopped' })).toBe(false);
+    expect(hostResumes(both, null)).toBe(false);
+    expect(hostResumes(null, { status: 'paused' })).toBe(false);
   });
 });
 

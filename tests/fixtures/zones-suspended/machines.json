@@ -1,0 +1,7 @@
+{
+  "machines": [
+    { "name": "web-1", "status": "running", "brand": "bhyve" },
+    { "name": "web-2", "status": "suspended", "brand": "bhyve" }
+  ],
+  "total": 2
+}

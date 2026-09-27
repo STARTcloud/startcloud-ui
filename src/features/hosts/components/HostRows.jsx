@@ -5,6 +5,7 @@ import { FaPowerOff, FaRotate } from 'react-icons/fa6';
 
 import { useHostActions } from '../hooks/useHostActions';
 import { useHostStats } from '../hooks/useHostStats';
+import { hostHasFeature } from '../utils/capabilities';
 import { canControlHosts } from '../utils/permissions';
 
 import BulkRows from './BulkRows';
@@ -15,7 +16,8 @@ import HostPowerDialogs from './HostPowerDialogs';
  * The host rows of the Controls menu on `/hosts/{id}`: Restart host and
  * Power off host while `powered`, the role and the agent's `host-power`
  * token both allowing, each behind the dialogs of `HostPowerDialogs`,
- * its options and then the typed confirmation, then one request through
+ * its options, the fast reboot among them while the host lists
+ * `host-fast-reboot`, and then the typed confirmation, then one request through
  * `useHostActions`, the host's stats read again once after a success;
  * then, while `bulk`, the role and the agent's `machines` token both
  * allowing, the bulk rows over this host's machines; a role short of
@@ -60,7 +62,12 @@ const HostRows = ({ status, id, powered, bulk, server = null, user = null }) => 
           <PrivilegeLine />
         </>
       )}
-      <HostPowerDialogs action={action} onClose={() => setAction('')} onRun={run} />
+      <HostPowerDialogs
+        action={action}
+        fast={hostHasFeature(server, 'host-fast-reboot')}
+        onClose={() => setAction('')}
+        onRun={run}
+      />
     </>
   );
 };

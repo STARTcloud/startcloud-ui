@@ -13,9 +13,11 @@ const hostActionOptionsPropType = PropTypes.shape({
 /**
  * The options of a host restart: the restart type, standard or fast, the
  * boot environment of a fast reboot, the grace period of a standard one
- * and the message the system logs carry.
+ * and the message the system logs carry. The fast reboot and its note
+ * draw only while `fast`, the host listing `host-fast-reboot`, because an
+ * agent without the route answers 404.
  */
-export const HostRestartOptions = ({ hostActionOptions, setHostActionOptions }) => {
+export const HostRestartOptions = ({ hostActionOptions, setHostActionOptions, fast }) => {
   const { t } = useTranslation();
   return (
     <div>
@@ -35,9 +37,13 @@ export const HostRestartOptions = ({ hostActionOptions, setHostActionOptions }) 
           }
         >
           <option value="standard">{t('hosts.controls.restartOptions.standardRestart')}</option>
-          <option value="fast">{t('hosts.controls.restartOptions.fastReboot')}</option>
+          {fast ? (
+            <option value="fast">{t('hosts.controls.restartOptions.fastReboot')}</option>
+          ) : null}
         </select>
-        <p className="form-text">{t('hosts.controls.restartOptions.fastRebootNote')}</p>
+        {fast ? (
+          <p className="form-text">{t('hosts.controls.restartOptions.fastRebootNote')}</p>
+        ) : null}
       </div>
 
       {hostActionOptions.restartType === 'fast' && (
@@ -112,6 +118,7 @@ export const HostRestartOptions = ({ hostActionOptions, setHostActionOptions }) 
 HostRestartOptions.propTypes = {
   hostActionOptions: hostActionOptionsPropType,
   setHostActionOptions: PropTypes.func.isRequired,
+  fast: PropTypes.bool.isRequired,
 };
 
 /**

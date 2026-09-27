@@ -297,7 +297,15 @@ ShellFooter.propTypes = {
   sidebar: sidebarSizeShape,
 };
 
-const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, links, t }) => {
+const appRowsFor = ({
+  showAbout,
+  showAdminBoard,
+  showOrgConsole,
+  extraRows,
+  links,
+  apiRows,
+  t,
+}) => {
   const rows = [];
   if (showAdminBoard) {
     rows.push(
@@ -342,14 +350,14 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
       </Dropdown.Item>
     );
   }
-  if (links.api) {
+  apiRows.forEach(row => {
     rows.push(
-      <Dropdown.Item key="api" href={links.api}>
+      <Dropdown.Item key={row.key} href={row.href} target="_blank" rel="noopener noreferrer">
         <FaCode className="me-2" />
-        {t('navbar.api')}
+        {t(row.labelKey)}
       </Dropdown.Item>
     );
-  }
+  });
   return rows.length > 0 ? rows : null;
 };
 
@@ -420,7 +428,12 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * menu and draws the action menu right before it. While the app hands
  * `allOrganizations`, on a host that narrows by organization, the user
  * menu's organization row draws from one membership on and the switcher
- * carries All organizations as its first row. The app supplies
+ * carries All organizations as its first row. The API reference rows
+ * are `apiRows`, `[{ key, labelKey, href }]`, drawn last in the app
+ * section, after Docs, each opened in a new tab: the one row of
+ * `links.api` on most hosts, and on the `hyperweaver-server` role the
+ * hosts feature's Server API and, on a host's route, Agent API. The app
+ * supplies
  * the session state, the
  * collections the host mounts, the avatar, the ticket link, the
  * notification adapters, the sidebar entries, the action menu, the
@@ -438,6 +451,7 @@ const AppShell = ({
   collections,
   organizations,
   allOrganizations,
+  apiRows,
   loadOrganizations = null,
   ticketUrl,
   notifications = null,
@@ -545,6 +559,7 @@ const AppShell = ({
         showAdminBoard,
         extraRows: appRows,
         links: status.links,
+        apiRows,
         t,
       }),
       adapters: { notifications, push, ticketUrl, onSignOut },
@@ -636,6 +651,13 @@ AppShell.propTypes = {
   collections: PropTypes.array.isRequired,
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
   allOrganizations: PropTypes.bool.isRequired,
+  apiRows: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      labelKey: PropTypes.string.isRequired,
+      href: PropTypes.string.isRequired,
+    })
+  ).isRequired,
   loadOrganizations: PropTypes.func,
   ticketUrl: PropTypes.string.isRequired,
   notifications: notificationsAdapterShape,

@@ -2278,6 +2278,10 @@
         "toggleWrite": "Mostrar u ocultar el ancho de banda de escritura",
         "toggleTotal": "Mostrar u ocultar el ancho de banda total"
       }
+    },
+    "api": {
+      "server": "API del servidor",
+      "agent": "API del agente"
     }
   },
   "pages": {

@@ -18,7 +18,7 @@ import {
   setMemberships,
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
-import { ServersProvider, filtersByOrganization } from '../features/hosts';
+import { ServersProvider, apiReference, filtersByOrganization } from '../features/hosts';
 import {
   createNotificationsAdapter,
   createPushAdapter,
@@ -88,6 +88,17 @@ const notificationsFor = ({ status, cookie, claims, user, memberships, notificat
   return notifications;
 };
 
+const ownApiRows = status =>
+  status.links.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
+
+/**
+ * The API reference rows of the user menu's app section: the rows the
+ * hosts feature answers on the `hyperweaver-server` role, Server API and
+ * on a host's route Agent API, else the one row of `links.api`, none
+ * while the host answers no `links.api`.
+ */
+const apiRowsFor = (status, pathname) => apiReference(status, pathname) || ownApiRows(status);
+
 /**
  * The shell's flags from the status and the session. On a host that
  * narrows by organization, `orgFilter`, the switcher draws the session's
@@ -108,8 +119,10 @@ const shellFlags = ({
   memberships,
   activeOrgUuid,
   orgFilter,
+  pathname,
 }) => ({
   allOrganizations: orgFilter,
+  apiRows: apiRowsFor(status, pathname),
   loadOrganizations: backend && !orgFilter ? loadOrganizations : null,
   showAbout: hasAbout(status, i18n),
   showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
@@ -242,6 +255,7 @@ const App = ({ getSupportedLanguages }) => {
     memberships,
     activeOrgUuid,
     orgFilter,
+    pathname: location.pathname,
   });
   const inbox = notificationsFor({ status, cookie, claims, user, memberships, notifications });
 

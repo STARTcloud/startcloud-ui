@@ -1,5 +1,8 @@
 import PropTypes from 'prop-types';
 
+import { useHostRow } from '../hooks/useHostRow';
+import { hostHasFeature } from '../utils/capabilities';
+
 import HostPowerDialogs from './HostPowerDialogs';
 import MachineDangerDialogs from './MachineDangerDialogs';
 
@@ -15,9 +18,11 @@ const among = (actions, action) => (actions.includes(action) ? action : '');
  * Force kill or a Destroy asked of a machine's node and the host dialogs
  * for a Restart host or a Power off host asked of a host's node, the
  * same dialogs the Controls menu opens, each handing `onRun` the target
- * the row was asked of.
+ * the row was asked of, the restart offering the fast reboot while the
+ * target host's own row lists `host-fast-reboot`.
  */
 const TreeDialogs = ({ target, onClose, onRun }) => {
+  const server = useHostRow(target.id);
   const run = (action, options) => onRun({ id: target.id, name: target.name, action, options });
   return (
     <>
@@ -27,7 +32,12 @@ const TreeDialogs = ({ target, onClose, onRun }) => {
         onClose={onClose}
         onRun={run}
       />
-      <HostPowerDialogs action={among(HOST_ACTIONS, target.action)} onClose={onClose} onRun={run} />
+      <HostPowerDialogs
+        action={among(HOST_ACTIONS, target.action)}
+        fast={hostHasFeature(server, 'host-fast-reboot')}
+        onClose={onClose}
+        onRun={run}
+      />
     </>
   );
 };

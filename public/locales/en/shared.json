@@ -2278,6 +2278,10 @@
         "toggleWrite": "Toggle Write bandwidth visibility",
         "toggleTotal": "Toggle Total bandwidth visibility"
       }
+    },
+    "api": {
+      "server": "Server API",
+      "agent": "Agent API"
     }
   },
   "pages": {

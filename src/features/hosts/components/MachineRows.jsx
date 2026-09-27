@@ -19,7 +19,7 @@ import {
 import { useHostActions } from '../hooks/useHostActions';
 import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostStats } from '../hooks/useHostStats';
-import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
+import { hostHasFeature, hostHasHypervisor, hostResumes } from '../utils/capabilities';
 import { isRunning } from '../utils/hosts';
 import { canDestroyMachines, canRestartMachines, canStartStopMachines } from '../utils/permissions';
 
@@ -28,19 +28,19 @@ import { ActionRow, PrivilegeLine } from './HostActionOptions';
 import MachineDangerDialogs from './MachineDangerDialogs';
 import ZoneRows from './ZoneRows';
 
-const HELD_STATES = ['paused', 'suspended'];
-
 /**
  * What the host's row and the machine's own row allow in the menu: `utm`
  * while the machine's hypervisor is UTM, which has no reset, no pause
  * apart from its suspend and no guest reboot; `pause` on a VirtualBox
- * host; `suspend` while the host lists `machine-suspend`; `guest` while
+ * host; `suspend` while the host lists `machine-suspend`; `resume` by
+ * `hostResumes`, a paused machine behind `machine-suspend` and a
+ * suspended one behind `machine-resume-suspended`; `guest` while
  * the guest can be reached from outside, through Guest Additions on
  * VirtualBox or through the guest agent on a bhyve host that lists
  * `guest-agent`.
  *
  * @param {Object} options - The host's row and the machine's row
- * @returns {{ utm: boolean, pause: boolean, suspend: boolean, guest: boolean }} The gates
+ * @returns {{ utm: boolean, pause: boolean, suspend: boolean, resume: boolean, guest: boolean }} The gates
  */
 const gatesOf = ({ server, machine }) => {
   const utm = machine?.hypervisor === 'utm';
@@ -49,6 +49,7 @@ const gatesOf = ({ server, machine }) => {
     utm,
     pause: virtualbox && !utm,
     suspend: hostHasFeature(server, 'machine-suspend'),
+    resume: hostResumes(server, machine),
     guest:
       virtualbox || (hostHasHypervisor(server, 'bhyve') && hostHasFeature(server, 'guest-agent')),
   };
@@ -58,6 +59,7 @@ const gatesShape = PropTypes.shape({
   utm: PropTypes.bool.isRequired,
   pause: PropTypes.bool.isRequired,
   suspend: PropTypes.bool.isRequired,
+  resume: PropTypes.bool.isRequired,
   guest: PropTypes.bool.isRequired,
 });
 
@@ -135,7 +137,7 @@ PowerRows.propTypes = {
   onAction: PropTypes.func.isRequired,
 };
 
-const HoldRows = ({ role, running, held, gates, busy, onAction }) => {
+const HoldRows = ({ role, running, gates, busy, onAction }) => {
   if (!canStartStopMachines(role)) {
     return null;
   }
@@ -161,7 +163,7 @@ const HoldRows = ({ role, running, held, gates, busy, onAction }) => {
           onClick={() => onAction('suspend')}
         />
       ) : null}
-      {held && gates.suspend ? (
+      {gates.resume ? (
         <ActionRow
           icon={FaCirclePlay}
           tone="text-success"
@@ -178,7 +180,6 @@ const HoldRows = ({ role, running, held, gates, busy, onAction }) => {
 HoldRows.propTypes = {
   role: PropTypes.string,
   running: PropTypes.bool.isRequired,
-  held: PropTypes.bool.isRequired,
   gates: gatesShape.isRequired,
   busy: PropTypes.bool.isRequired,
   onAction: PropTypes.func.isRequired,
@@ -259,7 +260,8 @@ DangerRows.propTypes = {
  * while the machine is stopped; Shutdown, Restart, Reset and Inject NMI
  * while it runs; Pause on a VirtualBox host and Suspend on a host that
  * lists `machine-suspend` while it runs, Resume while its own row reads
- * paused or suspended; Guest shutdown and Guest reboot while it runs and
+ * paused on such a host or reads suspended on a host that lists
+ * `machine-resume-suspended`; Guest shutdown and Guest reboot while it runs and
  * its guest can be reached from outside; a machine on UTM draws no Reset,
  * no Pause and no Guest reboot; then the Open in application rows of a
  * host that lists `host-launchers`, the zone lifecycle rows of a bhyve
@@ -282,19 +284,11 @@ const MachineRows = ({ status, id, name, server = null, user = null }) => {
   const [danger, setDanger] = useState('');
   const running = isRunning(stats, name);
   const gates = gatesOf({ server, machine });
-  const held = HELD_STATES.includes(machine?.status);
 
   return (
     <>
       <PowerRows role={role} running={running} utm={gates.utm} busy={busy} onAction={run} />
-      <HoldRows
-        role={role}
-        running={running}
-        held={held}
-        gates={gates}
-        busy={busy}
-        onAction={run}
-      />
+      <HoldRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
       <GuestRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
       <ApplicationRows
         status={status}

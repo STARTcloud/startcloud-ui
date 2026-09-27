@@ -22,7 +22,14 @@ const LAB_FEATURES = [
   'swap',
   'provisioning',
 ];
-const ZONE_FEATURES = ['monitoring', 'zfs', 'swap', 'provisioning'];
+const ZONE_FEATURES = [
+  'monitoring',
+  'zfs',
+  'swap',
+  'provisioning',
+  'host-fast-reboot',
+  'machine-resume-suspended',
+];
 const STUDIO_FEATURES = [
   'machines',
   'tasks',
@@ -38,6 +45,7 @@ const STORE_FEATURES = [
   'machines',
   'host-terminal',
   'host-power',
+  'host-fast-reboot',
   'monitoring',
   'zfs',
   'swap',

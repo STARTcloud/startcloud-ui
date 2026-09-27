@@ -20,10 +20,12 @@ const DEFAULT_OPTIONS = {
  * open the list dialog of their options, the restart type with its boot
  * environment or the power type, the grace period and the message, then
  * the typed confirmation, which hands `onRun` the action and the options
- * collected. Nothing shows while `action` is empty, and closing either
- * dialog returns the options to their defaults.
+ * collected. `fast` says whether the host lists `host-fast-reboot`, the
+ * restart offering the fast reboot only then. Nothing shows while
+ * `action` is empty, and closing either dialog returns the options to
+ * their defaults.
  */
-const HostPowerDialogs = ({ action, onClose, onRun }) => {
+const HostPowerDialogs = ({ action, fast, onClose, onRun }) => {
   const { t } = useTranslation();
   const [collected, setCollected] = useState(false);
   const [options, setOptions] = useState(DEFAULT_OPTIONS);
@@ -45,7 +47,11 @@ const HostPowerDialogs = ({ action, onClose, onRun }) => {
         onContinue={() => setCollected(true)}
       >
         {restart ? (
-          <HostRestartOptions hostActionOptions={options} setHostActionOptions={setOptions} />
+          <HostRestartOptions
+            hostActionOptions={options}
+            setHostActionOptions={setOptions}
+            fast={fast}
+          />
         ) : (
           <HostShutdownOptions hostActionOptions={options} setHostActionOptions={setOptions} />
         )}
@@ -63,6 +69,7 @@ const HostPowerDialogs = ({ action, onClose, onRun }) => {
 
 HostPowerDialogs.propTypes = {
   action: PropTypes.oneOf(['', 'host-restart', 'host-shutdown']).isRequired,
+  fast: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onRun: PropTypes.func.isRequired,
 };

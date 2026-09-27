@@ -141,6 +141,42 @@ Feature: hosts
     Then the host was sent POST to "/api/machines/web-2/move" carrying "target_path" as "/rpool/zones/new-home"
     And I see "web-2 is moving."
 
+  Scenario: Controls menu: a suspended machine draws no Resume on a host that lists no machine-resume-suspended, Power on its way back
+    Given the host answers the zones fixture
+    And the host answers the zones-suspended fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/web-2"
+    And I click "Zone controls"
+    Then I see "Power on"
+    And I do not see "Resume"
+
+  Scenario: Controls menu: a suspended machine draws Resume on a host that lists machine-resume-suspended, one request
+    Given the host answers the zones fixture
+    And the host answers the zones-suspended fixture
+    And the host answers the zones-tokens fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/web-2"
+    And I click "Zone controls"
+    And I click "Resume"
+    Then the host was sent POST to "/api/machines/web-2/resume"
+
+  Scenario: Controls menu: Restart host offers no fast reboot on a host that lists no host-fast-reboot
+    Given the host answers the zones fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self"
+    And I click "Host actions"
+    And I click "Restart host"
+    Then the restart dialog offers no fast reboot
+
+  Scenario: Controls menu: Restart host offers the fast reboot on a host that lists host-fast-reboot
+    Given the host answers the zones fixture
+    And the host answers the zones-tokens fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self"
+    And I click "Host actions"
+    And I click "Restart host"
+    Then the restart dialog offers the fast reboot
+
   Scenario: Controls menu: the bulk rows on a host's route pick the stopped machines for a start and send one request per target
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -223,13 +259,35 @@ Feature: hosts
     And the sidebar foot holds the account menu
     And the sidebar foot draws the avatar before the name
 
-  Scenario: App section: the utility rows by `links`, `links.api` draws the API reference row as a link to the path the UI backend answers
+  Scenario: App section: the utility rows by `links`, on the server role `links.api` draws Server API and on a host's route Agent API after it, each in a new tab
     Given the host answers the hosts fixture
     And the host answers the hosts-links fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
     And I open the account menu
+    Then the link "Server API" opens "/api-docs"
+    And the link "Server API" opens in a new tab
+    And the link "Agent API" opens "/agent/api-docs?server=1"
+    And the link "Agent API" opens in a new tab
+
+  Scenario: App section: the utility rows by `links`, on the server role with no host in the route Server API draws alone
+    Given the host answers the hosts fixture
+    And the host answers the hosts-links fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I open the account menu
+    Then the link "Server API" opens "/api-docs"
+    And I do not see "Agent API"
+
+  Scenario: App section: the utility rows by `links`, on an agent role `links.api` draws the one API reference row in a new tab
+    Given the host answers the agent fixture
+    And the host answers the agent-links fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self"
+    And I open the account menu
     Then the link "API reference" opens "/api-docs"
+    And the link "API reference" opens in a new tab
+    And I do not see "Agent API"
 
   Scenario: App section: the utility rows by `links`, an empty `links.api` draws no API reference row
     Given the host answers the hosts fixture
@@ -237,6 +295,8 @@ Feature: hosts
     When I open "/hosts/1"
     And I open the account menu
     Then I do not see "API reference"
+    And I do not see "Server API"
+    And I do not see "Agent API"
 
   Scenario: The footer's name and year are one link to /about
     Given the host answers the hosts fixture

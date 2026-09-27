@@ -126,6 +126,20 @@ Then(
   }
 );
 
+Then('the link {string} opens in a new tab', async ({ page }, name) => {
+  await expect(page.getByRole('link', { name })).toHaveAttribute('target', '_blank');
+});
+
+Then('the restart dialog offers the fast reboot', async ({ page }) => {
+  await expect(page.locator('#restart-type')).toBeVisible();
+  await expect(page.locator('#restart-type option[value="fast"]')).toHaveCount(1);
+});
+
+Then('the restart dialog offers no fast reboot', async ({ page }) => {
+  await expect(page.locator('#restart-type')).toBeVisible();
+  await expect(page.locator('#restart-type option[value="fast"]')).toHaveCount(0);
+});
+
 Then("the footer's name links to {string}", async ({ page }, pathname) => {
   await expect(page.locator(`.footer-edge-start a[href="${pathname}"]`)).toBeVisible();
 });
