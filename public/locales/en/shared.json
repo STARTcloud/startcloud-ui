@@ -43,21 +43,19 @@
       "toggle": "Open the navigation",
       "navigation": "Sidebar",
       "view": "View"
+    },
+    "mode": {
+      "auto": "Mode: OS ({{resolved}})",
+      "light": "Mode: light",
+      "dark": "Mode: dark",
+      "name": {
+        "light": "Light",
+        "dark": "Dark"
+      }
     }
   },
   "user": {
     "unknownUser": "Unknown User"
-  },
-  "theme": {
-    "auto": "Theme: Auto ({{variant}})",
-    "light": "Theme: light",
-    "dark": "Theme: dark",
-    "name": {
-      "follow": "Follow this site",
-      "auto": "Auto (follow device)",
-      "light": "Light",
-      "dark": "Dark"
-    }
   },
   "sessionEnded": {
     "title": "You were signed out.",
@@ -481,25 +479,24 @@
       "title": "Preferences",
       "language": "Language",
       "languageHint": "Saved as you change it, the same value the globe in the header writes.",
-      "theme": {
-        "label": "Theme",
+      "mode": {
+        "label": "Mode",
         "light": "Light",
         "dark": "Dark",
-        "auto": "Auto (follow device)",
-        "follow": "Follow this site"
+        "auto": "OS"
       },
       "motion": {
         "label": "Motion",
         "auto": "Follow this device",
         "reduce": "Reduced"
       },
-      "themeHint": "Saved as you change it, the same value the theme button writes.",
-      "motionHint": "Reduced turns off the animations and transitions of every look for you, on every host, and follows you when you sign in.",
-      "look": {
-        "label": "Look",
+      "modeHint": "Saved as you change it, the same value the mode button writes.",
+      "motionHint": "Reduced turns off the animations and transitions of every theme for you, on every host, and follows you when you sign in.",
+      "theme": {
+        "label": "Theme",
         "follow": "Follow this site"
       },
-      "lookHint": "Saved as you change it and painted at once; this page is the one place the look is chosen.",
+      "themeHint": "Saved as you change it and painted at once; this page is the one place the theme is chosen.",
       "timezone": "Time zone",
       "timezoneHint": "The detected zone is preselected while none is set.",
       "region": "Region",

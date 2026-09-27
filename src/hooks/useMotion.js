@@ -41,7 +41,7 @@ const writeMotion = next => {
  * The motion switch shared by every estate app, one store behind every
  * call so the profile's Preferences tab and any control that joins it
  * read and write the same preference, the person's own reduced-motion
- * switch beside the variant and the look: `auto` follows the device's
+ * switch beside the mode and the theme: `auto` follows the device's
  * `prefers-reduced-motion`, `reduce` turns every animation and transition
  * off. The store holds the value in force; the browser's own key,
  * localStorage.motion, holds the visitor's own choice, written by the

@@ -19,8 +19,8 @@ const s256 = async text => {
 };
 
 const preferredOf = preferences => ({
+  preferred_mode: preferences?.mode ?? null,
   preferred_theme: preferences?.theme ?? null,
-  preferred_pack: preferences?.pack ?? null,
   preferred_motion: preferences?.motion ?? null,
   preferred_language: preferences?.language ?? null,
 });
@@ -70,13 +70,13 @@ const tokenFailure = requestError => {
  * token's (OpenID Connect Core 1.0 section 5.3.2), whose `preferences`
  * are cached under `<prefix>.preferences` beside the tokens on every
  * `load()` and `reload()` and answered beside the user as
- * `preferred_theme`, `preferred_pack`, `preferred_motion` and
+ * `preferred_mode`, `preferred_theme`, `preferred_motion` and
  * `preferred_language`, by `restore()` from the cache and by `load()`
- * from the fresh userinfo, so a look, theme, motion or language changed
+ * from the fresh userinfo, so a mode, theme, motion or language changed
  * at the identity provider is picked up on a normal page refresh of the
  * app and never needs a hard refresh or a sign-out and back in; the
  * account's values are applied in memory while signed in and never
- * mirrored into the browser's own `theme`, `pack`, `motion` and
+ * mirrored into the browser's own `mode`, `theme`, `motion` and
  * `language` keys, and the cache leaves with the tokens at sign-out, so
  * nothing spills; a guest-only account's are neither cached nor answered
  * and a userinfo that does not answer leaves the browser's own. `complete()`

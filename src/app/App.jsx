@@ -43,7 +43,7 @@ import {
   events,
   fetchHealth,
   hubClient,
-  offeredPacks,
+  offeredThemes,
   returnTo,
   session,
 } from '../lib/runtime';
@@ -54,9 +54,9 @@ import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, { routeCrumbParent, routeTitleKey, sidebarEntries } from './router';
 
-const persistTheme = preference => session.savePreferences({ theme: preference || null });
+const persistMode = mode => session.savePreferences({ mode });
 
-const persistPack = pack => session.savePreferences({ pack: pack || null });
+const persistTheme = theme => session.savePreferences({ theme: theme || null });
 
 const persistMotion = value => session.savePreferences({ motion: value === 'auto' ? null : value });
 
@@ -101,9 +101,9 @@ const shellFlags = ({
 
 /**
  * The app behind the status: the session from the host's first `auth`
- * token, the theme, the look over the packs the host offers, painted by
+ * token, the mode, the theme over the themes the host offers, painted by
  * the shared theme store and chosen on the profile's Preferences page
- * alone, the motion switch written through to the account as the theme
+ * alone, the motion switch written through to the account as the mode
  * is and read by the Preferences tab from its own store, and the
  * favicon, the setup gate while the host advertises
  * `setup`, the identity avatar (Gravatar for a backend session, the
@@ -149,19 +149,11 @@ const App = ({ getSupportedLanguages }) => {
     issuerUrl,
     readDeferredFavorites,
   } = account;
-  const {
-    theme,
-    preference: themePreference,
-    siteVariant,
-    setPreference: setThemePreference,
-    toggleTheme,
-    setPack,
-  } = useTheme({
-    siteTheme: status.brand.theme || '',
-    sitePack: status.brand.pack || null,
-    packs: offeredPacks(status.brand),
-    onPersist: persistTheme,
-    onPersistPack: persistPack,
+  const { mode, resolved, setMode, toggleMode, setTheme } = useTheme({
+    hostTheme: status.brand.theme || null,
+    themes: offeredThemes(status.brand),
+    onPersistMode: persistMode,
+    onPersistTheme: persistTheme,
   });
   const { setMotion } = useMotion({ onPersist: persistMotion });
   const setupComplete = useSetupGate({
@@ -182,8 +174,8 @@ const App = ({ getSupportedLanguages }) => {
   usePwa(status.brand.name);
   useAccountPreferences({
     user,
-    setThemePreference,
-    setPackPreference: setPack,
+    setModePreference: setMode,
+    setThemePreference: setTheme,
     setMotionPreference: setMotion,
   });
   useSessionKeepalive({ user, loaded, reload });
@@ -242,11 +234,10 @@ const App = ({ getSupportedLanguages }) => {
           <AppShell
             account={account}
             avatarUrl={avatarUrl}
-            theme={theme}
-            themePreference={themePreference}
-            siteVariant={siteVariant}
-            toggleTheme={toggleTheme}
-            setThemePreference={setThemePreference}
+            mode={mode}
+            resolvedMode={resolved}
+            toggleMode={toggleMode}
+            setMode={setMode}
             onSignOut={handleSignOut}
             getSupportedLanguages={getSupportedLanguages}
             collections={collections}
@@ -263,7 +254,7 @@ const App = ({ getSupportedLanguages }) => {
               account={account}
               collections={collections}
               context={context}
-              theme={theme}
+              mode={resolved}
               setupComplete={Boolean(setupComplete)}
               globalAdmin={globalAdmin}
               afterSignIn={afterSignIn}

@@ -47,8 +47,8 @@
   ],
   "preferences": {
     "language": "en",
-    "theme": "dark",
-    "pack": null,
+    "mode": "dark",
+    "theme": null,
     "timezone": "America/Chicago",
     "region": null,
     "ciba_channel": "PUSH",

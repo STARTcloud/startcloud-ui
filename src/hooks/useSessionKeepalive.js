@@ -19,7 +19,7 @@ const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded &&
  * stream's `session-terminated` event ending the session through the
  * provider's own `endSession()`, which clears the cached record and ends
  * it on the bus, and its `profile-updated` and `reset` events reloading
- * the signed-in person's profile at once, so a look, theme, motion or
+ * the signed-in person's profile at once, so a theme, mode, motion or
  * language changed at the identity provider reaches the open tab through
  * the stream and a tab whose reconnect fell past the ring re-reads the
  * record; beside the stream the platform's own signals: a `storage`

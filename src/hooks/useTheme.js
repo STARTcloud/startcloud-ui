@@ -1,23 +1,20 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
-import { applyPack } from '../lib/runtime';
+import { applyTheme } from '../lib/runtime';
 
 const DARK_SCHEME_QUERY = '(prefers-color-scheme: dark)';
-const THEME_VALUES = ['auto', 'light', 'dark'];
-const VARIANTS = ['light', 'dark'];
-const FOLLOW = '';
-const NEXT_PREFERENCE = { auto: 'light', light: 'dark', dark: 'auto' };
+const MODE_VALUES = ['auto', 'light', 'dark'];
+const NEXT_MODE = { auto: 'light', light: 'dark', dark: 'auto' };
+const MODE_KEY = 'mode';
 const THEME_KEY = 'theme';
-const PACK_KEY = 'pack';
 
 const store = {
-  preference: null,
-  site: '',
-  onPersist: null,
-  pack: '',
-  packs: [],
-  sitePack: null,
-  onPersistPack: null,
+  mode: null,
+  onPersistMode: null,
+  theme: '',
+  themes: [],
+  hostTheme: null,
+  onPersistTheme: null,
   listeners: new Set(),
 };
 
@@ -29,28 +26,11 @@ const subscribeToColorScheme = onChange => {
 
 const systemPrefersDark = () => window.matchMedia(DARK_SCHEME_QUERY).matches;
 
-const siteDefault = siteTheme => {
-  const value = document.documentElement.getAttribute('data-brand-theme') || siteTheme;
-  return VARIANTS.includes(value) ? value : '';
-};
+export const isModePreference = value => MODE_VALUES.includes(value);
 
-const resolveTheme = ({ preference, site, system }) => {
-  if (preference === '') {
-    return site;
-  }
-  if (preference === 'auto') {
-    return system;
-  }
-  return preference;
-};
+const offered = name => store.themes.some(theme => theme.name === name);
 
-export const isThemePreference = value => value === FOLLOW || THEME_VALUES.includes(value);
-
-const preferenceOf = value => (value === FOLLOW && !store.site ? 'auto' : value);
-
-const offered = name => store.packs.some(pack => pack.name === name);
-
-const packOf = name => store.packs.find(pack => pack.name === name) || null;
+const themeOf = name => store.themes.find(theme => theme.name === name) || null;
 
 const writeOwn = (key, value) => {
   if (value) {
@@ -60,141 +40,132 @@ const writeOwn = (key, value) => {
   }
 };
 
-const initStore = ({ siteTheme, sitePack, packs, onPersist, onPersistPack }) => {
-  if (store.preference === null) {
-    store.site = siteDefault(siteTheme);
-    store.preference = localStorage.getItem(THEME_KEY) || (store.site ? '' : 'auto');
-    store.packs = packs;
-    store.sitePack = sitePack;
-    const cached = localStorage.getItem(PACK_KEY) || '';
-    store.pack = offered(cached) ? cached : '';
+const initStore = ({ hostTheme, themes, onPersistMode, onPersistTheme }) => {
+  if (store.mode === null) {
+    const cachedMode = localStorage.getItem(MODE_KEY);
+    store.mode = isModePreference(cachedMode) ? cachedMode : 'auto';
+    store.themes = themes;
+    store.hostTheme = hostTheme;
+    const cachedTheme = localStorage.getItem(THEME_KEY) || '';
+    store.theme = offered(cachedTheme) ? cachedTheme : '';
   }
-  if (onPersist) {
-    store.onPersist = onPersist;
+  if (onPersistMode) {
+    store.onPersistMode = onPersistMode;
   }
-  if (onPersistPack) {
-    store.onPersistPack = onPersistPack;
+  if (onPersistTheme) {
+    store.onPersistTheme = onPersistTheme;
   }
-  return store.preference;
+  return store.mode;
 };
 
-const subscribePreference = listener => {
+const subscribe = listener => {
   store.listeners.add(listener);
   return () => store.listeners.delete(listener);
 };
 
 const notify = () => store.listeners.forEach(listener => listener());
 
-const readPreference = () => store.preference;
+const readMode = () => store.mode;
 
-const readPack = () => store.pack;
+const readTheme = () => store.theme;
 
-const writePreference = next => {
-  store.preference = next;
+const writeMode = next => {
+  store.mode = next;
   notify();
 };
 
-const writePack = next => {
-  store.pack = next;
+const writeTheme = next => {
+  store.theme = next;
   notify();
 };
 
 /**
- * Theme state shared by every estate app, one store behind every call so
- * the header's control and the profile's Preferences tab read and write
- * the same preferences, resolved in the order the pre-paint script uses.
- * The store holds the value in force; the browser's own keys,
- * localStorage.theme and localStorage.pack, hold the visitor's own
- * choices, written by the person's own controls alone, `persist` true,
- * and never from an account, whose values arrive through setPreference
- * and setPack with `persist` false once the profile loads and overwrite
- * the store without touching the keys, so the account's look never spills
- * into the visitor's own. The variant: localStorage.theme, else the site
- * default the served page carries as data-brand-theme, or as
- * `brand.theme` of `/api/status` handed in as siteTheme when the served
- * page carries no attribute, else auto against the operating system
- * scheme. The empty preference is "Follow this site", the site's own
- * variant, the state a person is in before choosing and the one the
- * menu's Follow this site row returns them to, offered only while the
- * site names a default (`siteVariant`) and answered as auto otherwise.
- * The result is stamped on the document as data-bs-theme; a person's own
- * choice is written to localStorage.theme, the site default never is
- * (following removes the key), and every user toggle is handed to
- * onPersist so the app can write it through to the account, the empty
- * one as a cleared value. The look, the pack: the person's choice under
- * localStorage.pack while it names one of the packs the host offers
- * (`brand.packs`, handed in as packs) or every pack of the build when the
- * host names none, else the host's own pack (`brand.pack`, handed in as
- * sitePack), else none; a name the host does not offer is the host's own
- * pack; the pack in force is painted through `applyPack`, a person's own
- * choice is written to localStorage.pack (an empty choice removes the key)
- * and handed to onPersistPack, and the choice is made on the profile's
- * Preferences page alone, the header's control cycling the variant and
- * never the look.
+ * The theme and the mode shared by every estate app, one store behind
+ * every call so the header's control and the profile's Preferences tab
+ * read and write the same preferences, resolved in the order the
+ * pre-paint script uses. The theme is a pack, the pack's files, fonts,
+ * images and brands; the mode is `light`, `dark` or the operating
+ * system's, `auto`. The store holds the values in force; the browser's
+ * own keys, localStorage.mode and localStorage.theme, hold the visitor's
+ * own choices, written by the person's own controls alone, `persist`
+ * true, and never from an account, whose values arrive through setMode
+ * and setTheme with `persist` false once the profile loads and overwrite
+ * the store without touching the keys, so the account's choices never
+ * spill into the visitor's own. The mode: localStorage.mode while it
+ * holds `light`, `dark` or `auto`, else `auto`, the operating system's
+ * scheme; a host names no mode and there is no site default. `auto` is
+ * resolved against the operating system's scheme and the result is
+ * stamped on the document as data-bs-theme; the header's control cycles
+ * auto, light, dark and back to auto; a person's own choice is written
+ * to localStorage.mode and handed to onPersistMode so the app writes it
+ * through to the account. The theme: the person's choice under
+ * localStorage.theme while it names one of the themes the host offers
+ * (`brand.themes`, handed in as themes, the host's own list or every
+ * theme of the build when the host names none), else the host's own
+ * theme (`brand.theme`, handed in as hostTheme, the default `startcloud`
+ * when the host names none); a name the host does not offer is the
+ * host's own theme; the theme in force is painted through `applyTheme`,
+ * a person's own choice is written to localStorage.theme (an empty
+ * choice removes the key) and handed to onPersistTheme, and the choice
+ * is made on the profile's Preferences page alone, the header's control
+ * cycling the mode and never the theme.
  */
 export const useTheme = ({
-  siteTheme = '',
-  sitePack = null,
-  packs = [],
-  onPersist = null,
-  onPersistPack = null,
+  hostTheme = null,
+  themes = [],
+  onPersistMode = null,
+  onPersistTheme = null,
 } = {}) => {
-  useState(() => initStore({ siteTheme, sitePack, packs, onPersist, onPersistPack }));
-  const preference = useSyncExternalStore(subscribePreference, readPreference);
-  const pack = useSyncExternalStore(subscribePreference, readPack);
+  useState(() => initStore({ hostTheme, themes, onPersistMode, onPersistTheme }));
+  const mode = useSyncExternalStore(subscribe, readMode);
+  const theme = useSyncExternalStore(subscribe, readTheme);
   const prefersDark = useSyncExternalStore(subscribeToColorScheme, systemPrefersDark);
   const system = (prefersDark && 'dark') || 'light';
-  const theme = resolveTheme({ preference, site: store.site, system });
-  const shown = preference || 'auto';
+  const resolved = mode === 'auto' ? system : mode;
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.setAttribute('data-bs-theme', resolved);
+  }, [resolved]);
+
+  useEffect(() => {
+    applyTheme(themeOf(theme) || store.hostTheme);
   }, [theme]);
 
-  useEffect(() => {
-    applyPack(packOf(pack) || store.sitePack);
-  }, [pack]);
-
-  const setPreference = useCallback((value, { persist = true } = {}) => {
-    if (!isThemePreference(value)) {
+  const setMode = useCallback((value, { persist = true } = {}) => {
+    if (!isModePreference(value)) {
       return;
     }
-    const next = preferenceOf(value);
-    writePreference(next);
+    writeMode(value);
     if (!persist) {
       return;
     }
-    writeOwn(THEME_KEY, next);
-    if (store.onPersist) {
-      store.onPersist(next);
+    writeOwn(MODE_KEY, value);
+    if (store.onPersistMode) {
+      store.onPersistMode(value);
     }
   }, []);
 
-  const toggleTheme = useCallback(
-    () => setPreference(NEXT_PREFERENCE[shown] || 'auto'),
-    [shown, setPreference]
-  );
+  const toggleMode = useCallback(() => setMode(NEXT_MODE[mode] || 'auto'), [mode, setMode]);
 
-  const setPack = useCallback((next, { persist = true } = {}) => {
+  const setTheme = useCallback((next, { persist = true } = {}) => {
     const value = next && offered(next) ? next : '';
-    writePack(value);
+    writeTheme(value);
     if (!persist) {
       return;
     }
-    writeOwn(PACK_KEY, value);
-    if (store.onPersistPack) {
-      store.onPersistPack(value);
+    writeOwn(THEME_KEY, value);
+    if (store.onPersistTheme) {
+      store.onPersistTheme(value);
     }
   }, []);
 
   return {
+    mode,
+    resolved,
+    setMode,
+    toggleMode,
     theme,
-    preference: store.site ? preference : shown,
-    siteVariant: store.site,
-    setPreference,
-    toggleTheme,
-    pack,
-    packs: store.packs,
-    setPack,
+    themes: store.themes,
+    setTheme,
   };
 };

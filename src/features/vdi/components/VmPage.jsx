@@ -87,7 +87,7 @@ Section.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-const VmBody = ({ instance, theme }) => {
+const VmBody = ({ instance, mode }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const { vm, pools, missing, ready, now } = useVm(instance);
@@ -135,7 +135,7 @@ const VmBody = ({ instance, theme }) => {
       </Section>
       {grafana.enabled ? (
         <Section title={t('vdi.detail.metrics')}>
-          <VmMetrics vm={vm} grafana={grafana} theme={theme} />
+          <VmMetrics vm={vm} grafana={grafana} mode={mode} />
         </Section>
       ) : null}
       <Section title={t('vdi.detail.history')}>
@@ -150,7 +150,7 @@ const VmBody = ({ instance, theme }) => {
 
 VmBody.propTypes = {
   instance: PropTypes.string.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 /**
@@ -161,7 +161,7 @@ VmBody.propTypes = {
  * needs a session shows the sign-in note until one exists and fetches
  * nothing before.
  */
-const VmPage = ({ instance, theme, user = null }) => {
+const VmPage = ({ instance, mode, user = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const allowed = authMethod(status) === 'none' || Boolean(user);
@@ -172,12 +172,12 @@ const VmPage = ({ instance, theme, user = null }) => {
       </div>
     );
   }
-  return <VmBody instance={instance} theme={theme} />;
+  return <VmBody instance={instance} mode={mode} />;
 };
 
 VmPage.propTypes = {
   instance: PropTypes.string.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
   user: PropTypes.object,
 };
 

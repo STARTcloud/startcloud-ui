@@ -38,7 +38,7 @@ const REQUIRED_SURFACES = [
   'link-color',
   'link-hover-color',
 ];
-const MANIFEST = path.join(THEMES_DIR, 'packs.json');
+const MANIFEST = path.join(THEMES_DIR, 'themes.json');
 const RULES_IMPORT = /@import\b/;
 const RULES_FONT_FACE = /@font-face\b/;
 const KEYFRAMES = '@keyframes';
@@ -431,10 +431,10 @@ const writeManifest = entries => {
  * public/themes/<pack>/<pack>.yaml, write <pack>.css in the branding
  * contract's generated shape and nothing beside it, since no file of the
  * estate is ever versioned by a hash, in its name or in its query, and
- * one public/themes/packs.json beside them, the manifest every host reads
- * to answer `brand.packs`: one entry per pack, `name`, `css`, `label`,
- * `description`, `brand` and `logo`, so a pack's own words and mark reach
- * the profile's Look select and no host echoes the bare name.
+ * one public/themes/themes.json beside them, the manifest every host
+ * reads to answer `brand.themes`: one entry per pack, `name`, `css`,
+ * `label`, `description`, `brand` and `logo`, so a pack's own words and
+ * mark reach the profile's Theme select and no host echoes the bare name.
  *
  * Every pack names the same keys, the one shape, and a pack missing one
  * is refused: `label` and `description` (the pack's own words), `brand`
@@ -511,7 +511,7 @@ export const generateThemes = () => {
     return 1;
   }
   writeManifest(entries);
-  console.log(`public/themes/packs.json: ${entries.map(entry => entry.name).join(', ')}`);
+  console.log(`public/themes/themes.json: ${entries.map(entry => entry.name).join(', ')}`);
   return 0;
 };
 

@@ -101,7 +101,7 @@ Toolbar.propTypes = {
   onCollapseAll: PropTypes.func.isRequired,
 };
 
-const FleetBody = ({ context, theme }) => {
+const FleetBody = ({ context, mode }) => {
   const { t } = useTranslation();
   const { vms, pools, now, loaded, failed, lastEventAt } = useFleet();
   const grafana = useGrafana();
@@ -196,7 +196,7 @@ const FleetBody = ({ context, theme }) => {
           pools={pools}
           now={now}
           grafana={grafana}
-          theme={theme}
+          mode={mode}
           filtering={search.filtering}
         />
       )}
@@ -207,7 +207,7 @@ const FleetBody = ({ context, theme }) => {
 
 FleetBody.propTypes = {
   context: pageContextShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 /**
@@ -218,7 +218,7 @@ FleetBody.propTypes = {
  * `useFleetSearch` under `table_prefs_vdi`; a host that needs a session
  * shows the sign-in note until one exists and fetches nothing before.
  */
-const FleetPage = ({ context, theme }) => {
+const FleetPage = ({ context, mode }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const allowed = authMethod(status) === 'none' || Boolean(context.user);
@@ -234,12 +234,12 @@ const FleetPage = ({ context, theme }) => {
       </div>
     );
   }
-  return <FleetBody context={context} theme={theme} />;
+  return <FleetBody context={context} mode={mode} />;
 };
 
 FleetPage.propTypes = {
   context: pageContextShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 export default FleetPage;

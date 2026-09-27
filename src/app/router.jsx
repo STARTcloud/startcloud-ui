@@ -749,13 +749,13 @@ VersionRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
-const VmRoute = ({ theme, user }) => {
+const VmRoute = ({ mode, user }) => {
   const { instance } = useParams();
-  return <VmPage instance={instance} theme={theme} user={user} />;
+  return <VmPage instance={instance} mode={mode} user={user} />;
 };
 
 VmRoute.propTypes = {
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
   user: PropTypes.object,
 };
 
@@ -1136,7 +1136,7 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
   )),
 ];
 
-const homeElementFor = ({ cookie, fleet, account, collections, context, theme, globalAdmin }) => {
+const homeElementFor = ({ cookie, fleet, account, collections, context, mode, globalAdmin }) => {
   if (cookie) {
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
@@ -1144,7 +1144,7 @@ const homeElementFor = ({ cookie, fleet, account, collections, context, theme, g
     return issuerProfile({ account, globalAdmin });
   }
   if (fleet) {
-    return <FleetPage context={context} theme={theme} />;
+    return <FleetPage context={context} mode={mode} />;
   }
   return <HomePage collections={collections} context={context} />;
 };
@@ -1184,7 +1184,7 @@ const AppRoutes = ({
   account,
   collections,
   context,
-  theme,
+  mode,
   setupComplete,
   globalAdmin,
   afterSignIn,
@@ -1215,7 +1215,7 @@ const AppRoutes = ({
     account,
     collections,
     context,
-    theme,
+    mode,
     globalAdmin,
   });
 
@@ -1227,7 +1227,7 @@ const AppRoutes = ({
         path="/vm/:instance"
         element={
           fleet ? (
-            <VmRoute theme={theme} user={account.user} />
+            <VmRoute mode={mode} user={account.user} />
           ) : (
             <Stub titleKey={titleOf('/vm/:instance')} token="fleet" />
           )
@@ -1377,7 +1377,7 @@ AppRoutes.propTypes = {
   account: sessionStateShape.isRequired,
   collections: PropTypes.arrayOf(collectionShape).isRequired,
   context: pageContextShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
   setupComplete: PropTypes.bool.isRequired,
   globalAdmin: PropTypes.bool.isRequired,
   afterSignIn: PropTypes.func.isRequired,

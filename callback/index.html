@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <script>
@@ -16,8 +16,8 @@
           var account = null;
           if (stored && typeof stored === 'object') {
             account = {
+              mode: stored.preferred_mode,
               theme: stored.preferred_theme,
-              pack: stored.preferred_pack,
               motion: stored.preferred_motion,
               language: stored.preferred_language,
             };
@@ -28,8 +28,8 @@
                 var cached = read(name);
                 if (cached && typeof cached === 'object') {
                   account = {
+                    mode: cached.mode === undefined ? null : cached.mode,
                     theme: cached.theme === undefined ? null : cached.theme,
-                    pack: cached.pack === undefined ? null : cached.pack,
                     motion: cached.motion === undefined ? null : cached.motion,
                     language: cached.language === undefined ? null : cached.language,
                   };
@@ -44,17 +44,13 @@
             }
             return localStorage.getItem(field) || '';
           };
-          var site = document.documentElement.getAttribute('data-brand-theme');
-          var siteDefault = site === 'light' || site === 'dark' ? site : 'auto';
-          var chosen = member('theme');
-          var preference =
-            chosen === 'light' || chosen === 'dark' || chosen === 'auto' ? chosen : siteDefault;
+          var mode = member('mode');
           var resolved =
-            preference === 'auto'
-              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            mode === 'light' || mode === 'dark'
+              ? mode
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
                 ? 'dark'
-                : 'light'
-              : preference;
+                : 'light';
           document.documentElement.setAttribute('data-bs-theme', resolved);
           var lang = member('language') || localStorage.getItem('language');
           if (lang) {
@@ -63,23 +59,23 @@
           if (member('motion') === 'reduce') {
             document.documentElement.setAttribute('data-motion', 'reduce');
           }
-          var packName = member('pack');
-          var packs = JSON.parse(localStorage.getItem('packs') || '[]');
-          var pack = /^[a-z0-9-]+$/.test(packName)
-            ? packs.filter(function (entry) {
-                return entry && entry.name === packName;
+          var themeName = member('theme');
+          var themes = JSON.parse(localStorage.getItem('themes') || '[]');
+          var theme = /^[a-z0-9-]+$/.test(themeName)
+            ? themes.filter(function (entry) {
+                return entry && entry.name === themeName;
               })[0]
             : null;
           if (
-            pack &&
-            /^\/(?![/\\])/.test(pack.css || '') &&
-            document.documentElement.getAttribute('data-brand') !== pack.name
+            theme &&
+            /^\/(?![/\\])/.test(theme.css || '') &&
+            document.documentElement.getAttribute('data-brand') !== theme.name
           ) {
-            document.documentElement.setAttribute('data-brand', pack.name);
+            document.documentElement.setAttribute('data-brand', theme.name);
             var link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.id = 'brand-pack';
-            link.href = pack.css;
+            link.id = 'brand-theme';
+            link.href = theme.css;
             document.head.appendChild(link);
           }
         } catch (error) {

@@ -34,8 +34,8 @@ const displayFieldsOf = profile =>
   Object.fromEntries(DISPLAY_FIELDS.map(field => [field, profile?.[field] ?? null]));
 
 const preferredOf = preferences => ({
+  preferred_mode: preferences?.mode ?? null,
   preferred_theme: preferences?.theme ?? null,
-  preferred_pack: preferences?.pack ?? null,
   preferred_motion: preferences?.motion ?? null,
   preferred_language: preferences?.language ?? null,
 });
@@ -97,7 +97,7 @@ const cachedOf = profile => {
  * session cookie the browser carries, the `XSRF-TOKEN` cookie echoed as
  * `X-XSRF-TOKEN` on every method but GET, HEAD and OPTIONS, the display
  * fields of the profile cached under `storageKey` with the account's
- * `preferred_theme`, `preferred_pack`, `preferred_motion` and
+ * `preferred_mode`, `preferred_theme`, `preferred_motion` and
  * `preferred_language` beside them, `GET /api/user` as the one
  * confirmation of a session, the form-encoded `POST /login` answering
  * `next` (the page that follows it awaits `login` on the bus, through
@@ -122,15 +122,15 @@ const cachedOf = profile => {
  * any failure but a `401`, which clears it instead; a guest-only
  * account's preferences are neither cached nor answered, the browser's
  * own standing. The account's values are applied in memory while signed
- * in and never mirrored into the browser's own `theme`, `pack`, `motion`
+ * in and never mirrored into the browser's own `mode`, `theme`, `motion`
  * and `language` keys, and leave with the cached profile at sign-out, so
- * nothing spills. `savePreferences` writes the chrome's theme, look,
+ * nothing spills. `savePreferences` writes the chrome's mode, theme,
  * motion switch and language through `PATCH /api/user/preferences` and
  * updates the four cached members from the answer's `preferences`,
  * except for a guest-only account, which the issuer refuses `403
  * guest_only`, so its choices stay the browser's. `signOut` and
- * `endSession` drop every storage key but the visitor's own, `theme`,
- * `pack`, `packs`, `motion` and `language`. `begin({ method, navigate })`
+ * `endSession` drop every storage key but the visitor's own, `mode`,
+ * `theme`, `themes`, `motion` and `language`. `begin({ method, navigate })`
  * with no method, `local` or `magic-link` moves in-router to `/login`,
  * while `oidc-<id>` stays a top-level navigation.
  *

@@ -194,7 +194,7 @@ const rowClass = vm => {
 
 const TABS = ['overview', 'metrics', 'history', 'stats'];
 
-const VmDetail = ({ vm, pools, now, grafana, theme }) => {
+const VmDetail = ({ vm, pools, now, grafana, mode }) => {
   const { t } = useTranslation();
   const [tab, setTab] = useState('overview');
   const history = useVmHistory(vm.instance_id, { enabled: tab === 'history' || tab === 'stats' });
@@ -209,7 +209,7 @@ const VmDetail = ({ vm, pools, now, grafana, theme }) => {
         ))}
       </Nav>
       {tab === 'overview' ? <VmOverview vm={vm} pools={pools} now={now} /> : null}
-      {tab === 'metrics' ? <VmMetrics vm={vm} grafana={grafana} theme={theme} /> : null}
+      {tab === 'metrics' ? <VmMetrics vm={vm} grafana={grafana} mode={mode} /> : null}
       {tab === 'history' ? <VmHistory history={history} /> : null}
       {tab === 'stats' ? <VmStats stats={history.stats} loading={history.loading} /> : null}
     </div>
@@ -221,7 +221,7 @@ VmDetail.propTypes = {
   pools: PropTypes.object.isRequired,
   now: PropTypes.number.isRequired,
   grafana: grafanaShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 /**
@@ -245,7 +245,7 @@ const FleetTable = ({
   pools,
   now,
   grafana,
-  theme,
+  mode,
   filtering,
 }) => {
   const { t, i18n } = useTranslation();
@@ -258,7 +258,7 @@ const FleetTable = ({
       rowClass={rowClass}
       rowProp="vm"
       Detail={VmDetail}
-      detailProps={{ pools, now, grafana, theme }}
+      detailProps={{ pools, now, grafana, mode }}
       expandedKeys={expanded}
       sort={sort}
       onSort={onSort}
@@ -283,7 +283,7 @@ FleetTable.propTypes = {
   pools: PropTypes.object.isRequired,
   now: PropTypes.number.isRequired,
   grafana: grafanaShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
   filtering: PropTypes.bool.isRequired,
 };
 

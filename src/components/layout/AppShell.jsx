@@ -352,14 +352,14 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
  * host advertises `discover` the cluster carries Discover, an in-router
  * link to the discovery page drawn as the compass cluster button; the
  * cluster keeps one order in both states, search, Discover, the ticket
- * icon, theme (the cycling button over the variant alone, the look chosen
- * on the profile's Preferences page), language, then the account menu or
- * Sign in, each control
+ * icon, the mode control (the cycling button over the mode alone, the
+ * theme chosen on the profile's Preferences page), language, then the
+ * account menu or Sign in, each control
  * drawn only in the state it belongs to: signed out the left of the bar
  * holds the brand alone and the cluster is Discover, the ticket icon
  * (the ticket link the app supplies, built from the fallback customer id
- * alone, in a new tab, drawn only while there is a ticket system), theme,
- * language and Sign in, with no search icon because app-wide search
+ * alone, in a new tab, drawn only while there is a ticket system), the
+ * mode control, language and Sign in, with no search icon because app-wide search
  * needs a session; signed in, the search icon, its box and the panel
  * under the bar draw only while the host lists `search`, a host without
  * the token drawing none of them. The app supplies
@@ -371,11 +371,10 @@ const appRowsFor = ({ showAbout, showAdminBoard, showOrgConsole, extraRows, link
 const AppShell = ({
   account,
   avatarUrl,
-  theme,
-  themePreference,
-  siteVariant = '',
-  toggleTheme,
-  setThemePreference,
+  mode,
+  resolvedMode,
+  toggleMode,
+  setMode,
   onSignOut,
   getSupportedLanguages,
   collections,
@@ -507,12 +506,11 @@ const AppShell = ({
         brand={showSidebar ? null : brand}
         crumbs={crumbs}
         LinkComponent={Link}
-        theme={{
-          preference: themePreference,
-          siteVariant,
-          resolved: theme,
-          onToggle: toggleTheme,
-          onPick: setThemePreference,
+        mode={{
+          preference: mode,
+          resolved: resolvedMode,
+          onToggle: toggleMode,
+          onPick: setMode,
         }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
@@ -556,11 +554,10 @@ const AppShell = ({
 AppShell.propTypes = {
   account: sessionStateShape.isRequired,
   avatarUrl: PropTypes.string.isRequired,
-  theme: PropTypes.string.isRequired,
-  themePreference: PropTypes.string.isRequired,
-  siteVariant: PropTypes.string,
-  toggleTheme: PropTypes.func.isRequired,
-  setThemePreference: PropTypes.func.isRequired,
+  mode: PropTypes.string.isRequired,
+  resolvedMode: PropTypes.string.isRequired,
+  toggleMode: PropTypes.func.isRequired,
+  setMode: PropTypes.func.isRequired,
   onSignOut: PropTypes.func.isRequired,
   getSupportedLanguages: PropTypes.func.isRequired,
   collections: PropTypes.array.isRequired,

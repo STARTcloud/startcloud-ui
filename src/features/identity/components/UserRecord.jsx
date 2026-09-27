@@ -244,7 +244,7 @@ PasswordChangeSwitch.propTypes = {
  * the address `PUT`, the mobile as one plain field saved with the form
  * through the phone `PUT`, the email through its own dialog over the
  * email `PUT`), the Preferences card drawing the shared preferences
- * section with the record's own language and theme saved with the rest
+ * section with the record's own language, mode, theme and motion saved with the rest
  * through the preferences `PATCH` while the adapter carries it, the
  * Two-factor card listing the record's methods from the adapter's `tfa`
  * read the way the Security section lists them, passkeys included,

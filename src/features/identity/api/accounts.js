@@ -71,8 +71,8 @@ export const organizationsBulk = body => client.post('/api/admin/organizations/b
  * window and refused `403 own_account` on the admin's own id: the detail
  * members and `password_change_required` through `update`, the address
  * `PUT`, the email `PUT` (`409` on a taken address), the plain phone
- * `PUT`, the preferences `PATCH` (language, theme, timezone, region,
- * ciba_channel) and, under `tfa`, the read of the account's second-factor
+ * `PUT`, the preferences `PATCH` (language, mode, theme, motion, timezone,
+ * region, ciba_channel) and, under `tfa`, the read of the account's second-factor
  * methods (passkeys included, no step-up) and the `DELETE` of an SMS or
  * APP method (`409 last_method` on the last while two-factor is on);
  * `places` answers the Google Places key the address block loads with.

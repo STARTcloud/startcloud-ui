@@ -10,19 +10,21 @@ export const grafanaShape = PropTypes.shape({
   panels: PropTypes.arrayOf(PropTypes.number).isRequired,
 });
 
-const dashboardUrl = ({ grafana, hostname, theme }) =>
-  `${grafana.base_url}/d/${grafana.dashboard_uid}/?var-${grafana.vm_var}=${encodeURIComponent(hostname)}&theme=${theme}`;
+const dashboardUrl = ({ grafana, hostname, mode }) =>
+  `${grafana.base_url}/d/${grafana.dashboard_uid}/?var-${grafana.vm_var}=${encodeURIComponent(hostname)}&theme=${mode}`;
 
-const panelUrl = ({ grafana, hostname, theme, panel }) =>
-  `${grafana.base_url}/d-solo/${grafana.dashboard_uid}/?orgId=1&var-${grafana.vm_var}=${encodeURIComponent(hostname)}&panelId=${panel}&theme=${theme}&refresh=30s&kiosk&hideLogo=true`;
+const panelUrl = ({ grafana, hostname, mode, panel }) =>
+  `${grafana.base_url}/d-solo/${grafana.dashboard_uid}/?orgId=1&var-${grafana.vm_var}=${encodeURIComponent(hostname)}&panelId=${panel}&theme=${mode}&refresh=30s&kiosk&hideLogo=true`;
 
 /**
  * The Grafana panels of one VM while the host's Grafana settings are
  * enabled: the Open in Grafana link to the dashboard filtered to the
- * hostname, then one embedded panel per configured id in the app's theme,
- * or a note that none is configured; nothing while Grafana is disabled.
+ * hostname, then one embedded panel per configured id in the app's
+ * resolved mode, light or dark, handed to Grafana as its own `theme`
+ * parameter, or a note that none is configured; nothing while Grafana is
+ * disabled.
  */
-const VmMetrics = ({ vm, grafana, theme }) => {
+const VmMetrics = ({ vm, grafana, mode }) => {
   const { t } = useTranslation();
   if (!grafana.enabled) {
     return null;
@@ -32,7 +34,7 @@ const VmMetrics = ({ vm, grafana, theme }) => {
     <div>
       <div className="mb-3">
         <a
-          href={dashboardUrl({ grafana, hostname, theme })}
+          href={dashboardUrl({ grafana, hostname, mode })}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
@@ -47,7 +49,7 @@ const VmMetrics = ({ vm, grafana, theme }) => {
             <div key={panel} className="col">
               <iframe
                 className="metrics-panel rounded border"
-                src={panelUrl({ grafana, hostname, theme, panel })}
+                src={panelUrl({ grafana, hostname, mode, panel })}
                 title={t('vdi.metrics.panel', { id: panel })}
                 loading="lazy"
               />
@@ -64,7 +66,7 @@ const VmMetrics = ({ vm, grafana, theme }) => {
 VmMetrics.propTypes = {
   vm: PropTypes.object.isRequired,
   grafana: grafanaShape.isRequired,
-  theme: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
 };
 
 export default VmMetrics;

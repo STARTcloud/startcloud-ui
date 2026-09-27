@@ -10,8 +10,8 @@ permalink: /docs/guides/preferences-and-branding/
 
 {: .no_toc }
 
-The estate-wide contract for user preferences (language, theme, timezone),
-notification localization, and tenant branding. Relying apps build against
+The estate-wide contract for user preferences (language, theme, mode,
+timezone), notification localization, and tenant branding. Relying apps build against
 this page. Agreed across the authorization server, BoxVault and
 hyperweaver-ui; every clause below carries its reasoning, because a rule
 without its rationale gets pruned by whoever inherits it. The visual
@@ -29,49 +29,104 @@ paints them today.
 
 ---
 
+## Theme and mode
+
+In Mark's words: "theme is a pack, theme not set is the default, the
+default is always the startcloud pack, the theme is the pack files, fonts,
+images, brands, etc"; "theme mode is light, dark and OS"; "I should have
+never had a config holding a default theme of light"; "the default theme
+of an app, when it's not following a user, or part of a brand, is that it
+should default to the operating system's default"; "we want the
+first-time users to have their OS's theme, not the light theme as the
+default"; "everyone keeps confusing the theme with the theme mode".
+
+So, everywhere in this contract and the code: the word **theme** means the
+pack (`startcloud`, `lcars`, `moonshinedev`: the pack's files, fonts,
+images and brands); the word **mode** means `light`, `dark` or the
+operating system's (`auto`). A site or host names its theme and may offer
+a list of themes; a site or host never names a mode. The default theme is
+`startcloud`; the default mode is the operating system's.
+
+Theme painted:
+
+| Person     | Account says                   | Browser key `theme`  | Host offers it      | Theme painted             |
+| ---------- | ------------------------------ | -------------------- | ------------------- | ------------------------- |
+| signed in  | theme `X`                      | any                  | yes                 | `X`                       |
+| signed in  | theme `X`                      | any                  | no                  | the host's own theme      |
+| signed in  | theme null (follow)            | any                  | —                   | the host's own theme      |
+| signed in  | record carries no theme member | `Y` set              | yes                 | `Y`                       |
+| signed in  | record carries no theme member | unset or not offered | —                   | the host's own theme      |
+| signed out | —                              | `Y` set              | yes                 | `Y`                       |
+| signed out | —                              | unset or not offered | —                   | the host's own theme      |
+| any        | —                              | —                    | host names no theme | `startcloud`, the default |
+
+Mode painted:
+
+| Person     | Account says                  | Browser key `mode` | Mode painted           |
+| ---------- | ----------------------------- | ------------------ | ---------------------- |
+| signed in  | `light` or `dark`             | any                | that                   |
+| signed in  | `auto` or null                | any                | the operating system's |
+| signed in  | record carries no mode member | `light` or `dark`  | that                   |
+| signed in  | record carries no mode member | `auto` or unset    | the operating system's |
+| signed out | —                             | `light` or `dark`  | that                   |
+| signed out | —                             | `auto` or unset    | the operating system's |
+
+Events:
+
+| Event                                                | What moves                                                                                                                  |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| first paint                                          | the same two tables, read from the cached record, then the browser keys, before any script of the app runs                  |
+| a press of the mode control or a pick on Preferences | painted at once, written to the browser key, written through to the account                                                 |
+| a change at the identity provider                    | pushed to the app's record, `profile-updated` on the tab's stream, re-read and re-applied in memory, browser keys untouched |
+| sign-out or a session ended elsewhere                | back to the browser keys, else the host's theme and the operating system's mode                                             |
+
+---
+
 ## The model
 
 Three independent axes, never conflated:
 
-| Axis        | Values                                    | Owner              | Distribution            |
-| ----------- | ----------------------------------------- | ------------------ | ----------------------- |
-| **variant** | `light` \| `dark` \| `auto`               | the user           | claims, SCIM, write API |
-| **pack**    | a bare brand name (`moonshinedev`, `shi`) | client/site config | branding endpoint       |
-| **motion**  | `auto` \| `reduce`                        | the user           | claims, SCIM, write API |
+| Axis       | Values                                             | Owner                             | Distribution                    |
+| ---------- | -------------------------------------------------- | --------------------------------- | ------------------------------- |
+| **theme**  | a pack, a bare name (`startcloud`, `lcars`, `shi`) | the user, else client/site config | claims, SCIM, write API, status |
+| **mode**   | `light` \| `dark` \| `auto`                        | the user                          | claims, SCIM, write API         |
+| **motion** | `auto` \| `reduce`                                 | the user                          | claims, SCIM, write API         |
 
 Plus two more user preferences carried the same way: `language` (BCP 47) and
 `timezone` (IANA name).
 
-**The pack axis is per-application, not per-tenant.** Resolution is
-`clients.<id>.client.theme-pack` → site `theme_id` → none. That ordering is
-what lets Super.Human.Installer brand hyperweaver's clients while BoxVault
-on the same site keeps its own — sometimes a pack answers "which customer",
+**The host's theme is per-application, not per-tenant.** Resolution on
+the identity provider is `clients.<id>.client.theme` → site
+`theme_id` → `startcloud`. That ordering is what lets
+Super.Human.Installer brand hyperweaver's clients while BoxVault on the
+same site keeps its own — sometimes a theme answers "which customer",
 sometimes "which product", in the same slot.
 
-**A person may override the pack, the way they override the variant.**
-The `pack` preference, a bare pack name or `null`, is carried by the same
-write path and claim as `theme`, resolved in the same order
-(the account value, else `localStorage.pack`, else the host's own pack)
-and never composed with the variant; a host that lets a person choose
-answers the packs it offers as `brand.packs` in its status payload
+**A person may choose the theme, the way they choose the mode.** The
+`theme` preference, a bare theme name or `null`, is carried by the same
+write path and claim as `mode`, resolved in the order of the tables above
+(the account value while the host offers it, else `localStorage.theme`
+while the host offers it, else the host's own theme, else `startcloud`)
+and never composed with the mode; a host that lets a person choose
+answers the themes it offers as `brand.themes` in its status payload
 (`[{ name, css, label }]`, the navbar contract's status row), the shared
 UI completes each row by name from the build's own
-`public/themes/packs.json`, the manifest the generator writes from every
+`public/themes/themes.json`, the manifest the generator writes from every
 pack's YAML with the pack's `label`, `description`, `brand` and `logo`,
-before it boots, so a host names which packs it offers and the pack
-supplies its own words and mark; the shared UI draws its Look picker from
-that completed list alone and constructs no stylesheet URL, a host that
-answers no list offers every pack of the build, an empty list offers
-none, and a list offers exactly those, so a host exposes everything by
-default and a white-label site lists none or only its own. The choice is
-cached in local storage beside `theme` so the pre-paint script can stamp
-`data-brand` and append the chosen pack's `<link>` before first paint,
-after the host's own, and a guest-only account keeps it browser-local as
-it keeps `theme`.
+before it boots, so a host names which themes it offers and the pack
+supplies its own words and mark; the shared UI draws its Theme picker
+from that completed list alone and constructs no stylesheet URL, a host
+that answers no list offers every theme of the build, an empty list
+offers none, and a list offers exactly those, so a host exposes
+everything by default and a white-label site lists none or only its own.
+The choice is cached in local storage beside `mode` so the pre-paint
+script can stamp `data-brand` and append the chosen theme's `<link>`
+before first paint, after the host's own, and a guest-only account keeps
+it browser-local as it keeps `mode`.
 
-Adoption is layered and nothing is forced. **Layer 1** — the variant and
+Adoption is layered and nothing is forced. **Layer 1** — the mode and
 language, applied by each app through whatever theme and i18n system it
-already has. No convergence required. **Layer 2** — packs, which require the
+already has. No convergence required. **Layer 2** — themes, which require the
 app to have adopted the variable contract below. An app that adopts nothing
 keeps working unchanged, and its bundled assets remain its fallback forever.
 
@@ -83,9 +138,10 @@ keeps working unchanged, and its bundled assets remain its fallback forever.
 <html lang="es" data-bs-theme="dark" data-brand="moonshinedev"></html>
 ```
 
-- **`data-bs-theme` carries the variant and nothing else** — `light` or
-  `dark`, never `auto`, never a pack name.
-- **`data-brand` carries the pack.**
+- **`data-bs-theme` carries the mode and nothing else** — `light` or
+  `dark`, never `auto`, never a theme name; the attribute is Bootstrap's
+  own and keeps its name.
+- **`data-brand` carries the theme.**
 - **`lang` carries the user's language.**
 
 **Never compose them into one value.** Bootstrap is consumed as precompiled
@@ -96,20 +152,20 @@ controls and dropdowns silently revert to light while the brand appears to
 apply. This is the single most expensive mistake available here; an earlier
 draft of this page recommended it.
 
-**Null pack: omit the attribute and the stylesheet link entirely.** No empty
-`data-brand`, no dead `<link>`. Two implementations will otherwise diverge
-on day one.
+**No theme painted: omit the attribute and the stylesheet link entirely.**
+No empty `data-brand`, no dead `<link>`. Two implementations will
+otherwise diverge on day one.
 
 ### Injection ordering
 
-The pack stylesheet must load **after** the app's own stylesheet.
+The theme's stylesheet must load **after** the app's own stylesheet.
 
 `:root` and `[data-brand="x"]` both compute to specificity (0,1,0), so a tie
-is broken by source order alone — a pack loaded first loses every
+is broken by source order alone — a theme loaded first loses every
 single-attribute battle and the brand half-applies.
 
 `[data-brand="x"][data-bs-theme="dark"]` is (0,2,0) and beats `:root`
-regardless of order. **So variant overrides are order-independent while
+regardless of order. **So mode overrides are order-independent while
 brand-level overrides are not.** That asymmetry is why an ordering bug
 presents as "dark mode brands correctly, light mode doesn't" — which reads
 as intermittent and sends people hunting in the wrong place.
@@ -121,12 +177,12 @@ because "trivially satisfied today" is how load-bearing rules get deleted
 and rediscovered.
 
 > **Open evaluation:** CSS Cascade Level 5 `@layer` would make this rule
-> unnecessary — a pack in its own layer wins regardless of source order.
+> unnecessary — a theme in its own layer wins regardless of source order.
 > Worth assessing before the rule calcifies.
 
 ---
 
-## Variant resolution and precedence
+## Mode resolution and precedence
 
 **The account value is authoritative. The cached record the session keeps
 is its cache; the browser's own keys hold the visitor's choices, are never
@@ -134,8 +190,8 @@ written from the account, and are the fallback when no account exists.**
 
 - **On login the account value overwrites** whatever the browser held.
   Seed-when-unset is actively wrong: under seeding, a user who switches
-  theme on one device never sees it on another that already holds a local
-  value — the exact failure roaming exists to prevent.
+  the mode on one device never sees it on another that already holds a
+  local value — the exact failure roaming exists to prevent.
 - **A toggle writes through** to the account, or the stored value goes stale
   the moment anyone touches the control and every later login fights the
   user.
@@ -149,29 +205,32 @@ written from the account, and are the fallback when no account exists.**
 `auto` is resolved by the app via `prefers-color-scheme`; it is a stored
 preference value and is never written to the attribute.
 
-**Claim-only consumers lag by design.** `preferences.theme` rides the ID
-token, so an app reading only claims sees a change at its next login or
-token refresh. Apps on the SCIM push (RFC 7643/7644) converge immediately.
+**Claim-only consumers lag by design.** `preferences.mode` and
+`preferences.theme` ride the ID token, so an app reading only claims sees
+a change at its next login or token refresh. Apps on the SCIM push (RFC
+7643/7644) converge immediately.
 
 ---
 
-## The pre-paint script — pack-independent
+## The pre-paint script — theme-independent
 
-**This section is not part of the pack system and must not be read as
-conditional on it.** The script reads only the variant, it fixes a defect
-that predates this contract, and it belongs in every app whether or not that
-app ever adopts Layer 2. Three apps in this estate shipped this defect
-independently: one hardcoded `data-bs-theme="dark"`, one stamped the
-attribute from a post-mount effect, one put a pack name in the variant slot.
+**This section is not part of the theme system and must not be read as
+conditional on it.** The script's first job is the mode, it fixes a
+defect that predates this contract, and it belongs in every app whether
+or not that app ever adopts Layer 2. Three apps in this estate shipped
+this defect independently: one hardcoded `data-bs-theme="dark"`, one
+stamped the attribute from a post-mount effect, one put a theme name in
+the mode slot.
 
 Without it, the page paints in the wrong color scheme and repaints once the
-app resolves the variant — the whole page, not an accent. That is a
+app resolves the mode — the whole page, not an accent. That is a
 materially worse artifact than a late-arriving brand, and the two should
 never be traded off against each other as one problem.
 
 An inline script in `<head>`, before first paint, stamps `data-bs-theme`
 (and `lang`) from synchronously readable state, resolving `auto` through
-`matchMedia`.
+`matchMedia`, and paints the person's chosen theme from the browser's
+`theme` and `themes` keys.
 
 **It must implement the same precedence its app's mount uses — and mount's
 precedence _as it exists in that app at that time_, not a fixed sequence.**
@@ -191,38 +250,31 @@ Where a host renders server-side and already knows a concrete `light`/`dark`
 for the user, it stamps directly and the script is a no-op for that user.
 The script is the resolver for `auto` and for the accountless case.
 
-A UI backend with a site default names it as `brand.theme` (`light` or
-`dark`) in its `/api/status`, the navbar contract's status payload, from a
-value of its own in the site's configuration (`sites.<id>.ui.default_theme`
-on the authorization server), never inferred from a pack name; the
-shared UI applies it, in the script and at mount alike, only while neither
-an account value nor local storage holds a choice, so the site default never
-overrides a person. A UI backend whose site names no default answers no
-`brand.theme` and stamps nothing, never `light`, because, in Mark's
-words, the default theme of an app, when it is not following a user or
-part of a brand, is the operating system's default: a first-time visitor
-gets the operating system's scheme, `auto` resolved through
-`prefers-color-scheme` by the script and the mount alike, and the script
-resolves the same scheme when it fails, never a fixed variant.
-
-A UI backend that serves more than one site serves `index.html` per site and
-stamps that default on the `<html>` tag as it serves the file, by hostname,
-as `data-brand-theme="light"` or `data-brand-theme="dark"`; the file in the
-build never changes. The script then reads the site default synchronously,
-with no fetch before the first paint, which is the whole point of the
-script: a default that arrived only with `/api/status` would repaint the
-page once, the defect this section exists to remove. `data-brand-theme` is
-the site's word and never the person's; `data-bs-theme` stays the resolved
-variant, and the two are never composed.
+A host names no mode. No UI backend carries a mode member in its
+`/api/status`, no site configuration holds a default mode, and the served
+page carries no site default on `<html>`, because, in Mark's words, "I
+should have never had a config holding a default theme of light" and "the
+default theme of an app, when it's not following a user, or part of a
+brand, is that it should default to the operating system's default": a
+first-time visitor gets the operating system's scheme, "we want the
+first-time users to have their OS's theme, not the light theme as the
+default", `auto` resolved through `prefers-color-scheme` by the script and
+the mount alike, and the script resolves the same scheme when it fails,
+never a fixed mode. The mode is the person's alone, the account's
+`preferred_mode`, then the browser's `mode` key, then the operating
+system's, the mode table above.
 
 A UI backend that rewrites `index.html` per site stamps `data-brand` and
-the pack's `<link>` in the same pass, the link after the app stylesheet,
-so the pack paints with the first frame. A pack may set surfaces, and a
-pack that arrives after the mount repaints the whole page from stock
-Bootstrap to the site's own grays or purple-black, the same defect this
-section removes for the variant; a server that already knows the site by
-hostname has no reason to leave that to a fetch. The shell then finds
-`data-brand` and the link already present and appends nothing.
+the theme's `<link>` as it serves the file, by hostname, the link after
+the app stylesheet, so the theme paints with the first frame. A theme may
+set surfaces, and a theme that arrives after the mount repaints the whole
+page from stock Bootstrap to the site's own grays or purple-black, the
+same defect this section removes for the mode; a server that already
+knows the site by hostname has no reason to leave that to a fetch. The
+shell then finds `data-brand` and the link already present and appends
+nothing; the script paints the person's own chosen theme over the host's
+from the browser's `theme` and `themes` keys, and the mount does the same
+from the account's `preferred_theme`.
 
 ---
 
@@ -236,10 +288,11 @@ Emitted on `/userinfo` and the ID token:
   Under the `profile` scope, where OpenID Connect Core §5.4 places it.
 - `zoneinfo` — IANA timezone name. Omitted when unset. Under `profile`,
   the same section.
-- `preferences` — a map carrying `language` and `theme` when set, on
+- `preferences` — a map, `{ language, mode, theme, motion }`, on
   `/userinfo` for every client and on the ID token only for a client whose
-  `id-token-custom-claims` lists it. `preferences.theme` is the variant
-  only; a composed value never appears here and consumers reject one if
+  `id-token-custom-claims` lists it. `preferences.mode` is the mode only,
+  `light`, `dark` or `auto`, and `preferences.theme` the theme's bare
+  name; a composed value never appears here and consumers reject one if
   seen.
 
 ### SCIM push — subscribing clients only
@@ -247,15 +300,15 @@ Emitted on `/userinfo` and the ID token:
 User resources carry, in addition to the long-standing fields (RFC 7643
 §4.1.1, all omitted when unset): `displayName`, `name.formatted`,
 `preferredLanguage`, `locale`, `timezone`. Absent means null; receivers must
-not treat absence as an error. The look rides the identity provider's User
-extension, `urn:startcloud:scim:schemas:extension:1.0:User`, as one
-`preferences` object, `{ theme, pack, motion }`, the shape of the
-`preferences` claim, always present on a push with `null` for an unset
-member, so a value cleared at the identity provider clears at the
-receiver; a receiver reads that object and nothing else, applies it as
-full desired state and sends its own `profile-updated` when a column
-changed, because a push that lands and changes nothing is the failure
-this sentence exists to prevent.
+not treat absence as an error. The mode, the theme and the motion switch
+ride the identity provider's User extension,
+`urn:startcloud:scim:schemas:extension:1.0:User`, as one `preferences`
+object, `{ mode, theme, motion }`, the shape of the `preferences` claim,
+always present on a push with `null` for an unset member, so a value
+cleared at the identity provider clears at the receiver; a receiver reads
+that object and nothing else, applies it as full desired state and sends
+its own `profile-updated` when a column changed, because a push that
+lands and changes nothing is the failure this sentence exists to prevent.
 
 ### Branding endpoint — anonymous-safe
 
@@ -273,7 +326,7 @@ changes in the same release.
 ```json
 {
   "site_id": "moonshinedev",
-  "theme_pack": "moonshinedev",
+  "theme": "moonshinedev",
   "theme_css": "https://auth.example.com/themes/moonshinedev/moonshinedev.css",
   "company_name": "Moonshine.dev",
   "logos": {
@@ -297,9 +350,12 @@ changes in the same release.
   `height` always present so consumers can reserve space; `monochrome: true`
   marks a slot safe to mask. A `mark` (stencil) is distinct from `small` (a
   wordmark).
-- **`theme_pack: null`** means stock Bootstrap and is answered only for a
-  client on no site; every site of the identity provider names a pack, so
-  a site never publishes `null`.
+- **`theme: null`** means stock Bootstrap and is answered only for a
+  client on no site; every site of the identity provider names a theme, so
+  a site never publishes `null`; the endpoint's members are `theme` and
+  `theme_css`, never a `pack` word, and a `theme_id` of `light` or `dark`
+  is a mode written where a theme belongs, refused at startup, never read
+  as no theme.
 - **Absolute URLs are built from the site's configured hostname, never
   from the request's `Host` or `X-Forwarded-Host`**, and a request whose
   host matches no site answers the default site; a publicly cacheable
@@ -320,28 +376,30 @@ directly or via their own backend.** Both current consumers proxy through
 their own server; browser-direct is permitted, not assumed.
 
 **The shared UI never calls the branding endpoint.** A UI backend that
-wants a pack names it in its own `/api/status` as
-`brand.pack: { name, css }`, `name` the bare pack name for `data-brand`
+wants a theme names it in its own `/api/status` as
+`brand.theme: { name, css }`, `name` the bare theme name for `data-brand`
 and `css` the stylesheet URL, resolved by the UI backend's server from
-its local configuration, one pack name per host, the same way the
+its local configuration, one theme name per host, the same way the
 identity provider names `theme_id` per site, never fetched from the
 identity provider at runtime, since every app serves the same build and
-so already holds every pack; the shell stamps `data-brand` and appends
-the `<link>` from that member alone, and a payload without it stamps
-nothing. A UI backend that rewrites
-`index.html` per site stamps the same two values into the file and
-answers the same `brand.pack`, so the shell finds them present and
-appends nothing, the identity provider and BoxVault being such backends,
-the hostnames and what may differ per host fixed by the navbar contract's
-status payload section. One
-member, one branch, and the branding endpoint stays a server-to-server
-call, because a shell that guessed a route per UI backend would carry a
-per-app path the status payload exists to remove.
+so already holds every theme; the shell stamps `data-brand` and appends
+the `<link>` from that member alone, and a payload without it paints the
+default theme, `startcloud`, from the build's own manifest. `brand.theme`
+is an object and never a mode word; a stale host that still answers a
+bare string there is a host naming no theme, never a mode. A UI backend
+that rewrites `index.html` per site stamps the same two values into the
+file and answers the same `brand.theme`, so the shell finds them present
+and appends nothing, the identity provider and BoxVault being such
+backends, the hostnames and what may differ per host fixed by the navbar
+contract's status payload section. One member, one branch, and the
+branding endpoint stays a server-to-server call, because a shell that
+guessed a route per UI backend would carry a per-app path the status
+payload exists to remove.
 
-**Standalone hosts serve pack CSS from their own origin, from embedded or
+**Standalone hosts serve theme CSS from their own origin, from embedded or
 seeded assets — never a remote URL.** An offline install must not hang a
 paint on a dead host. The identity provider follows the same default and
-admits a remote pack only through the per-site `pack_origins` list above.
+admits a remote theme only through the per-site `theme_origins` list above.
 
 ---
 
@@ -351,7 +409,7 @@ admits a remote pack only through the per-site `pack_origins` list above.
 PATCH {issuer}/api/user/preferences
 Content-Type: application/json
 
-{ "language": "es", "theme": "dark", "timezone": "America/Chicago" }
+{ "language": "es", "mode": "dark", "theme": null, "timezone": "America/Chicago" }
 ```
 
 - **Auth is dual-principal**: a same-origin session with CSRF token, or the
@@ -363,30 +421,33 @@ Content-Type: application/json
   through the same call: `ciba_channel`, one of `PUSH`, `EMAIL` or `SMS`
   (`SMS` only while a verified mobile number exists), and `ciba_user_code`,
   the approval PIN, `null` clearing it; the PIN is never read back.
-- `pack` is writable beside `theme`: a bare pack name (`^[a-z0-9-]+$`)
-  the host offers in `brand.packs` sets the person's look, `null` clears
-  it so they follow the host's own pack, and a name the host does not
-  offer answers `422` `enum` at `/pack`; read back as `preferences.pack`
-  wherever `preferences.theme` is read back.
-- `motion` is writable beside `theme`: `auto` or `reduce`, the person's
+- `mode` is `light`, `dark` or `auto`, the person's mode, `null` clearing
+  it so they follow the operating system's; read back as
+  `preferences.mode`.
+- `theme` is writable beside `mode`: a bare theme name (`^[a-z0-9-]+$`)
+  the host offers in `brand.themes` sets the person's theme, `null` clears
+  it so they follow the host's own theme, and a name the host does not
+  offer answers `422` `enum` at `/theme`; read back as `preferences.theme`
+  wherever `preferences.mode` is read back.
+- `motion` is writable beside `mode`: `auto` or `reduce`, the person's
   own reduced-motion switch, `null` clearing it so they follow the
-  device; read back as `preferences.motion` wherever `preferences.theme`
+  device; read back as `preferences.motion` wherever `preferences.mode`
   is read back.
-- `region` is writable beside `language`, `theme` and `timezone`: the
+- `region` is writable beside `language`, `mode` and `timezone`: the
   person's chosen legal region, a two-letter ISO 3166-1 country code or
   one of `EU`, `EEA`, `UK`, `null` clears it, used by the identity
-  provider to pick the terms and policy variant; never inferred from
+  provider to pick the terms and policy copy; never inferred from
   `language`, because a language names no country and the law a person
   is owed depends on where they are.
 - Validation: well-formed BCP 47 with no length cap, since RFC 5646 §2.1
   sets none and `ca-ES-valencia` is a registered fourteen-character tag;
-  `light|dark|auto`; a known IANA zone id; a country code or named set
-  for `region`; `PUSH|EMAIL|SMS`. A violation
+  `light|dark|auto` for `mode`; a known IANA zone id; a country code or
+  named set for `region`; `PUSH|EMAIL|SMS`. A violation
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
 - `GET` on the same path returns the eight members the identity provider
-  stores: `language`, `theme`, `pack`, `motion`, `timezone`, `region`,
+  stores: `language`, `mode`, `theme`, `motion`, `timezone`, `region`,
   `ciba_channel` and `ciba_user_code_set`, the last two the sign-in
   approval channel and whether an approval PIN is set.
 - The shared Preferences tab sends `timezone` only when the person chose
@@ -423,7 +484,7 @@ a pack's own rules.** A pack may set
 the whole `--bs-*` color set, surfaces included: `--bs-body-bg`,
 `--bs-tertiary-bg`, `--bs-secondary-bg`, `--bs-border-color`,
 `--bs-body-color`, `--bs-emphasis-color`, `--bs-link-color` and the button
-variables, each under `[data-brand="x"]` for the light variant and under
+variables, each under `[data-brand="x"]` for the light mode and under
 `[data-brand="x"][data-bs-theme="dark"]` for the dark one, so a site whose
 surfaces are its own keeps them (Moonshine's neutral grays, Nomad's
 purple-black). Every pack is the same shape, no snowflakes: one YAML
@@ -432,7 +493,7 @@ pack belongs to, a brand's own pack naming itself and a product's pack
 naming its owner, BoxVault, Super.Human.Installer and Super.Human.Portal
 naming `startcloud`, because some things are products, not brands, and a
 product belongs to a brand), `primary`, `on_primary`, `logo`,
-`logo_color` per variant, `display`, and under `surfaces` per variant
+`logo_color` per mode, `display`, and under `surfaces` per mode
 `body-bg`, `tertiary-bg`, `secondary-bg`, `border-color`, `body-color`,
 `emphasis-color`, `secondary-color`, `link-color` and `link-hover-color`,
 free to name any further Bootstrap color the same way, `warning` with
@@ -443,10 +504,11 @@ key out or fails contrast, and decides no color of its own, so a hover is
 the pack's own word, toward its brand and never brighter than its link,
 never Bootstrap's blue, and a new pack is one YAML copied from any other
 with every value swapped. Beside the packs the generator writes
-`public/themes/packs.json`, one row per pack, `name`, `css`, `label`,
+`public/themes/themes.json`, one row per pack, `name`, `css`, `label`,
 `description`, `brand` and `logo`, the manifest the shared UI reads at
-boot to complete every pack a host names in `brand.packs`, so the Look
-menu shows a pack's own name and mark and no host, no script and no page
+boot to complete every theme a host names in `brand.themes` and to paint
+the default `startcloud` when the host names none, so the Theme menu
+shows a pack's own name and mark and no host, no script and no page
 carries a pack's words. The variables reach colors, one mark and one face;
 a pack that needs more names `rules`, a stylesheet in its own directory the
 generator appends to the pack's stylesheet nested under
@@ -491,7 +553,7 @@ light. Without it, a dark-primary pack renders unreadable buttons in every
 app.
 
 Surfaces carry no `--brand-*` alias: a pack that sets them writes the
-`--bs-*` names directly, per variant, and the generator checks every text
+`--bs-*` names directly, per mode, and the generator checks every text
 color it sets against the surface it sits on at the same 4.5:1.
 
 App-specific namespaces (`--hw-*`, `--bv-*`) remain for genuinely app-only
@@ -529,7 +591,7 @@ an API, so its part is naming a pack per site (`theme_id`) and answering
 A developer brands a site by writing a pack directory and naming it in the
 site's configuration, never by touching a server. On the identity provider
 a pack is same-origin unless the site's configuration lists the origin
-that hosts it (`sites.<id>.ui.pack_origins`), and every listed origin
+that hosts it (`sites.<id>.ui.theme_origins`), and every listed origin
 becomes that site's `style-src` and `font-src` entry while any other
 origin is refused, because a stylesheet from a host the issuer does not
 control runs on the sign-in page and CSS alone can leak typed input
@@ -559,30 +621,31 @@ manages packs and none offers a UI for them.
 }
 ```
 
-Only genuine inversions repeat under the variant selector. The mark's
-paint is per variant in the YAML, `logo_color: { light, dark }`, the same
+Only genuine inversions repeat under the mode selector. The mark's
+paint is per mode in the YAML, `logo_color: { light, dark }`, the same
 shape as `surfaces`: the `light` value (the primary when absent) is
 emitted in the brand block, and the `dark` value repeats under the dark
 selector only when the YAML names one, each checked at 3:1 against the
-`--bs-body-bg` of its own variant.
+`--bs-body-bg` of its own mode.
 
-### Pack names
+### Theme names
 
 `data-brand` values are bare names in a shared namespace. **The shared UI's
-`public/themes/` is the canonical source of what a pack name means**, one
+`public/themes/` is the canonical source of what a theme name means**, one
 directory per name; the authorization server's site configuration names one
 of them per site. Standalone hosts carry vendored snapshots that may lag it —
 that is expected behavior, not a fault.
 
-Every site of the identity provider names a pack; a site with no pack is
+Every site of the identity provider names a theme; a site with no theme is
 not a valid site, because the auth column and the chrome then paint stock
 Bootstrap where the site's own accent belongs, and `theme_id: light` is
-retired as a site value (the variant is the person's, decision 70's list
+retired as a site value (the mode is the person's, decision 70's list
 is amended). The `startcloud` pack is the shared UI's own base look under
-its name: Bootstrap's `#0d6efd` accent with white on it, stock light
-surfaces, and the dark surfaces `#1a1d20` with the `#4d565e` border, the
-same values the base sheet paints with no pack at all, so a site or a
-host names `startcloud` for that look instead of naming nothing.
+its name and the default theme of every host that names none: Bootstrap's
+`#0d6efd` accent with white on it, stock light surfaces, and the dark
+surfaces `#1a1d20` with the `#4d565e` border, the same values the base
+sheet paints with no theme at all, so a site or a host names `startcloud`
+for that look and a host that names nothing gets it.
 
 Email is branded through the identity provider's email-template
 documents, a copy per site and per locale edited on its Email templates
@@ -593,7 +656,7 @@ the server's jar.
 
 ## Artwork
 
-Prefer a **monochrome stencil painted by CSS** over per-variant image files:
+Prefer a **monochrome stencil painted by CSS** over per-mode image files:
 
 ```css
 .brand-mark {
@@ -605,7 +668,7 @@ Prefer a **monochrome stencil painted by CSS** over per-variant image files:
 }
 ```
 
-One file per brand, works cross-origin, no variants, no inlining, no
+One file per brand, works cross-origin, no per-mode files, no inlining, no
 JavaScript. Defaulting the color to `currentColor` makes the mark inherit
 the themed text color with no rule at all.
 
@@ -622,7 +685,7 @@ the themed text color with no rule at all.
 
 **Multi-color marks cannot be masked** — masking discards color. Choose
 artwork that reads on both light and dark and needs no switching, or ship
-`light`/`dark` variants. `--brand-logo` and `--brand-logo-color` are
+`light`/`dark` files. `--brand-logo` and `--brand-logo-color` are
 therefore **optional per pack**.
 
 **Bundled brand assets remain the fallback everywhere.** Endpoint down, 404,
@@ -670,8 +733,8 @@ shell ships the fallbacks until each lands:
 | `public/brand/providers/<id>.svg`, one per federated provider that is not ours                                                                                            | square                                                                                                                                                                                                                                                                                                                                 | `icon_url` of `GET /api/auth/methods` (google, github, microsoft); our own providers name `/brand/<name>/mark.svg`                                                                                                    |
 | `public/themes/switchboard/poppins-<weight>.woff2`                                                                                                                        | weights 500, 600, 700                                                                                                                                                                                                                                                                                                                  | `--brand-auth-display` of the `switchboard` pack, named under `fonts` in its YAML; Helvetica paints until they land                                                                                                   |
 | `public/themes/prominic/ocr-a-tribute-400.woff2`                                                                                                                          | weight 400, the face of the Prominic wordmark                                                                                                                                                                                                                                                                                          | `--brand-auth-display` of the `prominic` pack, named under `fonts` in its YAML; the system monospace paints until it loads                                                                                            |
-| `public/themes/startcloud/startcloud.css` and its YAML source                                                                                                             | the fourth pack, the shared UI's own base look under its name                                                                                                                                                                                                                                                                          | the `startcloud` site and every BoxVault host that names it as `brand.pack`                                                                                                                                           |
-| `public/themes/prominic/prominic.css` and its YAML source, `logo: /brand/prominic/mark.svg`                                                                               | the fifth pack, the Prominic accent `#67142c`, the p and asterisk as the mark                                                                                                                                                                                                                                                          | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.pack` and `logo_url`                                                                                                 |
+| `public/themes/startcloud/startcloud.css` and its YAML source                                                                                                             | the fourth pack, the shared UI's own base look under its name, the default theme                                                                                                                                                                                                                                                       | the `startcloud` site, every BoxVault host that names it as `brand.theme` and every host that names none                                                                                                              |
+| `public/themes/prominic/prominic.css` and its YAML source, `logo: /brand/prominic/mark.svg`                                                                               | the fifth pack, the Prominic accent `#67142c`, the p and asterisk as the mark                                                                                                                                                                                                                                                          | BoxVault's downloads face at `downloads.prominic.net`, named per host in its sites map as `brand.theme` and `logo_url`                                                                                                |
 
 The sites are `startcloud`, `moonshinedev`, `switchboard`,
 `nomadservices` and, on BoxVault's downloads face alone, `prominic`.
@@ -690,9 +753,9 @@ is a build gate rather than a review note:
   Bootstrap's focus ring, so a pack can pass text contrast and still fail
   keyboard accessibility. The focus ring is therefore the chrome's and
   never the pack's: the generator emits one `--brand-focus-ring` per
-  variant, computed from the accent, nudged toward black on the light
-  variant or white on the dark one in 5% steps only until the opaque
-  color reaches 3:1 against that variant's body background, at the
+  mode, computed from the accent, nudged toward black on the light
+  mode or white on the dark one in 5% steps only until the opaque
+  color reaches 3:1 against that mode's body background, at the
   lowest alpha whose color composited over that background reaches 3:1,
   measured composited as WCAG technique G195 measures a partially
   transparent indicator; a pack never sets a ring.
@@ -732,10 +795,11 @@ For a consuming app:
   this directive.
 - **`script-src`** — a per-response **nonce** (natural, since hosts already
   mutate served HTML) or a hash for a byte-stable script. **Never
-  `unsafe-inline`.** The pre-paint script requires this whether or not packs
-  are ever adopted. The shared build publishes the script's SHA-256 beside
-  each release tarball, so a UI backend copies the hash rather than
-  computing it.
+  `unsafe-inline`.** The pre-paint script requires this whether or not
+  themes are ever adopted. The shared build publishes the script's SHA-256
+  beside each release tarball, so a UI backend copies the hash rather than
+  computing it, and the identity provider computes it per answer from the
+  script it serves; BoxVault carries no CSP hash.
 - **Reporting** — `report-to` beside `report-uri`, since CSP Level 3
   deprecates the latter and browsers are dropping it.
 - **One header** — a UI backend that must vary a directive per route
@@ -790,12 +854,12 @@ render path (RFC 9111).
 Server-side injection is the recorded end state. For a first pass it is
 **deferred**, because the two flashes it addresses are not the same size:
 
-| Item                                | Status                                                                                                 | Reason                                                                                                                                                                           |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pre-paint variant script            | **Ship**                                                                                               | Wrong-variant paint is the whole page; it is also a live defect independent of packs                                                                                             |
-| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while packs set colors only; a pack that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
-| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                             |
-| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                    |
+| Item                                | Status                                                                                                 | Reason                                                                                                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pre-paint mode script               | **Ship**                                                                                               | Wrong-mode paint is the whole page; it is also a live defect independent of themes                                                                                                 |
+| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while themes set colors only; a theme that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
+| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                               |
+| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                      |
 
 **Client hints are an enhancement, not a mechanism.** `Sec-CH-Prefers-Color-Scheme`
 is opt-in by protocol (RFC 8942) — the first request never carries it, and a
@@ -847,7 +911,7 @@ Recorded so they surface as decisions rather than discoveries:
   blank gap; a face that blocks paint or swaps late on the sign-in page is the
   most visible flash a visitor can meet.
 - **`prefers-reduced-motion`.** Modeled now, as the `motion` preference,
-  the same user-preference shape as the variant axis: `auto` follows the
+  the same user-preference shape as the mode axis: `auto` follows the
   device and `reduce` stamps `data-motion="reduce"` on `<html>` from the
   account value, local storage or the pre-paint script, and one rule of
   the chrome stops every animation and transition under it so a pack

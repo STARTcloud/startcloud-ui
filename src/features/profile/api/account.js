@@ -114,7 +114,7 @@ export const placesKey = () => client.get('/api/config/places');
  * section draws its fields with no write control and no Manage link (the
  * issuer is the record's home) and the Places key for the address block's
  * display; the issuer refuses every self-write for it, the preferences
- * write included, so theme and language stay the browser's and every
+ * write included, so mode, theme, motion and language stay the browser's and every
  * credential, passkey, second-factor, session and deletion call is
  * absent, the page drawing none of their sections.
  */

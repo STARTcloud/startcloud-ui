@@ -9,87 +9,87 @@ import { log } from './logger';
 
 const PUBLIC = { auth: false };
 const DATA_ATTRIBUTE = /^data-[a-z0-9-]+$/;
-const PACK_NAME = /^[a-z0-9-]+$/;
+const THEME_NAME = /^[a-z0-9-]+$/;
 const SAME_ORIGIN_PATH = /^\/(?![/\\])/;
-const PACK_LINK_ID = 'brand-pack';
-const PACK_KEY = 'pack';
-const PACKS_KEY = 'packs';
+const THEME_LINK_ID = 'brand-theme';
+const THEME_KEY = 'theme';
+const THEMES_KEY = 'themes';
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
 
-const validPack = pack =>
-  Boolean(pack?.css) && SAME_ORIGIN_PATH.test(pack.css) && PACK_NAME.test(pack.name || '');
+const validTheme = theme =>
+  Boolean(theme?.css) && SAME_ORIGIN_PATH.test(theme.css) && THEME_NAME.test(theme.name || '');
 
 /**
- * The packs a person may choose on this host, `brand.packs` of the status,
- * the host's own list or every pack of the build when the host names none,
- * with every malformed entry dropped.
+ * The themes a person may choose on this host, `brand.themes` of the
+ * status, the host's own list or every theme of the build when the host
+ * names none, with every malformed entry dropped.
  *
  * @param {Object} brand - `status.brand`
- * @returns {Array<{ name: string, css: string, label: string }>} The offered packs
+ * @returns {Array<{ name: string, css: string, label: string }>} The offered themes
  */
-export const offeredPacks = brand =>
-  (Array.isArray(brand?.packs) ? brand.packs : []).filter(
-    pack => validPack(pack) && typeof pack.label === 'string'
+export const offeredThemes = brand =>
+  (Array.isArray(brand?.themes) ? brand.themes : []).filter(
+    theme => validTheme(theme) && typeof theme.label === 'string'
   );
 
 /**
- * The pack the person chose on this host, read from the `pack` key beside
- * `theme`, or null while the choice is unset or names a pack the host no
- * longer offers.
+ * The theme the person chose on this host, read from the `theme` key
+ * beside `mode`, or null while the choice is unset or names a theme the
+ * host no longer offers.
  *
- * @param {Array<{ name: string }>} packs - The offered packs
- * @returns {Object|null} The chosen pack
+ * @param {Array<{ name: string }>} themes - The offered themes
+ * @returns {Object|null} The chosen theme
  */
-export const chosenPack = packs => {
-  const name = localStorage.getItem(PACK_KEY) || '';
-  return packs.find(pack => pack.name === name) || null;
+export const chosenTheme = themes => {
+  const name = localStorage.getItem(THEME_KEY) || '';
+  return themes.find(theme => theme.name === name) || null;
 };
 
 /**
- * Paint the page in a pack: `data-brand` stamped from its name and its
+ * Paint the page in a theme: `data-brand` stamped from its name and its
  * stylesheet linked last in the head, after the app's own, so a tie on
- * specificity goes to the pack; null removes the person's own link and the
- * attribute, leaving whatever the served page stamped. A pack the served
- * page already stamped is left as it is.
+ * specificity goes to the theme; null removes the person's own link and
+ * the attribute, leaving whatever the served page stamped. A theme the
+ * served page already stamped is left as it is.
  *
- * @param {{ name: string, css: string }|null} pack - The pack to paint, or null for none
+ * @param {{ name: string, css: string }|null} theme - The theme to paint, or null for none
  */
-export const applyPack = pack => {
+export const applyTheme = theme => {
   const root = document.documentElement;
-  const link = document.getElementById(PACK_LINK_ID);
-  if (!validPack(pack)) {
+  const link = document.getElementById(THEME_LINK_ID);
+  if (!validTheme(theme)) {
     link?.remove();
     root.removeAttribute('data-brand');
     return;
   }
-  if (!link && root.getAttribute('data-brand') === pack.name) {
+  if (!link && root.getAttribute('data-brand') === theme.name) {
     return;
   }
   const element = link || document.createElement('link');
   element.rel = 'stylesheet';
-  element.id = PACK_LINK_ID;
-  if (element.getAttribute('href') !== pack.css) {
-    element.href = pack.css;
+  element.id = THEME_LINK_ID;
+  if (element.getAttribute('href') !== theme.css) {
+    element.href = theme.css;
   }
-  root.setAttribute('data-brand', pack.name);
+  root.setAttribute('data-brand', theme.name);
   document.head.appendChild(element);
 };
 
 const paintBrand = brand => {
-  const packs = offeredPacks(brand);
-  if (packs.length > 0) {
-    localStorage.setItem(PACKS_KEY, JSON.stringify(packs));
+  const themes = offeredThemes(brand);
+  if (themes.length > 0) {
+    localStorage.setItem(THEMES_KEY, JSON.stringify(themes));
   } else {
-    localStorage.removeItem(PACKS_KEY);
+    localStorage.removeItem(THEMES_KEY);
   }
-  const chosen = chosenPack(packs);
+  const chosen = chosenTheme(themes);
   if (chosen) {
-    applyPack(chosen);
+    applyTheme(chosen);
     return;
   }
-  if (!document.documentElement.hasAttribute('data-brand') && validPack(brand?.pack)) {
-    applyPack(brand.pack);
+  if (!document.documentElement.hasAttribute('data-brand') && validTheme(brand?.theme)) {
+    applyTheme(brand.theme);
   }
 };
 
@@ -185,14 +185,14 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * Vite serves it), and the notification hub client, the identity provider
  * itself for an `idp` host and the app's own backend otherwise; the
  * analytics script tag with its data attribute when the status carries
- * `analytics`; and the pack when the status carries `brand.pack`,
+ * `analytics`; and the theme when the status carries `brand.theme`,
  * `data-brand` stamped from its `name` and its `css` appended as a
  * stylesheet link after the app's own, unless the served page already
- * carries `data-brand`, in which case nothing is touched; the packs the
- * host offers a person, `brand.packs`, the host's own list or every pack
- * of the build when the host names none, cached under `packs` for the
- * pre-paint script, and the person's own choice under `pack`, when it
- * names an offered pack, painted over the host's. Runs once per entry
+ * carries `data-brand`, in which case nothing is touched; the themes the
+ * host offers a person, `brand.themes`, the host's own list or every
+ * theme of the build when the host names none, cached under `themes` for
+ * the pre-paint script, and the person's own choice under `theme`, when
+ * it names an offered theme, painted over the host's. Runs once per entry
  * before anything renders; the exports are live bindings.
  *
  * @param {Object} status - The payload from `probeStatus`

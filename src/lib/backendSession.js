@@ -57,14 +57,14 @@ const failure = (message, messageKey) => {
  * produced, and merged over the stored record without its `access_token`
  * member, so a profile read never replaces the JWT and never hands out a
  * credential, the stored token and `stay_logged_in` kept as they are; a
- * look, theme, motion or language changed at the identity provider is
+ * mode, theme, motion or language changed at the identity provider is
  * picked up on a normal page refresh, the stored record is the fallback on
  * any failure but a `401`, which clears it, and `restore()` answers null
  * while the record carries no `id`, so a token-only record never paints
- * as signed in. The account's `preferred_theme`, `preferred_language`,
- * `preferred_pack` and `preferred_motion` ride the stored record, applied
- * in memory while signed in and never mirrored into the browser's own
- * keys, and leave with the record at sign-out. `complete()` and `login()`
+ * as signed in. The account's `preferred_mode`, `preferred_theme`,
+ * `preferred_motion` and `preferred_language` ride the stored record,
+ * applied in memory while signed in and never mirrored into the browser's
+ * own keys, and leave with the record at sign-out. `complete()` and `login()`
  * store the credential, await `login` on the bus, whose handler is the one
  * `load()`, and answer the restored session, reading nothing themselves.
  * The backend's logout route signs out everywhere. A session it restores
@@ -291,9 +291,9 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
     if (saved && user) {
       store({
         ...user,
+        ...('mode' in patch ? { preferred_mode: patch.mode } : {}),
         ...('theme' in patch ? { preferred_theme: patch.theme } : {}),
         ...(patch.language ? { preferred_language: patch.language } : {}),
-        ...('pack' in patch ? { preferred_pack: patch.pack } : {}),
         ...('motion' in patch ? { preferred_motion: patch.motion } : {}),
       });
     }

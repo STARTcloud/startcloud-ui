@@ -43,21 +43,19 @@
       "toggle": "Abrir la navegación",
       "navigation": "Barra lateral",
       "view": "Vista"
+    },
+    "mode": {
+      "auto": "Modo: SO ({{resolved}})",
+      "light": "Modo: claro",
+      "dark": "Modo: oscuro",
+      "name": {
+        "light": "Claro",
+        "dark": "Oscuro"
+      }
     }
   },
   "user": {
     "unknownUser": "Usuario Desconocido"
-  },
-  "theme": {
-    "auto": "Tema: Automático ({{variant}})",
-    "light": "Tema: claro",
-    "dark": "Tema: oscuro",
-    "name": {
-      "follow": "Seguir este sitio",
-      "auto": "Automático (seguir el dispositivo)",
-      "light": "Claro",
-      "dark": "Oscuro"
-    }
   },
   "sessionEnded": {
     "title": "Se cerró tu sesión.",
@@ -481,25 +479,24 @@
       "title": "Preferencias",
       "language": "Idioma",
       "languageHint": "Se guarda al cambiarlo, el mismo valor que escribe el globo de la cabecera.",
-      "theme": {
-        "label": "Tema",
+      "mode": {
+        "label": "Modo",
         "light": "Claro",
         "dark": "Oscuro",
-        "auto": "Automático (seguir el dispositivo)",
-        "follow": "Seguir este sitio"
+        "auto": "SO"
       },
       "motion": {
         "label": "Movimiento",
         "auto": "Seguir este dispositivo",
         "reduce": "Reducido"
       },
-      "themeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de tema.",
-      "motionHint": "Reducido desactiva las animaciones y transiciones de todos los estilos para ti, en todos los hosts, y te sigue al iniciar sesión.",
-      "look": {
-        "label": "Aspecto",
+      "modeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de modo.",
+      "motionHint": "Reducido desactiva las animaciones y transiciones de todos los temas para ti, en todos los hosts, y te sigue al iniciar sesión.",
+      "theme": {
+        "label": "Tema",
         "follow": "Seguir este sitio"
       },
-      "lookHint": "Se guarda al cambiarlo y se aplica al momento; esta página es el único lugar donde se elige el aspecto.",
+      "themeHint": "Se guarda al cambiarlo y se aplica al momento; esta página es el único lugar donde se elige el tema.",
       "timezone": "Zona horaria",
       "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
       "region": "Región",

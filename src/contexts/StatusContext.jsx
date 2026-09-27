@@ -18,53 +18,71 @@ const StatusContext = createContext(null);
  */
 export const probeStatus = () => axios.get('/api/status').then(({ data }) => data);
 
+const DEFAULT_THEME = 'startcloud';
+
 /**
- * The build's pack manifest, `public/themes/packs.json`, written by the
- * theme generator from every pack's YAML: one row per pack, `name`,
+ * The build's theme manifest, `public/themes/themes.json`, written by the
+ * theme generator from every theme's YAML: one row per theme, `name`,
  * `css`, `label`, `description`, `brand` and `logo`; an empty list when
- * the file is missing or malformed, so a host without packs boots as it
+ * the file is missing or malformed, so a host without themes boots as it
  * did.
  *
  * @returns {Promise<Array<Object>>} The rows
  */
-export const fetchPackManifest = () =>
+export const fetchThemeManifest = () =>
   axios
-    .get('/themes/packs.json')
+    .get('/themes/themes.json')
     .then(({ data }) => (Array.isArray(data) ? data : []))
     .catch(() => []);
 
-/**
- * The status with the packs the host offers completed from the build's
- * manifest by name: a host whose `brand.packs` is absent or not a list
- * offers every pack of the build in the manifest's order, an empty list
- * offers none, and a list offers exactly those names, the host naming
- * which packs a person may choose and the pack itself supplying its
- * label, description, brand and mark, so no host carries a pack's words;
- * a name the manifest does not hold is dropped, because a build cannot
- * paint a pack it does not ship and a site config can run ahead of the
- * build it serves, the host's rows kept as they are only while the
- * manifest could not be read at all.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {Array<Object>} manifest - The rows from `fetchPackManifest`
- * @returns {Object} The status, its `brand.packs` completed
- */
-export const withPackManifest = (status, manifest) => {
-  const packs = status?.brand?.packs;
-  if (!Array.isArray(packs)) {
-    return { ...status, brand: { ...status?.brand, packs: manifest } };
+const hostThemeOf = (brand, manifest) => {
+  if (brand?.theme && typeof brand.theme === 'object') {
+    return brand.theme;
+  }
+  return manifest.find(row => row.name === DEFAULT_THEME) || null;
+};
+
+const offeredOf = (themes, manifest) => {
+  if (!Array.isArray(themes)) {
+    return manifest;
   }
   if (manifest.length === 0) {
-    return status;
+    return themes;
   }
   const rows = new Map(manifest.map(row => [row.name, row]));
+  return themes.flatMap(theme =>
+    rows.has(theme.name) ? [{ ...theme, ...rows.get(theme.name) }] : []
+  );
+};
+
+/**
+ * The status with the host's own theme and the themes it offers completed
+ * from the build's manifest: `brand.theme` stays the host's own
+ * `{ name, css }` while it names one, and is the manifest's `startcloud`
+ * row, the default theme, while the host names none, a stale host's bare
+ * string there being no theme; a host whose `brand.themes` is absent or
+ * not a list offers every theme of the build in the manifest's order, an
+ * empty list offers none, and a list offers exactly those names, the
+ * host naming which themes a person may choose and the theme itself
+ * supplying its label, description, brand and mark, so no host carries a
+ * theme's words; a name the manifest does not hold is dropped, because a
+ * build cannot paint a theme it does not ship and a site config can run
+ * ahead of the build it serves, the host's rows kept as they are only
+ * while the manifest could not be read at all.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Array<Object>} manifest - The rows from `fetchThemeManifest`
+ * @returns {Object} The status, its `brand.theme` and `brand.themes` completed
+ */
+export const withThemeManifest = (status, manifest) => {
+  const brand = status?.brand;
+  const hostTheme = hostThemeOf(brand, manifest);
   return {
     ...status,
     brand: {
-      ...status.brand,
-      packs: packs.flatMap(pack =>
-        rows.has(pack.name) ? [{ ...pack, ...rows.get(pack.name) }] : []
-      ),
+      ...brand,
+      ...(hostTheme ? { theme: hostTheme } : {}),
+      themes: offeredOf(brand?.themes, manifest),
     },
   };
 };
@@ -77,12 +95,11 @@ export const statusShape = PropTypes.shape({
     logo_url: PropTypes.string.isRequired,
     repo: PropTypes.string,
     changelog: PropTypes.string,
-    theme: PropTypes.oneOf(['light', 'dark']),
-    pack: PropTypes.shape({
+    theme: PropTypes.shape({
       name: PropTypes.string.isRequired,
       css: PropTypes.string.isRequired,
     }),
-    packs: PropTypes.arrayOf(
+    themes: PropTypes.arrayOf(
       PropTypes.shape({
         name: PropTypes.string.isRequired,
         css: PropTypes.string.isRequired,

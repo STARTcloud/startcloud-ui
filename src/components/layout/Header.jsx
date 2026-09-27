@@ -9,7 +9,7 @@ import { NavbarSearchControl } from './Search';
 import { NavbarSearchPanel } from './SearchPanel';
 import UserMenu, { SignInButton } from './UserMenu';
 
-const THEME_ICONS = { auto: FaCircleHalfStroke, light: FaSun, dark: FaMoon };
+const MODE_ICONS = { auto: FaCircleHalfStroke, light: FaSun, dark: FaMoon };
 
 const Brand = ({ brand, LinkComponent }) => {
   const className = 'navbar-brand p-0 d-flex align-items-center';
@@ -98,53 +98,52 @@ TicketButton.propTypes = {
   href: PropTypes.string.isRequired,
 };
 
-const ThemeButton = ({ theme }) => {
+const ModeButton = ({ mode }) => {
   const { t } = useTranslation();
-  const ThemeIcon = THEME_ICONS[theme.preference] || FaCircleHalfStroke;
-  const themeLabel = theme.preference
-    ? t(`theme.${theme.preference}`, { variant: t(`theme.name.${theme.resolved}`) })
-    : t('theme.name.follow');
+  const ModeIcon = MODE_ICONS[mode.preference] || FaCircleHalfStroke;
+  const modeLabel = t(`navbar.mode.${mode.preference}`, {
+    resolved: t(`navbar.mode.name.${mode.resolved}`),
+  });
   return (
     <li className="nav-item">
       <button
-        key={theme.preference}
+        key={mode.preference}
         type="button"
         className={CLUSTER_BUTTON}
-        onClick={theme.onToggle}
-        title={themeLabel}
-        aria-label={themeLabel}
+        onClick={mode.onToggle}
+        title={modeLabel}
+        aria-label={modeLabel}
       >
-        <ThemeIcon />
+        <ModeIcon />
       </button>
     </li>
   );
 };
 
-const themeShape = PropTypes.shape({
-  preference: PropTypes.string.isRequired,
-  siteVariant: PropTypes.string,
+const modeShape = PropTypes.shape({
+  preference: PropTypes.oneOf(['auto', 'light', 'dark']).isRequired,
   resolved: PropTypes.oneOf(['light', 'dark']).isRequired,
   onToggle: PropTypes.func.isRequired,
   onPick: PropTypes.func,
 });
 
-ThemeButton.propTypes = {
-  theme: themeShape.isRequired,
+ModeButton.propTypes = {
+  mode: modeShape.isRequired,
 };
 
 /**
  * The account cluster in one order for both states, search, Discover, the
- * ticket icon, theme (the cycling button over the variant alone, the look
- * being the profile's Preferences page's to choose), language, then the
- * account menu or Sign in, each control drawn only in the state it
- * belongs to: search and the menu signed in, the ticket icon and Sign in
- * signed out, the rest in both.
+ * ticket icon, the mode control (the cycling button over the mode alone,
+ * the theme being the profile's Preferences page's to choose), language,
+ * then the account menu or Sign in, each control drawn only in the state
+ * it belongs to: search and the menu signed in, the ticket icon and Sign
+ * in signed out, the rest in both.
  */
 const Cluster = ({
   signedIn,
   discoverTo,
   ticketUrl,
-  theme,
+  mode,
   language,
   userMenu,
   onSignIn,
@@ -155,7 +154,7 @@ const Cluster = ({
     {signedIn ? <NavbarSearchControl /> : null}
     {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
     {!signedIn && ticketUrl ? <TicketButton href={ticketUrl} /> : null}
-    <ThemeButton theme={theme} />
+    <ModeButton mode={mode} />
     <LanguageButton languages={language.languages} onPick={language.onPick} />
     {signedIn && userMenu ? <UserMenu {...userMenu} /> : null}
     {!signedIn && (onSignIn || signInTo) ? (
@@ -173,7 +172,7 @@ Cluster.propTypes = {
   signedIn: PropTypes.bool.isRequired,
   discoverTo: PropTypes.string.isRequired,
   ticketUrl: PropTypes.string.isRequired,
-  theme: themeShape.isRequired,
+  mode: modeShape.isRequired,
   language: languageShape.isRequired,
   userMenu: PropTypes.object,
   onSignIn: PropTypes.func,
@@ -185,7 +184,7 @@ const Header = ({
   brand = null,
   crumbs = [],
   LinkComponent = 'a',
-  theme,
+  mode,
   language,
   signedIn,
   onSignIn = null,
@@ -228,7 +227,7 @@ const Header = ({
           signedIn={signedIn}
           discoverTo={discoverTo}
           ticketUrl={ticketUrl}
-          theme={theme}
+          mode={mode}
           language={language}
           userMenu={userMenu}
           onSignIn={onSignIn}
@@ -246,7 +245,7 @@ Header.propTypes = {
   brand: brandShape,
   crumbs: PropTypes.arrayOf(crumbShape),
   LinkComponent: PropTypes.elementType,
-  theme: themeShape.isRequired,
+  mode: modeShape.isRequired,
   language: languageShape.isRequired,
   signedIn: PropTypes.bool.isRequired,
   onSignIn: PropTypes.func,

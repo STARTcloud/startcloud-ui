@@ -16,7 +16,7 @@ import { loadCountries } from '../../../lib/countries';
 import ManageLink from './ManageLink';
 
 const PREFS_KEY = 'table_prefs_profile_preferences';
-const THEMES = ['light', 'dark', 'auto'];
+const MODES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
 const REGION_SETS = ['EU', 'EEA', 'UK'];
 const RECORD_SCHEMA = {
@@ -62,8 +62,8 @@ const languageName = code => {
 
 const settingsOf = preferences => ({
   language: preferences?.language || '',
-  theme: preferences?.theme || 'auto',
-  pack: preferences?.pack || '',
+  mode: preferences?.mode || 'auto',
+  theme: preferences?.theme || '',
   motion: preferences?.motion || 'auto',
   timezone: preferences?.timezone || '',
   region: preferences?.region || '',
@@ -80,8 +80,8 @@ const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
   }
   if (!own) {
     patch.language = settings.language;
+    patch.mode = settings.mode;
     patch.theme = settings.theme || null;
-    patch.pack = settings.pack || null;
     patch.motion = settings.motion === 'auto' ? null : settings.motion;
     return patch;
   }
@@ -132,31 +132,29 @@ ReadOnlyField.propTypes = {
   value: PropTypes.string.isRequired,
 };
 
-const ThemeSelect = ({ own, themePreference, recordTheme, siteVariant, onChange }) => {
+const ModeSelect = ({ own, mode, recordMode, onChange }) => {
   const { t } = useTranslation();
-  const themes = siteVariant ? ['', ...THEMES] : THEMES;
   return (
     <SelectField
-      id="profile-preferences-theme"
-      label={t('profile.preferences.theme.label')}
-      hint={own ? t('profile.preferences.themeHint') : ''}
-      value={own ? themePreference : recordTheme}
+      id="profile-preferences-mode"
+      label={t('profile.preferences.mode.label')}
+      hint={own ? t('profile.preferences.modeHint') : ''}
+      value={own ? mode : recordMode}
       onChange={event => onChange(event.target.value)}
     >
-      {themes.map(theme => (
-        <option key={theme || 'follow'} value={theme}>
-          {t(`profile.preferences.theme.${theme || 'follow'}`)}
+      {MODES.map(value => (
+        <option key={value} value={value}>
+          {t(`profile.preferences.mode.${value}`)}
         </option>
       ))}
     </SelectField>
   );
 };
 
-ThemeSelect.propTypes = {
+ModeSelect.propTypes = {
   own: PropTypes.bool.isRequired,
-  themePreference: PropTypes.string.isRequired,
-  recordTheme: PropTypes.string.isRequired,
-  siteVariant: PropTypes.string.isRequired,
+  mode: PropTypes.string.isRequired,
+  recordMode: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -186,27 +184,23 @@ MotionSelect.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-const lookName = (packs, name) => packs.find(pack => pack.name === name)?.label || name;
+const themeName = (themes, name) => themes.find(theme => theme.name === name)?.label || name;
 
 const ReadOnlyPreferences = ({ account, profile, folds }) => {
   const { t, i18n } = useTranslation();
-  const { preference: themePreference, pack, packs } = useTheme();
+  const { mode, theme, themes } = useTheme();
   const { motion } = useMotion();
   const preferences = profile.preferences || {};
   const fields = [
     ['language', t('profile.preferences.language'), languageName(i18n.language)],
-    [
-      'theme',
-      t('profile.preferences.theme.label'),
-      t(`profile.preferences.theme.${themePreference || 'follow'}`),
-    ],
+    ['mode', t('profile.preferences.mode.label'), t(`profile.preferences.mode.${mode}`)],
     ['motion', t('profile.preferences.motion.label'), t(`profile.preferences.motion.${motion}`)],
-    ...(packs.length > 0
+    ...(themes.length > 0
       ? [
           [
-            'look',
-            t('profile.preferences.look.label'),
-            pack ? lookName(packs, pack) : t('profile.preferences.look.follow'),
+            'theme',
+            t('profile.preferences.theme.label'),
+            theme ? themeName(themes, theme) : t('profile.preferences.theme.follow'),
           ],
         ]
       : []),
@@ -302,14 +296,7 @@ PinField.propTypes = {
 const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
-  const {
-    preference: themePreference,
-    siteVariant,
-    setPreference: setThemePreference,
-    pack,
-    packs,
-    setPack,
-  } = useTheme();
+  const { mode, setMode, theme, themes, setTheme } = useTheme();
   const { motion, setMotion } = useMotion();
   const own = session !== null;
   const languages = supportedLanguages(i18n);
@@ -364,20 +351,20 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
     await i18n.changeLanguage(language);
   };
 
-  const changeTheme = theme => {
+  const changeMode = value => {
     if (!own) {
-      set('theme', theme);
+      set('mode', value);
       return;
     }
-    setThemePreference(theme);
+    setMode(value);
   };
 
-  const changeLook = name => {
+  const changeTheme = name => {
     if (!own) {
-      set('pack', name);
+      set('theme', name);
       return;
     }
-    setPack(name);
+    setTheme(name);
   };
 
   const changeMotion = value => {
@@ -453,13 +440,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
               </SelectField>
             </div>
             <div className="col-md-3">
-              <ThemeSelect
-                own={own}
-                themePreference={themePreference}
-                recordTheme={settings.theme}
-                siteVariant={siteVariant}
-                onChange={changeTheme}
-              />
+              <ModeSelect own={own} mode={mode} recordMode={settings.mode} onChange={changeMode} />
             </div>
             <div className="col-md-3">
               <MotionSelect
@@ -471,17 +452,17 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
             </div>
           </div>
           <div className="row">
-            {packs.length > 0 ? (
+            {themes.length > 0 ? (
               <div className="col-md-3">
                 <SelectField
-                  id="profile-preferences-look"
-                  label={t('profile.preferences.look.label')}
-                  hint={own ? t('profile.preferences.lookHint') : ''}
-                  value={own ? pack : settings.pack}
-                  onChange={event => changeLook(event.target.value)}
+                  id="profile-preferences-theme"
+                  label={t('profile.preferences.theme.label')}
+                  hint={own ? t('profile.preferences.themeHint') : ''}
+                  value={own ? theme : settings.theme}
+                  onChange={event => changeTheme(event.target.value)}
                 >
-                  <option value="">{t('profile.preferences.look.follow')}</option>
-                  {packs.map(entry => (
+                  <option value="">{t('profile.preferences.theme.follow')}</option>
+                  {themes.map(entry => (
                     <option key={entry.name} value={entry.name}>
                       {entry.label}
                     </option>
@@ -589,16 +570,16 @@ EditablePreferences.propTypes = {
 /**
  * The Preferences section of the identity contract at
  * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
- * fold is kept under `table_prefs_profile_preferences`: language, theme
+ * fold is kept under `table_prefs_profile_preferences`: language, mode
  * and motion on one row, each a select that writes through on change,
- * language and theme the same values the chrome's controls write through
- * the shared `useTheme` and the shared `i18n`, the theme select offering
- * "Follow this site" first while the site names a default variant, saved
- * as a cleared value, and motion the person's own reduced-motion switch
- * through the shared `useMotion`, "Follow this device" or "Reduced",
- * following saved as a cleared value; on the next row a Look select while
- * the host offers packs, "Follow this site" or one of them, writing
- * through on change as the theme does, the time zone from the `Intl` list
+ * language and mode the same values the chrome's controls write through
+ * the shared `useTheme` and the shared `i18n`, the mode select offering
+ * Light, Dark and OS, the operating system's scheme, and motion the
+ * person's own reduced-motion switch through the shared `useMotion`,
+ * "Follow this device" or "Reduced", following saved as a cleared value;
+ * on the next row a Theme select while the host offers themes, "Follow
+ * this site" or one of them, writing through on change as the mode does,
+ * the theme following saved as a cleared value, the time zone from the `Intl` list
  * with the detected zone preselected while none is set, and region as a
  * select of the two-letter country list plus `EU`, `EEA` and `UK`, the
  * legal region the terms and policy variants resolve to, blank clearing
@@ -612,12 +593,12 @@ EditablePreferences.propTypes = {
  * value, so a detected preselection is never written, while the rules
  * evaluate the zone and region the selects hold; the page remounts it
  * with every re-read of the record. While `readOnly`, the record an
- * identity provider owns, the language, theme, motion, time zone and
- * region draw as `readonly` fields in the same card with the Manage at
- * identity provider link as its action, the approval channel and PIN
+ * identity provider owns, the language, mode, motion, theme, time zone
+ * and region draw as `readonly` fields in the same card with the Manage
+ * at identity provider link as its action, the approval channel and PIN
  * being the issuer's own and not drawn. Without a `session`, the record
- * another person's on the admin record page, language, theme and motion
- * are the record's own values saved with the rest through
+ * another person's on the admin record page, language, mode, theme and
+ * motion are the record's own values saved with the rest through
  * `account.preferences` and never the viewer's chrome, and the PIN is not
  * drawn because the admin route takes none.
  */
