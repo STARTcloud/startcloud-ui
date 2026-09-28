@@ -1,0 +1,137 @@
+{
+  "machines": [
+    {
+      "id": 1,
+      "name": "web-1",
+      "zone_id": "00001234--web-1",
+      "host": "zone-1",
+      "status": "running",
+      "brand": "bhyve",
+      "vnc_port": 5901,
+      "is_orphaned": false,
+      "auto_discovered": false,
+      "last_seen": "2026-09-27T00:00:00.000Z",
+      "server_id": "00001234",
+      "vm_type": "production",
+      "notes": "Public web front",
+      "tags": ["web", "production"],
+      "configuration": {
+        "zonename": "web-1",
+        "zonepath": "/rpool/zones/web-1",
+        "brand": "bhyve",
+        "autoboot": "true",
+        "ip-type": "exclusive",
+        "hostid": "00c0ffee",
+        "ram": "4G",
+        "vcpus": "2",
+        "bootrom": "BHYVE_RELEASE_CSM",
+        "hostbridge": "i440fx",
+        "type": "generic",
+        "acpi": "true",
+        "xhci": "on",
+        "rng": "off",
+        "cloud-init": "on",
+        "bootdisk": {
+          "path": "rpool/zones/web-1/boot",
+          "size": "40G",
+          "sparse": "true",
+          "blocksize": "8K"
+        },
+        "disk": [
+          {
+            "path": "rpool/zones/web-1/data",
+            "size": "100G",
+            "sparse": "true",
+            "blocksize": "8K"
+          }
+        ],
+        "cdrom": ["/rpool/iso/debian-13.iso"],
+        "net": [
+          {
+            "physical": "vnice3_1234_0",
+            "global-nic": "igb0",
+            "vlan-id": "11",
+            "allowed-address": "10.0.0.20/24",
+            "mac-addr": "02:08:20:aa:bb:cc"
+          }
+        ],
+        "provisioner": {
+          "provisioner_name": "startcloud",
+          "provisioner_version": "0.1.27",
+          "roles": [
+            {
+              "name": "nomadweb"
+            },
+            {
+              "name": "leap"
+            }
+          ]
+        },
+        "settings": {
+          "hostname": "web-1",
+          "domain": "example.com",
+          "vcpus": "2",
+          "memory": "4G"
+        },
+        "guest_info": {
+          "ips": ["10.0.0.20"],
+          "source": "guest-agent",
+          "agent_responding": true,
+          "checked_at": "2026-09-27T00:00:00.000Z"
+        }
+      },
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "web-2",
+      "zone_id": "00001235--web-2",
+      "host": "zone-1",
+      "status": "installed",
+      "brand": "bhyve",
+      "vnc_port": null,
+      "is_orphaned": false,
+      "auto_discovered": true,
+      "last_seen": "2026-09-27T00:00:00.000Z",
+      "server_id": "00001235",
+      "vm_type": "development",
+      "notes": null,
+      "tags": null,
+      "configuration": {
+        "zonename": "web-2",
+        "zonepath": "/rpool/zones/web-2",
+        "brand": "bhyve",
+        "autoboot": "true",
+        "ip-type": "exclusive",
+        "hostid": "00c0ffee",
+        "ram": "4G",
+        "vcpus": "2",
+        "bootrom": "BHYVE_RELEASE_CSM",
+        "hostbridge": "i440fx",
+        "type": "generic",
+        "acpi": "true",
+        "xhci": "on",
+        "rng": "off",
+        "cloud-init": "on",
+        "bootdisk": {
+          "path": "rpool/zones/web-2/boot",
+          "size": "40G",
+          "sparse": "true",
+          "blocksize": "8K"
+        },
+        "disk": [],
+        "cdrom": [],
+        "net": [
+          {
+            "physical": "vnice3_1235_0",
+            "global-nic": "igb0"
+          }
+        ]
+      },
+      "createdAt": "2026-09-02T00:00:00.000Z",
+      "updatedAt": "2026-09-27T00:00:00.000Z"
+    }
+  ],
+  "total": 2
+}

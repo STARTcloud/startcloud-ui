@@ -13,6 +13,7 @@ import HostMachinesProvider from './HostMachinesProvider';
 import HostReadingsProvider from './HostReadingsProvider';
 import HostSeriesProvider from './HostSeriesProvider';
 import HostStatsProvider from './HostStatsProvider';
+import MachineDetailProvider from './MachineDetailProvider';
 
 const IDLE = -1;
 
@@ -51,9 +52,10 @@ const answered = (epoch, patch) => current =>
  * host the person reached by its address draw whole under any choice, the
  * server having answered for it.
  * Inside it draws `HostStatsProvider`, `HostMachinesProvider`,
- * `HostReadingsProvider` and `HostSeriesProvider`, the stats, the machine
- * rows, the Overview's answers and the charts' series of each host held
- * the same way, so the app mounts one provider for the feature.
+ * `MachineDetailProvider`, `HostReadingsProvider` and
+ * `HostSeriesProvider`, the stats, the machine rows, the detail of each
+ * machine, the Overview's answers and the charts' series of each host
+ * held the same way, so the app mounts one provider for the feature.
  */
 const ServersProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
@@ -123,9 +125,11 @@ const ServersProvider = ({ signedIn, organization, children }) => {
     <ServersContext.Provider value={value}>
       <HostStatsProvider signedIn={signedIn} organization={organization}>
         <HostMachinesProvider signedIn={signedIn} organization={organization}>
-          <HostReadingsProvider signedIn={signedIn}>
-            <HostSeriesProvider signedIn={signedIn}>{children}</HostSeriesProvider>
-          </HostReadingsProvider>
+          <MachineDetailProvider signedIn={signedIn}>
+            <HostReadingsProvider signedIn={signedIn}>
+              <HostSeriesProvider signedIn={signedIn}>{children}</HostSeriesProvider>
+            </HostReadingsProvider>
+          </MachineDetailProvider>
         </HostMachinesProvider>
       </HostStatsProvider>
     </ServersContext.Provider>

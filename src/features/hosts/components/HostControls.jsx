@@ -24,7 +24,7 @@ const routeOf = pathname => {
   if (machine) {
     return machine.params;
   }
-  const host = matchPath('/hosts/:id', pathname);
+  const host = matchPath('/hosts/:id', pathname) || matchPath('/hosts/:id/machines', pathname);
   return host ? { id: host.params.id, name: '' } : { id: '', name: '' };
 };
 
@@ -115,7 +115,8 @@ HomeControls.propTypes = {
  * The hosts feature's Controls menu, the `actionMenu` the header draws in
  * the account slot in the account menu's toggle shape: on
  * `/hosts/{id}/machines/{name}` the machine controls, named by the noun
- * the host's hypervisors fix, over the machine rows; on `/hosts/{id}` the
+ * the host's hypervisors fix, over the machine rows; on `/hosts/{id}` and
+ * on the machines of the host at `/hosts/{id}/machines` the
  * host actions over the host power rows while the person's role and the
  * registry row's `host-power` token allow them and the bulk rows over the
  * host's machines while the role and the row's `machines` token do, the

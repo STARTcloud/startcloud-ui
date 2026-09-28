@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 
+import { hostHasFeature } from '../utils/capabilities';
 import { visibleRows } from '../utils/organizations';
+
+import { useHostRow } from './useHostRow';
 
 export const HostMachinesContext = createContext(null);
 
@@ -55,14 +58,17 @@ export const useHeldMachines = (id, wanted) => {
  * an action's response; `loaded` answers true once the named agent has
  * answered or failed. The rows are the ones that show under the
  * organization a person operates under (`visibleUnder`, failing open),
- * every row while the choice is All.
+ * every row while the choice is All. A caller that passes `wanted` false
+ * asks for nothing, the way a page asks nothing of a host whose own row
+ * does not list `machines`.
  *
  * @param {string} id - The registry id, or `self` on an agent role
+ * @param {boolean} [wanted] - Whether the caller needs the rows read
  * @returns {{ machines: Array<Object>, loaded: boolean, failed: boolean, refresh: Function }} The rows
  */
-export const useHostMachines = id => {
+export const useHostMachines = (id, wanted = true) => {
   const { organization } = useContext(HostMachinesContext) || NO_PROVIDER;
-  const { machines, loaded, failed, refresh } = useHeldMachines(id, true);
+  const { machines, loaded, failed, refresh } = useHeldMachines(id, wanted);
   const visible = useMemo(() => visibleRows(machines, organization), [machines, organization]);
   return { machines: visible, loaded, failed, refresh };
 };
@@ -109,13 +115,29 @@ export const useHostMachinesRevision = () => {
  * One machine's row of its host's held rows, null while the host has not
  * answered or lists no machine of that name. The row is read whatever
  * the organization chosen, because the route names the machine and its
- * own hypervisor and state gate the rows of its menu.
+ * own hypervisor and state gate the rows of its menu. Nothing is asked of
+ * a host whose own row does not list `machines`, because an agent without
+ * the surface answers 404; `offered` says whether it does, and `loaded`
+ * whether the rows answered.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
- * @returns {{ machine: Object|null, refresh: Function }} The row
+ * @returns {{ machine: Object|null, loaded: boolean, offered: boolean, refresh: Function }} The row
  */
 export const useMachineRow = (id, name) => {
-  const { machines, refresh } = useHeldMachines(id, true);
-  return { machine: machines.find(row => row.name === name) || null, refresh };
+  const offered = hostHasFeature(useHostRow(id), 'machines');
+  const { machines, loaded, refresh: read } = useHeldMachines(id, offered);
+
+  const refresh = useCallback(() => {
+    if (offered) {
+      read();
+    }
+  }, [offered, read]);
+
+  return {
+    machine: machines.find(row => row.name === name) || null,
+    loaded: offered && loaded,
+    offered,
+    refresh,
+  };
 };

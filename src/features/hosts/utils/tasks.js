@@ -51,62 +51,6 @@ export const priorityKey = value => {
   return 'background';
 };
 
-/**
- * The eleven columns of the tasks table in the order they draw, each the
- * member of the task row it reads and the key of its heading.
- */
-export const TASK_COLUMNS = [
-  { key: 'id', labelKey: 'footer.tasks.columnId' },
-  { key: 'operation', labelKey: 'footer.tasks.columnOperation' },
-  { key: 'machine_name', labelKey: 'footer.tasks.columnTarget' },
-  { key: 'status', labelKey: 'footer.tasks.columnStatus' },
-  { key: 'progress', labelKey: 'footer.tasks.columnProgress' },
-  { key: 'priority', labelKey: 'footer.tasks.columnPriority' },
-  { key: 'created_by', labelKey: 'footer.tasks.columnCreatedBy' },
-  { key: 'created_at', labelKey: 'footer.tasks.columnCreated' },
-  { key: 'started_at', labelKey: 'footer.tasks.columnStarted' },
-  { key: 'completed_at', labelKey: 'footer.tasks.columnCompleted' },
-  { key: 'error_message', labelKey: 'footer.tasks.columnError' },
-];
-
-export const DEFAULT_COLUMNS = [
-  'operation',
-  'machine_name',
-  'status',
-  'progress',
-  'priority',
-  'created_at',
-];
-
-const COLUMN_KEYS = TASK_COLUMNS.map(column => column.key);
-
-/**
- * The stored column keys as a list of known columns, the six default ones
- * while the value is no list or names no column.
- *
- * @param {*} value - The stored value
- * @returns {Array<string>} The column keys shown
- */
-export const columnsOf = value => {
-  const known = Array.isArray(value) ? value.filter(key => COLUMN_KEYS.includes(key)) : [];
-  return known.length > 0 ? known : DEFAULT_COLUMNS;
-};
-
-/**
- * The shown columns with one toggled: a hidden column is added, a shown
- * one removed unless it is the last one left.
- *
- * @param {Array<string>} columns - The column keys shown
- * @param {string} key - The column to toggle
- * @returns {Array<string>} The column keys shown after the toggle
- */
-export const withColumnToggled = (columns, key) => {
-  if (!columns.includes(key)) {
-    return [...columns, key];
-  }
-  return columns.length > 1 ? columns.filter(column => column !== key) : columns;
-};
-
 const OPERATION_KEYS = {
   provisioner_import: 'footer.operation.provisionerImport',
   machine_prepare: 'footer.operation.machinePrepare',
@@ -162,6 +106,132 @@ export const taskOperationKey = operation => OPERATION_KEYS[operation] || '';
 export const taskOperationLabel = (operation, t) => {
   const key = taskOperationKey(operation);
   return key ? t(key) : operation;
+};
+
+const instantOf = value => (value ? new Date(value).getTime() : 0);
+
+/**
+ * The eleven columns of the tasks table in the order they draw, each a
+ * column of the one `SubTable`: the member of the task row it reads, the
+ * key of its heading, its content kind, the fold priority where the
+ * kind's own does not fit (the operation never folds, the target and the
+ * status fold last, the id and the error first) and `value`, what a
+ * header sorts by, the instant of a date, the number of a progress or a
+ * priority and the text of everything else.
+ */
+export const TASK_COLUMNS = [
+  {
+    key: 'id',
+    kind: 'text',
+    priority: 6,
+    labelKey: 'footer.tasks.columnId',
+    value: task => String(task.id ?? ''),
+  },
+  {
+    key: 'operation',
+    kind: 'name',
+    labelKey: 'footer.tasks.columnOperation',
+    value: (task, ctx) => taskOperationLabel(task.operation, ctx.t),
+  },
+  {
+    key: 'machine_name',
+    kind: 'text',
+    priority: 2,
+    labelKey: 'footer.tasks.columnTarget',
+    value: task => task.machine_name || '',
+  },
+  {
+    key: 'status',
+    kind: 'word',
+    priority: 2,
+    labelKey: 'footer.tasks.columnStatus',
+    value: task => task.status || '',
+  },
+  {
+    key: 'progress',
+    kind: 'text',
+    priority: 3,
+    labelKey: 'footer.tasks.columnProgress',
+    value: task => Number(task.progress_percent) || 0,
+  },
+  {
+    key: 'priority',
+    kind: 'word',
+    priority: 4,
+    labelKey: 'footer.tasks.columnPriority',
+    value: task => Number(task.priority) || 0,
+  },
+  {
+    key: 'created_by',
+    kind: 'text',
+    labelKey: 'footer.tasks.columnCreatedBy',
+    value: task => task.created_by || '',
+  },
+  {
+    key: 'created_at',
+    kind: 'date',
+    labelKey: 'footer.tasks.columnCreated',
+    value: task => instantOf(task.created_at),
+  },
+  {
+    key: 'started_at',
+    kind: 'date',
+    priority: 4,
+    labelKey: 'footer.tasks.columnStarted',
+    value: task => instantOf(task.started_at),
+  },
+  {
+    key: 'completed_at',
+    kind: 'date',
+    priority: 4,
+    labelKey: 'footer.tasks.columnCompleted',
+    value: task => instantOf(task.completed_at),
+  },
+  {
+    key: 'error_message',
+    kind: 'text',
+    priority: 6,
+    labelKey: 'footer.tasks.columnError',
+    value: task => task.error_message || '',
+  },
+];
+
+export const DEFAULT_COLUMNS = [
+  'operation',
+  'machine_name',
+  'status',
+  'progress',
+  'priority',
+  'created_at',
+];
+
+const COLUMN_KEYS = TASK_COLUMNS.map(column => column.key);
+
+/**
+ * The stored column keys as a list of known columns, the six default ones
+ * while the value is no list or names no column.
+ *
+ * @param {*} value - The stored value
+ * @returns {Array<string>} The column keys shown
+ */
+export const columnsOf = value => {
+  const known = Array.isArray(value) ? value.filter(key => COLUMN_KEYS.includes(key)) : [];
+  return known.length > 0 ? known : DEFAULT_COLUMNS;
+};
+
+/**
+ * The shown columns with one toggled: a hidden column is added, a shown
+ * one removed unless it is the last one left.
+ *
+ * @param {Array<string>} columns - The column keys shown
+ * @param {string} key - The column to toggle
+ * @returns {Array<string>} The column keys shown after the toggle
+ */
+export const withColumnToggled = (columns, key) => {
+  if (!columns.includes(key)) {
+    return [...columns, key];
+  }
+  return columns.length > 1 ? columns.filter(column => column !== key) : columns;
 };
 
 /**

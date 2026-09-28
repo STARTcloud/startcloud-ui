@@ -43,3 +43,33 @@ export const hostResumes = (server, machine) => {
   }
   return machine?.status === 'suspended' && hostHasFeature(server, 'machine-resume-suspended');
 };
+
+/**
+ * What the host's row and the machine's own row allow of the machine's
+ * actions, the one rule the Controls menu and the machines list share:
+ * `utm` while the machine's hypervisor is UTM, which has no reset, no
+ * pause apart from its suspend and no guest reboot; `pause` on a
+ * VirtualBox host; `suspend` while the host lists `machine-suspend`;
+ * `resume` by `hostResumes`, a paused machine behind `machine-suspend` and
+ * a suspended one behind `machine-resume-suspended`; `guest` while the
+ * guest can be reached from outside, through Guest Additions on
+ * VirtualBox or through the guest agent on a bhyve host that lists
+ * `guest-agent`.
+ *
+ * @param {Object} options - The host's row and the machine's row
+ * @param {Object|null} options.server - The registry row, or the one serving agent's
+ * @param {Object|null} options.machine - The machine's own row
+ * @returns {{ utm: boolean, pause: boolean, suspend: boolean, resume: boolean, guest: boolean }} The gates
+ */
+export const gatesOf = ({ server, machine }) => {
+  const utm = machine?.hypervisor === 'utm';
+  const virtualbox = hostHasHypervisor(server, 'virtualbox');
+  return {
+    utm,
+    pause: virtualbox && !utm,
+    suspend: hostHasFeature(server, 'machine-suspend'),
+    resume: hostResumes(server, machine),
+    guest:
+      virtualbox || (hostHasHypervisor(server, 'bhyve') && hostHasFeature(server, 'guest-agent')),
+  };
+};

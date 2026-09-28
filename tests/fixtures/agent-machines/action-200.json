@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "task_id": "5d2c7b90-1e4f-4a3b-8f60-2a9c4e7d1b35",
+  "machine_name": "dev-2",
+  "operation": "start",
+  "status": "pending",
+  "message": "Start task queued successfully"
+}

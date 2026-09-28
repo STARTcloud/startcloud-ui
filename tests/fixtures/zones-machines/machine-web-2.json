@@ -1,0 +1,96 @@
+{
+  "machine_info": {
+    "id": 2,
+    "name": "web-2",
+    "zone_id": "00001235--web-2",
+    "host": "zone-1",
+    "status": "installed",
+    "brand": "bhyve",
+    "vnc_port": null,
+    "is_orphaned": false,
+    "auto_discovered": true,
+    "last_seen": "2026-09-27T00:00:00.000Z",
+    "server_id": "00001235",
+    "vm_type": "development",
+    "notes": null,
+    "tags": null,
+    "configuration": {
+      "zonename": "web-2",
+      "zonepath": "/rpool/zones/web-2",
+      "brand": "bhyve",
+      "autoboot": "true",
+      "ip-type": "exclusive",
+      "hostid": "00c0ffee",
+      "ram": "4G",
+      "vcpus": "2",
+      "bootrom": "BHYVE_RELEASE_CSM",
+      "hostbridge": "i440fx",
+      "type": "generic",
+      "acpi": "true",
+      "xhci": "on",
+      "rng": "off",
+      "cloud-init": "on",
+      "bootdisk": {
+        "path": "rpool/zones/web-2/boot",
+        "size": "40G",
+        "sparse": "true",
+        "blocksize": "8K"
+      },
+      "disk": [],
+      "cdrom": [],
+      "net": [
+        {
+          "physical": "vnice3_1235_0",
+          "global-nic": "igb0"
+        }
+      ]
+    },
+    "createdAt": "2026-09-02T00:00:00.000Z",
+    "updatedAt": "2026-09-27T00:00:00.000Z"
+  },
+  "configuration": {
+    "zonename": "web-2",
+    "zonepath": "/rpool/zones/web-2",
+    "brand": "bhyve",
+    "autoboot": "true",
+    "ip-type": "exclusive",
+    "hostid": "00c0ffee",
+    "ram": "4G",
+    "vcpus": "2",
+    "bootrom": "BHYVE_RELEASE_CSM",
+    "hostbridge": "i440fx",
+    "type": "generic",
+    "acpi": "true",
+    "xhci": "on",
+    "rng": "off",
+    "cloud-init": "on",
+    "bootdisk": {
+      "path": "rpool/zones/web-2/boot",
+      "size": "40G",
+      "sparse": "true",
+      "blocksize": "8K"
+    },
+    "disk": [],
+    "cdrom": [],
+    "net": [
+      {
+        "physical": "vnice3_1235_0",
+        "global-nic": "igb0"
+      }
+    ]
+  },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "installed",
+  "pending_changes": null,
+  "knob_current": {
+    "guest_agent": false,
+    "nics": [
+      {
+        "physical": "vnice3_1235_0",
+        "props": {}
+      }
+    ],
+    "cpu_topology": null
+  }
+}

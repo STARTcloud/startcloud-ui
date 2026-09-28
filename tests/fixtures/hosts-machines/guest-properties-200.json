@@ -1,0 +1,29 @@
+{
+  "machine_name": "dev-1",
+  "properties": [
+    {
+      "name": "/VirtualBox/GuestInfo/Net/0/V4/IP",
+      "value": "10.0.2.15",
+      "timestamp": "2026-09-27T00:00:00.000Z",
+      "flags": "TRANSIENT, TRANSRESET"
+    },
+    {
+      "name": "/VirtualBox/GuestInfo/Net/1/V4/IP",
+      "value": "192.168.1.50",
+      "timestamp": "2026-09-27T00:00:00.000Z",
+      "flags": "TRANSIENT, TRANSRESET"
+    },
+    {
+      "name": "/VirtualBox/GuestInfo/OS/Product",
+      "value": "Linux",
+      "timestamp": "2026-09-27T00:00:00.000Z",
+      "flags": "TRANSIENT, TRANSRESET"
+    },
+    {
+      "name": "/Hyperweaver/CloudInit/dns_domain",
+      "value": "example.com",
+      "timestamp": "2026-09-27T00:00:00.000Z"
+    }
+  ],
+  "total": 4
+}

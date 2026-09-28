@@ -11,10 +11,12 @@ import {
 } from './fleet.js';
 import { notifyAdmins } from './inbox.js';
 import { AGENT_MODE, ok } from './kit.js';
+import { listedRow, mountMachineDetail } from './machine-detail.js';
 import { mountMachines } from './machines.js';
 import { mountMonitoring } from './monitoring.js';
 import { isAdmin, orgUuidsOf } from './people.js';
 import { mountPower } from './power.js';
+import { mountScreenshot } from './screenshot.js';
 import { refuseSocket } from './socket.js';
 import { broadcast } from './stream.js';
 import { cancelledTask, listedTasks, openTaskStream, shownOutput, shownTask } from './tasks.js';
@@ -39,10 +41,10 @@ const ownedOf = ({ person, host }, row) => {
   return isAdmin(person) ? owners : owners.filter(uuid => own.includes(uuid));
 };
 
-const decorated = ctx =>
-  AGENT_MODE
-    ? ctx.host.machines
-    : ctx.host.machines.map(row => ({ ...row, org_uuids: ownedOf(ctx, row) }));
+const decorated = ctx => {
+  const rows = ctx.host.machines.map(row => listedRow(ctx.host, row));
+  return AGENT_MODE ? rows : rows.map(row => ({ ...row, org_uuids: ownedOf(ctx, row) }));
+};
 
 const machines = ctx => ok({ machines: decorated(ctx), total: ctx.host.machines.length });
 
@@ -116,11 +118,13 @@ export const startFlapping = () => {
 /**
  * The hosts feature's routes: the registry on the server role, each row
  * shown to the people of its organizations and to every admin, and the
- * agent routes of every host, its stats, machines (each row carrying
- * `org_uuids` on the server role, the machine's organizations an admin
- * reads whole and every other person reads their own of), status, the reads of
- * its Overview and its charts, tasks, power routes and terminal, with
- * the two sockets.
+ * agent routes of every host, its stats, machines (each row the one the
+ * agent of the host's kind answers and carrying `org_uuids` on the
+ * server role, the machine's organizations an admin reads whole and
+ * every other person reads their own of), status, the reads of its
+ * Overview and its charts, tasks, the reads and the writes of the
+ * machine page, the screen of a machine, power routes and terminal,
+ * with the two sockets.
  *
  * @param {Object} router - `sessionRoute`, `agentRoute` and `socketRoute`
  * @returns {void}
@@ -138,6 +142,8 @@ export const mountAgents = ({ sessionRoute, agentRoute, socketRoute }) => {
   agentRoute('GET', 'tasks/:task/output', shownOutput);
   agentRoute('DELETE', 'tasks/:task', cancelledTask);
   mountMachines(agentRoute);
+  mountMachineDetail(agentRoute);
+  mountScreenshot(agentRoute);
   mountPower(agentRoute);
   mountTerminal(agentRoute);
   socketRoute('term/:session', shellSocket);

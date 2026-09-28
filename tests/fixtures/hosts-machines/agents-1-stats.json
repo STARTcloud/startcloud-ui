@@ -1,0 +1,28 @@
+{
+  "hostname": "vbox-1",
+  "eol": "\r\n",
+  "arch": "x64",
+  "cpus": [
+    {
+      "model": "Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz",
+      "speed": 3000,
+      "times": { "user": 4210000, "nice": 0, "sys": 1830000, "idle": 52400000, "irq": 96000 }
+    },
+    {
+      "model": "Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz",
+      "speed": 3000,
+      "times": { "user": 3980000, "nice": 0, "sys": 1710000, "idle": 52900000, "irq": 41000 }
+    }
+  ],
+  "endianness": "LE",
+  "freemem": 8589934592,
+  "loadavg": [0, 0, 0],
+  "platform": "win32",
+  "release": "10.0.19045",
+  "totalmem": 34359738368,
+  "type": "Windows_NT",
+  "uptime": 3600,
+  "version": "Windows 10 Pro",
+  "allmachines": ["dev-1", "dev-2", "dev-3"],
+  "runningmachines": ["dev-1", "dev-3"]
+}

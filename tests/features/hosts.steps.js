@@ -62,7 +62,15 @@ When('I pick the priority floor {int}', async ({ page }, floor) => {
 });
 
 When('I open the task of {string}', async ({ page }, target) => {
-  await taskRows(page).filter({ hasText: target }).getByRole('button').click();
+  await taskRows(page).filter({ hasText: target }).locator('.task-open').click();
+});
+
+When('I drag the tasks header {string} {int} wider', async ({ page }, column, right) => {
+  await dragBy(page, `.footer-pane th.col-${column} .col-resize`, right, 0);
+});
+
+Given('the window is {int} wide', async ({ page }, width) => {
+  await page.setViewportSize({ width, height: 800 });
 });
 
 When('I open the account menu', async ({ page }) => {
@@ -158,7 +166,25 @@ Then('the tasks pane lists {int} tasks', async ({ page }, count) => {
 });
 
 Then('the tasks pane draws the {string} column', async ({ page }, column) => {
-  await expect(page.locator(`.footer-pane th[data-column="${column}"]`)).toBeVisible();
+  await expect(page.locator(`.footer-pane th.col-${column}`)).toBeVisible();
+});
+
+Then('the tasks header {string} is sized', async ({ page }, column) => {
+  await expect(page.locator(`.footer-pane th.col-${column}`)).toHaveClass(/col-sized/);
+});
+
+Then('the tasks pane folds the columns it has no room for', async ({ page }) => {
+  await expect(page.locator('.footer-pane th.col-fold')).toHaveCount(1);
+});
+
+Then('the tasks pane does not scroll sideways', async ({ page }) => {
+  await expect
+    .poll(() =>
+      page
+        .locator('.footer-pane .items-table-wrap')
+        .evaluate(node => node.querySelector('table').offsetWidth <= node.clientWidth)
+    )
+    .toBe(true);
 });
 
 Then(

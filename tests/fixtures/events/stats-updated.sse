@@ -1,0 +1,9 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["tasks","hosts"]}
+
+id: 1757068800733-0
+event: stats-updated
+data: {"agent_id":1,"hostname":"vbox-1","eol":"\r\n","arch":"x64","cpus":[],"endianness":"LE","freemem":8589934592,"loadavg":[0,0,0],"platform":"win32","release":"10.0.19045","totalmem":34359738368,"type":"Windows_NT","uptime":3660,"version":"Windows 10 Pro","allmachines":["dev-1","dev-2","dev-3"],"runningmachines":["dev-1","dev-3"]}
+

@@ -1,0 +1,15 @@
+{
+  "machine_name": "web-1",
+  "interfaces": [
+    {
+      "name": "lo",
+      "hardware-address": "00:00:00:00:00:00",
+      "ip-addresses": [{ "ip-address-type": "ipv4", "ip-address": "127.0.0.1", "prefix": 8 }]
+    },
+    {
+      "name": "enp0s6",
+      "hardware-address": "02:08:20:aa:bb:cc",
+      "ip-addresses": [{ "ip-address-type": "ipv4", "ip-address": "10.0.0.20", "prefix": 24 }]
+    }
+  ]
+}

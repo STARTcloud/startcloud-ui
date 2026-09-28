@@ -6,6 +6,7 @@ import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
 import { fetchMachines } from '../api/agents';
 import { HostMachinesContext } from '../hooks/useHostMachines';
+import { agentIdOf } from '../utils/hosts';
 
 const emptyFor = (signedIn, epoch) => ({ epoch, signedIn, hosts: {} });
 
@@ -30,6 +31,11 @@ const staled = current => ({
   ),
 });
 
+const staledOne = id => current =>
+  current.hosts[id]
+    ? { ...current, hosts: { ...current.hosts, [id]: { ...current.hosts[id], stale: true } } }
+    : current;
+
 /**
  * The machine rows of every host a caller has drawn, behind
  * `useHostMachines` and `useMachineRow`: one request per host when the
@@ -39,7 +45,11 @@ const staled = current => ({
  * `load` answers a caller that is no component the rows held while they
  * are fresh and the one request otherwise. When the event stream opens
  * fresh or answers `reset` the held rows are marked stale and kept on
- * screen, and only the callers that draw a host ask for it again. The
+ * screen, and only the callers that draw a host ask for it again; the
+ * `hosts` topic's `stats-updated` event, sent when a machine of a host
+ * is made or removed and when one starts or stops, marks that host's
+ * rows stale the same way, so a machine's state follows the stream and
+ * nothing reads on a clock. The
  * rows belong to the session: when `signedIn` changes they are dropped,
  * an answer of the session before it discarded. `organization` is the
  * uuid of the organization a person operates under, empty for All, the
@@ -112,6 +122,12 @@ const HostMachinesProvider = ({ signedIn, organization, children }) => {
   });
 
   useEventStream('reset', stale);
+
+  useEventStream('stats-updated', data => {
+    const id = agentIdOf(data);
+    copies.current?.delete(keyOf(epochRef.current, id));
+    setState(staledOne(id));
+  });
 
   const value = useMemo(
     () => ({ epoch: state.epoch, hosts: state.hosts, read, load, organization }),

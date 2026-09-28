@@ -256,6 +256,21 @@ const announce = () => {
  * subtasks, transfers with byte counts and failures with coloured
  * output; a seeded running task starts moving when its stream opens.
  *
+ * The machines of a host and the machine page have data on both agent
+ * kinds. `GET machines` answers the row the agent of the host's kind
+ * answers, hyperweaver-agent's with `hypervisor`, `backing`, `home` and
+ * `spec` and zoneweaver-agent's with `brand`, `zone_id` and the zone's
+ * configuration, and `GET machines/{name}` its detail, the devices in
+ * `knob_current.devices` on the hyperweaver kind and in `configuration`
+ * on the zoneweaver kind. Every other machine was made by a provisioner,
+ * a running machine carries `guest_info`, and every third machine's guest
+ * agent stays silent, so Set up channel draws. Guest properties answer on
+ * the hyperweaver kind alone; the guest agent's reads answer 503 on a
+ * host that lists no `guest-agent`. Tags and notes are kept at once. The
+ * screen is a PNG of coloured bands that move one step a frame, on Desk,
+ * Zones, Studio and the agent roles, which list `machine-screenshot`;
+ * Lab, `store-1` and Attic list none and draw no screen.
+ *
  * Every host that lists `monitoring` answers the reads of the host page's
  * Overview and of its charts as the agent of its kind answers them, the
  * pools, the datasets, the pool I/O and the ARC on the hosts that list

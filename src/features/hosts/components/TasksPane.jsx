@@ -1,8 +1,11 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useTablePrefs } from '../../../hooks/useTablePrefs';
+import { sortItems } from '../../../utils/sort';
 import { useFocus } from '../hooks/useFocus';
 import { useTaskPrefs, useTasks } from '../hooks/useTasks';
 import {
@@ -16,7 +19,14 @@ import {
 
 import TaskDialog, { TaskProgress } from './TaskDialog';
 
-const HOST_COLUMN = { key: 'host', labelKey: 'footer.tasks.columnHost' };
+const PREFS_KEY = 'table_prefs_tasks';
+
+const HOST_COLUMN = {
+  key: 'host',
+  kind: 'name',
+  labelKey: 'footer.tasks.columnHost',
+  value: task => task.host || '',
+};
 
 const NO_PROGRESS = ['completed', 'prepared', 'pending'];
 
@@ -105,58 +115,95 @@ const CELLS = {
   error_message: task => truncated(task.error_message),
 };
 
-const TaskRow = ({ task, columns, onOpen = null }) => {
+const OpenTask = ({ task, onOpen }) => {
   const { t } = useTranslation();
-  const [first, ...rest] = columns;
   const title = `${t('footer.task.taskTitle')}: ${taskOperationLabel(task.operation, t)}`;
   return (
-    <tr className={taskRowClass(task.status) || undefined}>
-      <td>
-        {CELLS[first.key](task, t)}
-        {onOpen ? (
-          <button
-            type="button"
-            className="task-open"
-            title={title}
-            aria-label={title}
-            onClick={() => onOpen(task)}
-          />
-        ) : null}
-      </td>
-      {rest.map(column => (
-        <td key={column.key}>{CELLS[column.key](task, t)}</td>
-      ))}
-    </tr>
+    <button
+      type="button"
+      className="task-open"
+      title={title}
+      aria-label={title}
+      onClick={() => onOpen(task)}
+    />
   );
 };
 
-const columnShape = PropTypes.shape({
-  key: PropTypes.string.isRequired,
-  labelKey: PropTypes.string.isRequired,
-});
-
-TaskRow.propTypes = {
+OpenTask.propTypes = {
   task: PropTypes.object.isRequired,
-  columns: PropTypes.arrayOf(columnShape).isRequired,
+  onOpen: PropTypes.func.isRequired,
+};
+
+const LeadCell = ({ columnKey, task, onOpen = null }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {CELLS[columnKey](task, t)}
+      {onOpen ? <OpenTask task={task} onOpen={onOpen} /> : null}
+    </>
+  );
+};
+
+LeadCell.propTypes = {
+  columnKey: PropTypes.string.isRequired,
+  task: PropTypes.object.isRequired,
   onOpen: PropTypes.func,
 };
 
+const plainCell = column => (task, ctx) => CELLS[column.key](task, ctx.t);
+
 /**
- * The tasks view of the footer's pane: one table of the tasks of the
- * host in focus above the priority floor, the columns the Columns picker
- * shows of the eleven, a failed row tinted danger and a running one
- * warning, the priority a word from its number and the progress of a
- * running task the shell's progress element with its transfer line; a
- * row opens the task dialog. With every host in focus, the server role
- * with no host in the route, the Host column draws first and a row opens
- * nothing. The rows are read through `useTasks` while the view shows,
- * `active`, the columns and the floor through `useTaskPrefs`.
+ * The columns the tasks table hands the one `SubTable`: the Host column
+ * first while every host is in focus, then the eleven, each drawing its
+ * cell; the first column shown never folds and carries the button that
+ * opens the task's dialog over the whole row, so a row opens whatever
+ * the columns folded.
+ *
+ * @param {Object} options - Whether `every` host is in focus, the `hidden` column keys and `onOpen`, null where a row opens nothing
+ * @returns {Array<Object>} The columns
+ */
+const columnsFor = ({ every, hidden, onOpen }) => {
+  const all = every ? [HOST_COLUMN, ...TASK_COLUMNS] : TASK_COLUMNS;
+  const lead = all.find(column => !hidden.has(column.key));
+  return all.map(column =>
+    column === lead
+      ? {
+          ...column,
+          priority: 1,
+          render: task => <LeadCell columnKey={column.key} task={task} onOpen={onOpen} />,
+        }
+      : { ...column, render: plainCell(column) }
+  );
+};
+
+const hiddenOf = shown =>
+  new Set(TASK_COLUMNS.map(column => column.key).filter(key => !shown.includes(key)));
+
+const rowClassOf = task => taskRowClass(task.status) || undefined;
+
+const rowKeyOf = task => task.rowKey;
+
+/**
+ * The tasks view of the footer's pane: the one `SubTable` over the tasks
+ * of the host in focus above the priority floor, the columns the Columns
+ * picker shows of the eleven, every header sorting and carrying the
+ * resize handle, the sort and the widths kept under `table_prefs_tasks`,
+ * and the columns the pane has no room for folded by their priority
+ * under a fold cell, so the table never scrolls sideways; a failed row
+ * tinted danger and a running one warning, the priority a word from its
+ * number and the progress of a running task the shell's progress element
+ * with its transfer line; a row opens the task dialog. With every host
+ * in focus, the server role with no host in the route, the Host column
+ * draws first and a row opens nothing. While nothing is sorted the rows
+ * keep the order they were read in, the newest first. The rows are read
+ * through `useTasks` while the view shows, `active`, the columns and the
+ * floor through `useTaskPrefs`.
  */
 const TasksPane = ({ active }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const status = useStatus();
   const focus = useFocus();
-  const { columns, floor } = useTaskPrefs();
+  const { columns: shown, floor } = useTaskPrefs();
   const { tasks, loaded, failed, messageKey } = useTasks({
     status,
     focus,
@@ -165,10 +212,17 @@ const TasksPane = ({ active }) => {
   });
   const [selected, setSelected] = useState(null);
   const every = focus.kind === 'all';
-  const shown = [
-    ...(every ? [HOST_COLUMN] : []),
-    ...TASK_COLUMNS.filter(column => columns.includes(column.key)),
-  ];
+  const hidden = useMemo(() => hiddenOf(shown), [shown]);
+  const columns = useMemo(
+    () => columnsFor({ every, hidden, onOpen: every ? null : setSelected }),
+    [every, hidden]
+  );
+  const prefs = useTablePrefs(PREFS_KEY, columns);
+  const ctx = useMemo(() => ({ t, language: i18n.language }), [t, i18n.language]);
+  const rows = useMemo(
+    () => sortItems(tasks, prefs.sort, columns, ctx),
+    [tasks, prefs.sort, columns, ctx]
+  );
 
   return (
     <div className="footer-tasks">
@@ -178,27 +232,19 @@ const TasksPane = ({ active }) => {
         </p>
       ) : null}
       {loaded ? (
-        <table className="table table-sm mb-0">
-          <thead>
-            <tr>
-              {shown.map(column => (
-                <th key={column.key} data-column={column.key}>
-                  {t(column.labelKey)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {tasks.map(task => (
-              <TaskRow
-                key={task.rowKey}
-                task={task}
-                columns={shown}
-                onOpen={every ? null : setSelected}
-              />
-            ))}
-          </tbody>
-        </table>
+        <SubTable
+          columns={columns}
+          rows={rows}
+          rowKey={rowKeyOf}
+          rowClass={rowClassOf}
+          sort={prefs.sort}
+          onSort={prefs.setSort}
+          hiddenColumns={hidden}
+          widths={prefs.widths}
+          onResize={prefs.setColumnWidth}
+          ctx={ctx}
+          emptyText={t('pages.empty')}
+        />
       ) : (
         <p className="small m-2">{t('footer.tasks.loading')}</p>
       )}

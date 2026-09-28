@@ -1,0 +1,152 @@
+{
+  "machine_info": {
+    "id": 2,
+    "name": "dev-2",
+    "host": "vbox-1",
+    "status": "stopped",
+    "backing": "vbox",
+    "hypervisor": "virtualbox",
+    "home": null,
+    "uuid": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+    "server_id": null,
+    "is_orphaned": false,
+    "auto_discovered": true,
+    "last_seen": "2026-09-27T00:00:00Z",
+    "notes": null,
+    "tags": null,
+    "configuration": {
+      "name": "dev-2",
+      "ostype": "Debian (64-bit)",
+      "UUID": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+      "CfgFile": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\dev-2.vbox",
+      "memory": "8192",
+      "cpus": "4",
+      "firmware": "BIOS",
+      "chipset": "piix3",
+      "VMState": "poweroff",
+      "acpi": "on",
+      "vrde": "off",
+      "boot1": "disk",
+      "boot2": "dvd",
+      "boot3": "none",
+      "boot4": "none",
+      "storagecontrollername0": "SATA Controller",
+      "storagecontrollertype0": "IntelAhci",
+      "SATA Controller-0-0": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\boot.vdi",
+      "SATA Controller-1-0": "emptydrive",
+      "nic1": "nat",
+      "nictype1": "82540EM",
+      "macaddress1": "00FF00FF00FF",
+      "cableconnected1": "on",
+      "nic2": "bridged",
+      "nictype2": "82540EM",
+      "bridgeadapter2": "Intel(R) Ethernet Connection",
+      "macaddress2": "080027AABBCC",
+      "cableconnected2": "on"
+    },
+    "spec": null,
+    "created_at": "2026-09-02T00:00:00Z",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "configuration": {
+    "name": "dev-2",
+    "ostype": "Debian (64-bit)",
+    "UUID": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+    "CfgFile": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\dev-2.vbox",
+    "memory": "8192",
+    "cpus": "4",
+    "firmware": "BIOS",
+    "chipset": "piix3",
+    "VMState": "poweroff",
+    "acpi": "on",
+    "vrde": "off",
+    "boot1": "disk",
+    "boot2": "dvd",
+    "boot3": "none",
+    "boot4": "none",
+    "storagecontrollername0": "SATA Controller",
+    "storagecontrollertype0": "IntelAhci",
+    "SATA Controller-0-0": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\boot.vdi",
+    "SATA Controller-1-0": "emptydrive",
+    "nic1": "nat",
+    "nictype1": "82540EM",
+    "macaddress1": "00FF00FF00FF",
+    "cableconnected1": "on",
+    "nic2": "bridged",
+    "nictype2": "82540EM",
+    "bridgeadapter2": "Intel(R) Ethernet Connection",
+    "macaddress2": "080027AABBCC",
+    "cableconnected2": "on"
+  },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "stopped",
+  "web_address": null,
+  "knob_current": {
+    "ram": 8192,
+    "vcpus": 4,
+    "bootrom": "bios",
+    "hostbridge": "piix3",
+    "diskif": "sata",
+    "netif": "e1000",
+    "os_type": "Debian_64",
+    "vnc": "off",
+    "acpi": "on",
+    "boot_order": ["disk", "dvd"],
+    "guest_agent": false,
+    "nics": [
+      {
+        "adapter": 1,
+        "cable_connected": "on",
+        "nic_type": "82540EM",
+        "mac": "00FF00FF00FF",
+        "provisional": true,
+        "remove_on_completion": false
+      },
+      {
+        "adapter": 2,
+        "cable_connected": "on",
+        "nic_type": "82540EM",
+        "mac": "080027AABBCC"
+      }
+    ],
+    "devices": {
+      "controllers": [
+        {
+          "name": "SATA Controller",
+          "type": "sata"
+        }
+      ],
+      "attachments": [
+        {
+          "controller": "SATA Controller",
+          "port": 0,
+          "device": 0,
+          "path": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\boot.vdi",
+          "kind": "disk"
+        },
+        {
+          "controller": "SATA Controller",
+          "port": 1,
+          "device": 0,
+          "path": "",
+          "kind": "cdrom"
+        }
+      ],
+      "nics": [
+        {
+          "adapter": 1,
+          "mode": "nat",
+          "mac": "00FF00FF00FF"
+        },
+        {
+          "adapter": 2,
+          "mode": "bridged",
+          "network": "Intel(R) Ethernet Connection",
+          "mac": "080027AABBCC"
+        }
+      ]
+    }
+  },
+  "pending_changes": null
+}

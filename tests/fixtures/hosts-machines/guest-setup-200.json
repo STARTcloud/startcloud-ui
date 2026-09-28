@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "machine_name": "dev-3",
+  "operation": "machine_modify",
+  "status": "pending_power_cycle",
+  "requires_restart": true,
+  "pending_changes": {
+    "vbox": {
+      "serial": [
+        {
+          "port": 2,
+          "io_base": "0x2F8",
+          "irq": 3,
+          "mode": "server \\\\.\\pipe\\hyperweaver-qga-dev-3"
+        }
+      ]
+    }
+  },
+  "pipe": "\\\\.\\pipe\\hyperweaver-qga-dev-3",
+  "message": "Guest-agent UART setup accrued — applies at the next agent-driven power cycle; the guest needs qemu-ga on its COM2 (baked into current box templates)."
+}

@@ -12,7 +12,14 @@ import {
 
 const GIB = 1024 ** 3;
 const CHROME_TOKENS = ['sidebar', 'hosts', 'footer'];
-const DESK_FEATURES = ['host-power', 'guest-agent', 'monitoring', 'swap', 'provisioning'];
+const DESK_FEATURES = [
+  'host-power',
+  'guest-agent',
+  'machine-screenshot',
+  'monitoring',
+  'swap',
+  'provisioning',
+];
 const LAB_FEATURES = [
   'machines',
   'tasks',
@@ -23,6 +30,7 @@ const LAB_FEATURES = [
   'provisioning',
 ];
 const ZONE_FEATURES = [
+  'machine-screenshot',
   'monitoring',
   'zfs',
   'swap',
@@ -37,6 +45,7 @@ const STUDIO_FEATURES = [
   'machine-suspend',
   'host-launchers',
   'guest-agent',
+  'machine-screenshot',
   'monitoring',
   'swap',
   'provisioning',
@@ -58,6 +67,8 @@ const AGENT_FEATURES = [
   'host-power',
   'machine-suspend',
   'host-launchers',
+  'guest-agent',
+  'machine-screenshot',
   'monitoring',
   'swap',
   'provisioning',

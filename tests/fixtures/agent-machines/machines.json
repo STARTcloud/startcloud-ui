@@ -1,0 +1,132 @@
+{
+  "machines": [
+    {
+      "id": 1,
+      "name": "dev-1",
+      "host": "lab-1",
+      "status": "running",
+      "backing": "vagrant",
+      "hypervisor": "virtualbox",
+      "home": "C:\\hyperweaver\\machines\\dev-1",
+      "uuid": "5b1c2a44-0d5e-4c0e-9b6e-2f4a8f1f6a01",
+      "server_id": "0042",
+      "is_orphaned": false,
+      "auto_discovered": false,
+      "last_seen": "2026-09-27T00:00:00Z",
+      "notes": "Primary build box",
+      "tags": ["web", "lab"],
+      "configuration": {
+        "name": "dev-1",
+        "ostype": "Debian (64-bit)",
+        "UUID": "5b1c2a44-0d5e-4c0e-9b6e-2f4a8f1f6a01",
+        "CfgFile": "C:\\Users\\mark\\VirtualBox VMs\\dev-1\\dev-1.vbox",
+        "memory": "8192",
+        "cpus": "4",
+        "firmware": "BIOS",
+        "chipset": "piix3",
+        "VMState": "running",
+        "acpi": "on",
+        "vrde": "off",
+        "boot1": "disk",
+        "boot2": "dvd",
+        "boot3": "none",
+        "boot4": "none",
+        "storagecontrollername0": "SATA Controller",
+        "storagecontrollertype0": "IntelAhci",
+        "SATA Controller-0-0": "C:\\Users\\mark\\VirtualBox VMs\\dev-1\\boot.vdi",
+        "SATA Controller-1-0": "emptydrive",
+        "nic1": "nat",
+        "nictype1": "82540EM",
+        "macaddress1": "00FF00FF00FF",
+        "cableconnected1": "on",
+        "nic2": "bridged",
+        "nictype2": "82540EM",
+        "bridgeadapter2": "Intel(R) Ethernet Connection",
+        "macaddress2": "080027AABBCC",
+        "cableconnected2": "on",
+        "guest_info": {
+          "ips": ["192.168.1.50"],
+          "source": "guest-agent",
+          "agent_responding": true,
+          "checked_at": "2026-09-27T00:00:00Z"
+        }
+      },
+      "spec": {
+        "provisioner": {
+          "name": "startcloud",
+          "version": "0.1.27"
+        },
+        "settings": {
+          "hostname": "dev-1",
+          "domain": "example.com",
+          "server_id": "0042",
+          "vcpus": 4,
+          "memory": "8G",
+          "box": "STARTcloud/debian13-server"
+        },
+        "roles": [
+          {
+            "name": "domino",
+            "enabled": true
+          },
+          {
+            "name": "traveler",
+            "enabled": false
+          }
+        ]
+      },
+      "created_at": "2026-09-01T00:00:00Z",
+      "updatedAt": "2026-09-27T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "dev-2",
+      "host": "lab-1",
+      "status": "stopped",
+      "backing": "vbox",
+      "hypervisor": "virtualbox",
+      "home": null,
+      "uuid": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+      "server_id": null,
+      "is_orphaned": false,
+      "auto_discovered": true,
+      "last_seen": "2026-09-27T00:00:00Z",
+      "notes": null,
+      "tags": null,
+      "configuration": {
+        "name": "dev-2",
+        "ostype": "Debian (64-bit)",
+        "UUID": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+        "CfgFile": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\dev-2.vbox",
+        "memory": "8192",
+        "cpus": "4",
+        "firmware": "BIOS",
+        "chipset": "piix3",
+        "VMState": "poweroff",
+        "acpi": "on",
+        "vrde": "off",
+        "boot1": "disk",
+        "boot2": "dvd",
+        "boot3": "none",
+        "boot4": "none",
+        "storagecontrollername0": "SATA Controller",
+        "storagecontrollertype0": "IntelAhci",
+        "SATA Controller-0-0": "C:\\Users\\mark\\VirtualBox VMs\\dev-2\\boot.vdi",
+        "SATA Controller-1-0": "emptydrive",
+        "nic1": "nat",
+        "nictype1": "82540EM",
+        "macaddress1": "00FF00FF00FF",
+        "cableconnected1": "on",
+        "nic2": "bridged",
+        "nictype2": "82540EM",
+        "bridgeadapter2": "Intel(R) Ethernet Connection",
+        "macaddress2": "080027AABBCC",
+        "cableconnected2": "on"
+      },
+      "spec": null,
+      "created_at": "2026-09-02T00:00:00Z",
+      "updatedAt": "2026-09-27T00:00:00Z"
+    }
+  ],
+  "total": 2
+}

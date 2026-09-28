@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "task_id": "8a41f3d6-0c27-4b95-9e1a-6f5b2d7c4e08",
+  "machine_name": "dev-1",
+  "operation": "stop",
+  "status": "pending",
+  "message": "Stop task queued successfully"
+}

@@ -19,3 +19,4 @@ export { filtersByOrganization } from './utils/organizations';
 export const HostsPage = lazy(() => import('./components/HostsPage'));
 export const HostPage = lazy(() => import('./components/HostPage'));
 export const MachinePage = lazy(() => import('./components/MachinePage'));
+export const MachinesPage = lazy(() => import('./components/MachinesPage'));

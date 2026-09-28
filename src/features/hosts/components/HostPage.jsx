@@ -11,9 +11,11 @@ import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useHostReadingsRefresh } from '../hooks/useHostReadings';
+import { useHostRow } from '../hooks/useHostRow';
 import { useHostSeriesRefresh } from '../hooks/useHostSeries';
 import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
+import { hostHasFeature } from '../utils/capabilities';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 
 import HostOverview from './HostOverview';
@@ -86,7 +88,9 @@ const labelOf = ({ status, held, id, stats }) => {
  * `stats.allmachines` sorted in the one `SubTable` over Name and State,
  * running or stopped from `stats.runningmachines`, under a heading that
  * counts them, narrowed by the navbar binding of `useDetailSearch` under
- * `table_prefs_host`; then, on a host whose own row lists `monitoring`,
+ * `table_prefs_host`, the heading's View all the link to the machines of
+ * the host at `/hosts/{id}/machines` while the host's own row lists
+ * `machines`; then, on a host whose own row lists `monitoring`,
  * the network and storage summary, the performance charts and the
  * monitoring database, each gated by the host's own tokens. The folds of
  * the page's cards are kept under the same `table_prefs_host`. Refresh
@@ -105,6 +109,7 @@ const HostPage = ({ id, context }) => {
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
   const folds = useFolds(`${context.prefsPrefix}_host`);
+  const listed = hostHasFeature(useHostRow(id), 'machines');
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
   const ctx = { ...context, t, language: i18n.language };
@@ -153,6 +158,17 @@ const HostPage = ({ id, context }) => {
         <SectionHeading
           title={t('hosts.page.machines')}
           count={t('hosts.host.machines', { running, total: machines.length })}
+          actions={
+            listed ? (
+              <Link
+                to={`/hosts/${id}/machines`}
+                className="btn btn-sm btn-outline-secondary"
+                data-link="machines"
+              >
+                {t('hosts.machines.viewAll')}
+              </Link>
+            ) : null
+          }
         />
       ) : null}
       {stats ? (

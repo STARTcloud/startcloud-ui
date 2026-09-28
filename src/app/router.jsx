@@ -67,6 +67,7 @@ import {
   HostPage,
   HostsPage,
   MachinePage,
+  MachinesPage,
   actionMenu as hostsActionMenu,
   footerPane as hostsFooterPane,
   sidebar as hostsSidebar,
@@ -468,6 +469,7 @@ const PAGE_TITLES = {
   '/setup': 'setup.title',
   '/vm/:instance': 'vdi.vm.title',
   '/hosts/:id': 'hosts.host.title',
+  '/hosts/:id/machines': 'hosts.machines.pageTitle',
   '/hosts/:id/machines/:name': 'hosts.machine.title',
   '/authenticator': 'auth:tfa.title',
   '/authenticator-method': 'auth:tfa.choose.title',
@@ -824,9 +826,23 @@ HostRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
-const MachineRoute = () => {
+const MachinesRoute = ({ context }) => {
+  const { id } = useParams();
+  return <MachinesPage id={id} context={context} />;
+};
+
+MachinesRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const MachineRoute = ({ context, organizations }) => {
   const { id, name } = useParams();
-  return <MachinePage id={id} name={name} />;
+  return <MachinePage id={id} name={name} context={context} organizations={organizations} />;
+};
+
+MachineRoute.propTypes = {
+  context: pageContextShape.isRequired,
+  organizations: PropTypes.array.isRequired,
 };
 
 const ProviderRoute = ({ collection, context }) => {
@@ -1207,22 +1223,32 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
 ];
 
 /**
- * The hosts feature's two routes, the host page at `/hosts/:id` and the
- * machine page at `/hosts/:id/machines/:name`, each open while the host
- * advertises `hosts` and the not-available stub otherwise.
+ * The hosts feature's three routes, the host page at `/hosts/:id`, the
+ * machines of a host at `/hosts/:id/machines` and the machine page at
+ * `/hosts/:id/machines/:name`, each open while the host advertises
+ * `hosts` and the not-available stub otherwise; the machine page is
+ * handed the session's memberships, by whose names it draws the
+ * organizations a machine belongs to.
  *
  * @param {Object} options - The router's side
  * @param {boolean} options.hosts - Whether the host advertises `hosts`
  * @param {Object} options.context - The page context
- * @returns {Array} The two routes
+ * @param {Array<Object>} options.organizations - The session's memberships
+ * @returns {Array} The three routes
  */
-const hostsRoutes = ({ hosts, context }) =>
+const hostsRoutes = ({ hosts, context, organizations }) =>
   gatedRoutes([
     { path: '/hosts/:id', open: hosts, element: <HostRoute context={context} />, token: 'hosts' },
     {
+      path: '/hosts/:id/machines',
+      open: hosts,
+      element: <MachinesRoute context={context} />,
+      token: 'hosts',
+    },
+    {
       path: '/hosts/:id/machines/:name',
       open: hosts,
-      element: <MachineRoute />,
+      element: <MachineRoute context={context} organizations={organizations} />,
       token: 'hosts',
     },
   ]);
@@ -1255,7 +1281,8 @@ const homeElementFor = ({
 /**
  * Every route the app serves: the fleet page at `/` and the VM page at
  * `/vm/:instance` while the host advertises `fleet`, the hosts page at
- * `/` with the host page at `/hosts/:id` and the machine page at
+ * `/` with the host page at `/hosts/:id`, the machines of a host at
+ * `/hosts/:id/machines` and the machine page at
  * `/hosts/:id/machines/:name` while the host advertises `hosts`, else the home page
  * and the collection routes from the registry in the host's order (the
  * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
@@ -1340,7 +1367,7 @@ const AppRoutes = ({
           )
         }
       />
-      {hostsRoutes({ hosts, context })}
+      {hostsRoutes({ hosts, context, organizations })}
       <Route path="/about" element={<AboutRoute oidc={oidc} clientId={account.clientId} />} />
       <Route
         path="/search"

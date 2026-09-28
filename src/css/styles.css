@@ -3350,10 +3350,20 @@ a.stat-card:focus-visible {
 .footer-view {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .footer-tasks {
   font-size: 12.5px;
+}
+
+.footer-tasks .table {
+  margin-bottom: 0;
+}
+
+.footer-tasks .col-fold {
+  position: relative;
+  z-index: 1;
 }
 
 .footer-tasks th,
@@ -3362,10 +3372,13 @@ a.stat-card:focus-visible {
   white-space: nowrap;
 }
 
-.footer-tasks th {
+.footer-tasks thead {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+}
+
+.footer-tasks th {
   background: var(--bs-body-bg);
   font-size: 11px;
   font-weight: 600;
@@ -3643,4 +3656,80 @@ a.stat-card:focus-visible {
 
 .chart-tone-cyan {
   color: var(--bs-cyan);
+}
+
+.device-tree {
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  overflow: hidden;
+}
+
+.device-tree-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bs-tertiary-bg);
+  font-weight: 600;
+}
+
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.device-row:hover {
+  background: var(--bs-secondary-bg);
+}
+
+.device-row > svg {
+  flex-shrink: 0;
+}
+
+.device-group {
+  font-weight: 600;
+}
+
+.device-child {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.device-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1.05rem;
+  border-left: 1px solid var(--bs-border-color);
+}
+
+.device-meta {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+
+.device-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.guest-properties {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.machine-screenshot {
+  display: block;
+  max-height: 60vh;
+  margin: 0 auto;
 }

@@ -1,0 +1,20 @@
+{
+  "machine_name": "dev-1",
+  "interfaces": [
+    {
+      "name": "lo",
+      "hardware-address": "00:00:00:00:00:00",
+      "ip-addresses": [{ "ip-address-type": "ipv4", "ip-address": "127.0.0.1", "prefix": 8 }]
+    },
+    {
+      "name": "enp0s3",
+      "hardware-address": "00:ff:00:ff:00:ff",
+      "ip-addresses": [{ "ip-address-type": "ipv4", "ip-address": "10.0.2.15", "prefix": 24 }]
+    },
+    {
+      "name": "enp0s8",
+      "hardware-address": "08:00:27:aa:bb:cc",
+      "ip-addresses": [{ "ip-address-type": "ipv4", "ip-address": "192.168.1.50", "prefix": 24 }]
+    }
+  ]
+}

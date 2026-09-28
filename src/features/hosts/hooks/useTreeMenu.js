@@ -22,6 +22,7 @@ import {
 import { useActionRunner } from './useHostActions';
 import { useHostMachinesRefresh } from './useHostMachines';
 import { useHostStatsRefresh } from './useHostStats';
+import { useMachineDetailRefresh } from './useMachineDetail';
 
 const NONE = { action: '', id: '', name: '' };
 
@@ -120,7 +121,8 @@ const hostRows = ({ server, role, ask }) => {
  * request at once through `run`; a row that destroys or powers a host
  * off sets `target`, which the tree's dialogs open on, and the dialogs'
  * confirmation calls `run` with that target. After a success the host's
- * stats are read again once, and its machine rows while they are held.
+ * stats are read again once, and its machine rows and the machine's
+ * detail while they are held.
  *
  * @param {Object|null} user - The session's user
  * @returns {{ menu: Function, target: Object, close: Function, run: Function }} The menu and its state
@@ -131,6 +133,7 @@ export const useTreeMenu = user => {
   const { run: send } = useActionRunner(status);
   const refreshStats = useHostStatsRefresh();
   const refreshMachines = useHostMachinesRefresh();
+  const refreshDetail = useMachineDetailRefresh();
   const [target, setTarget] = useState(NONE);
   const role = user?.role;
 
@@ -144,9 +147,12 @@ export const useTreeMenu = user => {
         onDone: () => {
           refreshStats(id);
           refreshMachines(id);
+          if (name) {
+            refreshDetail(id, name);
+          }
         },
       }),
-    [send, refreshStats, refreshMachines]
+    [send, refreshStats, refreshMachines, refreshDetail]
   );
 
   const menu = useCallback(

@@ -232,3 +232,114 @@ export const launchApplication = (status, id, name, application) =>
  */
 export const deleteMachine = (status, id, name, { force = false, cleanupDisks = true } = {}) =>
   client.delete(machinePath(status, id, name), { params: { force, cleanup_disks: cleanupDisks } });
+
+/**
+ * One machine's detail, `GET machines/{name}`: the machine's own row as
+ * `machine_info`, its live `configuration`, `system_status`, the tasks
+ * that wait or run for it and `knob_current`, the values its settings
+ * hold now.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<Object>} `{ machine_info, configuration, system_status, pending_tasks, knob_current, pending_changes }`
+ */
+export const fetchMachine = (status, id, name) => client.get(machinePath(status, id, name));
+
+/**
+ * What the guest additions report of one VirtualBox machine,
+ * `GET machines/{name}/guest-properties`, asked for only of a host that
+ * names `virtualbox` and never of a UTM machine.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<Array<Object>>} The rows, `[{ name, value, timestamp, flags }]`
+ */
+export const fetchGuestProperties = (status, id, name) =>
+  client
+    .get(machinePath(status, id, name, '/guest-properties'))
+    .then(data => (Array.isArray(data.properties) ? data.properties : []));
+
+/**
+ * The guest's own word for its operating system through the guest agent,
+ * `GET machines/{name}/guest/osinfo`, asked for only of a host that lists
+ * `guest-agent`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<Object|null>} The `osinfo`, `{ name, pretty-name, kernel-release, ... }`
+ */
+export const fetchGuestOsInfo = (status, id, name) =>
+  client.get(machinePath(status, id, name, '/guest/osinfo')).then(data => data.osinfo || null);
+
+/**
+ * The guest's live network through the guest agent,
+ * `GET machines/{name}/guest/network`: `interfaces`, each with its name,
+ * `hardware-address` and `ip-addresses`, and for a UTM machine the flat
+ * `ips` it answers in their place.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<{ interfaces: Array<Object>, ips: Array<string> }>} The network
+ */
+export const fetchGuestNetwork = (status, id, name) =>
+  client.get(machinePath(status, id, name, '/guest/network')).then(data => ({
+    interfaces: Array.isArray(data.interfaces) ? data.interfaces : [],
+    ips: Array.isArray(data.ips) ? data.ips : [],
+  }));
+
+/**
+ * Wire the guest agent's channel onto one machine,
+ * `POST machines/{name}/guest-agent/setup`, which takes effect when the
+ * machine next boots.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<Object>} `{ success, machine_name, requires_restart, message }`
+ */
+export const setupGuestAgent = (status, id, name) =>
+  client.post(machinePath(status, id, name, '/guest-agent/setup'));
+
+/**
+ * One frame of a running machine's screen as a PNG,
+ * `GET machines/{name}/vnc/screenshot`, asked for only of a host that
+ * lists `machine-screenshot`; the agent answers 502 for a machine that
+ * does not run.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {Promise<Blob>} The image
+ */
+export const fetchScreenshot = (status, id, name) =>
+  client.get(machinePath(status, id, name, '/vnc/screenshot'), { responseType: 'blob' });
+
+/**
+ * Write one machine's tags, `PUT machines/{name}/tags`, kept at once with
+ * no task; null clears them.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @param {Array<string>|null} tags - The tags, or null for none
+ * @returns {Promise<Object>} `{ success, machine_name, tags }`
+ */
+export const saveMachineTags = (status, id, name, tags) =>
+  client.put(machinePath(status, id, name, '/tags'), { tags });
+
+/**
+ * Write one machine's notes, `PUT machines/{name}/notes`, kept at once
+ * with no task; null clears them.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @param {string|null} notes - The notes, or null for none
+ * @returns {Promise<Object>} `{ success, machine_name, notes }`
+ */
+export const saveMachineNotes = (status, id, name, notes) =>
+  client.put(machinePath(status, id, name, '/notes'), { notes });

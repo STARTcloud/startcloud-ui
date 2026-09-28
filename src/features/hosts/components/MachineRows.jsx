@@ -19,7 +19,8 @@ import {
 import { useHostActions } from '../hooks/useHostActions';
 import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostStats } from '../hooks/useHostStats';
-import { hostHasFeature, hostHasHypervisor, hostResumes } from '../utils/capabilities';
+import { useMachineDetailRefresh } from '../hooks/useMachineDetail';
+import { gatesOf } from '../utils/capabilities';
 import { isRunning } from '../utils/hosts';
 import { canDestroyMachines, canRestartMachines, canStartStopMachines } from '../utils/permissions';
 
@@ -27,33 +28,6 @@ import ApplicationRows from './ApplicationRows';
 import { ActionRow, PrivilegeLine } from './HostActionOptions';
 import MachineDangerDialogs from './MachineDangerDialogs';
 import ZoneRows from './ZoneRows';
-
-/**
- * What the host's row and the machine's own row allow in the menu: `utm`
- * while the machine's hypervisor is UTM, which has no reset, no pause
- * apart from its suspend and no guest reboot; `pause` on a VirtualBox
- * host; `suspend` while the host lists `machine-suspend`; `resume` by
- * `hostResumes`, a paused machine behind `machine-suspend` and a
- * suspended one behind `machine-resume-suspended`; `guest` while
- * the guest can be reached from outside, through Guest Additions on
- * VirtualBox or through the guest agent on a bhyve host that lists
- * `guest-agent`.
- *
- * @param {Object} options - The host's row and the machine's row
- * @returns {{ utm: boolean, pause: boolean, suspend: boolean, resume: boolean, guest: boolean }} The gates
- */
-const gatesOf = ({ server, machine }) => {
-  const utm = machine?.hypervisor === 'utm';
-  const virtualbox = hostHasHypervisor(server, 'virtualbox');
-  return {
-    utm,
-    pause: virtualbox && !utm,
-    suspend: hostHasFeature(server, 'machine-suspend'),
-    resume: hostResumes(server, machine),
-    guest:
-      virtualbox || (hostHasHypervisor(server, 'bhyve') && hostHasFeature(server, 'guest-agent')),
-  };
-};
 
 const gatesShape = PropTypes.shape({
   utm: PropTypes.bool.isRequired,
@@ -270,15 +244,19 @@ DangerRows.propTypes = {
  * tokens and hypervisors come from its registry row, `server`, the
  * running state from the host's stats and the machine's hypervisor and
  * state from the host's machine rows, both read again once after every
- * success. A role short of destroying reads the privilege line instead.
+ * success, and the machine's detail with them while the machine page
+ * holds it, so the page's state row follows the action. A role short of
+ * destroying reads the privilege line instead.
  */
 const MachineRows = ({ status, id, name, server = null, user = null }) => {
   const role = user?.role;
   const { stats, refresh: refreshStats } = useHostStats(id);
   const { machine, refresh: refreshMachines } = useMachineRow(id, name);
+  const refreshDetail = useMachineDetailRefresh();
   const refresh = () => {
     refreshStats();
     refreshMachines();
+    refreshDetail(id, name);
   };
   const { run, busy } = useHostActions({ status, id, name, onDone: refresh });
   const [danger, setDanger] = useState('');

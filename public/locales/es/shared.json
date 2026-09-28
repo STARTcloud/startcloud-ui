@@ -2282,6 +2282,175 @@
     "api": {
       "server": "API del servidor",
       "agent": "API del agente"
+    },
+    "machines": {
+      "pageTitle": "Máquinas",
+      "viewAll": "Ver todas",
+      "view": "Ver",
+      "moreActions": "Más acciones",
+      "notOffered": "Este host no ofrece máquinas",
+      "detailsUnavailable": "Los detalles de esta {{noun}} no están disponibles.",
+      "detailsUnavailableNote": "El agente no respondió con los detalles de esta {{noun}}; se muestra lo que contiene la lista.",
+      "vcpus_one": "{{count}} vCPU",
+      "vcpus_other": "{{count}} vCPUs",
+      "ram": "{{memory}} de RAM",
+      "noun": {
+        "machine": "máquina",
+        "zone": "zona"
+      },
+      "title": {
+        "machine": "Máquinas",
+        "zone": "Zonas"
+      },
+      "search": {
+        "machine": "Filtrar por nombre, ID de servidor, etiqueta o provisioner…",
+        "zone": "Filtrar por nombre, ID de servidor, etiqueta o provisioner…"
+      },
+      "loadError": {
+        "machine": "No se pudieron cargar las máquinas.",
+        "zone": "No se pudieron cargar las zonas."
+      },
+      "empty": {
+        "machine": "Todavía no hay máquinas en este host",
+        "zone": "Todavía no hay zonas en este host"
+      },
+      "count": {
+        "total": "{{number}} en total",
+        "running": "{{number}} en ejecución",
+        "stopped": "{{number}} detenidas"
+      },
+      "flag": {
+        "orphaned": "Huérfana",
+        "autoDiscovered": "Detectada automáticamente"
+      },
+      "column": {
+        "sentence": "Resumen",
+        "id": "ID de servidor",
+        "provisioner": "Provisioner",
+        "roles": "Roles",
+        "system": "Sistema",
+        "hypervisor": "Hipervisor",
+        "backing": "Backend",
+        "flags": "Indicadores",
+        "tags": "Etiquetas"
+      },
+      "sentence": {
+        "running": "Esta {{noun}} está en ejecución.",
+        "stopped": "Esta {{noun}} está detenida.",
+        "paused": "En pausa — congelada en la RAM; reanuda para continuar.",
+        "suspended": "Suspendida a disco — inicia para reanudar donde se quedó.",
+        "configured": "Configurada pero nunca iniciada.",
+        "transitioning": "La {{noun}} está {{status}}…"
+      },
+      "info": {
+        "title": "Información de la máquina",
+        "hypervisor": "Hipervisor",
+        "backing": "Backend",
+        "backingTitle": "Cómo llegan las operaciones del ciclo de vida al hipervisor",
+        "homeTitle": "Directorio del proyecto Vagrant",
+        "networkErrors_one": "Errores de red: {{count}}",
+        "networkErrors_other": "Errores de red: {{count}}",
+        "storageErrors_one": "Errores de almacenamiento: {{count}}",
+        "storageErrors_other": "Errores de almacenamiento: {{count}}",
+        "hostHealth": "Salud del host",
+        "lastSeen": "Última vez",
+        "guestIp": "IP del invitado",
+        "organizations": "Acceso de organizaciones",
+        "unassigned": "Sin asignar",
+        "zoneName": "Nombre",
+        "zonePath": "Ruta",
+        "bootArgs": "Argumentos de arranque",
+        "hostId": "ID del host",
+        "pool": "Pool",
+        "schedulingClass": "Clase de planificación",
+        "limitPrivileges": "Límite de privilegios",
+        "fsAllowed": "FS permitidos"
+      },
+      "hardware": {
+        "title": "Hardware",
+        "enabled": "Activado",
+        "disabled": "Desactivado",
+        "on": "Sí",
+        "off": "No",
+        "consolePort": "Puerto VNC",
+        "pinned": "fijado",
+        "pinnedTitle": "Fijado por el atributo consoleport",
+        "thisSession": "(esta sesión)",
+        "autoPort": "Automático (pool del agente)",
+        "natForwards": "Reenvíos de puertos NAT",
+        "adapter": "Adaptador {{adapter}}",
+        "ram": "RAM",
+        "vcpus": "vCPUs",
+        "bootrom": "Boot ROM",
+        "hostBridge": "Puente del host",
+        "brand": "Marca",
+        "type": "Tipo",
+        "acpi": "ACPI",
+        "autoBoot": "Arranque automático",
+        "uefiVars": "Variables UEFI",
+        "xhci": "xHCI",
+        "rng": "RNG",
+        "cloudInit": "Cloud-init"
+      },
+      "devices": {
+        "title": "Dispositivos",
+        "disks": "Discos",
+        "cdDvd": "CD/DVD",
+        "network": "Red",
+        "adapters": "Adaptadores de red",
+        "adapter": "Adaptador {{adapter}}",
+        "portDevice": "puerto {{port}} · disp. {{device}}",
+        "emptyDrive": "unidad vacía",
+        "boot": "arranque",
+        "bootTitle": "El puerto 0 es el medio de arranque — el agente se niega a quitarlo",
+        "zoneBootTitle": "El medio de arranque de la zona",
+        "transport": "NAT de aprovisionamiento",
+        "transportTitle": "El adaptador 1 es el NAT de aprovisionamiento en las máquinas creadas por el agente",
+        "onNetwork": "en {{network}}",
+        "overLink": "sobre {{link}}"
+      },
+      "guest": {
+        "agentTitle": "Agente del invitado",
+        "infoTitle": "Información del invitado",
+        "checkedAt": "comprobado {{time}}",
+        "os": "SO",
+        "unknownOs": "Desconocido",
+        "via": "vía {{source}}",
+        "sourceAdditions": "Guest Additions",
+        "sourceAgent": "agente del invitado",
+        "more": "Más",
+        "notResponding": "El canal del agente del invitado no responde — o el invitado no está ejecutando qemu-ga, o el dispositivo del canal aún no está conectado.",
+        "setup": "Configurar el canal",
+        "setupTitle": "Conecta el dispositivo del canal del agente del invitado a esta máquina — surte efecto en el próximo arranque",
+        "setupDone": "Canal del agente del invitado configurado para {{name}}",
+        "requiresRestart": "— surte efecto en el próximo arranque.",
+        "networkFailed": "No se pudo leer la red del invitado.",
+        "networkTitle": "Red del invitado de {{name}}",
+        "mac": "Dirección MAC",
+        "addresses": "Dirección IP",
+        "noAddresses": "No se observaron direcciones.",
+        "nic": "NIC {{nic}}",
+        "noGuestIps": "Aún no se informó de ninguna IP del invitado (¿están en ejecución las Guest Additions?).",
+        "cloudInit_one": "Semilla de cloud-init ({{count}})",
+        "cloudInit_other": "Semillas de cloud-init ({{count}})",
+        "allProperties_one": "Todas las propiedades del invitado ({{count}})",
+        "allProperties_other": "Todas las propiedades del invitado ({{count}})",
+        "refreshProperties": "Actualizar"
+      },
+      "screenshot": {
+        "title": "Pantalla",
+        "refresh": "Actualizar la captura de pantalla",
+        "alt": "Captura de pantalla de la consola de {{name}}"
+      },
+      "tags": {
+        "title": "Etiquetas y notas",
+        "note": "Las etiquetas y las notas se guardan al momento, sin tarea, incluso mientras la máquina está en ejecución.",
+        "tags": "Etiquetas (separadas por comas)",
+        "tagsPlaceholder": "p. ej. web, producción",
+        "notes": "Notas",
+        "save": "Guardar etiquetas y notas",
+        "saved": "Las etiquetas y las notas de {{name}} se guardaron."
+      }
     }
   },
   "pages": {

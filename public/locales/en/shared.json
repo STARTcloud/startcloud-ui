@@ -2282,6 +2282,175 @@
     "api": {
       "server": "Server API",
       "agent": "Agent API"
+    },
+    "machines": {
+      "pageTitle": "Machines",
+      "viewAll": "View all",
+      "view": "View",
+      "moreActions": "More actions",
+      "notOffered": "This host does not offer machines",
+      "detailsUnavailable": "The details of this {{noun}} are not available.",
+      "detailsUnavailableNote": "The agent did not answer the details of this {{noun}}; what the list holds is shown.",
+      "vcpus_one": "{{count}} vCPU",
+      "vcpus_other": "{{count}} vCPUs",
+      "ram": "{{memory}} RAM",
+      "noun": {
+        "machine": "machine",
+        "zone": "zone"
+      },
+      "title": {
+        "machine": "Machines",
+        "zone": "Zones"
+      },
+      "search": {
+        "machine": "Filter by name, server ID, tag, or provisioner…",
+        "zone": "Filter by name, server ID, tag, or provisioner…"
+      },
+      "loadError": {
+        "machine": "The machines could not be loaded.",
+        "zone": "The zones could not be loaded."
+      },
+      "empty": {
+        "machine": "No machines on this host yet",
+        "zone": "No zones on this host yet"
+      },
+      "count": {
+        "total": "{{number}} total",
+        "running": "{{number}} running",
+        "stopped": "{{number}} stopped"
+      },
+      "flag": {
+        "orphaned": "Orphaned",
+        "autoDiscovered": "Auto-discovered"
+      },
+      "column": {
+        "sentence": "Summary",
+        "id": "Server ID",
+        "provisioner": "Provisioner",
+        "roles": "Roles",
+        "system": "System",
+        "hypervisor": "Hypervisor",
+        "backing": "Backing",
+        "flags": "Flags",
+        "tags": "Tags"
+      },
+      "sentence": {
+        "running": "This {{noun}} is running.",
+        "stopped": "This {{noun}} is stopped.",
+        "paused": "Paused — frozen in RAM; resume to continue.",
+        "suspended": "Suspended to disk — start to resume where it left off.",
+        "configured": "Configured but never started.",
+        "transitioning": "The {{noun}} is {{status}}…"
+      },
+      "info": {
+        "title": "Machine information",
+        "hypervisor": "Hypervisor",
+        "backing": "Backing",
+        "backingTitle": "How lifecycle operations reach the hypervisor",
+        "homeTitle": "Vagrant project directory",
+        "networkErrors_one": "Net errors: {{count}}",
+        "networkErrors_other": "Net errors: {{count}}",
+        "storageErrors_one": "Storage errors: {{count}}",
+        "storageErrors_other": "Storage errors: {{count}}",
+        "hostHealth": "Host health",
+        "lastSeen": "Last seen",
+        "guestIp": "Guest IP",
+        "organizations": "Organization access",
+        "unassigned": "Unassigned",
+        "zoneName": "Name",
+        "zonePath": "Path",
+        "bootArgs": "Boot args",
+        "hostId": "Host ID",
+        "pool": "Pool",
+        "schedulingClass": "Scheduling class",
+        "limitPrivileges": "Limit privileges",
+        "fsAllowed": "FS allowed"
+      },
+      "hardware": {
+        "title": "Hardware",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "on": "On",
+        "off": "Off",
+        "consolePort": "VNC port",
+        "pinned": "pinned",
+        "pinnedTitle": "Pinned by the consoleport attr",
+        "thisSession": "(this session)",
+        "autoPort": "Auto (agent pool)",
+        "natForwards": "NAT port forwards",
+        "adapter": "Adapter {{adapter}}",
+        "ram": "RAM",
+        "vcpus": "vCPUs",
+        "bootrom": "Boot ROM",
+        "hostBridge": "Host bridge",
+        "brand": "Brand",
+        "type": "Type",
+        "acpi": "ACPI",
+        "autoBoot": "Auto boot",
+        "uefiVars": "UEFI vars",
+        "xhci": "xHCI",
+        "rng": "RNG",
+        "cloudInit": "Cloud-init"
+      },
+      "devices": {
+        "title": "Devices",
+        "disks": "Disks",
+        "cdDvd": "CD/DVD",
+        "network": "Network",
+        "adapters": "Network adapters",
+        "adapter": "Adapter {{adapter}}",
+        "portDevice": "port {{port}} · dev {{device}}",
+        "emptyDrive": "empty drive",
+        "boot": "boot",
+        "bootTitle": "Port 0 is the boot medium — the agent refuses removing it",
+        "zoneBootTitle": "The zone's boot medium",
+        "transport": "provisioning NAT",
+        "transportTitle": "Adapter 1 is the provisioning NAT on agent-created machines",
+        "onNetwork": "on {{network}}",
+        "overLink": "over {{link}}"
+      },
+      "guest": {
+        "agentTitle": "Guest agent",
+        "infoTitle": "Guest info",
+        "checkedAt": "checked {{time}}",
+        "os": "OS",
+        "unknownOs": "Unknown",
+        "via": "via {{source}}",
+        "sourceAdditions": "Guest Additions",
+        "sourceAgent": "guest agent",
+        "more": "More",
+        "notResponding": "The guest-agent channel is not responding — either the guest is not running qemu-ga, or the channel device is not wired yet.",
+        "setup": "Set up channel",
+        "setupTitle": "Wire the guest-agent channel device onto this machine — takes effect on the next boot",
+        "setupDone": "Guest-agent channel configured for {{name}}",
+        "requiresRestart": "— takes effect on the next boot.",
+        "networkFailed": "The guest's network could not be read.",
+        "networkTitle": "Guest network of {{name}}",
+        "mac": "MAC address",
+        "addresses": "IP address",
+        "noAddresses": "No addresses observed.",
+        "nic": "NIC {{nic}}",
+        "noGuestIps": "No guest IPs reported yet (guest additions running?).",
+        "cloudInit_one": "Cloud-init seed ({{count}})",
+        "cloudInit_other": "Cloud-init seeds ({{count}})",
+        "allProperties_one": "All guest properties ({{count}})",
+        "allProperties_other": "All guest properties ({{count}})",
+        "refreshProperties": "Refresh"
+      },
+      "screenshot": {
+        "title": "Screen",
+        "refresh": "Refresh screenshot",
+        "alt": "{{name}} console screenshot"
+      },
+      "tags": {
+        "title": "Tags & notes",
+        "note": "Tags and notes are saved at once, with no task, even while the machine runs.",
+        "tags": "Tags (comma-separated)",
+        "tagsPlaceholder": "e.g. web, production",
+        "notes": "Notes",
+        "save": "Save tags & notes",
+        "saved": "The tags and notes of {{name}} are saved."
+      }
     }
   },
   "pages": {
