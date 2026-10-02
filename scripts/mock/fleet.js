@@ -1,6 +1,7 @@
 import { seedTasks } from './fleet-tasks.js';
 import {
   AGENT_MODE,
+  APIKEY_MODE,
   ORG_UUIDS,
   SELF,
   ZONE_MODE,
@@ -19,7 +20,18 @@ const DESK_FEATURES = [
   'monitoring',
   'swap',
   'provisioning',
+  'provisioner-registry',
+  'network-spaces',
+  'machine-create',
+  'machine-modify',
+  'machine-snapshots',
+  'templates',
+  'artifacts',
+  'ssh',
+  'processes',
+  'secrets',
 ];
+const DESK_CONSOLES = ['vnc', 'rdp'];
 const LAB_FEATURES = [
   'machines',
   'tasks',
@@ -35,8 +47,26 @@ const ZONE_FEATURES = [
   'zfs',
   'swap',
   'provisioning',
+  'provisioner-registry',
   'host-fast-reboot',
   'machine-resume-suspended',
+  'vnics',
+  'devices',
+  'machine-create',
+  'machine-modify',
+  'machine-snapshots',
+  'templates',
+  'artifacts',
+  'services',
+  'processes',
+  'system-users',
+  'time-sync',
+  'packages',
+  'repositories',
+  'boot-environments',
+  'fault-management',
+  'log-streaming',
+  'syslog',
 ];
 const STUDIO_FEATURES = [
   'machines',
@@ -49,6 +79,11 @@ const STUDIO_FEATURES = [
   'monitoring',
   'swap',
   'provisioning',
+  'provisioner-registry',
+  'machine-create',
+  'machine-modify',
+  'machine-snapshots',
+  'templates',
 ];
 const STORE_FEATURES = [
   'machines',
@@ -59,6 +94,14 @@ const STORE_FEATURES = [
   'zfs',
   'swap',
   'provisioning',
+  'vnics',
+  'services',
+  'processes',
+  'system-users',
+  'time-sync',
+  'packages',
+  'boot-environments',
+  'fault-management',
 ];
 const AGENT_FEATURES = [
   'machines',
@@ -72,8 +115,62 @@ const AGENT_FEATURES = [
   'monitoring',
   'swap',
   'provisioning',
+  'provisioner-registry',
+  'network-spaces',
+  'machine-create',
+  'machine-modify',
+  'machine-snapshots',
+  'templates',
+  'artifacts',
+  'processes',
+  'secrets',
+];
+const LIVE_AGENT_FEATURES = [
+  'tasks',
+  'machines',
+  'machine-suspend',
+  'machine-create',
+  'machine-modify',
+  'machine-snapshots',
+  'machine-screenshot',
+  'swap',
+  'monitoring',
+  'processes',
+  'provisioning',
+  'provisioner-registry',
+  'secrets',
+  'ssh',
+  'templates',
+  'host-launchers',
+  'host-terminal',
+  'hosts-file',
+  'dns',
+  'hostname',
+  'ip-addresses',
+  'network-spaces',
+  'hosts',
+  'footer',
+  'health',
+  'events',
+  'admin',
+  'setup',
+  'host-power',
+  'artifacts',
+  'file-browser',
+  'guest-agent',
 ];
 const CPU_TIMES = { user: 914520, nice: 0, sys: 402310, idle: 8812400, irq: 0 };
+const STREAMING_AGENT = 'hyperweaver-agent';
+const AGENT_EVENTS = { path: '/api/events', topics: ['health', 'tasks', 'hosts'] };
+
+const streamed = capabilities =>
+  capabilities.agent === STREAMING_AGENT
+    ? {
+        ...capabilities,
+        events: AGENT_EVENTS,
+        features: uniqueOf([...capabilities.features, 'events']),
+      }
+    : capabilities;
 
 const machine = (name, status, hypervisor, notes = '') => ({
   name,
@@ -307,7 +404,7 @@ const agentRow = ({ first, id, hostname, name, capabilities, orgs = [] }) => ({
 const capabilitiesFrom = (folder, features, added = []) => {
   const agent = fixture(folder, 'status.json');
   const own = agent.features.filter(token => !CHROME_TOKENS.includes(token));
-  return {
+  return streamed({
     role: 'agent',
     agent: agent.agent,
     hypervisors: agent.hypervisors,
@@ -317,10 +414,10 @@ const capabilitiesFrom = (folder, features, added = []) => {
     hostname: agent.hostname,
     console: agent.console,
     features: features || uniqueOf([...own, ...added]),
-  };
+  });
 };
 
-const STUDIO_CAPABILITIES = {
+const STUDIO_CAPABILITIES = streamed({
   role: 'agent',
   agent: 'hyperweaver-agent',
   hypervisors: ['virtualbox', 'utm'],
@@ -330,7 +427,7 @@ const STUDIO_CAPABILITIES = {
   hostname: 'mac-1',
   console: ['rdp', 'vnc'],
   features: STUDIO_FEATURES,
-};
+});
 const STORE_CAPABILITIES = {
   role: 'agent',
   agent: 'zoneweaver-agent',
@@ -345,7 +442,7 @@ const STORE_CAPABILITIES = {
 
 export const ATTIC_ID = 6;
 
-export const ATTIC_CAPABILITIES = {
+export const ATTIC_CAPABILITIES = streamed({
   role: 'agent',
   agent: 'hyperweaver-agent',
   hypervisors: ['virtualbox'],
@@ -363,16 +460,17 @@ export const ATTIC_CAPABILITIES = {
     'monitoring',
     'swap',
   ],
-};
+});
 
 const registryRows = () => {
   const [first] = fixture('hosts', 'servers.json').servers;
   const desk = {
     ...first,
-    capabilities: {
+    capabilities: streamed({
       ...first.capabilities,
+      console: DESK_CONSOLES,
       features: uniqueOf([...first.capabilities.features, ...DESK_FEATURES]),
-    },
+    }),
     org_uuids: [ORG_UUIDS.acme],
   };
   return [
@@ -420,6 +518,61 @@ const registryRows = () => {
 
 export const REGISTRY = AGENT_MODE ? [] : registryRows();
 
+/**
+ * Register an agent the settings page's Servers tab added: a host of the
+ * Lab kind under the new id and a registry row carrying the address, the
+ * entity name and the self-signed flag the form sent.
+ *
+ * @param {Object} row - `id`, `hostname`, `port`, `protocol`, `entityName` and `allowInsecure`
+ * @returns {void}
+ */
+export const registerHost = ({ id, hostname, port, protocol, entityName, allowInsecure }) => {
+  const [first] = fixture('hosts', 'servers.json').servers;
+  hosts.set(String(id), labHost(id));
+  REGISTRY.push({
+    ...agentRow({
+      first,
+      id,
+      hostname,
+      name: entityName,
+      capabilities: capabilitiesFrom('agent', LAB_FEATURES),
+    }),
+    port,
+    protocol,
+    allow_insecure: allowInsecure,
+    created_at: new Date().toISOString(),
+  });
+};
+
+/**
+ * Change whether the server accepts a registered agent's self-signed
+ * certificate, the one editable member of a registry row.
+ *
+ * @param {string|number} id - The registry id
+ * @param {boolean} allowInsecure - Whether to accept it
+ * @returns {void}
+ */
+export const setAllowInsecure = (id, allowInsecure) => {
+  const row = REGISTRY.find(entry => String(entry.id) === String(id));
+  if (row) {
+    row.allow_insecure = allowInsecure;
+  }
+};
+
+/**
+ * Remove an agent from the registry and its host with it.
+ *
+ * @param {string|number} id - The registry id
+ * @returns {void}
+ */
+export const unregisterHost = id => {
+  const index = REGISTRY.findIndex(entry => String(entry.id) === String(id));
+  if (index >= 0) {
+    REGISTRY.splice(index, 1);
+  }
+  hosts.delete(String(id));
+};
+
 const STATUS_FOLDER = (() => {
   if (ZONE_MODE) {
     return 'zones';
@@ -432,14 +585,16 @@ const agentFeatures = ZONE_MODE ? ZONE_FEATURES : AGENT_FEATURES;
 const ownFeatures = AGENT_MODE ? agentFeatures : [];
 
 /**
- * The status fixture of the role the mock stands in for, the agent's own
- * pane tokens added on the `hyperweaver-agent` role, whose fixture names
- * two of them alone, and on both agent roles the tokens the host page's
- * Overview and its charts are gated by.
+ * The status fixture of the role the mock stands in for: on the
+ * `hyperweaver-agent` role the tokens the agent's own status handler
+ * advertises, its platform tokens and the four its configuration gates,
+ * as that agent answers them, no chrome token it does not list; on the
+ * `zoneweaver-agent` role the fixture's tokens with the ones the host
+ * page's Overview and its charts are gated by.
  */
 export const ROLE_STATUS = {
   ...statusBase,
-  features: uniqueOf([...statusBase.features, ...ownFeatures]),
+  features: APIKEY_MODE ? LIVE_AGENT_FEATURES : uniqueOf([...statusBase.features, ...ownFeatures]),
 };
 
 export const hostFor = id => hosts.get(AGENT_MODE ? SELF : String(id)) || null;
@@ -489,6 +644,19 @@ export const machineOf = (host, name) => host.machines.find(row => row.name === 
  * @returns {Array<string>} The uuids
  */
 export const machineOrgsOf = (host, name) => MACHINE_ORGS[host.id]?.[name] || [];
+
+/**
+ * Replace the organizations a machine belongs to, the server role's own
+ * table and never the agent's.
+ *
+ * @param {Object} host - The host
+ * @param {string} name - The machine name
+ * @param {Array<string>} uuids - The organization uuids
+ * @returns {void}
+ */
+export const setMachineOrgs = (host, name, uuids) => {
+  MACHINE_ORGS[host.id] = { ...(MACHINE_ORGS[host.id] || {}), [name]: uuids };
+};
 
 export const runningOf = host =>
   host.machines.filter(row => row.status === 'running').map(row => row.name);

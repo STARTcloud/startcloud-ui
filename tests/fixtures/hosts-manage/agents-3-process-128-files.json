@@ -1,0 +1,5 @@
+[
+  { "fd": 0, "description": "S_IFCHR mode:0666 dev:0,0 ino:0", "details": "/dev/null" },
+  { "fd": 1, "description": "S_IFREG mode:0644", "details": "/var/log/bhyve.log" },
+  { "fd": 3, "description": "S_IFSOCK mode:0666", "details": "AF_UNIX /var/run/vmm/db-1" }
+]

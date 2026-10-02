@@ -1,0 +1,36 @@
+{
+  "name": "startcloud",
+  "version": "0.1.27",
+  "metadata": {
+    "label": "STARTcloud",
+    "roles": [
+      { "name": "domino", "depends_on": [] },
+      { "name": "nomadweb", "depends_on": ["domino"] },
+      { "name": "leap", "depends_on": ["domino"] }
+    ],
+    "configuration": {
+      "groups": [],
+      "fields": [{ "name": "hostname", "label": "Hostname", "type": "fqdn", "required": true }]
+    }
+  },
+  "role_specs": {
+    "roles": {
+      "domino": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Domino",
+        "options": {}
+      },
+      "nomadweb": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Nomad Web",
+        "options": {}
+      },
+      "leap": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Leap",
+        "options": {}
+      }
+    }
+  },
+  "playbook_candidates": ["ansible/playbook.yml"]
+}

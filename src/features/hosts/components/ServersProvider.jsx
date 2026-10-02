@@ -14,6 +14,10 @@ import HostReadingsProvider from './HostReadingsProvider';
 import HostSeriesProvider from './HostSeriesProvider';
 import HostStatsProvider from './HostStatsProvider';
 import MachineDetailProvider from './MachineDetailProvider';
+import MachineRestoreProvider from './MachineRestoreProvider';
+import MachineSeriesProvider from './MachineSeriesProvider';
+import MachineSnapshotsProvider from './MachineSnapshotsProvider';
+import ZoneTerminalProvider from './ZoneTerminalProvider';
 
 const IDLE = -1;
 
@@ -55,7 +59,11 @@ const answered = (epoch, patch) => current =>
  * `MachineDetailProvider`, `HostReadingsProvider` and
  * `HostSeriesProvider`, the stats, the machine rows, the detail of each
  * machine, the Overview's answers and the charts' series of each host
- * held the same way, so the app mounts one provider for the feature.
+ * held the same way, so the app mounts one provider for the feature;
+ * and `MachineSnapshotsProvider` and `MachineSeriesProvider`, the
+ * snapshots and the charts' series of each machine; `MachineRestoreProvider`,
+ * the start that follows a restore; and innermost `ZoneTerminalProvider`,
+ * the zlogin terminals of the zones a person opened.
  */
 const ServersProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
@@ -127,7 +135,15 @@ const ServersProvider = ({ signedIn, organization, children }) => {
         <HostMachinesProvider signedIn={signedIn} organization={organization}>
           <MachineDetailProvider signedIn={signedIn}>
             <HostReadingsProvider signedIn={signedIn}>
-              <HostSeriesProvider signedIn={signedIn}>{children}</HostSeriesProvider>
+              <HostSeriesProvider signedIn={signedIn}>
+                <MachineSnapshotsProvider signedIn={signedIn}>
+                  <MachineSeriesProvider signedIn={signedIn}>
+                    <MachineRestoreProvider signedIn={signedIn}>
+                      <ZoneTerminalProvider signedIn={signedIn}>{children}</ZoneTerminalProvider>
+                    </MachineRestoreProvider>
+                  </MachineSeriesProvider>
+                </MachineSnapshotsProvider>
+              </HostSeriesProvider>
             </HostReadingsProvider>
           </MachineDetailProvider>
         </HostMachinesProvider>

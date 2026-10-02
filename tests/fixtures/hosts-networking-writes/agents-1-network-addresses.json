@@ -1,0 +1,42 @@
+{
+  "addresses": [
+    {
+      "addrobj": "Ethernet/v4",
+      "interface": "Ethernet",
+      "addr": "10.0.0.11/24",
+      "ip_version": "v4",
+      "type": "static",
+      "state": "ok",
+      "source": "live"
+    },
+    {
+      "addrobj": "Ethernet/v4",
+      "interface": "Ethernet",
+      "addr": "10.0.0.12/24",
+      "ip_version": "v4",
+      "type": "static",
+      "state": "ok",
+      "source": "live"
+    },
+    {
+      "addrobj": "Ethernet/v6",
+      "interface": "Ethernet",
+      "addr": "fe80::a00:27ff:fe4f:1a01/64",
+      "ip_version": "v6",
+      "type": "addrconf",
+      "state": "ok",
+      "source": "live"
+    },
+    {
+      "addrobj": "Wi-Fi/v4",
+      "interface": "Wi-Fi",
+      "addr": "169.254.12.7/16",
+      "ip_version": "v4",
+      "type": "static",
+      "state": "down",
+      "source": "live"
+    }
+  ],
+  "returned": 4,
+  "source": "live"
+}

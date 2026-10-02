@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "task_id": "c3000000-0000-4000-8000-000000000001",
+  "operation": "artifact_scan",
+  "status": "pending",
+  "message": "Artifact scan task queued"
+}

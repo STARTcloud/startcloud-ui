@@ -145,6 +145,44 @@ describe('validateObject', () => {
     ]);
   });
 
+  it('walks an array of objects one element at a time and then the array itself', () => {
+    const rows = {
+      properties: {
+        servers: {
+          type: 'array',
+          maxItems: 2,
+          items: {
+            type: 'object',
+            required: ['origin'],
+            properties: {
+              origin: { type: 'string', pattern: '^https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$' },
+              label: { type: 'string', maxLength: 3 },
+            },
+          },
+        },
+      },
+    };
+    expect(
+      validateObject(rows, {
+        servers: [
+          { origin: 'https://hw.example.com', label: 'ok' },
+          { origin: 'ftp://bad', label: 'toolong' },
+          { label: 'x' },
+        ],
+      })
+    ).toEqual([
+      {
+        pointer: '/servers/1/origin',
+        rule: 'pattern',
+        params: { pattern: '^https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$' },
+      },
+      { pointer: '/servers/1/label', rule: 'maxLength', params: { maxLength: 3 } },
+      { pointer: '/servers/2/origin', rule: 'required', params: {} },
+      { pointer: '/servers', rule: 'maxItems', params: { maxItems: 2 } },
+    ]);
+    expect(validateObject(rows, { servers: [{ origin: 'https://hw.example.com' }] })).toEqual([]);
+  });
+
   it('requires a member only while the member it depends on is set', () => {
     expect(validateObject(schema, { name: 'ok', sql: { host: 'db' } })).toEqual([]);
     expect(validateObject(schema, { name: 'ok', engine: 'sqlite', sql: { host: 'db' } })).toEqual([

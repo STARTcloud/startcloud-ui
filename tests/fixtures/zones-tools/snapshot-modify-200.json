@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "task_id": "b2000000-0000-4000-8000-000000000004",
+  "machine_name": "web-1",
+  "operation": "snapshot_modify",
+  "status": "pending",
+  "message": "Snapshot modify task queued successfully"
+}

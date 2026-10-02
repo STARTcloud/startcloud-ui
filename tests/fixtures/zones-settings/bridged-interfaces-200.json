@@ -1,0 +1,9 @@
+{
+  "interfaces": [
+    { "name": "igb0", "class": "phys", "state": "up", "provisioning": false },
+    { "name": "aggr0", "class": "aggr", "state": "up", "provisioning": true },
+    { "name": "stub0", "class": "etherstub", "state": "up", "provisioning": false }
+  ],
+  "excluded_aggr_members": ["igb1", "igb2"],
+  "total": 3
+}

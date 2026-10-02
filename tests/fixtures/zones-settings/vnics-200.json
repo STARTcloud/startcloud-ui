@@ -1,0 +1,17 @@
+{
+  "vnics": [
+    {
+      "link": "vnice3_1234_0",
+      "over": "igb0",
+      "speed": 1000,
+      "macaddress": "02:08:20:aa:bb:cc",
+      "macaddrtype": "fixed",
+      "vid": 11,
+      "mtu": 1500,
+      "state": "up",
+      "zone": "web-1"
+    }
+  ],
+  "returned": 1,
+  "source": "live"
+}

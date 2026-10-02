@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "message": "Hold task created for rpool/zones/web-1@before-upgrade with tag audit",
+  "task_id": "b2000000-0000-4000-8000-000000000007",
+  "snapshot": "rpool/zones/web-1@before-upgrade",
+  "tag": "audit"
+}

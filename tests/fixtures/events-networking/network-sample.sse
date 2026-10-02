@@ -1,0 +1,9 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["tasks","hosts","monitoring"]}
+
+id: 1757068805000-0
+event: network-sample
+data: {"agent_id":1,"usage":[{"host":"vbox-1","link":"Ethernet","ipackets":1820944,"rbytes":2105637123,"ierrors":0,"opackets":912755,"obytes":310642871,"oerrors":0,"rx_bps":750000,"tx_bps":200000,"rx_mbps":6,"tx_mbps":1.6,"time_delta_seconds":5,"scan_timestamp":"2026-09-27T12:00:05Z"},{"host":"vbox-1","link":"Wi-Fi","ipackets":0,"rbytes":0,"ierrors":0,"opackets":0,"obytes":0,"oerrors":0,"rx_bps":0,"tx_bps":0,"rx_mbps":0,"tx_mbps":0,"time_delta_seconds":5,"scan_timestamp":"2026-09-27T12:00:05Z"}]}
+

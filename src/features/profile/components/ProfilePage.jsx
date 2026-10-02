@@ -48,7 +48,7 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
         account={account}
         profile={profile}
         session={session}
-        readOnly={readOnly}
+        readOnly={readOnly && !account.preferences}
         onSaved={page.refresh}
       />
     );
@@ -246,7 +246,10 @@ const usePlacesKey = places => {
  * `readOnly` adapter, the record an identity provider owns, draws the
  * same sections with every field read-only and the Manage at identity
  * provider link in each section's heading (RFC 7644 §3.5.2: a client
- * never writes a `readOnly` attribute); a
+ * never writes a `readOnly` attribute), the Preferences section alone
+ * editable while such an adapter still carries `preferences`, the record
+ * of a local key whose details no one writes but whose preferences are
+ * the person's own; a
  * `#section` hash the estate still links is replaced by the section's
  * route; the record is read once through `account.profile` and, after
  * every change the session must reflect, one awaited `login` on the bus

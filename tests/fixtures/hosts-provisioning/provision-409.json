@@ -1,0 +1,6 @@
+{
+  "error": "Host hooks need confirmation",
+  "needs_confirmation": true,
+  "reason": "This document runs host hooks (target: host) on the agent host itself; confirm to run them",
+  "confirm_with": { "confirm_host_hooks": true }
+}

@@ -7,7 +7,7 @@ import { log } from '../../../lib/logger';
 import { fetchMachine } from '../api/machines';
 import { MachineDetailContext } from '../hooks/useMachineDetail';
 import { agentIdOf } from '../utils/hosts';
-import { detailKey } from '../utils/machines';
+import { detailKey, taskMachineOf } from '../utils/machines';
 import { TERMINAL_TASK_STATUSES } from '../utils/tasks';
 
 const emptyFor = (signedIn, epoch) => ({ epoch, signedIn, machines: {} });
@@ -46,11 +46,21 @@ const staledWhere = matches => current => {
 
 const staled = staledWhere(() => true);
 
+const heldKey = flight => flight.slice(flight.indexOf('|') + 1);
+
+const forget = (copies, matches) =>
+  [...(copies || [])]
+    .filter(flight => matches(heldKey(flight)))
+    .forEach(flight => copies.delete(flight));
+
 /**
  * The detail of every machine a caller has drawn, behind
  * `useMachineDetail`: one request per machine when the first caller asks,
  * a second caller while it is in flight joining it, the answer held for
- * every caller after it and renewed on a caller's `refresh`. The held
+ * every caller after it and renewed on a caller's `refresh`; `ask` is
+ * the read of a caller that draws, which answers at once while the
+ * answer is held fresh, so a caller that mounts as an answer lands asks
+ * for nothing twice. The held
  * answers are marked stale and kept on screen, and only the callers that
  * draw a machine ask for it again, when the event stream opens fresh or
  * answers `reset`, when the `hosts` topic's `stats-updated` event says a
@@ -64,6 +74,7 @@ const MachineDetailProvider = ({ signedIn, children }) => {
   const status = useStatus();
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
   const flights = useRef(null);
+  const copies = useRef(null);
 
   if (state.signedIn !== signedIn) {
     setState(emptyFor(signedIn, state.epoch + 1));
@@ -72,52 +83,76 @@ const MachineDetailProvider = ({ signedIn, children }) => {
   const read = useCallback(
     (epoch, id, name) => {
       flights.current ||= new Map();
+      copies.current ||= new Set();
       const key = detailKey(id, name);
-      const flying = flights.current.get(flightKey(epoch, key));
+      const held = flightKey(epoch, key);
+      const flying = flights.current.get(held);
       if (flying) {
         return flying;
       }
+      copies.current.delete(held);
       const flight = fetchMachine(status, id, name)
         .then(detail => {
+          copies.current.add(held);
           setState(answered(epoch, key, { detail, failed: false }));
           return detail;
         })
         .catch(error => {
           log.api.error('Error fetching machine detail', { id, name, error: error.message });
+          copies.current.add(held);
           setState(answered(epoch, key, { detail: null, failed: true }));
           return null;
         })
-        .finally(() => flights.current.delete(flightKey(epoch, key)));
-      flights.current.set(flightKey(epoch, key), flight);
+        .finally(() => flights.current.delete(held));
+      flights.current.set(held, flight);
       return flight;
     },
     [status]
   );
 
+  const ask = useCallback(
+    (epoch, id, name) =>
+      copies.current?.has(flightKey(epoch, detailKey(id, name)))
+        ? Promise.resolve(null)
+        : read(epoch, id, name),
+    [read]
+  );
+
+  const stale = matches => {
+    forget(copies.current, matches);
+    setState(staledWhere(matches));
+  };
+
+  const staleAll = () => {
+    copies.current?.clear();
+    setState(staled);
+  };
+
   useEventStream('ready', (data, resumed) => {
     if (data && !resumed) {
-      setState(staled);
+      staleAll();
     }
   });
 
-  useEventStream('reset', () => setState(staled));
+  useEventStream('reset', staleAll);
 
   useEventStream('stats-updated', data => {
     const prefix = detailKey(agentIdOf(data), '');
-    setState(staledWhere(key => key.startsWith(prefix)));
+    stale(key => key.startsWith(prefix));
   });
 
   useEventStream('task-updated', data => {
-    if (!TERMINAL_TASK_STATUSES.includes(data?.status) || !data?.machine_name) {
+    const machine = taskMachineOf(data);
+    if (!TERMINAL_TASK_STATUSES.includes(data?.status) || !machine) {
       return;
     }
-    const ended = detailKey(agentIdOf(data), data.machine_name);
-    setState(staledWhere(key => key === ended));
+    const ended = detailKey(agentIdOf(data), machine);
+    stale(key => key === ended);
   });
 
   const value = useMemo(
-    () => ({ epoch: state.epoch, machines: state.machines, read }),
-    [state.epoch, state.machines, read]
+    () => ({ epoch: state.epoch, machines: state.machines, read, ask }),
+    [state.epoch, state.machines, read, ask]
   );
 
   return <MachineDetailContext.Provider value={value}>{children}</MachineDetailContext.Provider>;

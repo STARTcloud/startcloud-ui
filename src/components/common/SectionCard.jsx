@@ -17,7 +17,8 @@ const stop = event => event.stopPropagation();
  * badge and actions, and the chevron last, flush right; the whole header
  * folds the card except its action controls, the body collapsing under
  * it, open by default, `folded` and `onFold` the page's own state kept in
- * its prefs object under `folds` (identity contract decision 117);
+ * its prefs object under `folds` (identity contract decision 117), the
+ * chevron's tooltip `foldTitle` where a page names one;
  * `tone="danger"` draws the border and the header in the danger colours.
  */
 const SectionCard = ({
@@ -30,10 +31,12 @@ const SectionCard = ({
   className = 'mb-3',
   folded = false,
   onFold,
+  foldTitle = '',
   children,
 }) => {
   const { t } = useTranslation();
   const bodyId = useId();
+  const chevronTitle = foldTitle || t('pages.toggle');
   return (
     <div className={`card ${className}${tone ? ` border-${tone}` : ''}`} id={id} ref={sectionRef}>
       <div
@@ -57,8 +60,8 @@ const SectionCard = ({
           }`}
           aria-expanded={!folded}
           aria-controls={bodyId}
-          aria-label={t('pages.toggle')}
-          title={t('pages.toggle')}
+          aria-label={chevronTitle}
+          title={chevronTitle}
         >
           <FaChevronDown aria-hidden />
         </button>
@@ -82,6 +85,7 @@ SectionCard.propTypes = {
   className: PropTypes.string,
   folded: PropTypes.bool,
   onFold: PropTypes.func.isRequired,
+  foldTitle: PropTypes.string,
   children: PropTypes.node.isRequired,
 };
 

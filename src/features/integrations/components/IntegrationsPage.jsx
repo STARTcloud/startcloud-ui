@@ -2,8 +2,14 @@ import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaPlug } from 'react-icons/fa6';
+import { Link } from 'react-router-dom';
 
-import MethodList, { MethodRow, httpsUrl } from '../../../components/common/MethodList';
+import MethodList, {
+  MethodRow,
+  followableUrl,
+  httpsUrl,
+  inAppPath,
+} from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -11,11 +17,7 @@ import { log } from '../../../lib/logger';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 import { integrationsShape } from '../api/integrations';
 
-const STATUS_CLASSES = {
-  connected: 'bg-success',
-  expired: 'bg-warning text-dark',
-  error: 'bg-danger',
-};
+import ServiceStatusBadge from './ServiceStatusBadge';
 
 const absoluteTime = (value, language) => {
   const time = new Date(value);
@@ -26,22 +28,6 @@ const matches = (service, needle) =>
   String(service.name || '')
     .toLowerCase()
     .includes(needle);
-
-const StatusBadge = ({ status }) => {
-  const { t } = useTranslation();
-  if (!status) {
-    return null;
-  }
-  return (
-    <span className={`badge ${STATUS_CLASSES[status] || 'bg-secondary'}`}>
-      {t(`integrations.status.${status}`, { defaultValue: status })}
-    </span>
-  );
-};
-
-StatusBadge.propTypes = {
-  status: PropTypes.string,
-};
 
 const ConnectedSubline = ({ service }) => {
   const { t, i18n } = useTranslation();
@@ -64,6 +50,14 @@ ConnectedSubline.propTypes = {
 
 const ManageLink = ({ service }) => {
   const { t } = useTranslation();
+  const path = inAppPath(followableUrl(service.settings_url));
+  if (path) {
+    return (
+      <Link to={path} className="btn btn-sm btn-outline-secondary">
+        {t('integrations.manage')}
+      </Link>
+    );
+  }
   const url = httpsUrl(service.settings_url);
   if (!url) {
     return null;
@@ -118,7 +112,9 @@ const useServices = integrations => {
  * from `GET /api/user/integrations`: one row per third-party service
  * connected through the issuer (icon, name, the status badge, the
  * connection time with its absolute time in the tooltip, Manage following
- * `settings_url` in a new tab), drawn only while the answer carries
+ * `settings_url`, in-router while it is a same-origin path, the issuer's
+ * own settings page of a service, and in a new tab while it is an `https:`
+ * URL), drawn only while the answer carries
  * `services`; `fallback` is drawn in its place otherwise, because an
  * estate that connects no service has no page here; the navbar search is
  * bound with a query over the services by name.
@@ -164,7 +160,7 @@ const IntegrationsPage = ({ integrations, fallback }) => {
             icon={<FaPlug aria-hidden />}
             iconUrl={service.icon_url || ''}
             label={service.name}
-            badges={<StatusBadge status={service.status} />}
+            badges={<ServiceStatusBadge status={service.status} />}
             subline={<ConnectedSubline service={service} />}
             actions={<ManageLink service={service} />}
           />

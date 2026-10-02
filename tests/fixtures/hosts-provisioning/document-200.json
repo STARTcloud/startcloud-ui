@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "machine_name": "dev-1",
+  "operation": "machine_modify",
+  "status": "completed",
+  "message": "Provisioner configuration updated successfully.",
+  "requires_restart": false
+}

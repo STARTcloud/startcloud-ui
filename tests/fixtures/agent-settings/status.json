@@ -1,0 +1,16 @@
+{
+  "role": "hyperweaver-agent",
+  "agent": "hyperweaver-agent",
+  "hypervisors": ["virtualbox"],
+  "platform": "linux",
+  "arch": "x86_64",
+  "version": "1.2.0",
+  "hostname": "lab-1",
+  "auth": ["backend"],
+  "console": ["rdp"],
+  "features": ["sidebar", "hosts", "footer", "machines", "tasks", "machine-modify"],
+  "brand": { "name": "Hyperweaver", "logo_url": "/brand/hyperweaver/mark.svg" },
+  "collections": [],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

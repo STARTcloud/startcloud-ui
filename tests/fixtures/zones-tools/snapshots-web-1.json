@@ -1,0 +1,24 @@
+{
+  "machine_name": "web-1",
+  "snapshots": [
+    {
+      "name": "daily-20260927-0300",
+      "description": null,
+      "created": "2026-09-27T03:00:00.000Z",
+      "datasets": 2,
+      "dataset_names": ["rpool/zones/web-1", "rpool/zones/web-1/boot"],
+      "used_bytes": 1048576,
+      "holds": 0
+    },
+    {
+      "name": "before-upgrade",
+      "description": "Before the upgrade",
+      "created": "2026-09-20T18:30:00.000Z",
+      "datasets": 3,
+      "dataset_names": ["rpool/zones/web-1", "rpool/zones/web-1/boot", "rpool/zones/web-1/data"],
+      "used_bytes": 734003200,
+      "holds": 3
+    }
+  ],
+  "total": 2
+}

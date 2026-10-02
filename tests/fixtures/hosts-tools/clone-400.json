@@ -1,0 +1,25 @@
+{
+  "error": "Insufficient resources",
+  "details": [
+    {
+      "resource": "memory",
+      "strategy": "actual",
+      "message": "Requested 64.00 GB exceeds available host memory (8.00 GB free)",
+      "host_total_bytes": 34359738368,
+      "host_free_bytes": 8589934592,
+      "requested_bytes": 68719476736,
+      "projected_percent": 275
+    },
+    {
+      "resource": "cpu",
+      "strategy": "committed",
+      "message": "Requested 32 vCPUs would exceed overcommit limit (12 allocated + 32 requested = 44 total vCPUs, 550% of 8 physical cores, limit: 400%)",
+      "host_cpu_count": 8,
+      "committed_vcpus": 12,
+      "requested_vcpus": 32,
+      "projected_vcpus": 44,
+      "projected_percent": 550,
+      "hard_limit_percent": 400
+    }
+  ]
+}

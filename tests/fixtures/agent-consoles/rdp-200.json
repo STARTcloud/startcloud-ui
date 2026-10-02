@@ -1,0 +1,12 @@
+{
+  "machine_name": "dev-1",
+  "targets": [
+    {
+      "type": "console",
+      "host": "127.0.0.1",
+      "port": 3389,
+      "rdp_url": "rdp://127.0.0.1:3389",
+      "description": "VRDE console on the agent host"
+    }
+  ]
+}

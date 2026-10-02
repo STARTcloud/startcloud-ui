@@ -1,0 +1,19 @@
+{
+  "vnic": "vnice3_1234_0",
+  "properties": [
+    { "property": "mtu", "value": "1500", "default": "1500", "possible": [] },
+    {
+      "property": "priority",
+      "value": "high",
+      "default": "high",
+      "possible": ["low", "medium", "high"]
+    },
+    {
+      "property": "protection",
+      "value": "mac-nospoof",
+      "default": "",
+      "possible": ["mac-nospoof", "ip-nospoof", "dhcp-nospoof", "restricted"]
+    }
+  ],
+  "timestamp": "2026-09-28T09:00:00.000Z"
+}

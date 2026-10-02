@@ -34,13 +34,13 @@ const columns = [
   {
     key: 'name',
     kind: 'name',
-    labelKey: 'hosts.page.name',
+    labelKey: 'machine.machineGuestAgent.nameHeader',
     value: row => row.name,
   },
   {
     key: 'mac',
     kind: 'text',
-    labelKey: 'hosts.machines.guest.mac',
+    labelKey: 'machine.machineGuestAgent.macHeader',
     priority: 2,
     value: row => row['hardware-address'] || '',
     render: row =>
@@ -49,7 +49,7 @@ const columns = [
   {
     key: 'addresses',
     kind: 'badges',
-    labelKey: 'hosts.machines.guest.addresses',
+    labelKey: 'machine.machineGuestAgent.ipHeader',
     priority: 1,
     value: row => addressesOf(row).join(', '),
     render: row => (
@@ -100,7 +100,7 @@ const NetworkBody = ({ network, flat }) => {
     );
   }
   if (flat) {
-    return <Addresses ips={network.ips} emptyKey="hosts.machines.guest.noAddresses" />;
+    return <Addresses ips={network.ips} emptyKey="machine.machineGuestAgent.noAddresses" />;
   }
   return (
     <SubTable
@@ -111,7 +111,7 @@ const NetworkBody = ({ network, flat }) => {
       onSort={(column, options) => setSort(current => nextSort(current, column, options))}
       hiddenColumns={NO_HIDDEN}
       ctx={ctx}
-      emptyText={t('hosts.machines.guest.noAddresses')}
+      emptyText={t('machine.machineGuestAgent.noAddresses')}
     />
   );
 };
@@ -130,9 +130,9 @@ const OsLine = ({ osinfo }) => {
   const { t } = useTranslation();
   return (
     <div className="mb-2" data-line="guest-os">
-      <span className="text-muted small me-2">{t('hosts.machines.guest.os')}</span>
+      <span className="text-muted small me-2">{t('machine.machineGuestAgent.osLabel')}</span>
       <span className="small">
-        {osinfo['pretty-name'] || osinfo.name || t('hosts.machines.guest.unknownOs')}
+        {osinfo['pretty-name'] || osinfo.name || t('machine.machineGuestAgent.unknownOs')}
       </span>
       {osinfo['kernel-release'] ? (
         <span className="text-muted small ms-2">({osinfo['kernel-release']})</span>
@@ -193,10 +193,9 @@ const useGuestOs = ({ status, id, name, asked, turn }) => {
  * silent, the line saying so and Set up channel, one request and one
  * notice, the agent's own message with the note that the machine must
  * be restarted where the answer says so, the detail read again once
- * after a success. The operating
- * system, the network and the setup are asked only of a host whose own
- * row lists `guest-agent`, and the first and the last never of a UTM
- * machine, whose agent refuses both.
+ * after a success. The operating system, the network and the setup are
+ * asked only of a host whose own row lists `guest-agent`, and the first
+ * and the last never of a UTM machine, whose agent refuses both.
  */
 const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => {
   const { t } = useTranslation();
@@ -221,8 +220,10 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
     setBusy(true);
     try {
       const answer = await setupGuestAgent(status, id, name);
-      const said = answer?.message || t('hosts.machines.guest.setupDone', { name });
-      const restart = answer?.requires_restart ? t('hosts.machines.guest.requiresRestart') : '';
+      const said = answer?.message || t('machine.machineGuestAgent.channelConfiguredFallback');
+      const restart = answer?.requires_restart
+        ? t('machine.machineGuestAgent.requiresRestartNote')
+        : '';
       notify('success', [said, restart].filter(Boolean).join(' '));
       onChanged();
     } catch (error) {
@@ -245,7 +246,7 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
 
   const checked = guest.checked_at ? (
     <span className="text-muted small fw-normal">
-      {t('hosts.machines.guest.checkedAt', {
+      {t('machine.machineGuestAgent.checkedAt', {
         time: new Date(guest.checked_at).toLocaleTimeString(),
       })}
     </span>
@@ -254,7 +255,7 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
   return (
     <div className="col-12 col-lg-6 col-xxl-4" data-panel="machine-guest-agent">
       <SectionCard
-        title={t('hosts.machines.guest.agentTitle')}
+        title={t('machine.machineGuestAgent.heading')}
         badge={checked}
         className="mb-0 h-100"
         folded={folds.folded(FOLD)}
@@ -263,10 +264,12 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
         {ready ? (
           <>
             {osinfo ? <OsLine osinfo={osinfo} /> : null}
-            <Addresses ips={ips} emptyKey="hosts.machines.guest.noAddresses" />
+            <Addresses ips={ips} emptyKey="machine.machineGuestAgent.noAddresses" />
             {ips.length > 0 ? (
               <span className="d-block text-muted small mb-2">
-                {t('hosts.machines.guest.via', { source: t(guestSourceKey(guest.source)) })}
+                {t('machine.machineGuestAgent.viaSource', {
+                  source: t(guestSourceKey(guest.source, 'machineGuestAgent')),
+                })}
               </span>
             ) : null}
             {ips.length > 0 && offered ? (
@@ -276,24 +279,26 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
                 data-action="guest-network"
                 onClick={more}
               >
-                {t('hosts.machines.guest.more')}
+                {t('machine.machineGuestAgent.moreButton')}
               </button>
             ) : null}
           </>
         ) : (
           <>
-            <p className="text-muted small mb-2">{t('hosts.machines.guest.notResponding')}</p>
+            <p className="text-muted small mb-2">
+              {t('machine.machineGuestAgent.channelNotResponding')}
+            </p>
             {offered && !utm ? (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-primary"
-                title={t('hosts.machines.guest.setupTitle')}
+                title={t('machine.machineGuestAgent.setupChannelTooltip')}
                 data-action="guest-setup"
                 disabled={busy}
                 onClick={setup}
               >
                 <FaPlug className="me-2" aria-hidden="true" />
-                {t('hosts.machines.guest.setup')}
+                {t('machine.machineGuestAgent.setupChannelButton')}
               </button>
             ) : null}
           </>
@@ -306,7 +311,7 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
         scrollable
       >
         <Modal.Header closeButton>
-          <Modal.Title>{t('hosts.machines.guest.networkTitle', { name })}</Modal.Title>
+          <Modal.Title>{t('machine.machineGuestAgent.networkModalTitle')}</Modal.Title>
         </Modal.Header>
         <Modal.Body data-dialog="guest-network">
           <NetworkBody network={network} flat={utm} />

@@ -1,6 +1,7 @@
 import { authMethod } from '../utils/capabilities';
 
 import { createAnonymousSession } from './anonymousSession';
+import { createApiKeySession } from './apiKeySession';
 import { createBackendSession } from './backendSession';
 import { createBrowserOidc } from './browserOidc';
 import { createCookieSession } from './cookieSession';
@@ -37,8 +38,9 @@ const COOKIE_AUTH_PATHS = [
  * serving origin with `/login` as the sign-in page and every reserved
  * segment of the identity contract's sign-in, onboarding and interstitial
  * groups plus `/error` as the auth paths, `none` is no session at all,
- * anything else is the app's own backend session with `/login` as the
- * sign-in page.
+ * `apikey` is hyperweaver-agent's API key session with `/login` as the
+ * sign-in page and its only auth path, anything else is the app's own
+ * backend session with `/login` as the sign-in page.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} events - The bus from `createSessionEvents`
@@ -72,6 +74,16 @@ export const createSession = (status, events) => {
         storageKey: STORAGE_KEY,
         signInPath: '/login',
         authPaths: COOKIE_AUTH_PATHS,
+      }),
+    };
+  }
+  if (method === 'apikey') {
+    return {
+      session: createApiKeySession({ baseUrl: window.location.origin, events }),
+      returnTo: createReturnTo({
+        storageKey: STORAGE_KEY,
+        signInPath: '/login',
+        authPaths: ['/login'],
       }),
     };
   }

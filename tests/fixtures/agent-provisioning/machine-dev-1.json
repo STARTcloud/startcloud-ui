@@ -1,0 +1,49 @@
+{
+  "machine_info": {
+    "id": 1,
+    "name": "dev-1",
+    "host": "lab-1",
+    "status": "running",
+    "backing": "vagrant",
+    "hypervisor": "virtualbox",
+    "home": "C:\\hyperweaver\\machines\\dev-1",
+    "uuid": "5b1c2a44-0d5e-4c0e-9b6e-2f4a8f1f6a01",
+    "server_id": "0042",
+    "is_orphaned": false,
+    "auto_discovered": false,
+    "last_seen": "2026-09-27T00:00:00Z",
+    "notes": "Primary build box",
+    "tags": ["web", "lab"],
+    "spec": {
+      "provisioner": { "name": "startcloud", "version": "0.1.27" },
+      "settings": { "hostname": "dev-1", "domain": "example.com", "server_id": "0042" },
+      "roles": [{ "name": "domino", "enabled": true }]
+    },
+    "created_at": "2026-09-01T00:00:00Z",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "configuration": {
+    "name": "dev-1",
+    "VMState": "running",
+    "provisioner": {
+      "provisioner_name": "startcloud",
+      "provisioner_version": "0.1.27",
+      "settings": { "hostname": "dev-1", "domain": "example.com", "server_id": "0042" },
+      "folders": [{ "map": "./provisioners", "to": "/vagrant/provisioners", "type": "rsync" }],
+      "roles": [{ "name": "startcloud.hcl_roles.domino" }]
+    },
+    "nat_forwards": []
+  },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "running",
+  "web_address": null,
+  "knob_current": {
+    "ram": 8192,
+    "vcpus": 4,
+    "guest_agent": true,
+    "nics": [],
+    "devices": { "controllers": [], "attachments": [], "nics": [] }
+  },
+  "pending_changes": null
+}

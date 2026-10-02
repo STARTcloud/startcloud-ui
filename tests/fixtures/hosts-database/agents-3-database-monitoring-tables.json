@@ -1,0 +1,9 @@
+{
+  "tables": [
+    { "name": "cpu_stats", "rows": 86400, "indexes": 2 },
+    { "name": "memory_stats", "rows": 86400, "indexes": 2 },
+    { "name": "network_usage", "rows": 259200, "indexes": 3 },
+    { "name": "disk_io", "rows": 172800, "indexes": 3 },
+    { "name": "arc_stats", "rows": 43200, "indexes": 2 }
+  ]
+}

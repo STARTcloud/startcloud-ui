@@ -1,0 +1,22 @@
+{
+  "provisioners": [
+    {
+      "name": "hcl-domino",
+      "repo": "STARTcloud/hcl-domino-provisioner",
+      "description": "HCL Domino on Debian",
+      "versions": [
+        {
+          "version": "2.0.0",
+          "released_at": "2026-09-01T10:00:00Z",
+          "artifacts": [
+            {
+              "url": "https://catalog.example.com/hcl-domino-2.0.0.tar.gz",
+              "checksum": "abc123",
+              "checksum_type": "sha256"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

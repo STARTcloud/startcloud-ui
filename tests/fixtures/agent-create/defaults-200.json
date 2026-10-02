@@ -1,0 +1,37 @@
+{
+  "settings": {
+    "vcpus": 2,
+    "memory": "2G",
+    "firmware_type": "BIOS",
+    "sync_method": "rsync"
+  },
+  "zones": {},
+  "disks": {
+    "boot": {
+      "sparse": true,
+      "clone_strategy": "copy"
+    }
+  },
+  "config": {},
+  "knob_values": {
+    "nics.promisc": ["deny", "allow-vms", "allow-all"],
+    "nics.nic_type": ["82540EM", "virtio"],
+    "nics.cable_connected": ["on", "off"],
+    "disks.controller_type": ["ide", "sata", "scsi", "sas", "nvme", "virtio", "usb", "floppy"],
+    "boot_order": ["floppy", "dvd", "disk", "net", "none"],
+    "settings.sync_method": ["rsync", "scp"],
+    "settings.firmware_type": ["BIOS", "UEFI"],
+    "disks.boot.clone_strategy": ["clone", "copy"]
+  },
+  "knob_defaults": {
+    "vcpus": 2,
+    "ram": 2048,
+    "diskif": "sata",
+    "boot_priority": 95,
+    "settings.sync_method": "rsync",
+    "settings.firmware_type": "BIOS",
+    "transport.remove_on_completion": false,
+    "disks.boot.clone_strategy": "copy"
+  },
+  "notes": ["VirtualBox recommends the rest per guest OS type"]
+}

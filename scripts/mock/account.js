@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'crypto';
 
 import { notify } from './inbox.js';
+import { integrationsOf } from './integrations.js';
 import {
   ago,
   ahead,
@@ -100,14 +101,28 @@ const startingFavorites = () =>
     order: index,
   }));
 
-const favoritesOf = person => {
+/**
+ * A person's favorites, the starting four until a save replaces them; the
+ * one store the backend session's routes and the agent's relay answer.
+ *
+ * @param {Object} person - The person
+ * @returns {Array<Object>} The ordered favorites
+ */
+export const favoritesOf = person => {
   if (!favorites.has(person.id)) {
     favorites.set(person.id, startingFavorites());
   }
   return favorites.get(person.id);
 };
 
-const savedFavorites = ctx => {
+/**
+ * The whole ordered list saved, each entry enriched from the app's own
+ * registration, answered as stored.
+ *
+ * @param {Object} ctx - The request's context, its `body` the list
+ * @returns {Object} The answer
+ */
+export const savedFavorites = ctx => {
   const rows = Array.isArray(ctx.body) ? ctx.body : [];
   const saved = rows.map((row, index) => ({
     ...appNamed(String(row.client_id)),
@@ -242,7 +257,11 @@ const etagOf = record => {
 };
 
 const ownRecord = ctx => {
-  const record = recordOf(ctx.person, ctx.token.provider);
+  const rows = integrationsOf(ctx.person);
+  const record = {
+    ...recordOf(ctx.person, ctx.token.provider),
+    ...(rows ? { integrations: rows } : {}),
+  };
   const etag = etagOf(record);
   if (ctx.req.headers['if-none-match'] === etag) {
     return empty(304, { ETag: etag });

@@ -1,0 +1,47 @@
+{
+  "spaces": [
+    {
+      "type": "hostonly",
+      "name": "vboxnet0",
+      "ip_address": "192.168.56.1",
+      "network_mask": "255.255.255.0",
+      "dhcp": {
+        "exists": true,
+        "server_ip": "192.168.56.100",
+        "lower_ip": "192.168.56.101",
+        "upper_ip": "192.168.56.254",
+        "enabled": true
+      }
+    },
+    {
+      "type": "hostonlynet",
+      "name": "HostOnlyNet",
+      "network_mask": "255.255.255.0",
+      "lower_ip": "192.168.60.10",
+      "upper_ip": "192.168.60.200",
+      "enabled": true
+    },
+    {
+      "type": "natnetwork",
+      "name": "NatNetwork",
+      "cidr": "10.0.2.0/24",
+      "gateway": "10.0.2.1",
+      "enabled": true,
+      "dhcp_enabled": true,
+      "ipv6": false,
+      "port_forwards": [
+        {
+          "name": "ssh",
+          "protocol": "tcp",
+          "host_ip": "",
+          "host_port": 2222,
+          "guest_ip": "10.0.2.15",
+          "guest_port": 22,
+          "ipv6": false
+        }
+      ]
+    },
+    { "type": "intnet", "name": "intnet" }
+  ],
+  "returned": 4
+}

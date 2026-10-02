@@ -41,7 +41,7 @@ const SESSION_ENDED_KEY = 'session-ended';
 
 const DISCOVER_PATH = '/organizations/discover';
 
-const LOCAL_PROFILE_PATHS = { backend: '/profile', cookie: '/user/profile' };
+const LOCAL_PROFILE_PATHS = { backend: '/profile', cookie: '/user/profile', apikey: '/profile' };
 
 const localProfileFor = status => {
   const to = LOCAL_PROFILE_PATHS[authMethod(status)];
@@ -302,7 +302,7 @@ const appRowsFor = ({
   showAdminBoard,
   showOrgConsole,
   extraRows,
-  links,
+  links = {},
   apiRows,
   t,
 }) => {

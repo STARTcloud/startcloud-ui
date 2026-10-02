@@ -397,7 +397,7 @@ const AUTH_FILE = {
         issuer: 'https://auth.example.com',
         client_id: 'hyperweaver',
         client_secret: 'an-example-secret-of-no-value',
-        scope: 'openid profile email organizations notifications',
+        scope: 'openid profile email organizations notifications:read',
         enabled: true,
       },
       github: {

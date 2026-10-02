@@ -63,7 +63,7 @@ const Seeds = ({ seeds }) => {
   return (
     <details className="mb-2" data-list="cloud-init">
       <summary className="small fw-semibold">
-        {t('hosts.machines.guest.cloudInit', { count: seeds.length })}
+        {t('machine.machineGuestInfo.cloudInitSeeds', { count: seeds.length })}
       </summary>
       <RecordRows rows={codeRows(seeds)} className="mb-0 small" />
     </details>
@@ -102,7 +102,7 @@ const MachineGuestInfoCard = ({ id, name, detail, turn, folds }) => {
 
   const addresses = guestAddresses(properties);
   const seeds = cloudInitSeeds(properties);
-  const refresh = t('hosts.machines.guest.refreshProperties');
+  const refresh = t('machine.machineGuestInfo.refreshTooltip');
   const again = (
     <button
       type="button"
@@ -119,7 +119,7 @@ const MachineGuestInfoCard = ({ id, name, detail, turn, folds }) => {
   return (
     <div className="col-12 col-lg-6 col-xxl-4" data-panel="machine-guest-info">
       <SectionCard
-        title={t('hosts.machines.guest.infoTitle')}
+        title={t('machine.machineGuestInfo.heading')}
         className="mb-0 h-100"
         actions={again}
         folded={folds.folded(FOLD)}
@@ -130,19 +130,19 @@ const MachineGuestInfoCard = ({ id, name, detail, turn, folds }) => {
             {addresses.map(entry => (
               <div key={entry.nic}>
                 <span className="text-muted small me-2">
-                  {t('hosts.machines.guest.nic', { nic: entry.nic })}
+                  {t('machine.machineGuestInfo.nicLabel', { nic: entry.nic })}
                 </span>
                 <code>{entry.ip}</code>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted small mb-2">{t('hosts.machines.guest.noGuestIps')}</p>
+          <p className="text-muted small mb-2">{t('machine.machineGuestInfo.noGuestIps')}</p>
         )}
         {seeds.length > 0 ? <Seeds seeds={seeds} /> : null}
         <details data-list="guest-properties">
           <summary className="small text-muted">
-            {t('hosts.machines.guest.allProperties', { count: properties.length })}
+            {t('machine.machineGuestInfo.allGuestProperties', { count: properties.length })}
           </summary>
           <div className="guest-properties">
             <RecordRows rows={codeRows(properties)} className="mb-0 small" />

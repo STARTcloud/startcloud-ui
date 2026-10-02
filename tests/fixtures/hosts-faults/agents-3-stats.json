@@ -1,0 +1,14 @@
+{
+  "hostname": "zone-1",
+  "platform": "sunos",
+  "release": "5.11",
+  "arch": "x64",
+  "type": "SunOS",
+  "version": "omnios-r151054",
+  "uptime": 1036800,
+  "totalmem": 68719476736,
+  "freemem": 17179869184,
+  "loadavg": [0.42, 0.37, 0.31],
+  "allmachines": ["db-1", "web-1"],
+  "runningmachines": ["db-1"]
+}

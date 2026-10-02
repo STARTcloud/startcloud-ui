@@ -114,7 +114,14 @@ UI completes each row by name from the build's own
 `public/themes/themes.json`, the manifest the generator writes from every
 pack's YAML with the pack's `label`, `description`, `brand` and `logo`,
 before it boots, so a host names which themes it offers and the pack
-supplies its own words and mark; the shared UI draws its Theme picker
+supplies its own words and mark, and while a person chose a pack whose
+row carries a `logo` that mark is the chrome's mark, the favicon, the
+About mark and the console placeholder in place of `brand.logo_url`, and
+a pack logo that fails to load falls back to `brand.logo_url` on the
+mark, the favicon and the console placeholder, swapped once on the
+image's own error event and never again, so a bad pack paints the host's
+mark and never a broken image; the
+shared UI draws its Theme picker
 from that completed list alone and constructs no stylesheet URL, a host
 that answers no list offers every theme of the build, an empty list
 offers none, and a list offers exactly those, so a host exposes

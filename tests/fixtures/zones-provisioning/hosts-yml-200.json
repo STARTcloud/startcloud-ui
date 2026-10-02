@@ -1,0 +1,4 @@
+{
+  "machine_name": "web-1",
+  "yaml": "hosts:\n  - web-1:\n      provisioner_name: startcloud\n      provisioner_version: 0.1.27\n      settings:\n        hostname: web-1\n        domain: example.com\n        vcpus: '2'\n        memory: 4G\n      roles:\n        - name: startcloud.hcl_roles.nomadweb\n        - name: startcloud.hcl_roles.leap\n"
+}

@@ -83,6 +83,19 @@ describe('parseRoute', () => {
     ).toMatchObject({ collection: downloads, provider: 'FP1', architecture: 'linux-x64' });
     expect(parseRoute('/org/isos/debian', { reserved, collections })).toBeNull();
   });
+
+  it('answers null on levels under an organization no mounted collection owns', () => {
+    const segmented = [isos, downloads];
+    const own = reservedSegments(segmented);
+    expect(parseRoute('/acme/debian/12', { reserved: own, collections: segmented })).toBeNull();
+    expect(
+      parseRoute('/organization/acme/box/web', { reserved: reservedSegments([]), collections: [] })
+    ).toBeNull();
+    expect(parseRoute('/acme', { reserved: own, collections: segmented })).toMatchObject({
+      org: 'acme',
+      collection: null,
+    });
+  });
 });
 
 describe('collectionPath', () => {

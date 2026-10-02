@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Service svc:/network/cdp:default disabled",
+  "fmri": "svc:/network/cdp:default"
+}

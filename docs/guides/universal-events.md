@@ -259,6 +259,7 @@ name the agent's REST routes use.
 | `monitoring` | `network-sample`  | `{ "usage": [sample] }`, one sample an interface as `GET /api/monitoring/network/usage` answers them, sent when the agent took them                                                   | none; the client reads the history on connect and on `reset`      |
 | `monitoring` | `pool-io-sample`  | `{ "poolio": [sample] }`, one sample a pool as `GET /api/monitoring/storage/pool-io` answers them, sent by an agent that lists `zfs` when it took them                                | none; the client reads the history on connect and on `reset`      |
 | `monitoring` | `arc-sample`      | `{ "arc": [sample] }`, as `GET /api/monitoring/storage/arc` answers them, sent by an agent that lists `zfs` when it took them                                                         | none; the client reads the history on connect and on `reset`      |
+| `monitoring` | `disk-io-sample`  | `{ "diskio": [sample] }`, one sample a device as `GET /api/monitoring/storage/disk-io` answers them, sent by an agent that lists `zfs` when it took them                              | none; the client reads the history on connect and on `reset`      |
 
 The `monitoring` topic carries what an agent's collector took, so a chart
 grows by push and no page asks on a timer. An agent sends each sample

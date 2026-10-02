@@ -7,14 +7,17 @@ import { createPush } from './push';
 
 const PUBLIC = { auth: false };
 
+const BACKEND_PATHS = {
+  vapidKey: '/api/notifications/vapid-key',
+  subscriptions: '/api/notifications/subscriptions',
+  testToast: '/api/notifications/test/toast',
+  testChannel: '/api/notifications/test/channel',
+  unsubscribeOptions: endpoint => ({ body: { endpoint } }),
+};
+
 const PATHS = {
-  backend: {
-    vapidKey: '/api/notifications/vapid-key',
-    subscriptions: '/api/notifications/subscriptions',
-    testToast: '/api/notifications/test/toast',
-    testChannel: '/api/notifications/test/channel',
-    unsubscribeOptions: endpoint => ({ body: { endpoint } }),
-  },
+  backend: BACKEND_PATHS,
+  apikey: BACKEND_PATHS,
   idp: {
     vapidKey: '/push/vapid-key',
     subscriptions: '/push/subscriptions',
@@ -34,7 +37,8 @@ const PATHS = {
 /**
  * The inbox adapter the user menu's bell reads: the hub client's five
  * calls plus the host's channel test, its path chosen by the first `auth`
- * token (the app's own backend proxies the hub for `backend`, the Worker's
+ * token (the app's own backend proxies the hub for `backend` and an
+ * `apikey` agent relays it to its issuer on the same paths, the Worker's
  * push routes answer for `idp`, the hub's own routes for `cookie`).
  *
  * @param {Object} options - The runtime pieces

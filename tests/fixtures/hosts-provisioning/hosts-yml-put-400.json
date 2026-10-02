@@ -1,0 +1,5 @@
+{
+  "error": "Nested mappings are not allowed in compact mappings",
+  "line": 3,
+  "column": 7
+}

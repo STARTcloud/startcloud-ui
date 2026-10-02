@@ -1,0 +1,4 @@
+{
+  "error": "Failed to get IP addresses",
+  "details": "SQLITE_BUSY: database is locked"
+}

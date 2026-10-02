@@ -1,17 +1,6 @@
-import { log } from '../../../../lib/logger';
 import { createDeployControls, deployableVersion } from '../../../deploy';
-import { api } from '../api/boxes';
 
 export { deployableVersion };
-
-const fetchHyperweaverUrl = () =>
-  api.config
-    .hyperweaver()
-    .then(data => data?.hyperweaver?.url || '')
-    .catch(error => {
-      log.api.error('Error fetching hyperweaver config', { error: error.message });
-      return '';
-    });
 
 export const hasHyperweaverEntitlement = user =>
   Array.isArray(user?.entitlements) &&
@@ -20,11 +9,14 @@ export const hasHyperweaverEntitlement = user =>
       typeof entitlement.value === 'string' && entitlement.value.startsWith('hyperweaver')
   );
 
-const hrefFor = ({ hyperweaverUrl, item, version }) =>
-  `${hyperweaverUrl}/?create=machine&box=${encodeURIComponent(`${item.organization.name}/${item.name}`)}&box_version=${encodeURIComponent(version)}&box_arch=amd64&box_url=${encodeURIComponent(window.location.origin)}`;
+const seedFor = ({ item, version }) => ({
+  box: `${item.organization.name}/${item.name}`,
+  box_version: version,
+  box_arch: 'amd64',
+  box_url: window.location.origin,
+});
 
 export const { DeployGlyph, deployColumn, CardGlyph } = createDeployControls({
-  fetchHyperweaverUrl,
   canDeploy: hasHyperweaverEntitlement,
-  hrefFor,
+  seedFor,
 });

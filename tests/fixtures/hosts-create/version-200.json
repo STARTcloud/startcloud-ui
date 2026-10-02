@@ -1,0 +1,55 @@
+{
+  "name": "startcloud",
+  "version": "0.1.27",
+  "dir": "startcloud/0.1.27",
+  "metadata": {
+    "name": "startcloud",
+    "version": "0.1.27",
+    "description": "The STARTcloud provisioner, generic edition",
+    "metadata": {
+      "label": "STARTcloud",
+      "description": "The STARTcloud provisioner, generic edition",
+      "roles": [
+        {
+          "name": "startcloud.startcloud_roles.networking",
+          "defaultEnabled": true
+        },
+        {
+          "name": "startcloud.startcloud_roles.docker",
+          "defaultEnabled": false
+        }
+      ],
+      "configuration": {
+        "groups": [
+          {
+            "name": "guest",
+            "label": "Guest",
+            "advanced": false
+          }
+        ],
+        "fields": [
+          {
+            "name": "guest_user",
+            "label": "Guest user",
+            "type": "text",
+            "group": "guest",
+            "required": true,
+            "default": "startcloud"
+          },
+          {
+            "name": "guest_password",
+            "label": "Guest password",
+            "type": "password",
+            "group": "guest",
+            "required": false,
+            "generate": {
+              "length": 16
+            }
+          }
+        ]
+      }
+    }
+  },
+  "role_specs": [],
+  "playbook_candidates": []
+}

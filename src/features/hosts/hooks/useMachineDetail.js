@@ -13,6 +13,7 @@ const NO_PROVIDER = {
   epoch: 0,
   machines: {},
   read: () => Promise.resolve(null),
+  ask: () => Promise.resolve(null),
 };
 
 /**
@@ -35,14 +36,14 @@ const NO_PROVIDER = {
 export const useMachineDetail = (id, name) => {
   const server = useHostRow(id);
   const offered = hostHasFeature(server, 'machines');
-  const { epoch, machines, read } = useContext(MachineDetailContext) || NO_PROVIDER;
+  const { epoch, machines, read, ask } = useContext(MachineDetailContext) || NO_PROVIDER;
   const { detail, loaded, failed, stale } = machines[detailKey(id, name)] || EMPTY;
 
   useEffect(() => {
     if (offered && (!loaded || stale)) {
-      read(epoch, id, name);
+      ask(epoch, id, name);
     }
-  }, [offered, loaded, stale, epoch, id, name, read]);
+  }, [offered, loaded, stale, epoch, id, name, ask]);
 
   const refresh = useCallback(() => {
     if (offered) {

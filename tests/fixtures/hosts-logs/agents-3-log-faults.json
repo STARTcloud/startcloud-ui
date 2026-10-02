@@ -1,0 +1,10 @@
+{
+  "name": "faults",
+  "path": "fmdump faults",
+  "lines": [
+    "TIME                 EVENT-ID                             MSG-ID         SEVERITY",
+    "Sep 28 10:16:40 e7a1c3d4-9b2f-4c1e-8d3a-5f6e7a8b9c0d ZFS-8000-8A    Major"
+  ],
+  "totalLines": 2,
+  "raw_output": "TIME                 EVENT-ID                             MSG-ID         SEVERITY\nSep 28 10:16:40 e7a1c3d4-9b2f-4c1e-8d3a-5f6e7a8b9c0d ZFS-8000-8A    Major"
+}

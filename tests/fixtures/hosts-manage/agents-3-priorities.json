@@ -1,0 +1,6 @@
+{
+  "machines": [
+    { "name": "db-1", "priority": 100, "state": "running", "has_custom_priority": true },
+    { "name": "web-1", "priority": 95, "state": "installed", "has_custom_priority": false }
+  ]
+}

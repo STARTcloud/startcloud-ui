@@ -1,0 +1,4 @@
+{
+  "error": "Failed to list snapshot holds",
+  "details": "spawn pfexec ENOENT"
+}

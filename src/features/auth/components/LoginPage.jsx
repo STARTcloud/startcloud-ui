@@ -7,6 +7,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
+import { useStatus } from '../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
 import { sessionStateShape } from '../../../hooks/useSession';
 import { log } from '../../../lib/logger';
@@ -18,7 +19,9 @@ import {
   sortMethodsByDefault,
   storeLoginMethod,
 } from '../../../utils/auth';
+import { useSignedInRedirect } from '../useSignedInRedirect';
 
+import AgentSignIns from './AgentSignIns';
 import CookieLogin from './CookieLogin';
 import ProviderButtons from './ProviderButtons';
 
@@ -288,6 +291,42 @@ LoginMethods.propTypes = {
   onSwitchMode: PropTypes.func.isRequired,
 };
 
+const ApiKeyLoginPage = ({ session, account, returnTo, auth, appName }) => {
+  const { t } = useTranslation(['auth']);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const status = useStatus();
+  const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  useSignedInRedirect(account, returnTo);
+
+  useEffect(() => {
+    document.title = t('login.pageTitle');
+  }, [t]);
+
+  const signedIn = () =>
+    navigate(returnTo.fromParams(urlParams) || returnTo.consume() || '/', { replace: true });
+
+  return (
+    <AuthShell title={t('login.headline', { app: appName })}>
+      <AgentSignIns
+        status={status}
+        session={session}
+        silentSsoKey={auth.silentSsoKey}
+        urlParams={urlParams}
+        onSignedIn={signedIn}
+      />
+    </AuthShell>
+  );
+};
+
+ApiKeyLoginPage.propTypes = {
+  session: PropTypes.object.isRequired,
+  account: sessionStateShape.isRequired,
+  returnTo: returnToShape.isRequired,
+  auth: authShape.isRequired,
+  appName: PropTypes.string.isRequired,
+};
+
 const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
@@ -363,14 +402,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     });
 
   const view = useMemo(
-    () =>
-      deriveLoginView({
-        mode,
-        localEnabled,
-        providerParam,
-        oidcMethods,
-        visibleOidcMethods,
-      }),
+    () => deriveLoginView({ mode, localEnabled, providerParam, oidcMethods, visibleOidcMethods }),
     [mode, localEnabled, providerParam, oidcMethods, visibleOidcMethods]
   );
 
@@ -588,13 +620,27 @@ BackendLoginPage.propTypes = {
  * provider, under the same guards as the silent attempt, and the return
  * path kept for the callback; Create an account is drawn only while the
  * host answers `local_registration_enabled`, never merely because a
- * provider exists;
+ * provider exists; on hyperweaver-agent (`session.id` is `apikey`) the
+ * page is the agent's own sign-ins alone through `AgentSignIns`, the six
+ * paths of the `apikey` provider, no methods read and no password form,
+ * a person whose adopted session is live sent away;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
  * issuer's modes and states through `CookieLogin`, which sends a person
  * whose adopted session (`account`) is live away and hands the session
  * bus (`events`) to every answer it follows.
  */
 const LoginPage = ({ session, events, account, returnTo, auth, appName }) => {
+  if (session.id === 'apikey') {
+    return (
+      <ApiKeyLoginPage
+        session={session}
+        account={account}
+        returnTo={returnTo}
+        auth={auth}
+        appName={appName}
+      />
+    );
+  }
   if (session.id === 'cookie') {
     return (
       <CookieLogin

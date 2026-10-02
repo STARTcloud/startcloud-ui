@@ -1,0 +1,5 @@
+{
+  "machine_name": "dev-1",
+  "filters": [{ "index": 0, "name": "YubiKey", "vendor_id": "0x1050", "product_id": "0x0407" }],
+  "total": 1
+}

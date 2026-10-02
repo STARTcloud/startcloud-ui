@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "paths": [
+    {
+      "id": "loc-iso",
+      "name": "ISO library",
+      "path": "/rpool/iso",
+      "type": "iso",
+      "enabled": true,
+      "source": "builtin",
+      "file_count": 2,
+      "total_size": 7545069568,
+      "scan_errors": 0,
+      "last_scan_at": "2026-09-27T10:00:00.000Z"
+    },
+    {
+      "id": "loc-installers",
+      "name": "HCL installers",
+      "path": "/rpool/installers",
+      "type": "installer",
+      "enabled": true,
+      "source": "config",
+      "file_count": 1,
+      "total_size": 1610612736,
+      "scan_errors": 1,
+      "last_error_message": "permission denied: /rpool/installers/tmp",
+      "last_scan_at": "2026-09-27T10:00:00.000Z"
+    },
+    {
+      "id": "loc-old",
+      "name": "Old ISOs",
+      "path": "/tank/old-iso",
+      "type": "iso",
+      "enabled": false,
+      "source": "config",
+      "file_count": 0,
+      "total_size": 0,
+      "scan_errors": 0,
+      "last_scan_at": null
+    }
+  ],
+  "total_paths": 3
+}

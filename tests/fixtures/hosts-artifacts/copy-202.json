@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "task_id": "c3000000-0000-4000-8000-000000000004",
+  "operation": "artifact_copy",
+  "status": "pending",
+  "message": "Copy task queued"
+}

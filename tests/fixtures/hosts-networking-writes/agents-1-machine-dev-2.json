@@ -1,0 +1,35 @@
+{
+  "machine_info": {
+    "id": 2,
+    "name": "dev-2",
+    "host": "vbox-1",
+    "status": "stopped",
+    "backing": "vagrant",
+    "hypervisor": "virtualbox",
+    "uuid": "5b1c2a44-0d5e-4c0e-9b6e-2f4a8f1f6a02",
+    "is_orphaned": false,
+    "auto_discovered": false,
+    "notes": "",
+    "tags": [],
+    "configuration": { "name": "dev-2", "VMState": "poweroff" },
+    "created_at": "2026-09-01T00:00:00Z",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "configuration": { "name": "dev-2", "VMState": "poweroff" },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "stopped",
+  "web_address": null,
+  "knob_current": {
+    "ram": 4096,
+    "vcpus": 2,
+    "devices": {
+      "controllers": [],
+      "attachments": [],
+      "nics": [
+        { "adapter": 1, "mode": "natnetwork", "network": "NatNetwork", "mac": "080027AABB02" }
+      ]
+    }
+  },
+  "pending_changes": null
+}

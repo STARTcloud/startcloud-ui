@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "item": {
+    "name": "README.txt",
+    "path": "/README.txt",
+    "isDirectory": false,
+    "size": 1284,
+    "mtime": "2026-09-27T09:00:00.000Z",
+    "permissions": { "octal": "644", "string": "-rw-r--r--" },
+    "uid": 1000,
+    "gid": 1000,
+    "mimeType": "text/plain",
+    "isBinary": false,
+    "syntax": null
+  }
+}

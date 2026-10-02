@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "DNS configuration written",
+  "backup": "/etc/resolv.conf.20260927120000"
+}

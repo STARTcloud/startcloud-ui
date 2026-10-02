@@ -1,0 +1,30 @@
+[
+  {
+    "id": 7,
+    "name": "debian12-server",
+    "description": "Debian 12 server image",
+    "is_public": true,
+    "guest_access": false,
+    "published": true,
+    "download_count": 12,
+    "created_at": "2026-08-01T10:00:00Z",
+    "updated_at": "2026-09-01T10:00:00Z",
+    "organization": { "name": "STARTcloud" },
+    "versions": [
+      {
+        "version_number": "1.2.3",
+        "is_public": true,
+        "published": true,
+        "created_at": "2026-09-01T10:00:00Z",
+        "providers": [
+          {
+            "name": "virtualbox",
+            "is_public": true,
+            "published": true,
+            "architectures": [{ "name": "amd64", "is_public": true, "published": true }]
+          }
+        ]
+      }
+    ]
+  }
+]

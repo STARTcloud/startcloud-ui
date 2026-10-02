@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "message": "Release task created for rpool/zones/web-1@before-upgrade tag keep",
+  "task_id": "b2000000-0000-4000-8000-000000000008",
+  "snapshot": "rpool/zones/web-1@before-upgrade",
+  "tag": "keep"
+}

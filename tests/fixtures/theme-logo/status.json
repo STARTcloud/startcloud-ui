@@ -1,0 +1,21 @@
+{
+  "role": "auth-server",
+  "version": "1.9.1",
+  "brand": {
+    "name": "STARTcloud",
+    "logo_url": "/brand/startcloud/mark.svg",
+    "themes": [
+      {
+        "name": "shi",
+        "css": "/themes/shi/shi.css",
+        "label": "Super.Human.Installer",
+        "logo": "/brand/shi/mark.svg"
+      },
+      { "name": "lcars", "css": "/themes/lcars/lcars.css", "label": "LCARS" }
+    ]
+  },
+  "auth": ["cookie"],
+  "collections": [],
+  "features": ["health", "footer"],
+  "links": { "docs": "", "contact": "" }
+}

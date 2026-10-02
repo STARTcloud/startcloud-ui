@@ -1,0 +1,15 @@
+{
+  "pools": [
+    {
+      "name": "rpool",
+      "size": "1992864825344",
+      "alloc": "612854669312",
+      "free": "1380010156032",
+      "capacity_percent": "30",
+      "dedup_ratio": "1.00x",
+      "health": "ONLINE",
+      "altroot": null
+    }
+  ],
+  "total": 1
+}

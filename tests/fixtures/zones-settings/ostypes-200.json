@@ -1,0 +1,7 @@
+{
+  "ostypes": [
+    { "id": "generic", "description": "Generic bhyve guest", "family": "Other" },
+    { "id": "windows", "description": "Windows", "family": "Windows" }
+  ],
+  "total": 2
+}

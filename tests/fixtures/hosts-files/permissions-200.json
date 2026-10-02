@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "item": {
+    "name": "README.md",
+    "path": "/README.md",
+    "isDirectory": false,
+    "size": 1284,
+    "mtime": "2026-09-26T10:00:00.000Z",
+    "permissions": { "octal": "600", "string": "-rw-------" },
+    "uid": 1000,
+    "gid": 1000,
+    "mimeType": "text/markdown",
+    "isBinary": false,
+    "syntax": "markdown"
+  }
+}

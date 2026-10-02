@@ -1,0 +1,24 @@
+{
+  "interfaces": [
+    {
+      "name": "eth0",
+      "class": "phys",
+      "status": "up",
+      "wireless": false
+    },
+    {
+      "name": "wlan0",
+      "class": "phys",
+      "status": "up",
+      "wireless": true
+    },
+    {
+      "name": "eth1",
+      "class": "phys",
+      "status": "down",
+      "wireless": false
+    }
+  ],
+  "default": "eth0",
+  "total": 3
+}

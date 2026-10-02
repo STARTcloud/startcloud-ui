@@ -1,0 +1,6 @@
+{
+  "current_config": { "arc_size_bytes": 0, "arc_max_bytes": 0, "arc_min_bytes": 0 },
+  "system_constraints": null,
+  "config_source": "auto-calculated",
+  "available_tunables": null
+}

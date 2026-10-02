@@ -80,6 +80,18 @@ const writeTheme = next => {
 };
 
 /**
+ * The theme the person chose and the themes the host offers, read from the
+ * one store `useTheme` fills, for a surface that draws the chosen pack's
+ * mark and paints nothing itself.
+ *
+ * @returns {{ theme: string, themes: Array<Object> }} The chosen theme's name, empty while none, and the offered themes
+ */
+export const useChosenTheme = () => {
+  const theme = useSyncExternalStore(subscribe, readTheme);
+  return { theme, themes: store.themes };
+};
+
+/**
  * The theme and the mode shared by every estate app, one store behind
  * every call so the header's control and the profile's Preferences tab
  * read and write the same preferences, resolved in the order the

@@ -1,0 +1,10 @@
+{
+  "pid": 128,
+  "ppid": 100,
+  "zone": "global",
+  "uid": 0,
+  "vsz": 23383244800,
+  "rss": 7794065408,
+  "command": "/usr/bin/bhyve -c 4 -m 8G db-1",
+  "open_files_sample": ["/dev/null", "/var/log/bhyve.log"]
+}

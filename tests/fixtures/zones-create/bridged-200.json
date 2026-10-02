@@ -1,0 +1,18 @@
+{
+  "interfaces": [
+    {
+      "name": "igb0",
+      "class": "phys",
+      "state": "up",
+      "provisioning": false
+    },
+    {
+      "name": "aggr0",
+      "class": "aggr",
+      "state": "up",
+      "provisioning": true
+    }
+  ],
+  "excluded_aggr_members": ["igb1"],
+  "total": 2
+}

@@ -1,0 +1,4 @@
+{
+  "error": "Provisioner startcloud is referenced by 2 machines",
+  "machines": ["db-1", "web-1"]
+}

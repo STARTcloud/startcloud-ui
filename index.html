@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="/brand/startcloud/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/brand/startcloud/mark.svg" type="image/svg+xml" id="favicon" />
     <script>
       (function () {
         try {
@@ -12,7 +14,7 @@
               return null;
             }
           };
-          var stored = read('user') || read('account');
+          var stored = read('user') || read('account') || read('apikey');
           var account = null;
           if (stored && typeof stored === 'object') {
             account = {
@@ -78,6 +80,10 @@
             link.href = theme.css;
             document.head.appendChild(link);
           }
+          var favicon = document.getElementById('favicon');
+          if (theme && favicon && /^\/(?![/\\])/.test(theme.logo || '')) {
+            favicon.href = theme.logo;
+          }
         } catch (error) {
           document.documentElement.setAttribute(
             'data-bs-theme',
@@ -86,8 +92,6 @@
         }
       })();
     </script>
-    <link rel="icon" href="/brand/startcloud/favicon.ico" sizes="32x32" />
-    <link rel="icon" href="/brand/startcloud/mark.svg" type="image/svg+xml" id="favicon" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/brand/startcloud/mark-192.png" />
     <meta name="theme-color" content="#0d6efd" />

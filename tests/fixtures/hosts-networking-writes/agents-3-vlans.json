@@ -1,0 +1,7 @@
+{
+  "vlans": [
+    { "link": "igb100000", "vid": 100, "over": "igb0", "state": "up", "class": "vlan", "mtu": 1500 }
+  ],
+  "returned": 1,
+  "source": "live"
+}

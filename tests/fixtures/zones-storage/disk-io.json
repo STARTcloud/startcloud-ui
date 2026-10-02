@@ -1,0 +1,134 @@
+{
+  "diskio": [
+    {
+      "id": 501,
+      "device_name": "c0t5000C500A1B2C3D4d0",
+      "pool": "rpool",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "4",
+      "write_ops": "38",
+      "read_bandwidth_bytes": "1048576",
+      "write_bandwidth_bytes": "2097152"
+    },
+    {
+      "id": 507,
+      "device_name": "c0t5000C500A1B2C3D4d0",
+      "pool": "rpool",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "9",
+      "write_ops": "51",
+      "read_bandwidth_bytes": "3145728",
+      "write_bandwidth_bytes": "4194304"
+    },
+    {
+      "id": 502,
+      "device_name": "c0t5000C500A1B2C3D5d0",
+      "pool": "rpool",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "3",
+      "write_ops": "36",
+      "read_bandwidth_bytes": "524288",
+      "write_bandwidth_bytes": "2097152"
+    },
+    {
+      "id": 508,
+      "device_name": "c0t5000C500A1B2C3D5d0",
+      "pool": "rpool",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "8",
+      "write_ops": "49",
+      "read_bandwidth_bytes": "2097152",
+      "write_bandwidth_bytes": "4194304"
+    },
+    {
+      "id": 503,
+      "device_name": "c0t5000C500B2C3D4E6d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "40",
+      "write_ops": "70",
+      "read_bandwidth_bytes": "8388608",
+      "write_bandwidth_bytes": "20971520"
+    },
+    {
+      "id": 509,
+      "device_name": "c0t5000C500B2C3D4E6d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "44",
+      "write_ops": "76",
+      "read_bandwidth_bytes": "16777216",
+      "write_bandwidth_bytes": "41943040"
+    },
+    {
+      "id": 504,
+      "device_name": "c0t5000C500B2C3D4E7d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "38",
+      "write_ops": "68",
+      "read_bandwidth_bytes": "8388608",
+      "write_bandwidth_bytes": "20971520"
+    },
+    {
+      "id": 510,
+      "device_name": "c0t5000C500B2C3D4E7d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "41",
+      "write_ops": "72",
+      "read_bandwidth_bytes": "12582912",
+      "write_bandwidth_bytes": "31457280"
+    },
+    {
+      "id": 505,
+      "device_name": "c0t5000C500B2C3D4E8d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "0",
+      "write_ops": "0",
+      "read_bandwidth_bytes": "0",
+      "write_bandwidth_bytes": "0"
+    },
+    {
+      "id": 511,
+      "device_name": "c0t5000C500B2C3D4E8d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "0",
+      "write_ops": "0",
+      "read_bandwidth_bytes": "0",
+      "write_bandwidth_bytes": "0"
+    },
+    {
+      "id": 506,
+      "device_name": "c0t5000C500B2C3D4E9d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "read_ops": "36",
+      "write_ops": "66",
+      "read_bandwidth_bytes": "8388608",
+      "write_bandwidth_bytes": "20971520"
+    },
+    {
+      "id": 512,
+      "device_name": "c0t5000C500B2C3D4E9d0",
+      "pool": "tank",
+      "scan_timestamp": "2026-09-27T12:00:10.000Z",
+      "read_ops": "39",
+      "write_ops": "70",
+      "read_bandwidth_bytes": "10485760",
+      "write_bandwidth_bytes": "27262976"
+    }
+  ],
+  "totalCount": 12,
+  "returnedCount": 12,
+  "sampling": {
+    "applied": true,
+    "strategy": "javascript-time-sampling",
+    "entityCount": 6,
+    "samplesPerEntity": 2,
+    "requestedSamplesPerEntity": 38
+  },
+  "queryTime": 9
+}

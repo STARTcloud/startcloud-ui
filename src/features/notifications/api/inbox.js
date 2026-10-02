@@ -23,9 +23,13 @@ export const createNotificationsClient = ({ client }) => ({
   removeAll: () => client.delete(INBOX),
 });
 
+const READ_SCOPE = 'notifications:read';
+
 /**
- * Whether a token or claims payload carries the `notifications` scope, the
- * scope arriving as a space-separated string or an array.
+ * Whether a token or claims payload carries the hub's read scope,
+ * `notifications:read`, the scope arriving as a space-separated string or
+ * an array; the bare `notifications` the hub once granted is no scope at
+ * all.
  * @param {Object|null|undefined} claims - The claims or the access token payload
  * @returns {boolean}
  */
@@ -34,4 +38,4 @@ export const hasNotificationsScope = claims =>
     .concat(claims?.scope || [])
     .join(' ')
     .split(/\s+/)
-    .includes('notifications');
+    .includes(READ_SCOPE);

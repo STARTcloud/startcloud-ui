@@ -1,0 +1,4 @@
+{
+  "error": "Failed to get zone metrics",
+  "details": "SQLITE_BUSY: database is locked"
+}

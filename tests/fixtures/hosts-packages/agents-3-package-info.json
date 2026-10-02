@@ -1,0 +1,1 @@
+"Name: network/ssh\nSummary: OpenSSH client and server\nPublisher: omnios\nVersion: 9.8p1\nState: Installed\nSize: 1.4 MB\nFMRI: pkg://omnios/network/ssh@9.8p1-151054.0"

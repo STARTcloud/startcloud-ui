@@ -1,0 +1,5 @@
+{
+  "task_id": "b2000000-0000-4000-8000-000000000001",
+  "status": "running",
+  "output": [{ "stream": "stdout", "data": "Taking the snapshot", "timestamp": 1790510401000 }]
+}

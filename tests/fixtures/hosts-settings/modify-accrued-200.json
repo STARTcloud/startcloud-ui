@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "machine_name": "dev-1",
+  "operation": "machine_modify",
+  "status": "pending_power_cycle",
+  "requires_restart": true,
+  "pending_changes": { "vcpus": "8" },
+  "message": "Changes accrued for dev-1 — they apply at the next power cycle"
+}

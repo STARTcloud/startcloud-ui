@@ -1,0 +1,53 @@
+{
+  "packages": [
+    {
+      "name": "pkg:/system/library",
+      "publisher": "omnios",
+      "version": "0.5.11-151054.0",
+      "installed": true,
+      "frozen": false,
+      "manually_installed": false,
+      "obsolete": false,
+      "renamed": false,
+      "flags": "i--",
+      "size": "2.61 MB"
+    },
+    {
+      "name": "pkg:/network/ssh",
+      "publisher": "omnios",
+      "version": "9.8p1-151054.0",
+      "installed": true,
+      "frozen": false,
+      "manually_installed": true,
+      "obsolete": false,
+      "renamed": false,
+      "flags": "i-m",
+      "size": "1.4 MB"
+    },
+    {
+      "name": "pkg:/ooce/runtime/node-22",
+      "publisher": "ooce",
+      "version": "22.9.0-151054.0",
+      "installed": true,
+      "frozen": true,
+      "manually_installed": false,
+      "obsolete": false,
+      "renamed": false,
+      "flags": "if-",
+      "size": 50331648
+    },
+    {
+      "name": "pkg:/extra.omnios/database/postgresql-16",
+      "publisher": "extra.omnios",
+      "version": "16.4-151054.0",
+      "installed": false,
+      "frozen": false,
+      "manually_installed": false,
+      "obsolete": false,
+      "renamed": false,
+      "flags": "---",
+      "size": "24 MB"
+    }
+  ],
+  "total": 4
+}

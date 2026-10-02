@@ -1,0 +1,8 @@
+{
+  "roles": [
+    { "name": "root", "description": "Super-User" },
+    { "name": "zoneadm", "description": "Zone Administrator" },
+    { "name": "netadm", "description": "Network Administrator" }
+  ],
+  "total": 3
+}

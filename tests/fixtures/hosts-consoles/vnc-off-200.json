@@ -1,0 +1,8 @@
+{
+  "machine_name": "dev-2",
+  "vrde_enabled": true,
+  "vrde_port": 3390,
+  "vnc_capable": true,
+  "running": false,
+  "websocket_url": "/machines/dev-2/vnc/websockify"
+}

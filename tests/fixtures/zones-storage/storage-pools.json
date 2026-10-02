@@ -1,0 +1,25 @@
+{
+  "pools": [
+    {
+      "name": "rpool",
+      "size": "2199023255552",
+      "alloc": "44238211481",
+      "free": "453119049728",
+      "capacity_percent": "9",
+      "dedup_ratio": "1.00x",
+      "health": "ONLINE",
+      "altroot": null
+    },
+    {
+      "name": "tank",
+      "size": "15997871821824",
+      "alloc": "5838392045731",
+      "free": "10159479767695",
+      "capacity_percent": "36",
+      "dedup_ratio": "1.00x",
+      "health": "DEGRADED",
+      "altroot": null
+    }
+  ],
+  "total": 2
+}

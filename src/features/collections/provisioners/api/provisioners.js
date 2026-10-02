@@ -25,5 +25,4 @@ export const api = {
     start: () => client.post('/api/admin/rebuild'),
     status: () => client.get('/api/admin/rebuild/status'),
   },
-  config: () => client.get('/api/config', PUBLIC),
 };

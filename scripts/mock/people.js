@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from 'crypto';
 
-import { ORG_UUIDS, ago, now, payloadOf, unsignedJwt } from './kit.js';
+import { APIKEY_MODE, ORG_UUIDS, ago, now, payloadOf, unsignedJwt } from './kit.js';
 
 const HOUR_S = 3600;
 const SHORT_S = 90;
 const DAY_MINUTES = 60 * 24;
-const SCOPE = 'openid profile email organizations notifications';
+const SCOPE = 'openid profile email organizations notifications:read';
 const ADMIN_ROLES = ['ROLE_USER', 'ROLE_ADMIN'];
 const USER_ROLES = ['ROLE_USER'];
 const MANAGERS = ['owner', 'admin'];
@@ -363,8 +363,8 @@ const claimedPhone = row =>
 
 /**
  * One person's claims as `GET /api/userinfo/claims` answers them, the
- * standard claims of OpenID Connect with the `notifications` scope and
- * the customer code of the primary organization.
+ * standard claims of OpenID Connect with the `notifications:read` scope
+ * and the customer code of the primary organization.
  *
  * @param {Object} row - The person
  * @returns {Object} The claims
@@ -431,8 +431,63 @@ export const tokenFor = ({ person, provider = 'local', password = '' }) => {
   });
 };
 
+const apiKeys = new Map();
+
+const FAR_FUTURE_S = 4102444800;
+
+/**
+ * Register an agent API key a page may sign in with: a request carrying
+ * it as `Authorization: Bearer` or `X-API-Key` on the `hyperweaver-agent`
+ * role, and as `x-access-token` on the server role, is the fixture's
+ * person, a super-admin, under the key's name, the key's own role kept
+ * beside it for the agent's refusals.
+ *
+ * @param {string} key - The key
+ * @param {string} name - The key's name
+ * @param {string} [role] - The key's role, `admin`, `operator` or `viewer`
+ * @returns {void}
+ */
+export const registerApiKey = (key, name, role = 'admin') => {
+  apiKeys.set(key, { name, role });
+};
+
+export const forgetApiKey = key => {
+  apiKeys.delete(key);
+};
+
+const apiKeyPayload = token =>
+  apiKeys.has(token)
+    ? {
+        id: FIXTURE_PERSON,
+        username: apiKeys.get(token).name,
+        role: 'super-admin',
+        key_role: apiKeys.get(token).role,
+        provider: 'apikey',
+        exp: FAR_FUTURE_S,
+      }
+    : null;
+
+const bearerOf = req => {
+  const header = String(req.headers.authorization || '');
+  return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
+};
+
+/**
+ * The credential a request carries: on the `hyperweaver-agent` role the
+ * key of `Authorization: Bearer` or of `X-API-Key`, on every other role
+ * the token of `x-access-token`; empty when the request carries none.
+ *
+ * @param {Object} req - The request
+ * @returns {string} The credential
+ */
+export const credentialOf = req =>
+  APIKEY_MODE
+    ? bearerOf(req) || String(req.headers['x-api-key'] || '')
+    : String(req.headers['x-access-token'] || '');
+
 export const readToken = req => {
-  const payload = payloadOf(req.headers['x-access-token']);
+  const token = credentialOf(req);
+  const payload = payloadOf(token) || apiKeyPayload(token);
   const row = payload ? personById(payload.id) : null;
   return row && !row.suspended ? { person: row, payload } : null;
 };

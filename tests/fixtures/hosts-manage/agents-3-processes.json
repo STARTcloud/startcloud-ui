@@ -1,0 +1,38 @@
+[
+  {
+    "pid": 100,
+    "ppid": 1,
+    "username": "root",
+    "zone": "global",
+    "cpu_percent": 0.1,
+    "rss": "4M",
+    "command": "/usr/lib/inet/inetd start"
+  },
+  {
+    "pid": 128,
+    "ppid": 100,
+    "username": "root",
+    "zone": "global",
+    "cpu_percent": 42.5,
+    "rss": "7434M",
+    "command": "/usr/bin/bhyve -c 4 -m 8G db-1"
+  },
+  {
+    "pid": 135,
+    "ppid": 100,
+    "username": "postgres",
+    "zone": "db-1",
+    "cpu_percent": 3.4,
+    "rss": "512M",
+    "command": "/usr/lib/postgres/bin/postgres -D /var/pg"
+  },
+  {
+    "pid": 142,
+    "ppid": 100,
+    "username": "mark",
+    "zone": "global",
+    "cpu_percent": 0.0,
+    "rss": "3M",
+    "command": "/usr/bin/bash"
+  }
+]

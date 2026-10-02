@@ -1,0 +1,21 @@
+{
+  "valid": true,
+  "errors": [],
+  "warnings": ["Line 5: every emergency message is broadcast to every user"],
+  "parsed_rules": [
+    {
+      "line_number": 1,
+      "selector": "*.err;kern.notice;auth.notice",
+      "action": "/dev/sysmsg",
+      "full_line": "*.err;kern.notice;auth.notice\t\t\t/dev/sysmsg",
+      "parsed": { "action_type": "file", "action_target": "/dev/sysmsg" }
+    },
+    {
+      "line_number": 2,
+      "selector": "*.emerg",
+      "action": "*",
+      "full_line": "*.emerg\t\t\t*",
+      "parsed": { "action_type": "all_users", "action_target": "*" }
+    }
+  ]
+}

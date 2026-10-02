@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "users": [
+    {
+      "username": "root",
+      "uid": 0,
+      "gid": 0,
+      "comment": "Super-User",
+      "home": "/root",
+      "shell": "/bin/bash"
+    },
+    {
+      "username": "mark",
+      "uid": 1000,
+      "gid": 1000,
+      "comment": "Mark",
+      "home": "/home/mark",
+      "shell": "/bin/bash"
+    }
+  ],
+  "total": 2
+}

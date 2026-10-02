@@ -1,0 +1,28 @@
+{
+  "role": "zoneweaver-agent",
+  "agent": "zoneweaver-agent",
+  "hypervisors": ["bhyve"],
+  "platform": "omnios",
+  "arch": "x86_64",
+  "version": "0.2.3",
+  "hostname": "zone-1",
+  "auth": ["backend"],
+  "console": ["vnc", "zlogin"],
+  "features": [
+    "sidebar",
+    "hosts",
+    "footer",
+    "machines",
+    "tasks",
+    "host-power",
+    "services",
+    "processes",
+    "system-users",
+    "time-sync",
+    "packages"
+  ],
+  "brand": { "name": "Hyperweaver", "logo_url": "/brand/hyperweaver/mark.svg" },
+  "collections": [],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "parent_task_id": "b2000000-0000-4000-8000-000000000005",
+  "machine_name": "copy-1.example.com",
+  "source_machine": "web-1",
+  "operation": "zone_clone_orchestration",
+  "status": "pending",
+  "message": "Zone clone queued",
+  "sub_tasks": {
+    "storage": "b2000000-0000-4000-8000-000000000051",
+    "config": "b2000000-0000-4000-8000-000000000052",
+    "install": "b2000000-0000-4000-8000-000000000053",
+    "finalize": "b2000000-0000-4000-8000-000000000054"
+  }
+}

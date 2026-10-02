@@ -1,0 +1,11 @@
+[
+  { "fmri": "svc:/network/ssh:default", "state": "online", "stime": "Sep_20" },
+  { "fmri": "svc:/system/cron:default", "state": "online", "stime": "Sep_20" },
+  { "fmri": "svc:/network/http:apache24", "state": "disabled", "stime": "-" },
+  {
+    "fmri": "svc:/application/database/postgresql:default",
+    "state": "maintenance",
+    "stime": "10:14:02"
+  },
+  { "fmri": "lrc:/etc/rc2_d/S20sysetup", "state": "legacy_run", "stime": "Sep_20" }
+]

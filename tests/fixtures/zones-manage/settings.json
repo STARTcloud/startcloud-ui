@@ -1,0 +1,5 @@
+{
+  "settings": {
+    "machines": { "orchestration": { "enabled": true, "strategy": "parallel_by_priority" } }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "message": "Provisioning pipeline queued",
+  "machine_name": "dev-1",
+  "parent_task_id": "a1000000-0000-4000-8000-000000000007",
+  "steps": 3,
+  "task_chain": ["a1000000-0000-4000-8000-000000000008"]
+}

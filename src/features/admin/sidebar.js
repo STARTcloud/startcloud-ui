@@ -17,9 +17,8 @@ import { isGlobalAdmin } from '../../utils/permissions';
  * Configuration node with one child per file over the shared
  * `useConfigTree` fed the adapter's `config` and the System heading's
  * key, answered as the tree's `labelKey` (decision 135), while it names
- * more;
- * nothing when the adapter carries none, and never a branch on the host's
- * role.
+ * more; nothing when the adapter carries none, and never a branch on the
+ * host's role.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`

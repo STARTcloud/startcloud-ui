@@ -1,0 +1,18 @@
+{
+  "datasets": [
+    {
+      "name": "rpool/zones",
+      "type": "filesystem",
+      "used": "412316860416",
+      "avail": "1380010156032"
+    },
+    {
+      "name": "rpool/vols/data",
+      "type": "volume",
+      "used": "10737418240",
+      "avail": "0",
+      "in_use_by": null
+    }
+  ],
+  "total": 2
+}

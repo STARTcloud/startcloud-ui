@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "template_sources": {
+    "sources": {
+      "mirror": {
+        "display_name": "Mirror",
+        "url": "https://mirror.example.com",
+        "enabled": true,
+        "default": false
+      },
+      "boxvault": {
+        "display_name": "BoxVault",
+        "url": "https://boxvault.example.com",
+        "enabled": true,
+        "default": true,
+        "auth_token": "kept"
+      }
+    }
+  }
+}

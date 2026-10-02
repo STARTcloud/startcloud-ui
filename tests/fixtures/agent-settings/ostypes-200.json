@@ -1,0 +1,11 @@
+{
+  "ostypes": [
+    {
+      "id": "Debian_64",
+      "description": "Debian (64-bit)",
+      "family": "Linux",
+      "architecture": "x86"
+    }
+  ],
+  "total": 1
+}

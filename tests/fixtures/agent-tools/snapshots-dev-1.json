@@ -1,0 +1,19 @@
+{
+  "machine_name": "dev-1",
+  "snapshots": [
+    {
+      "name": "clean-install",
+      "uuid": "3d1f6a20-7b41-4c58-9a0e-5c2b8e4f1a01",
+      "description": "Fresh from the box",
+      "node": "SnapshotName",
+      "current": false
+    },
+    {
+      "name": "before-upgrade",
+      "uuid": "3d1f6a20-7b41-4c58-9a0e-5c2b8e4f1a02",
+      "node": "SnapshotName-1",
+      "current": true
+    }
+  ],
+  "total": 2
+}

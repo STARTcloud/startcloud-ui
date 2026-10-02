@@ -1,11 +1,14 @@
 import { featuresOf, machineOf } from './fleet.js';
 import { ago, now, ok, problem, refusal } from './kit.js';
+import { documentOf } from './machine-provisioning.js';
+import { knobOverridesOf, pendingChangesOf } from './machine-settings.js';
 import { queue } from './tasks.js';
 
 const ACTIVE = ['pending', 'running'];
 const PENDING_LIMIT = 10;
 const SILENT_EVERY = 3;
 const TRANSPORT_MAC = '00FF00FF00FF';
+const SSH_PORT = 2222;
 const MACHINE_MISSING = 'Machine not found';
 const ZONE_MISSING = 'Zone not found';
 const NOT_RUNNING = 'Machine is not running';
@@ -109,6 +112,7 @@ const vboxView = (host, row, index) => ({
   bridgeadapter2: 'eth0',
   macaddress2: macOf(index),
   cableconnected2: 'on',
+  'Forwarding(0)': `ssh,tcp,127.0.0.1,${SSH_PORT + index},,22`,
 });
 
 const specOf = (row, index) => ({
@@ -125,6 +129,13 @@ const specOf = (row, index) => ({
 });
 
 const tagsOf = row => (Array.isArray(row.tags) && row.tags.length > 0 ? row.tags : null);
+
+const policyOf = row => (row.snapshots ? { snapshots: row.snapshots } : {});
+
+const documentIn = (host, row) => {
+  const document = documentOf(host, row);
+  return document ? { provisioner: document } : {};
+};
 
 const machineRow = (host, row, index) => {
   const made = provisioned(index);
@@ -146,7 +157,9 @@ const machineRow = (host, row, index) => {
     tags: tagsOf(row),
     configuration: {
       ...(utm ? {} : vboxView(host, row, index)),
+      ...documentIn(host, row),
       ...guestInfoOf(host, row, index),
+      ...policyOf(row),
     },
     spec: made ? specOf(row, index) : null,
     created_at: ago(index * 60 + 600),
@@ -191,16 +204,10 @@ const zoneView = (row, index) => ({
   ],
 });
 
-const zoneDocument = (row, index) =>
+const zoneDocument = (host, row, index) =>
   provisioned(index)
     ? {
-        provisioner: {
-          provisioner_name: 'startcloud',
-          provisioner_version: '0.1.27',
-          roles: ROLES.map((name, order) => ({ name, order }))
-            .filter(role => (index + role.order) % 2 === 0)
-            .map(role => ({ name: role.name })),
-        },
+        ...documentIn(host, row),
         settings: { hostname: row.name, domain: 'example.com', vcpus: '2', memory: '4G' },
       }
     : {};
@@ -222,8 +229,9 @@ const zoneRow = (host, row, index) => ({
   tags: tagsOf(row),
   configuration: {
     ...zoneView(row, index),
-    ...zoneDocument(row, index),
+    ...zoneDocument(host, row, index),
     ...guestInfoOf(host, row, index),
+    ...policyOf(row),
   },
   createdAt: ago(index * 60 + 600),
   updatedAt: now(),
@@ -235,7 +243,9 @@ const zoneRow = (host, row, index) => ({
  * `backing`, `home`, `uuid`, `spec` and VirtualBox's own view as its
  * `configuration`, and zoneweaver-agent's zone row, with `zone_id`,
  * `brand`, `vnc_port`, `vm_type` and the zone's configuration, neither
- * carrying the other's members; a running machine carries `guest_info`.
+ * carrying the other's members; a running machine carries `guest_info`,
+ * a machine with a retention policy of its own `snapshots`, and a
+ * machine a provisioner made its document under `configuration.provisioner`.
  *
  * @param {Object} host - The host
  * @param {Object} row - The machine the mock holds
@@ -300,6 +310,20 @@ const zoneKnobs = (host, row, index) => ({
   cpu_topology: null,
 });
 
+const forwardsOf = (row, index) =>
+  row.hypervisor === 'utm'
+    ? []
+    : [
+        {
+          name: 'ssh',
+          protocol: 'tcp',
+          host_ip: '127.0.0.1',
+          host_port: SSH_PORT + index,
+          guest_ip: '',
+          guest_port: 22,
+        },
+      ];
+
 const pendingOf = (host, row) =>
   host.tasks
     .filter(task => task.machine_name === row.name && ACTIVE.includes(task.status))
@@ -316,14 +340,21 @@ const detail = ctx => {
     pending_tasks: pendingOf(host, row),
     system_status: row.status,
   };
+  const pending = pendingChangesOf(host, row);
+  const overrides = knobOverridesOf(host, row);
   if (host.kind === 'zoneweaver') {
-    return ok({ ...shared, pending_changes: null, knob_current: zoneKnobs(host, row, index) });
+    return ok({
+      ...shared,
+      pending_changes: pending,
+      knob_current: { ...zoneKnobs(host, row, index), ...overrides },
+    });
   }
   return ok({
     ...shared,
+    configuration: { ...info.configuration, nat_forwards: forwardsOf(row, index) },
     web_address: provisioned(index) ? `https://${row.name}.example.com/welcome.html` : null,
-    knob_current: machineKnobs(host, row, index),
-    pending_changes: null,
+    knob_current: { ...machineKnobs(host, row, index), ...overrides },
+    pending_changes: pending,
   });
 };
 
@@ -520,8 +551,10 @@ const notes = ctx => {
 /**
  * The reads and the writes of the machine page on both agents, each
  * answering as the agent of the host's kind does: `GET machines/{name}`,
- * the detail, hyperweaver-agent's with `web_address` and
- * `knob_current.devices` and zoneweaver-agent's with the zone's own
+ * the detail, hyperweaver-agent's with `web_address`,
+ * `knob_current.devices` and the NAT port forwards of its configuration
+ * as `configuration.nat_forwards`, and zoneweaver-agent's with the
+ * zone's own
  * `knob_current` and no devices; `GET machines/{name}/guest-properties`
  * on the hyperweaver kind alone, 404 on a zoneweaver host; the guest
  * agent's `guest/osinfo`, `guest/network` and `guest-agent/setup`, 503 on

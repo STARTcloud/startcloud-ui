@@ -1,0 +1,19 @@
+{
+  "services": [
+    {
+      "id": "hyperweaver",
+      "name": "Hyperweaver",
+      "icon_url": "/brand/integrations/hyperweaver.svg",
+      "status": "connected",
+      "connected_at": "2026-09-01T12:00:00Z",
+      "settings_url": "/user/integrations/hyperweaver",
+      "settings": {
+        "servers": [
+          { "origin": "https://hw.example.com", "label": "Office", "default": true },
+          { "origin": "https://lab.example.com:8443", "label": "Lab", "default": false }
+        ],
+        "deploy_target": "local"
+      }
+    }
+  ]
+}

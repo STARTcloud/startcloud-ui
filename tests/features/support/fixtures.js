@@ -29,7 +29,9 @@ const keyOf = request => {
  * file with 422; the error reporter's `POST /api/client-errors` answers
  * 204 on every fixture, since a scenario's expected failures are shipped
  * like any other; a key the fixture lacks answers 404 with a problem
- * body, so a scenario never reaches a dev proxy target.
+ * body, so a scenario never reaches a dev proxy target. Every call is
+ * recorded with its key, its parsed body and its request headers, so a
+ * scenario can read the credential a request carried.
  */
 export class FixtureHost {
   constructor(page) {
@@ -61,7 +63,7 @@ export class FixtureHost {
     const request = route.request();
     const key = keyOf(request);
     const body = request.postData();
-    this.calls.push({ key, body: body ? JSON.parse(body) : null });
+    this.calls.push({ key, body: body ? JSON.parse(body) : null, headers: request.headers() });
     if (key === REPORT_KEY) {
       await route.fulfill({ status: 204 });
       return;

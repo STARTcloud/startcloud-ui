@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { FaFileImport, FaPlus } from 'react-icons/fa6';
+import { Link, useNavigate } from 'react-router-dom';
 
 import EmptyState from '../../../components/common/EmptyState';
 import PageHeader from '../../../components/common/PageHeader';
@@ -9,17 +10,22 @@ import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { pageContextShape } from '../../../utils/itemShape';
+import { importMachine } from '../api/machines';
 import { useActionRunner } from '../hooks/useHostActions';
 import { useHostMachines } from '../hooks/useHostMachines';
 import { useHostRow } from '../hooks/useHostRow';
 import { useHostStats } from '../hooks/useHostStats';
 import { useMachineDetailRefresh } from '../hooks/useMachineDetail';
+import { useMachineTools } from '../hooks/useMachineTools';
 import { useServers } from '../hooks/useServers';
 import { hostHasFeature } from '../utils/capabilities';
-import { hostLabel, isServerRole, machineNoun } from '../utils/hosts';
+import { hostLabel, isServerRole } from '../utils/hosts';
+import { createRouteOf, hostCreates } from '../utils/machineCreate';
 import {
   machineCounts,
+  machineRoute,
   matchesMachine,
+  nounKeyOf,
   provisionerOf,
   rolesOf,
   sentenceKey,
@@ -28,24 +34,35 @@ import {
   systemLine,
   tagsOf,
 } from '../utils/machines';
+import { hostImports } from '../utils/machineTools';
 
+import HostTabs from './HostTabs';
+import MachineImportDialog from './MachineImportDialog';
 import MachineRowActions from './MachineRowActions';
+import MachineToolDialogs from './MachineToolDialogs';
 import RefreshButton from './RefreshButton';
+import TaskDialog from './TaskDialog';
 
 const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
+const NO_TOOL = { tool: '', name: '' };
+
+const IMPORT_NOTES = ['machine.importMachineModal.discoveryNote'];
+
 const COUNTS = [
-  { key: 'total', tone: 'info', labelKey: 'hosts.machines.count.total' },
-  { key: 'running', tone: 'success', labelKey: 'hosts.machines.count.running' },
-  { key: 'stopped', tone: 'danger', labelKey: 'hosts.machines.count.stopped' },
+  { key: 'total', tone: 'info', labelKey: 'pages.machines.total' },
+  { key: 'running', tone: 'success', labelKey: 'pages.machines.running' },
+  { key: 'stopped', tone: 'danger', labelKey: 'pages.machines.stopped' },
 ];
 
 const FLAGS = [
-  { member: 'is_orphaned', tone: 'warning', labelKey: 'hosts.machines.flag.orphaned' },
-  { member: 'auto_discovered', tone: 'info', labelKey: 'hosts.machines.flag.autoDiscovered' },
+  { member: 'is_orphaned', tone: 'warning', labelKey: 'machine.machineListPanel.orphanedBadge' },
+  {
+    member: 'auto_discovered',
+    tone: 'info',
+    labelKey: 'machine.machineListPanel.autoDiscoveredBadge',
+  },
 ];
-
-const machinePath = (id, name) => `/hosts/${id}/machines/${encodeURIComponent(name)}`;
 
 const flagsOf = row => FLAGS.filter(flag => row[flag.member]);
 
@@ -86,7 +103,7 @@ const columnsFor = id => [
     labelKey: 'hosts.page.name',
     value: row => row.name,
     render: row => (
-      <Link to={machinePath(id, row.name)} className="fw-semibold">
+      <Link to={machineRoute(id, row.name)} className="fw-semibold">
         {row.name}
       </Link>
     ),
@@ -255,8 +272,9 @@ const labelOf = ({ status, server, id, stats }) => {
 const Counts = ({ counts }) => {
   const { t } = useTranslation();
   return COUNTS.map(({ key, tone, labelKey }) => (
-    <span key={key} className={`badge text-bg-${tone}`} data-count={key} data-number={counts[key]}>
-      {t(labelKey, { number: counts[key] })}
+    <span key={key} className="d-inline-flex" data-count={key} data-number={counts[key]}>
+      <span className="badge text-bg-secondary">{t(labelKey)}</span>
+      <span className={`badge text-bg-${tone}`}>{counts[key]}</span>
     </span>
   ));
 };
@@ -269,11 +287,65 @@ Counts.propTypes = {
   }).isRequired,
 };
 
+const ImportButton = ({ onImport }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-primary"
+      data-action="import"
+      onClick={onImport}
+    >
+      <FaFileImport className="me-1" aria-hidden="true" />
+      {t('pages.machines.import')}
+    </button>
+  );
+};
+
+ImportButton.propTypes = {
+  onImport: PropTypes.func.isRequired,
+};
+
+const NewButton = ({ noun, onNew }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-success"
+      data-action="new-machine"
+      onClick={onNew}
+    >
+      <FaPlus className="me-1" aria-hidden="true" />
+      {t('navbar.navbar.newMachineButton', { noun })}
+    </button>
+  );
+};
+
+NewButton.propTypes = {
+  noun: PropTypes.string.isRequired,
+  onNew: PropTypes.func.isRequired,
+};
+
+const NotOffered = ({ resource }) => {
+  const { t } = useTranslation();
+  return (
+    <span data-note="machines-not-offered">
+      {t('pages.machines.noMachinesCapabilityPre', { resource })} <code>machines</code>{' '}
+      {t('pages.machines.noMachinesCapabilityPost')}
+    </span>
+  );
+};
+
+NotOffered.propTypes = {
+  resource: PropTypes.string.isRequired,
+};
+
 /**
  * The machines of one host at `/hosts/{id}/machines`, hyperweaver-ui's
  * machine list: the heading names the machines by the noun the host's
  * hypervisors fix, the host under it and the counts of all, running and
- * stopped as its chips; under it the one `SubTable` over the rows of
+ * stopped as its chips; under it the tab row of the host's pages,
+ * `HostTabs`, with Machines active; under it the one `SubTable` over the rows of
  * `GET machines`, the copy `useHostMachines` shares with the Controls
  * menu and the tree, narrowed to the organization a person operates
  * under and by the navbar binding of `useDetailSearch` under
@@ -281,35 +353,54 @@ Counts.propTypes = {
  * `MachineRowActions`. A row's action is one request through the
  * Controls menu's runner and one notice, the host's stats and its
  * machine rows read again once after a success, and the machine's
- * detail with them while it is held; what a queued task
- * changes afterwards reaches the rows through the `hosts` topic, and
- * nothing reads on a clock. Refresh in the heading's actions reads the
- * list of servers, the host's stats and its machine rows again. Nothing
- * is asked of a host whose own row does not list `machines`, which draws
+ * detail with them while it is held; what a queued task changes
+ * afterwards reaches the rows through the `hosts` topic, and nothing
+ * reads on a clock. Refresh in the heading's actions reads the list of
+ * servers, the host's stats and its machine rows again. New draws first
+ * while `hostCreates` offers it, a host that lists `machine-create`, and
+ * opens the create wizard on the host's page; Import draws
+ * before Refresh while `hostImports` offers it, a host that names
+ * `virtualbox`, and opens the dialog that imports an appliance, one
+ * request through `useMachineTools` and one notice; Clone in a row's
+ * More menu opens the clone dialog of `MachineToolDialogs` on that
+ * machine. A read that failed draws the agent's own message. Nothing is
+ * asked of a host whose own row does not list `machines`, which draws
  * the placard saying so.
  */
 const MachinesPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
-  const { loaded: listed, refresh: refreshServers } = useServers();
+  const navigate = useNavigate();
+  const { loaded: held, refresh: refreshServers } = useServers();
   const server = useHostRow(id);
   const offered = hostHasFeature(server, 'machines');
   const { stats, refresh: refreshStats } = useHostStats(id);
-  const { machines, loaded, failed, refresh: refreshMachines } = useHostMachines(id, offered);
+  const {
+    machines,
+    loaded,
+    failed,
+    message,
+    refresh: refreshMachines,
+  } = useHostMachines(id, offered);
   const { run, busy } = useActionRunner(status);
   const refreshDetail = useMachineDetailRefresh();
-  const noun = machineNoun(server ? [server] : []);
+  const tools = useMachineTools();
+  const [open, setOpen] = useState(NO_TOOL);
+  const [importing, setImporting] = useState(false);
+  const listed = server ? [server] : [];
+  const resource = t(nounKeyOf(listed));
+  const plural = t(nounKeyOf(listed, true));
   const columns = useMemo(() => columnsFor(id), [id]);
   const ctx = {
     ...context,
     t,
     language: i18n.language,
-    noun: t(`hosts.machines.noun.${noun}`),
+    noun: resource.toLowerCase(),
   };
   const search = useDetailSearch({
     rows: machines,
     matches: matchesMachine,
-    placeholderKey: `hosts.machines.search.${noun}`,
+    placeholderKey: 'machine.machineListPanel.filterPlaceholder',
     columns,
     ctx,
     prefsKey: `${context.prefsPrefix}_machines`,
@@ -317,13 +408,12 @@ const MachinesPage = ({ id, context }) => {
     defaultSort: DEFAULT_SORT,
   });
   const label = labelOf({ status, server, id, stats });
-  const title = t(`hosts.machines.title.${noun}`);
 
   useEffect(() => {
-    document.title = `${title} · ${label}`;
-  }, [title, label]);
+    document.title = `${plural} · ${label}`;
+  }, [plural, label]);
 
-  if (!listed || (offered && !loaded)) {
+  if (!held || (offered && !loaded)) {
     return (
       <div className="list row">
         <div>{t('pages.loading')}</div>
@@ -351,17 +441,43 @@ const MachinesPage = ({ id, context }) => {
       },
     });
 
+  const sendImport = async body => {
+    const { error } = await tools.send({
+      id,
+      name: '',
+      call: () => importMachine(status, id, body),
+      doneKey: 'machine.importMachineModal.importQueuedFallback',
+      notes: IMPORT_NOTES,
+    });
+    if (!error) {
+      setImporting(false);
+    }
+  };
+
+  const actions = (
+    <>
+      {hostCreates(server, context.user?.role) ? (
+        <NewButton noun={resource} onNew={() => navigate(createRouteOf(id))} />
+      ) : null}
+      {hostImports(server, context.user?.role) ? (
+        <ImportButton onImport={() => setImporting(true)} />
+      ) : null}
+      <RefreshButton onRefresh={refresh} />
+    </>
+  );
+
   return (
     <div className="list row" data-page="machines">
       <PageHeader
-        title={title}
+        title={plural}
         subtitle={label}
         chips={offered ? <Counts counts={machineCounts(machines)} /> : null}
-        actions={<RefreshButton onRefresh={refresh} />}
+        actions={actions}
       />
+      <HostTabs id={id} />
       {failed ? (
-        <div className="alert alert-danger" role="alert">
-          {t(`hosts.machines.loadError.${noun}`)}
+        <div className="alert alert-danger" role="alert" data-note="machines-failed">
+          {t('machine.machineListPanel.loadFailed', { plural: plural.toLowerCase(), message })}
         </div>
       ) : null}
       {offered ? (
@@ -371,18 +487,52 @@ const MachinesPage = ({ id, context }) => {
           rowKey={row => row.name}
           rowProp="machine"
           RowActions={MachineRowActions}
-          actionsProps={{ id, server, role: context.user?.role, busy, onAction: act }}
+          actionsProps={{
+            id,
+            server,
+            role: context.user?.role,
+            noun: ctx.noun,
+            busy,
+            onAction: act,
+            onTool: (machine, tool) => setOpen({ tool, name: machine.name }),
+          }}
           sort={search.sort}
           onSort={search.setSort}
           hiddenColumns={search.hiddenColumns}
           widths={search.widths}
           onResize={search.setColumnWidth}
           ctx={ctx}
-          emptyText={t(search.filtering ? 'pages.noMatches' : `hosts.machines.empty.${noun}`)}
+          emptyText={
+            search.filtering
+              ? t('pages.noMatches')
+              : t('machine.machineListPanel.noneOnHost', { plural: plural.toLowerCase() })
+          }
         />
       ) : (
-        <EmptyState title={t('hosts.machines.notOffered')} />
+        <EmptyState title={<NotOffered resource={resource} />} />
       )}
+      <MachineToolDialogs
+        status={status}
+        tool={open.tool}
+        id={id}
+        name={open.name}
+        onClose={() => setOpen(NO_TOOL)}
+      />
+      {importing ? (
+        <MachineImportDialog
+          busy={tools.busy}
+          onClose={() => setImporting(false)}
+          onSubmit={sendImport}
+        />
+      ) : null}
+      {tools.task ? (
+        <TaskDialog
+          status={status}
+          id={tools.task.id}
+          task={tools.task.row}
+          onHide={tools.closeTask}
+        />
+      ) : null}
     </div>
   );
 };

@@ -1,0 +1,4 @@
+{
+  "machine_name": "dev-1",
+  "yaml": "hosts:\n  - dev-1:\n      provisioner_name: startcloud\n      provisioner_version: 0.1.27\n      settings:\n        hostname: dev-1\n        domain: example.com\n        server_id: '0042'\n        vcpus: 4\n        memory: 8G\n        box: STARTcloud/debian13-server\n      roles:\n        - name: startcloud.hcl_roles.domino\n        - name: startcloud.hcl_roles.traveler\n"
+}

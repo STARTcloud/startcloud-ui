@@ -36,6 +36,11 @@ describe('READS and SERIES', () => {
     expect(READS.datasets.tokens).toEqual(['monitoring', 'zfs']);
     expect(SERIES['pool-io'].tokens).toEqual(['monitoring', 'zfs']);
     expect(SERIES.arc.tokens).toEqual(['monitoring', 'zfs']);
+    expect(SERIES['disk-io'].tokens).toEqual(['monitoring', 'zfs']);
+  });
+
+  it('put the disk inventory behind monitoring alone', () => {
+    expect(READS.disks).toEqual({ path: 'monitoring/storage/disks', tokens: ['monitoring'] });
   });
 
   it('put every other read behind the one token of its surface', () => {
@@ -55,12 +60,15 @@ describe('READS and SERIES', () => {
       ['network', 'usage', 'network-sample'],
       ['pool-io', 'poolio', 'pool-io-sample'],
       ['arc', 'arc', 'arc-sample'],
+      ['disk-io', 'diskio', 'disk-io-sample'],
     ]);
   });
 
-  it('tell the rows of one interface or pool from another by its name', () => {
+  it('tell the rows of one interface, pool or device from another by its name', () => {
     expect(SERIES.network.entity).toBe('link');
     expect(SERIES['pool-io'].entity).toBe('pool');
+    expect(SERIES['disk-io'].entity).toBe('device_name');
+    expect(SERIES['disk-io'].params).toEqual({ per_device: true });
     expect(SERIES.cpu.entity).toBe('');
   });
 });

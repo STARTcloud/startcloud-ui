@@ -1,0 +1,12 @@
+{
+  "id": "hyperweaver",
+  "name": "Hyperweaver",
+  "icon_url": "/brand/integrations/hyperweaver.svg",
+  "status": "connected",
+  "connected_at": "2026-09-29T12:00:00Z",
+  "settings_url": "/user/integrations/hyperweaver",
+  "settings": {
+    "servers": [{ "origin": "https://new.example.com", "label": "Home", "default": true }],
+    "deploy_target": "https://new.example.com"
+  }
+}

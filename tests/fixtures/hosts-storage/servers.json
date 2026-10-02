@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "servers": [
+    {
+      "id": 1,
+      "hostname": "vbox-1.example.com",
+      "port": 5001,
+      "protocol": "https",
+      "entity_name": "Desk",
+      "description": "",
+      "capabilities": {
+        "role": "agent",
+        "agent": "hyperweaver-agent",
+        "hypervisors": ["virtualbox"],
+        "platform": "windows",
+        "arch": "x86_64",
+        "version": "1.2.0",
+        "hostname": "vbox-1",
+        "features": ["machines", "tasks", "swap", "monitoring", "provisioning", "network-spaces"]
+      },
+      "last_used": "2026-09-27T00:00:00.000Z",
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "org_uuids": []
+    },
+    {
+      "id": 3,
+      "hostname": "zone-1.example.com",
+      "port": 5001,
+      "protocol": "https",
+      "entity_name": "Zones",
+      "description": "",
+      "capabilities": {
+        "role": "agent",
+        "agent": "zoneweaver-agent",
+        "hypervisors": ["bhyve"],
+        "platform": "omnios",
+        "arch": "x86_64",
+        "version": "0.2.3",
+        "hostname": "zone-1",
+        "features": ["machines", "tasks", "zfs", "swap", "monitoring", "vnics", "devices"]
+      },
+      "last_used": "2026-09-27T00:00:00.000Z",
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "org_uuids": []
+    },
+    {
+      "id": 4,
+      "hostname": "zone-2.example.com",
+      "port": 5001,
+      "protocol": "https",
+      "entity_name": "Bare",
+      "description": "",
+      "capabilities": {
+        "role": "agent",
+        "agent": "zoneweaver-agent",
+        "hypervisors": ["bhyve"],
+        "platform": "omnios",
+        "arch": "x86_64",
+        "version": "0.2.3",
+        "hostname": "zone-2",
+        "features": ["machines", "zfs", "vnics"]
+      },
+      "last_used": "2026-09-27T00:00:00.000Z",
+      "created_at": "2026-09-01T00:00:00.000Z",
+      "org_uuids": []
+    }
+  ]
+}

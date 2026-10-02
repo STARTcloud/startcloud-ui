@@ -1,0 +1,68 @@
+{
+  "faults": [
+    {
+      "uuid": "e7a1c3d4-9b2f-4c1e-8d3a-5f6e7a8b9c0d",
+      "msgId": "ZFS-8000-8A",
+      "severity": "Major",
+      "time": "Sep 28 10:16:40",
+      "details": {
+        "host": "zone-1",
+        "platform": "i86pc",
+        "faultClass": "fault.fs.zfs.device",
+        "affects": "zfs://pool=tank/vdev=c0t5000C500B2C3D4E8d0 faulted but still in service",
+        "problemIn": "zfs://pool=tank/vdev=c0t5000C500B2C3D4E8d0",
+        "description": "A file or directory could not be read due to corrupt data.",
+        "response": "The device has been offlined and marked as faulted.",
+        "impact": "Fault tolerance of the pool may be compromised.",
+        "action": "Run zpool status -x and replace the faulted device."
+      },
+      "raw_output": "TIME            EVENT-ID                              MSG-ID         SEVERITY\nSep 28 10:16:40 e7a1c3d4-9b2f-4c1e-8d3a-5f6e7a8b9c0d ZFS-8000-8A Major"
+    },
+    {
+      "uuid": "b2c3d4e5-6f70-4a81-9b2c-3d4e5f6a7b8c",
+      "msgId": "CPU-8000-4E",
+      "severity": "Critical",
+      "time": "Sep 27 22:01:12",
+      "details": {
+        "host": "zone-1",
+        "platform": "i86pc",
+        "faultClass": "fault.cpu.intel.internal",
+        "affects": "cpu:///cpuid=3 faulted and taken out of service",
+        "problemIn": "cpu:///cpuid=3",
+        "description": "The number of errors on this CPU has exceeded acceptable levels.",
+        "response": "The CPU has been offlined.",
+        "impact": "Performance of the system may be affected.",
+        "action": "Schedule a repair procedure to replace the affected CPU."
+      },
+      "raw_output": "TIME            EVENT-ID                              MSG-ID         SEVERITY\nSep 27 22:01:12 b2c3d4e5-6f70-4a81-9b2c-3d4e5f6a7b8c CPU-8000-4E Critical"
+    },
+    {
+      "uuid": "c3d4e5f6-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+      "msgId": "SMF-8000-YX",
+      "severity": "Minor",
+      "time": "Sep 25 08:30:00",
+      "details": {
+        "host": "zone-1",
+        "platform": "i86pc",
+        "faultClass": "defect.sunos.smf.svc.maintenance",
+        "affects": "svc:///network/http:apache24 degraded",
+        "problemIn": "svc:///network/http:apache24",
+        "description": "A service failed to start and is in maintenance.",
+        "response": "The service has been placed in the maintenance state.",
+        "impact": "The service is not running.",
+        "action": "Run svcs -xv for more information and svcadm clear once repaired."
+      },
+      "raw_output": "TIME            EVENT-ID                              MSG-ID         SEVERITY\nSep 25 08:30:00 c3d4e5f6-7a8b-4c9d-8e0f-1a2b3c4d5e6f SMF-8000-YX Minor"
+    }
+  ],
+  "summary": {
+    "totalFaults": 3,
+    "severityLevels": ["Major", "Critical", "Minor"],
+    "faultClasses": [
+      "fault.fs.zfs.device",
+      "fault.cpu.intel.internal",
+      "defect.sunos.smf.svc.maintenance"
+    ]
+  },
+  "cached": false
+}

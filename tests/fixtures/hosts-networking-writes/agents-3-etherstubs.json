@@ -1,0 +1,7 @@
+{
+  "etherstubs": [
+    { "name": "stub0", "class": "etherstub", "state": "up", "over": "--", "vnics": [], "mtu": 9000 }
+  ],
+  "returned": 1,
+  "source": "live"
+}

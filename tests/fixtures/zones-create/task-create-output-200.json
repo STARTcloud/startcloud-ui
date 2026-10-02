@@ -1,0 +1,11 @@
+{
+  "task_id": "b2000000-0000-4000-8000-000000000007",
+  "status": "running",
+  "output": [
+    {
+      "stream": "stdout",
+      "data": "Preparing the machine folder",
+      "timestamp": 1790000000000
+    }
+  ]
+}

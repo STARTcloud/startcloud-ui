@@ -1,0 +1,9 @@
+{
+  "strategy": "parallel_by_priority",
+  "total_machines": 2,
+  "estimated_duration": "30s",
+  "execution_plan": [
+    { "priority_range": "100-119", "machines": [{ "name": "db-1", "priority": 100 }] },
+    { "priority_range": "80-99", "machines": [{ "name": "web-1", "priority": 95 }] }
+  ]
+}

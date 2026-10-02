@@ -1,11 +1,14 @@
 import { hostHasFeature } from './capabilities';
 
 /**
- * The reads the Overview's panels make, each the agent path it asks and
+ * The reads the Overview's panels and the networking page's tables make,
+ * each the agent path it asks and
  * the tokens the host's own row must list for it, every one of them,
  * because an agent without the surface answers 404: the monitoring
- * service's status, health and summary and the network interfaces behind
- * `monitoring`, the ZFS pools and datasets behind `monitoring` and `zfs`,
+ * service's status, health and summary, the network interfaces and the
+ * IP addresses behind `monitoring`, the routing table behind `monitoring`
+ * and `vnics`, the token of the agent that serves it until a token of
+ * its own names it, the ZFS pools and datasets behind `monitoring` and `zfs`,
  * the task queue's counts behind `tasks`, the swap summary behind `swap`
  * and the provisioning tools behind `provisioning`.
  */
@@ -14,12 +17,47 @@ export const READS = {
   'monitoring-health': { path: 'monitoring/health', tokens: ['monitoring'] },
   'monitoring-summary': { path: 'monitoring/summary', tokens: ['monitoring'] },
   interfaces: { path: 'monitoring/network/interfaces', tokens: ['monitoring'] },
+  'ip-addresses': { path: 'monitoring/network/ipaddresses', tokens: ['monitoring'] },
+  routes: { path: 'monitoring/network/routes', tokens: ['monitoring', 'vnics'] },
   pools: { path: 'monitoring/storage/pools', tokens: ['monitoring', 'zfs'] },
   datasets: { path: 'monitoring/storage/datasets', tokens: ['monitoring', 'zfs'] },
+  disks: { path: 'monitoring/storage/disks', tokens: ['monitoring'] },
   'task-stats': { path: 'tasks/stats', tokens: ['tasks'] },
   swap: { path: 'system/swap/summary', tokens: ['swap'] },
   provisioning: { path: 'provisioning/status', tokens: ['provisioning'] },
+  'network-addresses': { path: 'network/addresses', tokens: [], any: ['ip-addresses', 'vnics'] },
+  vnics: { path: 'network/vnics', tokens: ['vnics'] },
+  vlans: { path: 'network/vlans', tokens: ['vnics'] },
+  etherstubs: { path: 'network/etherstubs', tokens: ['vnics'] },
+  bridges: { path: 'network/bridges', tokens: ['vnics'], params: { extended: true } },
+  aggregates: { path: 'network/aggregates', tokens: ['vnics'], params: { extended: true } },
+  'network-spaces': { path: 'network/spaces', tokens: ['network-spaces'] },
+  hostname: { path: 'network/hostname', tokens: [], any: ['hostname', 'vnics'] },
+  dns: { path: 'system/dns', tokens: [], any: ['dns', 'vnics'] },
+  'hosts-file': { path: 'system/hosts', tokens: ['hosts-file'] },
+  'services-cdp': { path: 'services', tokens: ['vnics'], params: { pattern: 'cdp' } },
+  'machines-usage': { path: 'monitoring/machines/usage', tokens: ['monitoring', 'network-spaces'] },
 };
+
+/**
+ * The keys of `READS` the networking page's management draws, the reads
+ * a queued task's end asks again.
+ */
+export const NETWORKING_READS = [
+  'network-addresses',
+  'vnics',
+  'vlans',
+  'etherstubs',
+  'bridges',
+  'aggregates',
+  'network-spaces',
+  'hostname',
+  'dns',
+  'hosts-file',
+  'interfaces',
+  'ip-addresses',
+  'routes',
+];
 
 /**
  * The series the performance charts draw, each the agent path its
@@ -70,6 +108,14 @@ export const SERIES = {
     entity: '',
     tokens: ['monitoring', 'zfs'],
   },
+  'disk-io': {
+    path: 'monitoring/storage/disk-io',
+    member: 'diskio',
+    event: 'disk-io-sample',
+    params: { per_device: true },
+    entity: 'device_name',
+    tokens: ['monitoring', 'zfs'],
+  },
 };
 
 /**
@@ -83,32 +129,45 @@ export const SERIES = {
 export const hostOffers = (server, tokens) => tokens.every(token => hostHasFeature(server, token));
 
 /**
+ * Whether a host's own row offers one read of `READS`: every token of
+ * `tokens` and, where the read names `any`, at least one of those, the
+ * any-of gate of a surface two agents list under different tokens.
+ *
+ * @param {Object|null} server - The registry row, or the one serving agent's
+ * @param {{ tokens: Array<string>, any?: Array<string> }} read - The entry of `READS`
+ * @returns {boolean} True only when the row offers it
+ */
+export const readOffered = (server, read) =>
+  hostOffers(server, read.tokens) &&
+  (!read.any || read.any.some(token => hostHasFeature(server, token)));
+
+/**
  * The time windows a chart's history is read over, hyperweaver-ui's ten,
- * each the minutes it reaches back and the key of its label.
+ * each its key, the word of hyperweaver-ui's option, and the minutes it
+ * reaches back.
  */
 export const WINDOWS = [
-  { key: '1min', minutes: 1, labelKey: 'hosts.charts.window.1min' },
-  { key: '5min', minutes: 5, labelKey: 'hosts.charts.window.5min' },
-  { key: '10min', minutes: 10, labelKey: 'hosts.charts.window.10min' },
-  { key: '15min', minutes: 15, labelKey: 'hosts.charts.window.15min' },
-  { key: '30min', minutes: 30, labelKey: 'hosts.charts.window.30min' },
-  { key: '1hour', minutes: 60, labelKey: 'hosts.charts.window.1hour' },
-  { key: '3hour', minutes: 180, labelKey: 'hosts.charts.window.3hour' },
-  { key: '6hour', minutes: 360, labelKey: 'hosts.charts.window.6hour' },
-  { key: '12hour', minutes: 720, labelKey: 'hosts.charts.window.12hour' },
-  { key: '24hour', minutes: 1440, labelKey: 'hosts.charts.window.24hour' },
+  { key: '1min', minutes: 1 },
+  { key: '5min', minutes: 5 },
+  { key: '10min', minutes: 10 },
+  { key: '15min', minutes: 15 },
+  { key: '30min', minutes: 30 },
+  { key: '1hour', minutes: 60 },
+  { key: '3hour', minutes: 180 },
+  { key: '6hour', minutes: 360 },
+  { key: '12hour', minutes: 720 },
+  { key: '24hour', minutes: 1440 },
 ];
 
 /**
  * The resolutions a chart's history is read at, hyperweaver-ui's four,
- * each the most samples the read asks for as `limit` and the key of its
- * label.
+ * each its key and the most samples the read asks for as `limit`.
  */
 export const RESOLUTIONS = [
-  { key: 'realtime', limit: 125, labelKey: 'hosts.charts.resolution.realtime' },
-  { key: 'high', limit: 38, labelKey: 'hosts.charts.resolution.high' },
-  { key: 'medium', limit: 13, labelKey: 'hosts.charts.resolution.medium' },
-  { key: 'low', limit: 5, labelKey: 'hosts.charts.resolution.low' },
+  { key: 'realtime', limit: 125 },
+  { key: 'high', limit: 38 },
+  { key: 'medium', limit: 13 },
+  { key: 'low', limit: 5 },
 ];
 
 export const DEFAULT_QUERY = { window: '15min', resolution: 'high' };

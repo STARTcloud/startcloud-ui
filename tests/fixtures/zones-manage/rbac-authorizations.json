@@ -1,0 +1,10 @@
+{
+  "authorizations": [
+    {
+      "name": "solaris.zone.manage",
+      "short_description": "Manage zones",
+      "long_description": "Grants the ability to manage zones."
+    }
+  ],
+  "total": 1
+}

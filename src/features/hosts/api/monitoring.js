@@ -12,7 +12,8 @@ import { READS, SERIES } from '../utils/monitoring';
  * @param {string} key - The read's key in `READS`, e.g. `swap`
  * @returns {Promise<Object>} The agent's answer
  */
-export const fetchReading = (status, id, key) => client.get(agentPath(status, id, READS[key].path));
+export const fetchReading = (status, id, key) =>
+  client.get(agentPath(status, id, READS[key].path), { params: READS[key].params || {} });
 
 /**
  * The history of one series of one agent, the path `SERIES` names for

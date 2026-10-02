@@ -1,0 +1,87 @@
+{
+  "routes": [
+    {
+      "id": 4,
+      "destination": "default",
+      "gateway": "10.0.0.1",
+      "interface": "igb0",
+      "ip_version": "v4",
+      "is_default": true,
+      "flags": "UG",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "ref": 3,
+      "use": "184220",
+      "destination_mask": null
+    },
+    {
+      "id": 5,
+      "destination": "10.0.0.0",
+      "gateway": "10.0.0.31",
+      "interface": "igb0",
+      "ip_version": "v4",
+      "is_default": false,
+      "flags": "U",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "ref": 5,
+      "use": "90412",
+      "destination_mask": "255.255.255.0"
+    },
+    {
+      "id": 6,
+      "destination": "10.0.0.41",
+      "gateway": "10.0.0.41",
+      "interface": "vnic0",
+      "ip_version": "v4",
+      "is_default": false,
+      "flags": "UH",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "ref": 1,
+      "use": "12",
+      "destination_mask": "255.255.255.255"
+    },
+    {
+      "id": 1,
+      "destination": "default",
+      "gateway": "10.0.0.1",
+      "interface": "igb0",
+      "ip_version": "v4",
+      "is_default": true,
+      "flags": "UG",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "ref": 3,
+      "use": "184100",
+      "destination_mask": null
+    },
+    {
+      "id": 2,
+      "destination": "10.0.0.0",
+      "gateway": "10.0.0.31",
+      "interface": "igb0",
+      "ip_version": "v4",
+      "is_default": false,
+      "flags": "U",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "ref": 5,
+      "use": "90380",
+      "destination_mask": "255.255.255.0"
+    },
+    {
+      "id": 3,
+      "destination": "10.0.0.41",
+      "gateway": "10.0.0.41",
+      "interface": "vnic0",
+      "ip_version": "v4",
+      "is_default": false,
+      "flags": "UH",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "ref": 1,
+      "use": "12",
+      "destination_mask": "255.255.255.255"
+    }
+  ],
+  "returned": 6,
+  "pagination": {
+    "limit": 100,
+    "offset": 0
+  }
+}

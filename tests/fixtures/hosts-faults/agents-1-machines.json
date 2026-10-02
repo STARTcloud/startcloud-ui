@@ -1,0 +1,6 @@
+{
+  "machines": [
+    { "name": "dev-1", "status": "running", "hypervisor": "virtualbox", "org_uuids": [] }
+  ],
+  "total": 1
+}

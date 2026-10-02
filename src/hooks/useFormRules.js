@@ -81,6 +81,13 @@ const collectNames = ({ schema, values, base, names }) => {
       collectNames({ schema: property, values: values?.[key], base: name, names });
       return;
     }
+    if (property.items?.properties) {
+      names.push(name);
+      (Array.isArray(values?.[key]) ? values[key] : []).forEach((entry, index) =>
+        collectNames({ schema: property.items, values: entry, base: `${name}/${index}`, names })
+      );
+      return;
+    }
     if (property.additionalProperties && typeof property.additionalProperties === 'object') {
       const item = property.additionalProperties;
       const entries = values?.[key] && typeof values[key] === 'object' ? values[key] : {};
@@ -128,7 +135,9 @@ const without = (map, name) =>
  * whether the form may submit, and `applyServerErrors(apiError)` paints an
  * `ApiError`'s `fieldErrors` by pointer (a map's own pointer among the
  * fields, so a `propertyNames` refusal paints on the map and a `readOnly`
- * refusal on its field), entries matching no field kept for the summary.
+ * refusal on its field; an array of objects one field per element member,
+ * `servers/0/origin`, beside the array's own), entries matching no field
+ * kept for the summary.
  * `labels` maps a field name to the translation key of its label and must
  * be a stable object; a config schema's `title` is the label when no entry
  * names it. `idFor(name)` answers `${idPrefix}${pointer}` with the pointer

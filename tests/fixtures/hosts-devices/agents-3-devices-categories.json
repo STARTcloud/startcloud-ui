@@ -1,0 +1,9 @@
+{
+  "categories": {
+    "network": { "total": 3, "ppt_capable": 3, "ppt_enabled": 1 },
+    "storage": { "total": 3, "ppt_capable": 1, "ppt_enabled": 0 },
+    "display": { "total": 1, "ppt_capable": 1, "ppt_enabled": 1 },
+    "usb": { "total": 1, "ppt_capable": 1, "ppt_enabled": 0 }
+  },
+  "total": 8
+}

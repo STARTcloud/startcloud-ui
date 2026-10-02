@@ -1,0 +1,6 @@
+{
+  "success": true,
+  "hostname": "zone-9",
+  "applied": false,
+  "message": "Hostname change to zone-9 takes effect at the next reboot"
+}

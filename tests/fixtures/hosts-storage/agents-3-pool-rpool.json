@@ -1,0 +1,14 @@
+{
+  "name": "rpool",
+  "properties": {
+    "size": { "value": "2.00T", "source": "-" },
+    "capacity": { "value": "9%", "source": "-" },
+    "health": { "value": "ONLINE", "source": "-" },
+    "autoexpand": { "value": "off", "source": "default" },
+    "autoreplace": { "value": "off", "source": "default" },
+    "autotrim": { "value": "off", "source": "default" },
+    "comment": { "value": "-", "source": "default" },
+    "failmode": { "value": "wait", "source": "default" },
+    "listsnapshots": { "value": "off", "source": "default" }
+  }
+}

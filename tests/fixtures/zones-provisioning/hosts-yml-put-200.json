@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "machine_name": "web-1",
+  "warnings": ["The entry names no vcpus; the zone keeps its own"]
+}

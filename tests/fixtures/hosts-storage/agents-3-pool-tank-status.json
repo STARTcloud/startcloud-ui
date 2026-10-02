@@ -1,0 +1,47 @@
+{
+  "name": "tank",
+  "status": "  pool: tank\n state: DEGRADED\nstatus: One or more devices has been taken offline by the administrator.\n  scan: scrub in progress since Sun Sep 27 11:40:00 2026\n\t4.12T scanned at 1.2G/s, 2.23T issued at 650M/s, 5.31T total\n\t0B repaired, 42.00% done, 01:22:10 to go\nconfig:\n\n\tNAME                       STATE     READ WRITE CKSUM\n\ttank                       DEGRADED     0     0     0\n\t  raidz2-0                 DEGRADED     0     0     0\n\t    c0t5000C500B2C3D4E6d0  ONLINE       0     0     0\n\t    c0t5000C500B2C3D4E7d0  ONLINE       0     0     0\n\t    c0t5000C500B2C3D4E8d0  OFFLINE      0     0     0\n\t    c0t5000C500B2C3D4E9d0  ONLINE       0     0     0\n\nerrors: No known data errors",
+  "parsed": {
+    "vdevs": [
+      {
+        "type": "raidz2",
+        "state": "DEGRADED",
+        "devices": [
+          {
+            "name": "c0t5000C500B2C3D4E6d0",
+            "state": "ONLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": ""
+          },
+          {
+            "name": "c0t5000C500B2C3D4E7d0",
+            "state": "ONLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": ""
+          },
+          {
+            "name": "c0t5000C500B2C3D4E8d0",
+            "state": "OFFLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": "taken offline by the administrator"
+          },
+          {
+            "name": "c0t5000C500B2C3D4E9d0",
+            "state": "ONLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": ""
+          }
+        ]
+      }
+    ],
+    "scan": { "action": "scrub in progress since Sun Sep 27 11:40:00 2026", "pct": 42 }
+  }
+}

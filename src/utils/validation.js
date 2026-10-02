@@ -431,6 +431,23 @@ const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) =
   });
 };
 
+const itemSchemaOf = (rule, document) =>
+  rule.items && typeof rule.items === 'object' ? resolve(rule.items, document).rule : null;
+
+const walkItems = ({ item, values, scopes, base, document, errors, walk }) => {
+  values.forEach((entry, index) => {
+    const child = entry || {};
+    walk({
+      schema: item,
+      values: child,
+      scopes: [...scopes, child],
+      base: `${base}/${index}`,
+      document,
+      errors,
+    });
+  });
+};
+
 const walkObject = ({ schema, values, scopes, base, document, errors }) => {
   const required = requiredOf(schema, values);
   Object.entries(schema.properties || {}).forEach(([name, property]) => {
@@ -451,6 +468,11 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
       walkMap({ ...next, base: pointer, document, errors, walk: walkObject });
       return;
     }
+    const item = itemSchemaOf(rule, document);
+    if (item?.properties && Array.isArray(value)) {
+      const next = { item, values: value, scopes: [...scopes, value], base: pointer };
+      walkItems({ ...next, document, errors, walk: walkObject });
+    }
     const own = validateValue({ ...property, required: required.has(name) }, value, document);
     const failure = own.length > 0 ? own[0] : clientFailure(rule, value, values);
     if (failure) {
@@ -466,7 +488,10 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
  * objects and `additionalProperties` maps walked, maps within maps included,
  * pointers `/name`, `/sql/port`; a map's keys evaluated against its
  * `propertyNames`, a failing key reported as rule `propertyNames` at the
- * map's pointer with `params.key`), a property hidden by
+ * map's pointer with `params.key`; an array whose `items` is an object
+ * schema walked one element at a time, pointers `/servers/0/origin`, the
+ * array itself then evaluated for `minItems`, `maxItems` and its own
+ * client entries), a property hidden by
  * `dependsOn`/`showWhen` skipped, and the client-only `equals` and `custom`
  * entries a form schema may carry.
  *

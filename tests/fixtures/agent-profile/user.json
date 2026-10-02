@@ -1,0 +1,17 @@
+{
+  "id": 12,
+  "username": "Mark",
+  "name": "Mark",
+  "email": "person@example.com",
+  "auth_provider": "oidc",
+  "customer_id": "123456",
+  "issuer": "https://auth.example.com",
+  "subject": "8f2c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+  "role": "admin",
+  "organizations": [],
+  "preferred_language": null,
+  "preferred_mode": null,
+  "preferred_theme": null,
+  "preferred_motion": null,
+  "preferred_timezone": "America/Chicago"
+}

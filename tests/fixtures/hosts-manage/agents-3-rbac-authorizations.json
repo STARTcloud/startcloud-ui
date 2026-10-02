@@ -1,0 +1,20 @@
+{
+  "authorizations": [
+    {
+      "name": "solaris.zone.manage",
+      "short_description": "Manage zones",
+      "long_description": "Grants the ability to manage zones on the system."
+    },
+    {
+      "name": "solaris.zone.login",
+      "short_description": "Log in to zones",
+      "long_description": "Grants the ability to log in to any zone."
+    },
+    {
+      "name": "solaris.system.shutdown",
+      "short_description": "Shut down the system",
+      "long_description": "Grants the ability to shut down, reboot or halt the system, which is a longer sentence than fifty characters."
+    }
+  ],
+  "total": 3
+}

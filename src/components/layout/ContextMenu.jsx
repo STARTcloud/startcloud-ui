@@ -102,6 +102,7 @@ const ContextMenu = ({ menu, onClose }) => {
             <button
               type="button"
               className="dropdown-item"
+              data-menu-row={row.key}
               onClick={() => {
                 onClose();
                 row.onClick();

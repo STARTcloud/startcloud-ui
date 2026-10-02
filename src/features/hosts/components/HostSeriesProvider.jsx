@@ -202,6 +202,8 @@ const HostSeriesProvider = ({ signedIn, children }) => {
 
   useEventStream(SERIES.arc.event, data => take('arc', data));
 
+  useEventStream(SERIES['disk-io'].event, data => take('disk-io', data));
+
   const value = useMemo(
     () => ({ epoch: state.epoch, hosts: state.hosts, read, setQuery }),
     [state.epoch, state.hosts, read, setQuery]

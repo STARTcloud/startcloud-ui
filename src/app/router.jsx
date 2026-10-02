@@ -5,6 +5,7 @@ import { Navigate, Route, Routes, matchPath, useParams } from 'react-router-dom'
 
 import BrandLogo from '../components/common/BrandLogo';
 import NotAvailableStub from '../components/common/NotAvailableStub';
+import SignInPlacard from '../components/common/SignInPlacard';
 import { notificationsAdapterShape } from '../components/layout/NotificationsModal';
 import {
   ACTIVE_ORG_KEY,
@@ -62,14 +63,23 @@ import {
   pageContextShape,
   sidebar as catalogSidebar,
 } from '../features/catalog';
-import { ErrorPage } from '../features/errors';
+import { ErrorPage, hasServerFault } from '../features/errors';
 import {
+  AgentSettings,
+  DashboardPage,
+  DevicesPage,
   HostPage,
   HostsPage,
   MachinePage,
   MachinesPage,
+  ManagePage,
+  NetworkingPage,
+  StandaloneConsole,
+  StandaloneRdpConsole,
+  StoragePage,
   actionMenu as hostsActionMenu,
   footerPane as hostsFooterPane,
+  isServerRole,
   sidebar as hostsSidebar,
 } from '../features/hosts';
 import {
@@ -79,7 +89,11 @@ import {
   issuerUsers,
   sidebar as identitySidebar,
 } from '../features/identity';
-import { IntegrationsPage, issuerIntegrations } from '../features/integrations';
+import {
+  HyperweaverServicePage,
+  IntegrationsPage,
+  issuerIntegrations,
+} from '../features/integrations';
 import {
   CibaApprovePage,
   CodeDisplayPage,
@@ -147,7 +161,7 @@ import {
   verifyMail,
 } from '../features/profile';
 import { SearchPage } from '../features/search';
-import { SetupPage, setupApi } from '../features/setup';
+import { ServerSetup, SetupPage, ZoneRegister, setupApi } from '../features/setup';
 import { UserTermsPage, issuerTerms } from '../features/terms';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage, sidebar as vdiSidebar } from '../features/vdi';
@@ -319,9 +333,52 @@ const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
   };
 };
 
+const apiKeyProfile = async () => (await session.reload())?.user || null;
+
+const PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion', 'timezone'];
+
+const apiKeyPreferences = patch => {
+  const picked = Object.fromEntries(
+    Object.entries(patch).filter(([member]) => PREFERENCE_MEMBERS.includes(member))
+  );
+  return Object.keys(picked).length > 0 ? session.savePreferences(picked) : Promise.resolve();
+};
+
+/**
+ * The profile page's `account` adapter of an `apikey` host, the person
+ * behind hyperweaver-agent's key: the record from the session's own
+ * reload, the agent's `GET /api/user` in the identity provider's shape
+ * under the key's profile; `readOnly` on every key, because the agent
+ * serves no write of the record's details, with `manageUrl` the identity
+ * provider's profile page while a federated login minted the key
+ * (`issuerUrl`), so the page draws the details read-only with the
+ * Manage at identity provider link, and no link on a tray or typed key,
+ * whose record has no other home; on every key the Preferences card is
+ * editable through `preferences`, because the theme, the mode, the
+ * motion, the language and the time zone are this application's own
+ * choices of the person (identity contract decision 168), the branding
+ * contract's five members written through the session's
+ * `PATCH /api/user/preferences` and kept by the agent; no password,
+ * email, deletion, organizations or service accounts, the agent serving
+ * none.
+ *
+ * @param {Object} options - The session's side
+ * @param {string} options.issuerUrl - The identity provider behind the key, empty for a plain one
+ * @returns {Object} The adapter
+ */
+const apiKeyAccountFor = ({ issuerUrl }) => ({
+  profile: apiKeyProfile,
+  mutability: 'readOnly',
+  preferences: apiKeyPreferences,
+  ...(issuerUrl ? { manageUrl: `${issuerUrl}/user/profile` } : {}),
+});
+
 const profileAccountFor = ({ status, account }) => {
   if (authMethod(status) === 'cookie') {
     return guestOnly(account.organizations) ? issuerGuestAccount : issuerAccount;
+  }
+  if (authMethod(status) === 'apikey') {
+    return apiKeyAccountFor({ issuerUrl: account.issuerUrl });
   }
   return backendAccountFor({
     user: account.user,
@@ -459,6 +516,7 @@ const PAGE_TITLES = {
   '/user/applications': 'applications.title',
   '/user/terms': 'userTerms.title',
   '/user/integrations': 'integrations.title',
+  '/user/integrations/hyperweaver': 'integrations.hyperweaver.title',
   '/org-console': 'orgConsole.pageTitle',
   '/org-console/:tab': 'orgConsole.pageTitle',
   '/notifications': 'inbox.title',
@@ -467,10 +525,23 @@ const PAGE_TITLES = {
   '/admin/terms': 'admin.terms.title',
   '/admin/email-templates': 'admin.emailTemplates.title',
   '/setup': 'setup.title',
+  '/setup/server': 'auth.serverSetup.serverSetupTitle',
+  '/setup/zone': 'auth.zoneRegister.registerBtn',
   '/vm/:instance': 'vdi.vm.title',
   '/hosts/:id': 'hosts.host.title',
   '/hosts/:id/machines': 'hosts.machines.pageTitle',
   '/hosts/:id/machines/:name': 'hosts.machine.title',
+  '/hosts/:id/machines/:name/settings': 'navbar.contextTabs.settings',
+  '/hosts/:id/machines/:name/snapshots': 'navbar.contextTabs.snapshots',
+  '/hosts/:id/machines/:name/provisioning': 'navbar.contextTabs.provisioning',
+  '/hosts/:id/machines/:name/console/vnc': 'chrome.sidebarMenu.vncConsole',
+  '/hosts/:id/machines/:name/console/rdp': 'console.rdpConsoleDisplay.vrdpLabel',
+  '/hosts/:id/networking': 'host.networkingHeader.title',
+  '/hosts/:id/manage': 'pages.hostManage.pageTitle',
+  '/hosts/:id/devices': 'host.deviceHeader.title',
+  '/hosts/:id/storage': 'host.storageHeader.title',
+  '/hosts/:id/settings': 'navbar.contextTabs.agent',
+  '/hosts/:id/settings/:name': 'navbar.contextTabs.agent',
   '/authenticator': 'auth:tfa.title',
   '/authenticator-method': 'auth:tfa.choose.title',
   '/passwordRecovery': 'auth:recovery.title',
@@ -658,9 +729,26 @@ Stub.propTypes = {
   token: PropTypes.string.isRequired,
 };
 
+/**
+ * The page a hosts route draws for a visitor on a host that needs a
+ * session, the sign-in placard under the route's own title with this
+ * page as the return path: the page itself is not mounted, so no provider
+ * of the hosts feature reads anything without a credential, the rule the
+ * hosts sidebar, the Controls menu and the footer's pane keep.
+ */
+const SignInStub = ({ titleKey, signIn }) => {
+  const { t } = useTranslation();
+  return <SignInPlacard title={t(titleKey)} user={null} onSignIn={signIn} />;
+};
+
+SignInStub.propTypes = {
+  titleKey: PropTypes.string.isRequired,
+  signIn: PropTypes.func.isRequired,
+};
+
 const AdminRoute = ({ globalAdmin, user = null, page = 'config' }) => {
   const status = useStatus();
-  const admin = adminAdapterFor(status);
+  const admin = useMemo(() => adminAdapterFor(status), [status]);
   if (!hasFeature(status, 'admin')) {
     return <Stub titleKey={titleOf('/admin')} token="admin" />;
   }
@@ -689,6 +777,9 @@ const AdminHomeRoute = ({ globalAdmin, user = null }) => {
   const admin = adminAdapterFor(status);
   if (hasFeature(status, 'admin') && admin.organizations) {
     return <Navigate to="/admin/organizations" replace />;
+  }
+  if (hasFeature(status, 'admin') && configNamesOf(status).length > 0) {
+    return <Navigate to="/admin/config" replace />;
   }
   return <AdminRoute globalAdmin={globalAdmin} user={user} />;
 };
@@ -835,14 +926,86 @@ MachinesRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
-const MachineRoute = ({ context, organizations }) => {
+const NetworkingRoute = ({ context }) => {
+  const { id } = useParams();
+  return <NetworkingPage id={id} context={context} />;
+};
+
+NetworkingRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const ManageRoute = ({ context }) => {
+  const { id } = useParams();
+  return <ManagePage id={id} context={context} />;
+};
+
+ManageRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const DevicesRoute = ({ context }) => {
+  const { id } = useParams();
+  return <DevicesPage id={id} context={context} />;
+};
+
+DevicesRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const StorageRoute = ({ context }) => {
+  const { id } = useParams();
+  return <StoragePage id={id} context={context} />;
+};
+
+StorageRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+/**
+ * The Agent settings route of a host and, with the `name` segment, one
+ * configuration file of it: the page under the shell's one step-up
+ * window, `GuardProvider` the way `AdminRoute` mounts it, because the
+ * shared configuration engine runs the restart and every action through
+ * `useGuard`.
+ */
+const AgentSettingsRoute = ({ context }) => {
+  const { id, name = '' } = useParams();
+  return (
+    <GuardProvider stepUp={stepUp} hasPassword={Boolean(context.user?.has_local_auth)}>
+      <AgentSettings id={id} name={name} context={context} />
+    </GuardProvider>
+  );
+};
+
+AgentSettingsRoute.propTypes = {
+  context: pageContextShape.isRequired,
+};
+
+const MachineRoute = ({ context, organizations, page = 'overview' }) => {
   const { id, name } = useParams();
-  return <MachinePage id={id} name={name} context={context} organizations={organizations} />;
+  return (
+    <MachinePage id={id} name={name} context={context} organizations={organizations} page={page} />
+  );
 };
 
 MachineRoute.propTypes = {
   context: pageContextShape.isRequired,
   organizations: PropTypes.array.isRequired,
+  page: PropTypes.string,
+};
+
+const ConsoleRoute = ({ kind }) => {
+  const { id, name } = useParams();
+  return kind === 'rdp' ? (
+    <StandaloneRdpConsole id={id} name={name} />
+  ) : (
+    <StandaloneConsole id={id} name={name} />
+  );
+};
+
+ConsoleRoute.propTypes = {
+  kind: PropTypes.oneOf(['vnc', 'rdp']).isRequired,
 };
 
 const ProviderRoute = ({ collection, context }) => {
@@ -1088,6 +1251,40 @@ BackendProfileRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
 };
 
+const ApiKeyProfileRoute = ({ account, globalAdmin }) => {
+  const { issuerUrl } = account;
+  const adapter = useMemo(() => apiKeyAccountFor({ issuerUrl }), [issuerUrl]);
+  return (
+    <ProfilePage
+      session={session}
+      events={events}
+      returnTo={returnTo}
+      account={adapter}
+      basePath="/profile"
+      activeOrgUuid={account.activeOrgUuid}
+      organizations={account.organizations}
+      admin={globalAdmin}
+      user={account.user}
+      loaded={account.loaded}
+    />
+  );
+};
+
+ApiKeyProfileRoute.propTypes = {
+  account: sessionStateShape.isRequired,
+  globalAdmin: PropTypes.bool.isRequired,
+};
+
+const localProfileFor = ({ backend, apiKey, account, status, globalAdmin }) => {
+  if (backend) {
+    return <BackendProfileRoute account={account} status={status} globalAdmin={globalAdmin} />;
+  }
+  if (apiKey) {
+    return <ApiKeyProfileRoute account={account} globalAdmin={globalAdmin} />;
+  }
+  return null;
+};
+
 const OrgConsoleRoute = ({ cookie, account, globalAdmin }) => {
   const { tab = '' } = useParams();
   const segment = ORG_CONSOLE_SEGMENTS.includes(tab) ? tab : '';
@@ -1179,8 +1376,14 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications, t
       token: 'integrations',
     },
     {
+      path: '/user/integrations/hyperweaver',
+      open: cookie && hasFeature(status, 'integrations'),
+      element: <HyperweaverServicePage integrations={issuerIntegrations} fallback={notFound} />,
+      token: 'integrations',
+    },
+    {
       path: '/notifications',
-      open: cookie && hasFeature(status, 'inbox') && Boolean(notifications),
+      open: hasFeature(status, 'inbox') && Boolean(notifications),
       element: notifications ? <InboxPage notifications={notifications} /> : null,
       token: 'inbox',
     },
@@ -1223,40 +1426,138 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
 ];
 
 /**
- * The hosts feature's three routes, the host page at `/hosts/:id`, the
- * machines of a host at `/hosts/:id/machines` and the machine page at
- * `/hosts/:id/machines/:name`, each open while the host advertises
- * `hosts` and the not-available stub otherwise; the machine page is
- * handed the session's memberships, by whose names it draws the
- * organizations a machine belongs to.
+ * The hosts feature's fourteen routes, the host page at `/hosts/:id`, the
+ * machines of a host at `/hosts/:id/machines`, the machine page at
+ * `/hosts/:id/machines/:name`, its settings at
+ * `/hosts/:id/machines/:name/settings`, its snapshots at
+ * `/hosts/:id/machines/:name/snapshots`, its provisioning at
+ * `/hosts/:id/machines/:name/provisioning`, its full-window VNC console
+ * at `/hosts/:id/machines/:name/console/vnc` and its full-window RDP
+ * console at `/hosts/:id/machines/:name/console/rdp`, the networking of
+ * a host at `/hosts/:id/networking`, its Manage page at
+ * `/hosts/:id/manage`, its devices at `/hosts/:id/devices`, its
+ * storage at `/hosts/:id/storage`, its agent's settings at
+ * `/hosts/:id/settings` and one configuration file of the agent at
+ * `/hosts/:id/settings/:name`, the hosts feature's mount of the shared
+ * configuration engine, each open while the host advertises
+ * `hosts` and the not-available stub otherwise, and each the sign-in
+ * placard while the host needs a session and none is held
+ * (`signedOut`), so no page of the feature reads without a credential;
+ * the machine page is handed the session's memberships, by whose names
+ * it draws the organizations a machine belongs to, and the page of it
+ * the route names.
  *
  * @param {Object} options - The router's side
  * @param {boolean} options.hosts - Whether the host advertises `hosts`
+ * @param {boolean} options.signedOut - Whether the host needs a session and none is held
  * @param {Object} options.context - The page context
  * @param {Array<Object>} options.organizations - The session's memberships
- * @returns {Array} The three routes
+ * @returns {Array} The fourteen routes
  */
-const hostsRoutes = ({ hosts, context, organizations }) =>
-  gatedRoutes([
-    { path: '/hosts/:id', open: hosts, element: <HostRoute context={context} />, token: 'hosts' },
-    {
-      path: '/hosts/:id/machines',
+const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
+  const page = (path, element) =>
+    signedOut ? <SignInStub titleKey={titleOf(path)} signIn={context.signIn} /> : element;
+  return gatedRoutes(
+    [
+      { path: '/hosts/:id', element: <HostRoute context={context} /> },
+      { path: '/hosts/:id/machines', element: <MachinesRoute context={context} /> },
+      {
+        path: '/hosts/:id/machines/:name',
+        element: <MachineRoute context={context} organizations={organizations} />,
+      },
+      {
+        path: '/hosts/:id/machines/:name/settings',
+        element: <MachineRoute context={context} organizations={organizations} page="settings" />,
+      },
+      {
+        path: '/hosts/:id/machines/:name/snapshots',
+        element: <MachineRoute context={context} organizations={organizations} page="snapshots" />,
+      },
+      {
+        path: '/hosts/:id/machines/:name/provisioning',
+        element: (
+          <MachineRoute context={context} organizations={organizations} page="provisioning" />
+        ),
+      },
+      { path: '/hosts/:id/machines/:name/console/vnc', element: <ConsoleRoute kind="vnc" /> },
+      { path: '/hosts/:id/machines/:name/console/rdp', element: <ConsoleRoute kind="rdp" /> },
+      { path: '/hosts/:id/networking', element: <NetworkingRoute context={context} /> },
+      { path: '/hosts/:id/manage', element: <ManageRoute context={context} /> },
+      { path: '/hosts/:id/devices', element: <DevicesRoute context={context} /> },
+      { path: '/hosts/:id/storage', element: <StorageRoute context={context} /> },
+      { path: '/hosts/:id/settings', element: <AgentSettingsRoute context={context} /> },
+      { path: '/hosts/:id/settings/:name', element: <AgentSettingsRoute context={context} /> },
+    ].map(({ path, element }) => ({
+      path,
       open: hosts,
-      element: <MachinesRoute context={context} />,
+      element: page(path, element),
       token: 'hosts',
-    },
-    {
-      path: '/hosts/:id/machines/:name',
-      open: hosts,
-      element: <MachineRoute context={context} organizations={organizations} />,
-      token: 'hosts',
-    },
-  ]);
+    }))
+  );
+};
+
+/**
+ * The three setup routes: the setup page at `/setup` while the host
+ * advertises `setup`, the zone register at `/setup/zone` on the
+ * `zoneweaver-agent` role behind `setup`, and the server setup at
+ * `/setup/server` on the `hyperweaver-server` role behind `hosts`; the
+ * first two stand while setup is owed too.
+ *
+ * @param {Object} options - The router's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {boolean} options.hosts - Whether the host advertises `hosts`
+ * @param {Object} options.context - The page context
+ * @returns {{ setupRoute: import('react').ReactElement|null, zoneRoute: import('react').ReactElement, serverRoute: import('react').ReactElement }} The routes
+ */
+const setupRoutesOf = ({ status, hosts, context }) => ({
+  setupRoute: hasFeature(status, 'setup') ? (
+    <Route path="/setup" element={<SetupPage setup={setupApi} />} />
+  ) : null,
+  zoneRoute: (
+    <Route
+      path="/setup/zone"
+      element={gated(
+        status.role === 'zoneweaver-agent' && hasFeature(status, 'setup'),
+        <ZoneRegister />,
+        titleOf('/setup/zone'),
+        'setup'
+      )}
+    />
+  ),
+  serverRoute: (
+    <Route
+      path="/setup/server"
+      element={gated(
+        hosts && isServerRole(status),
+        <ServerSetup context={context} />,
+        titleOf('/setup/server'),
+        'hosts'
+      )}
+    />
+  ),
+});
+
+/**
+ * The page of a route the router does not know: the ErrorPage with the
+ * fault the server stamped on `<html>` on any host, the ErrorPage's 404
+ * on a `cookie` host, and home elsewhere.
+ */
+const unknownRouteFor = ({ cookie, ticketUrl, admin }) => {
+  if (hasServerFault()) {
+    return <ErrorPage ticketUrl={ticketUrl} admin={admin} />;
+  }
+  if (cookie) {
+    return <ErrorPage ticketUrl={ticketUrl} admin={admin} notFound />;
+  }
+  return <Navigate to="/" />;
+};
 
 const homeElementFor = ({
   cookie,
   fleet,
   hosts,
+  signedOut,
+  status,
   account,
   collections,
   context,
@@ -1273,7 +1574,16 @@ const homeElementFor = ({
     return <FleetPage context={context} mode={mode} />;
   }
   if (hosts) {
-    return <HostsPage context={context} />;
+    const server = isServerRole(status);
+    if (signedOut) {
+      return (
+        <SignInStub
+          titleKey={server ? 'hosts.page.title' : 'dashboard.dashboard.infrastructureOverview'}
+          signIn={context.signIn}
+        />
+      );
+    }
+    return server ? <HostsPage context={context} /> : <DashboardPage context={context} />;
   }
   return <HomePage collections={collections} context={context} />;
 };
@@ -1281,21 +1591,30 @@ const homeElementFor = ({
 /**
  * Every route the app serves: the fleet page at `/` and the VM page at
  * `/vm/:instance` while the host advertises `fleet`, the hosts page at
- * `/` with the host page at `/hosts/:id`, the machines of a host at
+ * `/` on the `hyperweaver-server` role and the dashboard at `/` on an
+ * agent role, with the host page at `/hosts/:id`, the machines of a host at
  * `/hosts/:id/machines` and the machine page at
- * `/hosts/:id/machines/:name` while the host advertises `hosts`, else the home page
+ * `/hosts/:id/machines/:name` while the host advertises `hosts`, every
+ * one of them and the hosts home the sign-in placard for a visitor on a
+ * host that needs a session, so nothing of the hosts feature reads
+ * without a credential, else the home page
  * and the collection routes from the registry in the host's order (the
  * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
  * to sign in with `/` as the return path), the setup page at `/setup` while the host
  * advertises `setup`, every other route sent there until setup is complete
- * and the page drawing its complete state after, each feature route gated by
+ * and the page drawing its complete state after, hyperweaver-ui's server
+ * setup at `/setup/server` on the `hyperweaver-server` role behind `hosts`
+ * and its zone register at `/setup/zone` on the `zoneweaver-agent` role
+ * behind `setup`, reachable while setup is owed too, each feature route gated by
  * its feature token or by the host's first `auth` token (the search page
  * at `/search` behind `search`, the token the navbar's box answers to),
  * and the identity
  * contract's five groups behind the `cookie` token and their feature
  * tokens, a route the host lacks rendering `NotAvailableStub` instead
- * (`/user/integrations` drawing the ErrorPage's 404 while the issuer's
- * answer carries no `services`); the
+ * (`/user/integrations` and the Hyperweaver service's own page at
+ * `/user/integrations/hyperweaver`, the `settings_url` its row names,
+ * each drawing the ErrorPage's 404 while the issuer's answer carries no
+ * `services`); the
  * shared admin pages at `/admin/config/:name` and `/admin/system` on
  * every host, the Configuration page drawing the named file of
  * `status.config`, the bare `/admin/config` redirecting to the first
@@ -1304,9 +1623,16 @@ const homeElementFor = ({
  * the identity feature's Configuration entry; the
  * sign-in, register and profile pages take the session state, whose
  * adopted session alone sends a signed-in person off a sign-in page or
- * draws the profile; on a `cookie` host
- * `/error` and every unknown route draw the identity contract's ErrorPage,
- * every other host sending an unknown route home; on a `backend` host the
+ * draws the profile, the sign-in page answering `/login` on an `apikey`
+ * host too, hyperweaver-agent's six sign-ins, and `/profile` there the
+ * one profile page over the key's record read-only; `/error` draws the
+ * identity contract's ErrorPage on every host, as does any route the
+ * served page reached with a fault the server stamped on `<html>`
+ * (`data-error-status`, the way a backend answers `index.html` in place
+ * of a failed browser navigation), the admin details fold on the issuer
+ * alone; on a `cookie` host every unknown route draws the ErrorPage's
+ * 404 too, every other host sending an unstamped unknown route home; on
+ * a `backend` host the
  * identity feature's Users and All organizations pages answer
  * `/admin/users` and `/admin/organizations` over the host's own accounts
  * and the bare `/admin` redirects to the organizations; one account's
@@ -1326,17 +1652,18 @@ const AppRoutes = ({
   const status = useStatus();
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
+  const apiKey = authMethod(status) === 'apikey';
   const fleet = hasFeatureStrict(status, 'fleet');
   const hosts = hasFeatureStrict(status, 'hosts');
+  const signedOut = authMethod(status) !== 'none' && !account.user;
   const { organizations, oidc } = account;
-  const setupRoute = hasFeature(status, 'setup') ? (
-    <Route path="/setup" element={<SetupPage setup={setupApi} />} />
-  ) : null;
+  const { setupRoute, zoneRoute, serverRoute } = setupRoutesOf({ status, hosts, context });
 
   if (hasFeature(status, 'setup') && !setupComplete) {
     return (
       <Routes>
         {setupRoute}
+        {zoneRoute}
         <Route path="*" element={<Navigate to="/setup" replace />} />
       </Routes>
     );
@@ -1346,6 +1673,8 @@ const AppRoutes = ({
     cookie,
     fleet,
     hosts,
+    signedOut,
+    status,
     account,
     collections,
     context,
@@ -1356,6 +1685,8 @@ const AppRoutes = ({
   return (
     <Routes>
       {setupRoute}
+      {zoneRoute}
+      {serverRoute}
       <Route path="/" element={homeElement} />
       <Route
         path="/vm/:instance"
@@ -1367,7 +1698,7 @@ const AppRoutes = ({
           )
         }
       />
-      {hostsRoutes({ hosts, context, organizations })}
+      {hostsRoutes({ hosts, signedOut, context, organizations })}
       <Route path="/about" element={<AboutRoute oidc={oidc} clientId={account.clientId} />} />
       <Route
         path="/search"
@@ -1398,7 +1729,7 @@ const AppRoutes = ({
       <Route
         path="/login"
         element={
-          backend || cookie ? (
+          backend || cookie || apiKey ? (
             <LoginPage
               session={session}
               events={events}
@@ -1460,11 +1791,8 @@ const AppRoutes = ({
           key={path}
           path={path}
           element={
-            backend ? (
-              <BackendProfileRoute account={account} status={status} globalAdmin={globalAdmin} />
-            ) : (
-              gated(cookie, issuerProfile({ account, globalAdmin }), titleOf('/profile'), 'backend')
-            )
+            localProfileFor({ backend, apiKey, account, status, globalAdmin }) ||
+            gated(cookie, issuerProfile({ account, globalAdmin }), titleOf('/profile'), 'backend')
           }
         />
       ))}
@@ -1491,18 +1819,13 @@ const AppRoutes = ({
       {collections.flatMap(collection =>
         collectionRoutes({ collection, collections, organizations, context })
       )}
-      {cookie ? (
-        <Route path="/error" element={<ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} />} />
-      ) : null}
+      <Route
+        path="/error"
+        element={<ErrorPage ticketUrl={ticketUrl} admin={cookie && globalAdmin} />}
+      />
       <Route
         path="*"
-        element={
-          cookie ? (
-            <ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} notFound />
-          ) : (
-            <Navigate to="/" />
-          )
-        }
+        element={unknownRouteFor({ cookie, ticketUrl, admin: cookie && globalAdmin })}
       />
     </Routes>
   );

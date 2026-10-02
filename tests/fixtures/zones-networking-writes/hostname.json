@@ -1,0 +1,7 @@
+{
+  "hostname": "zone-1",
+  "nodename_file": "zone-9",
+  "system_hostname": "zone-1",
+  "matches": false,
+  "pending_hostname": "zone-9"
+}

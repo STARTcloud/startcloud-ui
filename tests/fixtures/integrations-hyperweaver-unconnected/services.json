@@ -1,0 +1,12 @@
+{
+  "services": [
+    {
+      "id": "example-service",
+      "name": "Example service",
+      "icon_url": "https://example.com/mark.svg",
+      "status": "connected",
+      "connected_at": "2026-09-01T12:00:00Z",
+      "settings_url": "https://example.com/settings"
+    }
+  ]
+}

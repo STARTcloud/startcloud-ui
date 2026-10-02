@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "task_id": "c3000000-0000-4000-8000-000000000002",
+  "operation": "artifact_download",
+  "status": "pending",
+  "message": "Download task queued",
+  "filename": "rocky-9.4.iso",
+  "url": "https://mirror.example.com/pub/rocky-9.4.iso",
+  "storage_location": {
+    "id": "7c1e5d3a-0000-4000-8000-000100000001",
+    "name": "ISO library",
+    "path": "/rpool/iso",
+    "type": "iso"
+  }
+}

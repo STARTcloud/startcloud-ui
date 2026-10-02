@@ -1,0 +1,31 @@
+{
+  "log_files": [
+    {
+      "name": "messages",
+      "displayName": "messages",
+      "type": "system",
+      "path": "/var/adm/messages",
+      "size": 184320,
+      "sizeFormatted": "180.0 KB",
+      "modified": "2026-09-28T10:18:30.000Z"
+    },
+    {
+      "name": "syslog",
+      "displayName": "syslog",
+      "type": "system",
+      "path": "/var/log/syslog",
+      "size": 92160,
+      "sizeFormatted": "90.0 KB",
+      "modified": "2026-09-28T10:18:30.000Z"
+    },
+    {
+      "name": "authlog",
+      "displayName": "authlog",
+      "type": "authentication",
+      "path": "/var/log/authlog",
+      "size": 20480,
+      "sizeFormatted": "20.0 KB",
+      "modified": "2026-09-28T10:14:02.000Z"
+    }
+  ]
+}

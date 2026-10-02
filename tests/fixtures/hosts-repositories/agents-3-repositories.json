@@ -1,0 +1,45 @@
+{
+  "publishers": [
+    {
+      "name": "omnios",
+      "type": "origin",
+      "status": "online",
+      "location": "https://pkg.omnios.org/r151054/core/",
+      "enabled": true,
+      "proxy": "F",
+      "sticky": true,
+      "search_first": false
+    },
+    {
+      "name": "omnios",
+      "type": "mirror",
+      "status": "online",
+      "location": "https://mirror.omnios.org/r151054/core/",
+      "enabled": true,
+      "proxy": "F",
+      "sticky": false,
+      "search_first": false
+    },
+    {
+      "name": "extra.omnios",
+      "type": "origin",
+      "status": "online",
+      "location": "https://pkg.omnios.org/r151054/extra/",
+      "enabled": true,
+      "proxy": "T",
+      "sticky": false,
+      "search_first": false
+    },
+    {
+      "name": "ooce",
+      "type": "origin",
+      "status": "online",
+      "location": "https://pkg.omnios.org/r151054/braich/",
+      "enabled": false,
+      "proxy": "F",
+      "sticky": false,
+      "search_first": false
+    }
+  ],
+  "total": 4
+}

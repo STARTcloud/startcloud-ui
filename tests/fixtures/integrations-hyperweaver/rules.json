@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {},
+  "forms": {
+    "integration-hyperweaver": {
+      "type": "object",
+      "required": ["servers", "deploy_target"],
+      "properties": {
+        "servers": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["origin"],
+            "properties": {
+              "origin": { "type": "string", "pattern": "^https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$" },
+              "label": { "type": "string", "maxLength": 100 },
+              "default": { "type": "boolean" }
+            }
+          }
+        },
+        "deploy_target": { "type": "string" }
+      }
+    }
+  }
+}

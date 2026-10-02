@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "machine_name": "web-1",
+  "operation": "zone_modify",
+  "status": "pending_power_cycle",
+  "requires_restart": true,
+  "pending_changes": { "ram": "8G" },
+  "message": "Changes accrued for web-1 — they apply at the next zone boot"
+}

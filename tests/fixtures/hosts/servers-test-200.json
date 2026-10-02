@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "message": "agent-7.example.com answered",
+  "serverInfo": {
+    "hostname": "agent-7.example.com",
+    "agent": "hyperweaver-agent",
+    "version": "1.2.0"
+  }
+}

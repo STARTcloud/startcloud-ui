@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 
 import { writesAny } from '../../utils/membership';
+import { integrationsShape } from '../integrations/api/integrations';
 
 import { isReadOnly } from './components/ManageLink';
 
@@ -16,7 +17,9 @@ import { isReadOnly } from './components/ManageLink';
  * for and draws nothing without, the identity provider carrying
  * `details`, `address`, `phone` (`{ send, verify }`, the number changed
  * through a code), `email`, `password`, `tfa`, `passkeys`,
- * `backupCodes`, `linked`, `sessions`, `favorites`, `preferences` and
+ * `backupCodes`, `linked`, `sessions`, `favorites`, `preferences`,
+ * `integrations` (the connected services' reads and writes, the
+ * Hyperweaver card under the Preferences card) and
  * `deletion`, and a UI backend with accounts of its own carrying
  * `details`, `address`, `phone` (`{ set }`, the number written plainly),
  * `password`, `email`, `deletion`, `verification` (the emailed
@@ -45,6 +48,7 @@ export const accountShape = PropTypes.shape({
   sessions: PropTypes.object,
   favorites: PropTypes.object,
   preferences: PropTypes.func,
+  integrations: integrationsShape,
   deletion: PropTypes.func,
   organizations: PropTypes.shape({
     list: PropTypes.func.isRequired,

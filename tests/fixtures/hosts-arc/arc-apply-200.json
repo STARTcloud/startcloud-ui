@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "ZFS tunables written",
+  "results": { "reboot_required": true, "apply_method": "persistent" }
+}

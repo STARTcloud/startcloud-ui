@@ -43,6 +43,8 @@
       "bridgeadapter2": "Intel(R) Ethernet Connection",
       "macaddress2": "080027AABBCC",
       "cableconnected2": "on",
+      "Forwarding(0)": "ssh,tcp,127.0.0.1,2222,,22",
+      "Forwarding(1)": "web,tcp,,8443,,443",
       "guest_info": {
         "ips": ["192.168.1.50"],
         "source": "guest-agent",
@@ -106,12 +108,32 @@
     "bridgeadapter2": "Intel(R) Ethernet Connection",
     "macaddress2": "080027AABBCC",
     "cableconnected2": "on",
+    "Forwarding(0)": "ssh,tcp,127.0.0.1,2222,,22",
+    "Forwarding(1)": "web,tcp,,8443,,443",
     "guest_info": {
       "ips": ["192.168.1.50"],
       "source": "guest-agent",
       "agent_responding": true,
       "checked_at": "2026-09-27T00:00:00Z"
-    }
+    },
+    "nat_forwards": [
+      {
+        "name": "ssh",
+        "protocol": "tcp",
+        "host_ip": "127.0.0.1",
+        "host_port": 2222,
+        "guest_ip": "",
+        "guest_port": 22
+      },
+      {
+        "name": "web",
+        "protocol": "tcp",
+        "host_ip": "",
+        "host_port": 8443,
+        "guest_ip": "",
+        "guest_port": 443
+      }
+    ]
   },
   "active_vnc_session": null,
   "pending_tasks": [],

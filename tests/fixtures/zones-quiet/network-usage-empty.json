@@ -1,0 +1,10 @@
+{
+  "totalCount": 0,
+  "returnedCount": 0,
+  "queryTime": 3,
+  "sampling": {
+    "applied": true,
+    "strategy": "sql-ntile-optimized",
+    "entityCount": 0
+  }
+}

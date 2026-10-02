@@ -1,0 +1,16 @@
+{
+  "config": [
+    { "module": "cpumem-retire", "version": "1.1", "description": "CPU/Memory Retire Agent" },
+    { "module": "disk-transport", "version": "1.0", "description": "Disk Transport Agent" },
+    { "module": "zfs-diagnosis", "version": "1.0", "description": "ZFS Diagnosis Engine" },
+    { "module": "zfs-retire", "version": "1.0", "description": "ZFS Retire Agent" },
+    { "module": "eft", "version": "1.16", "description": "eft diagnosis engine" },
+    {
+      "module": "fmd-self-diagnosis",
+      "version": "1.0",
+      "description": "Fault Manager Self-Diagnosis"
+    },
+    { "module": "ip-transport", "version": "2.0", "description": "IP Transport Agent" },
+    { "module": "syslog-msgs", "version": "1.1", "description": "Syslog Messaging Agent" }
+  ]
+}

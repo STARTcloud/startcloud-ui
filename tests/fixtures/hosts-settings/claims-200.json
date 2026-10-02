@@ -1,0 +1,21 @@
+{
+  "sub": "b3d1e0c2-8a4f-4c6e-9d2b-1f5a7c9e0b11",
+  "name": "Mark Gilbert",
+  "preferred_username": "mark",
+  "email": "mark@example.com",
+  "email_verified": true,
+  "organizations": [
+    {
+      "uuid": "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+      "name": "Acme",
+      "roles": ["OWNER"],
+      "primary": true
+    },
+    {
+      "uuid": "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622",
+      "name": "Prominic",
+      "roles": ["ADMIN"],
+      "primary": false
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "machines": [
+    { "name": "web-1", "status": "running", "brand": "bhyve", "hypervisor": "bhyve" },
+    { "name": "web-2", "status": "installed", "brand": "bhyve", "hypervisor": "bhyve" }
+  ],
+  "total": 2
+}

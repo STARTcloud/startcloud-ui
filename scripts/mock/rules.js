@@ -8,6 +8,7 @@ const EMAIL_LABEL = '[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?';
 const EMAIL = `${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`;
 const NAME_FIRST = '[^\\x00-\\x40\\x5B-\\x60\\x7B-\\x7F]';
 const NAME_REST = '[^\\x00-\\x1F\\x21-\\x26\\x28-\\x2C\\x2F-\\x40\\x5B-\\x60\\x7B-\\x7F]';
+const ORIGIN = '^https://[A-Za-z0-9.-]+(?::[0-9]{1,5})?$';
 const TEXT = { type: 'string' };
 
 const ref = name => ({ $ref: `#/$defs/${name}` });
@@ -106,6 +107,24 @@ const FORMS = {
     ['email']
   ),
   joinRequest: form({ message: TEXT }),
+  'integration-hyperweaver': form(
+    {
+      servers: {
+        type: 'array',
+        maxItems: 20,
+        items: form(
+          {
+            origin: { type: 'string', pattern: ORIGIN },
+            label: bounded(100),
+            default: { type: 'boolean' },
+          },
+          ['origin']
+        ),
+      },
+      deploy_target: TEXT,
+    },
+    ['servers', 'deploy_target']
+  ),
 };
 
 /**

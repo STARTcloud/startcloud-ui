@@ -1,0 +1,11 @@
+{
+  "id": 12,
+  "name": "Mark",
+  "description": "Created by the tray Open handoff 2026-09-27T21:44:00-05:00",
+  "role": "admin",
+  "created_at": "2026-09-27T21:44:00-05:00",
+  "last_used": "2026-09-27T21:58:10-05:00",
+  "auth_provider": "oidc",
+  "email": "person@example.com",
+  "customer_id": "123456"
+}

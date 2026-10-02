@@ -1,0 +1,7 @@
+{
+  "nameservers": ["10.0.0.1"],
+  "search_domains": [],
+  "domain": "",
+  "options": [],
+  "raw": "nameserver 10.0.0.1\n"
+}

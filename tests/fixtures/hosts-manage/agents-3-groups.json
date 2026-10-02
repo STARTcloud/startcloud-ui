@@ -1,0 +1,8 @@
+{
+  "groups": [
+    { "groupname": "staff", "gid": 10, "members": [] },
+    { "groupname": "deploy", "gid": 1002, "members": ["mark"] },
+    { "groupname": "operators", "gid": 1100, "members": ["mark", "deploy", "backup", "ci"] }
+  ],
+  "total": 3
+}

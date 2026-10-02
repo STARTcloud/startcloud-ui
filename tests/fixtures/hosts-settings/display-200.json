@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "machine_name": "dev-1",
+  "width": 1280,
+  "height": 720,
+  "depth": 32,
+  "display": 0,
+  "message": "Display of dev-1 set to 1280x720"
+}

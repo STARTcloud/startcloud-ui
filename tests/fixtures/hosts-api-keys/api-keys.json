@@ -1,0 +1,22 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "name": "Initial-Setup",
+      "description": "Initial bootstrap API key",
+      "is_active": true,
+      "last_used": "2026-09-27T09:12:00.000Z",
+      "created_at": "2026-08-20T10:00:00.000Z",
+      "key": "hwk_seed_0001_initial"
+    },
+    {
+      "id": 2,
+      "name": "old-laptop",
+      "description": "Revoked when the laptop was retired",
+      "is_active": false,
+      "last_used": null,
+      "created_at": "2026-07-01T10:00:00.000Z",
+      "key": ""
+    }
+  ]
+}

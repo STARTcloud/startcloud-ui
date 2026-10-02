@@ -12,9 +12,11 @@ import {
   hasDevices,
   isUnknownMachine,
   machineCounts,
+  machineRoute,
   matchesMachine,
   natForwardsOf,
   nicSummary,
+  nounKeyOf,
   organizationsOf,
   parseTags,
   provisionerOf,
@@ -26,6 +28,7 @@ import {
   systemLine,
   tagsOf,
   tagsText,
+  taskMachineOf,
   zoneFacts,
   zoneHardware,
   zoneNicSummary,
@@ -110,6 +113,35 @@ describe('detailKey', () => {
   it('answers the prefix every machine of a host begins with for an empty name', () => {
     expect(detailKey('1', 'dev-1').startsWith(detailKey('1', ''))).toBe(true);
     expect(detailKey('12', 'dev-1').startsWith(detailKey('1', ''))).toBe(false);
+  });
+});
+
+describe('machineRoute', () => {
+  it('names the page of a machine, its name encoded', () => {
+    expect(machineRoute('1', 'dev-1')).toBe('/hosts/1/machines/dev-1');
+    expect(machineRoute('self', 'web 1/a')).toBe('/hosts/self/machines/web%201%2Fa');
+  });
+});
+
+describe('taskMachineOf', () => {
+  it('reads machine_name of a hyperweaver-agent row and zone_name of a zoneweaver-agent row', () => {
+    expect(taskMachineOf({ id: 'a1', machine_name: 'dev-1' })).toBe('dev-1');
+    expect(taskMachineOf({ id: 'b2', zone_name: 'web-1' })).toBe('web-1');
+  });
+
+  it('answers empty for a row that names no machine', () => {
+    expect(taskMachineOf({ id: 'c3' })).toBe('');
+    expect(taskMachineOf(null)).toBe('');
+  });
+});
+
+describe('nounKeyOf', () => {
+  it('names the zone while every host names bhyve alone and the machine otherwise', () => {
+    expect(nounKeyOf([bhyve])).toBe('common.nounZone');
+    expect(nounKeyOf([bhyve], true)).toBe('common.nounZones');
+    expect(nounKeyOf([vbox])).toBe('common.nounMachine');
+    expect(nounKeyOf([vbox, bhyve], true)).toBe('common.nounMachines');
+    expect(nounKeyOf([])).toBe('common.nounMachine');
   });
 });
 
@@ -202,10 +234,10 @@ describe('statusTone', () => {
 
 describe('sentenceKey', () => {
   it('names the sentence of a status that has one', () => {
-    expect(sentenceKey('running')).toBe('hosts.machines.sentence.running');
-    expect(sentenceKey('starting')).toBe('hosts.machines.sentence.transitioning');
-    expect(sentenceKey('stopping')).toBe('hosts.machines.sentence.transitioning');
-    expect(sentenceKey('Configured')).toBe('hosts.machines.sentence.configured');
+    expect(sentenceKey('running')).toBe('machine.machineListPanel.runningSentence');
+    expect(sentenceKey('starting')).toBe('machine.machineListPanel.transitioningSentence');
+    expect(sentenceKey('stopping')).toBe('machine.machineListPanel.transitioningSentence');
+    expect(sentenceKey('Configured')).toBe('machine.machineListPanel.configuredSentence');
   });
 
   it('answers empty for a status without a sentence', () => {
@@ -555,9 +587,13 @@ describe('cloudInitSeeds', () => {
 
 describe('guestSourceKey', () => {
   it('names the guest additions and the guest agent for every other source', () => {
-    expect(guestSourceKey('additions')).toBe('hosts.machines.guest.sourceAdditions');
-    expect(guestSourceKey('guest-agent')).toBe('hosts.machines.guest.sourceAgent');
-    expect(guestSourceKey('')).toBe('hosts.machines.guest.sourceAgent');
+    expect(guestSourceKey('additions', 'machineInfo')).toBe(
+      'machine.machineInfo.guestAdditionsSource'
+    );
+    expect(guestSourceKey('guest-agent', 'machineGuestAgent')).toBe(
+      'machine.machineGuestAgent.guestAgentSource'
+    );
+    expect(guestSourceKey('', 'machineInfo')).toBe('machine.machineInfo.guestAgentSource');
   });
 });
 

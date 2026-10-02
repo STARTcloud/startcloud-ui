@@ -24,7 +24,7 @@ const HOST_ROUTE = { path: '/hosts/:id', end: false };
  * @returns {Array<{ key: string, labelKey: string, href: string }>|null} The rows, or null
  */
 export const apiReference = (status, pathname) => {
-  const own = status.links.api || '';
+  const own = status.links?.api || '';
   if (!own || !isServerRole(status) || !hasFeatureStrict(status, 'hosts')) {
     return null;
   }

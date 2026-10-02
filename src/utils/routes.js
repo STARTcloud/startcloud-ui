@@ -114,7 +114,10 @@ const emptyRoute = {
 
 /**
  * Reads the current path as the shared page levels. Returns null on a
- * reserved first segment (an app page that is not an organization), the
+ * reserved first segment (an app page that is not an organization) and on
+ * a path carrying levels under an organization that no mounted collection
+ * owns (no segment of the host's names it and the host mounts no
+ * segment-less collection), the
  * empty route on the home page, the collection alone on a collection's
  * own root (its segment, or its key for a segment-less collection), and
  * otherwise the organization, the
@@ -140,6 +143,9 @@ export const parseRoute = (pathname, { reserved, collections }) => {
   const tail = explicit ? rest.slice(1) : rest;
   const implicit = collections.find(entry => !entry.segment) || null;
   const collection = explicit || (tail.length > 0 ? implicit : null);
+  if (tail.length > 0 && !collection) {
+    return null;
+  }
   return {
     org: first,
     collection,

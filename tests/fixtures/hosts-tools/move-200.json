@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "task_id": "a1000000-0000-4000-8000-000000000008",
+  "machine_name": "dev-2",
+  "operation": "machine_move",
+  "status": "pending",
+  "message": "Move task queued successfully"
+}

@@ -1,6 +1,10 @@
 import PropTypes from 'prop-types';
 import { Button, Dropdown, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { FaShareNodes } from 'react-icons/fa6';
+
+import { useNotify } from '../../../contexts/NoticeContext';
+import { copyToClipboard } from '../../../lib/clipboard';
 
 const hostActionOptionsPropType = PropTypes.shape({
   restartType: PropTypes.string.isRequired,
@@ -261,13 +265,15 @@ ActionOptionsModal.propTypes = {
 /**
  * One row of the Controls menu: a fa6 glyph in its tone and the label,
  * `titleKey` the sentence its tooltip carries when the label alone does
- * not say what the row does.
+ * not say what the row does, `action` the word the row carries as
+ * `data-action`.
  */
 export const ActionRow = ({
   icon: Icon,
   tone,
   labelKey,
   titleKey = '',
+  action = '',
   disabled = false,
   onClick,
 }) => {
@@ -278,6 +284,7 @@ export const ActionRow = ({
       type="button"
       disabled={disabled}
       title={titleKey ? t(titleKey) : undefined}
+      data-action={action || undefined}
       onClick={onClick}
     >
       <Icon className={`${tone} me-2`} />
@@ -291,8 +298,33 @@ ActionRow.propTypes = {
   tone: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
   titleKey: PropTypes.string,
+  action: PropTypes.string,
   disabled: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
+};
+
+/**
+ * Share link, hyperweaver-ui's first row of both Controls menus: copies
+ * the page's own address, which names the host and the machine, to the
+ * clipboard and raises one notice; a refused clipboard raises none.
+ */
+export const ShareLinkRow = () => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  return (
+    <ActionRow
+      icon={FaShareNodes}
+      tone="text-info"
+      labelKey="navbar.navbar.shareLink"
+      titleKey="navbar.navbar.shareLinktitle"
+      action="share-link"
+      onClick={() =>
+        copyToClipboard(window.location.href)
+          .then(() => notify('success', t('copyButton.copied')))
+          .catch(() => null)
+      }
+    />
+  );
 };
 
 /**

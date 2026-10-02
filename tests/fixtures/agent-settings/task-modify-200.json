@@ -1,0 +1,19 @@
+{
+  "id": "a1000000-0000-4000-8000-0000000000a2",
+  "machine_name": "dev-2",
+  "operation": "machine_modify",
+  "status": "pending",
+  "priority": 60,
+  "created_by": "mark",
+  "depends_on": null,
+  "parent_task_id": null,
+  "error_message": null,
+  "created_at": "2026-09-28T09:00:00.000Z",
+  "started_at": null,
+  "completed_at": null,
+  "updatedAt": "2026-09-28T09:00:00.000Z",
+  "metadata": { "ram": "4G" },
+  "progress_percent": 0,
+  "progress_info": null,
+  "output": null
+}

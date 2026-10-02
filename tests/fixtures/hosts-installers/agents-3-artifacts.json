@@ -1,0 +1,87 @@
+{
+  "success": true,
+  "artifacts": [
+    {
+      "id": 11,
+      "filename": "debian-13.1.0-amd64-netinst.iso",
+      "path": "/rpool/iso/debian-13.1.0-amd64-netinst.iso",
+      "file_type": "iso",
+      "extension": "iso",
+      "size": 702545920,
+      "checksum": "8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e",
+      "checksum_verified": true,
+      "file_exists": true,
+      "role": null,
+      "version": null,
+      "storage_location_id": "loc-iso",
+      "storage_location": {
+        "id": "loc-iso",
+        "name": "ISO library",
+        "path": "/rpool/iso",
+        "type": "iso"
+      }
+    },
+    {
+      "id": 12,
+      "filename": "Win11_24H2_English_x64.iso",
+      "path": "/rpool/iso/Win11_24H2_English_x64.iso",
+      "file_type": "iso",
+      "extension": "iso",
+      "size": 6842523648,
+      "checksum": null,
+      "checksum_verified": null,
+      "file_exists": true,
+      "role": null,
+      "version": null,
+      "storage_location_id": "loc-iso",
+      "storage_location": {
+        "id": "loc-iso",
+        "name": "ISO library",
+        "path": "/rpool/iso",
+        "type": "iso"
+      }
+    },
+    {
+      "id": 13,
+      "filename": "Domino_14.5_Linux_English.tar",
+      "path": "/rpool/installers/domino_install/Domino_14.5_Linux_English.tar",
+      "file_type": "installer",
+      "extension": "tar",
+      "size": 1610612736,
+      "checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "checksum_verified": false,
+      "expected_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "file_exists": true,
+      "role": "domino_install",
+      "version": "14.5",
+      "storage_location_id": "loc-installers",
+      "storage_location": {
+        "id": "loc-installers",
+        "name": "HCL installers",
+        "path": "/rpool/installers",
+        "type": "installer"
+      }
+    },
+    {
+      "id": 14,
+      "filename": "Domino_14.5_FP1_Linux.tar",
+      "path": "/rpool/installers/domino_fixpack/Domino_14.5_FP1_Linux.tar",
+      "file_type": "fixpack",
+      "extension": "tar",
+      "size": 0,
+      "checksum": "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4",
+      "checksum_verified": null,
+      "file_exists": false,
+      "role": "domino_fixpack",
+      "version": "14.5FP1",
+      "storage_location_id": "loc-installers",
+      "storage_location": {
+        "id": "loc-installers",
+        "name": "HCL installers",
+        "path": "/rpool/installers",
+        "type": "installer"
+      }
+    }
+  ],
+  "pagination": { "total": 4, "limit": 200, "offset": 0, "has_more": false }
+}

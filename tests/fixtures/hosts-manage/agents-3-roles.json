@@ -1,0 +1,21 @@
+{
+  "roles": [
+    {
+      "rolename": "zoneadm",
+      "comment": "Zone Administrator",
+      "shell": "/bin/pfsh",
+      "home": "/export/home/zoneadm",
+      "authorizations": ["solaris.zone.manage"],
+      "profiles": ["Zone Management"]
+    },
+    {
+      "rolename": "netadm",
+      "comment": "Network Administrator",
+      "shell": "/bin/pfsh",
+      "home": "/export/home/netadm",
+      "authorizations": ["solaris.network.*"],
+      "profiles": ["Network Management", "Network Security"]
+    }
+  ],
+  "total": 2
+}

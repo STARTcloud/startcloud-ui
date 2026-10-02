@@ -1,0 +1,31 @@
+{
+  "ppt_devices": [
+    {
+      "id": 4,
+      "device_name": "NVIDIA GA104GL [RTX A4000]",
+      "vendor_name": "NVIDIA Corporation",
+      "pci_address": "0000:41:00.0",
+      "device_category": "display",
+      "driver_name": "ppt",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": true,
+      "ppt_device_path": "/dev/ppt0",
+      "assigned_to_zones": ["web-1"]
+    },
+    {
+      "id": 5,
+      "device_name": "Mellanox ConnectX-4 Lx",
+      "vendor_name": "Mellanox Technologies",
+      "pci_address": "0000:81:00.0",
+      "device_category": "network",
+      "driver_name": "ppt",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": true,
+      "ppt_device_path": "/dev/ppt1",
+      "assigned_to_zones": []
+    }
+  ],
+  "summary": { "total": 2, "assigned": 1, "available": 1 }
+}

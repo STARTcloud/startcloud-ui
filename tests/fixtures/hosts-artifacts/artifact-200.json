@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "id": "9a2b4c6d-0000-4000-8000-000100000001",
+  "filename": "debian-13.0.0-amd64-netinst.iso",
+  "path": "/rpool/iso/debian-13.0.0-amd64-netinst.iso",
+  "file_type": "iso",
+  "extension": ".iso",
+  "mime_type": "application/x-iso9660-image",
+  "size": 776994816,
+  "checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+  "checksum_algorithm": "sha256",
+  "checksum_verified": true,
+  "calculated_checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+  "user_provided_checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+  "storage_location": {
+    "id": "7c1e5d3a-0000-4000-8000-000100000001",
+    "name": "ISO library",
+    "path": "/rpool/iso",
+    "type": "iso"
+  },
+  "source_url": "https://mirror.example.com/debian-13.0.0-amd64-netinst.iso",
+  "discovered_at": "2026-09-20T00:00:00.000Z",
+  "updated_at": "2026-09-27T06:00:00.000Z"
+}

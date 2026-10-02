@@ -1,0 +1,14 @@
+{
+  "hostname": "vbox-1",
+  "platform": "win32",
+  "release": "10.0.26100",
+  "arch": "x64",
+  "type": "Windows_NT",
+  "version": "Windows 11 Pro",
+  "uptime": 86400,
+  "totalmem": 34359738368,
+  "freemem": 8589934592,
+  "loadavg": [0, 0, 0],
+  "allmachines": ["dev-1"],
+  "runningmachines": ["dev-1"]
+}

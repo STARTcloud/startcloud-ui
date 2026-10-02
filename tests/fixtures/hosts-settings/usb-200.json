@@ -1,0 +1,16 @@
+{
+  "devices": [
+    {
+      "uuid": "a1b2c3d4-0001-4000-8000-000000000001",
+      "address": "\\\\?\\usb#vid_0781&pid_5583",
+      "vendor_id": "0x0781",
+      "product_id": "0x5583",
+      "manufacturer": "SanDisk",
+      "product": "Ultra Fit",
+      "serial_number": "4C530001",
+      "port": 4,
+      "state": "Busy"
+    }
+  ],
+  "total": 1
+}

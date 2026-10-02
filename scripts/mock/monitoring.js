@@ -1,5 +1,6 @@
 import { featuresOf, hosts } from './fleet.js';
 import { AGENT_MODE, ok, problem, secondsUp } from './kit.js';
+import { linkRows } from './machine-metrics.js';
 import { emit } from './stream.js';
 
 const SAMPLE_MS = 5000;
@@ -31,6 +32,14 @@ const LINKS = {
 const POOLS = [
   { pool: 'rpool', pool_type: 'mirror', alloc: '41.2G', free: '422G', capacity: 8.9 },
   { pool: 'tank', pool_type: 'raidz2', alloc: '5.31T', free: '9.24T', capacity: 36.5 },
+];
+const DEVICES = [
+  { device_name: 'c0t5000C500A1B2C3D4d0', pool: 'rpool' },
+  { device_name: 'c0t5000C500A1B2C3D5d0', pool: 'rpool' },
+  { device_name: 'c0t5000C500B2C3D4E6d0', pool: 'tank' },
+  { device_name: 'c0t5000C500B2C3D4E7d0', pool: 'tank' },
+  { device_name: 'c0t5000C500B2C3D4E8d0', pool: 'tank' },
+  { device_name: 'c0t5000C500B2C3D4E9d0', pool: 'tank' },
 ];
 const DATASETS = [
   { name: 'rpool/ROOT', pool: 'rpool', type: 'filesystem', used: '6.05G' },
@@ -182,6 +191,20 @@ const poolRows = (host, at) =>
     };
   });
 
+const diskRows = (host, at) =>
+  DEVICES.map((entry, index) => {
+    const seed = seedOf(host) + index + POOLS.length;
+    return {
+      device_name: entry.device_name,
+      pool: entry.pool,
+      read_ops: String(Math.round(between(1, 90, shareAt(at, 4, seed)))),
+      write_ops: String(Math.round(between(2, 120, shareAt(at, 7, seed)))),
+      read_bandwidth_bytes: String(Math.round(between(0.05, 22, shareAt(at, 4, seed)) * MIB)),
+      write_bandwidth_bytes: String(Math.round(between(0.1, 31, shareAt(at, 7, seed)) * MIB)),
+      scan_timestamp: iso(at),
+    };
+  });
+
 const arcRow = (host, at) => {
   const seed = seedOf(host);
   const target = Math.round(memoryOf(host) * 0.25);
@@ -210,6 +233,7 @@ const sampleOf = (host, at) => ({
   usage: networkRows(host, at),
   poolio: offers(host, 'zfs') ? poolRows(host, at) : [],
   arc: offers(host, 'zfs') ? [arcRow(host, at)] : [],
+  diskio: offers(host, 'zfs') ? diskRows(host, at) : [],
 });
 
 const kept = (rows, entities) => rows.slice(-KEPT * Math.max(1, entities));
@@ -220,11 +244,12 @@ const added = (state, sample) => ({
   usage: kept([...state.usage, ...sample.usage], sample.usage.length),
   poolio: kept([...state.poolio, ...sample.poolio], sample.poolio.length),
   arc: kept([...state.arc, ...sample.arc], 1),
+  diskio: kept([...state.diskio, ...sample.diskio], sample.diskio.length),
 });
 
 const seeded = host => {
   const last = Date.now();
-  const empty = { cpu: [], memory: [], usage: [], poolio: [], arc: [] };
+  const empty = { cpu: [], memory: [], usage: [], poolio: [], arc: [], diskio: [] };
   return [...Array(KEPT).keys()]
     .map(index => last - (KEPT - 1 - index) * SAMPLE_MS)
     .reduce((state, at) => added(state, sampleOf(host, at)), empty);
@@ -285,7 +310,10 @@ const series =
     const { host, url } = ctx;
     const since = Date.parse(url.searchParams.get('since') || '') || 0;
     const limit = Number(url.searchParams.get('limit')) || 100;
-    const { rows, strategy, applied } = historyOf({ host, member, entity, since, limit });
+    const held = historyOf({ host, member, entity, since, limit });
+    const { strategy, applied } = held;
+    const rows =
+      entity === 'link' ? linkRows({ host, url, rows: held.rows, since, limit }) : held.rows;
     const newest = isZone(host) ? rows[rows.length - 1] : rows[0];
     return ok({
       [member]: rows,
@@ -552,6 +580,7 @@ const pushed = (host, sample) => {
     ['network-sample', { usage: sample.usage }],
     ['pool-io-sample', { poolio: sample.poolio }],
     ['arc-sample', { arc: sample.arc }],
+    ['disk-io-sample', { diskio: sample.diskio }],
   ];
   events
     .filter(([, data]) => Object.values(data)[0].length > 0)
@@ -573,10 +602,10 @@ const collect = () => {
 /**
  * The collector of the mock: every five seconds each host that lists
  * `monitoring` takes one sample of its CPU, its memory, its interfaces
- * and, where it lists `zfs`, its pools and its ARC, keeps it in its
- * history, an hour of it, and sends it on the `monitoring` topic as
- * `cpu-sample`, `memory-sample`, `network-sample`, `pool-io-sample` and
- * `arc-sample`, each carrying the rows of the one collection under the
+ * and, where it lists `zfs`, its pools, its disks and its ARC, keeps it
+ * in its history, an hour of it, and sends it on the `monitoring` topic
+ * as `cpu-sample`, `memory-sample`, `network-sample`, `pool-io-sample`,
+ * `arc-sample` and `disk-io-sample`, each carrying the rows of the one collection under the
  * member the REST route answers them in. Lab, on the server role, keeps
  * no history and sends nothing, as an agent in realtime mode without the
  * events does.
@@ -599,7 +628,8 @@ export const startSampling = () => {
  * `since` answers the history from that instant, thinned to `limit`
  * samples an entity and oldest first on the zoneweaver kind, the newest
  * `limit` rows newest first on the hyperweaver kind, and the one sample
- * taken now, `realtime`, on a host that keeps none. Mounted before the
+ * taken now, `realtime`, on a host that keeps none; the network series
+ * read with `link` answers that link's rows alone. Mounted before the
  * task routes, so `tasks/stats` is not read as a task's id.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
@@ -619,6 +649,7 @@ export const mountMonitoring = agentRoute => {
   agentRoute('GET', 'monitoring/storage/datasets', behind(zfs, datasets));
   agentRoute('GET', 'monitoring/storage/pool-io', behind(zfs, series('poolio', 'pool')));
   agentRoute('GET', 'monitoring/storage/arc', behind(zfs, series('arc')));
+  agentRoute('GET', 'monitoring/storage/disk-io', behind(zfs, series('diskio', 'device_name')));
   agentRoute('GET', 'tasks/stats', behind(['tasks'], taskStats));
   agentRoute('GET', 'system/swap/summary', behind(['swap'], swapSummary));
   agentRoute('GET', 'provisioning/status', behind(['provisioning'], tools));

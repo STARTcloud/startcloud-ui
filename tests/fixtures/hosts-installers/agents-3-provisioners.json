@@ -1,0 +1,51 @@
+{
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "description": "The STARTcloud provisioner",
+      "metadata": { "label": "STARTcloud", "description": "The STARTcloud provisioner" },
+      "valid": true,
+      "source": {
+        "source_type": "git",
+        "url": "https://github.com/STARTcloud/startcloud-provisioner",
+        "branch": "main",
+        "token_name": "github-startcloud"
+      },
+      "versions": [
+        {
+          "version": "0.1.27",
+          "dir": "startcloud/0.1.27",
+          "name": "STARTcloud",
+          "description": "Release 0.1.27"
+        },
+        {
+          "version": "0.1.26",
+          "dir": "startcloud/0.1.26",
+          "name": "STARTcloud",
+          "description": "Release 0.1.26"
+        }
+      ]
+    },
+    {
+      "name": "hcl-domino",
+      "description": "HCL Domino on any box",
+      "metadata": { "label": "HCL Domino" },
+      "valid": true,
+      "source": null,
+      "versions": [
+        { "version": "2.0.0", "dir": "hcl-domino/2.0.0", "name": "HCL Domino", "description": "" }
+      ]
+    },
+    {
+      "name": "broken-local",
+      "description": "",
+      "metadata": {},
+      "valid": false,
+      "source": null,
+      "versions": [
+        { "version": "0.0.1", "dir": "broken-local/0.0.1", "name": "", "description": "" }
+      ]
+    }
+  ],
+  "total": 3
+}

@@ -1,0 +1,77 @@
+{
+  "datasets": [
+    {
+      "name": "rpool",
+      "type": "filesystem",
+      "used": "41.2G",
+      "avail": "422G",
+      "refer": "96K",
+      "mountpoint": "/rpool"
+    },
+    {
+      "name": "rpool/ROOT",
+      "type": "filesystem",
+      "used": "6.05G",
+      "avail": "422G",
+      "refer": "96K",
+      "mountpoint": "legacy"
+    },
+    {
+      "name": "rpool/zones",
+      "type": "filesystem",
+      "used": "30.1G",
+      "avail": "422G",
+      "refer": "128K",
+      "mountpoint": "/zones"
+    },
+    {
+      "name": "tank",
+      "type": "filesystem",
+      "used": "5.31T",
+      "avail": "9.24T",
+      "refer": "128K",
+      "mountpoint": "/tank"
+    },
+    {
+      "name": "tank/zones",
+      "type": "filesystem",
+      "used": "4.80T",
+      "avail": "9.24T",
+      "refer": "128K",
+      "mountpoint": "/zones"
+    },
+    {
+      "name": "tank/zones/web-1",
+      "type": "filesystem",
+      "used": "2.11T",
+      "avail": "9.24T",
+      "refer": "96K",
+      "mountpoint": "/zones/web-1"
+    },
+    {
+      "name": "tank/zones/web-1/boot",
+      "type": "volume",
+      "used": "60.0G",
+      "avail": "9.24T",
+      "refer": "41.2G",
+      "mountpoint": "-"
+    },
+    {
+      "name": "tank/zones/web-1/boot@before-upgrade",
+      "type": "snapshot",
+      "used": "829M",
+      "avail": "-",
+      "refer": "40.1G",
+      "mountpoint": "-"
+    },
+    {
+      "name": "tank/zones/web-1/boot@daily-20260927",
+      "type": "snapshot",
+      "used": "12.4M",
+      "avail": "-",
+      "refer": "41.2G",
+      "mountpoint": "-"
+    }
+  ],
+  "total": 9
+}

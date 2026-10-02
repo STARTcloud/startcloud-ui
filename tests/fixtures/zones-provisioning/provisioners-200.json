@@ -1,0 +1,10 @@
+{
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "metadata": { "label": "STARTcloud", "description": "The STARTcloud provisioner" },
+      "versions": [{ "version": "0.1.27", "dir": "startcloud/0.1.27" }]
+    }
+  ],
+  "total": 1
+}

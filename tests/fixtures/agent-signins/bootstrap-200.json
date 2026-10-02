@@ -1,0 +1,5 @@
+{
+  "api_key": "hw_first_boot_key",
+  "message": "Bootstrap API key generated successfully",
+  "note": "The bootstrap endpoint is now disabled."
+}

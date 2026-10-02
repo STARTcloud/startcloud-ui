@@ -1,0 +1,4 @@
+{
+  "downloadUrl": "https://boxvault.example.com/api/organization/startcloud/box/debian13/version/13.1.0/provider/virtualbox/architecture/amd64/file/download?token=signed",
+  "expiresIn": 3600
+}

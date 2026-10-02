@@ -1,0 +1,21 @@
+{
+  "current_config": {
+    "arc_size_bytes": 36212254720,
+    "arc_max_bytes": 58411555225,
+    "arc_min_bytes": 1073741824
+  },
+  "system_constraints": {
+    "physical_memory_bytes": 68719476736,
+    "max_safe_arc_bytes": 58411555225,
+    "min_recommended_arc_bytes": 1073741824
+  },
+  "config_source": "auto-calculated",
+  "available_tunables": {
+    "zfs_arc_max": { "effective_value": 0, "unit": "bytes", "source": "default" },
+    "zfs_arc_min": { "effective_value": 0, "unit": "bytes", "source": "default" },
+    "zfs_arc_max_percent": { "effective_value": 0, "unit": "percent", "source": "default" },
+    "user_reserve_hint_pct": { "effective_value": 0, "unit": "percent", "source": "default" },
+    "zfs_vdev_max_pending": { "effective_value": 0, "unit": "count", "source": "default" },
+    "zfs_prefetch_disable": { "effective_value": 0, "unit": "flag", "source": "default" }
+  }
+}

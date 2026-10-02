@@ -1,0 +1,29 @@
+{
+  "artifacts": [
+    {
+      "id": "art-0001",
+      "filename": "debian-13.1.0-amd64-netinst.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/debian-13.1.0-amd64-netinst.iso",
+      "size": 702545920,
+      "file_type": "iso",
+      "extension": "iso",
+      "mime_type": "application/x-iso9660-image",
+      "checksum": "8f0a9c1e",
+      "checksum_algorithm": "sha256",
+      "file_exists": true
+    },
+    {
+      "id": "art-0002",
+      "filename": "lost.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/lost.iso",
+      "size": 0,
+      "file_type": "iso",
+      "extension": "iso",
+      "mime_type": "application/x-iso9660-image",
+      "checksum": "",
+      "checksum_algorithm": "sha256",
+      "file_exists": false
+    }
+  ],
+  "total": 2
+}

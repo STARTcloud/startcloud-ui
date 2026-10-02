@@ -11,6 +11,7 @@ import RecordRows from '../../../components/common/RecordRows';
 import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
+import TabStrip from '../../../components/common/TabStrip';
 import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -148,35 +149,22 @@ const OrgConsoleTabs = ({
   const showJoinRequests = !isExternalOrg || orgAccessMode === 'request';
   const showInvitations = !isExternalOrg && invitationsEnabled;
   const tabs = [
-    { key: 'organization', labelKey: 'orgConsole.tabs.organization', count: 0 },
+    { key: 'organization', label: t('orgConsole.tabs.organization'), count: 0 },
     ...(showJoinRequests
-      ? [{ key: 'joinRequests', labelKey: 'orgConsole.tabs.joinRequests', count: joinRequestCount }]
+      ? [
+          {
+            key: 'joinRequests',
+            label: t('orgConsole.tabs.joinRequests'),
+            count: joinRequestCount,
+          },
+        ]
       : []),
     ...(showInvitations
-      ? [{ key: 'invitations', labelKey: 'orgConsole.tabs.invitations', count: 0 }]
+      ? [{ key: 'invitations', label: t('orgConsole.tabs.invitations'), count: 0 }]
       : []),
   ];
 
-  if (tabs.length < 2) {
-    return null;
-  }
-
-  return (
-    <ul className="nav nav-tabs">
-      {tabs.map(tab => (
-        <li key={tab.key} className="nav-item">
-          <button
-            type="button"
-            className={`nav-link ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {t(tab.labelKey)}
-            {tab.count > 0 && <span className="badge bg-warning ms-2">{tab.count}</span>}
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
+  return <TabStrip tabs={tabs} active={activeTab} onSelect={setActiveTab} />;
 };
 
 const visibleTab = (tab, isExternalOrg, orgAccessMode, invitationsEnabled) => {

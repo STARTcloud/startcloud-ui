@@ -76,7 +76,8 @@
     "nictype2": "82540EM",
     "bridgeadapter2": "Intel(R) Ethernet Connection",
     "macaddress2": "080027AABBCC",
-    "cableconnected2": "on"
+    "cableconnected2": "on",
+    "nat_forwards": []
   },
   "active_vnc_session": null,
   "pending_tasks": [],

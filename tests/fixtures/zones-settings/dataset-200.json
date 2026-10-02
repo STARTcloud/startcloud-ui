@@ -1,0 +1,11 @@
+{
+  "name": "rpool/zones/web-1/data",
+  "properties": {
+    "type": { "value": "volume", "source": "local" },
+    "volsize": { "value": "107374182400", "source": "local" },
+    "used": { "value": "42949672960", "source": "local" },
+    "volblocksize": { "value": "8192", "source": "local" },
+    "refreservation": { "value": "0", "source": "local" },
+    "compression": { "value": "lz4", "source": "inherited" }
+  }
+}

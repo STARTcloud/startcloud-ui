@@ -1,0 +1,6 @@
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [],
+  "proposed_settings": { "arc_max_gb": 8, "arc_min_gb": null }
+}

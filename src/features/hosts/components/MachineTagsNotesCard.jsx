@@ -66,7 +66,7 @@ const MachineTagsNotesCard = ({ id, name, detail, onSaved, folds }) => {
     if (failed.length > 0) {
       notify('danger', failed.map(answer => answer.reason.message).join('; '));
     } else {
-      notify('success', t('hosts.machines.tags.saved', { name }));
+      notify('success', t('machine.tagsNotesPanel.saved'));
     }
     if (failed.length < answers.length) {
       onSaved();
@@ -76,21 +76,23 @@ const MachineTagsNotesCard = ({ id, name, detail, onSaved, folds }) => {
   return (
     <div className="col-12 col-lg-6 col-xxl-4" data-panel="machine-tags-notes">
       <SectionCard
-        title={t('hosts.machines.tags.title')}
+        title={t('machine.tagsNotesPanel.heading')}
         className="mb-0 h-100"
         folded={folds.folded(FOLD)}
         onFold={() => folds.toggle(FOLD)}
       >
-        <p className="form-text text-muted mt-0">{t('hosts.machines.tags.note')}</p>
+        <p className="form-text text-muted mt-0">
+          {t('machine.tagsNotesPanel.savedImmediatelyNote')}
+        </p>
         <div className="mb-3">
           <label className="form-label" htmlFor="machine-tags">
-            {t('hosts.machines.tags.tags')}
+            {t('machine.tagsNotesPanel.tagsLabel')}
           </label>
           <input
             id="machine-tags"
             className="form-control"
             type="text"
-            placeholder={t('hosts.machines.tags.tagsPlaceholder')}
+            placeholder={t('machine.tagsNotesPanel.tagsPlaceholder')}
             value={draft.tags}
             disabled={saving}
             onChange={event => setDraft({ ...draft, tags: event.target.value })}
@@ -98,7 +100,7 @@ const MachineTagsNotesCard = ({ id, name, detail, onSaved, folds }) => {
         </div>
         <div className="mb-3">
           <label className="form-label" htmlFor="machine-notes">
-            {t('hosts.machines.tags.notes')}
+            {t('machine.tagsNotesPanel.notesLabel')}
           </label>
           <textarea
             id="machine-notes"
@@ -117,7 +119,7 @@ const MachineTagsNotesCard = ({ id, name, detail, onSaved, folds }) => {
           onClick={save}
         >
           <FaFloppyDisk className="me-2" aria-hidden="true" />
-          {t('hosts.machines.tags.save')}
+          {t('machine.tagsNotesPanel.saveButton')}
         </button>
       </SectionCard>
     </div>

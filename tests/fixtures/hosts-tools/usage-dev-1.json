@@ -1,0 +1,37 @@
+{
+  "usage": [
+    {
+      "host": "vbox-1",
+      "machine_name": "dev-1",
+      "cpu_guest_pct": 3.5,
+      "cpu_vmm_pct": 0.5,
+      "cpu_pct": 4,
+      "rss_bytes": 2147483648,
+      "ram_total_bytes": 8589934592,
+      "ram_free_bytes": 6442450944,
+      "guest_additions": true,
+      "net_rx_bps": 1048576,
+      "net_tx_bps": 524288,
+      "net_rx_total_bytes": 88120447,
+      "net_tx_total_bytes": 21044871,
+      "disk_read_bps": 2097152,
+      "disk_write_bps": 1048576,
+      "disk_read_total_bytes": 412044731,
+      "disk_write_total_bytes": 204487123,
+      "nics": [
+        {
+          "adapter": 1,
+          "device": "E1000#0",
+          "rx_bps": 1048576,
+          "tx_bps": 524288,
+          "rx_total_bytes": 88120447,
+          "tx_total_bytes": 21044871
+        }
+      ],
+      "scan_timestamp": "2026-09-27T12:00:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "returnedCount": 1,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 1 }
+}

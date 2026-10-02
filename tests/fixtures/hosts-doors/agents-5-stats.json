@@ -1,0 +1,12 @@
+{
+  "hostname": "plain-1",
+  "platform": "omnios",
+  "type": "SunOS",
+  "release": "5.11",
+  "arch": "x86_64",
+  "uptime": 86400,
+  "totalmem": 17179869184,
+  "freemem": 8589934592,
+  "allmachines": [],
+  "runningmachines": []
+}

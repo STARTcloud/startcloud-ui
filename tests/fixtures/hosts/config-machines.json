@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "machines": {
+    "base_directory": "/var/lib/machines",
+    "default_memory_mb": 2048
+  }
+}

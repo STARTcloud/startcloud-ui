@@ -59,7 +59,7 @@ const group = (items, tree) => [
  * `sectionsFor` over the host's `profile` adapter, the account's
  * `organizations` and its global-admin role, and the host's profile
  * path (`/user/profile` on a `cookie` host, `/profile` on a `backend`
- * host), so the column never lists a section the page cannot draw
+ * or an `apikey` host), so the column never lists a section the page cannot draw
  * (decision 109); on a `cookie` host the group also carries Organizations
  * while the host advertises `org-console`, Applications always, Terms and
  * policies while `policies`, Notifications while `inbox` (the row to the
@@ -83,7 +83,7 @@ export const sidebar = (status, account, integrations, profile) => {
     return [];
   }
   const method = authMethod(status);
-  if (method === 'backend') {
+  if (method === 'backend' || method === 'apikey') {
     return group([profileRow('/profile', profile, account)]);
   }
   if (method !== 'cookie') {

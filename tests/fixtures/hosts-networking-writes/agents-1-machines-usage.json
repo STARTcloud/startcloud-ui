@@ -1,0 +1,13 @@
+{
+  "usage": [
+    {
+      "machine_name": "dev-1",
+      "nics": [
+        { "adapter": 1, "rx_bps": 800000, "tx_bps": 200000 },
+        { "adapter": 2, "rx_bps": 4000000, "tx_bps": 1000000 }
+      ],
+      "scan_timestamp": "2026-09-27T12:00:00.000Z"
+    }
+  ],
+  "returnedCount": 1
+}

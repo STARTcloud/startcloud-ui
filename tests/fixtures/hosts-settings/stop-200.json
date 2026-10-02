@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "machine_name": "dev-1",
+  "operation": "stop",
+  "status": "pending",
+  "message": "Stop request accepted"
+}

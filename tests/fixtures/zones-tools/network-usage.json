@@ -1,0 +1,85 @@
+{
+  "usage": [
+    {
+      "link": "vnice3_1234_0",
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "rx_mbps": 2,
+      "tx_mbps": 1,
+      "rx_bps": 250000,
+      "tx_bps": 125000,
+      "interface_speed_mbps": 1000,
+      "interface_class": "vnic",
+      "time_delta_seconds": 20,
+      "ipackets_delta": 3300,
+      "opackets_delta": 1650,
+      "rbytes_delta": 5000000,
+      "obytes_delta": 2500000,
+      "ierrors_delta": 0,
+      "oerrors_delta": 0,
+      "rx_utilization_pct": 0.2,
+      "tx_utilization_pct": 0.1,
+      "ipackets": "5204550",
+      "rbytes": "4120447312",
+      "ierrors": "0",
+      "opackets": "2120440",
+      "obytes": "2044871230",
+      "oerrors": "0"
+    },
+    {
+      "link": "vnice3_1234_0",
+      "scan_timestamp": "2026-09-27T12:00:20.000Z",
+      "rx_mbps": 2.4,
+      "tx_mbps": 0.8,
+      "rx_bps": 300000,
+      "tx_bps": 100000,
+      "interface_speed_mbps": 1000,
+      "interface_class": "vnic",
+      "time_delta_seconds": 20,
+      "ipackets_delta": 3960,
+      "opackets_delta": 1320,
+      "rbytes_delta": 6000000,
+      "obytes_delta": 2000000,
+      "ierrors_delta": 0,
+      "oerrors_delta": 0,
+      "rx_utilization_pct": 0.24,
+      "tx_utilization_pct": 0.08,
+      "ipackets": "5208510",
+      "rbytes": "4126447312",
+      "ierrors": "0",
+      "opackets": "2121760",
+      "obytes": "2046871230",
+      "oerrors": "0"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "sampling": {
+    "applied": true,
+    "strategy": "sql-ntile-optimized",
+    "interfaceCount": 1,
+    "samplesPerInterface": 200,
+    "totalSamples": 2,
+    "performance": {
+      "originalRecords": 45,
+      "sampledRecords": 2,
+      "dataReduction": "96%",
+      "queryTimeMs": 12,
+      "efficiency": 22.5
+    }
+  },
+  "metadata": {
+    "timeSpan": {
+      "start": "2026-09-27T12:00:00.000Z",
+      "end": "2026-09-27T12:00:20.000Z",
+      "durationMinutes": 0,
+      "totalSamples": 2,
+      "uniqueInterfaces": 1
+    },
+    "activeInterfacesCount": 2,
+    "interfaceList": ["vnice3_1234_0"],
+    "originalDataSize": 45,
+    "compressionRatio": 22.5,
+    "averageRecordsPerInterface": 45
+  },
+  "queryTime": 12
+}

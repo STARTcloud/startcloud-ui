@@ -1,0 +1,10 @@
+{
+  "sources": [
+    { "name": "startcloud", "url": "https://catalog.startcloud.com/catalog.json", "default": true },
+    {
+      "name": "staging",
+      "url": "https://catalog-staging.startcloud.com/catalog.json",
+      "default": false
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "ostypes": [
+    {
+      "id": "Debian_64",
+      "description": "Debian (64-bit)",
+      "family": "Linux",
+      "architecture": "x86"
+    },
+    {
+      "id": "Ubuntu_64",
+      "description": "Ubuntu (64-bit)",
+      "family": "Linux",
+      "architecture": "x86"
+    },
+    {
+      "id": "Windows11_64",
+      "description": "Windows 11 (64-bit)",
+      "family": "Windows",
+      "architecture": "x86"
+    }
+  ],
+  "total": 3
+}

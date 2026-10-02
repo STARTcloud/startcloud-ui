@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import ConfigPage from '../../../components/common/ConfigPage';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { adminShape } from '../utils/adminShape';
 
-import AdminConfig from './AdminConfig';
 import AdminStorage from './AdminStorage';
 import UpdateNotice from './UpdateNotice';
 
@@ -24,9 +24,9 @@ export const ADMIN_PAGES = ['config', 'system'];
  * over the adapter's `users` and `organizations`; the sidebar rows are the
  * one navigation and no tab strip is drawn; the page's own heading is
  * drawn above System and not above Configuration, whose heading is the
- * file's root `title` drawn by `AdminConfig` (identity contract decision
- * 129); a visitor is sent to sign in and a signed-in non-admin home,
- * `allowed` being the app's global-admin flag.
+ * file's root `title` drawn by the shared `ConfigPage` (identity contract
+ * decision 129); a visitor is sent to sign in and a signed-in non-admin
+ * home, `allowed` being the app's global-admin flag.
  */
 const AdminPage = ({ session, returnTo, allowed, admin, updateCommand, page }) => {
   const { t } = useTranslation();
@@ -70,7 +70,7 @@ const AdminPage = ({ session, returnTo, allowed, admin, updateCommand, page }) =
       )}
       {updateInfo && <UpdateNotice updateInfo={updateInfo} command={updateCommand} />}
       <div className="mt-2">
-        {page === 'config' ? <AdminConfig config={admin.config || null} /> : null}
+        {page === 'config' ? <ConfigPage config={admin.config || null} /> : null}
         {page === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
       </div>
     </div>

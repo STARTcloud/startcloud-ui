@@ -1,5 +1,11 @@
 import { gatesOf } from './capabilities';
+import { machineNoun } from './hosts';
 import { canRestartMachines, canStartStopMachines } from './permissions';
+
+const NOUN_KEYS = {
+  zone: { one: 'common.nounZone', many: 'common.nounZones' },
+  machine: { one: 'common.nounMachine', many: 'common.nounMachines' },
+};
 
 const STATUS_TONES = {
   running: 'success',
@@ -18,13 +24,13 @@ const STATUS_TONES = {
 };
 
 const SENTENCES = {
-  running: 'running',
-  stopped: 'stopped',
-  paused: 'paused',
-  suspended: 'suspended',
-  configured: 'configured',
-  starting: 'transitioning',
-  stopping: 'transitioning',
+  running: 'machine.machineListPanel.runningSentence',
+  stopped: 'machine.machineListPanel.stoppedSentence',
+  paused: 'machine.machineListPanel.pausedSentence',
+  suspended: 'machine.machineListPanel.suspendedSentence',
+  configured: 'machine.machineListPanel.configuredSentence',
+  starting: 'machine.machineListPanel.transitioningSentence',
+  stopping: 'machine.machineListPanel.transitioningSentence',
 };
 
 const GUEST_ADDRESS = /^\/VirtualBox\/GuestInfo\/Net\/(?<nic>\d+)\/V4\/IP$/u;
@@ -32,29 +38,39 @@ const GUEST_ADDRESS = /^\/VirtualBox\/GuestInfo\/Net\/(?<nic>\d+)\/V4\/IP$/u;
 const CLOUD_INIT_PREFIX = '/Hyperweaver/CloudInit/';
 
 const ZONE_FACTS = [
-  { key: 'zonename', labelKey: 'hosts.machines.info.zoneName', kind: 'code' },
-  { key: 'zonepath', labelKey: 'hosts.machines.info.zonePath', kind: 'code' },
-  { key: 'bootargs', labelKey: 'hosts.machines.info.bootArgs', kind: 'code' },
-  { key: 'hostid', labelKey: 'hosts.machines.info.hostId', kind: 'badge' },
-  { key: 'pool', labelKey: 'hosts.machines.info.pool', kind: 'badge' },
-  { key: 'scheduling-class', labelKey: 'hosts.machines.info.schedulingClass', kind: 'badge' },
-  { key: 'limitpriv', labelKey: 'hosts.machines.info.limitPrivileges', kind: 'badge' },
-  { key: 'fs-allowed', labelKey: 'hosts.machines.info.fsAllowed', kind: 'badge' },
+  { key: 'zonename', labelKey: 'machine.machineInfo.nameLabel', kind: 'code' },
+  { key: 'zonepath', labelKey: 'machine.machineInfo.pathLabel', kind: 'code' },
+  { key: 'bootargs', labelKey: 'machine.machineInfo.bootArgsLabel', kind: 'code' },
+  { key: 'hostid', labelKey: 'machine.machineInfo.hostIdLabel', kind: 'badge' },
+  { key: 'pool', labelKey: 'machine.machineInfo.poolLabel', kind: 'badge' },
+  { key: 'scheduling-class', labelKey: 'machine.machineInfo.schedulingClassLabel', kind: 'badge' },
+  { key: 'limitpriv', labelKey: 'machine.machineInfo.limitPrivilegesLabel', kind: 'badge' },
+  { key: 'fs-allowed', labelKey: 'machine.machineInfo.fsAllowedLabel', kind: 'badge' },
 ];
 
 const ZONE_SPECS = [
-  { key: 'ram', labelKey: 'hosts.machines.hardware.ram', kind: 'text' },
-  { key: 'vcpus', labelKey: 'hosts.machines.hardware.vcpus', kind: 'text' },
-  { key: 'bootrom', labelKey: 'hosts.machines.hardware.bootrom', kind: 'code' },
-  { key: 'hostbridge', labelKey: 'hosts.machines.hardware.hostBridge', kind: 'code' },
-  { key: 'brand', labelKey: 'hosts.machines.hardware.brand', kind: 'code' },
-  { key: 'type', labelKey: 'hosts.machines.hardware.type', kind: 'code' },
-  { key: 'acpi', labelKey: 'hosts.machines.hardware.acpi', kind: 'enabled', on: 'true' },
-  { key: 'autoboot', labelKey: 'hosts.machines.hardware.autoBoot', kind: 'enabled', on: 'true' },
-  { key: 'uefivars', labelKey: 'hosts.machines.hardware.uefiVars', kind: 'switch', on: 'on' },
-  { key: 'xhci', labelKey: 'hosts.machines.hardware.xhci', kind: 'switch', on: 'on' },
-  { key: 'rng', labelKey: 'hosts.machines.hardware.rng', kind: 'switch', on: 'on' },
-  { key: 'cloud-init', labelKey: 'hosts.machines.hardware.cloudInit', kind: 'switch', on: 'on' },
+  { key: 'ram', labelKey: 'machine.machineHardware.ramLabel', kind: 'text' },
+  { key: 'vcpus', labelKey: 'machine.machineHardware.vcpusLabel', kind: 'text' },
+  { key: 'bootrom', labelKey: 'machine.machineHardware.bootromLabel', kind: 'code' },
+  { key: 'hostbridge', labelKey: 'machine.machineHardware.hostBridgeLabel', kind: 'code' },
+  { key: 'brand', labelKey: 'machine.machineHardware.brandLabel', kind: 'code' },
+  { key: 'type', labelKey: 'machine.machineHardware.typeLabel', kind: 'code' },
+  { key: 'acpi', labelKey: 'machine.machineHardware.acpiLabel', kind: 'enabled', on: 'true' },
+  {
+    key: 'autoboot',
+    labelKey: 'machine.machineHardware.autoBootLabel',
+    kind: 'enabled',
+    on: 'true',
+  },
+  { key: 'uefivars', labelKey: 'machine.machineHardware.uefiVarsLabel', kind: 'switch', on: 'on' },
+  { key: 'xhci', labelKey: 'machine.machineHardware.xhciLabel', kind: 'switch', on: 'on' },
+  { key: 'rng', labelKey: 'machine.machineHardware.rngLabel', kind: 'switch', on: 'on' },
+  {
+    key: 'cloud-init',
+    labelKey: 'machine.machineHardware.cloudInitLabel',
+    kind: 'switch',
+    on: 'on',
+  },
 ];
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -75,6 +91,41 @@ const listOf = value => {
  * @returns {string} The key
  */
 export const detailKey = (id, name) => `${id}|${name}`;
+
+/**
+ * The key of the word the listed servers' instances go by,
+ * hyperweaver-ui's resource label: the zone's while every server names
+ * `bhyve` alone and the machine's otherwise (`machineNoun`), the word of
+ * one instance or, with `many`, of several. The word is written with a
+ * capital; a sentence that takes it inside lower-cases it.
+ *
+ * @param {Array<Object>} servers - The registry rows
+ * @param {boolean} [many] - Whether the word names several
+ * @returns {string} The locale key
+ */
+export const nounKeyOf = (servers, many = false) =>
+  NOUN_KEYS[machineNoun(servers)][many ? 'many' : 'one'];
+
+/**
+ * The route of one machine's page, the machine's name encoded.
+ *
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} name - The machine name
+ * @returns {string} The path
+ */
+export const machineRoute = (id, name) => `/hosts/${id}/machines/${encodeURIComponent(name)}`;
+
+/**
+ * The machine a task's row is for, read under the member the agent that
+ * answered the row names it by: `machine_name` in a row of
+ * hyperweaver-agent and `zone_name` in a row of zoneweaver-agent's task
+ * routes; empty for a row that carries neither. The one reader of a task
+ * row's machine, so a row of either agent finds the copies it staled.
+ *
+ * @param {Object|null} row - The task row, of a read or of `task-updated`
+ * @returns {string} The machine name, or the empty string
+ */
+export const taskMachineOf = row => String(row?.machine_name || row?.zone_name || '');
 
 /**
  * Whether a route names a machine its host does not have: true once the
@@ -122,16 +173,13 @@ export const statusOf = row => String(row?.status || 'unknown').toLowerCase();
 export const statusTone = status => STATUS_TONES[String(status || '').toLowerCase()] || 'secondary';
 
 /**
- * The key of the sentence that says a machine's state in words, empty for
- * a status that has none.
+ * The key of the sentence that says a machine's state in words,
+ * hyperweaver-ui's own, empty for a status that has none.
  *
  * @param {string} status - The machine's status
  * @returns {string} The locale key, or the empty string
  */
-export const sentenceKey = status => {
-  const word = SENTENCES[String(status || '').toLowerCase()];
-  return word ? `hosts.machines.sentence.${word}` : '';
-};
+export const sentenceKey = status => SENTENCES[String(status || '').toLowerCase()] || '';
 
 /**
  * A row's configuration, the object both agents answer it as, an empty
@@ -516,15 +564,16 @@ export const cloudInitSeeds = properties =>
 
 /**
  * The key of the words that name where a guest's addresses came from:
- * the guest additions, or the guest agent for every other source.
+ * the guest additions, or the guest agent for every other source, in
+ * the words of the hyperweaver-ui card that draws them, `scope` the
+ * card's namespace, `machineInfo` or `machineGuestAgent`.
  *
  * @param {string} source - The `source` of `guest_info`
+ * @param {string} scope - The namespace of the card under `machine`
  * @returns {string} The locale key
  */
-export const guestSourceKey = source =>
-  source === 'additions'
-    ? 'hosts.machines.guest.sourceAdditions'
-    : 'hosts.machines.guest.sourceAgent';
+export const guestSourceKey = (source, scope) =>
+  `machine.${scope}.${source === 'additions' ? 'guestAdditionsSource' : 'guestAgentSource'}`;
 
 /**
  * The tags a person typed, a comma between two, each trimmed and the

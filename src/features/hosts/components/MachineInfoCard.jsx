@@ -17,6 +17,8 @@ import {
 import { healthTone } from '../utils/resources';
 import { formatTaskDate } from '../utils/tasks';
 
+import MachineOrgAccess from './MachineOrgAccess';
+
 const FOLD = 'machine-info';
 
 const hostPath = id => `/hosts/${id}`;
@@ -60,7 +62,7 @@ const originRows = (info, t) => [
     ? [
         {
           key: 'hypervisor',
-          label: t('hosts.machines.info.hypervisor'),
+          label: t('machine.machineInfo.hypervisorLabel'),
           value: <Badge>{info.hypervisor}</Badge>,
         },
       ]
@@ -69,12 +71,12 @@ const originRows = (info, t) => [
     ? [
         {
           key: 'backing',
-          label: t('hosts.machines.info.backing'),
+          label: t('machine.machineInfo.backingLabel'),
           value: (
             <>
-              <Badge title={t('hosts.machines.info.backingTitle')}>{info.backing}</Badge>
+              <Badge title={t('machine.machineInfo.backingTooltip')}>{info.backing}</Badge>
               {info.home ? (
-                <code className="small ms-2" title={t('hosts.machines.info.homeTitle')}>
+                <code className="small ms-2" title={t('machine.machineInfo.vagrantDirTooltip')}>
                   {info.home}
                 </code>
               ) : null}
@@ -98,12 +100,12 @@ const HealthValue = ({ health }) => {
         <span className="d-flex flex-wrap gap-1 mt-1">
           {network > 0 ? (
             <Badge tone="warning">
-              {t('hosts.machines.info.networkErrors', { count: network })}
+              {t('machine.machineInfo.netErrorsBadge', { count: network })}
             </Badge>
           ) : null}
           {storage > 0 ? (
             <Badge tone="warning">
-              {t('hosts.machines.info.storageErrors', { count: storage })}
+              {t('machine.machineInfo.storageErrorsBadge', { count: storage })}
             </Badge>
           ) : null}
         </span>
@@ -125,7 +127,7 @@ const healthRows = (health, t) =>
     ? [
         {
           key: 'health',
-          label: t('hosts.machines.info.hostHealth'),
+          label: t('machine.machineInfo.hostHealthLabel'),
           value: <HealthValue health={health} />,
         },
       ]
@@ -136,12 +138,12 @@ const seenRows = (detail, t) =>
     ? [
         {
           key: 'last-seen',
-          label: t('hosts.machines.info.lastSeen'),
+          label: t('machine.machineInfo.lastSeenLabel'),
           value: (
             <span className="text-muted">
               {detail.machine_info?.last_seen
                 ? formatTaskDate(detail.machine_info.last_seen)
-                : t('hosts.overview.notAvailable')}
+                : t('machine.machineInfo.notApplicableFallback')}
             </span>
           ),
         },
@@ -156,7 +158,7 @@ const guestRows = (guest, t) => {
   return [
     {
       key: 'guest-ip',
-      label: t('hosts.machines.info.guestIp'),
+      label: t('machine.machineInfo.guestIpLabel'),
       value: (
         <>
           {ips.map(ip => (
@@ -165,7 +167,9 @@ const guestRows = (guest, t) => {
             </code>
           ))}
           <span className="text-muted small">
-            {t('hosts.machines.guest.via', { source: t(guestSourceKey(guest.source)) })}
+            {t('machine.machineInfo.viaSource', {
+              source: t(guestSourceKey(guest.source, 'machineInfo')),
+            })}
           </span>
         </>
       ),
@@ -178,14 +182,14 @@ const flagRows = (info, t) =>
     ? [
         {
           key: 'flags',
-          label: t('hosts.machines.column.flags'),
+          label: t('machine.machineInfo.flagsLabel'),
           value: (
             <span className="d-flex flex-wrap gap-1">
               {info.is_orphaned ? (
-                <Badge tone="warning">{t('hosts.machines.flag.orphaned')}</Badge>
+                <Badge tone="warning">{t('machine.machineInfo.orphanedBadge')}</Badge>
               ) : null}
               {info.auto_discovered ? (
-                <Badge tone="info">{t('hosts.machines.flag.autoDiscovered')}</Badge>
+                <Badge tone="info">{t('machine.machineInfo.autoDiscoveredBadge')}</Badge>
               ) : null}
             </span>
           ),
@@ -193,24 +197,33 @@ const flagRows = (info, t) =>
       ]
     : [];
 
-const organizationRows = (names, t) =>
+const organizationRows = ({ names, status, id, name, t }) =>
   names
     ? [
         {
           key: 'organizations',
           label: t('hosts.machines.info.organizations'),
-          value:
-            names.length > 0 ? (
-              <span className="d-flex flex-wrap gap-1" data-machine-organizations={names.length}>
-                {names.map(name => (
-                  <Badge key={name}>{name}</Badge>
-                ))}
-              </span>
-            ) : (
-              <span className="text-muted" data-machine-organizations="0">
-                {t('hosts.machines.info.unassigned')}
-              </span>
-            ),
+          value: (
+            <span className="d-flex flex-wrap align-items-center gap-1">
+              {names.length > 0 ? (
+                <span className="d-flex flex-wrap gap-1" data-machine-organizations={names.length}>
+                  {names.map(org => (
+                    <Badge key={org}>{org}</Badge>
+                  ))}
+                </span>
+              ) : (
+                <span className="text-muted" data-machine-organizations="0">
+                  {t('hosts.machines.info.unassigned')}
+                </span>
+              )}
+              <MachineOrgAccess
+                status={status}
+                id={id}
+                name={name}
+                className="btn btn-sm btn-link p-0"
+              />
+            </span>
+          ),
         },
       ]
     : [];
@@ -240,7 +253,8 @@ const factRows = (configuration, t) =>
  * when the machine was last seen; the guest's addresses with the source
  * that reported them; the orphaned and auto-discovered flags; on the
  * `hyperweaver-server` role the organizations the machine belongs to,
- * by the name of the person's membership and by uuid otherwise; and the
+ * by the name of the person's membership and by uuid otherwise, with
+ * the Organization access control of `MachineOrgAccess` beside them; and the
  * facts of a zone, which zoneweaver-agent answers alone.
  */
 const MachineInfoCard = ({
@@ -264,7 +278,7 @@ const MachineInfoCard = ({
   return (
     <div className="col-12 col-lg-6" data-panel="machine-info">
       <SectionCard
-        title={t('hosts.machines.info.title')}
+        title={t('machine.machineInfo.heading')}
         className="mb-0 h-100"
         folded={folds.folded(FOLD)}
         onFold={() => folds.toggle(FOLD)}
@@ -278,7 +292,7 @@ const MachineInfoCard = ({
             ...seenRows(detail, t),
             ...guestRows(configuration.guest_info, t),
             ...flagRows(info, t),
-            ...organizationRows(names, t),
+            ...organizationRows({ names, status, id, name, t }),
             ...factRows(configuration, t),
           ]}
         />

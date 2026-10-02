@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "ready": false,
+  "components": {
+    "bridge": { "exists": false, "up": false, "name": "hwprov0" },
+    "dhcp": { "running": true, "leases": 0 },
+    "nat": true
+  },
+  "config": {
+    "interface": "hwprov0",
+    "subnet": "10.99.0.0/24",
+    "gateway": "10.99.0.1",
+    "dhcp_range": "10.99.0.100-10.99.0.200"
+  }
+}

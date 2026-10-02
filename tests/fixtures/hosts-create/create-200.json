@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "parent_task_id": "a1000000-0000-4000-8000-000000000007",
+  "machine_name": "1042--web-3.example.com",
+  "operation": "machine_create_orchestration",
+  "status": "pending",
+  "message": "Machine creation queued",
+  "requires_download": false,
+  "sub_tasks": {
+    "prepare": "a1000000-0000-4000-8000-000000000071",
+    "storage": "a1000000-0000-4000-8000-000000000072",
+    "config": "a1000000-0000-4000-8000-000000000073",
+    "finalize": "a1000000-0000-4000-8000-000000000074"
+  },
+  "storage_path_id": null
+}

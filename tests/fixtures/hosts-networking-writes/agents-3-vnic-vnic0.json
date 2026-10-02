@@ -1,0 +1,16 @@
+{
+  "vnic": {
+    "link": "vnic0",
+    "over": "igb0",
+    "speed": 1000,
+    "macaddress": "02:08:20:aa:bb:01",
+    "macaddrtype": "fixed",
+    "vid": 0,
+    "mtu": 1500,
+    "state": "up",
+    "zone": "web-1",
+    "media": "Ethernet",
+    "duplex": "full",
+    "created_at": "2026-09-27T11:00:00.000Z"
+  }
+}

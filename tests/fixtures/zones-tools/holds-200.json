@@ -1,0 +1,11 @@
+{
+  "snapshot": "rpool/zones/web-1@before-upgrade",
+  "holds": [
+    {
+      "name": "rpool/zones/web-1@before-upgrade",
+      "tag": "keep",
+      "timestamp": "Sun Sep 20 18:31 2026"
+    }
+  ],
+  "total": 1
+}

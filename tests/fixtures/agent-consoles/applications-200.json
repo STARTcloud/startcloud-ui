@@ -1,0 +1,7 @@
+{
+  "applications": [
+    { "name": "remmina", "path": "/usr/bin/remmina", "args": [], "exists": true },
+    { "name": "filezilla", "path": "/usr/bin/filezilla", "args": [], "exists": false }
+  ],
+  "total": 2
+}

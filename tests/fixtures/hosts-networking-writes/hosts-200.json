@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Hosts file written",
+  "backup": "/etc/inet/hosts.20260927120000"
+}

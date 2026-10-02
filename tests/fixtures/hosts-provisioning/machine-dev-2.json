@@ -1,0 +1,57 @@
+{
+  "machine_info": {
+    "id": 2,
+    "name": "dev-2",
+    "host": "vbox-1",
+    "status": "stopped",
+    "backing": "vagrant",
+    "hypervisor": "virtualbox",
+    "home": "C:\\hyperweaver\\machines\\dev-2",
+    "uuid": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+    "server_id": "0043",
+    "is_orphaned": false,
+    "auto_discovered": false,
+    "last_seen": "2026-09-27T00:00:00Z",
+    "notes": null,
+    "tags": null,
+    "spec": {
+      "provisioner": { "name": "startcloud", "version": "0.1.27" },
+      "settings": { "hostname": "dev-2", "domain": "example.com", "server_id": "0043" },
+      "roles": []
+    },
+    "created_at": "2026-09-02T00:00:00Z",
+    "updatedAt": "2026-09-27T00:00:00Z"
+  },
+  "configuration": {
+    "name": "dev-2",
+    "ostype": "Debian (64-bit)",
+    "UUID": "7c9d3b55-1e6f-4d1f-8c7f-3a5b9a2a7b02",
+    "memory": "8192",
+    "cpus": "4",
+    "VMState": "poweroff",
+    "provisioner": {
+      "provisioner_name": "startcloud",
+      "provisioner_version": "0.1.27",
+      "settings": { "hostname": "dev-2", "domain": "example.com", "server_id": "0043" },
+      "provisioning": {
+        "pre": [{ "script": "./scripts/snapshot.sh", "target": "host" }],
+        "ansible": {
+          "playbooks": [{ "local": [{ "playbook": "ansible/playbook.yml", "run": "once" }] }]
+        }
+      }
+    },
+    "nat_forwards": []
+  },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "stopped",
+  "web_address": null,
+  "knob_current": {
+    "ram": 8192,
+    "vcpus": 4,
+    "guest_agent": false,
+    "nics": [],
+    "devices": { "controllers": [], "attachments": [], "nics": [] }
+  },
+  "pending_changes": null
+}

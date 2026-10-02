@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDatabase, FaHardDrive } from 'react-icons/fa6';
+import { Link } from 'react-router-dom';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
@@ -10,6 +11,7 @@ import { nextSort, sortItems } from '../../../utils/sort';
 import { useHostReading } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
 import { READS, hostOffers } from '../utils/monitoring';
+import { hostHasNetworking } from '../utils/networking';
 import { interfaceCounts, latestPer } from '../utils/resources';
 
 const DEFAULT_SORT = [{ column: 'link', direction: 'asc' }];
@@ -54,6 +56,7 @@ const emptyKeyOf = ({ loaded, failed }) => {
 
 const Interfaces = ({ id }) => {
   const { t, i18n } = useTranslation();
+  const server = useHostRow(id);
   const { data, loaded, failed } = useHostReading(id, 'interfaces');
   const [sort, setSort] = useState(DEFAULT_SORT);
   const ctx = useMemo(() => ({ t, language: i18n.language }), [t, i18n.language]);
@@ -64,6 +67,17 @@ const Interfaces = ({ id }) => {
       <SectionHeading
         title={t('hosts.overview.interfaces')}
         count={rows.length > 0 ? t('hosts.overview.interfaceCounts', counts) : null}
+        actions={
+          hostHasNetworking(server) ? (
+            <Link
+              to={`/hosts/${id}/networking`}
+              className="btn btn-sm btn-outline-secondary"
+              data-link="networking"
+            >
+              {t('host.networkStorageSummary.viewAll')}
+            </Link>
+          ) : null
+        }
       />
       <SubTable
         columns={columns}
@@ -129,7 +143,9 @@ Storage.propTypes = {
  * interfaces behind `monitoring`, every interface the agent answers once,
  * the newest row of each where the agent keeps a history of them, in the
  * one table over Interface, Class and State, the heading counting them in
- * all, physical, virtual, up and down; and the storage summary behind
+ * all, physical, virtual, up and down, its View all the link to the
+ * networking of the host at `/hosts/{id}/networking` while the host's
+ * own row lists `vnics` or `network-spaces`; and the storage summary behind
  * `monitoring` and `zfs` both, the count of the ZFS pools and of the
  * datasets as two stat cards, the network section taking the whole width
  * on a host without it. Nothing draws on a host whose own row does not

@@ -9,7 +9,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useServers } from '../hooks/useServers';
 import { hostHasFeature } from '../utils/capabilities';
 import { machineNoun } from '../utils/hosts';
-import { canControlHosts, canPowerOffHosts, canStartStopMachines } from '../utils/permissions';
+import { canPowerOffHosts, canStartStopMachines } from '../utils/permissions';
 
 import BulkRows from './BulkRows';
 import HostRows from './HostRows';
@@ -20,11 +20,11 @@ const TOGGLE_CLASS = 'btn btn-link cluster-btn action-menu-toggle';
 const HOME = '/';
 
 const routeOf = pathname => {
-  const machine = matchPath('/hosts/:id/machines/:name', pathname);
+  const machine = matchPath({ path: '/hosts/:id/machines/:name', end: false }, pathname);
   if (machine) {
-    return machine.params;
+    return { id: machine.params.id, name: machine.params.name };
   }
-  const host = matchPath('/hosts/:id', pathname) || matchPath('/hosts/:id/machines', pathname);
+  const host = matchPath({ path: '/hosts/:id', end: false }, pathname);
   return host ? { id: host.params.id, name: '' } : { id: '', name: '' };
 };
 
@@ -73,9 +73,6 @@ const RouteControls = ({ id, name, user }) => {
   }
   const powered = canPowerOffHosts(role) && hostHasFeature(server, 'host-power');
   const bulk = canStartStopMachines(role) && hostHasFeature(server, 'machines');
-  if (!powered && !bulk && canControlHosts(role)) {
-    return <ControlsMenu label={t('hosts.controls.host')} disabled />;
-  }
   return (
     <ControlsMenu label={t('hosts.controls.host')}>
       <HostRows status={status} id={id} powered={powered} bulk={bulk} server={server} user={user} />
@@ -114,13 +111,15 @@ HomeControls.propTypes = {
 /**
  * The hosts feature's Controls menu, the `actionMenu` the header draws in
  * the account slot in the account menu's toggle shape: on
- * `/hosts/{id}/machines/{name}` the machine controls, named by the noun
+ * `/hosts/{id}/machines/{name}` and every page under it the machine
+ * controls, named by the noun
  * the host's hypervisors fix, over the machine rows; on `/hosts/{id}` and
- * on the machines of the host at `/hosts/{id}/machines` the
- * host actions over the host power rows while the person's role and the
+ * every page of the host under it the
+ * host actions,
+ * View host details always, the host power rows while the
+ * person's role and the
  * registry row's `host-power` token allow them and the bulk rows over the
- * host's machines while the role and the row's `machines` token do, the
- * toggle disabled while the role could act but the agent offers neither;
+ * host's machines while the role and the row's `machines` token do;
  * on the home route the bulk actions over the machines of every host that
  * lists `machines`, the toggle disabled while none does; on every other
  * route the toggle alone, disabled. The registry row of the host a route

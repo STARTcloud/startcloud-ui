@@ -1,0 +1,12 @@
+{
+  "updates_available": true,
+  "total_updates": 7,
+  "last_checked": "2026-09-28T09:00:00.000Z",
+  "plan_summary": {
+    "packages_to_install": 1,
+    "packages_to_update": 6,
+    "packages_to_remove": 0,
+    "total_download_size": "184.2 MB"
+  },
+  "raw_output": "Packages to update: 6\nPackages to install: 1"
+}

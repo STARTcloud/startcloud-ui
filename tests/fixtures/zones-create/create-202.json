@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "parent_task_id": "b2000000-0000-4000-8000-000000000007",
+  "machine_name": "1042--web-3.example.com",
+  "operation": "zone_create_orchestration",
+  "status": "pending",
+  "message": "Zone creation queued",
+  "requires_download": false,
+  "sub_tasks": {
+    "prepare": "b2000000-0000-4000-8000-000000000071",
+    "storage": "b2000000-0000-4000-8000-000000000072",
+    "config": "b2000000-0000-4000-8000-000000000073",
+    "finalize": "b2000000-0000-4000-8000-000000000074"
+  }
+}

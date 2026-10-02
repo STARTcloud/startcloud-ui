@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "dry_run": true,
+  "resolved_steps": [
+    { "type": "wait", "pattern": "login:" },
+    { "type": "send", "value": "root" },
+    { "type": "wait", "pattern": "Password:" },
+    { "type": "send", "value": "changeme" },
+    { "type": "command", "value": "ip addr" }
+  ],
+  "unresolved_variables": ["domain"]
+}

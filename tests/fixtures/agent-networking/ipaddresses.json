@@ -1,0 +1,30 @@
+{
+  "addresses": [
+    {
+      "addrobj": "eth0/v4",
+      "interface": "eth0",
+      "addr": "10.0.0.21/24",
+      "ip_version": "v4",
+      "state": "ok",
+      "source": "live"
+    },
+    {
+      "addrobj": "eth0/v6",
+      "interface": "eth0",
+      "addr": "fe80::a00:27ff:fe4f:2b01/64",
+      "ip_version": "v6",
+      "state": "ok",
+      "source": "live"
+    },
+    {
+      "addrobj": "lo/v4",
+      "interface": "lo",
+      "addr": "127.0.0.1/8",
+      "ip_version": "v4",
+      "state": "ok",
+      "source": "live"
+    }
+  ],
+  "returned": 3,
+  "pagination": { "limit": 100, "offset": 0 }
+}

@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FaChevronDown } from 'react-icons/fa6';
 
 export const headingSelectAllShape = PropTypes.shape({
   allSelected: PropTypes.bool.isRequired,
@@ -12,11 +14,14 @@ export const headingSelectAllShape = PropTypes.shape({
  * The heading line of a glass section of the pages contract, the line a
  * list or a table draws over its rows straight on the page's ground: the
  * title, the count or state as muted text after it, a trailing badge and
- * the action-pane slot, no icon, no body and no fold, because a list reads
+ * the action-pane slot, no icon and no body, because a list reads
  * better without a frame and one heading shape keeps every page of every
  * UI backend alike. `selectAll`, given only on a card list with no table
  * header of its own (the Terms cards), draws the select-all checkbox at
  * the title's leading edge, exactly where a table's header checkbox sits.
+ * `onFold`, given only by a page whose sections fold, draws the section
+ * card's chevron last, flush right, turned while `folded`, its tooltip
+ * `foldTitle`; the page keeps the fold and draws no body while folded.
  */
 const SectionHeading = ({
   title,
@@ -27,7 +32,11 @@ const SectionHeading = ({
   id = undefined,
   className = 'mb-3',
   selectAll = null,
+  folded = false,
+  onFold = null,
+  foldTitle = '',
 }) => {
+  const { t } = useTranslation();
   const selectAllRef = useRef(null);
   useEffect(() => {
     if (selectAllRef.current) {
@@ -59,6 +68,21 @@ const SectionHeading = ({
       {actions ? (
         <span className="d-flex align-items-center flex-wrap gap-2 ms-auto">{actions}</span>
       ) : null}
+      {onFold ? (
+        <button
+          type="button"
+          className={`btn btn-link btn-sm p-0 text-reset section-card-chevron${
+            folded ? ' folded' : ''
+          }${actions ? '' : ' ms-auto'}`}
+          aria-expanded={!folded}
+          aria-label={foldTitle || t('pages.toggle')}
+          title={foldTitle || t('pages.toggle')}
+          data-tool="fold"
+          onClick={onFold}
+        >
+          <FaChevronDown aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 };
@@ -72,6 +96,9 @@ SectionHeading.propTypes = {
   id: PropTypes.string,
   className: PropTypes.string,
   selectAll: headingSelectAllShape,
+  folded: PropTypes.bool,
+  onFold: PropTypes.func,
+  foldTitle: PropTypes.string,
 };
 
 export default SectionHeading;

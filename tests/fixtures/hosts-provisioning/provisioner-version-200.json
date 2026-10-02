@@ -1,0 +1,93 @@
+{
+  "name": "startcloud",
+  "version": "0.1.27",
+  "metadata": {
+    "label": "STARTcloud",
+    "roles": [
+      { "name": "domino", "depends_on": [], "defaultEnabled": true },
+      { "name": "traveler", "depends_on": ["domino"] },
+      { "name": "nomadweb", "depends_on": ["domino"] },
+      { "name": "leap", "depends_on": ["domino"] },
+      { "name": "networking", "depends_on": [], "defaultEnabled": true }
+    ],
+    "configuration": {
+      "groups": [
+        { "name": "domino", "label": "Domino", "show_if": { "domino_enabled": true } },
+        { "name": "advanced", "label": "Advanced", "advanced": true }
+      ],
+      "fields": [
+        { "name": "hostname", "label": "Hostname", "type": "fqdn", "required": true },
+        {
+          "name": "server_id",
+          "label": "Server id",
+          "type": "number",
+          "validate": { "min": 1, "max": 9999 }
+        },
+        {
+          "name": "domino_organization",
+          "label": "Organization",
+          "type": "text",
+          "group": "domino",
+          "default": "STARTcloud",
+          "required": true
+        },
+        {
+          "name": "domino_admin_notes_id_password",
+          "label": "Admin password",
+          "type": "password",
+          "group": "domino",
+          "generate": { "length": 24 }
+        },
+        { "name": "debug", "label": "Debug", "type": "checkbox", "group": "advanced" },
+        {
+          "name": "communicator",
+          "label": "Communicator",
+          "type": "select",
+          "group": "advanced",
+          "options": ["ssh", "winrm"],
+          "default": "ssh"
+        }
+      ]
+    }
+  },
+  "role_specs": {
+    "roles": {
+      "domino": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Domino from the installer the role names",
+        "options": {
+          "domino_organization": {
+            "description": "The Domino organization",
+            "default": "STARTcloud",
+            "required": true
+          },
+          "domino_admin_notes_id_password": {
+            "description": "The admin ID password",
+            "required": true
+          }
+        }
+      },
+      "traveler": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Traveler on a Domino server",
+        "options": { "traveler_port": { "description": "The Traveler port", "default": 443 } }
+      },
+      "nomadweb": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Nomad Web",
+        "options": {}
+      },
+      "leap": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Installs HCL Leap",
+        "options": {}
+      },
+      "networking": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Configures the guest network",
+        "options": {}
+      }
+    }
+  },
+  "playbook_candidates": ["ansible/playbook.yml", "ansible/always.yml", "ansible/roles.yml"]
+}

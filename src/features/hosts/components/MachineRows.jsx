@@ -7,12 +7,14 @@ import {
   FaBug,
   FaCirclePause,
   FaCirclePlay,
+  FaDisplay,
   FaPause,
   FaPlay,
   FaPowerOff,
   FaRotate,
   FaSkull,
   FaStop,
+  FaTerminal,
   FaTrash,
 } from 'react-icons/fa6';
 
@@ -21,12 +23,18 @@ import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostStats } from '../hooks/useHostStats';
 import { useMachineDetailRefresh } from '../hooks/useMachineDetail';
 import { gatesOf } from '../utils/capabilities';
+import { guestToolsOf } from '../utils/guestTools';
 import { isRunning } from '../utils/hosts';
 import { canDestroyMachines, canRestartMachines, canStartStopMachines } from '../utils/permissions';
 
 import ApplicationRows from './ApplicationRows';
-import { ActionRow, PrivilegeLine } from './HostActionOptions';
+import ConsoleRows from './ConsoleRows';
+import DisplayResizeModal from './DisplayResizeModal';
+import GuestExecModal from './GuestExecModal';
+import { ActionRow, PrivilegeLine, ShareLinkRow } from './HostActionOptions';
 import MachineDangerDialogs from './MachineDangerDialogs';
+import MachineToolRows from './MachineToolRows';
+import ProvisioningRows from './ProvisioningRows';
 import ZoneRows from './ZoneRows';
 
 const gatesShape = PropTypes.shape({
@@ -195,6 +203,82 @@ GuestRows.propTypes = {
   onAction: PropTypes.func.isRequired,
 };
 
+const GuestToolRows = ({ tools, busy, onTool }) => (
+  <>
+    {tools.exec ? (
+      <ActionRow
+        icon={FaTerminal}
+        tone="text-info"
+        labelKey="hosts.controls.guestExec"
+        titleKey="hosts.controls.guestExecTitle"
+        action="guest-exec"
+        disabled={busy}
+        onClick={() => onTool('exec')}
+      />
+    ) : null}
+    {tools.display ? (
+      <ActionRow
+        icon={FaDisplay}
+        tone="text-info"
+        labelKey="hosts.controls.displayResize"
+        titleKey="hosts.controls.displayResizeTitle"
+        action="display-resize"
+        disabled={busy}
+        onClick={() => onTool('display')}
+      />
+    ) : null}
+  </>
+);
+
+GuestToolRows.propTypes = {
+  tools: PropTypes.shape({
+    exec: PropTypes.bool.isRequired,
+    display: PropTypes.bool.isRequired,
+    flavor: PropTypes.string.isRequired,
+  }).isRequired,
+  busy: PropTypes.bool.isRequired,
+  onTool: PropTypes.func.isRequired,
+};
+
+const GuestToolDialogs = ({ status, id, name, running, tool, gates, tools, onClose }) => {
+  if (tool === 'exec') {
+    return (
+      <GuestExecModal
+        status={status}
+        hostId={id}
+        name={name}
+        running={running}
+        flavor={tools.flavor}
+        utm={gates.utm}
+        onClose={onClose}
+      />
+    );
+  }
+  if (tool === 'display') {
+    return (
+      <DisplayResizeModal
+        status={status}
+        hostId={id}
+        name={name}
+        running={running}
+        onClose={onClose}
+      />
+    );
+  }
+  return null;
+};
+
+GuestToolDialogs.propTypes = {
+  status: PropTypes.object.isRequired,
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  running: PropTypes.bool.isRequired,
+  tool: PropTypes.string.isRequired,
+  gates: gatesShape.isRequired,
+  tools: PropTypes.object.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
 const DangerRows = ({ role, running, busy, onDanger }) => {
   if (!canDestroyMachines(role)) {
     return <PrivilegeLine />;
@@ -230,16 +314,28 @@ DangerRows.propTypes = {
 
 /**
  * The machine rows of the Controls menu on `/hosts/{id}/machines/{name}`,
- * each one request through `useHostActions` and one notice: Power on
+ * each one request through `useHostActions` and one notice: Share link,
+ * hyperweaver-ui's first row, first; Power on
  * while the machine is stopped; Shutdown, Restart, Reset and Inject NMI
  * while it runs; Pause on a VirtualBox host and Suspend on a host that
  * lists `machine-suspend` while it runs, Resume while its own row reads
  * paused on such a host or reads suspended on a host that lists
  * `machine-resume-suspended`; Guest shutdown and Guest reboot while it runs and
  * its guest can be reached from outside; a machine on UTM draws no Reset,
- * no Pause and no Guest reboot; then the Open in application rows of a
- * host that lists `host-launchers`, the zone lifecycle rows of a bhyve
- * host, and, for a role that may destroy, Force kill while it runs and
+ * no Pause and no Guest reboot; Run in guest and Set display size by
+ * `guestToolsOf`, each opening its dialog, the command sent through the
+ * guest agent on a host that lists `guest-agent` and through the Guest
+ * Additions on a VirtualBox host otherwise, the display size on a
+ * VirtualBox host alone and never of a machine on UTM; the console rows
+ * of `ConsoleRows`, one a console the host's row lists, each opening it
+ * on the machine's page; then the Open in application rows of a
+ * host that lists `host-launchers`, the tool rows of `MachineToolRows`,
+ * Snapshot, Clone, Convert to template and the move of a VirtualBox
+ * machine's files, each behind its own gate, the zone lifecycle rows of
+ * a bhyve host, the provisioning rows of `ProvisioningRows`, Provision,
+ * Sync files, Sync back and Run provisioners, each opening the
+ * Provisioning page with its action, and, for a role that may destroy,
+ * Force kill while it runs and
  * Destroy, both behind the dialogs of `MachineDangerDialogs`. The host's
  * tokens and hypervisors come from its registry row, `server`, the
  * running state from the host's stats and the machine's hypervisor and
@@ -260,20 +356,35 @@ const MachineRows = ({ status, id, name, server = null, user = null }) => {
   };
   const { run, busy } = useHostActions({ status, id, name, onDone: refresh });
   const [danger, setDanger] = useState('');
+  const [tool, setTool] = useState('');
   const running = isRunning(stats, name);
   const gates = gatesOf({ server, machine });
+  const guestTools = guestToolsOf({ server, machine, role, running });
 
   return (
     <>
+      <ShareLinkRow />
+      <Dropdown.Divider />
       <PowerRows role={role} running={running} utm={gates.utm} busy={busy} onAction={run} />
       <HoldRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
       <GuestRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
+      <GuestToolRows tools={guestTools} busy={busy} onTool={setTool} />
+      <ConsoleRows id={id} name={name} server={server} busy={busy} />
       <ApplicationRows
         status={status}
         id={id}
         server={server}
         busy={busy}
         onLaunch={application => run('launch', { application })}
+      />
+      <MachineToolRows
+        status={status}
+        id={id}
+        name={name}
+        server={server}
+        machine={machine}
+        user={user}
+        busy={busy}
       />
       <ZoneRows
         status={status}
@@ -284,9 +395,20 @@ const MachineRows = ({ status, id, name, server = null, user = null }) => {
         busy={busy}
         onAction={run}
       />
+      <ProvisioningRows id={id} name={name} server={server} user={user} busy={busy} />
       <Dropdown.Divider />
       <DangerRows role={role} running={running} busy={busy} onDanger={setDanger} />
       <MachineDangerDialogs action={danger} name={name} onClose={() => setDanger('')} onRun={run} />
+      <GuestToolDialogs
+        status={status}
+        id={id}
+        name={name}
+        running={running}
+        tool={tool}
+        gates={gates}
+        tools={guestTools}
+        onClose={() => setTool('')}
+      />
     </>
   );
 };

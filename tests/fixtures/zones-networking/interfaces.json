@@ -1,0 +1,78 @@
+{
+  "interfaces": [
+    {
+      "id": 4,
+      "link": "igb0",
+      "state": "up",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "class": "phys",
+      "mtu": 1500,
+      "over": "--",
+      "speed": 1000,
+      "duplex": "full",
+      "zone": "--"
+    },
+    {
+      "id": 5,
+      "link": "igb1",
+      "state": "down",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "class": "phys",
+      "mtu": 1500,
+      "over": "--",
+      "speed": 0,
+      "duplex": "unknown",
+      "zone": "--"
+    },
+    {
+      "id": 6,
+      "link": "vnic0",
+      "state": "up",
+      "scan_timestamp": "2026-09-27T11:59:00.000Z",
+      "class": "vnic",
+      "mtu": 1500,
+      "over": "igb0",
+      "speed": 1000,
+      "duplex": "full",
+      "zone": "web-1"
+    },
+    {
+      "id": 1,
+      "link": "igb0",
+      "state": "down",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "class": "phys",
+      "mtu": 1500,
+      "over": "--",
+      "speed": 0,
+      "duplex": "unknown",
+      "zone": "--"
+    },
+    {
+      "id": 2,
+      "link": "igb1",
+      "state": "down",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "class": "phys",
+      "mtu": 1500,
+      "over": "--",
+      "speed": 0,
+      "duplex": "unknown",
+      "zone": "--"
+    },
+    {
+      "id": 3,
+      "link": "vnic0",
+      "state": "up",
+      "scan_timestamp": "2026-09-27T11:58:00.000Z",
+      "class": "vnic",
+      "mtu": 1500,
+      "over": "igb0",
+      "speed": 1000,
+      "duplex": "full",
+      "zone": "web-1"
+    }
+  ],
+  "totalCount": 6,
+  "pagination": { "limit": 100, "offset": 0, "hasMore": false }
+}

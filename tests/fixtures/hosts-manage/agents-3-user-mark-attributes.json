@@ -1,0 +1,11 @@
+{
+  "username": "mark",
+  "groups": ["operators", "deploy"],
+  "authorizations": ["solaris.zone.manage"],
+  "profiles": ["Zone Management"],
+  "roles": ["zoneadm"],
+  "project": "default",
+  "account_status": "active",
+  "password_status": "set",
+  "last_login": "2026-09-27T08:12:00.000Z"
+}

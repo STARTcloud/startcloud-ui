@@ -1,0 +1,48 @@
+{
+  "recipes": [
+    {
+      "id": "r-1",
+      "name": "debian-console-setup",
+      "os_family": "linux",
+      "brand": "bhyve",
+      "is_default": true,
+      "description": "Logs in over the console and sets the network up",
+      "boot_string": "login:",
+      "login_prompt": "login:",
+      "shell_prompt": ":~$",
+      "timeout_seconds": 300,
+      "variables": { "username": "root", "password": "changeme" },
+      "steps": [
+        { "type": "wait", "pattern": "login:" },
+        { "type": "send", "value": "{{username}}" },
+        { "type": "wait", "pattern": "Password:" },
+        { "type": "send", "value": "{{password}}" },
+        { "type": "command", "value": "ip addr" }
+      ]
+    },
+    {
+      "id": "r-2",
+      "name": "windows-first-boot",
+      "os_family": "windows",
+      "brand": "bhyve",
+      "is_default": false,
+      "description": "Waits out the first boot",
+      "variables": {},
+      "steps": [{ "type": "delay", "seconds": 120 }]
+    },
+    {
+      "id": "r-3",
+      "name": "omnios-lx-setup",
+      "os_family": "solaris",
+      "brand": "lx",
+      "is_default": false,
+      "description": "",
+      "variables": { "hostname": "lx-1" },
+      "steps": [
+        { "type": "wait", "pattern": "# " },
+        { "type": "template", "content": "hostname={{hostname}}", "dest": "/etc/nodename" }
+      ]
+    }
+  ],
+  "total": 3
+}

@@ -32,3 +32,9 @@ export const canPowerOffHosts = role => hasMinPermission(role, 'admin');
 
 /** An admin alone controls a host. */
 export const canControlHosts = role => hasMinPermission(role, 'admin');
+
+/** A super-admin alone edits an agent's settings, hyperweaver-ui's gate. */
+export const canManageSettings = role => hasMinPermission(role, 'super-admin');
+
+/** An admin alone manages an agent's API keys. */
+export const canManageApiKeys = role => hasMinPermission(role, 'admin');

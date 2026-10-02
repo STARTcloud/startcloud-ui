@@ -88,7 +88,8 @@
       "source": "",
       "agent_responding": false,
       "checked_at": "2026-09-27T00:00:00Z"
-    }
+    },
+    "nat_forwards": []
   },
   "active_vnc_session": null,
   "pending_tasks": [],

@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "message": "Nothing to run: every playbook was skipped by its run directive",
+  "machine_name": "dev-2",
+  "playbook_count": 0,
+  "playbooks_skipped": ["ansible/playbook.yml"]
+}

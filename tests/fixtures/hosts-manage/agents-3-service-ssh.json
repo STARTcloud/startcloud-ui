@@ -1,0 +1,11 @@
+{
+  "fmri": "svc:/network/ssh:default",
+  "name": "ssh:default",
+  "state": "online",
+  "next_state": "none",
+  "enabled": true,
+  "restarter": "svc:/system/svc/restarter:default",
+  "contract_id": 118,
+  "dependencies": ["svc:/milestone/network:default"],
+  "log_file": "/var/svc/log/network-ssh:default.log"
+}

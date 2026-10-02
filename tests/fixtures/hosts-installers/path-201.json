@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "message": "Storage location created",
+  "path": {
+    "id": "loc-images",
+    "name": "Images",
+    "path": "/rpool/images",
+    "type": "image",
+    "enabled": true
+  }
+}

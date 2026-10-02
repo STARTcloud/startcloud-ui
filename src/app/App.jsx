@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
 import AppShell from '../components/layout/AppShell';
-import { brandLogoUrl } from '../config/brand';
+import { brandLogoUrl, brandMarkUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
 import { CrumbProvider } from '../contexts/CrumbContext';
 import { NavbarSearchProvider } from '../contexts/SearchContext';
@@ -78,10 +78,17 @@ const createRuntimeAdapters = status => ({
  * The notifications adapter the shell's bell and the inbox route share,
  * null when the host lists no `notifications`, when the session carries
  * no notifications scope, or when the account is guest-only, the shared
- * download login, which keeps nothing of its own and so has no inbox.
+ * download login, which keeps nothing of its own and so has no inbox; on
+ * an `apikey` host the token alone is the scope, because the agent lists
+ * it only while it holds a live token for its bound account and relays
+ * the inbox under that token.
  */
 const notificationsFor = ({ status, cookie, claims, user, memberships, notifications }) => {
-  const scoped = cookie || hasNotificationsScope(claims) || hasNotificationsScope(user);
+  const scoped =
+    cookie ||
+    authMethod(status) === 'apikey' ||
+    hasNotificationsScope(claims) ||
+    hasNotificationsScope(user);
   if (!hasFeature(status, 'notifications') || !scoped || guestOnly(memberships)) {
     return null;
   }
@@ -89,7 +96,7 @@ const notificationsFor = ({ status, cookie, claims, user, memberships, notificat
 };
 
 const ownApiRows = status =>
-  status.links.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
+  status.links?.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
 
 /**
  * The API reference rows of the user menu's app section: the rows the
@@ -143,9 +150,10 @@ const shellFlags = ({
  * `setup`, the identity avatar (Gravatar for a backend session, the
  * profile's picture for a cookie one, the provider's picture for an
  * identity-provider one), the event stream a session keeps, its
- * terminate and profile events, the favorites read the
- * session deferred while it was adopted on an auth path, run the first
- * time the route leaves those paths, the ticket link, the
+ * terminate and profile events, the favorites read while the host lists
+ * `favorites`, never asked of a host that lists no such route, the read
+ * the session deferred while it was adopted on an auth path run the
+ * first time the route leaves those paths, the ticket link, the
  * notification adapters (the inbox one handed to the shell's bell and to
  * the inbox route alike, its unread count in the notifications feature's
  * one context around them both, neither drawn for a guest-only
@@ -160,7 +168,9 @@ const shellFlags = ({
  * the header's account slot while one does, the views hook the first
  * mounted feature exports for the footer's pane while one does, the
  * crumb context a page names its own crumb through, and the shell around
- * the routes.
+ * the routes. A sign-out from the user menu forgets the session and moves
+ * home in one transition, so the page signed out of never draws itself
+ * for a visitor and sends nobody to the sign-in page on the way home.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t, i18n } = useTranslation();
@@ -181,7 +191,7 @@ const App = ({ getSupportedLanguages }) => {
     allOrganizations: orgFilter,
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
-    loadFavorites: menuFavorites,
+    loadFavorites: hasFeature(status, 'favorites') ? menuFavorites : null,
   });
   const {
     user,
@@ -194,7 +204,7 @@ const App = ({ getSupportedLanguages }) => {
     issuerUrl,
     readDeferredFavorites,
   } = account;
-  const { mode, resolved, setMode, toggleMode, setTheme } = useTheme({
+  const { mode, resolved, setMode, toggleMode, theme, themes, setTheme } = useTheme({
     hostTheme: status.brand.theme || null,
     themes: offeredThemes(status.brand),
     onPersistMode: persistMode,
@@ -215,7 +225,7 @@ const App = ({ getSupportedLanguages }) => {
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
   const appSearch = useAppSearch(collections, isGlobalAdmin(user));
 
-  useFavicon(brandLogoUrl(status.brand));
+  useFavicon(brandMarkUrl(status.brand, theme, themes), brandLogoUrl(status.brand));
   usePwa(status.brand.name);
   useAccountPreferences({
     user,
@@ -260,9 +270,11 @@ const App = ({ getSupportedLanguages }) => {
   const inbox = notificationsFor({ status, cookie, claims, user, memberships, notifications });
 
   const handleSignOut = () => {
-    account.signOut();
-    resetCatalogCache();
-    navigate('/');
+    startTransition(() => {
+      account.signOut();
+      resetCatalogCache();
+      navigate('/');
+    });
   };
 
   const afterSignIn = () => navigate(returnTo.consume() || '/', { replace: true });

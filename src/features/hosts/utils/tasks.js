@@ -1,3 +1,5 @@
+import { taskMachineOf } from './machines';
+
 export const PRIORITY_FLOORS = [20, 40, 60, 80, 100];
 
 export const DEFAULT_FLOOR = 40;
@@ -138,7 +140,7 @@ export const TASK_COLUMNS = [
     kind: 'text',
     priority: 2,
     labelKey: 'footer.tasks.columnTarget',
-    value: task => task.machine_name || '',
+    value: task => taskMachineOf(task),
   },
   {
     key: 'status',
@@ -250,15 +252,17 @@ export const TERMINAL_TASK_STATUSES = ['completed', 'completed_with_errors', 'fa
 export const HOST_LEVEL_TARGETS = ['system', 'artifact', 'filesystem'];
 
 /**
- * The machine a task's stream ticket is bound to: the task's own
- * `machine_name`, and none for a host-level task, whose target reads
- * `system`, `artifact` or `filesystem`.
+ * The machine a task's stream ticket is bound to: the task's own machine
+ * as its agent names it (`taskMachineOf`), and none for a host-level
+ * task, whose target reads `system`, `artifact` or `filesystem`.
  *
  * @param {Object} task - The task row
  * @returns {string} The machine name, empty for an unbound ticket
  */
-export const ticketMachineOf = task =>
-  task.machine_name && !HOST_LEVEL_TARGETS.includes(task.machine_name) ? task.machine_name : '';
+export const ticketMachineOf = task => {
+  const machine = taskMachineOf(task);
+  return machine && !HOST_LEVEL_TARGETS.includes(machine) ? machine : '';
+};
 
 /**
  * The class a task's row is tinted with: danger for a failed task,

@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "task_id": "a1000000-0000-4000-8000-000000000011",
+  "machine_name": "copy-1.example.com",
+  "source_machine": "dev-1",
+  "operation": "machine_clone_current",
+  "status": "pending",
+  "message": "Current-state clone task queued (VBoxManage clonevm)"
+}

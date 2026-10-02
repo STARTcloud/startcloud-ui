@@ -8,8 +8,8 @@ import PropTypes from 'prop-types';
  * on a host whose `status.config` names a file (`config` present, absent
  * on a backend with no files); the `users` and `organizations` adapters
  * the identity feature's Users and All organizations pages draw over on
- * a host with accounts of its own (each present only there); the storage
- * usage on a host that answers it (`storage` present).
+ * a host with accounts of its own (each present only there); and the
+ * storage usage on a host that answers it (`storage` present).
  */
 export const adminShape = PropTypes.shape({
   users: PropTypes.shape({

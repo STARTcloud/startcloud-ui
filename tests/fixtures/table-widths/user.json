@@ -1,0 +1,10 @@
+{
+  "id": 1,
+  "username": "mark",
+  "email": "mark@m4kr.net",
+  "verified": true,
+  "roles": ["user"],
+  "organization": "STARTcloud",
+  "organizations": [{ "name": "STARTcloud", "role": "admin", "is_primary": true }],
+  "entitlements": [{ "value": "hyperweaver" }]
+}

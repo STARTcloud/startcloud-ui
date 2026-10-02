@@ -1,0 +1,4 @@
+{
+  "schemaVersion": 1,
+  "machines": { "orchestration": { "enabled": false, "strategy": "parallel_by_priority" } }
+}

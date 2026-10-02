@@ -1,8 +1,19 @@
 import { hostFor, offline } from './fleet.js';
-import { AGENT_MODE, denied, missing, unauthenticated } from './kit.js';
-import { isAdmin, sessionOf } from './people.js';
+import { AGENT_MODE, APIKEY_MODE, denied, missing, typedProblem, unauthenticated } from './kit.js';
+import { credentialOf, isAdmin, sessionOf } from './people.js';
 
 const AGENT_PREFIX = AGENT_MODE ? '/api' : '/api/agents/:agent';
+const KEY_REQUIRED =
+  'API key required - provide either X-API-Key header or Authorization: Bearer header';
+const INVALID_KEY = 'Invalid API key';
+const AUTHENTICATION = {
+  status: 401,
+  name: 'authentication',
+  title: 'Authentication is required.',
+};
+const FORBIDDEN = { status: 403, name: 'forbidden', title: 'The request is not allowed.' };
+
+const agentRefusal = (kind, detail) => typedProblem({ ...kind, more: { detail, errors: [] } });
 
 const routes = [];
 const sockets = [];
@@ -62,10 +73,35 @@ export const matchSocket = pathname => {
   return entry ? matched(entry, pathname) : null;
 };
 
+const noSession = req => {
+  if (!APIKEY_MODE) {
+    return unauthenticated('Sign in first.');
+  }
+  return credentialOf(req)
+    ? agentRefusal(FORBIDDEN, INVALID_KEY)
+    : agentRefusal(AUTHENTICATION, KEY_REQUIRED);
+};
+
+const notAdmin = session => {
+  if (!APIKEY_MODE) {
+    return denied('This takes an administrator.');
+  }
+  const role = session.payload.key_role || 'viewer';
+  return agentRefusal(
+    FORBIDDEN,
+    `Insufficient role: this operation requires 'admin' (key role: '${role}')`
+  );
+};
+
 /**
  * What stands between a request and its route: a route that needs a
  * session answers 401 without a live token, and an admin's route answers
- * 403 to a person without `ROLE_ADMIN`.
+ * 403 to a person without `ROLE_ADMIN`; on the `hyperweaver-agent` role
+ * the refusals are the agent's middleware's own, a problem body of the
+ * status's registry type with the sentence as `detail` and an empty
+ * `errors` list, 401 with no credential, 403 for an unknown key and 403
+ * for a role too low, while the sign-in routes of `agent-settings.js`
+ * keep the `{ msg }` bodies of the agent's sign-in brief.
  *
  * @param {Object} gate - The route's gate
  * @param {Object} req - The request
@@ -74,10 +110,10 @@ export const matchSocket = pathname => {
 export const admit = (gate, req) => {
   const session = sessionOf(req);
   if (gate.session && !session) {
-    return { refused: unauthenticated('Sign in first.'), session: null };
+    return { refused: noSession(req), session: null };
   }
   if (gate.admin && !isAdmin(session.person)) {
-    return { refused: denied('This takes an administrator.'), session };
+    return { refused: notAdmin(session), session };
   }
   return { refused: null, session };
 };

@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "name": "mirror",
+      "url": "https://mirror.example.com",
+      "enabled": true,
+      "default": false
+    },
+    {
+      "name": "boxvault",
+      "url": "https://boxvault.example.com",
+      "enabled": true,
+      "default": true
+    }
+  ]
+}

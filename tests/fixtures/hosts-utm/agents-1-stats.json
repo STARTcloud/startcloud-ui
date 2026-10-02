@@ -1,0 +1,23 @@
+{
+  "hostname": "mac-1",
+  "eol": "\n",
+  "arch": "arm64",
+  "cpus": [
+    {
+      "model": "Apple M4 Pro",
+      "speed": 2400,
+      "times": { "user": 914520, "nice": 0, "sys": 402310, "idle": 8812400, "irq": 0 }
+    }
+  ],
+  "endianness": "LE",
+  "freemem": 12884901888,
+  "loadavg": [0.42, 0.37, 0.31],
+  "platform": "darwin",
+  "release": "25.0.0",
+  "totalmem": 51539607552,
+  "type": "Darwin",
+  "uptime": 3600,
+  "version": "Darwin Kernel Version 25.0.0",
+  "allmachines": ["mac-1"],
+  "runningmachines": ["mac-1"]
+}

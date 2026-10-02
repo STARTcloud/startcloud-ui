@@ -1,0 +1,35 @@
+{
+  "boot_environments": [
+    {
+      "name": "omnios-r151054",
+      "is_active_now": true,
+      "is_active_on_reboot": true,
+      "mountpoint": "/",
+      "space": "6.05G",
+      "policy": "static",
+      "created": "2026-08-01 09:12",
+      "is_temporary": false
+    },
+    {
+      "name": "omnios-r151052",
+      "is_active_now": false,
+      "is_active_on_reboot": false,
+      "mountpoint": "-",
+      "space": "412M",
+      "policy": "static",
+      "created": "2026-03-14 18:40",
+      "is_temporary": false
+    },
+    {
+      "name": "test-be",
+      "is_active_now": false,
+      "is_active_on_reboot": false,
+      "mountpoint": "-",
+      "space": "96K",
+      "policy": "dynamic",
+      "created": "2026-09-20 02:14",
+      "is_temporary": true
+    }
+  ],
+  "total": 3
+}

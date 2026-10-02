@@ -15,12 +15,14 @@ const ConfirmModal = ({
   title = '',
   message = '',
   variant = 'delete',
+  keyword: ownKeyword = '',
+  confirmText = '',
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
   const { keys, button } = VARIANTS[variant];
-  const keyword = t(`${keys}.keyword`);
+  const keyword = ownKeyword || t(`${keys}.keyword`);
 
   const handleInputChange = event => {
     setInputValue(event.target.value);
@@ -50,7 +52,7 @@ const ConfirmModal = ({
         <Modal.Title>{title || t(`${keys}.title`)}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>{message || t(`${keys}.message`, { keyword })}</p>
+        <div className="mb-3">{message || t(`${keys}.message`, { keyword })}</div>
         <Form.Control
           type="text"
           value={inputValue}
@@ -68,7 +70,7 @@ const ConfirmModal = ({
           {t('pages.confirm.cancel')}
         </Button>
         <Button variant={button} onClick={handleConfirmClick}>
-          {t(`${keys}.confirm`)}
+          {confirmText || t(`${keys}.confirm`)}
         </Button>
       </Modal.Footer>
     </Modal>
@@ -80,8 +82,10 @@ ConfirmModal.propTypes = {
   handleClose: PropTypes.func.isRequired,
   handleConfirm: PropTypes.func.isRequired,
   title: PropTypes.string,
-  message: PropTypes.string,
+  message: PropTypes.node,
   variant: PropTypes.oneOf(Object.keys(VARIANTS)),
+  keyword: PropTypes.string,
+  confirmText: PropTypes.string,
 };
 
 export default ConfirmModal;

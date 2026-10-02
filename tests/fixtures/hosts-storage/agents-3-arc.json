@@ -1,0 +1,92 @@
+{
+  "arc": [
+    {
+      "id": 17278,
+      "scan_timestamp": "2026-09-27T12:00:00.000Z",
+      "arc_size": "16106127360",
+      "arc_target_size": "17179869184",
+      "arc_min_size": "2147483648",
+      "arc_max_size": "17179869184",
+      "arc_meta_used": "1288490188",
+      "arc_meta_limit": "4294967296",
+      "mru_size": "6120328396",
+      "mfu_size": "9019431321",
+      "data_size": "13314398617",
+      "metadata_size": "1288490188",
+      "hits": "9004120",
+      "misses": "410220",
+      "demand_data_hits": "7120440",
+      "demand_data_misses": "120440",
+      "hit_ratio": "95.64",
+      "data_demand_efficiency": "98.34",
+      "data_prefetch_efficiency": "61.20",
+      "l2_hits": "0",
+      "l2_misses": "0",
+      "l2_size": "0"
+    },
+    {
+      "id": 17279,
+      "scan_timestamp": "2026-09-27T12:00:05.000Z",
+      "arc_size": "16642998272",
+      "arc_target_size": "17179869184",
+      "arc_min_size": "2147483648",
+      "arc_max_size": "17179869184",
+      "arc_meta_used": "1288490188",
+      "arc_meta_limit": "4294967296",
+      "mru_size": "6324339343",
+      "mfu_size": "9320079032",
+      "data_size": "13851269529",
+      "metadata_size": "1288490188",
+      "hits": "9004920",
+      "misses": "410260",
+      "demand_data_hits": "7121040",
+      "demand_data_misses": "120460",
+      "hit_ratio": "95.64",
+      "data_demand_efficiency": "98.34",
+      "data_prefetch_efficiency": "61.22",
+      "l2_hits": "0",
+      "l2_misses": "0",
+      "l2_size": "0"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "latest": {
+    "id": 17279,
+    "scan_timestamp": "2026-09-27T12:00:05.000Z",
+    "arc_size": "16642998272",
+    "arc_target_size": "17179869184",
+    "arc_min_size": "2147483648",
+    "arc_max_size": "17179869184",
+    "arc_meta_used": "1288490188",
+    "arc_meta_limit": "4294967296",
+    "mru_size": "6324339343",
+    "mfu_size": "9320079032",
+    "data_size": "13851269529",
+    "metadata_size": "1288490188",
+    "hits": "9004920",
+    "misses": "410260",
+    "demand_data_hits": "7121040",
+    "demand_data_misses": "120460",
+    "hit_ratio": "95.64",
+    "data_demand_efficiency": "98.34",
+    "data_prefetch_efficiency": "61.22",
+    "l2_hits": "0",
+    "l2_misses": "0",
+    "l2_size": "0"
+  },
+  "sampling": {
+    "applied": true,
+    "strategy": "javascript-time-sampling",
+    "samplesRequested": 38,
+    "samplesReturned": 2
+  },
+  "metadata": {
+    "timeSpan": {
+      "start": "2026-09-27T12:00:00.000Z",
+      "end": "2026-09-27T12:00:05.000Z",
+      "durationMinutes": 0
+    }
+  },
+  "queryTime": 6
+}

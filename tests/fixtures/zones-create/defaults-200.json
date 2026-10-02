@@ -1,0 +1,46 @@
+{
+  "settings": {
+    "vcpus": 2,
+    "memory": "2G",
+    "os_type": "generic",
+    "firmware_type": "UEFI"
+  },
+  "zones": {
+    "brand": "bhyve",
+    "hostbridge": "i440fx",
+    "diskif": "virtio",
+    "netif": "virtio",
+    "acpi": "on",
+    "vnc": "on",
+    "bootorder": "bootdisk,cdrom0"
+  },
+  "disks": {
+    "boot": {
+      "pool": "rpool",
+      "dataset": "zones",
+      "sparse": true
+    }
+  },
+  "config": {
+    "template_pool": "rpool"
+  },
+  "knob_values": {
+    "zones.diskif": ["virtio", "ahci", "nvme"],
+    "zones.netif": ["virtio", "e1000"],
+    "zones.vnc": ["on", "off"],
+    "zones.acpi": ["on", "off"],
+    "zones.bootrom": ["BHYVE_RELEASE", "BHYVE_RELEASE_CSM"],
+    "settings.sync_method": ["rsync", "scp"],
+    "settings.firmware_type": ["BIOS", "UEFI"],
+    "disks.boot.clone_strategy": ["clone", "copy", "localize"]
+  },
+  "knob_defaults": {
+    "vcpus": 2,
+    "ram": 2048,
+    "zones.diskif": "virtio",
+    "settings.sync_method": "rsync",
+    "settings.firmware_type": "UEFI",
+    "transport.remove_on_completion": true
+  },
+  "notes": []
+}

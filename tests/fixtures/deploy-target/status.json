@@ -1,0 +1,10 @@
+{
+  "role": "boxvault",
+  "version": "0.77.0",
+  "brand": { "name": "BoxVault", "logo_url": "/brand/boxvault/mark.svg" },
+  "auth": ["backend"],
+  "collections": ["boxes"],
+  "features": ["deploy", "watches"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

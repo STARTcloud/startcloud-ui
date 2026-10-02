@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/servers/2/origin",
+      "rule": "unique",
+      "params": { "scope": "servers" },
+      "detail": "/servers/2/origin is already listed"
+    }
+  ]
+}

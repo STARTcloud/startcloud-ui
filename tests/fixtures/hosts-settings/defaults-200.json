@@ -1,0 +1,23 @@
+{
+  "settings": { "vcpus": 2, "memory": "2G", "firmware_type": "BIOS", "sync_method": "rsync" },
+  "zones": {},
+  "disks": { "boot": { "sparse": true, "clone_strategy": "copy" } },
+  "config": {},
+  "knob_values": {
+    "vbox.serial.type": ["16450", "16550A", "16750"],
+    "nics.promisc": ["deny", "allow-vms", "allow-all"],
+    "nics.nic_type": ["Am79C970A", "Am79C973", "82540EM", "82543GC", "82545EM", "virtio"],
+    "nics.cable_connected": ["on", "off"],
+    "disks.controller_type": ["ide", "sata", "scsi", "sas", "nvme", "virtio", "usb", "floppy"],
+    "boot_order": ["floppy", "dvd", "disk", "net", "none"]
+  },
+  "knob_defaults": {
+    "vcpus": 2,
+    "ram": 2048,
+    "xhci": "on",
+    "diskif": "sata",
+    "boot_priority": 95,
+    "disks.controller_type": "sata"
+  },
+  "notes": ["VirtualBox recommends the rest per guest OS type"]
+}

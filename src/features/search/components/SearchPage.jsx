@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
-import { KindGlyph, levelLabel } from '../../../components/common/SearchResults';
+import { levelLabel } from '../../../components/common/SearchResults';
 import SubTable from '../../../components/common/SubTable';
 import { EMPTY_APP_RESULTS, NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -105,7 +105,6 @@ const KindSection = ({ kind, rows, columns, search, collection, ctx }) => {
   return (
     <div className="list-table mb-4">
       <h4 className="d-flex align-items-center gap-2">
-        <KindGlyph kind={kind} collection={collection} />
         {levelLabel(t, kind, collection)}
         <span className="badge bg-secondary bg-opacity-50">{rows.length}</span>
       </h4>

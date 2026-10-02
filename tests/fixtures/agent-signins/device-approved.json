@@ -1,0 +1,8 @@
+{
+  "status": "approved",
+  "api_key": "hw_device_flow_key",
+  "entity_id": 14,
+  "name": "person@example.com",
+  "role": "admin",
+  "message": "Login successful"
+}

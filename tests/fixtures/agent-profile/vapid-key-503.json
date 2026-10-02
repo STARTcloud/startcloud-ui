@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/not-configured",
+  "title": "Browser push is not configured on this agent.",
+  "status": 503,
+  "detail": "The agent relays the inbox and sends no push of its own.",
+  "errors": []
+}

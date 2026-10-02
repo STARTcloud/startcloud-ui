@@ -1,0 +1,17 @@
+{
+  "sub": "8f2c",
+  "name": "Mark Gilbert",
+  "email": "mark@m4kr.net",
+  "scope": "openid profile email integrations",
+  "integrations": [
+    {
+      "id": "hyperweaver",
+      "status": "connected",
+      "connected_at": "2026-09-01T12:00:00Z",
+      "settings": {
+        "servers": [{ "origin": "https://hw.example.com", "label": "Office", "default": true }],
+        "deploy_target": "https://hw.example.com"
+      }
+    }
+  ]
+}

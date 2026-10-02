@@ -1,0 +1,17 @@
+{
+  "available": {
+    "ntp": {
+      "installed": true,
+      "enabled": true,
+      "can_switch_to": true,
+      "package_name": "service/network/ntp"
+    },
+    "chrony": {
+      "installed": false,
+      "enabled": false,
+      "can_switch_to": true,
+      "package_name": "service/network/chrony"
+    }
+  },
+  "current": { "service": "ntp" }
+}

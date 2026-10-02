@@ -14,6 +14,19 @@ export const hostHasFeature = (server, token) =>
   listOf(server?.capabilities?.features).includes(token);
 
 /**
+ * Whether a host's row names a console token in its
+ * `capabilities.console`, `vnc`, `zlogin` or `rdp`, checked strictly: a
+ * row without the list names nothing, because a console's start fires an
+ * agent request that an agent without the surface answers 404.
+ *
+ * @param {Object|null} server - The registry row, or the one serving agent's
+ * @param {string} token - The console token, e.g. `vnc`
+ * @returns {boolean} True only when the list names the token
+ */
+export const hostHasConsole = (server, token) =>
+  listOf(server?.capabilities?.console).includes(token);
+
+/**
  * Whether a host's row names a hypervisor in its
  * `capabilities.hypervisors`, `bhyve`, `virtualbox` or `utm`, the positive
  * check the rows that exist on one hypervisor alone are gated by.

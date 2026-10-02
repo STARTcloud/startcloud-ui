@@ -13,17 +13,27 @@ import { useHostReadingsRefresh } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
 import { useHostStats } from '../hooks/useHostStats';
 import { useMachineDetail } from '../hooks/useMachineDetail';
+import { useMachineSeriesRefresh } from '../hooks/useMachineSeries';
+import { useMachineSnapshotsRefresh } from '../hooks/useMachineSnapshots';
 import { useServers } from '../hooks/useServers';
-import { hostLabel, isRunning, isServerRole, machineNoun } from '../utils/hosts';
-import { isUnknownMachine } from '../utils/machines';
+import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
+import { isUnknownMachine, nounKeyOf } from '../utils/machines';
 
+import MachineCharts from './MachineCharts';
+import MachineConsolePanel from './MachineConsolePanel';
 import MachineGuestAgentCard from './MachineGuestAgentCard';
 import MachineGuestInfoCard from './MachineGuestInfoCard';
 import MachineHardwareCard from './MachineHardwareCard';
 import MachineInfoCard from './MachineInfoCard';
-import MachineScreenshotCard from './MachineScreenshotCard';
+import MachineProvisioningView from './MachineProvisioningView';
+import MachineSettingsView from './MachineSettingsView';
+import MachineSnapshotsView from './MachineSnapshotsView';
+import MachineTabs from './MachineTabs';
 import MachineTagsNotesCard from './MachineTagsNotesCard';
+import MachineTopologySlice from './NetworkTopology/MachineTopologySlice';
 import RefreshButton from './RefreshButton';
+
+const TOPOLOGY_FOLD = 'machine-topology';
 
 const labelOf = ({ status, held, id, stats }) => {
   if (isServerRole(status)) {
@@ -35,10 +45,27 @@ const labelOf = ({ status, held, id, stats }) => {
 
 /**
  * One machine at `/hosts/{id}/machines/{name}`, hyperweaver-ui's machine
- * overview in its order, each surface a section card that folds under
- * `table_prefs_machine`: the machine information; the screen, where
- * hyperweaver-ui drew the console; the tags and notes; the hardware; the
- * guest agent; and the guest information. The detail is the one copy
+ * page: under the heading the tab row of the machine's pages,
+ * `MachineTabs` over the one list of `MACHINE_PAGES`, and under it the
+ * page the route names, `page`. The Overview, the machine's own route,
+ * is hyperweaver-ui's machine overview in its order, each surface a
+ * section card that folds under `table_prefs_machine`: the machine
+ * information; the console of `MachineConsolePanel`, the one surface
+ * that shows the machine's screen, a frame while no console is live and
+ * the live console once one is; the tags and notes; the hardware; the guest agent; the guest information;
+ * the machine's slice of the host's topology, `MachineTopologySlice`,
+ * while the machine has a network presence; and the charts of
+ * `MachineCharts` behind `monitoring`. The Snapshots,
+ * at `/hosts/{id}/machines/{name}/snapshots`, hyperweaver-ui's Snapshots
+ * tab as one unit, `MachineSnapshotsView`, the snapshots with their
+ * retention policy, which reads what it draws through the hosts
+ * feature's hooks; the Settings, at
+ * `/hosts/{id}/machines/{name}/settings`, hyperweaver-ui's Settings tab
+ * as one unit, `MachineSettingsView`, every editor over the modify wire;
+ * the Provisioning, at
+ * `/hosts/{id}/machines/{name}/provisioning`, hyperweaver-ui's
+ * Provisioning tab as one unit, `MachineProvisioningView`, the status
+ * card, the document editor and the pipeline. The detail is the one copy
  * `useMachineDetail` holds of `GET machines/{name}`, the machine's own
  * row the one `useMachineRow` holds of `GET machines`, found whatever
  * the organization chosen, and the running state the host's stats of
@@ -49,9 +76,10 @@ const labelOf = ({ status, held, id, stats }) => {
  * answers and never by a test of which agent it is. Refresh in the
  * heading's actions reads the list of servers, the host's stats, every
  * answer the page holds of the host, its health among them, its machine
- * rows and the detail again and raises `turn`, on which the surfaces
+ * rows, the detail, the series of the machine's charts and its
+ * snapshots again and raises `turn`, on which the surfaces
  * that hold a read of their own, the guest's operating system, the
- * guest properties and the screen, read again; the stream's fresh
+ * guest properties and the console's frame, read again; the stream's fresh
  * opening and its `reset` raise it too, and nothing reads on a clock,
  * hyperweaver-ui's thirty-second read of the detail not carried over.
  * The loading line draws while the stats have not answered, the danger
@@ -61,7 +89,7 @@ const labelOf = ({ status, held, id, stats }) => {
  * that neither its stats, its machine rows nor a detail names once each
  * has answered, draws the placard saying so in place of the surfaces.
  */
-const MachinePage = ({ id, name, context, organizations }) => {
+const MachinePage = ({ id, name, context, organizations, page = 'overview' }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const { held, refresh: refreshServers } = useServers();
@@ -69,11 +97,13 @@ const MachinePage = ({ id, name, context, organizations }) => {
   const row = useMachineRow(id, name);
   const answer = useMachineDetail(id, name);
   const refreshReadings = useHostReadingsRefresh();
+  const refreshSeries = useMachineSeriesRefresh();
+  const refreshSnapshots = useMachineSnapshotsRefresh();
   const folds = useFolds(`${context.prefsPrefix}_machine`);
   const [turn, setTurn] = useState(0);
   const server = useHostRow(id);
   const host = labelOf({ status, held, id, stats });
-  const noun = t(`hosts.machines.noun.${machineNoun(server ? [server] : [])}`);
+  const resource = t(nounKeyOf(server ? [server] : []));
 
   useEffect(() => {
     document.title = name;
@@ -108,6 +138,8 @@ const MachinePage = ({ id, name, context, organizations }) => {
     refreshServers();
     refreshStats();
     refreshReadings(id);
+    refreshSeries(id, name);
+    refreshSnapshots(id, name);
     reread();
     setTurn(current => current + 1);
   };
@@ -125,7 +157,7 @@ const MachinePage = ({ id, name, context, organizations }) => {
       <div className="list row" data-page="machine">
         <PageHeader title={name} actions={<RefreshButton onRefresh={refresh} />} />
         <div data-note="not-found">
-          <EmptyState title={t('hosts.machines.notFound', { noun, name, host })} />
+          <EmptyState title={t('pages.machines.machineNotFound', { machineParam: name })} />
         </div>
       </div>
     );
@@ -134,6 +166,7 @@ const MachinePage = ({ id, name, context, organizations }) => {
   return (
     <div className="list row" data-page="machine">
       <PageHeader title={name} actions={<RefreshButton onRefresh={refresh} />} />
+      <MachineTabs id={id} name={name} role={context.user?.role} />
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('hosts.host.loadError')}
@@ -141,13 +174,20 @@ const MachinePage = ({ id, name, context, organizations }) => {
       ) : null}
       {answer.failed ? (
         <div className="alert alert-info" role="status" data-note="no-detail">
-          <p className="mb-1">{t('hosts.machines.detailsUnavailable', { noun })}</p>
+          <p className="mb-1">{t('pages.machines.detailsUnavailable', { resource })}</p>
           <p className="small text-muted mb-0">
-            {t('hosts.machines.detailsUnavailableNote', { noun })}
+            {t('pages.machines.detailsUnavailableNote', { resource })}
           </p>
         </div>
       ) : null}
-      <div>
+      {page === 'settings' ? (
+        <MachineSettingsView key={name} id={id} name={name} context={context} />
+      ) : null}
+      {page === 'snapshots' ? <MachineSnapshotsView id={id} name={name} context={context} /> : null}
+      {page === 'provisioning' ? (
+        <MachineProvisioningView id={id} name={name} context={context} />
+      ) : null}
+      {page === 'overview' ? (
         <div className="row g-3 mb-3">
           <MachineInfoCard
             id={id}
@@ -159,7 +199,15 @@ const MachinePage = ({ id, name, context, organizations }) => {
             organizations={organizations}
             folds={folds}
           />
-          <MachineScreenshotCard id={id} name={name} running={running} turn={turn} folds={folds} />
+          <MachineConsolePanel
+            id={id}
+            name={name}
+            detail={detail}
+            running={running}
+            turn={turn}
+            user={context.user}
+            folds={folds}
+          />
           {detail ? (
             <>
               <MachineTagsNotesCard
@@ -169,7 +217,7 @@ const MachinePage = ({ id, name, context, organizations }) => {
                 onSaved={reread}
                 folds={folds}
               />
-              <MachineHardwareCard detail={detail} folds={folds} />
+              <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
               <MachineGuestAgentCard
                 id={id}
                 name={name}
@@ -179,10 +227,24 @@ const MachinePage = ({ id, name, context, organizations }) => {
                 folds={folds}
               />
               <MachineGuestInfoCard id={id} name={name} detail={detail} turn={turn} folds={folds} />
+              <MachineTopologySlice
+                id={id}
+                name={name}
+                folded={folds.folded(TOPOLOGY_FOLD)}
+                onFold={() => folds.toggle(TOPOLOGY_FOLD)}
+              />
+              <MachineCharts
+                id={id}
+                name={name}
+                host={host}
+                detail={detail}
+                running={running}
+                folds={folds}
+              />
             </>
           ) : null}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 };
@@ -192,6 +254,7 @@ MachinePage.propTypes = {
   name: PropTypes.string.isRequired,
   context: pageContextShape.isRequired,
   organizations: PropTypes.arrayOf(PropTypes.object).isRequired,
+  page: PropTypes.oneOf(['overview', 'settings', 'snapshots', 'provisioning']),
 };
 
 export default MachinePage;

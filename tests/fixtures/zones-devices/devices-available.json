@@ -1,0 +1,66 @@
+{
+  "devices": [
+    {
+      "id": 1,
+      "device_name": "Intel I350 Gigabit Network Connection",
+      "vendor_name": "Intel Corporation",
+      "pci_address": "0000:03:00.0",
+      "device_category": "network",
+      "driver_name": "igb",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": false,
+      "assigned_to_zones": []
+    },
+    {
+      "id": 2,
+      "device_name": "Intel I350 Gigabit Network Connection",
+      "vendor_name": "Intel Corporation",
+      "pci_address": "0000:03:00.1",
+      "device_category": "network",
+      "driver_name": "igb",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": false,
+      "assigned_to_zones": []
+    },
+    {
+      "id": 5,
+      "device_name": "Mellanox ConnectX-4 Lx",
+      "vendor_name": "Mellanox Technologies",
+      "pci_address": "0000:81:00.0",
+      "device_category": "network",
+      "driver_name": "ppt",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": true,
+      "ppt_device_path": "/dev/ppt1",
+      "assigned_to_zones": []
+    },
+    {
+      "id": 6,
+      "device_name": "Samsung NVMe SSD Controller PM9A1",
+      "vendor_name": "Samsung Electronics",
+      "pci_address": "0000:c1:00.0",
+      "device_category": "storage",
+      "driver_name": "nvme",
+      "driver_attached": true,
+      "ppt_capable": true,
+      "ppt_enabled": false,
+      "assigned_to_zones": []
+    },
+    {
+      "id": 7,
+      "device_name": "ASMedia ASM1142 USB 3.1 Host Controller",
+      "vendor_name": "ASMedia Technology",
+      "pci_address": "0000:c2:00.0",
+      "device_category": "usb",
+      "driver_name": null,
+      "driver_attached": false,
+      "ppt_capable": true,
+      "ppt_enabled": false,
+      "assigned_to_zones": []
+    }
+  ],
+  "total": 5
+}

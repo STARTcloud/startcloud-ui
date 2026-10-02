@@ -7,9 +7,11 @@ import { mountAgents, socketMachine, startFlapping } from './mock/agents.js';
 import { SETUP_TOKEN, mountConfig } from './mock/config.js';
 import { hostFor } from './mock/fleet.js';
 import { mountInbox } from './mock/inbox.js';
-import { PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
+import { mountIntegrations } from './mock/integrations.js';
+import { APIKEY_MODE, PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
 import { startSampling } from './mock/monitoring.js';
 import { mountOrgs } from './mock/orgs.js';
+import { mountRegistry } from './mock/registry.js';
 import {
   adminRoute,
   admit,
@@ -26,6 +28,7 @@ import { openStream } from './mock/stream.js';
 import { ticketFits } from './mock/terminal.js';
 
 const DIST = path.resolve('dist');
+const API_PREFIXES = ['/api/'];
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -44,11 +47,17 @@ const SIGN_IN_NAMES = 'user, admin, super, guest, or any other name';
 const router = { publicRoute, sessionRoute, adminRoute, agentRoute, socketRoute };
 
 mountSite(router);
-mountAccount(router);
+if (!APIKEY_MODE) {
+  mountAccount(router);
+  mountIntegrations(router);
+}
 mountInbox(router);
 mountOrgs(router);
-mountConfig(router);
 mountAgents(router);
+mountConfig(router);
+if (STATUS.role === 'hyperweaver-server') {
+  mountRegistry(router);
+}
 sessionRoute('GET', '/api/events', openStream);
 
 const readBody = req =>
@@ -138,7 +147,7 @@ const answerFile = (req, res, url) => {
 
 const handle = async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  const status = url.pathname.startsWith('/api/')
+  const status = API_PREFIXES.some(prefix => url.pathname.startsWith(prefix))
     ? await answerApi(req, res, url)
     : answerFile(req, res, url);
   console.log(`${status} ${req.method} ${url.pathname}`);
@@ -271,6 +280,36 @@ const announce = () => {
  * Zones, Studio and the agent roles, which list `machine-screenshot`;
  * Lab, `store-1` and Attic list none and draw no screen.
  *
+ * The tools of a machine have data on Desk, Zones, Studio and the agent
+ * roles, which list `machine-create`, `machine-modify`,
+ * `machine-snapshots` and `templates`; Lab, `store-1` and Attic list
+ * none of the four. Every other machine starts with two snapshots, the
+ * tree of VirtualBox, the names alone on UTM, refused while the machine
+ * runs, and the snapshots of a zone's datasets; take, restore, edit and
+ * delete are tasks that change the list when they end, and so are a
+ * clone and an import, whose machine joins the host's. The hyperweaver
+ * kind clones the machines a provisioner made alone, and a clone that
+ * asks for more memory than the host has free is refused with its
+ * `details`. A retention policy is kept at once in the machine's
+ * `configuration.snapshots`. The holds answer on a host of the
+ * zoneweaver kind that lists `zfs`, the import on the hyperweaver kind.
+ * The machine's charts read `monitoring/zones/usage` and
+ * `monitoring/zones/diskio` on the zoneweaver kind and
+ * `monitoring/machines/usage` on the hyperweaver kind, and the usage of
+ * a zone's own link from `monitoring/network/usage` with `link`.
+ *
+ * The provisioning of a machine has data on every host that lists
+ * `provisioning`: every other machine carries a provisioner document
+ * under `configuration.provisioner`, its status reads provisioned, and
+ * a provision, a sync and a run of the provisioners each queue one task
+ * whose end marks the machine provisioned; every fourth machine's
+ * document runs a host hook, so its first provision is refused 409
+ * until confirmed. A stored document and a saved Hosts.yml are kept at
+ * once; Hosts.yml answers 403 to a person who is no admin. The registry
+ * answers on the hosts that list `provisioner-registry`, one family,
+ * `startcloud`, with two versions, their role specs, playbook
+ * candidates and the field DSL of a manifest.
+ *
  * Every host that lists `monitoring` answers the reads of the host page's
  * Overview and of its charts as the agent of its kind answers them, the
  * pools, the datasets, the pool I/O and the ARC on the hosts that list
@@ -302,6 +341,33 @@ const announce = () => {
  * banners, as zoneweaver-agent does, and on a host of the hyperweaver
  * kind every socket starts a new shell and `exit` writes `Terminal
  * session closed.`, as hyperweaver-agent does.
+ *
+ * The Agent settings page has data on every host: the settings with their
+ * schema, backups, the restart, an update offered on Desk and the agent
+ * roles, the secrets on the hosts that list `secrets`, and the API keys.
+ * On the `hyperweaver-agent` role the status lists `apikey` and `oidc`
+ * in `auth` and says `bootstrapAvailable` until the first-key bootstrap
+ * is used, the account routes are not mounted, the agent having no
+ * users, a request carries its key as `Authorization: Bearer` or
+ * `X-API-Key`, and the sign-in page offers the agent's six paths: a
+ * seeded key signs in as `hwk_seed_0001_initial` (admin) or
+ * `hwk_seed_0002_ci` (operator), the bootstrap takes the setup token as
+ * `setup_token`, `#tray=tray-demo-token` claims the tray handoff once,
+ * the device flow approves on its second status check, and the silent
+ * probe answers 502, no identity provider being reachable from the
+ * mock. The server role's hosts page has the registry's writes, an
+ * agent registered with a key of its own, its self-signed switch and
+ * its removal, a host whose name says `unreachable` failing its test;
+ * the server's own configuration is the config engine's, under
+ * `/admin/config`.
+ *
+ * The connected services of the identity contract answer on the server
+ * and zone roles: the fixture's person is connected to Hyperweaver with
+ * two servers, read on the record and at `GET /api/user/integrations`,
+ * and the whole-settings PATCH, the connect and the disconnect of
+ * `/api/user/integrations/hyperweaver` are answered in the issuer's
+ * shapes, a bad origin refused 422 with its pointer and an unknown
+ * service 404.
  *
  * Writes are evaluated against the rules of `GET /api/rules` and refused
  * as the validation contract's problem body: 422 with pointers, 409 for

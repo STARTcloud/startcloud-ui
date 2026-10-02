@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect } from 'react';
 
-import { READS, hostOffers } from '../utils/monitoring';
+import { READS, readOffered } from '../utils/monitoring';
 
 import { useHostRow } from './useHostRow';
 
@@ -31,7 +31,7 @@ const NO_PROVIDER = {
  */
 export const useHostReading = (id, key) => {
   const server = useHostRow(id);
-  const offered = hostOffers(server, READS[key].tokens);
+  const offered = readOffered(server, READS[key]);
   const { epoch, hosts, read } = useContext(HostReadingsContext) || NO_PROVIDER;
   const { data, loaded, failed, stale } = hosts[id]?.[key] || EMPTY;
 

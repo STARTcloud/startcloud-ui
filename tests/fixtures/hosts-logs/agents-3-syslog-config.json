@@ -1,0 +1,53 @@
+{
+  "service_fmri": "svc:/system/system-log:default",
+  "service_status": { "state": "online", "fmri": "svc:/system/system-log:default" },
+  "config_file": "/etc/syslog.conf",
+  "config_content": "*.err;kern.notice;auth.notice\t\t\t/dev/sysmsg\n*.err;kern.debug;daemon.notice;mail.crit\t\t\t/var/adm/messages\n*.alert;kern.err;daemon.err\t\t\toperator\n*.alert\t\t\troot\n*.emerg\t\t\t*\nmail.debug\t\t\tifdef(`LOGHOST', /var/log/syslog, @loghost)",
+  "parsed_rules": [
+    {
+      "line_number": 1,
+      "selector": "*.err;kern.notice;auth.notice",
+      "action": "/dev/sysmsg",
+      "full_line": "*.err;kern.notice;auth.notice\t\t\t/dev/sysmsg",
+      "parsed": { "action_type": "file", "action_target": "/dev/sysmsg" }
+    },
+    {
+      "line_number": 2,
+      "selector": "*.err;kern.debug;daemon.notice;mail.crit",
+      "action": "/var/adm/messages",
+      "full_line": "*.err;kern.debug;daemon.notice;mail.crit\t\t\t/var/adm/messages",
+      "parsed": { "action_type": "file", "action_target": "/var/adm/messages" }
+    },
+    {
+      "line_number": 3,
+      "selector": "*.alert;kern.err;daemon.err",
+      "action": "operator",
+      "full_line": "*.alert;kern.err;daemon.err\t\t\toperator",
+      "parsed": { "action_type": "user", "action_target": "operator" }
+    },
+    {
+      "line_number": 4,
+      "selector": "*.alert",
+      "action": "root",
+      "full_line": "*.alert\t\t\troot",
+      "parsed": { "action_type": "user", "action_target": "root" }
+    },
+    {
+      "line_number": 5,
+      "selector": "*.emerg",
+      "action": "*",
+      "full_line": "*.emerg\t\t\t*",
+      "parsed": { "action_type": "all_users", "action_target": "*" }
+    },
+    {
+      "line_number": 6,
+      "selector": "mail.debug",
+      "action": "ifdef(`LOGHOST', /var/log/syslog, @loghost)",
+      "full_line": "mail.debug\t\t\tifdef(`LOGHOST', /var/log/syslog, @loghost)",
+      "parsed": {
+        "action_type": "conditional",
+        "action_target": "ifdef(`LOGHOST', /var/log/syslog, @loghost)"
+      }
+    }
+  ]
+}

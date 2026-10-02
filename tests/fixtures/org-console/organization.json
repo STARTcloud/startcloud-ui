@@ -1,0 +1,9 @@
+{
+  "name": "acme",
+  "display_name": "Acme",
+  "email": "team@acme.example",
+  "email_hash": "",
+  "description": "The Acme team",
+  "access_mode": "request",
+  "default_role": "member"
+}

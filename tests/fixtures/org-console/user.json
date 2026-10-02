@@ -1,0 +1,9 @@
+{
+  "id": 42,
+  "username": "mark",
+  "email": "mark@m4kr.net",
+  "verified": true,
+  "roles": ["ROLE_USER"],
+  "organization": "acme",
+  "organizations": [{ "name": "acme", "role": "admin", "is_primary": true }]
+}

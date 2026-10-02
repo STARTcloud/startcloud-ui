@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "machine_name": "web-1",
+  "operation": "zone_modify",
+  "status": "completed",
+  "message": "Zone metadata updated successfully.",
+  "requires_restart": false
+}

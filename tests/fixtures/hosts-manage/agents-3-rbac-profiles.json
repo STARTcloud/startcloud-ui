@@ -1,0 +1,7 @@
+{
+  "profiles": [
+    { "name": "Zone Management", "description": "Manage zones" },
+    { "name": "Network Management", "description": "Manage the host and network configuration" }
+  ],
+  "total": 2
+}

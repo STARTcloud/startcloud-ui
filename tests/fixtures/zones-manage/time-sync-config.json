@@ -1,0 +1,7 @@
+{
+  "service": "ntp",
+  "config_file": "/etc/inet/ntp.conf",
+  "config_exists": true,
+  "current_config": "driftfile /var/ntp/ntp.drift\nserver 0.pool.ntp.org iburst",
+  "suggested_defaults": { "config_template": "pool 0.omnios.pool.ntp.org iburst" }
+}

@@ -1,6 +1,17 @@
+import { bootstrapOpen, oidcBound } from './agent-settings.js';
 import { CONFIG_NAMES } from './config-data.js';
 import { ROLE_STATUS, hosts, labelOf } from './fleet.js';
-import { AGENT_MODE, empty, missing, now, ok, uniqueOf } from './kit.js';
+import {
+  AGENT_MODE,
+  APIKEY_MODE,
+  ZONE_MODE,
+  empty,
+  missing,
+  now,
+  ok,
+  secondsUp,
+  uniqueOf,
+} from './kit.js';
 import {
   ROLE_NAMES,
   hashOf,
@@ -15,6 +26,10 @@ import { TOPICS, broadcast, closeStreamsOf, publish } from './stream.js';
 
 const HEALTH_MS = 45 * 1000;
 const GIB = 1024 ** 3;
+const AGENT_AUTH = ['apikey', 'oidc'];
+const AGENT_TOPICS = ['health', 'tasks', 'hosts', 'admin', 'monitoring'];
+const AGENT_REPO = 'https://github.com/Makr91/hyperweaver-agent';
+const AGENT_LINKS = { docs: '/docs', contact: '', api: '/api-docs' };
 const SHARED_FEATURES = [
   'local-accounts',
   'setup',
@@ -26,8 +41,9 @@ const SHARED_FEATURES = [
   'notifications',
   'search',
   'health',
-  'events',
 ];
+const STREAM_FEATURES = ['events'];
+const BOUND_FEATURES = ['favorites', 'notifications'];
 const SERVER_SERVICES = { database: 'ok', agents: 'ok', mail: 'ok', tasks: 'ok', storage: 'ok' };
 const AGENT_SERVICES = { database: 'ok', hypervisor: 'ok', tasks: 'ok', storage: 'ok' };
 const SERVER_PHASES = [
@@ -51,33 +67,72 @@ const phases = AGENT_MODE ? AGENT_PHASES : SERVER_PHASES;
 const steady = AGENT_MODE ? AGENT_SERVICES : SERVER_SERVICES;
 const health = { phase: 0 };
 
+const sharedFeatures = () => {
+  if (APIKEY_MODE) {
+    return [];
+  }
+  return [...SHARED_FEATURES, ...(ZONE_MODE ? [] : STREAM_FEATURES)];
+};
+
+const eventsOf = () => {
+  if (ZONE_MODE) {
+    return {};
+  }
+  return { events: { path: '/api/events', topics: APIKEY_MODE ? AGENT_TOPICS : TOPICS } };
+};
+
 /**
  * The status payload of the role the mock stands in for: the role's
  * fixture with every token of the shared chrome a hyperweaver backend can
  * answer, the links, the repository and the changelog of the About page,
- * the config file names and the topics of the one event stream.
+ * the config file names and, on the roles that stream, `events` and the
+ * topics of the one event stream; the zone role streams none. The
+ * `hyperweaver-agent` role answers the members its own status handler
+ * answers and no other: `brand` with the agent's repository, `links`
+ * with `/docs` and `/api-docs`, `auth` `apikey` and `oidc`, the tokens it
+ * advertises, the five topics of its stream, `bootstrapAvailable` while
+ * the first-key bootstrap is open, `shi_mode` and `uptime`, and
+ * `favorites` and `notifications` in `features` while a key a federated
+ * login minted exists, the agent's own rule for the tokens it lists only
+ * while it holds a live token for its bound account.
  */
 export const STATUS = {
   ...ROLE_STATUS,
   brand: {
     ...ROLE_STATUS.brand,
-    repo: 'https://github.com/example/hyperweaver',
-    changelog: 'https://github.com/example/hyperweaver/releases',
+    repo: APIKEY_MODE ? AGENT_REPO : 'https://github.com/example/hyperweaver',
+    ...(APIKEY_MODE ? {} : { changelog: 'https://github.com/example/hyperweaver/releases' }),
   },
-  features: uniqueOf([...ROLE_STATUS.features, ...SHARED_FEATURES]),
-  links: {
-    docs: 'https://docs.example.com/hyperweaver',
-    contact: 'mailto:support@example.com',
-    api: 'https://docs.example.com/hyperweaver/api',
-    community: [
-      { label: 'Sponsor Hyperweaver', url: 'https://sponsors.example.com/hyperweaver' },
-      { label: 'Community forum', url: 'https://forum.example.com/hyperweaver' },
-    ],
-  },
+  features: uniqueOf([...ROLE_STATUS.features, ...sharedFeatures()]),
+  auth: AGENT_MODE ? AGENT_AUTH : ROLE_STATUS.auth,
+  links: APIKEY_MODE
+    ? AGENT_LINKS
+    : {
+        docs: 'https://docs.example.com/hyperweaver',
+        contact: 'mailto:support@example.com',
+        api: 'https://docs.example.com/hyperweaver/api',
+        community: [
+          { label: 'Sponsor Hyperweaver', url: 'https://sponsors.example.com/hyperweaver' },
+          { label: 'Community forum', url: 'https://forum.example.com/hyperweaver' },
+        ],
+      },
   ticket: null,
   config: CONFIG_NAMES,
-  events: { path: '/api/events', topics: TOPICS },
+  ...eventsOf(),
 };
+
+const status = () =>
+  ok(
+    APIKEY_MODE
+      ? {
+          ...STATUS,
+          features: uniqueOf([...STATUS.features, ...(oidcBound() ? BOUND_FEATURES : [])]),
+          bootstrapAvailable: bootstrapOpen(),
+          shi_mode: false,
+          uptime: secondsUp(),
+        }
+      : STATUS
+  );
 
 const TICKET = {
   enabled: true,
@@ -294,7 +349,7 @@ const suspended = flag => ctx => {
  * @returns {void}
  */
 export const mountSite = ({ publicRoute, sessionRoute, adminRoute }) => {
-  publicRoute('GET', '/api/status', () => ok(STATUS));
+  publicRoute('GET', '/api/status', status);
   publicRoute('GET', '/api/health', () => ok(healthNow()));
   publicRoute('GET', '/api/rules', () => ok(RULES));
   publicRoute('GET', '/api/config/ticket', () => ok({ ticket_system: TICKET }));

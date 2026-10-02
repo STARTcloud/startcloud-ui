@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "parent_task_id": "a1000000-0000-4000-8000-000000000005",
+  "machine_name": "copy-1.example.com",
+  "source_machine": "dev-1",
+  "operation": "machine_create_orchestration",
+  "status": "pending",
+  "message": "Machine clone creation queued",
+  "requires_download": false,
+  "sub_tasks": {
+    "prepare": "a1000000-0000-4000-8000-000000000051",
+    "storage": "a1000000-0000-4000-8000-000000000052",
+    "config": "a1000000-0000-4000-8000-000000000053",
+    "finalize": "a1000000-0000-4000-8000-000000000054"
+  },
+  "resource_warnings": [
+    {
+      "resource": "memory",
+      "level": "warning",
+      "message": "Host memory will be 82.50% utilized after this operation (warning threshold: 80%)",
+      "projected_percent": 82.5
+    }
+  ]
+}

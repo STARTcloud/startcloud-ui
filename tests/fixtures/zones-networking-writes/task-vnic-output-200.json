@@ -1,0 +1,7 @@
+{
+  "task_id": "b2000000-0000-4000-8000-000000000201",
+  "status": "running",
+  "output": [
+    { "stream": "stdout", "data": "dladm create-vnic -l igb0 vnic9", "timestamp": 1790500442000 }
+  ]
+}

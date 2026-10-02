@@ -1,0 +1,21 @@
+{
+  "facilities": [
+    { "name": "*", "description": "All facilities" },
+    { "name": "kern", "description": "Kernel messages" },
+    { "name": "user", "description": "User processes" },
+    { "name": "mail", "description": "Mail system" },
+    { "name": "daemon", "description": "System daemons" },
+    { "name": "auth", "description": "Authentication" },
+    { "name": "local0", "description": "Local use 0" }
+  ],
+  "levels": [
+    { "name": "emerg", "description": "System is unusable" },
+    { "name": "alert", "description": "Action must be taken immediately" },
+    { "name": "crit", "description": "Critical conditions" },
+    { "name": "err", "description": "Error conditions" },
+    { "name": "warning", "description": "Warning conditions" },
+    { "name": "notice", "description": "Normal but significant" },
+    { "name": "info", "description": "Informational" },
+    { "name": "debug", "description": "Debug-level messages" }
+  ]
+}

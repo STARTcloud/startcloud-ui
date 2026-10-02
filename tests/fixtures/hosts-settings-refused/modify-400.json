@@ -1,0 +1,14 @@
+{
+  "error": "Insufficient resources",
+  "details": [
+    {
+      "resource": "memory",
+      "strategy": "actual",
+      "message": "Requested 64.00 GB exceeds available host memory (8.00 GB free)",
+      "host_total_bytes": 34359738368,
+      "host_free_bytes": 8589934592,
+      "requested_bytes": 68719476736,
+      "projected_percent": 275
+    }
+  ]
+}

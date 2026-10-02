@@ -52,7 +52,8 @@ export const encodePath = (...segments) =>
 
 /**
  * The one error shape every request of the client fails with: the HTTP
- * status (0 for a network failure), the server's own message, an i18n key
+ * status (0 for a network failure), the server's own message (`message`,
+ * `error_description`, `error`, a problem's `detail`, then its `title`), an i18n key
  * for the status, the parsed body, the RFC 9457 problem when the body is
  * one with its `errors[]` as `fieldErrors`, and the request that failed.
  */
@@ -65,6 +66,7 @@ export class ApiError extends Error {
       textOf(fields.message) ||
       textOf(fields.error_description) ||
       textOf(fields.error) ||
+      textOf(fields.detail) ||
       textOf(fields.title);
     super(serverMessage || cause.message);
     this.name = 'ApiError';

@@ -1,0 +1,26 @@
+{
+  "addresses": [
+    {
+      "interface": "igb0",
+      "addrobj": "igb0/v4static",
+      "ip_address": "10.0.0.31",
+      "prefix_length": 24,
+      "addr": "10.0.0.31/24",
+      "ip_version": "v4",
+      "type": "static",
+      "state": "ok"
+    },
+    {
+      "interface": "vnic0",
+      "addrobj": "vnic0/v4dhcp",
+      "ip_address": "10.0.0.41",
+      "prefix_length": 24,
+      "addr": "10.0.0.41/24",
+      "ip_version": "v4",
+      "type": "dhcp",
+      "state": "ok"
+    }
+  ],
+  "returned": 2,
+  "source": "live"
+}

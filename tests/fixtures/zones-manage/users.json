@@ -1,0 +1,21 @@
+{
+  "users": [
+    {
+      "username": "root",
+      "uid": 0,
+      "gid": 0,
+      "comment": "Super-User",
+      "home": "/root",
+      "shell": "/usr/bin/bash"
+    },
+    {
+      "username": "mark",
+      "uid": 1001,
+      "gid": 1001,
+      "comment": "Mark Gilbert",
+      "home": "/export/home/mark",
+      "shell": "/usr/bin/bash"
+    }
+  ],
+  "total": 2
+}

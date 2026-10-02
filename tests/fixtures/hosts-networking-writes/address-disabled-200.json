@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Address object Ethernet/v4 disabled",
+  "note": "The whole interface Ethernet was taken down with it"
+}

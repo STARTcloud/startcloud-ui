@@ -1,0 +1,9 @@
+{
+  "task_id": "c3000000-0000-4000-8000-000000000001",
+  "status": "running",
+  "output": [
+    { "stream": "stdout", "data": "Waiting for port 22", "timestamp": 1758974401000 },
+    { "stream": "stdout", "data": "ok the machine answers over SSH", "timestamp": 1758974402000 },
+    { "stream": "stdout", "data": "Syncing the provisioner folders", "timestamp": 1758974403000 }
+  ]
+}

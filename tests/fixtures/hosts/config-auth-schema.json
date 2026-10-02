@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Authentication",
+  "schemaVersion": 1,
+  "sections": {},
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "readOnly": true,
+      "default": 1,
+      "title": "Schema version"
+    }
+  }
+}

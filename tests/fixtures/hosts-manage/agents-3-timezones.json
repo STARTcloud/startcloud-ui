@@ -1,0 +1,10 @@
+{
+  "timezones": [
+    "UTC",
+    "America/Chicago",
+    "America/New_York",
+    "Europe/London",
+    "Europe/Berlin",
+    "Asia/Tokyo"
+  ]
+}

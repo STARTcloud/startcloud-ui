@@ -1,0 +1,27 @@
+{
+  "role": "hyperweaver-agent",
+  "brand": {
+    "name": "Hyperweaver",
+    "logo_url": "/brand/hyperweaver/mark.svg",
+    "repo": "https://github.com/Makr91/hyperweaver-agent"
+  },
+  "collections": [],
+  "ticket": null,
+  "config": ["app", "auth", "db", "machines", "storage"],
+  "events": {
+    "path": "/api/events",
+    "topics": ["health", "tasks", "hosts", "admin", "monitoring"]
+  },
+  "agent": "hyperweaver-agent",
+  "hypervisors": ["virtualbox"],
+  "platform": "linux",
+  "arch": "x86_64",
+  "version": "1.2.0",
+  "hostname": "lab-1",
+  "auth": ["apikey", "oidc"],
+  "bootstrapAvailable": false,
+  "console": ["rdp"],
+  "features": ["tasks", "machines", "hosts", "footer", "health", "events", "admin", "setup"],
+  "shi_mode": false,
+  "uptime": 1036800
+}

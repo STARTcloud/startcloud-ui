@@ -1,0 +1,7 @@
+{
+  "general/enabled": "true",
+  "restarter/state": "online",
+  "start/exec": "/lib/svc/method/sshd start",
+  "config/manpage": "https://illumos.org/man/8/svcadm",
+  "config/notes": "Line one of the notes\nLine two of the notes"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "rpool",
+  "status": "  pool: rpool\n state: ONLINE\n  scan: scrub repaired 0B in 00:12:41 with 0 errors on Sun Sep 21 03:12:41 2026\nconfig:\n\n\tNAME                       STATE     READ WRITE CKSUM\n\trpool                      ONLINE       0     0     0\n\t  mirror-0                 ONLINE       0     0     0\n\t    c0t5000C500A1B2C3D4d0  ONLINE       0     0     0\n\t    c0t5000C500A1B2C3D5d0  ONLINE       0     0     0\n\nerrors: No known data errors",
+  "parsed": {
+    "vdevs": [
+      {
+        "type": "mirror",
+        "state": "ONLINE",
+        "devices": [
+          {
+            "name": "c0t5000C500A1B2C3D4d0",
+            "state": "ONLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": ""
+          },
+          {
+            "name": "c0t5000C500A1B2C3D5d0",
+            "state": "ONLINE",
+            "read": "0",
+            "write": "0",
+            "cksum": "0",
+            "note": ""
+          }
+        ]
+      }
+    ],
+    "scan": null
+  }
+}

@@ -20,15 +20,47 @@ const SETTLED = {
   zone_attach: () => 'installed',
 };
 const steps = { begin: null, finish: null };
+const effects = new Map();
 
 export const stoppedWord = host => STOPPED[host.kind];
+
+/**
+ * What a completed task of one operation changes beyond a machine's
+ * state: `effect(host, task)` runs once when a task of `operation`
+ * completes, before the host's stats are announced.
+ *
+ * @param {string} operation - The task's `operation`
+ * @param {Function} effect - Called with the host and the task
+ * @returns {void}
+ */
+export const settles = (operation, effect) => {
+  effects.set(operation, effect);
+};
 
 const frame = (type, task, more) => JSON.stringify({ type, task_id: task.id, ...more });
 
 const listenersOf = (host, task) => [...(host.streams.get(task.id) || [])];
 
+/**
+ * One task row as the host's own agent answers it: hyperweaver-agent's
+ * row with `updatedAt`, zoneweaver-agent's with the machine under
+ * `zone_name` and `updatedAt`.
+ *
+ * @param {Object} host - The host
+ * @param {Object} task - The row the mock holds
+ * @returns {Object} The row on the wire
+ */
+export const wireTask = (host, task) => {
+  const updatedAt = task.completed_at || task.started_at || task.created_at;
+  if (host.kind !== 'zoneweaver') {
+    return { ...task, updatedAt };
+  }
+  const { machine_name: zone, ...rest } = task;
+  return { ...rest, zone_name: zone, updatedAt };
+};
+
 const announceTask = (host, task) =>
-  emit({ host, topic: 'tasks', event: 'task-updated', data: task });
+  emit({ host, topic: 'tasks', event: 'task-updated', data: wireTask(host, task) });
 
 export const announceStats = host =>
   emit({ host, topic: 'hosts', event: 'stats-updated', data: statsOf(host) });
@@ -108,6 +140,12 @@ const finish = (host, task, status) => {
 const settle = (host, task) => {
   const name = task.machine_name;
   const settled = SETTLED[task.operation];
+  const effect = effects.get(task.operation);
+  if (effect) {
+    effect(host, task);
+    announceStats(host);
+    return;
+  }
   if (!machineOf(host, name) || (!settled && task.operation !== 'delete')) {
     return;
   }
@@ -207,7 +245,7 @@ export const listedTasks = ctx => {
   const limit = Number(url.searchParams.get('limit')) || TASK_LIMIT;
   const tasks = host.tasks.filter(wanted(url)).sort(byNewest);
   return ok({
-    tasks: tasks.slice(0, limit),
+    tasks: tasks.slice(0, limit).map(task => wireTask(host, task)),
     running_count: host.tasks.filter(task => task.status === 'running').length,
   });
 };
@@ -229,7 +267,7 @@ const cancel = (host, task) => {
 
 export const shownTask = ctx => {
   const task = taskOf(ctx);
-  return task ? ok({ ...task, output: null }) : refusal(404, 'Task not found');
+  return task ? ok({ ...wireTask(ctx.host, task), output: null }) : refusal(404, 'Task not found');
 };
 
 export const shownOutput = ctx => {

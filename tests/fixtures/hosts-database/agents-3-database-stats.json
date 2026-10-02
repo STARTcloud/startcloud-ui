@@ -1,0 +1,24 @@
+{
+  "databases": [
+    {
+      "name": "monitoring",
+      "files": [
+        { "name": "monitoring.db", "size": 52428800 },
+        { "name": "monitoring.db-wal", "size": 4194304 }
+      ],
+      "size": 56623104,
+      "tables": 5,
+      "indexes": 12
+    },
+    {
+      "name": "tasks",
+      "files": [{ "name": "tasks.db", "size": 8388608 }],
+      "size": 8388608,
+      "tables": 2,
+      "indexes": 5
+    }
+  ],
+  "total_size": 65011712,
+  "total_tables": 7,
+  "total_rows": 758050
+}

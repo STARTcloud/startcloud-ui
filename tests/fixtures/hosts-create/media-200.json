@@ -1,0 +1,12 @@
+{
+  "media": [
+    {
+      "path": "D:\\vms\\media\\debian13-base.vdi",
+      "format": "VDI",
+      "size_bytes": 8589934592,
+      "source_stamp": "template",
+      "in_use_by": []
+    }
+  ],
+  "total": 1
+}

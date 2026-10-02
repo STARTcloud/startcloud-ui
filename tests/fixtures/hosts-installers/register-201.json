@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Registered /rpool/drop/omnios.iso",
+  "artifact": { "id": 15, "filename": "omnios.iso" }
+}

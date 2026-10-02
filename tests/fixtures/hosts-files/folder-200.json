@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "item": {
+    "name": "new-folder",
+    "path": "/new-folder",
+    "isDirectory": true,
+    "size": 0,
+    "mtime": "2026-09-27T09:00:00.000Z",
+    "permissions": { "octal": "755", "string": "drwxr-xr-x" },
+    "uid": 1000,
+    "gid": 1000,
+    "mimeType": "inode/directory",
+    "isBinary": false,
+    "syntax": null
+  }
+}

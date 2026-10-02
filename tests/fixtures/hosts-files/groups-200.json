@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "groups": [
+    { "groupname": "root", "gid": 0, "members": [] },
+    { "groupname": "mark", "gid": 1000, "members": ["mark"] }
+  ],
+  "total": 2
+}

@@ -1,0 +1,32 @@
+{
+  "role": "hyperweaver-agent",
+  "agent": "hyperweaver-agent",
+  "hypervisors": ["virtualbox"],
+  "platform": "linux",
+  "arch": "x86_64",
+  "version": "1.2.0",
+  "hostname": "lab-1",
+  "auth": ["apikey", "oidc"],
+  "bootstrapAvailable": true,
+  "console": ["rdp"],
+  "features": [
+    "sidebar",
+    "hosts",
+    "footer",
+    "machines",
+    "tasks",
+    "admin",
+    "setup",
+    "health",
+    "events"
+  ],
+  "config": ["app", "auth", "db", "machines", "storage"],
+  "events": {
+    "path": "/api/events",
+    "topics": ["health", "tasks", "hosts", "admin", "monitoring"]
+  },
+  "brand": { "name": "Hyperweaver", "logo_url": "/brand/hyperweaver/mark.svg" },
+  "collections": [],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

@@ -1,0 +1,9 @@
+{
+  "interfaces": [
+    { "name": "Intel(R) Ethernet Connection", "class": "phys", "status": "up", "wireless": false },
+    { "name": "Wi-Fi", "class": "phys", "status": "up", "wireless": true },
+    { "name": "Ethernet 2", "class": "phys", "status": "down", "wireless": false }
+  ],
+  "default": "Intel(R) Ethernet Connection",
+  "total": 3
+}

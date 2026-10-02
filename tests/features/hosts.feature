@@ -242,7 +242,112 @@ Feature: hosts
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/"
     Then I see "Desk"
-    And the sidebar draws "Hosts" above "Profile"
+    And the sidebar draws "Datacenter" above "Profile"
+
+  Scenario: Sidebar tree: the server role draws the Datacenter root at / above the hosts, each host indented under it
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    Then the sidebar draws "Datacenter" above "Desk"
+    And the tree node "Desk" begins where the label of "Datacenter" begins
+    And the chrome draws no sidebar row "Hosts"
+    When I open the tree node "Datacenter"
+    Then the path is "/"
+    And I see "Desk"
+
+  Scenario: Sidebar tree: a host node draws no status dot while a machine row draws one
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    Then I see "dev-1"
+    And the tree node "Desk" draws no status dot
+    And the tree node "dev-1" draws a status dot
+
+  Scenario: Sidebar tree: the pages of a host are no rows of the tree and stay one right-click away
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    Then the tree lists no row "Overview" under the tree node "Desk"
+    And the tree lists the row "dev-2" under the tree node "Desk"
+    When I right-click the tree node "Desk"
+    Then the tree menu offers "overview"
+    And the tree menu offers "machines"
+    And the tree menu offers "settings"
+
+  Scenario: Sidebar tree: the Configuration node under a host lists its files by title and opens the file on the shared engine over the host's proxy
+    Given the host answers the hosts fixture
+    And the host answers the hosts-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    Then the tree lists the row "Configuration" under the tree node "Desk"
+    When I open the tree node "Configuration"
+    Then the tree lists the row "Machines" under the tree node "Configuration"
+    And the tree lists the row "Application" under the tree node "Configuration"
+    And the tree lists the row "Storage" under the tree node "Configuration"
+    And the host was sent GET to "/api/agents/1/config/machines/schema" 1 times
+    When I follow the tree row "Machines" under the tree node "Configuration"
+    Then the path is "/hosts/1/settings/machines"
+    And the host tab "settings" is the active one
+    And I see "Schema version 1"
+    And the control "Base directory" has the value "/var/lib/machines"
+    And the host was sent GET to "/api/agents/1/config/machines" 1 times
+    And the host was sent GET to "/api/agents/1/config/machines/schema" 1 times
+    And the host was sent GET to "/api/agents/1/config/restart-status" 1 times
+    And the host was not sent GET to "/api/config/machines"
+    When I fill "Base directory" with "/srv/machines"
+    And I click "Update Configuration"
+    Then I see "Configuration updated successfully."
+    And the host was sent PUT to "/api/agents/1/config/machines" carrying "/srv/machines" at "/machines/base_directory"
+    And the host was sent PUT to "/api/agents/1/config/machines" carrying nothing at "/machines/default_memory_mb"
+    And the host was sent GET to "/api/agents/1/config/machines" 2 times
+
+  Scenario: Registry: the hosts page draws the registry's columns and Add host for a super-admin, Test connection and Add send the registry's writes
+    Given the host answers the hosts fixture
+    And the host answers the hosts-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then I see "Desk"
+    And the hosts table draws the "apiKey" column
+    And the hosts page draws no registry form
+    When I click "Add a host"
+    Then the hosts page draws the registry form
+    When I fill "Server Hostname" with "agent-7.example.com"
+    And I click "Test Connection"
+    Then the host was sent POST to "/api/servers/test" carrying "hostname" as "agent-7.example.com"
+    When I click "Bootstrap Server"
+    Then the host was sent POST to "/api/servers" carrying "hostname" as "agent-7.example.com"
+    And the host was sent POST to "/api/servers" carrying "port" as "5001"
+    And the host was sent POST to "/api/servers" carrying "protocol" as "https"
+    And the host was sent POST to "/api/servers" carrying "entityName" as "Hyperweaver-Production"
+    And the hosts page draws no registry form
+
+  Scenario: Registry: /?add=host arrives with the form open and the query dropped
+    Given the host answers the hosts fixture
+    And the host answers the hosts-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/?add=host"
+    Then the hosts page draws the registry form
+    And the path is "/"
+
+  Scenario: Registry: a person without a role that may manage settings reads no Add host and no registry column
+    Given the host answers the hosts fixture
+    And the host answers the hosts-member fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"user\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then I see "Desk"
+    And I do not see "Add a host"
+    And the hosts table draws no "apiKey" column
+    And the hosts page draws no registry form
+
+  Scenario: Registry: the Datacenter root's right-click Add host lands on / with the form open
+    Given the host answers the hosts fixture
+    And the host answers the hosts-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    And I right-click the tree node "Datacenter"
+    And I click "Add a host"
+    Then the hosts page draws the registry form
+    And the path is "/"
 
   Scenario: Sidebar tree: a machine's row begins where its host's label begins
     Given the host answers the hosts fixture
@@ -604,6 +709,32 @@ Feature: hosts
     Then the expanded chart draws
     And the "cores" series of the expanded chart is hidden
     And the "overall" series of the expanded chart is shown
+
+  Scenario: Error page: a failed browser navigation the backend answered with index.html and the stamped fault draws the error page on a backend host
+    Given the host answers the hosts fixture
+    And the served page carries "data-error-status" as "404"
+    And the served page carries "data-error-reference" as "0123456789abcdef"
+    And the served page carries "data-error-path" as "/api/organization/acme/box/web/version/1.0.0/provider/virtualbox/architecture/amd64/file/download"
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/organization/acme/box/web/version/1.0.0/provider/virtualbox/architecture/amd64/file/download"
+    Then I see "Page not found"
+    And I see "0123456789abcdef"
+    And I see "Go home"
+    And I see "Copy error details"
+    And the host was not sent GET to "/api/admin/errors/0123456789abcdef"
+
+  Scenario: Error page: /error after a 303 reads the fault from the URL on a backend host
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/error?status=403&reference=fedcba9876543210&path=%2Fapi%2Fdownload"
+    Then I see "You don't have access to this page"
+    And I see "fedcba9876543210"
+
+  Scenario: Error page: an unknown route with no stamped fault still goes home on a backend host
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/no-such-page"
+    Then the path is "/"
 
   Scenario: Host overview: on an agent role every read is sent at the agent's own /api path
     Given the host answers the agent fixture

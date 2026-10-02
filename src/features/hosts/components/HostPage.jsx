@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../components/common/PageHeader';
 import SectionHeading from '../../../components/common/SectionHeading';
@@ -17,8 +17,11 @@ import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
 import { hostHasFeature } from '../utils/capabilities';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
+import { createSeedOf, hostCreates, withoutCreateSeed } from '../utils/machineCreate';
 
 import HostOverview from './HostOverview';
+import HostTabs from './HostTabs';
+import MachineCreateModal from './MachineCreateModal';
 import MonitoringDatabase from './MonitoringDatabase';
 import NetworkStorageSummary from './NetworkStorageSummary';
 import PerformanceCharts from './PerformanceCharts';
@@ -83,7 +86,8 @@ const labelOf = ({ status, held, id, stats }) => {
 
 /**
  * One host at `/hosts/{id}`, hyperweaver-ui's host overview in its
- * order: the host's label as the title; the host overview card, the
+ * order: the host's label as the title; the tab row of the host's pages
+ * (`HostTabs`); the host overview card, the
  * system information beside the resource utilization; the machines of
  * `stats.allmachines` sorted in the one `SubTable` over Name and State,
  * running or stopped from `stats.runningmachines`, under a heading that
@@ -99,7 +103,11 @@ const labelOf = ({ status, held, id, stats }) => {
  * every series its charts draw, and nothing reads on a clock; the
  * loading line while the stats have not answered and the danger alert
  * when they failed, the stats the copy `useHostStats` shares with the
- * Controls menu and the tree.
+ * Controls menu and the tree. The route's `create=machine` query opens
+ * the create wizard over the page while `hostCreates` offers it, the
+ * seed of the query, the Deploy hand-off's box and provisioner members,
+ * seeding its fields; closing the wizard takes the query out of the
+ * route.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
@@ -109,7 +117,10 @@ const HostPage = ({ id, context }) => {
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
   const folds = useFolds(`${context.prefsPrefix}_host`);
-  const listed = hostHasFeature(useHostRow(id), 'machines');
+  const server = useHostRow(id);
+  const listed = hostHasFeature(server, 'machines');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seed = createSeedOf(searchParams);
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
   const ctx = { ...context, t, language: i18n.language };
@@ -148,6 +159,7 @@ const HostPage = ({ id, context }) => {
   return (
     <div className="list row">
       <PageHeader title={label} actions={<RefreshButton onRefresh={refresh} />} />
+      <HostTabs id={id} />
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('hosts.host.loadError')}
@@ -188,6 +200,14 @@ const HostPage = ({ id, context }) => {
       <NetworkStorageSummary id={id} />
       <PerformanceCharts id={id} host={label} folds={folds} />
       <MonitoringDatabase id={id} />
+      <MachineCreateModal
+        status={status}
+        id={id}
+        open={Boolean(seed) && hostCreates(server, context.user?.role)}
+        user={context.user}
+        seed={seed}
+        onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
+      />
     </div>
   );
 };

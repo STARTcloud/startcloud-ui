@@ -1,0 +1,75 @@
+{
+  "success": true,
+  "artifacts": [
+    {
+      "id": "9a2b4c6d-0000-4000-8000-000100000001",
+      "filename": "debian-13.0.0-amd64-netinst.iso",
+      "path": "/rpool/iso/debian-13.0.0-amd64-netinst.iso",
+      "file_type": "iso",
+      "extension": ".iso",
+      "mime_type": "application/x-iso9660-image",
+      "size": 776994816,
+      "checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "checksum_algorithm": "sha256",
+      "checksum_verified": true,
+      "calculated_checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "user_provided_checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "storage_location": {
+        "id": "7c1e5d3a-0000-4000-8000-000100000001",
+        "name": "ISO library",
+        "path": "/rpool/iso",
+        "type": "iso"
+      },
+      "source_url": "https://mirror.example.com/debian-13.0.0-amd64-netinst.iso",
+      "discovered_at": "2026-09-20T00:00:00.000Z",
+      "updated_at": "2026-09-27T06:00:00.000Z"
+    },
+    {
+      "id": "9a2b4c6d-0000-4000-8000-000100000002",
+      "filename": "omnios-r151054.iso",
+      "path": "/rpool/iso/omnios-r151054.iso",
+      "file_type": "iso",
+      "extension": ".iso",
+      "mime_type": "application/x-iso9660-image",
+      "size": 1181116006,
+      "checksum": "e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8",
+      "checksum_algorithm": "sha256",
+      "checksum_verified": null,
+      "calculated_checksum": "e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8",
+      "user_provided_checksum": null,
+      "storage_location": {
+        "id": "7c1e5d3a-0000-4000-8000-000100000001",
+        "name": "ISO library",
+        "path": "/rpool/iso",
+        "type": "iso"
+      },
+      "source_url": null,
+      "discovered_at": "2026-09-21T00:00:00.000Z",
+      "updated_at": "2026-09-27T06:00:00.000Z"
+    },
+    {
+      "id": "9a2b4c6d-0000-4000-8000-000100000003",
+      "filename": "windows-11-eval.iso",
+      "path": "/rpool/iso/windows-11-eval.iso",
+      "file_type": "iso",
+      "extension": ".iso",
+      "mime_type": "application/x-iso9660-image",
+      "size": 6657199308,
+      "checksum": "0123456789abcdef0123456789abcdef01234567",
+      "checksum_algorithm": "sha1",
+      "checksum_verified": false,
+      "calculated_checksum": "fedcba9876543210fedcba9876543210fedcba98",
+      "user_provided_checksum": "0123456789abcdef0123456789abcdef01234567",
+      "storage_location": {
+        "id": "7c1e5d3a-0000-4000-8000-000100000001",
+        "name": "ISO library",
+        "path": "/rpool/iso",
+        "type": "iso"
+      },
+      "source_url": null,
+      "discovered_at": "2026-09-22T00:00:00.000Z",
+      "updated_at": "2026-09-27T06:00:00.000Z"
+    }
+  ],
+  "pagination": { "total": 3, "limit": 25, "offset": 0, "has_more": false }
+}

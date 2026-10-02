@@ -36,6 +36,17 @@ const sizeOf = (page, selector, side) =>
 
 const rowOf = label => `.sidebar [data-sidebar-row]:has-text(${JSON.stringify(label)})`;
 
+const treeRow = (page, label) =>
+  page.locator('.sidebar-tree [data-sidebar-row]').filter({ hasText: label }).first();
+
+const treeChildren = (page, label) =>
+  treeRow(page, label).locator(
+    'xpath=following-sibling::div[contains(@class,"sidebar-children")][1]'
+  );
+
+const childRow = (page, parent, label) =>
+  treeChildren(page, parent).locator(':scope > [data-sidebar-row]').filter({ hasText: label });
+
 const ONE_SAMPLE = '[data-note="one-sample"]';
 
 const panelOf = (page, name) => page.locator(`[data-panel="${name}"]`);
@@ -43,6 +54,10 @@ const panelOf = (page, name) => page.locator(`[data-panel="${name}"]`);
 const chartOf = (page, metric) => page.locator(`[data-chart="${metric}"]`);
 
 const seriesOf = (scope, group) => scope.locator(`[data-series="${group}"]`);
+
+const REGISTRY_FORM = '[data-form="server-add"]';
+
+const hostsPage = page => page.locator('[data-page="hosts"]');
 
 Given('the browser records its requests', ({ page }) => {
   page.on('request', request => recorded(page).push(new URL(request.url())));
@@ -131,6 +146,50 @@ Then(
   async ({ page }, child, parent) => {
     const labelLeft = await sizeOf(page, `${rowOf(parent)} .sidebar-row-label`, 'left');
     await expect.poll(() => sizeOf(page, `${rowOf(child)} > :first-child`, 'left')).toBe(labelLeft);
+  }
+);
+
+Then('the sidebar row {string} links to {string}', async ({ page }, label, href) => {
+  await expect(page.locator(rowOf(label)).first()).toHaveAttribute('href', href);
+});
+
+Then('the chrome draws no sidebar row {string}', async ({ page }, label) => {
+  await expect(page.locator('.sidebar [data-sidebar-row]').first()).toBeVisible();
+  await expect(
+    page.locator('.sidebar [data-sidebar-row]').filter({ hasText: new RegExp(`^${label}$`, 'u') })
+  ).toHaveCount(0);
+});
+
+Then('the tree node {string} draws no status dot', async ({ page }, label) => {
+  await expect(treeRow(page, label)).toBeVisible();
+  await expect(treeRow(page, label).locator('.sidebar-dot')).toHaveCount(0);
+});
+
+Then('the tree node {string} draws a status dot', async ({ page }, label) => {
+  await expect(treeRow(page, label).locator('.sidebar-dot')).toHaveCount(1);
+});
+
+Then(
+  'the tree lists the row {string} under the tree node {string}',
+  async ({ page }, label, parent) => {
+    await expect(childRow(page, parent, label).first()).toBeVisible();
+  }
+);
+
+Then(
+  'the tree lists no row {string} under the tree node {string}',
+  async ({ page }, label, parent) => {
+    await expect(
+      treeChildren(page, parent).locator(':scope > [data-sidebar-row]').first()
+    ).toBeVisible();
+    await expect(childRow(page, parent, label)).toHaveCount(0);
+  }
+);
+
+When(
+  'I follow the tree row {string} under the tree node {string}',
+  async ({ page }, label, parent) => {
+    await childRow(page, parent, label).first().click();
   }
 );
 
@@ -265,4 +324,22 @@ Then('the {string} series of the expanded chart is hidden', async ({ page }, gro
 
 Then('the interfaces table lists {int} interfaces', async ({ page }, count) => {
   await expect(panelOf(page, 'interfaces').locator('tbody tr')).toHaveCount(count);
+});
+
+Then('the hosts table draws the {string} column', async ({ page }, column) => {
+  await expect(hostsPage(page).locator(`th.col-${column}`)).toBeVisible();
+});
+
+Then('the hosts table draws no {string} column', async ({ page }, column) => {
+  await expect(hostsPage(page).locator('th.col-name')).toBeVisible();
+  await expect(hostsPage(page).locator(`th.col-${column}`)).toHaveCount(0);
+});
+
+Then('the hosts page draws the registry form', async ({ page }) => {
+  await expect(hostsPage(page).locator(REGISTRY_FORM)).toBeVisible();
+});
+
+Then('the hosts page draws no registry form', async ({ page }) => {
+  await expect(hostsPage(page)).toBeVisible();
+  await expect(hostsPage(page).locator(REGISTRY_FORM)).toHaveCount(0);
 });

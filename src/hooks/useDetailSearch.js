@@ -8,7 +8,19 @@ import { nextSort, sortItems } from '../utils/sort';
 import { useClientFilters } from './useClientFilters';
 import { useNavbarSearchBinding } from './useSearchBinding';
 
-const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
+/**
+ * The Columns group of one table for the navbar panel: one pill a column
+ * the table is drawing, active while the column is shown, a pill showing
+ * or hiding its column in the table's preferences; not a filter.
+ *
+ * @param {Object} options - The table's side
+ * @param {Array} options.columns - The columns the table is drawing
+ * @param {Set} options.hidden - The hidden column keys
+ * @param {Function} options.setPrefs - The writer of the table's preferences
+ * @param {Function} options.t - The translator
+ * @returns {Object} The panel group
+ */
+export const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
   key: 'columns',
   label: t('pages.filter.columns'),
   entries: Object.fromEntries(columns.map(column => [column.key, null])),

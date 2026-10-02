@@ -10,6 +10,7 @@ const MINUTE_MS = 60 * 1000;
 
 export const ZONE_MODE = ROLE_WORD === 'zone';
 export const AGENT_MODE = ROLE_WORD === 'agent' || ZONE_MODE;
+export const APIKEY_MODE = ROLE_WORD === 'agent';
 export const SETUP_MODE = ROLE_WORD === 'setup';
 export const PORT = Number(PORT_WORD) || 9595;
 export const SELF = 'self';

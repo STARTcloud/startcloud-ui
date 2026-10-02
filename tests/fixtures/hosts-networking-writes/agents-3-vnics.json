@@ -1,0 +1,28 @@
+{
+  "vnics": [
+    {
+      "link": "vnic0",
+      "over": "igb0",
+      "speed": 1000,
+      "macaddress": "02:08:20:aa:bb:01",
+      "macaddrtype": "fixed",
+      "vid": 0,
+      "mtu": 1500,
+      "state": "up",
+      "zone": "web-1"
+    },
+    {
+      "link": "vnic1",
+      "over": "igb0",
+      "speed": 1000,
+      "macaddress": "02:08:20:aa:bb:02",
+      "macaddrtype": "random",
+      "vid": 100,
+      "mtu": 1500,
+      "state": "up",
+      "zone": "--"
+    }
+  ],
+  "returned": 2,
+  "source": "live"
+}

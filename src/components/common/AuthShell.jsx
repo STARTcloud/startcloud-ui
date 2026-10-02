@@ -3,9 +3,10 @@ import { preload } from 'react-dom';
 
 const AUTH_FACES = ['/fonts/ibm-plex-sans-400.ttf', '/fonts/source-serif-4-500.ttf'];
 
-AUTH_FACES.forEach(href =>
-  preload(href, { as: 'font', type: 'font/ttf', crossOrigin: 'anonymous' })
-);
+const preloadFaces = () =>
+  AUTH_FACES.forEach(href =>
+    preload(href, { as: 'font', type: 'font/ttf', crossOrigin: 'anonymous' })
+  );
 
 const ALERT_ICONS = {
   danger: (
@@ -76,8 +77,9 @@ AuthSpinner.propTypes = {
  * headline, an optional subhead and the page's own content beneath; `wide`
  * widens the column for a document, and a `headingRef` makes the headline
  * focusable so a multi-step page can move focus to it when a step appears.
- * The module asks the browser for the column's two faces through React's
- * `preload` as it loads, so no page outside the auth column requests them.
+ * The column asks the browser for its two faces through React's `preload`
+ * as it draws, so a page outside the auth column, which shares this
+ * module's chunk, never requests them.
  */
 const AuthShell = ({
   title,
@@ -87,25 +89,28 @@ const AuthShell = ({
   headingRef = null,
   top = null,
   children,
-}) => (
-  <div className="auth-page">
-    <div className={wide ? 'auth-column auth-column-wide' : 'auth-column'}>
-      {top}
-      <div className="auth-heading">
-        {icon}
-        {headingRef ? (
-          <h1 className="auth-headline" ref={headingRef} tabIndex={-1}>
-            {title}
-          </h1>
-        ) : (
-          <h1 className="auth-headline">{title}</h1>
-        )}
-        {subtitle && <p className="auth-subhead">{subtitle}</p>}
+}) => {
+  preloadFaces();
+  return (
+    <div className="auth-page">
+      <div className={wide ? 'auth-column auth-column-wide' : 'auth-column'}>
+        {top}
+        <div className="auth-heading">
+          {icon}
+          {headingRef ? (
+            <h1 className="auth-headline" ref={headingRef} tabIndex={-1}>
+              {title}
+            </h1>
+          ) : (
+            <h1 className="auth-headline">{title}</h1>
+          )}
+          {subtitle && <p className="auth-subhead">{subtitle}</p>}
+        </div>
+        {children}
       </div>
-      {children}
     </div>
-  </div>
-);
+  );
+};
 
 AuthShell.propTypes = {
   title: PropTypes.string.isRequired,

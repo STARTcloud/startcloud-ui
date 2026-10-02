@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Form } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
@@ -8,60 +7,15 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { useHostRow } from '../hooks/useHostRow';
 import { useHostSeriesQuery } from '../hooks/useHostSeries';
 import { CHART_ORDER, DEFAULT_VISIBILITY } from '../utils/chartSpecs';
-import { RESOLUTIONS, SERIES, WINDOWS, hostOffers } from '../utils/monitoring';
+import { SERIES, hostOffers } from '../utils/monitoring';
 
 import PerformanceCard from './PerformanceCard';
+import QuerySelects from './QuerySelects';
 
 const toggled = (visibility, metric, key) => ({
   ...visibility,
   [metric]: { ...visibility[metric], [key]: !visibility[metric][key] },
 });
-
-const QuerySelects = ({ query, onChange }) => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <Form.Select
-        size="sm"
-        className="w-auto"
-        name="window"
-        value={query.window}
-        title={t('hosts.charts.windowTitle')}
-        aria-label={t('hosts.charts.windowTitle')}
-        onChange={event => onChange({ window: event.target.value })}
-      >
-        {WINDOWS.map(entry => (
-          <option key={entry.key} value={entry.key}>
-            {t(entry.labelKey)}
-          </option>
-        ))}
-      </Form.Select>
-      <Form.Select
-        size="sm"
-        className="w-auto"
-        name="resolution"
-        value={query.resolution}
-        title={t('hosts.charts.resolutionTitle')}
-        aria-label={t('hosts.charts.resolutionTitle')}
-        onChange={event => onChange({ resolution: event.target.value })}
-      >
-        {RESOLUTIONS.map(entry => (
-          <option key={entry.key} value={entry.key}>
-            {t(entry.labelKey)}
-          </option>
-        ))}
-      </Form.Select>
-    </>
-  );
-};
-
-QuerySelects.propTypes = {
-  query: PropTypes.shape({
-    window: PropTypes.string.isRequired,
-    resolution: PropTypes.string.isRequired,
-  }).isRequired,
-  onChange: PropTypes.func.isRequired,
-};
 
 /**
  * The performance charts of the host page, behind `monitoring`: the
@@ -92,7 +46,7 @@ const PerformanceCharts = ({ id, host, folds }) => {
     <div data-panel="performance">
       <SectionHeading
         title={t('hosts.charts.heading')}
-        actions={<QuerySelects query={query} onChange={setQuery} />}
+        actions={<QuerySelects query={query} onChange={setQuery} scope="hostHeader" />}
       />
       <div className="row g-3 mb-3">
         {metrics.map(metric => (

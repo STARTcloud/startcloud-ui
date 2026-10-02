@@ -1,0 +1,13 @@
+{
+  "machine_name": "dev-2",
+  "snapshots": [
+    {
+      "name": "nightly",
+      "uuid": "6e2a7b31-8c52-4d69-ab1f-6d3c9f5a2b01",
+      "description": "Taken by the rotation",
+      "node": "SnapshotName",
+      "current": true
+    }
+  ],
+  "total": 1
+}

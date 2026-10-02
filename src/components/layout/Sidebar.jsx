@@ -284,7 +284,8 @@ const TreeNode = ({ node, inset, tree, current }) => {
   const branch = Boolean(node.children);
   const kids = tree.kids[node.key] || null;
   const open = nodeOpen({ node, tree, kids, current });
-  const active = Boolean(node.to) && current === node.to;
+  const active =
+    Boolean(node.to) && current === node.to && !(open && kids?.some(child => child.to === node.to));
   const fresh = Boolean(kids) && (tree.seen[node.key] || 0) === (node.revision || 0);
   const { load } = tree;
   const row = useRef(null);
@@ -528,7 +529,9 @@ const sizeShape = PropTypes.shape({
  * whether the current route lies under it, a status dot for `up` and `idle`, the right-click
  * rows from `menu(node)` drawn by `ContextMenu`, the one presenter the
  * footer's pane shares, titled by the node's label, no menu opening for
- * a node without rows, the selection driven by the route, a view select
+ * a node without rows, the selection driven by the route, one row alone
+ * active for it, an open node yielding to the child that carries its
+ * route, a view select
  * when the group exports more than one shape); the rail, the width, the
  * open rows and nodes under one `sidebar_open_<group>` and the
  * chosen view persisted per origin; arrow keys between rows, Left and

@@ -1,0 +1,40 @@
+{
+  "service": "ntp",
+  "status": "available",
+  "available": true,
+  "timezone": "America/Chicago",
+  "last_checked": "2026-09-28T09:00:00.000Z",
+  "service_details": { "state": "online", "fmri": "svc:/network/ntp:default" },
+  "peers": [
+    {
+      "remote": "0.pool.ntp.org",
+      "indicator": "*",
+      "status": "reach",
+      "stratum": 2,
+      "delay": 12.4,
+      "offset": 1.2,
+      "jitter": 0.8,
+      "reachability_percent": 100
+    },
+    {
+      "remote": "1.pool.ntp.org",
+      "indicator": "+",
+      "status": "reach",
+      "stratum": 2,
+      "delay": 18.9,
+      "offset": -2.4,
+      "jitter": 1.1,
+      "reachability_percent": 100
+    },
+    {
+      "remote": "time.cloudflare.com",
+      "indicator": "-",
+      "status": "reach",
+      "stratum": 3,
+      "delay": 220.5,
+      "offset": 130.2,
+      "jitter": 60.4,
+      "reachability_percent": 62
+    }
+  ]
+}

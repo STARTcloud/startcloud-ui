@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/authentication",
+  "title": "Authentication is required.",
+  "status": 401,
+  "detail": "API key required - provide either X-API-Key header or Authorization: Bearer header",
+  "errors": []
+}

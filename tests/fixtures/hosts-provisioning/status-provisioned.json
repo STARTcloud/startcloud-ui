@@ -1,0 +1,13 @@
+{
+  "machine_name": "dev-1",
+  "provisioning_configured": true,
+  "provisioning_status": "provisioned",
+  "last_provisioned_at": "2026-09-26T21:15:00.000Z",
+  "recent_tasks": [
+    {
+      "id": "c3000000-0000-4000-8000-000000000009",
+      "operation": "machine_provision_orchestration",
+      "status": "completed"
+    }
+  ]
+}

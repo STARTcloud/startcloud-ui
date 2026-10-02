@@ -70,7 +70,7 @@ const ZoneDevices = ({ zone }) => {
   return (
     <>
       {zone.disks.length > 0 ? (
-        <GroupRow icon={FaHardDrive} label={t('hosts.machines.devices.disks')} />
+        <GroupRow icon={FaHardDrive} label={t('machineEdit.currentHardware.disks')} />
       ) : null}
       {zone.disks.map(disk => (
         <ChildRow
@@ -78,18 +78,18 @@ const ZoneDevices = ({ zone }) => {
           icon={FaServer}
           name={disk.name}
           value={disk.value}
-          badge={disk.boot ? t('hosts.machines.devices.boot') : ''}
-          badgeTitle={t('hosts.machines.devices.zoneBootTitle')}
+          badge={disk.boot ? t('machineEdit.currentHardware.boot') : ''}
+          badgeTitle={t('machineEdit.currentHardware.zoneBootMediumTitle')}
         />
       ))}
       {zone.cdroms.length > 0 ? (
-        <GroupRow icon={FaCompactDisc} label={t('hosts.machines.devices.cdDvd')} />
+        <GroupRow icon={FaCompactDisc} label={t('machineEdit.currentHardware.cdDvd')} />
       ) : null}
       {zone.cdroms.map(cdrom => (
         <ChildRow key={cdrom.name} icon={FaCompactDisc} name={cdrom.name} value={cdrom.value} />
       ))}
       {zone.nics.length > 0 ? (
-        <GroupRow icon={FaNetworkWired} label={t('hosts.machines.devices.network')} />
+        <GroupRow icon={FaNetworkWired} label={t('machineEdit.currentHardware.network')} />
       ) : null}
       {zone.nics.map(nic => (
         <ChildRow key={nic.name} icon={FaEthernet} name={nic.name} value={zoneNicSummary(nic, t)} />
@@ -113,17 +113,17 @@ const ControllerRows = ({ controller, attachments }) => {
         <ChildRow
           key={attachmentKey(entry)}
           icon={entry.kind === 'cdrom' ? FaCompactDisc : FaServer}
-          name={t('hosts.machines.devices.portDevice', {
+          name={t('machineEdit.currentHardware.portDev', {
             port: entry.port,
             device: entry.device,
           })}
-          value={entry.path || t('hosts.machines.devices.emptyDrive')}
+          value={entry.path || t('machineEdit.currentHardware.emptyDrive')}
           badge={
             entry.port === BOOT_PORT && entry.kind === 'disk'
-              ? t('hosts.machines.devices.boot')
+              ? t('machineEdit.currentHardware.boot')
               : ''
           }
-          badgeTitle={t('hosts.machines.devices.bootTitle')}
+          badgeTitle={t('machineEdit.currentHardware.bootMediumTitle')}
         />
       ))}
     </>
@@ -145,15 +145,19 @@ const AdapterRows = ({ nics }) => {
   }
   return (
     <>
-      <GroupRow icon={FaNetworkWired} label={t('hosts.machines.devices.adapters')} />
+      <GroupRow icon={FaNetworkWired} label={t('machineEdit.currentHardware.networkAdapters')} />
       {nics.map(nic => (
         <ChildRow
           key={nic.adapter}
           icon={FaEthernet}
-          name={t('hosts.machines.devices.adapter', { adapter: nic.adapter })}
+          name={t('machineEdit.currentHardware.adapter', { adapter: nic.adapter })}
           value={nicSummary(nic, t)}
-          badge={nic.adapter === TRANSPORT_ADAPTER ? t('hosts.machines.devices.transport') : ''}
-          badgeTitle={t('hosts.machines.devices.transportTitle')}
+          badge={
+            nic.adapter === TRANSPORT_ADAPTER
+              ? t('machineEdit.currentHardware.provisioningNat')
+              : ''
+          }
+          badgeTitle={t('machineEdit.currentHardware.provisioningNatTitle')}
         />
       ))}
     </>
@@ -179,7 +183,7 @@ const DeviceTree = ({ hardware }) => {
     <div className="device-tree" data-tree="devices">
       <div className="device-tree-head">
         <FaPlug aria-hidden="true" />
-        <span>{t('hosts.machines.devices.title')}</span>
+        <span>{t('machineEdit.currentHardware.devices')}</span>
       </div>
       {hardware.zone ? (
         <ZoneDevices zone={hardware.zone} />

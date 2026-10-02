@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "message": "Folder sync queued",
+  "machine_name": "dev-1",
+  "parent_task_id": "a1000000-0000-4000-8000-000000000007",
+  "folder_count": 1
+}

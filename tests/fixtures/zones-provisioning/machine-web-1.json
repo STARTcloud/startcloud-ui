@@ -1,0 +1,64 @@
+{
+  "machine_info": {
+    "id": 1,
+    "name": "web-1",
+    "zone_id": "00001234--web-1",
+    "host": "zone-1",
+    "status": "running",
+    "brand": "bhyve",
+    "vnc_port": 5901,
+    "is_orphaned": false,
+    "auto_discovered": false,
+    "last_seen": "2026-09-27T00:00:00.000Z",
+    "server_id": "00001234",
+    "vm_type": "production",
+    "notes": "Public web front",
+    "tags": ["web", "production"],
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-27T00:00:00.000Z"
+  },
+  "configuration": {
+    "zonename": "web-1",
+    "zonepath": "/rpool/zones/web-1",
+    "brand": "bhyve",
+    "autoboot": "true",
+    "ram": "4G",
+    "vcpus": "2",
+    "bootrom": "BHYVE_RELEASE_CSM",
+    "provisioner": {
+      "provisioner_name": "startcloud",
+      "provisioner_version": "0.1.27",
+      "settings": { "hostname": "web-1", "domain": "example.com", "vcpus": "2", "memory": "4G" },
+      "vars": { "debug": true },
+      "folders": [{ "map": "./provisioners", "to": "/vagrant/provisioners", "type": "rsync" }],
+      "roles": [
+        { "name": "startcloud.hcl_roles.nomadweb" },
+        { "name": "startcloud.hcl_roles.leap" }
+      ],
+      "provisioning": {
+        "ansible": {
+          "playbooks": { "local": [{ "playbook": "ansible/playbook.yml", "run": "once" }] }
+        }
+      }
+    },
+    "settings": { "hostname": "web-1", "domain": "example.com", "vcpus": "2", "memory": "4G" },
+    "guest_info": {
+      "ips": ["10.0.0.20"],
+      "source": "guest-agent",
+      "agent_responding": true,
+      "checked_at": "2026-09-27T00:00:00.000Z"
+    }
+  },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "running",
+  "pending_changes": null,
+  "knob_current": {
+    "guest_agent": true,
+    "vnc": "on",
+    "bootorder": ["bootdisk", "cdrom0"],
+    "consoleport": 6001,
+    "nics": [],
+    "cpu_topology": null
+  }
+}

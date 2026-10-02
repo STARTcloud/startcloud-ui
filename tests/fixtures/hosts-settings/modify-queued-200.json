@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "task_id": "a1000000-0000-4000-8000-0000000000a1",
+  "machine_name": "dev-2",
+  "operation": "machine_modify",
+  "status": "pending",
+  "requires_restart": true,
+  "message": "Modification task queued for dev-2"
+}

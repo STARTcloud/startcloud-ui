@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "index": "pkg.fmri",
+      "action": "set",
+      "value": "pkg:/ooce/text/vim",
+      "package": "pkg:/ooce/text/vim@9.1-151054.0"
+    },
+    {
+      "index": "pkg.fmri",
+      "action": "set",
+      "value": "pkg:/ooce/editor/nano",
+      "package": "pkg:/ooce/editor/nano@8.2-151054.0"
+    },
+    {
+      "index": "pkg.description",
+      "action": "set",
+      "value": "editor",
+      "package": "pkg:/ooce/text/vim@9.1-151054.0"
+    }
+  ],
+  "total": 3,
+  "query": "editor"
+}

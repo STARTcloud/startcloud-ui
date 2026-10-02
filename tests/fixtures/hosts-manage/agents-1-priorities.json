@@ -1,0 +1,5 @@
+{
+  "machines": [
+    { "name": "dev-1", "priority": 100, "state": "running", "has_custom_priority": false }
+  ]
+}

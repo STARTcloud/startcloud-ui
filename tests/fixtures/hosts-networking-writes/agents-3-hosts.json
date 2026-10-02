@@ -1,0 +1,8 @@
+{
+  "entries": [
+    { "ip": "127.0.0.1", "hostnames": ["localhost"] },
+    { "ip": "10.0.0.31", "hostnames": ["zone-1", "zone-1.example.com"] }
+  ],
+  "raw": "127.0.0.1\tlocalhost\n10.0.0.31\tzone-1 zone-1.example.com\n",
+  "path": "/etc/inet/hosts"
+}

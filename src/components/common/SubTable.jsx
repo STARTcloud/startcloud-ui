@@ -57,10 +57,19 @@ const hasGroups = groups => Boolean(groups && groups.length > 0);
 
 const columnClass = column => `col-${column.key} ${kindClasses(column.kind)}`;
 
-const cellClass = (column, folded) => {
-  const base = column.className
-    ? `${columnClass(column)} ${column.className}`
-    : columnClass(column);
+/**
+ * The class of one body cell: the column's key and kind classes, its own
+ * `className`, `col-sized` while the column carries a width so the
+ * cell's content may fill it, and `folded` while the column is folded.
+ *
+ * @param {Object} column - The column
+ * @param {boolean} folded - Whether the column is folded
+ * @param {boolean} sized - Whether the column carries a width
+ * @returns {string} The class
+ */
+export const cellClass = (column, folded, sized = false) => {
+  const own = column.className ? `${columnClass(column)} ${column.className}` : columnClass(column);
+  const base = sized ? `${own} col-sized` : own;
   return folded ? `${base} folded` : base;
 };
 
@@ -390,7 +399,11 @@ const HeaderCell = ({ column, width, folded, sort, onSort, onResize }) => {
   const cell = useRef(null);
   useCssVar(cell, '--col-width', width);
   return (
-    <th ref={cell} className={headerClass(column, width, folded)}>
+    <th
+      ref={cell}
+      className={headerClass(column, width, folded)}
+      title={column.titleKey ? t(column.titleKey) : undefined}
+    >
       <SortHeader column={column.key} sort={sort} onSort={onSort}>
         {t(column.labelKey)}
       </SortHeader>
@@ -404,6 +417,7 @@ HeaderCell.propTypes = {
     key: PropTypes.string.isRequired,
     kind: PropTypes.oneOf(KIND_NAMES).isRequired,
     labelKey: PropTypes.string.isRequired,
+    titleKey: PropTypes.string,
   }).isRequired,
   width: PropTypes.string,
   folded: PropTypes.bool.isRequired,
@@ -528,6 +542,7 @@ DetailRow.propTypes = {
 const BodyRow = ({
   row,
   drawn,
+  sized,
   folded,
   foldCell,
   openKeys,
@@ -578,7 +593,10 @@ const BodyRow = ({
           </td>
         ) : null}
         {drawn.map(column => (
-          <td key={column.key} className={cellClass(column, folded.has(column.key))}>
+          <td
+            key={column.key}
+            className={cellClass(column, folded.has(column.key), Boolean(sized[column.key]))}
+          >
             <div className={column.prose ? 'cell prose' : 'cell'}>
               {cellContent(column, row, ctx)}
             </div>
@@ -608,6 +626,7 @@ const BodyRow = ({
 BodyRow.propTypes = {
   row: PropTypes.object.isRequired,
   drawn: PropTypes.array.isRequired,
+  sized: PropTypes.objectOf(PropTypes.string).isRequired,
   folded: PropTypes.instanceOf(Set).isRequired,
   foldCell: PropTypes.bool.isRequired,
   openKeys: PropTypes.instanceOf(Set).isRequired,
@@ -814,7 +833,8 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * each only when it is not in `hiddenColumns` and its `when` is absent or
  * true for the rows and `ctx` (so a column can read the viewer and the
  * host from `ctx` as well as the rows). A column is `{ key, kind,
- * labelKey, value, render?, priority?, prose? }`: `value(row, ctx)`
+ * labelKey, titleKey?, value, render?, priority?, prose? }`, `titleKey`
+ * the tooltip of its header where the column has one: `value(row, ctx)`
  * answers the one thing the cell shows, a string, a number, the instant
  * of a date or relative kind, the word of a badge or word kind, the
  * joined labels of a badges kind, and is what the cell draws unless
@@ -949,8 +969,10 @@ const FullTable = ({
   });
   const foldCell = folded.size > 0;
   const columnCount = countWithFold(shape, foldCell);
+  const sized = sizedWidths(drawn, widths, sharedWidths);
   const rowProps = {
     drawn,
+    sized,
     folded,
     foldCell,
     openKeys,
@@ -977,7 +999,7 @@ const FullTable = ({
         <thead>
           <HeaderRow
             drawn={drawn}
-            sized={sizedWidths(drawn, widths, sharedWidths)}
+            sized={sized}
             folded={folded}
             foldCell={foldCell}
             selection={selection}
@@ -1008,6 +1030,7 @@ const tableShape = {
       key: PropTypes.string.isRequired,
       kind: PropTypes.oneOf(KIND_NAMES).isRequired,
       labelKey: PropTypes.string.isRequired,
+      titleKey: PropTypes.string,
       value: PropTypes.func.isRequired,
       render: PropTypes.func,
       defaultHidden: PropTypes.bool,

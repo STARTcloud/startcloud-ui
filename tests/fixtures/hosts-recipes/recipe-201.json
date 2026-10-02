@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "message": "Recipe created",
+  "recipe": { "id": "r-4", "name": "alpine-setup", "os_family": "linux", "brand": "bhyve" }
+}

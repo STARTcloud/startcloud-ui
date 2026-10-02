@@ -43,15 +43,17 @@ const staledOne = id => current =>
  * the rows held for every caller after it, renewed on a caller's
  * `refresh`; every answer raises the host's `revision` by one, and
  * `load` answers a caller that is no component the rows held while they
- * are fresh and the one request otherwise. When the event stream opens
+ * are fresh and the one request otherwise, and `ask` a caller that
+ * draws the same way, so a caller that mounts as an answer lands asks
+ * for nothing twice. When the event stream opens
  * fresh or answers `reset` the held rows are marked stale and kept on
  * screen, and only the callers that draw a host ask for it again; the
  * `hosts` topic's `stats-updated` event, sent when a machine of a host
  * is made or removed and when one starts or stops, marks that host's
  * rows stale the same way, so a machine's state follows the stream and
- * nothing reads on a clock. The
- * rows belong to the session: when `signedIn` changes they are dropped,
- * an answer of the session before it discarded. `organization` is the
+ * nothing reads on a clock. The rows belong to the session: when
+ * `signedIn` changes they are dropped, an answer of the session before
+ * it discarded. `organization` is the
  * uuid of the organization a person operates under, empty for All, the
  * choice the hooks narrow the rows and the names of a host's stats by;
  * the provider holds every row the agent answered and asks for none
@@ -81,16 +83,17 @@ const HostMachinesProvider = ({ signedIn, organization, children }) => {
       if (flying) {
         return flying;
       }
+      copies.current.delete(key);
       const flight = fetchMachines(status, id)
         .then(machines => {
           copies.current.set(key, machines);
-          setState(answered(epoch, id, { machines, failed: false }));
+          setState(answered(epoch, id, { machines, failed: false, message: '' }));
           return machines;
         })
         .catch(error => {
           log.api.error('Error fetching host machines', { id, error: error.message });
           copies.current.set(key, []);
-          setState(answered(epoch, id, { machines: [], failed: true }));
+          setState(answered(epoch, id, { machines: [], failed: true, message: error.message }));
           return [];
         })
         .finally(() => flights.current.delete(key));
@@ -98,6 +101,14 @@ const HostMachinesProvider = ({ signedIn, organization, children }) => {
       return flight;
     },
     [status]
+  );
+
+  const ask = useCallback(
+    (epoch, id) =>
+      copies.current?.has(keyOf(epoch, id))
+        ? Promise.resolve(copies.current.get(keyOf(epoch, id)))
+        : read(epoch, id),
+    [read]
   );
 
   const load = useCallback(
@@ -130,8 +141,8 @@ const HostMachinesProvider = ({ signedIn, organization, children }) => {
   });
 
   const value = useMemo(
-    () => ({ epoch: state.epoch, hosts: state.hosts, read, load, organization }),
-    [state.epoch, state.hosts, read, load, organization]
+    () => ({ epoch: state.epoch, hosts: state.hosts, read, ask, load, organization }),
+    [state.epoch, state.hosts, read, ask, load, organization]
   );
 
   return <HostMachinesContext.Provider value={value}>{children}</HostMachinesContext.Provider>;

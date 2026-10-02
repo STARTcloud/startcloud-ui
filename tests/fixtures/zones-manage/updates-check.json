@@ -1,0 +1,12 @@
+{
+  "updates_available": false,
+  "total_updates": 0,
+  "last_checked": "2026-09-28T09:00:00.000Z",
+  "plan_summary": {
+    "packages_to_install": 0,
+    "packages_to_update": 0,
+    "packages_to_remove": 0,
+    "total_download_size": "0 B"
+  },
+  "raw_output": "No updates available"
+}

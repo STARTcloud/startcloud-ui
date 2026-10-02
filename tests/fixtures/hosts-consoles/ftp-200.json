@@ -1,0 +1,7 @@
+{
+  "machine_name": "dev-1",
+  "sftp_url": "sftp://vagrant@127.0.0.1:2222",
+  "host": "127.0.0.1",
+  "port": 2222,
+  "username": "vagrant"
+}

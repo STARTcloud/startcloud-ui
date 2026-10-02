@@ -302,6 +302,59 @@ but `mode`, `theme`, `themes`, `motion` and `language`, so the next
 person on a shared machine inherits neither a profile paint, a pending
 invite nor a return path.
 
+### API key session provider
+
+`createApiKeySession({ baseUrl, events, storageKey })` is hyperweaver-agent's
+shape, chosen when the UI backend's first `auth` token is `apikey`, `oidc`
+as its second token meaning the federated paths are on and never the
+session kind: the agent's API key and, of the profile
+`GET /api/api-keys/info` answered for it, the members the session reads
+stored together under `storageKey` (`apikey`), never a member that moves
+on every request, so a profile read again writes the same record, every
+request carrying the key as `Authorization: Bearer`, `retryAuth()` false
+because a key has no refresh, `load()` the profile read again with the
+stored key, a `401` or `403` there a dead credential that clears the
+record while any other failure keeps it and a `403` on any other route a
+role too low that touches the session not at all, `login(key)` the pasted
+key proved by that read and stored, `begin({ method: 'silent' })` the
+`prompt=none` authorize URL of `POST /api/auth/oidc/silent-start` followed
+as a top-level navigation and `begin({ method: 'device' })` the RFC 8628
+grant of `POST /api/auth/oidc/device-start`, `complete()` the `#tray=`
+claim of a tray Open or an `hwa://open`, once per page load with the
+fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
+key that still validates outranking it, the claimed session answered once
+and never after the record was forgotten, `claims()` null; once the key
+is proved, `GET /api/user` read with the same bearer and held in memory,
+the person's record in the identity provider's shape with the five
+`preferred_*` members the chrome applies, the identity provider's own
+values on a key a federated login minted and the agent's local store's
+on a plain key, its `preferred_mode`, `preferred_theme`,
+`preferred_motion` and `preferred_language` stored beside the key so
+the pre-paint script paints the person's mode and theme before the
+first frame, the way the `user` and `account` records do, a `404` there
+leaving the key's profile as the whole identity and no stored member,
+and `savePreferences()` `PATCH /api/user/preferences` while such a
+record is held, the agent relaying it to the identity provider on a
+federated key and merging its own store on a plain one, the held and
+stored members updated on success, nothing while none is; the stored
+record carries the profile's `issuer` and `subject`, the
+identity provider's origin and the account's stable id on a key a
+federated login minted, and the session's `issuerUrl` is that issuer, so
+the user menu's identity card, its Preferences row and the profile
+page's Manage at identity provider link point at it, the profile page at
+`/profile` drawing the record `readOnly` on every key because the agent
+serves no write of it;
+both sign-outs forgetting the record, the agent having no sign-out
+route, and `endSession()` ending the session on the bus only while a
+record is stored, so the refusals of requests sent after a sign-out end
+no session twice; the key's own role is mapped onto the hosts feature's ladder, the
+agent's `admin`, its highest role, to `super-admin`, `operator` to `admin`
+and `viewer` to `user`, with `ROLE_ADMIN` beside an `admin` key's record
+because the agent's configuration routes are admin-only; a handoff tells
+the other tabs over the `BroadcastChannel` `hw-auth` with `auth-updated`,
+the `storage` event the fallback, and a tab that hears it while signed out
+or holding another key reloads. Its `authPaths` are `/login` alone.
+
 ---
 
 ## Events
@@ -443,6 +496,7 @@ the `idp.storage_prefix` the UI backend names for its tokens.
 | join intent kept across a sign-in | n/a                                                                                                                                                                                                                                                                                                                            | `join_org`                                                                                                                                                                                                                                                 |
 | silent SSO tried                  | n/a — sign-in is one click                                                                                                                                                                                                                                                                                                     | `silent_sso_attempted` in `sessionStorage`                                                                                                                                                                                                                 |
 | table preferences                 | `table_prefs_<org or home>`, one JSON object `{ view, sort, group, hiddenColumns, widths, size, filters, folds }` per key, `view` present only on a page with the view toggle, so a page's choices travel as one value and a key never holds a bare string                                                                     | `table_prefs_<org or home>`, one JSON object `{ view, sort, group, hiddenColumns, widths, size, filters, folds }` per key, `view` present only on a page with the view toggle, so a page's choices travel as one value and a key never holds a bare string |
+| networking page preferences       | `table_prefs_networking`, the folds of the networking page as `folds`, and `table_prefs_networking_addresses`, `_routes`, `_interfaces` and `_bandwidth`, one object a table of that page, `{ sort, hiddenColumns, widths, size }`                                                                                             | `table_prefs_networking`, the folds of the networking page as `folds`, and `table_prefs_networking_addresses`, `_routes`, `_interfaces` and `_bandwidth`, one object a table of that page, `{ sort, hiddenColumns, widths, size }`                         |
 | sidebar width                     | `sidebar_width` (px)                                                                                                                                                                                                                                                                                                           | `sidebar_width` (px)                                                                                                                                                                                                                                       |
 | sidebar collapsed                 | `sidebar_minimized`                                                                                                                                                                                                                                                                                                            | `sidebar_minimized`                                                                                                                                                                                                                                        |
 | sidebar open nodes                | `sidebar_open_<group>`                                                                                                                                                                                                                                                                                                         | `sidebar_open_<group>`                                                                                                                                                                                                                                     |

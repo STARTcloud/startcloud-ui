@@ -7,12 +7,13 @@ import { useHostRow } from './useHostRow';
 
 export const HostMachinesContext = createContext(null);
 
-const EMPTY = { machines: [], loaded: false, failed: false, stale: false };
+const EMPTY = { machines: [], loaded: false, failed: false, message: '', stale: false };
 
 const NO_PROVIDER = {
   epoch: 0,
   hosts: {},
   read: () => Promise.resolve([]),
+  ask: () => Promise.resolve([]),
   load: () => Promise.resolve([]),
   organization: '',
 };
@@ -25,27 +26,28 @@ const NO_PROVIDER = {
  * event stream opened fresh or answered `reset`, and on `refresh`. A
  * caller that passes `wanted` false reads what is held and asks for
  * nothing, the way the stats of a host read the rows only while an
- * organization is chosen.
+ * organization is chosen. `message` is the agent's own word for a read
+ * that failed.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {boolean} wanted - Whether the caller needs the rows read
- * @returns {{ machines: Array<Object>, loaded: boolean, failed: boolean, refresh: Function }} The rows
+ * @returns {{ machines: Array<Object>, loaded: boolean, failed: boolean, message: string, refresh: Function }} The rows
  */
 export const useHeldMachines = (id, wanted) => {
-  const { epoch, hosts, read } = useContext(HostMachinesContext) || NO_PROVIDER;
-  const { machines, loaded, failed, stale } = hosts[id] || EMPTY;
+  const { epoch, hosts, read, ask } = useContext(HostMachinesContext) || NO_PROVIDER;
+  const { machines, loaded, failed, message, stale } = hosts[id] || EMPTY;
 
   useEffect(() => {
     if (wanted && (!loaded || stale)) {
-      read(epoch, id);
+      ask(epoch, id);
     }
-  }, [wanted, loaded, stale, epoch, id, read]);
+  }, [wanted, loaded, stale, epoch, id, ask]);
 
   const refresh = useCallback(() => {
     read(epoch, id);
   }, [read, epoch, id]);
 
-  return { machines, loaded, failed, refresh };
+  return { machines, loaded, failed, message, refresh };
 };
 
 /**
@@ -64,13 +66,13 @@ export const useHeldMachines = (id, wanted) => {
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {boolean} [wanted] - Whether the caller needs the rows read
- * @returns {{ machines: Array<Object>, loaded: boolean, failed: boolean, refresh: Function }} The rows
+ * @returns {{ machines: Array<Object>, loaded: boolean, failed: boolean, message: string, refresh: Function }} The rows
  */
 export const useHostMachines = (id, wanted = true) => {
   const { organization } = useContext(HostMachinesContext) || NO_PROVIDER;
-  const { machines, loaded, failed, refresh } = useHeldMachines(id, wanted);
+  const { machines, loaded, failed, message, refresh } = useHeldMachines(id, wanted);
   const visible = useMemo(() => visibleRows(machines, organization), [machines, organization]);
-  return { machines: visible, loaded, failed, refresh };
+  return { machines: visible, loaded, failed, message, refresh };
 };
 
 /**

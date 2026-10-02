@@ -3,8 +3,6 @@ import { client } from '../../../../lib/runtime';
 
 import { uploadChunked } from './uploadChunked';
 
-const PUBLIC = { auth: false };
-
 const org = organization => encodePath('api', 'organization', organization);
 const box = (organization, name) => `${org(organization)}${encodePath('box', name)}`;
 const version = (organization, name, number) =>
@@ -113,8 +111,5 @@ export const api = {
       client.post(`${version(organization, name, number)}/provider/bulk`, body),
     architectures: (organization, name, number, providerName, body) =>
       client.post(`${provider(organization, name, number, providerName)}/architecture/bulk`, body),
-  },
-  config: {
-    hyperweaver: () => client.get('/api/config/hyperweaver', PUBLIC),
   },
 };

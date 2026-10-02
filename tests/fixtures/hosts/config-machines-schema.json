@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Machines",
+  "schemaVersion": 1,
+  "sections": {
+    "machines": {
+      "title": "Machines",
+      "order": 1
+    }
+  },
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "readOnly": true,
+      "default": 1,
+      "title": "Schema version"
+    },
+    "machines": {
+      "type": "object",
+      "section": "machines",
+      "subsection": "machineDefaults",
+      "title": "Machine defaults",
+      "properties": {
+        "base_directory": {
+          "type": "string",
+          "title": "Base directory",
+          "description": "The folder new machines are created under",
+          "order": 1
+        },
+        "default_memory_mb": {
+          "type": "integer",
+          "minimum": 256,
+          "default": 2048,
+          "title": "Default memory",
+          "order": 2
+        }
+      },
+      "required": ["base_directory"]
+    }
+  }
+}

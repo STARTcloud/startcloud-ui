@@ -12,6 +12,11 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { MOTION_VALUES, useMotion } from '../../../hooks/useMotion';
 import { useTheme } from '../../../hooks/useTheme';
 import { loadCountries } from '../../../lib/countries';
+import {
+  HyperweaverServiceCard,
+  hyperweaverServiceOf,
+  integrationsShape,
+} from '../../integrations';
 
 import ManageLink from './ManageLink';
 
@@ -186,7 +191,7 @@ MotionSelect.propTypes = {
 
 const themeName = (themes, name) => themes.find(theme => theme.name === name)?.label || name;
 
-const ReadOnlyPreferences = ({ account, profile, folds }) => {
+const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
   const { t, i18n } = useTranslation();
   const { mode, theme, themes } = useTheme();
   const { motion } = useMotion();
@@ -228,6 +233,7 @@ const ReadOnlyPreferences = ({ account, profile, folds }) => {
           ))}
         </div>
       </SectionCard>
+      {after}
     </div>
   );
 };
@@ -239,6 +245,7 @@ ReadOnlyPreferences.propTypes = {
     folded: PropTypes.func.isRequired,
     toggle: PropTypes.func.isRequired,
   }).isRequired,
+  after: PropTypes.node,
 };
 
 const PinField = ({ rules, pin, pinSet, pinRef, onPin, onSet, onClear }) => {
@@ -293,7 +300,7 @@ PinField.propTypes = {
   onClear: PropTypes.func.isRequired,
 };
 
-const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
+const EditablePreferences = ({ account, profile, session, folds, onSaved, after = null }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const { mode, setMode, theme, themes, setTheme } = useTheme();
@@ -549,6 +556,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved }) => {
           </button>
         </form>
       </SectionCard>
+      {after}
     </div>
   );
 };
@@ -565,6 +573,7 @@ EditablePreferences.propTypes = {
     toggle: PropTypes.func.isRequired,
   }).isRequired,
   onSaved: PropTypes.func.isRequired,
+  after: PropTypes.node,
 };
 
 /**
@@ -600,12 +609,27 @@ EditablePreferences.propTypes = {
  * another person's on the admin record page, language, mode, theme and
  * motion are the record's own values saved with the rest through
  * `account.preferences` and never the viewer's chrome, and the PIN is not
- * drawn because the admin route takes none.
+ * drawn because the admin route takes none. Under the Preferences card,
+ * while the adapter carries `integrations` and the record carries the
+ * `integrations` rows the issuer answers for a person who connected a
+ * service, the Hyperweaver card draws over its `hyperweaver` row, its
+ * writes reading the record again the way the preferences write does,
+ * read-only under the same rule as the rest of the tab.
  */
 const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null }) => {
   const folds = useFolds(PREFS_KEY);
+  const after =
+    account.integrations && Array.isArray(profile.integrations) ? (
+      <HyperweaverServiceCard
+        integrations={account.integrations}
+        service={hyperweaverServiceOf(profile.integrations)}
+        readOnly={readOnly}
+        onSaved={onSaved}
+        className="mt-3 mb-0"
+      />
+    ) : null;
   if (readOnly) {
-    return <ReadOnlyPreferences account={account} profile={profile} folds={folds} />;
+    return <ReadOnlyPreferences account={account} profile={profile} folds={folds} after={after} />;
   }
   return (
     <EditablePreferences
@@ -614,14 +638,17 @@ const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null })
       session={session}
       folds={folds}
       onSaved={onSaved}
+      after={after}
     />
   );
 };
 
 PreferencesTab.propTypes = {
-  account: PropTypes.shape({ preferences: PropTypes.func }).isRequired,
+  account: PropTypes.shape({ preferences: PropTypes.func, integrations: integrationsShape })
+    .isRequired,
   profile: PropTypes.shape({
     preferences: PropTypes.object,
+    integrations: PropTypes.array,
     mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
   }).isRequired,
   session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }),

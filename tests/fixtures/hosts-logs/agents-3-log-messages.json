@@ -1,0 +1,17 @@
+{
+  "name": "messages",
+  "path": "/var/adm/messages",
+  "lines": [
+    "Sep 28 10:14:02 zone-1 sshd[1281]: [ID 800047 auth.info] Accepted publickey for mark",
+    "Sep 28 10:15:11 zone-1 zoneadmd[3310]: [ID 702911 daemon.notice] zone db-1 booted",
+    "Sep 28 10:16:40 zone-1 fmd[210]: [ID 377184 daemon.error] SUNW-MSG-ID: ZFS-8000-8A, TYPE: Fault",
+    "Sep 28 10:17:02 zone-1 in.ndpd[610]: [ID 702911 daemon.warning] interface vnic0 down"
+  ],
+  "totalLines": 4,
+  "raw_output": "Sep 28 10:14:02 zone-1 sshd[1281]: [ID 800047 auth.info] Accepted publickey for mark\nSep 28 10:15:11 zone-1 zoneadmd[3310]: [ID 702911 daemon.notice] zone db-1 booted\nSep 28 10:16:40 zone-1 fmd[210]: [ID 377184 daemon.error] SUNW-MSG-ID: ZFS-8000-8A, TYPE: Fault\nSep 28 10:17:02 zone-1 in.ndpd[610]: [ID 702911 daemon.warning] interface vnic0 down",
+  "fileInfo": {
+    "size": 184320,
+    "sizeFormatted": "180.0 KB",
+    "modified": "2026-09-28T10:18:30.000Z"
+  }
+}

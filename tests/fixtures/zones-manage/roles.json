@@ -1,0 +1,13 @@
+{
+  "roles": [
+    {
+      "rolename": "zoneadm",
+      "comment": "Zone Administrator",
+      "shell": "/bin/pfsh",
+      "home": "/export/home/zoneadm",
+      "authorizations": ["solaris.zone.manage"],
+      "profiles": ["Zone Management"]
+    }
+  ],
+  "total": 1
+}

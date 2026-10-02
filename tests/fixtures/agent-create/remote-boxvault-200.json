@@ -1,0 +1,171 @@
+[
+  {
+    "id": 8,
+    "name": "debian13",
+    "description": "debian13 base box",
+    "isPublic": true,
+    "user": {
+      "id": 1,
+      "username": "mark",
+      "primaryOrganization": {
+        "name": "startcloud"
+      }
+    },
+    "organization": {
+      "id": 1,
+      "name": "startcloud"
+    },
+    "versions": [
+      {
+        "versionNumber": "13.1.0",
+        "description": "debian13 13.1.0",
+        "providers": [
+          {
+            "name": "virtualbox",
+            "architectures": [
+              {
+                "name": "amd64",
+                "defaultBox": true,
+                "files": [
+                  {
+                    "fileName": "vagrant.box",
+                    "fileSize": 734003200,
+                    "checksum": "8f0a9c1e",
+                    "checksumType": "sha256"
+                  }
+                ]
+              },
+              {
+                "name": "arm64",
+                "defaultBox": false,
+                "files": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "versionNumber": "13.0.0",
+        "description": "debian13 13.0.0",
+        "providers": [
+          {
+            "name": "virtualbox",
+            "architectures": [
+              {
+                "name": "amd64",
+                "defaultBox": true,
+                "files": [
+                  {
+                    "fileName": "vagrant.box",
+                    "fileSize": 734003200,
+                    "checksum": "8f0a9c1e",
+                    "checksumType": "sha256"
+                  }
+                ]
+              },
+              {
+                "name": "arm64",
+                "defaultBox": false,
+                "files": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "ubuntu2404",
+    "description": "ubuntu2404 base box",
+    "isPublic": true,
+    "user": {
+      "id": 1,
+      "username": "mark",
+      "primaryOrganization": {
+        "name": "startcloud"
+      }
+    },
+    "organization": {
+      "id": 1,
+      "name": "startcloud"
+    },
+    "versions": [
+      {
+        "versionNumber": "24.04.2",
+        "description": "ubuntu2404 24.04.2",
+        "providers": [
+          {
+            "name": "virtualbox",
+            "architectures": [
+              {
+                "name": "amd64",
+                "defaultBox": true,
+                "files": [
+                  {
+                    "fileName": "vagrant.box",
+                    "fileSize": 734003200,
+                    "checksum": "8f0a9c1e",
+                    "checksumType": "sha256"
+                  }
+                ]
+              },
+              {
+                "name": "arm64",
+                "defaultBox": false,
+                "files": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "windows-server-2025",
+    "description": "windows-server-2025 base box",
+    "isPublic": false,
+    "user": {
+      "id": 1,
+      "username": "mark",
+      "primaryOrganization": {
+        "name": "acme"
+      }
+    },
+    "organization": {
+      "id": 1,
+      "name": "acme"
+    },
+    "versions": [
+      {
+        "versionNumber": "2025.1",
+        "description": "windows-server-2025 2025.1",
+        "providers": [
+          {
+            "name": "virtualbox",
+            "architectures": [
+              {
+                "name": "amd64",
+                "defaultBox": true,
+                "files": [
+                  {
+                    "fileName": "vagrant.box",
+                    "fileSize": 734003200,
+                    "checksum": "8f0a9c1e",
+                    "checksumType": "sha256"
+                  }
+                ]
+              },
+              {
+                "name": "arm64",
+                "defaultBox": false,
+                "files": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,45 @@
+{
+  "artifacts": [
+    {
+      "id": "art-0001",
+      "filename": "debian-13.1.0-amd64-netinst.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/debian-13.1.0-amd64-netinst.iso",
+      "size": 702545920,
+      "file_type": "iso",
+      "extension": "iso",
+      "mime_type": "application/x-iso9660-image",
+      "checksum": "8f0a9c1e",
+      "checksum_algorithm": "sha256",
+      "file_exists": true
+    },
+    {
+      "id": "art-0002",
+      "filename": "lost.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/lost.iso",
+      "size": 0,
+      "file_type": "iso",
+      "extension": "iso",
+      "mime_type": "application/x-iso9660-image",
+      "checksum": "",
+      "checksum_algorithm": "sha256",
+      "file_exists": false
+    },
+    {
+      "id": "art-0101",
+      "filename": "Domino_14.5_Linux_English.tar",
+      "path": "/var/lib/hyperweaver/artifacts/installer/Domino_14.5_Linux_English.tar",
+      "size": 1610612736,
+      "file_type": "installer",
+      "extension": "tar",
+      "role": "domino_install",
+      "expected_sha256": "a1b2c3d4e5f6",
+      "version": "14.5",
+      "file_exists": true
+    }
+  ],
+  "pagination": {
+    "total": 3,
+    "limit": 50,
+    "offset": 0
+  }
+}

@@ -8,6 +8,7 @@ import { useTablePrefs } from '../../../hooks/useTablePrefs';
 import { sortItems } from '../../../utils/sort';
 import { useFocus } from '../hooks/useFocus';
 import { useTaskPrefs, useTasks } from '../hooks/useTasks';
+import { taskMachineOf } from '../utils/machines';
 import {
   TASK_COLUMNS,
   formatTaskDate,
@@ -104,7 +105,7 @@ const CELLS = {
   host: task => task.host || '-',
   id: task => task.id,
   operation: (task, t) => taskOperationLabel(task.operation, t),
-  machine_name: task => task.machine_name,
+  machine_name: task => taskMachineOf(task),
   status: task => <StatusCell status={task.status} />,
   progress: task => <ProgressCell task={task} />,
   priority: task => <PriorityWord priority={task.priority} />,

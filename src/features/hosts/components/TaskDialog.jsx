@@ -16,6 +16,7 @@ import { requestTasksRefresh } from '../hooks/useTasks';
 import { useTaskStream } from '../hooks/useTaskStream';
 import { parseAnsi, stripAnsi } from '../utils/ansi';
 import { agentIdOf, withoutAgentId } from '../utils/hosts';
+import { taskMachineOf } from '../utils/machines';
 import {
   ACTIVE_TASK_STATUSES,
   formatTaskDate,
@@ -131,7 +132,7 @@ const factRows = (row, t) => [
     label: t('footer.task.labelOperation'),
     value: taskOperationLabel(row.operation, t),
   },
-  { key: 'target', label: t('footer.task.labelTarget'), value: row.machine_name },
+  { key: 'target', label: t('footer.task.labelTarget'), value: taskMachineOf(row) },
   {
     key: 'status',
     label: t('footer.task.labelStatus'),
@@ -307,7 +308,7 @@ const SubtasksCard = ({ subtasks, onSelect }) => {
                     {taskOperationLabel(subtask.operation, t)}
                   </button>
                 </td>
-                <td>{subtask.machine_name}</td>
+                <td>{taskMachineOf(subtask)}</td>
                 <td>
                   <StatusBadge status={subtask.status} />
                 </td>

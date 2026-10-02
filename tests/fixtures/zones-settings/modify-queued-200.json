@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "task_id": "b2000000-0000-4000-8000-0000000000b2",
+  "machine_name": "web-2",
+  "operation": "zone_modify",
+  "status": "pending",
+  "requires_restart": true,
+  "message": "Modification task queued for web-2"
+}

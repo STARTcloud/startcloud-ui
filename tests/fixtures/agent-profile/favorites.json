@@ -1,0 +1,18 @@
+[
+  {
+    "client_id": "conductor",
+    "client_name": "Conductor",
+    "icon_url": "https://conductor.example.com/favicon.ico",
+    "home_url": "https://conductor.example.com",
+    "custom_label": null,
+    "order": 0
+  },
+  {
+    "client_id": "boxvault",
+    "client_name": "BoxVault",
+    "icon_url": "https://boxvault.example.com/favicon.ico",
+    "home_url": "https://boxvault.example.com",
+    "custom_label": "Boxes",
+    "order": 1
+  }
+]

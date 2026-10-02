@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "id": "1d5a2c60-9b8e-4c31-8f0a-2f7e6b1c9a01",
+      "title": "New sign-in to your account",
+      "body": "A browser you have not used before signed in from Springfield, US.",
+      "type": "SECURITY",
+      "severity": "WARNING",
+      "navigate": "https://auth.example.com/user/profile/sessions",
+      "created_at": "2026-09-27T21:44:00-05:00",
+      "read_at": null
+    },
+    {
+      "id": "2e6b3d71-0c9f-4d42-9a1b-3a8f7c2d0b12",
+      "title": "Hyperweaver was given access to your profile",
+      "body": "Scopes: openid, profile, email, organizations, notifications.",
+      "type": "OAUTH",
+      "severity": "INFO",
+      "navigate": "",
+      "created_at": "2026-09-27T21:40:00-05:00",
+      "read_at": null
+    },
+    {
+      "id": "3f7c4e82-1da0-4e53-ab2c-4b9a8d3e1c23",
+      "title": "Your email address is verified",
+      "body": "",
+      "type": "ACCOUNT",
+      "severity": "SUCCESS",
+      "navigate": "https://auth.example.com/user/profile",
+      "created_at": "2026-09-20T10:00:00-05:00",
+      "read_at": "2026-09-20T10:05:00-05:00"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "total": 3,
+  "total_pages": 1
+}

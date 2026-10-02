@@ -1,0 +1,33 @@
+{
+  "role": "auth-server",
+  "version": "1.9.1",
+  "brand": {
+    "name": "STARTcloud",
+    "logo_url": "/brand/startcloud/mark.svg",
+    "changelog": "https://github.com/STARTcloud/authorization-server-private/releases",
+    "theme": { "name": "startcloud", "css": "/themes/startcloud/startcloud.css" }
+  },
+  "auth": ["cookie"],
+  "collections": [],
+  "features": [
+    "local-accounts",
+    "tfa",
+    "onboarding",
+    "interstitials",
+    "policies",
+    "org-console",
+    "discover",
+    "invitations",
+    "integrations",
+    "search",
+    "inbox",
+    "admin",
+    "notifications",
+    "health",
+    "events",
+    "footer",
+    "sidebar"
+  ],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

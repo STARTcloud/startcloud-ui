@@ -1,0 +1,10 @@
+{
+  "machine_name": "dev-1",
+  "vrde_enabled": true,
+  "vrde_port": 3389,
+  "vnc_capable": true,
+  "running": true,
+  "websocket_url": "/machines/dev-1/vnc/websockify",
+  "video": { "width": 1024, "height": 768, "depth": 32 },
+  "additions_run_level": 2
+}

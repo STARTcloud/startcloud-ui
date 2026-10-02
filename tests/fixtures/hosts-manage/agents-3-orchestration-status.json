@@ -1,0 +1,1 @@
+{ "orchestration_enabled": false, "strategy": "parallel_by_priority", "machines_with_priority": 1 }

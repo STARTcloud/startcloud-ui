@@ -1,5 +1,6 @@
 import { encodePath } from '../../../lib/apiClient';
 import { client, hubClient } from '../../../lib/runtime';
+import { issuerIntegrations } from '../../integrations/api/integrations';
 
 const USER = '/api/user';
 const PROVIDERS = `${USER}/integrations/providers`;
@@ -106,7 +107,10 @@ export const placesKey = () => client.get('/api/config/places');
  * Google Places key the address block loads its autocomplete with, and
  * `linked` carries the Security page's Linked accounts calls: the read of
  * `GET /api/user/linked-accounts`, the live provider status, and the link
- * and unlink routes under `/api/user/integrations/providers`.
+ * and unlink routes under `/api/user/integrations/providers`;
+ * `integrations` is the issuer's connected-services adapter, the read and
+ * the three writes of `/api/user/integrations`, which the Preferences
+ * section draws the Hyperweaver card from.
  */
 /**
  * The identity provider's `account` adapter for a guest-only account, the
@@ -160,5 +164,6 @@ export const issuerAccount = {
   sessions: { list: sessions, revoke: revokeSession, revokeAll: revokeSessions },
   favorites: { list: favorites, save: saveFavorites, apps: connectedApps },
   preferences: savePreferences,
+  integrations: issuerIntegrations,
   deletion: deleteAccount,
 };

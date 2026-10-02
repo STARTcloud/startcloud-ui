@@ -1,0 +1,14 @@
+{
+  "databases": [
+    {
+      "name": "tasks",
+      "files": [{ "name": "tasks.db", "size": 1048576 }],
+      "size": 1048576,
+      "tables": 2,
+      "indexes": 5
+    }
+  ],
+  "total_size": 1048576,
+  "total_tables": 2,
+  "total_rows": 1240
+}

@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "message": "VACUUM completed",
+  "total_reclaimed": 6291456,
+  "databases": [
+    { "name": "monitoring", "space_reclaimed": 4194304 },
+    { "name": "tasks", "space_reclaimed": 2097152 }
+  ]
+}

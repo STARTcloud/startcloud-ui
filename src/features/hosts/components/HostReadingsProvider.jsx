@@ -7,6 +7,7 @@ import { log } from '../../../lib/logger';
 import { fetchReading } from '../api/monitoring';
 import { HostReadingsContext } from '../hooks/useHostReadings';
 import { agentIdOf } from '../utils/hosts';
+import { NETWORKING_READS } from '../utils/monitoring';
 import { TERMINAL_TASK_STATUSES } from '../utils/tasks';
 
 const TASK_STATS = 'task-stats';
@@ -43,6 +44,9 @@ const staledOne = (id, key) => current => {
   const entry = current.hosts[id]?.[key];
   return entry ? withEntry({ current, id, key, entry: { ...entry, stale: true } }) : current;
 };
+
+const staledMany = (id, keys) => current =>
+  keys.reduce((next, key) => staledOne(id, key)(next), current);
 
 /**
  * The answers the Overview's panels draw of every host a caller has
@@ -108,9 +112,10 @@ const HostReadingsProvider = ({ signedIn, children }) => {
     }
     if (TERMINAL_TASK_STATUSES.includes(data?.status)) {
       seen.current.delete(task);
-    } else {
-      seen.current.set(task, data?.status);
+      setState(staledMany(id, [TASK_STATS, ...NETWORKING_READS]));
+      return;
     }
+    seen.current.set(task, data?.status);
     setState(staledOne(id, TASK_STATS));
   });
 

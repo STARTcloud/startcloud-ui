@@ -1,0 +1,19 @@
+{
+  "machines": [
+    {
+      "name": "db-1",
+      "status": "running",
+      "brand": "bhyve",
+      "hypervisor": "bhyve",
+      "org_uuids": []
+    },
+    {
+      "name": "web-1",
+      "status": "installed",
+      "brand": "bhyve",
+      "hypervisor": "bhyve",
+      "org_uuids": []
+    }
+  ],
+  "total": 2
+}
