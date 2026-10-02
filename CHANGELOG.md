@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.53.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.52.0...v0.53.0) (2026-10-02)
+
+
+### Features
+
+* a small clock glyph beside the second-factor code, its tooltip Time Mismatch: ~00:00:00, drawn only while the browser's clock and the server's differ by one code period or more ([cda9e1a](https://github.com/STARTcloud/startcloud-ui/commit/cda9e1ac156145710a83eba9c8c0a4c30062d06d))
+* importing hyperweaver-ui elements ([1f4d8c2](https://github.com/STARTcloud/startcloud-ui/commit/1f4d8c23704102ae5aad06b43d1b8e5100b05e35))
+* the Controls menu in the header's account slot on host and machine routes with the user menu at the sidebar's foot, the machine power rows and the host power rows each one request and one notice with the stats read again on success, and the ported host action options ([2dfd071](https://github.com/STARTcloud/startcloud-ui/commit/2dfd071d23c0c3f5d58f05702ec97a266995a955))
+* the Controls menu's pause, suspend, resume, NMI, guest power, application rows, zone lifecycle and bulk rows, the sidebar tree's right-click menu on the one ContextMenu with its danger dialogs, the Hosts group above Account with a child's row beginning where its parent's label begins, the organization filter with All organizations in the one switcher and a host named by its route drawn whole under any choice, the memberships read in the identity provider's shape with the active organization found by its uuid, the API reference row from links.api, the host Overview panels and the five performance charts on Apache ECharts growing by the monitoring topic of the events contract, the registry row read as entity_name, the development mock split into modules under scripts/mock, and the English and Spanish keys of them all ([c1013ab](https://github.com/STARTcloud/startcloud-ui/commit/c1013abfcbba406e6f8e8f0ea901b72acd1dc135))
+* the converged footer with its pane under the row, the tasks table with its priority filter, Columns picker, Refresh and task dialog, the one Shell over a terminal source with terminal preferences, the footer's name the link to About and the version's third click the game, the health heart and the unread count read without a timer, the list of servers and each host's stats held once in the hosts feature's context with Refresh on its three pages, a tree node's revision asking its children again, the tasks and hosts topics of the events contract read by the pane, the dialog and the pages, the About text of the three hyperweaver roles, and a development mock of the hyperweaver family under scripts/ until a backend answers ([6426709](https://github.com/STARTcloud/startcloud-ui/commit/64267092d7f102b0c5c85ff1219265b5748d6569))
+* the hosts feature, the hosts token, the role deciding the serving mode and the agent addressing, the Hosts group and its tree in the sidebar, the hosts, host and machine pages read once and again on ready and reset, the hyperweaver theme pack, and the merge of hyperweaver-ui recorded in the navbar contract ([34978cd](https://github.com/STARTcloud/startcloud-ui/commit/34978cd6259aa7c1942c816c79a59c441e368b6f))
+* updating and prep work for hyperweaver-ui merge ([71371e7](https://github.com/STARTcloud/startcloud-ui/commit/71371e766d2f784b37e7e8587bb0a9c7dc2514a8))
+* updating and prep work for hyperweaver-ui merge ([435bb6f](https://github.com/STARTcloud/startcloud-ui/commit/435bb6ffd54d4d5b8a6c9306825ee5c8a9bcd6f9))
+
+
+### Bug Fixes
+
+* the hyperweaver theme pack, role as the package name and the serving mode it decides in the status payload, and the merge of hyperweaver-ui recorded as a decision ([70e24c1](https://github.com/STARTcloud/startcloud-ui/commit/70e24c1c0e88f4d3be93d6d116237c5004985282))
+
 ## [0.52.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.51.1...v0.52.0) (2026-09-27)
 
 
