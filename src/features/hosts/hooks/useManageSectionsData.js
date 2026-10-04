@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { selectGroup, switchGroup } from '../../../hooks/useClientFilters';
 import { fetchBootEnvironments } from '../api/bootEnvironments';
 import { fetchDatabaseStats } from '../api/database';
 import { fetchFaultConfig, fetchFaults } from '../api/faults';
@@ -14,11 +15,10 @@ import { groupLogFiles } from '../utils/logs';
 import { REPOSITORY_PARAMS, repositoryParams } from '../utils/repositories';
 
 import { useManageRead } from './useHostManage';
-import { selectGroup, switchGroup } from './useHostManageSearch';
 
 /**
  * The request filters the boot environments, the faults and the
- * repositories open with, hyperweaver-ui's.
+ * repositories open with.
  */
 export const SECTION_PARAMS = {
   bootEnvironments: BOOT_ENVIRONMENT_PARAMS,
@@ -31,32 +31,31 @@ const NO_ROWS = [];
 const listOf = value => (Array.isArray(value) ? value : NO_ROWS);
 
 /**
- * The reads of the syslog, the system logs, the boot environments, the
- * faults, the database and the repositories sections, held at the
- * Manage page so its one search binding narrows their lists: each
- * behind hyperweaver-ui's tokens on the host's own row, the syslog and
- * the logs behind `fault-management` with `syslog` and `log-streaming`,
- * the repositories behind `packages` with `repositories`, the database
- * on every host as hyperweaver-ui read it; hyperweaver-ui's request
- * filters kept as `params` and `setParam(table, key, value)`, a change
- * sending the request again.
+ * The reads of the syslog, system logs, boot environments, faults,
+ * database and repositories sections, each behind its tokens and `only`,
+ * under the request filters `params`.
  *
  * @param {Object} options - The host
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {Object|null} options.server - The registry row, or the one serving agent's
+ * @param {Array<string>} [options.only] - The sections wanted, every section without the list
  * @returns {Object} The offers, the params, the reads and the rows
  */
-export const useManageSectionsData = ({ id, server }) => {
+export const useManageSectionsData = ({ id, server, only = null }) => {
   const status = useStatus();
   const [params, setParams] = useState(SECTION_PARAMS);
+  const wanted = key => !only || only.includes(key);
   const faultManagement = hostHasFeature(server, 'fault-management');
   const offered = {
-    syslog: faultManagement && hostHasFeature(server, 'syslog'),
-    logs: faultManagement && hostHasFeature(server, 'log-streaming'),
-    bootEnvironments: hostHasFeature(server, 'boot-environments'),
-    faults: faultManagement,
-    database: true,
-    repositories: hostHasFeature(server, 'packages') && hostHasFeature(server, 'repositories'),
+    syslog: faultManagement && hostHasFeature(server, 'syslog') && wanted('syslog'),
+    logs: faultManagement && hostHasFeature(server, 'log-streaming') && wanted('logs'),
+    bootEnvironments: hostHasFeature(server, 'boot-environments') && wanted('bootEnvironments'),
+    faults: faultManagement && wanted('faults'),
+    database: wanted('database'),
+    repositories:
+      hostHasFeature(server, 'packages') &&
+      hostHasFeature(server, 'repositories') &&
+      wanted('repositories'),
   };
 
   const setParam = useCallback((table, key, value) => {
@@ -140,11 +139,8 @@ export const useManageSectionsData = ({ id, server }) => {
 const withClear = (group, onClear) => ({ ...group, onClear });
 
 /**
- * The request filters of the sections' lists as panel groups of the
- * navbar, hyperweaver-ui's switches and selects: the detail and the
- * snapshots of the boot environments, the resolved faults and the
- * limit, and the enabled-only repositories. A change sends that list's
- * request again; Clear filters puts every filter back.
+ * The request filters of the boot environments, faults and repositories
+ * lists as panel groups, each clearing its list's filters.
  *
  * @param {Object} options - The filters
  * @param {Object} options.params - The filters of `useManageSectionsData`

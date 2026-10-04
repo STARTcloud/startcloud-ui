@@ -8,11 +8,30 @@ import MethodList, { MethodRow, httpsUrl } from '../../../components/common/Meth
 import SectionHeading from '../../../components/common/SectionHeading';
 import { OrgLogo, organizationShape } from '../../../components/layout/OrgSwitcherModal';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useArrivalQuery } from '../../../hooks/useArrival';
+import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { membershipOf } from '../../../utils/membership';
 
 const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
+
+const FILTER_GROUPS = [
+  {
+    key: 'role',
+    labelKey: 'profile.organizations.role',
+    values: org => (org.role ? [org.role] : []),
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`roles.${value}`),
+  },
+  {
+    key: 'primary',
+    labelKey: 'profile.organizations.primary',
+    values: org => (org.is_primary ? ['primary'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`profile.organizations.${value}`),
+  },
+];
 
 const nameOf = org => org.name || org.organization?.name || '';
 
@@ -176,24 +195,21 @@ CancelButton.propTypes = {
 };
 
 /**
- * The Organizations section of the profile page on a UI backend with
- * memberships of its own: the memberships as `MethodRow`s under a
- * `SectionHeading` (the organization's logo from the session's
- * `organizations` matched by name, the row's own `logo`, `logo_url` or
- * the Gravatar of its `email_hash` else, the building glyph otherwise;
- * the name, the Primary and role badges, the
- * description and the joined date, Make primary while the adapter carries
- * `setPrimary` and Leave while more than one membership remains) and the
- * pending join requests under a second heading with Cancel per row, both
- * glass lists on the page's ground, searched from the navbar; a change of
- * the primary organization re-reads the session through `onSaved`.
+ * The Organizations section of the profile page: the memberships with
+ * their logo, badges, description, joined date, Make primary and Leave,
+ * and the pending join requests with Cancel, searched from the navbar,
+ * the query first the one the page arrived with, the memberships narrowed
+ * client-side by the Role and Primary `toggle` groups, Clear filters
+ * keeping the query; a change of the primary organization re-reads the
+ * session through `onSaved`.
  */
 const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [memberships, setMemberships] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [query, setQuery] = useState('');
+  const arrivedQuery = useArrivalQuery();
+  const [query, setQuery] = useState(arrivedQuery);
   const { organizations } = account;
 
   const fail = (message, error) => {
@@ -259,15 +275,16 @@ const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSave
   const shownRequests = requests.filter(request =>
     includesTerm(term, request.organization?.name, request.organization?.description)
   );
+  const filters = useClientFilters({ specs: FILTER_GROUPS, rows: shownMemberships });
 
   useNavbarSearchBinding({
     query,
     onQueryChange: setQuery,
     placeholder: t('profile.search.organizations'),
-    matched: shownMemberships.length + shownRequests.length,
+    matched: filters.rows.length + shownRequests.length,
     total: memberships.length + requests.length,
-    groups: [],
-    onClearFilters: () => setQuery(''),
+    groups: filters.groups,
+    onClearFilters: filters.clear,
   });
 
   const canSetPrimary = typeof organizations.setPrimary === 'function';
@@ -277,10 +294,10 @@ const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSave
     <div className="tab-pane fade show active">
       <SectionHeading title={t('profile.organizations.belongToTitle')} count={memberships.length} />
       <MethodList
-        empty={term ? t('pages.noMatches') : t('profile.organizations.noOrgs')}
+        empty={term || filters.active ? t('pages.noMatches') : t('profile.organizations.noOrgs')}
         className="mb-4"
       >
-        {shownMemberships.map(org => {
+        {filters.rows.map(org => {
           const actions = (
             <MembershipActions
               org={org}

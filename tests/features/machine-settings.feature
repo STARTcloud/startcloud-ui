@@ -8,7 +8,7 @@ Feature: machine settings
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1/settings"
     Then the settings page draws
-    And the machine tab "settings" is the active one
+    And the machine row "settings" is the active one
     And the settings tabs offer "general"
     And the settings tabs offer "storage"
     And the settings tabs offer "nics"
@@ -252,6 +252,6 @@ Feature: machine settings
     And the host answers the hosts-member fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"user\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1/settings"
-    Then the machine tab row draws no "settings" tab
+    Then the machine column draws no "settings" row
     And the page draws no settings view
     And the host was not sent GET to "/api/agents/1/machines/defaults"

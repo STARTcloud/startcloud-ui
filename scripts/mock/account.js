@@ -246,8 +246,7 @@ const refreshed = ctx => {
 };
 
 const signedOut = ctx => {
-  const timer = setTimeout(() => closeStreamsOf(ctx.person.id), 0);
-  timer.unref();
+  ctx.res.once('finish', () => closeStreamsOf(ctx.person.id));
   return ok({ redirect_url: '/login' });
 };
 

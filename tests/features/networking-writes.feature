@@ -1,73 +1,90 @@
 Feature: networking writes
 
-  Scenario: Networking management: each section behind the tokens its read names, a zoneweaver-agent host draws the link families, the addresses, the hostname, the DNS and the hosts file and no spaces
+  Scenario: Network pages: each row and each section behind the tokens its read names, a zoneweaver-agent host draws the Links and the Hostname rows and no Spaces row, the link families on Links, the hostname, the DNS and the hosts file on Hostname and DNS, the addresses on Interfaces
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
-    Then the networking page draws the "hostname" section
-    And the networking page draws the "hosts-file" section
-    And the networking page draws the "dns" section
+    When I open "/hosts/3/network/links"
+    Then the section page "links" draws
+    And the host column draws the "interfaces" row to "/hosts/3/network/interfaces"
+    And the host column draws the "links" row to "/hosts/3/network/links"
+    And the host column draws the "hostname" row to "/hosts/3/network/hostname"
+    And the host column draws no "spaces" row
     And the networking page draws the "vnics" section
     And the networking page draws the "vlans" section
-    And the networking page draws the "managed-addresses" section
     And the networking page draws the "aggregates" section
     And the networking page draws the "bridges" section
     And the networking page draws the "etherstubs" section
     And the networking page draws no "spaces" section
+    And the networking page draws no "hostname" section
     And the "vnics" section of the networking page lists 2 rows
     And the "vlans" section of the networking page lists 1 rows
-    And the "managed-addresses" section of the networking page lists 3 rows
     And the "bridges" section of the networking page lists 1 rows
     And the "etherstubs" section of the networking page lists 1 rows
     And the "aggregates" section of the networking page says "empty"
     And the host was sent GET to "/api/agents/3/network/vnics"
-    And the host was sent GET to "/api/agents/3/network/addresses"
-    And the host was sent GET to "/api/agents/3/system/hosts"
     And the host was not sent GET to "/api/agents/3/network/spaces"
     And the page draws no key of hyperweaver-ui in place of its text
+    When I follow the host row "hostname"
+    Then the section page "hostname" draws
+    And the networking page draws the "hostname" section
+    And the networking page draws the "hosts-file" section
+    And the networking page draws the "dns" section
+    And the networking page draws no "vnics" section
+    And the host was sent GET to "/api/agents/3/system/hosts"
+    When I follow the host row "interfaces"
+    Then the networking page draws the "managed-addresses" section
+    And the "managed-addresses" section of the networking page lists 3 rows
+    And the host was sent GET to "/api/agents/3/network/addresses"
 
-  Scenario: Networking management: a hyperweaver-agent host draws the addresses and the spaces alone and asks for no link family
+  Scenario: Network pages: a hyperweaver-agent host draws the Interfaces and the Spaces rows alone, the addresses on Interfaces, the spaces on Spaces, and asks for no link family
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/interfaces"
     Then the networking page draws the "managed-addresses" section
-    And the networking page draws the "spaces" section
-    And the networking page draws no "vnics" section
-    And the networking page draws no "hostname" section
-    And the networking page draws no "dns" section
-    And the networking page draws no "hosts-file" section
     And the "managed-addresses" section of the networking page lists 4 rows
+    And the host column draws the "spaces" row to "/hosts/1/network/spaces"
+    And the host column draws no "links" row
+    And the host column draws no "hostname" row
+    And the networking page draws no "vnics" section
+    And the networking page draws no "spaces" section
+    When I follow the host row "spaces"
+    Then the section page "spaces" draws
+    And the networking page draws the "spaces" section
     And the host was not sent GET to "/api/agents/1/network/vnics"
     And the host was not sent GET to "/api/agents/1/network/hostname"
     And the host was not sent GET to "/api/agents/1/system/dns"
 
-  Scenario: Networking management: the one search narrows the management lists with the read tables
+  Scenario: Network pages: the one search narrows the page's lists with its read tables
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     Then the "vnics" section of the networking page lists 2 rows
-    When I press "Control+f"
+    When I press "Control+k"
     And I search the networking page for "vnic1"
     Then the "vnics" section of the networking page lists 1 rows
-    And the "managed-addresses" section of the networking page lists 1 rows
     And the "vlans" section of the networking page says "filtered"
+    When I open "/hosts/3/network/interfaces"
+    Then the "managed-addresses" section of the networking page lists 3 rows
+    When I press "Control+k"
+    And I search the networking page for "vnic1"
+    Then the "managed-addresses" section of the networking page lists 1 rows
 
-  Scenario: Networking management: a VNIC is created over POST network/vnics from the form dialog, the name suggested on the link, and deleted behind the typed confirmation
+  Scenario: Links: a VNIC is created over POST network/vnics from the form dialog, the name suggested on the link, and deleted behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     And I press the "vnics" section's "create-vnic" tool
     Then the "vnic-create" dialog is open
     When I send the open dialog
@@ -87,25 +104,25 @@ Feature: networking writes
     Then the host was sent DELETE to "/api/agents/3/network/vnics/vnic1"
     And the page raised 2 success notices
 
-  Scenario: Networking management: a VNIC's details read GET network/vnics/{link} once and open the dialog
+  Scenario: Links: a VNIC's details read GET network/vnics/{link} once and open the dialog
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     And I press "details" on the "vnics" section row "vnic0"
     Then the "vnic-details" dialog is open
     And the host was sent GET to "/api/agents/3/network/vnics/vnic0"
     And I see "Ethernet"
 
-  Scenario: Networking management: a VLAN's name follows dladm's formula and the body carries no name while it matches
+  Scenario: Links: a VLAN's name follows dladm's formula and the body carries no name while it matches
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     And I press the "vlans" section's "create-vlan" tool
     Then the "vlan-create" dialog is open
     When I type "200" into the field "vlan-create-vid"
@@ -120,13 +137,13 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/vlans" carrying "name" as "undefined"
     And the page raised 1 success notice
 
-  Scenario: Networking management: an etherstub is named the next free stub and created over POST network/etherstubs
+  Scenario: Links: an etherstub is named the next free stub and created over POST network/etherstubs
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     And I press the "etherstubs" section's "create-etherstub" tool
     Then the "etherstub-create" dialog is open
     And the field "etherstub-name" reads "stub1"
@@ -136,13 +153,13 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/etherstubs" carrying "temporary" as "true"
     And the page raised 1 success notice
 
-  Scenario: Networking management: a bridge carries the links picked one by one and is created over POST network/bridges
+  Scenario: Links: a bridge carries the links picked one by one and is created over POST network/bridges
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     And I press the "bridges" section's "create-bridge" tool
     Then the "bridge-create" dialog is open
     When I type "bridge1" into the field "bridge-name"
@@ -156,13 +173,13 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/bridges" carrying "priority" as "32768"
     And the page raised 1 success notice
 
-  Scenario: Networking management: an aggregate is refused while CDP runs and sent after the service is disabled
+  Scenario: Links: an aggregate is refused while CDP runs and sent after the service is disabled through the one service action, its FMRI encoded
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     Then the networking page notes "cdp"
     And the host was sent GET to "/api/agents/3/services"
     When I press the "aggregates" section's "create-aggregate" tool
@@ -177,19 +194,19 @@ Feature: networking writes
     And I choose "active" in the field "aggregate-lacp-mode"
     And I send the open dialog
     Then the host was sent POST to "/api/agents/3/services/action" carrying "action" as "disable"
-    And the host was sent POST to "/api/agents/3/services/action" carrying "fmri" as "svc:/network/cdp:default"
+    And the host was sent POST to "/api/agents/3/services/action" carrying "fmri" as "svc%3A%2Fnetwork%2Fcdp%3Adefault"
     And the host was sent POST to "/api/agents/3/network/aggregates" carrying "name" as "aggr0"
     And the host was sent POST to "/api/agents/3/network/aggregates" carrying "lacp_mode" as "active"
     And the host was sent POST to "/api/agents/3/network/aggregates" carrying "policy" as "L4"
     And the page raised 2 success notices
 
-  Scenario: Networking management: an address is created over POST network/addresses with the address object named from the interface, enabled over its PUT and deleted behind the typed confirmation
+  Scenario: Interfaces: an address is created over POST network/addresses with the address object named from the interface, enabled over its PUT and deleted behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/interfaces"
     Then the "managed-addresses" section row "vnic1/v4static" offers "enable"
     And the "managed-addresses" section row "vnic1/v4static" offers no "disable"
     And the "managed-addresses" section row "igb0/v4static" offers "disable"
@@ -212,14 +229,14 @@ Feature: networking writes
     Then the host was sent DELETE to "/api/agents/3/network/addresses/vnic1%2Fv4static"
     And the page raised 3 success notices
 
-  Scenario: Networking management: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
+  Scenario: Interfaces: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/interfaces"
     Then the "managed-addresses" section of the networking page lists 4 rows
     When I press "disable" on the "managed-addresses" section row "10.0.0.11"
     Then the host was not sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
@@ -233,13 +250,13 @@ Feature: networking writes
     And the host was asked "/api/agents/1/network/addresses/Ethernet%2Fv4" with "address" as "10.0.0.12"
     And the host was asked "/api/agents/1/network/addresses/Ethernet%2Fv4" with "release" as "false"
 
-  Scenario: Networking management: the hostname is written over PUT network/hostname with apply_immediately as the box says
+  Scenario: Hostname and DNS: the hostname is written over PUT network/hostname with apply_immediately as the box says
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/hostname"
     Then the networking field "new-hostname-input" reads "zone-1"
     And I see "zone-1"
     When I fill the networking field "new-hostname-input" with "zone-9"
@@ -249,13 +266,13 @@ Feature: networking writes
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/network/hostname" 2 times
 
-  Scenario: Networking management: the DNS is written over PUT system/dns as the parsed members and, behind the switch, as the raw file
+  Scenario: Hostname and DNS: the DNS is written over PUT system/dns as the parsed members and, behind the switch, as the raw file
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/hostname"
     Then the networking field "dns-domain" reads ""
     When I fill the networking field "dns-domain" with "lan"
     And I press the "dns" section's "save-dns" tool
@@ -268,13 +285,13 @@ Feature: networking writes
     Then the host was sent PUT to "/api/agents/3/system/dns" carrying "raw" as "nameserver 9.9.9.9"
     And the page raised 2 success notices
 
-  Scenario: Networking management: the hosts file lists its entries as rows and is written over PUT system/hosts as the raw file behind the switch
+  Scenario: Hostname and DNS: the hosts file lists its entries as rows and is written over PUT system/hosts as the raw file behind the switch
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/hostname"
     Then the "hosts-file" section of the networking page lists 2 rows
     And I see "/etc/inet/hosts"
     When I press the "hosts-file" section's "add-entry" tool
@@ -290,13 +307,13 @@ Feature: networking writes
     Then the host was sent PUT to "/api/agents/3/system/hosts" carrying "raw" as "127.0.0.1 localhost"
     And the page raised 2 success notices
 
-  Scenario: Networking management: the network spaces draw the families the platform carries, the NAT network is stopped, edited and the host-only interface deleted over their routes
+  Scenario: Spaces: the network spaces draw the families the platform carries, the NAT network is stopped, edited and the host-only interface deleted over their routes
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/spaces"
     Then the "spaces" section of the networking page lists 3 rows
     And the networking page notes "intnets"
     And the "spaces" section offers the "create-hostonly" tool
@@ -318,13 +335,13 @@ Feature: networking writes
     Then the host was sent DELETE to "/api/agents/1/network/spaces/hostonly/vboxnet0"
     And the page raised 3 success notices
 
-  Scenario: Networking management: a host-only interface is created over POST network/spaces/hostonly with the address typed
+  Scenario: Spaces: a host-only interface is created over POST network/spaces/hostonly with the address typed
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/spaces"
     And I press the "spaces" section's "create-hostonly" tool
     Then the "space-hostonly" dialog is open
     When I type "192.168.57.1" into the field "hw-hoif-ip"
@@ -334,37 +351,47 @@ Feature: networking writes
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/1/network/spaces" 2 times
 
-  Scenario: Networking management: a person who may not start machines sees the spaces read only
+  Scenario: Spaces: a person who may not control hosts sees the spaces read only, the admin gate of every networking write
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the host answers the hosts-viewer fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"guest\",\"role\":\"viewer\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/spaces"
     Then the "spaces" section of the networking page lists 3 rows
     And the "spaces" section offers no "create-hostonly" tool
     And the "spaces" section row "NatNetwork" offers no "edit"
+    When I open "/hosts/1/network/interfaces"
+    Then the "managed-addresses" section of the networking page lists 4 rows
+    And the "managed-addresses" section offers no "create-address" tool
+    And the "managed-addresses" section row "10.0.0.11" offers no "disable"
 
-  Scenario: Networking management: every section folds under manage- and the fold is kept over a reload
+  Scenario: Network pages: the sections fold under manage- on each page and the fold is kept over a reload
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     Then the "vnics" section of the networking management is open
     When I fold the "vnics" section of the networking management
-    And I fold the "hostname" section of the networking management
-    And I fold the "topology" section of the networking management
     Then the "vnics" section of the networking management is folded
-    And the "hostname" section of the networking management is folded
-    And the "topology" section of the networking management is folded
     When I load the page again
     Then the "vnics" section of the networking management is folded
-    And the "topology" section of the networking management is folded
     When I fold the "vnics" section of the networking management
     Then the "vnics" section of the networking page lists 2 rows
+    When I open "/hosts/3/network/hostname"
+    Then the "hostname" section of the networking management is open
+    When I fold the "hostname" section of the networking management
+    Then the "hostname" section of the networking management is folded
+    When I load the page again
+    Then the "hostname" section of the networking management is folded
+    When I open "/hosts/3/network/interfaces"
+    Then the "topology" section of the networking management is open
+    When I fold the "topology" section of the networking management
+    And I load the page again
+    Then the "topology" section of the networking management is folded
 
   Scenario: Networking topology: a zoneweaver-agent host draws its machines, its carriers and its networks from the copies the page holds, the feed pulse live from the usage series
     Given the host answers the hosts fixture
@@ -372,7 +399,7 @@ Feature: networking writes
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/interfaces"
     Then the networking page draws the "topology" section
     And the topology draws 3 consumers
     And the topology draws the consumer "web-1"
@@ -397,7 +424,7 @@ Feature: networking writes
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/networking"
+    When I open "/hosts/1/network/interfaces"
     Then the topology draws 2 consumers
     And the topology draws 6 networks
     And the topology draws the network "bridged|Ethernet"
@@ -407,7 +434,7 @@ Feature: networking writes
     And the host was sent GET to "/api/agents/1/machines/dev-2"
     And the host was sent GET to "/api/agents/1/monitoring/machines/usage"
 
-  Scenario: Networking management: a queued write's end on the tasks topic reads the networking answers again, never on a clock
+  Scenario: Links: a queued write's end on the tasks topic reads the networking answers again, never on a clock
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -415,19 +442,21 @@ Feature: networking writes
     And the host answers the hosts-overview-events fixture
     And the stream answers the networking vnic-created frames
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/networking"
+    When I open "/hosts/3/network/links"
     Then the "vnics" section of the networking page lists 2 rows
     And the host was sent GET to "/api/agents/3/network/vnics" once more than to "/api/agents/3/services"
 
-  Scenario: Networking management: on the zoneweaver-agent role a VNIC create is sent at the agent's own path and the notice opens the queued task
+  Scenario: Network pages: on the zoneweaver-agent role the hostname is read at the agent's own path, a VNIC create is sent there and the notice opens the queued task
     Given the host answers the zones fixture
     And the host answers the zones-networking fixture
     And the host answers the zones-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/self/networking"
-    Then the "vnics" section of the networking page lists 1 rows
-    And the networking page draws the "hostname" section
+    When I open "/hosts/self/network/hostname"
+    Then the networking page draws the "hostname" section
     And the networking page notes "mismatch"
+    And the host was sent GET to "/api/network/hostname"
+    When I follow the host row "links"
+    Then the "vnics" section of the networking page lists 1 rows
     And the host was sent GET to "/api/network/vnics"
     And the host was not sent GET to "/api/agents/self/network/vnics"
     When I press the "vnics" section's "create-vnic" tool

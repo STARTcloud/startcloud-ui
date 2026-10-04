@@ -1,4 +1,4 @@
-import { authMethod } from '../utils/capabilities';
+import { authMethod, hasFeature } from '../utils/capabilities';
 
 import { createApiClient } from './apiClient';
 import { createSession } from './createSession';
@@ -14,6 +14,7 @@ const SAME_ORIGIN_PATH = /^\/(?![/\\])/;
 const THEME_LINK_ID = 'brand-theme';
 const THEME_KEY = 'theme';
 const THEMES_KEY = 'themes';
+const OPENSEARCH_PATH = '/opensearch.xml';
 
 const requestOriginFor = origin => (import.meta.env.DEV ? '' : origin);
 
@@ -91,6 +92,18 @@ const paintBrand = brand => {
   if (!document.documentElement.hasAttribute('data-brand') && validTheme(brand?.theme)) {
     applyTheme(brand.theme);
   }
+};
+
+const linkOpenSearch = status => {
+  if (!hasFeature(status, 'search')) {
+    return;
+  }
+  const link = document.createElement('link');
+  link.rel = 'search';
+  link.type = 'application/opensearchdescription+xml';
+  link.href = OPENSEARCH_PATH;
+  link.title = status.brand.name;
+  document.head.appendChild(link);
 };
 
 const appendAnalytics = analytics => {
@@ -192,7 +205,9 @@ export const disconnectEventStream = () => eventHub.disconnect();
  * host offers a person, `brand.themes`, the host's own list or every
  * theme of the build when the host names none, cached under `themes` for
  * the pre-paint script, and the person's own choice under `theme`, when
- * it names an offered theme, painted over the host's. Runs once per entry
+ * it names an offered theme, painted over the host's; and while the host
+ * lists `search`, the `search` link to the OpenSearch description the
+ * backend serves at `/opensearch.xml`, titled with the brand's name. Runs once per entry
  * before anything renders; the exports are live bindings.
  *
  * @param {Object} status - The payload from `probeStatus`
@@ -201,6 +216,7 @@ export const initRuntime = status => {
   apiOrigin = __API_ORIGIN__ || window.location.origin;
   appendAnalytics(status.analytics);
   paintBrand(status.brand);
+  linkOpenSearch(status);
   ({ session, returnTo } = createSession(status, events));
   client = createApiClient({
     baseUrl: apiOrigin,

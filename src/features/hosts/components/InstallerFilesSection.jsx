@@ -161,20 +161,10 @@ InstallerDialogs.propTypes = {
 };
 
 /**
- * The installer files of a host, hyperweaver-ui's artifact storage as
- * the body of the Manage page's Installer files section: the storage
- * locations card with Add, Edit, Enable or Disable, Scan and Delete,
- * each one request and one notice, the delete and the scan queued
- * tasks; Upload, Register path, Download URL and HCL portal, each a
- * dialog over the one form dialog, the upload's bytes going up with
- * their bar; the re-hash switch with Scan all; and the artifacts over
- * the one table with a select column, the type and the location as
- * request filters in the navbar's panel, the page's query narrowing the
- * rows, Delete selected while any is picked, and on each row Download,
- * which saves the file, and Move and Copy to a location of the same
- * type. Every queued task is followed on `task-updated` and the
- * artifacts read again at its end; Load more raises the page size.
- * Nothing polls.
+ * The installer files of a host: the storage locations card, the Upload,
+ * Register path, Download URL and HCL portal dialogs, Scan all, and the
+ * artifacts table with its selection, row actions and Load more, every
+ * queued task followed to its end.
  */
 const InstallerFilesSection = ({
   id,
@@ -385,6 +375,7 @@ const InstallerFilesSection = ({
           columns={ARTIFACT_COLUMNS}
           rows={table.rows}
           rowKey={rowKey}
+          rowRef={table.rowRef || null}
           RowActions={ArtifactRowActions}
           actionsProps={{ busy: busy || saving, onAction: onArtifactAction }}
           selection={selection.subtable}

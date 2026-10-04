@@ -1,16 +1,16 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { selectGroup } from '../../../hooks/useClientFilters';
 import { fetchArtifacts, fetchStoragePaths } from '../api/artifacts';
 import { ARTIFACT_PAGE_SIZE, ARTIFACT_TYPES, artifactQuery } from '../utils/artifacts';
 import { hostHasFeature } from '../utils/capabilities';
 
 import { useManageRead } from './useHostManage';
-import { selectGroup } from './useHostManageSearch';
 
 /**
- * The request filters the artifacts list opens with, hyperweaver-ui's:
- * every type, every location, by file name ascending.
+ * The request filters the artifacts list opens with: every type, every
+ * location, by file name ascending.
  */
 export const ARTIFACT_PARAMS = {
   type: '',
@@ -29,12 +29,8 @@ const TYPE_KEYS = {
 };
 
 /**
- * The reads of the artifacts section, held at the Manage page so its
- * one search binding narrows them: the storage locations and the
- * artifacts, the latter with hyperweaver-ui's request filters kept as
- * `params` and `setParam(key, value)`, a change sending the request
- * again from the first page, and its page as `pagination` with
- * `setOffset`; both behind `artifacts` on the host's own row.
+ * The reads of the artifacts section behind `artifacts`: the storage
+ * locations and one page of artifacts under the request filters.
  *
  * @param {Object} options - The host
  * @param {string} options.id - The registry id, or `self` on an agent role
@@ -93,10 +89,8 @@ export const useArtifactStorageData = ({ id, server }) => {
 };
 
 /**
- * The request filters of the artifacts list as panel groups of the
- * navbar, hyperweaver-ui's two selects: the type and the storage
- * location; a change sends the request again and Clear filters puts
- * both back.
+ * The type and storage location filters of the artifacts list as panel
+ * groups, each clearing both.
  *
  * @param {Object} options - The filters and the vocabularies
  * @param {Object} options.params - The filters of `useArtifactStorageData`

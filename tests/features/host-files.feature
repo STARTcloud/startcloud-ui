@@ -1,36 +1,37 @@
 Feature: host files
 
-  Scenario: Manage page: the File Manager section behind file-browser, the root listing is read once and the action bar names the path
+  Scenario: Files: the File manager page behind file-browser, the root listing is read once and the action bar names the path
     Given the host answers the hosts fixture
     And the host answers the hosts-files fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
-    When I open "/hosts/1/manage"
-    Then the manage page draws the "file-manager" section
-    And the manage page draws the "file-manager" panel
+    When I open "/hosts/1/files"
+    Then the section page "files" draws
+    And the host row "file-manager" is the active one
+    And the section page draws the "file-manager" panel
     And the file manager draws the path "/"
-    And the manage page draws the "file-manager-actions" panel
+    And the section page draws the "file-manager-actions" panel
     And the host was sent GET to "/api/agents/1/filesystem" 1 times
     And the host was asked "/api/agents/1/filesystem" with "path" as "/"
     And the host was asked "/api/agents/1/filesystem" with "show_hidden" as "false"
     And the file manager holds "archive-selection" back
-    And the manage page offers "archive-directory"
+    And the section page offers "archive-directory"
 
-  Scenario: Manage page: the File Manager section behind file-browser, a host whose row lists no file-browser draws no section and is asked for no listing
+  Scenario: Files: a host whose row lists no file-browser draws no Files group, the not-available stub on the route, and is asked for no listing
     Given the host answers the hosts fixture
     And the host answers the hosts-artifacts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the manage page draws its frame
-    And the manage page draws no "file-manager" section
+    When I open "/hosts/1/files"
+    Then the section page draws the not-available stub
+    And the host column draws no "files" group
     And the host was not sent GET to "/api/agents/1/filesystem"
 
-  Scenario: Manage page: a write one request and one notice, Archive directory names every file of the directory and the format and reads the listing again
+  Scenario: Files: a write one request and one notice, Archive directory names every file of the directory and the format and reads the listing again
     Given the host answers the hosts fixture
     And the host answers the hosts-files fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press the manage page's "archive-directory" action
+    When I open "/hosts/1/files"
+    And I press the section page's "archive-directory" action
     Then the "archive-create" dialog is open
     And the open dialog notes "archive-sources"
     And the field "archive-name" reads "archive.tar.gz"
@@ -50,11 +51,11 @@ Feature: host files
     And no dialog is open
     And the host was sent GET to "/api/agents/1/filesystem" 2 times
 
-  Scenario: Manage page: the File Manager section behind file-browser, a person who may not manage the host is told an admin is required and nothing is read
+  Scenario: Files: a person who may not manage the host is told an admin is required and nothing is read
     Given the host answers the hosts fixture
     And the host answers the hosts-files fixture
     And the host answers the hosts-member fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"user\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the manage page says an admin is required
+    When I open "/hosts/1/files"
+    Then the section page says an admin is required
     And the host was not sent GET to "/api/agents/1/filesystem"

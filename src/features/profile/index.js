@@ -57,6 +57,6 @@ export {
   verifyMail,
 } from './api/profile';
 export { PROFILE_ROUTE_SECTIONS, accountShape, sectionsFor } from './sections';
-export { sidebar } from './sidebar';
+export { searchKinds, sidebar } from './sidebar';
 
 export const ProfilePage = lazy(() => import('./components/ProfilePage'));

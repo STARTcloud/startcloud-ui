@@ -1005,8 +1005,8 @@ const settleRunlevel = (host, task) => {
 const multiUserLevel = body => (body.network_services === false ? '2' : '3');
 
 /**
- * The system group of the Manage page, each route answered as the agents
- * answer it and 404 on a host that lists no token of its section: the
+ * Mount the host's system routes, each answered as the agents answer it
+ * and 404 on a host that lists no token of its section: the
  * services and their actions behind `services`, the processes, their
  * detail, files, limits and stack, the kill, the signal and the batch
  * kill behind `processes`, the users, groups, roles and the three RBAC
@@ -1015,12 +1015,12 @@ const multiUserLevel = body => (body.network_services === false ? '2' : '3');
  * synchronization status, systems, sync, switch and configuration
  * behind `time-sync`, the update check, history, refresh and install
  * behind `packages`, the orchestration, the priorities and the dry run
- * behind `machines`, the `machines` and `storage` configuration files of
- * the config contract with their merge patches, the strategy and the
+ * behind `machines`, the `machines` and `storage` configuration files
+ * with their merge patches, the strategy and the
  * registries map, and the runlevel with its three queued
- * tasks behind `host-power`. Mounted before the machine routes so
+ * tasks behind `runlevel`. Mounted before the machine routes so
  * `machines/orchestration/...` and `machines/priorities` are not taken
- * for a machine's name. Nothing here runs on a clock but the tasks.
+ * for a machine's name.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
  * @returns {void}
@@ -1039,7 +1039,7 @@ export const mountManage = agentRoute => {
   settles('system_host_multi_user', settleRunlevel);
   const rbac = ['system-users'];
   const time = ['time-sync'];
-  const power = ['host-power'];
+  const levels = ['runlevel'];
   agentRoute('GET', 'services', behind(['services'], services));
   agentRoute('GET', 'services/:fmri', behind(['services'], shownService));
   agentRoute('GET', 'services/:fmri/properties', behind(['services'], shownProperties));
@@ -1111,12 +1111,12 @@ export const mountManage = agentRoute => {
   agentRoute('PUT', 'config/machines', patchMachines);
   agentRoute('GET', 'config/storage', storageFile);
   agentRoute('PUT', 'config/storage', patchStorage);
-  agentRoute('GET', 'system/host/runlevel', behind(power, runlevel));
+  agentRoute('GET', 'system/host/runlevel', behind(levels, runlevel));
   agentRoute(
     'POST',
     'system/host/runlevel',
     behind(
-      power,
+      levels,
       runlevelTask('system_host_runlevel', body => body.runlevel)
     )
   );
@@ -1124,13 +1124,13 @@ export const mountManage = agentRoute => {
     'POST',
     'system/host/single-user',
     behind(
-      power,
+      levels,
       runlevelTask('system_host_single_user', () => 's')
     )
   );
   agentRoute(
     'POST',
     'system/host/multi-user',
-    behind(power, runlevelTask('system_host_multi_user', multiUserLevel))
+    behind(levels, runlevelTask('system_host_multi_user', multiUserLevel))
   );
 };

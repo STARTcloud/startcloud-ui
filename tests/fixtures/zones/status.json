@@ -16,6 +16,7 @@
     "tasks",
     "host-terminal",
     "host-power",
+    "runlevel",
     "guest-agent",
     "machine-suspend"
   ],

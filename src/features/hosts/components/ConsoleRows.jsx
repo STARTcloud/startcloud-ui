@@ -1,48 +1,29 @@
-import PropTypes from 'prop-types';
-import { Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 import { consoleDoorsOf, consoleRoute } from '../utils/consoles';
 
-import { ActionRow } from './HostActionOptions';
-
 /**
- * The console rows of the machine Controls menu, one a console the
- * host's row lists, VNC console behind the `vnc` console token, zlogin
- * console behind `zlogin`, SSH behind the `ssh` feature and RDP behind
- * `rdp`, from the one list of `CONSOLE_DOORS`; a row opens the machine's
- * page with the console named in its `console` query, the door the
- * console panel reads. Nothing draws for a host that lists none.
+ * The console commands of the machine Controls menu, one a console the
+ * host's row lists, each opening the machine's page with that console in
+ * its `console` query.
+ *
+ * @param {Object} options
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {string} options.name - The machine's name
+ * @param {Object|null} options.server - The host's registry row
+ * @param {boolean} options.busy - Whether an action is in flight
+ * @returns {Array<Object>} The commands
  */
-const ConsoleRows = ({ id, name, server = null, busy }) => {
+export const useConsoleCommands = ({ id, name, server, busy }) => {
   const navigate = useNavigate();
-  const doors = consoleDoorsOf(server);
-  if (doors.length === 0) {
-    return null;
-  }
-  return (
-    <>
-      <Dropdown.Divider />
-      {doors.map(door => (
-        <ActionRow
-          key={door.key}
-          icon={door.icon}
-          tone="text-info"
-          labelKey={door.labelKey}
-          action={`console-${door.key}`}
-          disabled={busy}
-          onClick={() => navigate(consoleRoute(id, name, door.key))}
-        />
-      ))}
-    </>
-  );
+  return consoleDoorsOf(server).map(door => ({
+    key: `console-${door.key}`,
+    group: 'console',
+    icon: door.icon,
+    tone: 'text-info',
+    labelKey: door.labelKey,
+    action: `console-${door.key}`,
+    disabled: busy,
+    run: () => navigate(consoleRoute(id, name, door.key)),
+  }));
 };
-
-ConsoleRows.propTypes = {
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  server: PropTypes.object,
-  busy: PropTypes.bool.isRequired,
-};
-
-export default ConsoleRows;

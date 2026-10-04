@@ -1,16 +1,17 @@
 Feature: host templates
 
-  Scenario: Templates: the section behind `templates`, the registries card and the one table from the one read each
+  Scenario: Templates: the page behind `templates`, the registries card and the one table from the one read each
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the manage page draws the "templates" section
+    When I open "/hosts/1/provisioning/templates"
+    Then the section page "templates" draws
+    And the host row "templates" is the active one
     And the catalog card "template-sources" lists 2 registries
-    And the manage page notes "source-default"
-    And the "templates" table of the manage page lists 3 rows
-    And the "templates" table of the manage page draws the "downloaded_at" column
-    And the row "windows-server-2025" of the "templates" table of the manage page offers "delete"
+    And the section page notes "source-default"
+    And the "templates" table of the section page lists 3 rows
+    And the "templates" table of the section page draws the "downloaded_at" column
+    And the row "windows-server-2025" of the "templates" table of the section page offers "delete"
     And the host was sent GET to "/api/agents/1/templates" 1 times
     And the host was sent GET to "/api/agents/1/templates/sources" 1 times
 
@@ -18,22 +19,22 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the "templates" table of the manage page lists 3 rows
-    When I press "Control+f"
-    And I search the manage page for "debian"
-    Then the "templates" table of the manage page lists 2 rows
-    When I search the manage page for ""
+    When I open "/hosts/1/provisioning/templates"
+    Then the "templates" table of the section page lists 3 rows
+    When I press "Control+k"
+    And I search the section page for "debian"
+    Then the "templates" table of the section page lists 2 rows
+    When I search the section page for ""
     And I open the filter panel
     And I toggle the filter pill "utm"
-    Then the "templates" table of the manage page lists 1 rows
+    Then the "templates" table of the section page lists 1 rows
 
   Scenario: Templates: the pull dialog opens on the default registry, reads its catalog, and a picked box fills the fields the pull sends
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press the manage page's "template-pull" action
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-pull" action
     Then the catalog dialog "template-pull" draws
     And the host was sent GET to "/api/agents/1/templates/remote/boxvault"
     When I submit the catalog dialog "template-pull"
@@ -51,8 +52,8 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press the manage page's "template-export" action
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-export" action
     Then the catalog dialog "template-export" draws
     And the catalog dialog option "dev-1" of "template-export-machine" is held
     When I pick "dev-2" in the catalog dialog select "template-export-machine"
@@ -65,8 +66,8 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press the manage page's "template-publish" action
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-publish" action
     And I pick "dev-2" in the catalog dialog select "template-publish-machine"
     And I type "startcloud" into the field "template-publish-org"
     And I type "dev-golden" into the field "template-publish-box"
@@ -80,12 +81,12 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press "move" on the row "13.1.0" of the "templates" table of the manage page
+    When I open "/hosts/1/provisioning/templates"
+    And I press "move" on the row "13.1.0" of the "templates" table of the section page
     And I type "/tank/templates" into the field "template-move-path"
     And I submit the catalog dialog "template-move"
     Then the host was sent POST to "/api/agents/1/templates/tpl-1/move" carrying "target_path" as "/tank/templates"
-    When I press "delete" on the row "13.0.0" of the "templates" table of the manage page
+    When I press "delete" on the row "13.0.0" of the "templates" table of the section page
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/1/templates/tpl-2"
 
@@ -93,8 +94,8 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    And I press the manage page's "source-add" action
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "source-add" action
     And I submit the catalog dialog "template-source"
     Then the catalog dialog "template-source" says why it cannot be sent
     When I type "vagrant-cloud" into the field "source-name"
@@ -119,7 +120,7 @@ Feature: host templates
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
+    When I open "/hosts/1/provisioning/templates"
     And I press the action "source-toggle" of the catalog source "mirror"
     Then the host was sent PUT to "/api/agents/1/config/storage" carrying "false" at "/template_sources/sources/mirror/enabled"
     And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/boxvault"

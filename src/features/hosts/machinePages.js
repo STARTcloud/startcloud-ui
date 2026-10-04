@@ -7,14 +7,14 @@ import { canCreateMachines } from './utils/permissions';
 const always = () => true;
 
 /**
- * The pages of one machine, hyperweaver-ui's machine tabs, the one list
- * every door to them reads, the tab row under the machine page's
- * heading: each entry its key, the segment of its route under
- * `/hosts/{id}/machines/{name}`, empty for the machine's own route, its
- * glyph, the key of its label, `landed`, whether the page exists in this
- * build, and `offered({ server, role })`, its gate on the host's own row
- * and the person's role, checked strictly. Overview is always offered;
- * Settings behind `machine-modify` for a person who may create machines;
+ * The pages of one machine, the list the machine's column and the tree
+ * menu read: each `{ key, segment, icon, labelKey, landed, offered }`,
+ * `segment` its route under `/hosts/{id}/machines/{name}`, empty for the
+ * machine's own, `labelKey` the page's own word without the machine
+ * noun, `landed` whether the page exists in this build, and
+ * `offered({ server, role })` its gate on the host's own row and the
+ * person's role, checked strictly. Overview is always offered; Settings
+ * behind `machine-modify` for a person who may create machines;
  * Snapshots behind `machine-snapshots`; Provisioning always.
  */
 export const MACHINE_PAGES = [
@@ -22,7 +22,7 @@ export const MACHINE_PAGES = [
     key: 'overview',
     segment: '',
     icon: FaCircleInfo,
-    labelKey: 'navbar.contextTabs.machineOverview',
+    labelKey: 'navbar.contextTabs.overview',
     landed: true,
     offered: always,
   },

@@ -1,31 +1,40 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import PageHeader from '../../../components/common/PageHeader';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useFolds } from '../../../hooks/useFolds';
+import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
-import { useHostReadingsRefresh } from '../hooks/useHostReadings';
+import { getTask } from '../api/tasks';
+import { useHostReading, useHostReadingsRefresh } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
-import { useHostSeriesRefresh } from '../hooks/useHostSeries';
+import { useHostSeriesQuery, useHostSeriesRefresh } from '../hooks/useHostSeries';
 import { useHostStats } from '../hooks/useHostStats';
 import { useServers } from '../hooks/useServers';
 import { hostHasFeature } from '../utils/capabilities';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 import { createSeedOf, hostCreates, withoutCreateSeed } from '../utils/machineCreate';
+import { SERIES, hostOffers } from '../utils/monitoring';
+import { uptimeParts } from '../utils/resources';
 
+import HostNav from './HostNav';
 import HostOverview from './HostOverview';
-import HostTabs from './HostTabs';
 import MachineCreateModal from './MachineCreateModal';
 import MonitoringDatabase from './MonitoringDatabase';
 import NetworkStorageSummary from './NetworkStorageSummary';
 import PerformanceCharts from './PerformanceCharts';
+import QuerySelects from './QuerySelects';
 import RefreshButton from './RefreshButton';
+import TaskDialog from './TaskDialog';
+
+const SEPARATOR = ' · ';
+
+const TASK_PARAM = 'task';
 
 const DEFAULT_SORT = [{ column: 'name', direction: 'asc' }];
 
@@ -38,7 +47,7 @@ const matches = (machine, needle) => machine.name.toLowerCase().includes(needle)
 
 /**
  * The machines table's columns: the name linking to the machine's page
- * and the state badge, running or stopped, each sorting by its text.
+ * and the running or stopped badge.
  */
 const columnsFor = id => [
   {
@@ -69,9 +78,8 @@ const machinesOf = stats =>
   [...(stats?.allmachines || [])].sort().map(name => ({ name, running: isRunning(stats, name) }));
 
 /**
- * The label of one host: the registry row's on the server role, found
- * among every row the server answered, the agent's own reported hostname
- * on an agent role, the id while neither has answered.
+ * The label of one host: the registry row's on the server role, the
+ * agent's hostname on an agent role, the id while neither has answered.
  *
  * @param {Object} options - The status, the held rows, the id and the stats
  * @returns {string} The label
@@ -85,29 +93,67 @@ const labelOf = ({ status, held, id, stats }) => {
 };
 
 /**
- * One host at `/hosts/{id}`, hyperweaver-ui's host overview in its
- * order: the host's label as the title; the tab row of the host's pages
- * (`HostTabs`); the host overview card, the
- * system information beside the resource utilization; the machines of
- * `stats.allmachines` sorted in the one `SubTable` over Name and State,
- * running or stopped from `stats.runningmachines`, under a heading that
- * counts them, narrowed by the navbar binding of `useDetailSearch` under
- * `table_prefs_host`, the heading's View all the link to the machines of
- * the host at `/hosts/{id}/machines` while the host's own row lists
- * `machines`; then, on a host whose own row lists `monitoring`,
- * the network and storage summary, the performance charts and the
- * monitoring database, each gated by the host's own tokens. The folds of
- * the page's cards are kept under the same `table_prefs_host`. Refresh
- * in the heading's actions reads again the list of servers, the host's
- * stats, every answer the panels hold of the host and the history of
- * every series its charts draw, and nothing reads on a clock; the
- * loading line while the stats have not answered and the danger alert
- * when they failed, the stats the copy `useHostStats` shares with the
- * Controls menu and the tree. The route's `create=machine` query opens
- * the create wizard over the page while `hostCreates` offers it, the
- * seed of the query, the Deploy hand-off's box and provisioner members,
- * seeding its fields; closing the wizard takes the query out of the
- * route.
+ * The muted text after the host's title: the health word, the uptime and
+ * the machines running of all, joined by a middle dot.
+ *
+ * @param {Object} options - The health answer, the stats, the running and total counts and `t`
+ * @returns {string|null} The text, null while nothing has answered
+ */
+const stateTextOf = ({ health, stats, running, total, t }) => {
+  const parts = uptimeParts(stats?.uptime);
+  return (
+    [
+      health?.status || '',
+      parts ? t('hosts.overview.uptimeValue', parts) : '',
+      stats ? t('hosts.host.machines', { running, total }) : '',
+    ]
+      .filter(Boolean)
+      .join(SEPARATOR) || null
+  );
+};
+
+/**
+ * The task the route's `task` query names, read once for the host, null
+ * while none is named or it has not answered.
+ *
+ * @param {Object} options - The status, the host's id and the task's id
+ * @returns {Object|null} The task's row
+ */
+const useArrivedTask = ({ status, id, taskId }) => {
+  const [held, setHeld] = useState(null);
+
+  useEffect(() => {
+    if (!taskId) {
+      return undefined;
+    }
+    let live = true;
+    getTask(status, id, taskId)
+      .then(row => {
+        if (live) {
+          setHeld(row);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      live = false;
+    };
+  }, [status, id, taskId]);
+
+  return taskId && held?.id === taskId ? held : null;
+};
+
+const withoutTask = params => {
+  const next = new URLSearchParams(params);
+  next.delete(TASK_PARAM);
+  return next;
+};
+
+/**
+ * One host at `/hosts/{id}` inside its column: the heading with the
+ * health, uptime and running machines, the overview card, the machines
+ * table, the network and storage summary, the performance charts and the
+ * monitoring database; the route's `create=machine` query opens the
+ * create wizard and its `task` query opens that task's dialog.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
@@ -116,11 +162,15 @@ const HostPage = ({ id, context }) => {
   const { stats, loaded, failed, refresh: refreshStats } = useHostStats(id);
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
+  const { query, setQuery } = useHostSeriesQuery(id);
+  const health = useHostReading(id, 'monitoring-health');
   const folds = useFolds(`${context.prefsPrefix}_host`);
   const server = useHostRow(id);
   const listed = hostHasFeature(server, 'machines');
+  const charted = hostOffers(server, SERIES.cpu.tokens);
   const [searchParams, setSearchParams] = useSearchParams();
   const seed = createSeedOf(searchParams);
+  const arrivedTask = useArrivedTask({ status, id, taskId: searchParams.get(TASK_PARAM) || '' });
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
   const ctx = { ...context, t, language: i18n.language };
@@ -134,6 +184,8 @@ const HostPage = ({ id, context }) => {
     defaultSort: DEFAULT_SORT,
   });
   const label = labelOf({ status, held, id, stats });
+
+  usePageName(label);
 
   useEffect(() => {
     document.title = label;
@@ -156,59 +208,79 @@ const HostPage = ({ id, context }) => {
     refreshSeries(id);
   };
 
+  const actions = (
+    <>
+      {charted ? <QuerySelects query={query} onChange={setQuery} scope="hostHeader" /> : null}
+      <RefreshButton onRefresh={refresh} />
+    </>
+  );
+
   return (
-    <div className="list row">
-      <PageHeader title={label} actions={<RefreshButton onRefresh={refresh} />} />
-      <HostTabs id={id} />
-      {failed ? (
-        <div className="alert alert-danger" role="alert">
-          {t('hosts.host.loadError')}
-        </div>
-      ) : null}
-      {stats ? <HostOverview id={id} stats={stats} folds={folds} /> : null}
-      {stats ? (
+    <HostNav id={id}>
+      <div className="list row">
         <SectionHeading
-          title={t('hosts.page.machines')}
-          count={t('hosts.host.machines', { running, total: machines.length })}
-          actions={
-            listed ? (
-              <Link
-                to={`/hosts/${id}/machines`}
-                className="btn btn-sm btn-outline-secondary"
-                data-link="machines"
-              >
-                {t('hosts.machines.viewAll')}
-              </Link>
-            ) : null
-          }
+          title={label}
+          count={stateTextOf({ health: health.data, stats, running, total: machines.length, t })}
+          actions={actions}
         />
-      ) : null}
-      {stats ? (
-        <SubTable
-          columns={columns}
-          rows={search.rows}
-          rowKey={machine => machine.name}
-          sort={search.sort}
-          onSort={search.setSort}
-          hiddenColumns={search.hiddenColumns}
-          widths={search.widths}
-          onResize={search.setColumnWidth}
-          ctx={ctx}
-          emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+        {failed ? (
+          <div className="alert alert-danger" role="alert">
+            {t('hosts.host.loadError')}
+          </div>
+        ) : null}
+        {stats ? <HostOverview id={id} stats={stats} folds={folds} /> : null}
+        {stats ? (
+          <SectionHeading
+            title={t('hosts.page.machines')}
+            count={t('hosts.host.machines', { running, total: machines.length })}
+            actions={
+              listed ? (
+                <Link
+                  to={`/hosts/${id}/machines`}
+                  className="btn btn-sm btn-outline-secondary"
+                  data-link="machines"
+                >
+                  {t('hosts.machines.viewAll')}
+                </Link>
+              ) : null
+            }
+          />
+        ) : null}
+        {stats ? (
+          <SubTable
+            columns={columns}
+            rows={search.rows}
+            rowKey={machine => machine.name}
+            sort={search.sort}
+            onSort={search.setSort}
+            hiddenColumns={search.hiddenColumns}
+            widths={search.widths}
+            onResize={search.setColumnWidth}
+            ctx={ctx}
+            emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+          />
+        ) : null}
+        <NetworkStorageSummary id={id} />
+        <PerformanceCharts id={id} host={label} folds={folds} />
+        <MonitoringDatabase id={id} />
+        <MachineCreateModal
+          status={status}
+          id={id}
+          open={Boolean(seed) && hostCreates(server, context.user?.role)}
+          user={context.user}
+          seed={seed}
+          onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
         />
-      ) : null}
-      <NetworkStorageSummary id={id} />
-      <PerformanceCharts id={id} host={label} folds={folds} />
-      <MonitoringDatabase id={id} />
-      <MachineCreateModal
-        status={status}
-        id={id}
-        open={Boolean(seed) && hostCreates(server, context.user?.role)}
-        user={context.user}
-        seed={seed}
-        onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
-      />
-    </div>
+        {arrivedTask ? (
+          <TaskDialog
+            status={status}
+            id={id}
+            task={arrivedTask}
+            onHide={() => setSearchParams(withoutTask(searchParams), { replace: true })}
+          />
+        ) : null}
+      </div>
+    </HostNav>
   );
 };
 

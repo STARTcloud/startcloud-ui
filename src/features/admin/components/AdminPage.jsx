@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import ConfigPage from '../../../components/common/ConfigPage';
+import UpdatePage from '../../../components/common/UpdatePage';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
 import { adminShape } from '../utils/adminShape';
@@ -11,22 +12,24 @@ import { adminShape } from '../utils/adminShape';
 import AdminStorage from './AdminStorage';
 import UpdateNotice from './UpdateNotice';
 
-export const ADMIN_PAGES = ['config', 'system'];
+export const ADMIN_PAGES = ['config', 'system', 'update'];
 
 /**
  * One admin page per sidebar entry of an app with configuration of its
  * own: the update notice while the adapter carries `updateStatus` and it
- * reports one, then the page the route names, Configuration on every
+ * reports one, on every page but Update, then the page the route names, Configuration on every
  * host, its empty state when the adapter carries no `config` and reached
- * by URL alone, System while it carries `storage`, every call through the
- * app's `admin` adapter; the Users and All organizations pages of a host
- * with accounts of its own are the identity feature's, drawn by the router
- * over the adapter's `users` and `organizations`; the sidebar rows are the
- * one navigation and no tab strip is drawn; the page's own heading is
- * drawn above System and not above Configuration, whose heading is the
- * file's root `title` drawn by the shared `ConfigPage` (identity contract
- * decision 129); a visitor is sent to sign in and a signed-in non-admin
- * home, `allowed` being the app's global-admin flag.
+ * by URL alone, System while it carries `storage`, Update, the shared
+ * `UpdatePage` over the adapter's `update`, while it carries `update`,
+ * every call through the app's `admin` adapter; the Users and All
+ * organizations pages of a host with accounts of its own are the
+ * identity feature's, drawn by the router over the adapter's `users` and
+ * `organizations`; the sidebar rows are the one navigation and no tab
+ * strip is drawn; the page's own heading is drawn above System alone,
+ * Configuration headed by the file's root `title` the shared `ConfigPage`
+ * draws and Update by its own heading row; a visitor is sent to sign in
+ * and a signed-in non-admin home, `allowed` being the app's global-admin
+ * flag.
  */
 const AdminPage = ({ session, returnTo, allowed, admin, updateCommand, page }) => {
   const { t } = useTranslation();
@@ -63,15 +66,20 @@ const AdminPage = ({ session, returnTo, allowed, admin, updateCommand, page }) =
 
   return (
     <div className="list row">
-      {page === 'config' ? null : (
+      {page === 'system' ? (
         <header>
           <h3 className="text-center">{t('admin.title')}</h3>
         </header>
-      )}
-      {updateInfo && <UpdateNotice updateInfo={updateInfo} command={updateCommand} />}
+      ) : null}
+      {updateInfo && page !== 'update' ? (
+        <UpdateNotice updateInfo={updateInfo} command={updateCommand} />
+      ) : null}
       <div className="mt-2">
         {page === 'config' ? <ConfigPage config={admin.config || null} /> : null}
         {page === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
+        {page === 'update' && admin.update && allowed ? (
+          <UpdatePage update={admin.update} title={t('hosts.nav.update')} />
+        ) : null}
       </div>
     </div>
   );

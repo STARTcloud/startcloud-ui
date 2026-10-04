@@ -471,37 +471,37 @@ When("I press the {word} notice's action", async ({ page }, kind) => {
   await noticesOf(page, kind).locator('.btn-outline-secondary').first().click();
 });
 
-const machineTabs = page => machineOf(page).locator('[data-tabs="machine"] .nav-tabs');
-
-const machineTabOf = (page, key) => machineTabs(page).locator(`[data-tab="${key}"]`);
-
-When('I follow the machine tab {string}', async ({ page }, key) => {
-  await machineTabOf(page, key).click();
+When('I dismiss the {word} notice', async ({ page }, kind) => {
+  await noticesOf(page, kind).locator('.btn-close').first().click();
 });
 
-Then('the machine tab row draws {int} tabs', async ({ page }, count) => {
-  await expect(machineTabs(page)).toBeVisible();
-  await expect(machineTabs(page).locator('[data-tab]')).toHaveCount(count);
+const machineNav = page => page.locator('[data-nav="machine"]');
+
+const machineRowOf = (page, key) => machineNav(page).locator(`[data-nav-page="${key}"]`);
+
+When('I follow the machine row {string}', async ({ page }, key) => {
+  await machineRowOf(page, key).click();
 });
 
-Then('the machine tab row draws the {string} tab to {string}', async ({ page }, key, href) => {
-  await expect(machineTabOf(page, key)).toHaveAttribute('href', href);
-  await expect(machineTabOf(page, key).locator('svg')).toHaveCount(1);
+Then('the machine column draws {int} page rows', async ({ page }, count) => {
+  await expect(machineNav(page)).toBeVisible();
+  await expect(machineNav(page).locator('[data-nav-page]')).toHaveCount(count);
+  await expect(machineNav(page).locator('[data-nav-group]')).toHaveCount(0);
 });
 
-Then('the machine tab row draws no {string} tab', async ({ page }, key) => {
-  await expect(machineTabs(page)).toBeVisible();
-  await expect(machineTabOf(page, key)).toHaveCount(0);
+Then('the machine column draws the {string} row to {string}', async ({ page }, key, href) => {
+  await expect(machineRowOf(page, key)).toHaveAttribute('href', href);
+  await expect(machineRowOf(page, key).locator('svg')).toHaveCount(1);
 });
 
-Then('the machine tab {string} is the active one', async ({ page }, key) => {
-  await expect(machineTabOf(page, key)).toHaveClass(/active/u);
-  await expect(machineTabs(page).locator('.nav-link.active')).toHaveCount(1);
+Then('the machine column draws no {string} row', async ({ page }, key) => {
+  await expect(machineRowOf(page, 'overview')).toBeVisible();
+  await expect(machineRowOf(page, key)).toHaveCount(0);
 });
 
-Then('the page draws no machine tab row', async ({ page }) => {
-  await expect(panelOf(page, 'machine-info')).toBeVisible();
-  await expect(machineOf(page).locator('[data-tabs="machine"]')).toHaveCount(0);
+Then('the machine row {string} is the active one', async ({ page }, key) => {
+  await expect(machineRowOf(page, key)).toHaveClass(/active/u);
+  await expect(machineNav(page).locator('.host-nav-row.active')).toHaveCount(1);
 });
 
 Then('the snapshots page draws no {string} panel', async ({ page }, name) => {

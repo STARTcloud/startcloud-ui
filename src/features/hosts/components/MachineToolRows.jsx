@@ -1,11 +1,8 @@
-import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Dropdown } from 'react-bootstrap';
 import { FaBoxArchive, FaCamera, FaClone, FaCompactDisc, FaTruckArrowRight } from 'react-icons/fa6';
 
 import { machineToolGates } from '../utils/machineTools';
 
-import { ActionRow } from './HostActionOptions';
 import MachineToolDialogs from './MachineToolDialogs';
 
 const ROWS = [
@@ -52,46 +49,36 @@ const ROWS = [
 ];
 
 /**
- * The tool rows of the machine Controls menu, hyperweaver-ui's Snapshot,
- * Clone, Convert to template, Install OS and Move, each drawn only while
- * `machineToolGates` offers it for the host's own row, the machine's own
- * row and the person's role: Snapshot while the host lists
- * `machine-snapshots`, Clone while it lists `machine-create`, Convert to
- * template while it lists `templates`, and Install OS, the unattended
- * install from an ISO, and Move, the move of a VirtualBox machine's
- * files, on a host that names `virtualbox` and never for a machine on
- * UTM, so a bhyve host, whose Move is the zone lifecycle's, draws
- * neither here. A row opens its dialog of
- * `MachineToolDialogs`, and the dialog's one request is sent from there.
+ * The tool commands of the machine Controls menu, Snapshot, Clone,
+ * Convert to template, Install OS and Move, each while `machineToolGates`
+ * offers it, each opening its dialog of `MachineToolDialogs`.
+ *
+ * @param {Object} options
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {string} options.name - The machine's name
+ * @param {Object|null} options.server - The host's registry row
+ * @param {Object|null} options.machine - The machine's own row
+ * @param {Object|null} options.user - The signed-in person
+ * @param {boolean} options.busy - Whether an action is in flight
+ * @returns {{ commands: Array<Object>, dialogs: import('react').ReactNode }} The commands and their dialogs
  */
-const MachineToolRows = ({
-  status,
-  id,
-  name,
-  server = null,
-  machine = null,
-  user = null,
-  busy,
-}) => {
+export const useMachineToolCommands = ({ status, id, name, server, machine, user, busy }) => {
   const [tool, setTool] = useState('');
   const gates = machineToolGates({ server, machine, role: user?.role });
-  const rows = ROWS.filter(row => gates[row.gate]);
-
-  return (
-    <>
-      {rows.length > 0 ? <Dropdown.Divider /> : null}
-      {rows.map(row => (
-        <ActionRow
-          key={row.tool}
-          icon={row.icon}
-          tone={row.tone}
-          labelKey={row.labelKey}
-          titleKey={row.titleKey}
-          action={`tool-${row.tool}`}
-          disabled={busy}
-          onClick={() => setTool(row.tool)}
-        />
-      ))}
+  return {
+    commands: ROWS.filter(row => gates[row.gate]).map(row => ({
+      key: `tool-${row.tool}`,
+      group: 'tools',
+      icon: row.icon,
+      tone: row.tone,
+      labelKey: row.labelKey,
+      titleKey: row.titleKey,
+      action: `tool-${row.tool}`,
+      disabled: busy,
+      run: () => setTool(row.tool),
+    })),
+    dialogs: (
       <MachineToolDialogs
         status={status}
         tool={tool}
@@ -99,18 +86,6 @@ const MachineToolRows = ({
         name={name}
         onClose={() => setTool('')}
       />
-    </>
-  );
+    ),
+  };
 };
-
-MachineToolRows.propTypes = {
-  status: PropTypes.object.isRequired,
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  server: PropTypes.object,
-  machine: PropTypes.object,
-  user: PropTypes.object,
-  busy: PropTypes.bool.isRequired,
-};
-
-export default MachineToolRows;

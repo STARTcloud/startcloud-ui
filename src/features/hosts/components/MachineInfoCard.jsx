@@ -23,7 +23,15 @@ const FOLD = 'machine-info';
 
 const hostPath = id => `/hosts/${id}`;
 
-const stateOf = ({ detail, machine, running }) =>
+/**
+ * The state a machine reads as, lower-cased: the detail's own word, the
+ * machine row's while the detail has not answered and running or
+ * stopped from the host's stats while neither has.
+ *
+ * @param {Object} options - The detail, the machine's row and the running state
+ * @returns {string} The state
+ */
+export const stateOf = ({ detail, machine, running }) =>
   String(
     detail?.machine_info?.status || machine?.status || (running ? 'running' : 'stopped')
   ).toLowerCase();

@@ -8,6 +8,7 @@ import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { saveHostsFile } from '../api/networking';
 import { hostsBody, hostsRowsFrom } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 const NO_SORT = [];
 
@@ -70,6 +71,23 @@ const ENTRY_COLUMNS = [
   },
 ];
 
+const READ_COLUMNS = [
+  {
+    key: 'ip',
+    kind: 'text',
+    labelKey: 'host.hostsFileEditor.ipAddress',
+    value: row => row.ip,
+    render: row => <code>{row.ip}</code>,
+  },
+  {
+    key: 'hostnames',
+    kind: 'text',
+    labelKey: 'host.hostsFileEditor.hostnames',
+    prose: true,
+    value: row => row.hostnames,
+  },
+];
+
 const EntryActions = ({ row, busy, onRemove }) => {
   const { t } = useTranslation();
   return (
@@ -102,18 +120,20 @@ const draftOf = data => ({
 /**
  * The hosts file section of the networking page's management,
  * hyperweaver-ui's `HostsFileEditor` as a folding section: the file's
- * entries as rows of the one `SubTable`, each an address and its
- * hostnames typed in place with a remove, and Add entry under them, or
- * the raw file behind the switch, the raw winning on the wire; Save
- * sends `PUT system/hosts` with `hostsBody` through the page's one
- * `useNetworkingTools`, the notice carrying the backup the agent wrote,
- * and the held answer is read again. The rows follow the held answer
- * until a person types, and again after a save.
+ * entries as rows of the one `SubTable`, for a role that controls hosts
+ * each an address and its hostnames typed in place with a remove, and
+ * Add entry under them, or the raw file behind the switch, the raw
+ * winning on the wire, and Save, which sends `PUT system/hosts` with
+ * `hostsBody` through the page's one `useNetworkingTools`, the notice
+ * carrying the backup the agent wrote, and the held answer is read
+ * again; every other role reads the entries as plain rows. The rows
+ * follow the held answer until a person types, and again after a save.
  */
-const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
+const HostsFileEditor = ({ id, role, reading, ctx, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [draft, setDraft] = useState(null);
+  const writable = canControlHosts(role);
   const form = draft || draftOf(reading.data);
   const change = (field, value) => setDraft({ ...form, [field]: value });
   const path = reading.data?.path || '';
@@ -195,7 +215,7 @@ const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
         folded={fold.folded}
         onFold={fold.onFold}
         foldTitle={fold.title}
-        actions={actions}
+        actions={writable ? actions : null}
       />
       {fold.folded ? null : (
         <div className="card">
@@ -205,13 +225,27 @@ const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
                 {t('hosts.overview.readError')}
               </div>
             ) : null}
-            <p className="form-text text-muted mt-0">
-              {t('host.hostsFileEditor.backupNote')}
-              {form.rawMode
-                ? t('host.hostsFileEditor.rawModeNote')
-                : t('host.hostsFileEditor.tableModeNote')}
-            </p>
-            {form.rawMode ? (
+            {writable ? null : (
+              <SubTable
+                columns={READ_COLUMNS}
+                rows={form.rows}
+                rowKey={row => row.key}
+                sort={NO_SORT}
+                onSort={() => {}}
+                hiddenColumns={NO_HIDDEN}
+                ctx={ctx}
+                emptyText={t('hosts.networking.hostsFile.empty')}
+              />
+            )}
+            {writable ? (
+              <p className="form-text text-muted mt-0">
+                {t('host.hostsFileEditor.backupNote')}
+                {form.rawMode
+                  ? t('host.hostsFileEditor.rawModeNote')
+                  : t('host.hostsFileEditor.tableModeNote')}
+              </p>
+            ) : null}
+            {writable && form.rawMode ? (
               <textarea
                 id="hosts-raw"
                 className="form-control font-monospace"
@@ -221,7 +255,8 @@ const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
                 disabled={tools.busy}
                 aria-label={t('host.hostsFileEditor.rawAriaLabel')}
               />
-            ) : (
+            ) : null}
+            {writable && !form.rawMode ? (
               <>
                 <SubTable
                   columns={ENTRY_COLUMNS}
@@ -253,7 +288,7 @@ const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
                   {t('host.hostsFileEditor.addEntry')}
                 </button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -263,6 +298,7 @@ const HostsFileEditor = ({ id, reading, ctx, fold, tools }) => {
 
 HostsFileEditor.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   reading: PropTypes.object.isRequired,
   ctx: PropTypes.object.isRequired,
   fold: PropTypes.object.isRequired,

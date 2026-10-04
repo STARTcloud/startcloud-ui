@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   MANAGE_SECTIONS,
-  MANAGE_TOKENS,
   configServers,
   diskSpaceWarning,
   filterTimezones,
@@ -11,14 +10,12 @@ import {
   formatTimezone,
   groupCreateBody,
   healthTone,
-  hostHasManage,
   isConfigValid,
   isSystemGroup,
   isSystemUser,
   matchesProcess,
   matchesService,
   movedOrder,
-  offeredSections,
   orderDiffers,
   orderOf,
   parseMemorySize,
@@ -54,27 +51,49 @@ const rowOf = (features, hypervisors = [], platform = 'omnios') => ({
 
 const keysOf = sections => sections.map(section => section.key);
 
-describe('hostHasManage', () => {
-  it('offers the page for any token of its sections and for none else', () => {
-    MANAGE_TOKENS.forEach(token => expect(hostHasManage(rowOf([token]))).toBe(true));
-    expect(hostHasManage(rowOf(['host-power', 'tasks']))).toBe(false);
-    expect(hostHasManage(null)).toBe(false);
-    expect(hostHasManage({ capabilities: {} })).toBe(false);
-  });
-});
-
-describe('sectionOffered and offeredSections', () => {
+describe('MANAGE_SECTIONS and sectionOffered', () => {
   const byKey = key => MANAGE_SECTIONS.find(section => section.key === key);
 
-  it('gates a section by its one token, every token of its list or any of its alternatives', () => {
+  it('lists the sections of the column pages in hyperweaver-ui order, each with a body of its own', () => {
+    expect(keysOf(MANAGE_SECTIONS)).toEqual([
+      'services',
+      'packages',
+      'repositories',
+      'system-updates',
+      'boot-environments',
+      'arc-configuration',
+      'artifacts',
+      'time-ntp',
+      'processes',
+      'fault-management',
+      'system-logs',
+      'syslog',
+      'file-manager',
+      'user-group',
+      'provisioning',
+      'provisioning-network',
+      'recipes',
+      'templates',
+      'orchestration',
+      'runlevel',
+      'installer-files',
+      'database',
+    ]);
+    expect(byKey('network')).toBeUndefined();
+    expect(byKey('storage')).toBeUndefined();
+  });
+
+  it('gates a section by its one token or every token of its list, strictly', () => {
     expect(sectionOffered(byKey('services'), rowOf(['services']))).toBe(true);
     expect(sectionOffered(byKey('services'), rowOf(['processes']))).toBe(false);
-    expect(sectionOffered(byKey('network'), rowOf(['hosts-file']))).toBe(true);
+    expect(sectionOffered(byKey('syslog'), rowOf(['syslog']))).toBe(false);
+    expect(sectionOffered(byKey('syslog'), rowOf(['fault-management', 'syslog']))).toBe(true);
     expect(sectionOffered(byKey('installer-files'), rowOf(['artifacts']))).toBe(false);
     expect(
       sectionOffered(byKey('installer-files'), rowOf(['artifacts', 'provisioner-registry']))
     ).toBe(true);
     expect(sectionOffered(byKey('database'), rowOf([]))).toBe(true);
+    expect(sectionOffered(byKey('services'), null)).toBe(false);
   });
 
   it('offers the recipes on a bhyve host alone', () => {
@@ -82,10 +101,16 @@ describe('sectionOffered and offeredSections', () => {
     expect(sectionOffered(byKey('recipes'), rowOf(['provisioning'], ['virtualbox']))).toBe(false);
   });
 
-  it('answers the offered sections in the page order', () => {
-    expect(
-      keysOf(offeredSections(rowOf(['services', 'packages', 'machines', 'host-power'], ['bhyve'])))
-    ).toEqual(['services', 'packages', 'system-updates', 'orchestration', 'runlevel', 'database']);
+  it('answers the offered sections in the list order', () => {
+    const row = rowOf(['services', 'packages', 'machines', 'runlevel'], ['bhyve']);
+    expect(keysOf(MANAGE_SECTIONS.filter(section => sectionOffered(section, row)))).toEqual([
+      'services',
+      'packages',
+      'system-updates',
+      'orchestration',
+      'runlevel',
+      'database',
+    ]);
   });
 });
 

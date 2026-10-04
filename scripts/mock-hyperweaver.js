@@ -9,7 +9,6 @@ import { hostFor } from './mock/fleet.js';
 import { mountInbox } from './mock/inbox.js';
 import { mountIntegrations } from './mock/integrations.js';
 import { APIKEY_MODE, PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
-import { startSampling } from './mock/monitoring.js';
 import { mountOrgs } from './mock/orgs.js';
 import { mountRegistry } from './mock/registry.js';
 import {
@@ -22,7 +21,7 @@ import {
   sessionRoute,
   socketRoute,
 } from './mock/router.js';
-import { STATUS, mountSite, startHealth } from './mock/site.js';
+import { STATUS, mountSite } from './mock/site.js';
 import { refuseSocket } from './mock/socket.js';
 import { openStream } from './mock/stream.js';
 import { ticketFits } from './mock/terminal.js';
@@ -145,11 +144,71 @@ const answerFile = (req, res, url) => {
   return 200;
 };
 
+const OPENSEARCH_PATH = '/opensearch.xml';
+
+const xmlText = text =>
+  String(text)
+    .replace(/&/gu, '&amp;')
+    .replace(/</gu, '&lt;')
+    .replace(/>/gu, '&gt;')
+    .replace(/"/gu, '&quot;');
+
+const firstOf = value =>
+  String(value || '')
+    .split(',')[0]
+    .trim();
+
+const originOf = req => {
+  const host = firstOf(req.headers['x-forwarded-host']) || firstOf(req.headers.host);
+  const scheme = firstOf(req.headers['x-forwarded-proto']) || 'http';
+  return `${scheme}://${host || `localhost:${PORT}`}`;
+};
+
+const imageLine = origin => {
+  const logo = STATUS.brand.logo_url || '';
+  if (!logo) {
+    return [];
+  }
+  const url = new URL(logo, origin);
+  const type = CONTENT_TYPES[path.extname(url.pathname)] || 'image/png';
+  return [`  <Image type="${type}">${xmlText(url.href)}</Image>`];
+};
+
+const answerOpenSearch = (req, res) => {
+  const name = xmlText(STATUS.brand.name);
+  const origin = originOf(req);
+  res.writeHead(200, {
+    'Content-Type': 'application/opensearchdescription+xml; charset=utf-8',
+    'Cache-Control': 'no-cache',
+  });
+  res.end(
+    [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">',
+      `  <ShortName>${name}</ShortName>`,
+      `  <Description>${name}</Description>`,
+      '  <InputEncoding>UTF-8</InputEncoding>',
+      ...imageLine(origin),
+      `  <Url type="text/html" method="get" template="${xmlText(origin)}/search?q={searchTerms}"/>`,
+      '</OpenSearchDescription>',
+      '',
+    ].join('\n')
+  );
+  return 200;
+};
+
+const answerOf = (req, res, url) => {
+  if (req.method === 'GET' && url.pathname === OPENSEARCH_PATH) {
+    return answerOpenSearch(req, res);
+  }
+  return API_PREFIXES.some(prefix => url.pathname.startsWith(prefix))
+    ? answerApi(req, res, url)
+    : answerFile(req, res, url);
+};
+
 const handle = async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  const status = API_PREFIXES.some(prefix => url.pathname.startsWith(prefix))
-    ? await answerApi(req, res, url)
-    : answerFile(req, res, url);
+  const status = await answerOf(req, res, url);
   console.log(`${status} ${req.method} ${url.pathname}`);
 };
 
@@ -180,8 +239,7 @@ const announce = () => {
  * A development-only mock of the hyperweaver family, so every surface the
  * shared UI draws for a hyperweaver backend has data behind it before a
  * real backend answers the shared `backend` wire. Its parts live under
- * `scripts/mock/`; this file mounts them and serves. Deleted when a real
- * backend answers, as the issuer's mock was.
+ * `scripts/mock/`; this file mounts them and serves.
  *
  * Run it inside WSL with `npm run mock`; the first word after `--` is the
  * role and the second the port, 9595 when absent, where config.yaml's
@@ -207,7 +265,10 @@ const announce = () => {
  * `brand.repo`, `brand.changelog`, the config names `app`, `auth`, `db`
  * and `mail`, and the topics `session`, `notifications`, `health`,
  * `profile`, `tasks`, `hosts` and `monitoring`. The ticket system answers
- * at `/api/config/ticket`.
+ * at `/api/config/ticket`, and the OpenSearch description of the brand at
+ * `/opensearch.xml`, its `Image` from `brand.logo_url` and its template
+ * `/search?q=` at the origin the request was made to, the forwarded host
+ * and scheme first.
  *
  * Sign in with a password, any but `wrong`, which answers 401; the
  * password `short` makes a token that lives 90 seconds, so a kept session
@@ -257,13 +318,13 @@ const announce = () => {
  * it, read from zoneweaver-agent's controllers and hyperweaver-agent's
  * handlers: a refusal is the agent's own status and body, `{ error,
  * current_status }`, a route one agent lacks answers 404 on its hosts,
- * and what the agent queues is a task here. A task is created pending,
- * runs on a timer, one output line and one `task-updated` a step, and
- * when it ends the machine's state changes and `stats-updated` is sent.
- * Restart is two tasks, the start waiting for the stop. Every host
- * starts with tasks of every status and priority, parents with their
- * subtasks, transfers with byte counts and failures with coloured
- * output; a seeded running task starts moving when its stream opens.
+ * and what the agent queues is a task here. A task is created pending
+ * and runs to its end at once, one output line and one `task-updated` a
+ * step, and when it ends the machine's state changes and `stats-updated`
+ * is sent. Restart is two tasks, the start waiting for the stop. Every
+ * host starts with tasks of every status and priority, parents with
+ * their subtasks, transfers with byte counts and failures with coloured
+ * output; a seeded running task runs to its end when its stream opens.
  *
  * The machines of a host and the machine page have data on both agent
  * kinds. `GET machines` answers the row the agent of the host's kind
@@ -313,19 +374,20 @@ const announce = () => {
  * Every host that lists `monitoring` answers the reads of the host page's
  * Overview and of its charts as the agent of its kind answers them, the
  * pools, the datasets, the pool I/O and the ARC on the hosts that list
- * `zfs` alone. A host keeps an hour of samples, one every five seconds,
- * and each sample is sent on the `monitoring` topic as `cpu-sample`,
- * `memory-sample`, `network-sample`, `pool-io-sample` and `arc-sample`.
- * Lab keeps no history and sends no sample: it answers the one sample it
- * took, `realtime`, so its charts draw one point until Refresh reads
- * another.
+ * `zfs` alone. A host starts with an hour of samples, one every five
+ * seconds, and every read of a series takes one more sample of it, keeps
+ * it and sends it on the `monitoring` topic as `cpu-sample`,
+ * `memory-sample`, `network-sample`, `pool-io-sample`, `arc-sample` or
+ * `disk-io-sample`. Lab keeps no history and sends no sample: it answers
+ * the one sample it took, `realtime`, so its charts draw one point until
+ * Refresh reads another.
  *
  * The stream is the events contract's: `retry`, `ready`, ids of
  * `<epoch-ms>-<seq>`, a ring of 500 events or 5 minutes, `Last-Event-ID`
  * replayed from the ring or answered `reset`, `:hb` after 25 idle
  * seconds. `unread-count`, `profile-updated` and `session-terminated`
  * reach the one person they are for, in the ring as on the wire. The
- * health takes a new state every 45 seconds and is sent on `health`.
+ * health takes a new state each time a task ends and is sent on `health`.
  *
  * The two WebSockets are hand-written over the upgrade, text frames
  * alone. A ticket of `GET ws-ticket` is good for 60 seconds, may be used
@@ -388,9 +450,7 @@ export const startMockHyperweaver = () => {
   });
   server.on('upgrade', upgrade);
   server.listen(PORT, announce);
-  startHealth();
   startFlapping();
-  startSampling();
   return server;
 };
 

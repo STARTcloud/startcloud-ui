@@ -166,8 +166,9 @@ export const REGISTRY_COLUMNS = [
 
 /**
  * The registry's row actions of the hosts table for a super-admin: Edit
- * opening the host's Manage page, the organizations in the assignment
- * dialog and Remove behind the typed confirmation.
+ * opening the host's Services page, the first page of its System group,
+ * the organizations in the assignment dialog and Remove behind the typed
+ * confirmation.
  */
 export const RegistryRowActions = ({ server, busy, onEdit, onAssignOrgs, onDelete }) => {
   const { t } = useTranslation();
@@ -477,7 +478,7 @@ const problemOf = form => {
  * answers `reset`, on the page's Refresh through `refresh` and after
  * every write; the self-signed switch writing
  * `PATCH /api/servers/{id}`, Remove `DELETE /api/servers/{id}` behind the
- * typed confirmation, Edit opening the host's Manage page and the
+ * typed confirmation, Edit opening the host's Services page and the
  * organizations the assignment dialog; the form of a new host, Test
  * connection sending `POST /api/servers/test` and Add or Bootstrap
  * sending `POST /api/servers`, a duplicate refused before it is sent.
@@ -640,7 +641,7 @@ export const useRegistry = ({ enabled, servers, onAdded }) => {
     RowActions: RegistryRowActions,
     actionsProps: {
       busy,
-      onEdit: server => navigate(`/hosts/${server.id}/manage`),
+      onEdit: server => navigate(`/hosts/${server.id}/system/services`),
       onAssignOrgs: setOrgTarget,
       onDelete: setDeleting,
     },

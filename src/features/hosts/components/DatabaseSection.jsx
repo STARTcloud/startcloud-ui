@@ -25,13 +25,12 @@ const ACTIONS = {
 };
 
 /**
- * The agent's databases, hyperweaver-ui's `DatabasePanel` as the body of
- * the Manage page's Database section: Vacuum, Analyze and Cleanup, each
- * one request and one notice, the vacuum's naming the space reclaimed;
- * the totals of the statistics; the one table over the databases the
- * page's binding left, a row's Explore opening its tables under the
- * table with Browse into the row browser; the statistics read again on
- * a success. Nothing polls.
+ * The agent's databases, the body of the Database page: Vacuum, Analyze
+ * and Cleanup, each one request and one notice, the vacuum's naming the
+ * space reclaimed; the totals of the statistics; the one table over the
+ * databases the page's search leaves, a row's Explore opening its tables
+ * in the detail row under that row, with Browse into the row browser;
+ * the statistics read again on a success.
  */
 const DatabaseSection = ({ id, ctx, table, reading, filtering }) => {
   const { t } = useTranslation();
@@ -115,19 +114,18 @@ const DatabaseSection = ({ id, ctx, table, reading, filtering }) => {
           expanded,
           onToggle: name => setExpanded(current => (current === name ? null : name)),
         }}
+        Detail={DatabaseTables}
+        detailProps={{
+          id,
+          ctx,
+          onBrowse: (database, name) => setBrowser({ database, table: name }),
+        }}
+        expandedKeys={new Set(expanded ? [expanded] : [])}
         ctx={ctx}
         emptyKey="host.databasePanel.noStats"
         reading={reading}
         filtering={filtering}
       />
-      {expanded ? (
-        <DatabaseTables
-          id={id}
-          database={expanded}
-          ctx={ctx}
-          onBrowse={(database, name) => setBrowser({ database, table: name })}
-        />
-      ) : null}
       {browser ? (
         <TableBrowserModal
           id={id}

@@ -333,8 +333,8 @@ Feature: machines
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1"
     Then the machine reads "running"
-    And the machine tab row draws 2 tabs
-    And the machine tab row draws no "snapshots" tab
+    And the machine column draws 2 page rows
+    And the machine column draws no "snapshots" row
     And the machine page draws no "cpu" chart
     And the machine page draws no "machine-snapshots" panel
     And the machine page draws no "machine-snapshot-policy" panel
@@ -1110,43 +1110,43 @@ Feature: machines
     And the machine page draws 4 charts
     And the host was sent GET to "/api/monitoring/network/usage" 2 times
 
-  Scenario: Machine page: the machines list draws the tab row of the host's pages under its heading with Machines active
+  Scenario: Machine page: the machines list draws the column of the host's pages beside it with Machines active
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines"
     Then the machines list draws 3 rows
-    And the host tab row draws 4 tabs
-    And the host tab row draws the "machines" tab to "/hosts/1/machines"
-    And the host tab "machines" is the active one
-    When I follow the host tab "overview"
+    And the host column draws the rows "overview, machines, orchestration, api-keys, database, update"
+    And the host column draws the "machines" row to "/hosts/1/machines"
+    And the host row "machines" is the active one
+    When I follow the host row "overview"
     Then the path is "/hosts/1"
 
-  Scenario: Machine page: the tab row of the machine's pages, Overview, Settings behind machine-modify for an admin, Snapshots behind machine-snapshots and Provisioning always, the snapshots a tab at their own route with the tab active
+  Scenario: Machine page: the column of the machine's pages, Overview, Settings behind machine-modify for an admin, Snapshots behind machine-snapshots and Provisioning always, the snapshots a row at their own route with the row active
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-tools fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1"
-    Then the machine tab row draws 4 tabs
-    And the machine tab row draws the "overview" tab to "/hosts/1/machines/dev-1"
-    And the machine tab row draws the "settings" tab to "/hosts/1/machines/dev-1/settings"
-    And the machine tab row draws the "snapshots" tab to "/hosts/1/machines/dev-1/snapshots"
-    And the machine tab row draws the "provisioning" tab to "/hosts/1/machines/dev-1/provisioning"
-    And the machine tab "overview" is the active one
+    Then the machine column draws 4 page rows
+    And the machine column draws the "overview" row to "/hosts/1/machines/dev-1"
+    And the machine column draws the "settings" row to "/hosts/1/machines/dev-1/settings"
+    And the machine column draws the "snapshots" row to "/hosts/1/machines/dev-1/snapshots"
+    And the machine column draws the "provisioning" row to "/hosts/1/machines/dev-1/provisioning"
+    And the machine row "overview" is the active one
     And the machine page draws no "machine-snapshots" panel
     And the host was not sent GET to "/api/agents/1/machines/dev-1/snapshots"
     And the page draws no key of hyperweaver-ui in place of its text
-    When I follow the machine tab "snapshots"
+    When I follow the machine row "snapshots"
     Then the path is "/hosts/1/machines/dev-1/snapshots"
-    And the machine tab "snapshots" is the active one
+    And the machine row "snapshots" is the active one
     And the machine page draws the "machine-snapshots" panel
     And the machine page draws the "machine-snapshot-policy" panel
     And the snapshots page draws no "machine-info" panel
     And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 1 times
     And the host was sent GET to "/api/agents/1/machines/dev-1" 1 times
-    When I follow the machine tab "overview"
+    When I follow the machine row "overview"
     Then the path is "/hosts/1/machines/dev-1"
-    And the machine tab "overview" is the active one
+    And the machine row "overview" is the active one
     And the machine page draws the "machine-info" panel
     And the host was sent GET to "/api/agents/1/machines/dev-1" 1 times

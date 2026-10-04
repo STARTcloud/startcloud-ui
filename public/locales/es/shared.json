@@ -383,7 +383,8 @@
     },
     "search": {
       "organizations": "Buscar organizaciones y solicitudes",
-      "serviceAccounts": "Buscar cuentas de servicio"
+      "serviceAccounts": "Buscar cuentas de servicio",
+      "sessions": "Buscar sesiones"
     },
     "fields": {
       "displayName": "Nombre visible",
@@ -520,7 +521,8 @@
       "makePrimary": "Hacer principal",
       "joined": "Unido",
       "pendingRequestsTitle": "Solicitudes de Unión Pendientes",
-      "requested": "Solicitado"
+      "requested": "Solicitado",
+      "role": "Rol"
     },
     "serviceAccounts": {
       "title": "Cuentas de Servicio",
@@ -1015,7 +1017,8 @@
           "authorizations": "Autorizaciones concedidas en total.",
           "users": "Personas distintas que la han usado.",
           "share": "Su parte de todas las sesiones activas."
-        }
+        },
+        "search": "Buscar servicios"
       },
       "insights": {
         "title": "Estadísticas",
@@ -1143,7 +1146,8 @@
         "errors": {
           "not_blocked": "no está bloqueada actualmente"
         }
-      }
+      },
+      "search": "Buscar direcciones bloqueadas"
     },
     "terms": {
       "title": "Términos",
@@ -1319,7 +1323,9 @@
     "update": {
       "title": "Actualización Disponible",
       "message": "Una nueva versión (v{{latestVersion}}) está disponible. Actualmente estás ejecutando v{{currentVersion}}.",
-      "instructions": "Para actualizar, ejecuta el siguiente comando en tu servidor:"
+      "instructions": "Para actualizar, ejecuta el siguiente comando en tu servidor:",
+      "confirmTitle": "Actualizar {{app}}",
+      "confirmMessage": "¿Actualizar {{app}} de {{currentVersion}} a {{latestVersion}}? La actualización se descarga y se aplica, luego {{app}} se reinicia con la nueva versión."
     }
   },
   "configManager": {
@@ -1621,6 +1627,7 @@
     "activeFilters_one": "{{count}} filtro activo",
     "activeFilters_other": "{{count}} filtros activos",
     "appPlaceholder": "Buscar en {{app}}",
+    "everywhere": "Buscar en todas partes",
     "elsewhere": "En otras partes de {{app}}",
     "inApp": "En {{app}}",
     "showAll": "Mostrar los {{count}} resultados",
@@ -1628,10 +1635,29 @@
     "loading": "Buscando…",
     "results_one": "{{count}} resultado",
     "results_other": "{{count}} resultados",
+    "status": {
+      "results_one": "{{count}} resultado",
+      "results_other": "{{count}} resultados",
+      "pending_one": "{{count}} host sigue buscando",
+      "pending_other": "{{count}} hosts siguen buscando",
+      "failed": "{{host}} no respondió"
+    },
+    "scope": {
+      "label": "Ámbito",
+      "remove": "Quitar el ámbito {{scope}}"
+    },
     "page": {
       "title": "Búsqueda",
       "count_one": "{{count}} resultado para «{{query}}»",
-      "count_other": "{{count}} resultados para «{{query}}»"
+      "count_other": "{{count}} resultados para «{{query}}»",
+      "host": {
+        "pending": "Buscando…",
+        "done": "Respondió",
+        "failed": "No respondió"
+      },
+      "retry": "Reintentar",
+      "previous": "Anterior",
+      "next": "Siguiente"
     },
     "kinds": {
       "organization": "Organizaciones",
@@ -1648,12 +1674,21 @@
       "session": "Sesiones",
       "login": "Inicios de sesión",
       "registration": "Registros",
-      "blocked-address": "Direcciones bloqueadas"
+      "blocked-address": "Direcciones bloqueadas",
+      "host": "Host",
+      "machine": "Máquina",
+      "task": "Tarea",
+      "service": "Servicio",
+      "config": "Configuración",
+      "template": "Plantilla",
+      "page": "Página"
     },
     "columns": {
       "title": "Título",
       "where": "Dónde",
-      "matched": "Coincidencia"
+      "matched": "Coincidencia",
+      "host": "Host",
+      "score": "Puntuación"
     },
     "matched": {
       "name": "Nombre",
@@ -2853,6 +2888,29 @@
         "assigned": "Asignado ({{count}})",
         "available": "Disponible"
       }
+    },
+    "nav": {
+      "host": "Host",
+      "network": "Red",
+      "links": "Enlaces",
+      "hostnameDns": "Nombre de host y DNS",
+      "spaces": "Espacios",
+      "pools": "Pools y datasets",
+      "arc": "ARC",
+      "disks": "Discos",
+      "system": "Sistema",
+      "updates": "Actualizaciones",
+      "files": "Archivos",
+      "logs": "Registros",
+      "agent": "Agente",
+      "apiKeys": "Claves de API",
+      "secrets": "Secretos",
+      "update": "Actualizar",
+      "arcHitRatio": "Tasa de aciertos {{ratio}}",
+      "updateAvailable": "Actualización a {{version}} disponible",
+      "updateCurrent": "Al día",
+      "updateCurrentVersion": "Versión actual",
+      "updateLatestVersion": "Versión más reciente"
     }
   },
   "pages": {
@@ -4156,7 +4214,8 @@
       "statusYes": "Sí",
       "statusNo": "No",
       "never": "Nunca",
-      "deleteKeyTableButton": "Eliminar"
+      "deleteKeyTableButton": "Eliminar",
+      "search": "Buscar claves de API"
     },
     "applicationsTab": {
       "configureToolsDescription": "Configura las herramientas de escritorio (PuTTY, WinSCP, mstsc…) que se lanzan por máquina desde su menú Controles. Cada lanzamiento se ejecuta en el",
@@ -5379,7 +5438,13 @@
       "notAvailable": "N/D",
       "memory": "Memoria",
       "viewDetails": "Ver detalles",
-      "connectionFailedFull": "Conexión fallida"
+      "connectionFailedFull": "Conexión fallida",
+      "health": "Salud",
+      "healthOf": {
+        "healthy": "Saludable",
+        "warning": "Advertencia",
+        "offline": "Sin conexión"
+      }
     },
     "healthModal": {
       "connectionFailed": "Falló la conexión",
@@ -5400,7 +5465,8 @@
       "collapse": "Contraer",
       "expand": "Expandir",
       "hide": "Ocultar widget"
-    }
+    },
+    "search": "Buscar hosts"
   },
   "fileManager": {
     "createArchiveModal": {
@@ -6032,7 +6098,8 @@
       "ppid": "PPID",
       "viewProcessDetails": "Ver Detalles del Proceso",
       "sendSignal": "Enviar Señal",
-      "killProcess": "Terminar Proceso"
+      "killProcess": "Terminar Proceso",
+      "notAvailable": "No disponible"
     },
     "repositoryTable": {
       "online": "En línea",
@@ -11459,35 +11526,6 @@
     }
   },
   "settings": {
-    "hyperweaverSettings": {
-      "pageTitleDenied": "Configuración del sistema - Hyperweaver",
-      "accessDeniedTitle": "Acceso denegado",
-      "superAdminRequired": "Se requiere acceso de superadministrador",
-      "superAdminOnly": "Solo los superadministradores pueden modificar la configuración del sistema de Hyperweaver.",
-      "yourCurrentRole": "Tu rol actual:",
-      "unknownRole": "Desconocido",
-      "pageTitle": "Configuración de Hyperweaver - Hyperweaver",
-      "systemSettings": "Configuración del sistema de Hyperweaver",
-      "save": "Guardar",
-      "backup": "Respaldar",
-      "restore": "Restaurar",
-      "restart": "Reiniciar",
-      "apiServers": "Servidores de API",
-      "restartRequiredTitle": "Se requiere reiniciar el servidor",
-      "restartRequiredText": "Algunos de tus cambios requieren reiniciar el servidor para surtir efecto.",
-      "restartServerNow": "Reiniciar el servidor ahora",
-      "settingsInformation": "Información de la configuración",
-      "importantLabel": "Importante:",
-      "importantText": "Esta configuración afecta a toda la aplicación Hyperweaver para todos los usuarios.",
-      "changesRequireAdmin": "Los cambios requieren privilegios de superadministrador y surten efecto de inmediato",
-      "refreshBrowsers": "Algunos ajustes pueden requerir que los usuarios actualicen sus navegadores",
-      "performanceSettings": "Los ajustes de rendimiento afectan el uso de recursos y la capacidad de respuesta",
-      "securitySettings": "Los ajustes de seguridad afectan las sesiones de usuario y la autenticación",
-      "currentUserLabel": "Usuario actual:",
-      "superAdmin": "Superadministrador",
-      "restartServerTitle": "Reiniciar el servidor",
-      "restartConfirmMessage": "¿Seguro que quieres reiniciar el servidor? Esto interrumpirá brevemente el servicio para todos los usuarios."
-    },
     "backupManager": {
       "failedToLoad": "No se pudieron cargar los respaldos: {{message}}",
       "errorLoading": "Error al cargar los respaldos: {{error}}",

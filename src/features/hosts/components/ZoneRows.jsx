@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Dropdown, Form, Modal } from 'react-bootstrap';
+import { Form, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import {
   FaCircleCheck,
@@ -16,7 +16,7 @@ import { verifyMachine } from '../api/machines';
 import { hostHasHypervisor } from '../utils/capabilities';
 import { canCreateMachines } from '../utils/permissions';
 
-import { ActionOptionsModal, ActionRow } from './HostActionOptions';
+import { ActionOptionsModal } from './HostActionOptions';
 
 const DETACHED = { update: false, force: false };
 
@@ -86,18 +86,34 @@ AttachOptions.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+const zoneCommand = (key, icon, tone, labelKey, disabled, run) => ({
+  key,
+  group: 'zone',
+  header: 'hosts.zone.header',
+  icon,
+  tone,
+  labelKey,
+  disabled,
+  run,
+});
+
 /**
- * The zone lifecycle rows of the machine Controls menu, drawn for a
- * person who may create machines on a host whose row names `bhyve`:
- * Ready, Mark incomplete and Detach each one request through `onAction`,
- * Attach after the dialog that collects its update and force options,
- * Move after the dialog that collects the absolute path on the host, and
- * Verify, whose answer is read and not acted on, the verdict and the
- * tool's own output drawn in a list dialog. The agent alone decides
- * whether a zone's state allows a row, and its refusal is the danger card
- * the action raises.
+ * The zone lifecycle commands of the machine Controls menu for a person
+ * who may create machines on a host whose row names `bhyve`: Ready, Mark
+ * incomplete and Detach through `onAction`, Attach and Move after their
+ * option dialogs, and Verify, its verdict drawn in a list dialog.
+ *
+ * @param {Object} options
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {string} options.name - The machine's name
+ * @param {Object|null} options.server - The host's registry row
+ * @param {Object|null} options.user - The signed-in person
+ * @param {boolean} options.busy - Whether an action is in flight
+ * @param {Function} options.onAction - Sends one machine action
+ * @returns {{ commands: Array<Object>, dialogs: import('react').ReactNode }} The commands and their dialogs
  */
-const ZoneRows = ({ status, id, name, server = null, user = null, busy, onAction }) => {
+export const useZoneCommands = ({ status, id, name, server, user, busy, onAction }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [dialog, setDialog] = useState('');
@@ -107,7 +123,7 @@ const ZoneRows = ({ status, id, name, server = null, user = null, busy, onAction
   const [verifying, setVerifying] = useState(false);
 
   if (!hostHasHypervisor(server, 'bhyve') || !canCreateMachines(user?.role)) {
-    return null;
+    return { commands: [], dialogs: null };
   }
 
   const held = busy || verifying;
@@ -125,58 +141,34 @@ const ZoneRows = ({ status, id, name, server = null, user = null, busy, onAction
     }
   };
 
-  return (
+  const commands = [
+    zoneCommand('zone-ready', FaCircleCheck, 'text-success', 'hosts.zone.ready', held, () =>
+      onAction('zone-ready')
+    ),
+    zoneCommand('zone-verify', FaListCheck, 'text-info', 'hosts.zone.verify', held, verify),
+    zoneCommand(
+      'zone-mark-incomplete',
+      FaCircleExclamation,
+      'text-warning',
+      'hosts.zone.markIncomplete',
+      held,
+      () => onAction('zone-mark-incomplete')
+    ),
+    zoneCommand('zone-detach', FaLinkSlash, 'text-warning', 'hosts.zone.detach', held, () =>
+      onAction('zone-detach')
+    ),
+    zoneCommand('zone-attach', FaLink, 'text-success', 'hosts.zone.attach', held, () => {
+      setAttach(DETACHED);
+      setDialog('attach');
+    }),
+    zoneCommand('zone-move', FaTruckArrowRight, 'text-warning', 'hosts.zone.move', held, () => {
+      setPath('');
+      setDialog('move');
+    }),
+  ];
+
+  const dialogs = (
     <>
-      <Dropdown.Divider />
-      <Dropdown.Header>{t('hosts.zone.header')}</Dropdown.Header>
-      <ActionRow
-        icon={FaCircleCheck}
-        tone="text-success"
-        labelKey="hosts.zone.ready"
-        disabled={held}
-        onClick={() => onAction('zone-ready')}
-      />
-      <ActionRow
-        icon={FaListCheck}
-        tone="text-info"
-        labelKey="hosts.zone.verify"
-        disabled={held}
-        onClick={verify}
-      />
-      <ActionRow
-        icon={FaCircleExclamation}
-        tone="text-warning"
-        labelKey="hosts.zone.markIncomplete"
-        disabled={held}
-        onClick={() => onAction('zone-mark-incomplete')}
-      />
-      <ActionRow
-        icon={FaLinkSlash}
-        tone="text-warning"
-        labelKey="hosts.zone.detach"
-        disabled={held}
-        onClick={() => onAction('zone-detach')}
-      />
-      <ActionRow
-        icon={FaLink}
-        tone="text-success"
-        labelKey="hosts.zone.attach"
-        disabled={held}
-        onClick={() => {
-          setAttach(DETACHED);
-          setDialog('attach');
-        }}
-      />
-      <ActionRow
-        icon={FaTruckArrowRight}
-        tone="text-warning"
-        labelKey="hosts.zone.move"
-        disabled={held}
-        onClick={() => {
-          setPath('');
-          setDialog('move');
-        }}
-      />
       <ActionOptionsModal
         show={dialog === 'attach'}
         title={t('hosts.zone.attachTitle', { name })}
@@ -215,16 +207,6 @@ const ZoneRows = ({ status, id, name, server = null, user = null, busy, onAction
       <VerdictModal verdict={verdict} name={name} onHide={() => setVerdict(null)} />
     </>
   );
-};
 
-ZoneRows.propTypes = {
-  status: PropTypes.object.isRequired,
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  server: PropTypes.object,
-  user: PropTypes.object,
-  busy: PropTypes.bool.isRequired,
-  onAction: PropTypes.func.isRequired,
+  return { commands, dialogs };
 };
-
-export default ZoneRows;

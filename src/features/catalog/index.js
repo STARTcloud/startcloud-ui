@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 
 export { collectionShape, pageContextShape } from '../../utils/itemShape';
-export { sidebar } from './sidebar';
+export { searchKinds, sidebar } from './sidebar';
 
 export const CollectionPage = lazy(() => import('./components/CollectionPage'));
 export const HomePage = lazy(() => import('./components/HomePage'));

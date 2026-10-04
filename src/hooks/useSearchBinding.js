@@ -26,12 +26,14 @@ const bindingSignature = binding =>
   ]);
 
 /**
- * Publishes a page's search and filter state to the navbar for as long as
- * the calling component is mounted. The newest binding is stored on every
- * render, so the navbar's handlers never go stale; the navbar re-renders
- * only when the visible data (query, counts, groups, active values)
- * changes. A binding that publishes no `total`, a page whose rows the
- * server alone narrows, has `matched` drawn alone as "N results".
+ * Publishes a page's search and filter state to the navbar search box while
+ * the calling component is mounted, notifying it when the query, counts,
+ * groups or active values change; the box draws `matched / total`, or
+ * `matched` alone as "N results" for a binding with no `total`, and calls
+ * `onQueryChange(text, parsed)` with the typed text less its `type:` and
+ * `org:` words and the `parseQuery` reading of the whole.
+ *
+ * @param {Object} binding - `{ query, onQueryChange, placeholder, matched, total?, groups, onClearFilters, action? }`
  */
 export const useNavbarSearchBinding = binding => {
   const context = useContext(NavbarSearchContext);

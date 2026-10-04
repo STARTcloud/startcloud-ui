@@ -126,7 +126,6 @@ const REPOSITORIES = [
 ];
 const ROW_COLUMNS = ['id', 'timestamp', 'value'];
 const ROW_TOTAL = 120;
-const STREAM_MS = 1500;
 
 const states = new Map();
 
@@ -359,52 +358,42 @@ const startStream = ctx => {
 
 const stopStream = ctx => {
   const state = stateOf(ctx.host);
-  if (!state.streams.delete(ctx.params.session)) {
+  const session = state.streams.get(ctx.params.session);
+  if (!session) {
     return refusal(404, 'Stream session not found');
   }
+  state.streams.delete(ctx.params.session);
+  session.connection?.close();
   return ok({ success: true, message: 'Stream stopped' });
 };
 
 /**
- * The `logs/stream/{session}` socket the mock pushes a log line on
- * every second and a half until the session is stopped or the socket
- * closes, hyperweaver-ui's frames: `status`, `log_line` and `error`.
+ * The `logs/stream/{session}` socket: a `status` frame, then one
+ * `log_line` frame for each line of the log the session's grep keeps,
+ * held open until the session is stopped, which closes it; an unknown
+ * session gets an `error` frame and the close.
  *
  * @param {Object} options - `req`, `socket`, `host` and `params`
  * @returns {void}
  */
 export const logStreamSocket = ({ req, socket, host, params }) => {
-  const state = stateOf(host);
-  const session = state.streams.get(params.session);
-  const timers = { tick: null };
+  const session = stateOf(host).streams.get(params.session);
   const connection = openSocket({
     req,
     socket,
     onText: () => null,
-    onClose: () => clearInterval(timers.tick),
+    onClose: () => null,
   });
   if (!session) {
     connection.send(JSON.stringify({ type: 'error', message: 'Stream session not found' }));
     connection.close();
     return;
   }
+  session.connection = connection;
   connection.send(JSON.stringify({ type: 'status', message: `Following ${session.log}` }));
-  let index = 0;
-  timers.tick = setInterval(() => {
-    if (!state.streams.has(session.session_id)) {
-      clearInterval(timers.tick);
-      connection.close();
-      return;
-    }
-    const line = LOG_LINES[index % LOG_LINES.length].replace(
-      /^Sep 28 \d{2}:\d{2}:\d{2}/u,
-      () => `Sep 28 ${new Date().toTimeString().slice(0, 8)}`
-    );
-    index += 1;
-    if (!session.grep || line.includes(session.grep)) {
-      connection.send(JSON.stringify({ type: 'log_line', line, timestamp: now() }));
-    }
-  }, STREAM_MS);
+  LOG_LINES.filter(line => !session.grep || line.includes(session.grep)).forEach(line =>
+    connection.send(JSON.stringify({ type: 'log_line', line, timestamp: now() }))
+  );
 };
 
 const arcConfig = ctx => {
@@ -838,8 +827,7 @@ const settleRemove = (host, task) => {
  * the fault manager's modules behind `fault-management`; the database
  * statistics, tables, rows and maintenance on every host; the
  * repositories, their add, update, enable, disable and remove behind
- * `packages` with `repositories`, the writes queued tasks. Nothing here
- * runs on a clock but the tasks and the log stream's socket.
+ * `packages` with `repositories`, the writes queued tasks.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
  * @returns {void}

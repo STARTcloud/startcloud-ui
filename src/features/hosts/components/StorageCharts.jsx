@@ -17,6 +17,8 @@ import SummaryCharts from './SummaryCharts';
 
 const FOLD = 'charts';
 
+const ALL_CHARTS = ['summary', 'devices', 'pools', 'arc'];
+
 const emptyKeyOf = ({ loaded, failed }) => {
   if (!loaded) {
     return 'pages.loading';
@@ -50,6 +52,91 @@ SortSelect.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+const shownOf = ({ wanted, diskIo, poolIo, arc }) => ({
+  summary: diskIo.offered && wanted.includes('summary'),
+  devices: diskIo.offered && wanted.includes('devices'),
+  pools: poolIo.offered && wanted.includes('pools'),
+  arc: arc.offered && wanted.includes('arc'),
+});
+
+const empty = series => series.loaded && series.rows.length === 0;
+
+const nothingOf = ({ shown, diskIo, poolIo, arc }) =>
+  (!(shown.summary || shown.devices) || empty(diskIo)) &&
+  (!shown.pools || empty(poolIo)) &&
+  (!shown.arc || empty(arc));
+
+const ChartActions = ({ shown, charts }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {shown.devices ? <SortSelect order={charts.order} onChange={charts.setOrder} /> : null}
+      {shown.devices || shown.pools ? (
+        <SeriesToggles
+          toggles={ioToggles(t)}
+          visibility={charts.visibility}
+          onToggle={charts.toggle}
+        />
+      ) : null}
+    </>
+  );
+};
+
+const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
+  const { t } = useTranslation();
+  const ioText = t(emptyKeyOf(diskIo));
+  return (
+    <>
+      {shown.summary ? (
+        <SummaryCharts
+          devices={charts.devices}
+          host={host}
+          emptyText={ioText}
+          single={samplesIn(diskIo.rows) === 1}
+          folds={folds}
+        />
+      ) : null}
+      {shown.devices ? (
+        <DeviceCharts
+          devices={charts.devices}
+          names={charts.names}
+          order={charts.order}
+          visibility={charts.visibility}
+          host={host}
+          emptyText={ioText}
+          single={samplesIn(diskIo.rows) === 1}
+          folds={folds}
+        />
+      ) : null}
+      {shown.pools ? (
+        <PoolCharts
+          pools={charts.pools}
+          latest={poolIo.latest}
+          visibility={charts.visibility}
+          host={host}
+          emptyText={t(emptyKeyOf(poolIo))}
+          single={samplesIn(poolIo.rows) === 1}
+          folds={folds}
+        />
+      ) : null}
+      {shown.arc ? (
+        <ArcCharts
+          rows={arc.rows}
+          host={host}
+          emptyText={t(emptyKeyOf(arc))}
+          single={samplesIn(arc.rows) === 1}
+          folds={folds}
+        />
+      ) : null}
+      {nothingOf({ shown, diskIo, poolIo, arc }) ? (
+        <p className="text-muted" data-note="storage-charts-empty">
+          {t('host.storageCharts.noData')}
+        </p>
+      ) : null}
+    </>
+  );
+};
+
 /**
  * The storage charts of the storage page, hyperweaver-ui's section over
  * the series the host's context holds: one heading with its title, the
@@ -60,85 +147,40 @@ SortSelect.propTypes = {
  * the page's preferences; under it the summary charts, one chart a
  * device, one chart a pool and the three ARC charts, and the line saying
  * there is nothing to draw while no device and no ARC sample is held.
- * Nothing draws while the host offers none of the three series.
+ * Nothing draws while the host offers none of the three series. The
+ * `charts` list names the groups one page draws, `summary`, `devices`,
+ * `pools` and `arc`, all four by default: the Pools page asks for the
+ * pool charts alone, the ARC page for the ARC charts, the Disks page
+ * for the summary and the device charts; the sort select draws with the
+ * device charts, the toggles with the device or the pool charts.
  */
-const StorageCharts = ({ diskIo, poolIo, arc, host, folds }) => {
+const StorageCharts = ({ diskIo, poolIo, arc, host, folds, charts: wanted = ALL_CHARTS }) => {
   const { t } = useTranslation();
   const charts = useStorageCharts({ diskIo: diskIo.rows, poolIo: poolIo.rows });
-  if (!diskIo.offered && !poolIo.offered && !arc.offered) {
+  const shown = shownOf({ wanted, diskIo, poolIo, arc });
+  if (!shown.summary && !shown.devices && !shown.pools && !shown.arc) {
     return null;
   }
   const folded = folds.folded(FOLD);
-  const ioText = t(emptyKeyOf(diskIo));
-  const nothing = diskIo.loaded && diskIo.rows.length === 0 && arc.loaded && arc.rows.length === 0;
-  const actions = (
-    <>
-      <SortSelect order={charts.order} onChange={charts.setOrder} />
-      <SeriesToggles
-        toggles={ioToggles(t)}
-        visibility={charts.visibility}
-        onToggle={charts.toggle}
-      />
-    </>
-  );
   return (
     <div data-panel="storage-charts" data-folded={folded}>
       <SectionHeading
         title={t('host.storageCharts.title')}
-        actions={actions}
+        actions={<ChartActions shown={shown} charts={charts} />}
         folded={folded}
         onFold={() => folds.toggle(FOLD)}
         foldTitle={t(folded ? 'host.storageCharts.expand' : 'host.storageCharts.collapse')}
       />
       {folded ? null : (
-        <>
-          {diskIo.offered ? (
-            <SummaryCharts
-              devices={charts.devices}
-              host={host}
-              emptyText={ioText}
-              single={samplesIn(diskIo.rows) === 1}
-              folds={folds}
-            />
-          ) : null}
-          {diskIo.offered ? (
-            <DeviceCharts
-              devices={charts.devices}
-              names={charts.names}
-              order={charts.order}
-              visibility={charts.visibility}
-              host={host}
-              emptyText={ioText}
-              single={samplesIn(diskIo.rows) === 1}
-              folds={folds}
-            />
-          ) : null}
-          {poolIo.offered ? (
-            <PoolCharts
-              pools={charts.pools}
-              latest={poolIo.latest}
-              visibility={charts.visibility}
-              host={host}
-              emptyText={t(emptyKeyOf(poolIo))}
-              single={samplesIn(poolIo.rows) === 1}
-              folds={folds}
-            />
-          ) : null}
-          {arc.offered ? (
-            <ArcCharts
-              rows={arc.rows}
-              host={host}
-              emptyText={t(emptyKeyOf(arc))}
-              single={samplesIn(arc.rows) === 1}
-              folds={folds}
-            />
-          ) : null}
-          {nothing ? (
-            <p className="text-muted" data-note="storage-charts-empty">
-              {t('host.storageCharts.noData')}
-            </p>
-          ) : null}
-        </>
+        <ChartBodies
+          shown={shown}
+          charts={charts}
+          diskIo={diskIo}
+          poolIo={poolIo}
+          arc={arc}
+          host={host}
+          folds={folds}
+        />
       )}
     </div>
   );
@@ -151,18 +193,43 @@ const seriesShape = PropTypes.shape({
   offered: PropTypes.bool.isRequired,
 });
 
-StorageCharts.propTypes = {
+const poolSeriesShape = PropTypes.shape({
+  rows: PropTypes.array.isRequired,
+  latest: PropTypes.array.isRequired,
+  loaded: PropTypes.bool.isRequired,
+  failed: PropTypes.bool.isRequired,
+  offered: PropTypes.bool.isRequired,
+});
+
+const shownShape = PropTypes.shape({
+  summary: PropTypes.bool.isRequired,
+  devices: PropTypes.bool.isRequired,
+  pools: PropTypes.bool.isRequired,
+  arc: PropTypes.bool.isRequired,
+});
+
+ChartActions.propTypes = {
+  shown: shownShape.isRequired,
+  charts: PropTypes.object.isRequired,
+};
+
+ChartBodies.propTypes = {
+  shown: shownShape.isRequired,
+  charts: PropTypes.object.isRequired,
   diskIo: seriesShape.isRequired,
-  poolIo: PropTypes.shape({
-    rows: PropTypes.array.isRequired,
-    latest: PropTypes.array.isRequired,
-    loaded: PropTypes.bool.isRequired,
-    failed: PropTypes.bool.isRequired,
-    offered: PropTypes.bool.isRequired,
-  }).isRequired,
+  poolIo: poolSeriesShape.isRequired,
   arc: seriesShape.isRequired,
   host: PropTypes.string.isRequired,
   folds: foldsShape.isRequired,
+};
+
+StorageCharts.propTypes = {
+  diskIo: seriesShape.isRequired,
+  poolIo: poolSeriesShape.isRequired,
+  arc: seriesShape.isRequired,
+  host: PropTypes.string.isRequired,
+  folds: foldsShape.isRequired,
+  charts: PropTypes.arrayOf(PropTypes.oneOf(ALL_CHARTS)),
 };
 
 export default StorageCharts;

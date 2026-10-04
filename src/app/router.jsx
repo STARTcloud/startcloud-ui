@@ -20,11 +20,13 @@ import { AboutRoute } from '../features/about';
 import {
   AdminPage,
   adminConfig,
+  appUpdate,
   organizationBodyOf,
   organizationRowOf,
   pageOf,
   resumeUser,
   roleNames,
+  searchKinds as adminSearchKinds,
   setUserRoles,
   sidebar as adminSidebar,
   storage,
@@ -61,25 +63,25 @@ import {
   VersionPage,
   collectionShape,
   pageContextShape,
+  searchKinds as catalogSearchKinds,
   sidebar as catalogSidebar,
 } from '../features/catalog';
 import { ErrorPage, hasServerFault } from '../features/errors';
 import {
-  AgentSettings,
   DashboardPage,
-  DevicesPage,
   HostPage,
+  HostSectionPage,
   HostsPage,
   MachinePage,
   MachinesPage,
-  ManagePage,
-  NetworkingPage,
   StandaloneConsole,
   StandaloneRdpConsole,
-  StoragePage,
   actionMenu as hostsActionMenu,
+  controlCommands as hostsControlCommands,
   footerPane as hostsFooterPane,
+  hostCrumbs,
   isServerRole,
+  searchKinds as hostsSearchKinds,
   sidebar as hostsSidebar,
 } from '../features/hosts';
 import {
@@ -87,6 +89,7 @@ import {
   IdentityAdminPage,
   issuerOrganizations as issuerAdminOrganizations,
   issuerUsers,
+  searchKinds as identitySearchKinds,
   sidebar as identitySidebar,
 } from '../features/identity';
 import {
@@ -154,19 +157,21 @@ import {
   placesKey,
   removeAccount,
   resendVerification,
+  searchKinds as profileSearchKinds,
   serviceAccounts,
   setPrimaryOrganization,
   sidebar as profileSidebar,
   stepUp,
   verifyMail,
 } from '../features/profile';
-import { SearchPage } from '../features/search';
+import { SearchPage, searchKinds as pageSearchKinds } from '../features/search';
 import { ServerSetup, SetupPage, ZoneRegister, setupApi } from '../features/setup';
 import { UserTermsPage, issuerTerms } from '../features/terms';
 import { TfaCodePage, TfaMethodPage } from '../features/tfa';
 import { FleetPage, VmPage, sidebar as vdiSidebar } from '../features/vdi';
 import { configNamesOf } from '../hooks/useConfigTree';
 import { sessionStateShape } from '../hooks/useSession';
+import { ownTimezone } from '../lib/apiKeySession';
 import { getOrganization, userOrganizations } from '../lib/organizations';
 import { events, returnTo, session } from '../lib/runtime';
 import { authMethod, hasFeature, hasFeatureStrict } from '../utils/capabilities';
@@ -206,11 +211,7 @@ const addressOfClaims = address =>
 
 /**
  * The identity provider's record in the profile page's field names, from
- * the standard claims of OpenID Connect Core 1.0 §5.1 the host's claims
- * route answers: the names, website, gender and birthdate as they are,
- * `phone_number` as the masked mobile, `address` mapped from the §5.1.1
- * members to the address block's, `zoneinfo` and `locale` as the
- * preferences' time zone and language.
+ * the standard OpenID Connect claims.
  *
  * @param {Object|null} claims - The claims the session answered
  * @returns {Object} The record fields the claims carry
@@ -267,12 +268,7 @@ const localDetails = userId => async body => {
 };
 
 /**
- * The writes of a local account's own record on a `backend` host, in the
- * identity provider's member names: `details` routes the display name to
- * the change-name call and every other member to `PATCH /api/user`, the
- * JSON Merge Patch over the host's SCIM core attributes, `address` writes
- * the address block's six stored members through the same patch, and
- * `phone` is the plain `set` of the number, the host verifying no code.
+ * The writes of a local account's own record on a `backend` host.
  *
  * @param {number} userId - The stored user's id
  * @returns {Object} The `details`, `address` and `phone` members
@@ -290,21 +286,8 @@ const localAccountMembers = userId => ({
 });
 
 /**
- * The profile page's `account` adapter of a `backend` host, in the
- * identity provider's member names: the record from the session's own
- * reload with `has_local_auth` (a local session) and `email_verified`
- * (the stored `verified`) beside it; for an identity provider's session
- * the record is `readOnly` (RFC 7643 §2.2), merged with the provider's
- * standard claims through the session's memoized `claims()`, and
- * `manageUrl` is the provider's profile page, so the page draws the same
- * sections read-only with the Manage at identity provider link; for a
- * local account the record is `readWrite`, the name parts and the display
- * name through `details`, the address and the mobile number through
- * `address` and `phone.set`, the password, email and deletion members
- * while the host advertises `local-accounts`; on both the verification link and its
- * resend under `verification`, the memberships and join requests under
- * `organizations` (Make primary only for a local session) and the
- * service accounts under `serviceAccounts`.
+ * The profile page's `account` adapter of a `backend` host: read-only
+ * for an identity provider's session, read-write for a local account.
  *
  * @param {Object} options - The session's side
  * @param {Object|null} options.user - The stored user
@@ -333,7 +316,10 @@ const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
   };
 };
 
-const apiKeyProfile = async () => (await session.reload())?.user || null;
+const apiKeyProfile = async () => {
+  const user = (await session.reload())?.user;
+  return user ? { ...user, preferences: { timezone: ownTimezone() } } : null;
+};
 
 const PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion', 'timezone'];
 
@@ -345,22 +331,10 @@ const apiKeyPreferences = patch => {
 };
 
 /**
- * The profile page's `account` adapter of an `apikey` host, the person
- * behind hyperweaver-agent's key: the record from the session's own
- * reload, the agent's `GET /api/user` in the identity provider's shape
- * under the key's profile; `readOnly` on every key, because the agent
- * serves no write of the record's details, with `manageUrl` the identity
- * provider's profile page while a federated login minted the key
- * (`issuerUrl`), so the page draws the details read-only with the
- * Manage at identity provider link, and no link on a tray or typed key,
- * whose record has no other home; on every key the Preferences card is
- * editable through `preferences`, because the theme, the mode, the
- * motion, the language and the time zone are this application's own
- * choices of the person (identity contract decision 168), the branding
- * contract's five members written through the session's
- * `PATCH /api/user/preferences` and kept by the agent; no password,
- * email, deletion, organizations or service accounts, the agent serving
- * none.
+ * The profile page's read-only `account` adapter of an `apikey` host,
+ * writing the preferences alone, the record read with the browser's own
+ * `timezone` key as its `preferences.timezone` because the agent keeps no
+ * user preferences.
  *
  * @param {Object} options - The session's side
  * @param {string} options.issuerUrl - The identity provider behind the key, empty for a plain one
@@ -411,11 +385,7 @@ const notFoundError = () =>
 
 /**
  * The Users page's adapter of a `backend` host over the
- * organizations-with-users answer: the paged list and the single record
- * by id read from the same rows, a missing id failing as a 404 the way
- * the client's own not-found does; the role catalog from `GET /api/roles`
- * and the whole-set roles write through `PUT /api/users/{id}/roles`, so
- * the Roles dialog draws; the suspend, resume and delete calls by id.
+ * organizations-with-users answer.
  */
 const backendUsers = {
   list: params => organizationsWithUsers().then(rows => pageOf(usersOf(rows), params)),
@@ -443,12 +413,7 @@ const renameActiveOrganization = async (name, next) => {
 };
 
 /**
- * The All organizations page's adapter of a `backend` host: the
- * organizations-with-users rows each joined with its record, one `update`
- * carrying the record write, the access-mode write while the patch names
- * a door, and the active organization's rename stored under the app's key
- * with the session refreshed; the suspend, resume and delete calls by
- * name, the row's id.
+ * The All organizations page's adapter of a `backend` host.
  */
 const backendOrganizations = {
   list: () =>
@@ -486,12 +451,19 @@ const issuerAdminAdapters = { users: issuerUsers, organizations: issuerAdminOrga
 
 const hasConfigFiles = status => Array.isArray(status?.config) && status.config.length > 0;
 
+/**
+ * The shared admin feature's adapter for the host behind `status`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @returns {Object} The adapter `adminShape` describes
+ */
 const adminAdapterFor = status => {
   const method = authMethod(status);
   return {
     ...(method === 'backend' ? backendAdminMembers : {}),
     ...(hasConfigFiles(status) ? { config: adminConfig } : {}),
     ...(method === 'cookie' ? {} : { updateStatus }),
+    ...(hasFeature(status, 'update') ? { update: appUpdate } : {}),
   };
 };
 
@@ -524,6 +496,7 @@ const PAGE_TITLES = {
   '/admin/users/:id': 'admin.users.title',
   '/admin/terms': 'admin.terms.title',
   '/admin/email-templates': 'admin.emailTemplates.title',
+  '/admin/update': 'hosts.nav.update',
   '/setup': 'setup.title',
   '/setup/server': 'auth.serverSetup.serverSetupTitle',
   '/setup/zone': 'auth.zoneRegister.registerBtn',
@@ -536,12 +509,38 @@ const PAGE_TITLES = {
   '/hosts/:id/machines/:name/provisioning': 'navbar.contextTabs.provisioning',
   '/hosts/:id/machines/:name/console/vnc': 'chrome.sidebarMenu.vncConsole',
   '/hosts/:id/machines/:name/console/rdp': 'console.rdpConsoleDisplay.vrdpLabel',
-  '/hosts/:id/networking': 'host.networkingHeader.title',
-  '/hosts/:id/manage': 'pages.hostManage.pageTitle',
-  '/hosts/:id/devices': 'host.deviceHeader.title',
-  '/hosts/:id/storage': 'host.storageHeader.title',
-  '/hosts/:id/settings': 'navbar.contextTabs.agent',
-  '/hosts/:id/settings/:name': 'navbar.contextTabs.agent',
+  '/hosts/:id/network/interfaces': 'hosts.overview.interfaces',
+  '/hosts/:id/network/links': 'hosts.nav.links',
+  '/hosts/:id/network/spaces': 'hosts.nav.spaces',
+  '/hosts/:id/network/hostname': 'hosts.nav.hostnameDns',
+  '/hosts/:id/storage/pools': 'hosts.nav.pools',
+  '/hosts/:id/storage/snapshots': 'navbar.contextTabs.snapshots',
+  '/hosts/:id/storage/arc': 'hosts.nav.arc',
+  '/hosts/:id/storage/disks': 'hosts.nav.disks',
+  '/hosts/:id/storage/boot-environments': 'pages.hostManage.tabBootEnvironments',
+  '/hosts/:id/devices': 'navbar.contextTabs.devices',
+  '/hosts/:id/system/services': 'pages.hostManage.tabServices',
+  '/hosts/:id/system/processes': 'pages.hostManage.tabProcesses',
+  '/hosts/:id/system/users': 'pages.hostManage.tabUserGroups',
+  '/hosts/:id/system/time': 'pages.hostManage.tabTime',
+  '/hosts/:id/system/runlevel': 'hosts.manage.runlevel.title',
+  '/hosts/:id/system/logs': 'hosts.nav.logs',
+  '/hosts/:id/system/faults': 'pages.hostManage.tabFaultManagement',
+  '/hosts/:id/updates/packages': 'pages.hostManage.tabPackages',
+  '/hosts/:id/updates/system': 'host.systemUpdates.title',
+  '/hosts/:id/updates/repositories': 'host.packageManagement.repositories',
+  '/hosts/:id/provisioning/recipes': 'pages.hostManage.tabRecipes',
+  '/hosts/:id/provisioning/templates': 'pages.hostManage.tabTemplates',
+  '/hosts/:id/provisioning/provisioners': 'pages.hostManage.tabProvisioners',
+  '/hosts/:id/provisioning/network': 'pages.hostManage.tabProvisioningNetwork',
+  '/hosts/:id/provisioning/installers': 'pages.hostManage.tabInstallerFiles',
+  '/hosts/:id/provisioning/orchestration': 'pages.hostManage.tabOrchestration',
+  '/hosts/:id/files': 'pages.hostManage.tabFileManager',
+  '/hosts/:id/agent/config/:name': 'admin.config.title',
+  '/hosts/:id/agent/secrets': 'hosts.nav.secrets',
+  '/hosts/:id/agent/api-keys': 'hosts.nav.apiKeys',
+  '/hosts/:id/agent/database': 'pages.hostManage.tabDatabase',
+  '/hosts/:id/agent/update': 'hosts.nav.update',
   '/authenticator': 'auth:tfa.title',
   '/authenticator-method': 'auth:tfa.choose.title',
   '/passwordRecovery': 'auth:recovery.title',
@@ -569,6 +568,57 @@ const PAGE_TITLES = {
   '/error': 'errors.title.other',
 };
 
+/**
+ * The routes of the host's column, each `[segment, section]`.
+ */
+const HOST_SECTION_ROUTES = [
+  ['network/interfaces', 'interfaces'],
+  ['network/links', 'links'],
+  ['network/spaces', 'spaces'],
+  ['network/hostname', 'hostname'],
+  ['storage/pools', 'pools'],
+  ['storage/snapshots', 'snapshots'],
+  ['storage/arc', 'arc'],
+  ['storage/disks', 'disks'],
+  ['storage/boot-environments', 'boot-environments'],
+  ['devices', 'devices'],
+  ['system/services', 'services'],
+  ['system/processes', 'processes'],
+  ['system/users', 'users'],
+  ['system/time', 'time'],
+  ['system/runlevel', 'runlevel'],
+  ['system/logs', 'logs'],
+  ['system/faults', 'faults'],
+  ['updates/packages', 'packages'],
+  ['updates/system', 'system-updates'],
+  ['updates/repositories', 'repositories'],
+  ['provisioning/recipes', 'recipes'],
+  ['provisioning/templates', 'templates'],
+  ['provisioning/provisioners', 'provisioners'],
+  ['provisioning/network', 'provisioning-network'],
+  ['provisioning/installers', 'installers'],
+  ['provisioning/orchestration', 'orchestration'],
+  ['files', 'files'],
+  ['agent/secrets', 'secrets'],
+  ['agent/api-keys', 'api-keys'],
+  ['agent/database', 'database'],
+  ['agent/update', 'update'],
+];
+
+const hostTrail = (section, machinePage = '') => ({
+  crumbs: ({ pageName, pageNoun, status, params, t }) =>
+    hostCrumbs({
+      id: params.id,
+      section,
+      name: params.name || '',
+      machinePage,
+      label: pageName || params.id,
+      noun: pageNoun,
+      aggregate: isServerRole(status),
+      t,
+    }),
+});
+
 const CRUMB_PARENTS = {
   '/org-console': {
     parent: '/user/organizations',
@@ -578,26 +628,33 @@ const CRUMB_PARENTS = {
     parent: '/admin/users',
     name: ({ pageName, t }) => pageName || t('admin.users.placeholder'),
   },
+  '/hosts/:id': hostTrail('overview'),
+  '/hosts/:id/machines': hostTrail('machines'),
+  '/hosts/:id/machines/:name': hostTrail('machine'),
+  '/hosts/:id/machines/:name/settings': hostTrail('machine', 'settings'),
+  '/hosts/:id/machines/:name/snapshots': hostTrail('machine', 'snapshots'),
+  '/hosts/:id/machines/:name/provisioning': hostTrail('machine', 'provisioning'),
+  ...Object.fromEntries(
+    HOST_SECTION_ROUTES.map(([segment, section]) => [`/hosts/:id/${segment}`, hostTrail(section)])
+  ),
+  '/hosts/:id/agent/config/:name': hostTrail('config'),
 };
 
 /**
- * The sidebar row a page living at its own path descends from, for the
- * crumbs of the pages contract's Breadcrumb section: the row's path as
- * `parent` and `name`, a resolver called with `{ activeOrganization,
- * pageName, params, t }`, the page's own name resolved from what the
- * shell holds (`activeOrganization`, the organization console's name
- * being the active membership's), the name the page set through
- * `usePageName` (`pageName`, a user record's being its username, the
- * translated placeholder "User" standing in while the record has not
- * loaded), the route's own parameters (`params`) and the translator
- * (`t`); null for a route no row parents.
+ * The crumbs of a page no sidebar row matches, by its route: the parent
+ * row's path and the page's name resolver, or the whole trail's resolver,
+ * each called with `{ activeOrganization, pageName, pageNoun, status, t }`
+ * and the route's `params`.
  *
  * @param {string} pathname - The current path
- * @returns {{ parent: string, name: Function }|null} The parent row and the name resolver
+ * @returns {{ parent: string, name: Function }|{ crumbs: Function }|null} The route's entry, null for a route none names
  */
 export const routeCrumbParent = pathname => {
   for (const [path, entry] of Object.entries(CRUMB_PARENTS)) {
     const match = matchPath(path, pathname);
+    if (match && entry.crumbs) {
+      return { crumbs: held => entry.crumbs({ ...held, params: match.params }) };
+    }
     if (match) {
       return { parent: entry.parent, name: held => entry.name({ ...held, params: match.params }) };
     }
@@ -614,12 +671,8 @@ const TITLE_PREFIXES = [...new Set(Object.keys(PAGE_TITLES).map(prefixOf))].sort
 );
 
 /**
- * The registered title key of a reserved route: `PAGE_TITLES` is the one
- * table every route registration below reads its title from, so a
- * route's title lives in one place; the lookup takes the longest
- * registered path, its parameter segments dropped, that the pathname
- * equals or descends from, and the shell draws it as the one crumb when
- * no sidebar row matches the route.
+ * The title key of the longest registered route the pathname equals or
+ * descends from.
  *
  * @param {string} pathname - The current path
  * @returns {string} The title key, empty when no route is registered
@@ -631,29 +684,75 @@ export const routeTitleKey = pathname => {
   return hit ? titleOf(Object.keys(PAGE_TITLES).find(path => prefixOf(path) === hit)) : '';
 };
 
+const routesOf = sections =>
+  new Set(sections.flatMap(section => section.items.map(item => item.to)));
+
+const foldSections = (sections, incoming) => {
+  const routes = routesOf(sections);
+  return incoming.reduce((folded, section) => {
+    const items = section.items.filter(item => !routes.has(item.to));
+    if (items.length === 0) {
+      return folded;
+    }
+    const at = folded.findIndex(held => held.key === section.key);
+    if (at === -1) {
+      return [...folded, { ...section, items }];
+    }
+    return folded.map((held, index) =>
+      index === at ? { ...held, items: [...held.items, ...items] } : held
+    );
+  }, sections);
+};
+
+const oneHeading = group => {
+  if (!group.tree) {
+    return group;
+  }
+  const labels = new Set(
+    (group.sections || [])
+      .filter(section => section.items.length > 0)
+      .map(section => section.labelKey)
+  );
+  const useGroupTree = group.tree;
+  const useOneHeadingTree = () => {
+    const answer = useGroupTree();
+    return labels.has(answer.labelKey) ? { ...answer, labelKey: null } : answer;
+  };
+  return { ...group, tree: useOneHeadingTree };
+};
+
+const foldInto = (folded, group) => {
+  const at = folded.findIndex(held => held.key === group.key);
+  if (at === -1) {
+    return [...folded, group];
+  }
+  return folded.map((held, index) => {
+    if (index !== at) {
+      return held;
+    }
+    const standing = Boolean(held.tree || held.views);
+    return {
+      ...held,
+      sections: foldSections(held.sections || [], group.sections || []),
+      ...(!standing && group.tree ? { tree: group.tree } : {}),
+      ...(!standing && group.views ? { views: group.views } : {}),
+    };
+  });
+};
+
 /**
- * Every mounted feature's `sidebar(status, account)` answer, concatenated
- * in the order the column draws them, behind one gate: nothing at all
- * unless the host lists the `sidebar` feature token (a host listing no
- * `features` array draws the column, `hasFeature` answering true there),
- * so the badges, the crumbs and the header's brand slot all follow from
- * the empty list; below that gate the catalog feature's Browse group
- * while the host mounts a collection (handed the status, the session's
- * account and the mounted collection definitions its tree walks: the
- * group for every visitor while the host advertises `browse`, for a
- * `ROLE_ADMIN` account alone while it advertises `admin` instead, else
- * none), the hosts feature's Hosts group while the host advertises
- * `hosts`, above the Account group because what a UI backend is for
- * draws before the person's own account, the profile feature's Account
- * group (handed the integrations adapter its Integrations entry reads
- * once and the host's profile adapter its Profile children are built
- * from), the identity feature's operator group while the host's first
- * `auth` token is `cookie` (its Configuration row reaching the shared
- * configuration page in place of the shared admin feature's entries), the
- * vdi feature's Fleet group while the host advertises `fleet`, and on
- * every other host the shared admin feature's entries over the admin
- * adapter the host gets, in the order catalog, hosts, profile, identity,
- * vdi, admin; empty means no column.
+ * The sidebar groups folded by key, a later group's sections and rows
+ * joining the first group of its key.
+ *
+ * @param {Array<Object>} groups - The groups in mount order
+ * @returns {Array<Object>} One group per key, in the order each key first appears
+ */
+const foldGroups = groups => groups.reduce(foldInto, []).map(oneHeading);
+
+/**
+ * Every mounted feature's sidebar groups in the order catalog, hosts,
+ * profile, identity (on a `cookie` host), vdi and admin, folded by key;
+ * empty while the host does not list `sidebar`.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -667,23 +766,50 @@ export const sidebarEntries = ({ status, account, collections }) => {
   }
   const cookie = authMethod(status) === 'cookie';
   const admin = adminAdapterFor(status);
-  return [
+  return foldGroups([
     ...catalogSidebar(status, account, collections),
     ...hostsSidebar(status, account),
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
-    ...(cookie ? [] : adminSidebar(status, account, admin)),
-  ];
+    ...adminSidebar(status, account, admin),
+  ]);
+};
+
+/**
+ * The search kind table: every mounted feature's `searchKinds` answer in
+ * the order catalog, hosts, identity (on a `cookie` host), admin, profile, search,
+ * each kind holding its owners in that order, a row's route falling
+ * through to the next owner when one cannot place it; empty while the
+ * host does not list `search`.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @param {Array<Object>} options.collections - The host's mounted collection definitions
+ * @returns {Object<string, Array<Object>>} The owners of each kind
+ */
+export const searchKindsFor = ({ status, account, collections }) => {
+  if (!hasFeature(status, 'search')) {
+    return {};
+  }
+  const cookie = authMethod(status) === 'cookie';
+  return [
+    ...catalogSearchKinds(status, collections),
+    ...hostsSearchKinds(status, account),
+    ...(cookie ? identitySearchKinds(status, account) : []),
+    ...adminSearchKinds(status, account, adminAdapterFor(status)),
+    ...profileSearchKinds(status, account),
+    ...pageSearchKinds(status, account),
+  ].reduce(
+    (table, entry) => ({ ...table, [entry.kind]: [...(table[entry.kind] || []), entry] }),
+    {}
+  );
 };
 
 /**
  * The first non-null `actionMenu(status, account)` answer of the mounted
- * features, the navbar contract's Foot exception: while one answers, the
- * header's account slot draws that menu and the user menu moves to the
- * sidebar's foot; today the hosts feature's Controls menu alone, drawn
- * here with the session's user under a `Suspense` around its lazy
- * component. Null means the account slot keeps the user menu.
+ * features, drawn with the session's user.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -703,13 +829,31 @@ export const actionMenuFor = ({ status, account }) => {
 };
 
 /**
+ * The first non-null `controlCommands(status, account)` answer of the
+ * mounted features, drawn with the session's user wherever the feature is
+ * mounted.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @returns {import('react').ReactElement|null} The command list `App` mounts
+ */
+export const controlCommandsFor = ({ status, account }) => {
+  const Commands =
+    [hostsControlCommands].map(commands => commands(status, account)).find(Boolean) || null;
+  if (!Commands) {
+    return null;
+  }
+  return (
+    <Suspense fallback={null}>
+      <Commands user={account.user} />
+    </Suspense>
+  );
+};
+
+/**
  * The first non-null `footerPane(status, account)` answer of the mounted
- * features, the pane of the navbar contract's Footer status section:
- * while one answers, the footer calls the hook it answered for the
- * pane's views, draws the grip in its center and the pane under its row
- * while the hook answers a view, and draws the row of every other host
- * while it answers none; today the hosts feature's tasks and shell
- * views alone. Null means the footer draws no pane.
+ * features, the views hook of the footer's pane.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -730,11 +874,8 @@ Stub.propTypes = {
 };
 
 /**
- * The page a hosts route draws for a visitor on a host that needs a
- * session, the sign-in placard under the route's own title with this
- * page as the return path: the page itself is not mounted, so no provider
- * of the hosts feature reads anything without a credential, the rule the
- * hosts sidebar, the Controls menu and the footer's pane keep.
+ * The sign-in placard a hosts route draws for a visitor on a host that
+ * needs a session.
  */
 const SignInStub = ({ titleKey, signIn }) => {
   const { t } = useTranslation();
@@ -746,11 +887,19 @@ SignInStub.propTypes = {
   signIn: PropTypes.func.isRequired,
 };
 
+/**
+ * One page of the shared admin feature inside the step-up window, the
+ * not-available stub without `admin`, or without `update` for the Update
+ * page.
+ */
 const AdminRoute = ({ globalAdmin, user = null, page = 'config' }) => {
   const status = useStatus();
   const admin = useMemo(() => adminAdapterFor(status), [status]);
   if (!hasFeature(status, 'admin')) {
     return <Stub titleKey={titleOf('/admin')} token="admin" />;
+  }
+  if (page === 'update' && !hasFeature(status, 'update')) {
+    return <Stub titleKey={titleOf('/admin/update')} token="update" />;
   }
   return (
     <GuardProvider stepUp={stepUp} hasPassword={Boolean(user?.has_local_auth)}>
@@ -926,59 +1075,32 @@ MachinesRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
-const NetworkingRoute = ({ context }) => {
+/**
+ * One section page of a host.
+ */
+const HostSectionRoute = ({ context, section }) => {
   const { id } = useParams();
-  return <NetworkingPage id={id} context={context} />;
+  return <HostSectionPage id={id} context={context} section={section} />;
 };
 
-NetworkingRoute.propTypes = {
+HostSectionRoute.propTypes = {
   context: pageContextShape.isRequired,
-};
-
-const ManageRoute = ({ context }) => {
-  const { id } = useParams();
-  return <ManagePage id={id} context={context} />;
-};
-
-ManageRoute.propTypes = {
-  context: pageContextShape.isRequired,
-};
-
-const DevicesRoute = ({ context }) => {
-  const { id } = useParams();
-  return <DevicesPage id={id} context={context} />;
-};
-
-DevicesRoute.propTypes = {
-  context: pageContextShape.isRequired,
-};
-
-const StorageRoute = ({ context }) => {
-  const { id } = useParams();
-  return <StoragePage id={id} context={context} />;
-};
-
-StorageRoute.propTypes = {
-  context: pageContextShape.isRequired,
+  section: PropTypes.string.isRequired,
 };
 
 /**
- * The Agent settings route of a host and, with the `name` segment, one
- * configuration file of it: the page under the shell's one step-up
- * window, `GuardProvider` the way `AdminRoute` mounts it, because the
- * shared configuration engine runs the restart and every action through
- * `useGuard`.
+ * The agent's Configuration page of one file inside a `GuardProvider`.
  */
-const AgentSettingsRoute = ({ context }) => {
-  const { id, name = '' } = useParams();
+const HostConfigRoute = ({ context }) => {
+  const { id, name } = useParams();
   return (
     <GuardProvider stepUp={stepUp} hasPassword={Boolean(context.user?.has_local_auth)}>
-      <AgentSettings id={id} name={name} context={context} />
+      <HostSectionPage id={id} context={context} section="config" name={name} />
     </GuardProvider>
   );
 };
 
-AgentSettingsRoute.propTypes = {
+HostConfigRoute.propTypes = {
   context: pageContextShape.isRequired,
 };
 
@@ -1416,6 +1538,7 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
   ...[
     { path: '/admin/config/:name', page: 'config' },
     { path: '/admin/system', page: 'system' },
+    { path: '/admin/update', page: 'update' },
   ].map(({ path, page }) => (
     <Route
       key={path}
@@ -1426,33 +1549,16 @@ const sharedAdminRoutes = ({ globalAdmin, user }) => [
 ];
 
 /**
- * The hosts feature's fourteen routes, the host page at `/hosts/:id`, the
- * machines of a host at `/hosts/:id/machines`, the machine page at
- * `/hosts/:id/machines/:name`, its settings at
- * `/hosts/:id/machines/:name/settings`, its snapshots at
- * `/hosts/:id/machines/:name/snapshots`, its provisioning at
- * `/hosts/:id/machines/:name/provisioning`, its full-window VNC console
- * at `/hosts/:id/machines/:name/console/vnc` and its full-window RDP
- * console at `/hosts/:id/machines/:name/console/rdp`, the networking of
- * a host at `/hosts/:id/networking`, its Manage page at
- * `/hosts/:id/manage`, its devices at `/hosts/:id/devices`, its
- * storage at `/hosts/:id/storage`, its agent's settings at
- * `/hosts/:id/settings` and one configuration file of the agent at
- * `/hosts/:id/settings/:name`, the hosts feature's mount of the shared
- * configuration engine, each open while the host advertises
- * `hosts` and the not-available stub otherwise, and each the sign-in
- * placard while the host needs a session and none is held
- * (`signedOut`), so no page of the feature reads without a credential;
- * the machine page is handed the session's memberships, by whose names
- * it draws the organizations a machine belongs to, and the page of it
- * the route names.
+ * The hosts feature's routes, each open while the host advertises
+ * `hosts` and drawing the sign-in placard while a needed session is not
+ * held.
  *
  * @param {Object} options - The router's side
  * @param {boolean} options.hosts - Whether the host advertises `hosts`
  * @param {boolean} options.signedOut - Whether the host needs a session and none is held
  * @param {Object} options.context - The page context
  * @param {Array<Object>} options.organizations - The session's memberships
- * @returns {Array} The fourteen routes
+ * @returns {Array} The routes
  */
 const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
   const page = (path, element) =>
@@ -1481,12 +1587,11 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
       },
       { path: '/hosts/:id/machines/:name/console/vnc', element: <ConsoleRoute kind="vnc" /> },
       { path: '/hosts/:id/machines/:name/console/rdp', element: <ConsoleRoute kind="rdp" /> },
-      { path: '/hosts/:id/networking', element: <NetworkingRoute context={context} /> },
-      { path: '/hosts/:id/manage', element: <ManageRoute context={context} /> },
-      { path: '/hosts/:id/devices', element: <DevicesRoute context={context} /> },
-      { path: '/hosts/:id/storage', element: <StorageRoute context={context} /> },
-      { path: '/hosts/:id/settings', element: <AgentSettingsRoute context={context} /> },
-      { path: '/hosts/:id/settings/:name', element: <AgentSettingsRoute context={context} /> },
+      ...HOST_SECTION_ROUTES.map(([segment, section]) => ({
+        path: `/hosts/:id/${segment}`,
+        element: <HostSectionRoute context={context} section={section} />,
+      })),
+      { path: '/hosts/:id/agent/config/:name', element: <HostConfigRoute context={context} /> },
     ].map(({ path, element }) => ({
       path,
       open: hosts,
@@ -1497,11 +1602,7 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
 };
 
 /**
- * The three setup routes: the setup page at `/setup` while the host
- * advertises `setup`, the zone register at `/setup/zone` on the
- * `zoneweaver-agent` role behind `setup`, and the server setup at
- * `/setup/server` on the `hyperweaver-server` role behind `hosts`; the
- * first two stand while setup is owed too.
+ * The setup page, the zone register and the server setup routes.
  *
  * @param {Object} options - The router's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -1538,9 +1639,8 @@ const setupRoutesOf = ({ status, hosts, context }) => ({
 });
 
 /**
- * The page of a route the router does not know: the ErrorPage with the
- * fault the server stamped on `<html>` on any host, the ErrorPage's 404
- * on a `cookie` host, and home elsewhere.
+ * The page of a route the router does not know: the server's fault, the
+ * 404 on a `cookie` host, or home.
  */
 const unknownRouteFor = ({ cookie, ticketUrl, admin }) => {
   if (hasServerFault()) {
@@ -1589,54 +1689,10 @@ const homeElementFor = ({
 };
 
 /**
- * Every route the app serves: the fleet page at `/` and the VM page at
- * `/vm/:instance` while the host advertises `fleet`, the hosts page at
- * `/` on the `hyperweaver-server` role and the dashboard at `/` on an
- * agent role, with the host page at `/hosts/:id`, the machines of a host at
- * `/hosts/:id/machines` and the machine page at
- * `/hosts/:id/machines/:name` while the host advertises `hosts`, every
- * one of them and the hosts home the sign-in placard for a visitor on a
- * host that needs a session, so nothing of the hosts feature reads
- * without a credential, else the home page
- * and the collection routes from the registry in the host's order (the
- * issuer's profile at `/` on a `cookie` host, an anonymous visitor sent
- * to sign in with `/` as the return path), the setup page at `/setup` while the host
- * advertises `setup`, every other route sent there until setup is complete
- * and the page drawing its complete state after, hyperweaver-ui's server
- * setup at `/setup/server` on the `hyperweaver-server` role behind `hosts`
- * and its zone register at `/setup/zone` on the `zoneweaver-agent` role
- * behind `setup`, reachable while setup is owed too, each feature route gated by
- * its feature token or by the host's first `auth` token (the search page
- * at `/search` behind `search`, the token the navbar's box answers to),
- * and the identity
- * contract's five groups behind the `cookie` token and their feature
- * tokens, a route the host lacks rendering `NotAvailableStub` instead
- * (`/user/integrations` and the Hyperweaver service's own page at
- * `/user/integrations/hyperweaver`, the `settings_url` its row names,
- * each drawing the ErrorPage's 404 while the issuer's answer carries no
- * `services`); the
- * shared admin pages at `/admin/config/:name` and `/admin/system` on
- * every host, the Configuration page drawing the named file of
- * `status.config`, the bare `/admin/config` redirecting to the first
- * name's route and drawing the empty state while the list is empty, on a
- * `cookie` host behind
- * the identity feature's Configuration entry; the
- * sign-in, register and profile pages take the session state, whose
- * adopted session alone sends a signed-in person off a sign-in page or
- * draws the profile, the sign-in page answering `/login` on an `apikey`
- * host too, hyperweaver-agent's six sign-ins, and `/profile` there the
- * one profile page over the key's record read-only; `/error` draws the
- * identity contract's ErrorPage on every host, as does any route the
- * served page reached with a fault the server stamped on `<html>`
- * (`data-error-status`, the way a backend answers `index.html` in place
- * of a failed browser navigation), the admin details fold on the issuer
- * alone; on a `cookie` host every unknown route draws the ErrorPage's
- * 404 too, every other host sending an unstamped unknown route home; on
- * a `backend` host the
- * identity feature's Users and All organizations pages answer
- * `/admin/users` and `/admin/organizations` over the host's own accounts
- * and the bare `/admin` redirects to the organizations; one account's
- * record page answers `/admin/users/:id` wherever the Users page does.
+ * Every route the app serves, each gated by its feature token or the
+ * host's first `auth` token, a route the host lacks drawing
+ * `NotAvailableStub`; every route goes to `/setup` while setup is
+ * incomplete.
  */
 const AppRoutes = ({
   account,

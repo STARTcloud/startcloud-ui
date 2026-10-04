@@ -478,9 +478,11 @@ const listOf = answer => (Array.isArray(answer?.datasets) ? answer.datasets : []
  * sweeps as the panel opens and again when `turn` moves, the page's
  * Refresh and the end of a task this page queued. Every write is a
  * queued task through `tools`, one notice; Promote and the bulk destroy
- * confirm first behind the typed word.
+ * confirm first behind the typed word. With `snapshotsOpen` every
+ * dataset's snapshots are unfolded as the tree is read, the Snapshots
+ * page's view of the same tree.
  */
-const ZfsDatasetsPanel = ({ id, turn, tools }) => {
+const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -517,11 +519,15 @@ const ZfsDatasetsPanel = ({ id, turn, tools }) => {
         ...listOf(datasets.value),
         ...(snapshots.status === 'fulfilled' ? listOf(snapshots.value) : []),
       ].forEach(row => merged.set(row.name, row));
-      setTree(buildTree([...merged.values()]));
+      const built = buildTree([...merged.values()]);
+      setTree(built);
+      if (snapshotsOpen) {
+        setSnapsOpen(new Set(allNodeNames(built)));
+      }
       setSelected(previous => new Set([...previous].filter(name => merged.has(name))));
       setLoaded(true);
     },
-    [t]
+    [t, snapshotsOpen]
   );
 
   const load = useCallback(() => {
@@ -781,6 +787,7 @@ ZfsDatasetsPanel.propTypes = {
     watch: PropTypes.func.isRequired,
     busy: PropTypes.bool.isRequired,
   }).isRequired,
+  snapshotsOpen: PropTypes.bool,
 };
 
 export default ZfsDatasetsPanel;

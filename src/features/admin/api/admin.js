@@ -63,3 +63,15 @@ export const adminConfig = {
 export const storage = () => client.get('/api/system/storage');
 
 export const updateStatus = () => client.get('/api/system/update-check');
+
+/**
+ * The serving backend's own update pair, the shared `UpdatePage`'s
+ * adapter: `check` is `GET /api/app/updates/check`, answered
+ * `{ current_version, latest_version, update_available }`, and `apply`
+ * is `POST /api/app/updates/apply`, answered
+ * `{ message, task_id, target_version }`.
+ */
+export const appUpdate = {
+  check: () => client.get('/api/app/updates/check'),
+  apply: () => client.post('/api/app/updates/apply'),
+};

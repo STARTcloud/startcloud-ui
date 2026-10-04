@@ -60,37 +60,32 @@ ConfigHeading.propTypes = {
 };
 
 /**
- * The shared configuration page of the config contract, one engine with
- * two mounts: the admin feature at `/admin/config/<name>`, where the
- * `name` segment names a file of the host's `status.config` and the bare
- * `/admin/config` redirects to the first file's route, and the hosts
- * feature at `/hosts/{id}/settings/<name>` over an adapter bound to one
- * host, which hands both the list and the file in as `names` and `name`.
- * The page heading is the file's schema root `title` in the `PageHeader`
- * shape (the name until the schema answers) with Update as its action
- * and the file's `schemaVersion` as the muted line under it, the caller
- * drawing no heading of its own above (identity contract decision 129),
- * its sections under that heading with no tab strip (identity contract
- * decisions 105 and 122); `config: []`, a missing member and an adapter
- * without `config` draw the empty state `configManager.noFiles` and no
- * Update and no Restart; the file and its schema fetched together, the
- * schema through the adapter's cached `schema` the sidebar's
- * configuration tree shares, the sections and foldable subsections drawn
- * through `ConfigSections`, their folds kept per file under
- * `table_prefs_admin_config`, and searched from the navbar by title or
- * key, every value validated through the schema on blur and on Update
- * with the summary above the sections, the URL's hash read on mount and
- * on every change as the map item the page arrived at,
- * `/admin/config/<name>#<key>`, handed through `ConfigArrivalContext` to
- * the map that holds the key, which opens its item dialog over that entry
- * and clears the hash when the dialog closes, the `PUT` sending the merge
- * patch `patchOf(before, after)` of the changed paths, the refused write
- * painted by pointer, every control id `config:<name><pointer>`, the
- * shared `RestartCard` fed by `restart-status` on mount and after every
- * write, and every `action` through the adapter's
- * `action(route, method, body)`, the restart and every action running
- * through the shell's `useGuard` so a `403 step_up_required` opens the
- * step-up dialog and retries.
+ * The shared configuration page: one configuration file drawn from its
+ * served schema and written back as a merge patch.
+ *
+ * It takes `config`, the adapter `{ get, schema, update, restartStatus,
+ * restart, action }`; `names`, the files that may be drawn, the host's
+ * `status.config` when absent; and `name`, the file drawn, the route's
+ * `name` segment when absent, the first of `names` when neither names a
+ * listed file. It draws the file's schema root `title` as the page
+ * heading with Update as its action and the file's `schemaVersion` as the
+ * muted line under it, the `RestartCard` fed by `restartStatus`, the
+ * sections through `ConfigSections` with their folds under
+ * `table_prefs_admin_config`, searched from the navbar; every value is
+ * validated through the schema on blur and on Update, the `PUT` sends
+ * `patchOf(before, after)`, a refused write is painted by pointer, the
+ * URL's hash opens the map item it names, and the restart and every
+ * schema action run through the shell's `useGuard`, so a
+ * `403 step_up_required` opens the step-up dialog and retries.
+ *
+ * Caveat: with no adapter or no file it draws the `configManager.noFiles`
+ * notice alone, no Update and no Restart.
+ *
+ * @param {Object} props
+ * @param {Object|null} [props.config] - The configuration adapter
+ * @param {Array<string>|null} [props.names] - The files that may be drawn
+ * @param {string|null} [props.name] - The file drawn
+ * @returns {import('react').ReactElement} The page
  */
 const ConfigPage = ({ config: configApi = null, names = null, name = null }) => {
   const { t } = useTranslation();

@@ -1,4 +1,4 @@
 export default {
   'GET /api/user': { status: 200, file: 'user.json' },
-  'PATCH /api/user/preferences': { status: 200, file: 'preferences-200.json' },
+  'PUT /api/config/app': { status: 200, file: 'config-app-200.json' },
 };

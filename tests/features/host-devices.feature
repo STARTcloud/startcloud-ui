@@ -55,6 +55,7 @@ Feature: host devices
     Given the host answers the hosts fixture
     And the host answers the hosts-devices fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    And the window is 1600 wide
     When I open "/hosts/3/devices"
     Then the passthrough table lists 2 rows
     And the passthrough table draws "/dev/ppt0" in its "path" column
@@ -66,7 +67,7 @@ Feature: host devices
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices table lists 8 rows
-    When I press "Control+f"
+    When I press "Control+k"
     And I search the devices page for "intel"
     Then the devices table lists 3 rows
     And the passthrough table lists 2 rows
@@ -77,7 +78,7 @@ Feature: host devices
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices table lists 8 rows
-    When I press "Control+f"
+    When I press "Control+k"
     And I open the filter panel
     And I toggle the filter pill "Storage"
     Then the devices table lists 3 rows

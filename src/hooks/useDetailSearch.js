@@ -2,68 +2,32 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { drawnColumns } from '../components/common/SubTable';
-import { readDetailPrefs, toggleIn, withWidth, writeDetailPrefs } from '../utils/prefs';
+import { readDetailPrefs, withWidth, writeDetailPrefs } from '../utils/prefs';
 import { nextSort, sortItems } from '../utils/sort';
 
-import { useClientFilters } from './useClientFilters';
+import { useArrivalQuery } from './useArrival';
+import { columnsGroup, hiddenToggle, useClientFilters } from './useClientFilters';
 import { useNavbarSearchBinding } from './useSearchBinding';
 
 /**
- * The Columns group of one table for the navbar panel: one pill a column
- * the table is drawing, active while the column is shown, a pill showing
- * or hiding its column in the table's preferences; not a filter.
- *
- * @param {Object} options - The table's side
- * @param {Array} options.columns - The columns the table is drawing
- * @param {Set} options.hidden - The hidden column keys
- * @param {Function} options.setPrefs - The writer of the table's preferences
- * @param {Function} options.t - The translator
- * @returns {Object} The panel group
- */
-export const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
-  key: 'columns',
-  label: t('pages.filter.columns'),
-  entries: Object.fromEntries(columns.map(column => [column.key, null])),
-  activeSet: new Set(columns.map(column => column.key).filter(key => !hidden.has(key))),
-  activeClass: 'bg-secondary',
-  columns: true,
-  labelFor: key => t(columns.find(column => column.key === key).labelKey),
-  onToggle: key =>
-    setPrefs(current => ({ ...current, hiddenColumns: toggleIn(current.hiddenColumns, key) })),
-});
-
-/**
- * Registers one navbar search binding for a detail page's table, with one
- * filter group per enumerable column the page names in `filterGroups`,
- * narrowing the rows client-side, and one Columns group last that shows
- * or hides the columns the table is drawing (their `when` true for the
- * rows and `ctx`), and returns the rows the query and the
- * groups leave in the active sort order, the query itself, whether a
- * query or a group is active, the sort with its setter, the hidden
- * column keys and the column widths with their setter. A sort on a hidden
- * column is dropped until the column returns; the sort is a stack, a
- * Shift-click on a header adding to it; a hidden column keeps its width.
- * The sort, the hidden columns, the widths and, on a page with the view
- * toggle, the view named in `views` persist together under `prefsKey`,
- * one object per key; Clear filters empties the groups and keeps the query. A page that
- * keeps the query elsewhere (the URL) hands it in as `bound`, with its own
- * placeholder, and the hook publishes that instead of its own state; a
- * page that keeps its groups' values in the URL hands its
- * `useUrlNarrowing` result in as `url`.
+ * The navbar search binding of one client-side table: the query, first
+ * the one the page arrived with, the page's filter groups and the Columns
+ * group, with the sort, the hidden columns, the widths and the view kept
+ * under `prefsKey`.
  *
  * @param {Object} options
  * @param {Array} options.rows - Every row of the table
  * @param {Function} options.matches - `matches(row, needle)` for one lower-cased needle
  * @param {string} options.placeholderKey - Translation key of the search placeholder
- * @param {Array} options.columns - The table's columns, each with `key`, `labelKey`, `value` and optionally `when` and `defaultHidden`
+ * @param {Array} options.columns - The table's columns
  * @param {Object} options.ctx - The context the table's columns receive
  * @param {string} options.prefsKey - The localStorage key of this page's prefs
  * @param {Array} [options.filterGroups] - The client-side group specs of `useClientFilters`
- * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - An externally held query
- * @param {Object|null} [options.url] - The URL narrowing holding the groups' values
+ * @param {{ query: string, onQueryChange: Function, placeholder: string }|null} [options.bound] - A query held outside the hook
+ * @param {Object|null} [options.url] - The `useUrlNarrowing` result holding the groups' values
  * @param {string[]|null} [options.views] - The views the page toggles between, the first the default
  * @param {Array} [options.defaultSort] - The sort stack drawn while nothing is saved
- * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, view: string, setView: Function }} The filtered, sorted rows and the search state
+ * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, view: string, setView: Function }} The narrowed, sorted rows and the search state
  */
 export const useDetailSearch = ({
   rows,
@@ -79,7 +43,8 @@ export const useDetailSearch = ({
   defaultSort = [],
 }) => {
   const { t } = useTranslation();
-  const [ownQuery, setOwnQuery] = useState('');
+  const arrivedQuery = useArrivalQuery();
+  const [ownQuery, setOwnQuery] = useState(arrivedQuery);
   const query = bound ? bound.query : ownQuery;
   const setQuery = bound ? bound.onQueryChange : setOwnQuery;
   const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, columns, { views }));
@@ -106,7 +71,7 @@ export const useDetailSearch = ({
       columnsGroup({
         columns: drawnColumns(columns, sorted, ctx),
         hidden: prefs.hiddenColumns,
-        setPrefs,
+        onToggle: hiddenToggle(setPrefs),
         t,
       }),
     ],

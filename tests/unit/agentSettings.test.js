@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { updateOf } from '../../src/components/common/UpdatePage.jsx';
 import {
   SECRET_CATEGORIES,
   apiKeysOf,
@@ -7,7 +8,6 @@ import {
   hostHasSettings,
   savedSecretEntries,
   secretEntriesOf,
-  updateOf,
 } from '../../src/features/hosts/utils/agentSettings.js';
 
 describe('hostHasSettings', () => {

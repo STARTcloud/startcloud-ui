@@ -1,12 +1,8 @@
-import PropTypes from 'prop-types';
-import { Dropdown } from 'react-bootstrap';
 import { FaGears, FaListCheck, FaRotate, FaRotateLeft } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import { useMachineDetail } from '../hooks/useMachineDetail';
 import { provisioningGates, provisioningRoute } from '../utils/provisioning';
-
-import { ActionRow } from './HostActionOptions';
 
 const ROWS = [
   {
@@ -40,48 +36,37 @@ const ROWS = [
 ];
 
 /**
- * The provisioning rows of the machine Controls menu, hyperweaver-ui's:
- * Provision, Sync files, Sync back and Run provisioners, drawn for a
- * person who may start and stop machines on a host that lists
- * `provisioning` while the machine's detail carries a provisioner
- * document, the truth `provisioning_configured` reads; each opens the
- * machine's Provisioning page with its action in `run`, which the page
- * sends and reports.
+ * The provisioning commands of the machine's command list, Provision,
+ * Sync files, Sync back and Run provisioners, while `provisioningGates`
+ * offers them by the machine's detail, the detail the page holds or, when
+ * it holds none, read once the Controls menu or the search box opens;
+ * each opens the machine's Provisioning page with its action in `run`.
+ *
+ * @param {Object} options
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {string} options.name - The machine's name
+ * @param {Object|null} options.server - The host's registry row
+ * @param {Object|null} options.user - The signed-in person
+ * @param {boolean} options.busy - Whether an action is in flight
+ * @param {boolean} options.wanted - Whether the menu or the search box is open
+ * @returns {Array<Object>} The commands
  */
-const ProvisioningRows = ({ id, name, server = null, user = null, busy }) => {
+export const useProvisioningCommands = ({ id, name, server, user, busy, wanted }) => {
   const navigate = useNavigate();
-  const { detail } = useMachineDetail(id, name);
+  const { detail } = useMachineDetail(id, name, { ask: wanted });
   const gates = provisioningGates({ server, detail, role: user?.role });
-
   if (!gates.rows) {
-    return null;
+    return [];
   }
-
-  return (
-    <>
-      <Dropdown.Divider />
-      {ROWS.map(row => (
-        <ActionRow
-          key={row.run}
-          icon={row.icon}
-          tone={row.tone}
-          labelKey={row.labelKey}
-          titleKey={row.titleKey}
-          action={row.run}
-          disabled={busy}
-          onClick={() => navigate(provisioningRoute(id, name, row.run))}
-        />
-      ))}
-    </>
-  );
+  return ROWS.map(row => ({
+    key: row.run,
+    group: 'provisioning',
+    icon: row.icon,
+    tone: row.tone,
+    labelKey: row.labelKey,
+    titleKey: row.titleKey,
+    action: row.run,
+    disabled: busy,
+    run: () => navigate(provisioningRoute(id, name, row.run)),
+  }));
 };
-
-ProvisioningRows.propTypes = {
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  server: PropTypes.object,
-  user: PropTypes.object,
-  busy: PropTypes.bool.isRequired,
-};
-
-export default ProvisioningRows;

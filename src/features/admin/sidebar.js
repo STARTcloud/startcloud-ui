@@ -1,24 +1,16 @@
-import { FaBuilding, FaGear, FaHardDrive, FaUsers } from 'react-icons/fa6';
+import { FaBuilding, FaCircleUp, FaGear, FaHardDrive, FaUsers } from 'react-icons/fa6';
 
 import { configNamesOf, useConfigTree } from '../../hooks/useConfigTree';
 import { hasFeature } from '../../utils/capabilities';
 import { isGlobalAdmin } from '../../utils/permissions';
+import { arrivalPath } from '../../utils/searchRow';
 
 /**
- * The shared admin feature's sidebar export: on every host that
- * advertises `admin`, for a `ROLE_ADMIN` account, one Admin group with
- * Users at `/admin/users` and Organizations at `/admin/organizations`
- * (the identity feature's two pages over the app's `users` and
- * `organizations` adapters), Configuration at `/admin/config` and System
- * at `/admin/system`, each drawn only while the app's `admin` adapter
- * carries `users`, `organizations`, `config` or `storage`; the
- * Configuration entry is the plain row while `status.config` names one
- * file and the configuration tree of identity contract decision 122, one
- * Configuration node with one child per file over the shared
- * `useConfigTree` fed the adapter's `config` and the System heading's
- * key, answered as the tree's `labelKey` (decision 135), while it names
- * more; nothing when the adapter carries none, and never a branch on the
- * host's role.
+ * The shared admin feature's sidebar groups for a `ROLE_ADMIN` account on
+ * a host that advertises `admin`: one Admin group with the Users,
+ * Organizations, Configuration, System and Update rows the admin adapter
+ * carries, the configuration tree in the Configuration row's place while
+ * `status.config` names more than one file.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -63,6 +55,14 @@ export const sidebar = (status, account, admin) => {
       to: '/admin/system',
     });
   }
+  if (admin.update) {
+    items.push({
+      key: 'update',
+      icon: FaCircleUp,
+      labelKey: 'hosts.nav.update',
+      to: '/admin/update',
+    });
+  }
   if (items.length === 0 && !configTree) {
     return [];
   }
@@ -71,8 +71,40 @@ export const sidebar = (status, account, admin) => {
     {
       key: 'admin',
       labelKey: 'admin.sidebar.title',
-      sections: [{ key: 'admin', labelKey: 'admin.sidebar.title', items }],
+      sections: [{ key: 'system', labelKey: 'admin.sidebar.system', items }],
       ...(configTree ? { tree: useTree } : {}),
     },
+  ];
+};
+
+const kindEntry = (kind, icon, path) => ({
+  kind,
+  feature: 'admin',
+  token: 'admin',
+  locators: [kind === 'organization' ? 'org' : 'name'],
+  route: (row, query) => arrivalPath(path, row, query),
+  icon: () => icon,
+  labelKey: `search.kinds.${kind}`,
+  matched: {},
+  facets: [],
+});
+
+/**
+ * The shared admin feature's search kinds for a `ROLE_ADMIN` account on a
+ * host that advertises `admin`: organization and user, routed to the
+ * Organizations and Users pages the admin adapter carries.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Object} account - The session state from `useSession`
+ * @param {Object} admin - The app's admin adapter
+ * @returns {Array<Object>} The kind entries
+ */
+export const searchKinds = (status, account, admin) => {
+  if (!hasFeature(status, 'admin') || !isGlobalAdmin(account?.user)) {
+    return [];
+  }
+  return [
+    ...(admin.organizations ? [kindEntry('organization', FaBuilding, '/admin/organizations')] : []),
+    ...(admin.users ? [kindEntry('user', FaUsers, '/admin/users')] : []),
   ];
 };

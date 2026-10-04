@@ -129,6 +129,7 @@ export default defineConfig(({ command }) => ({
       '/api': { ...proxyTo(apiTarget), ws: true },
       '/catalog.json': proxyTo(apiTarget),
       '/health.json': proxyTo(apiTarget),
+      '/opensearch.xml': { ...proxyTo(apiTarget), xfwd: true },
       '/private': proxyTo(apiTarget),
       '/push': proxyTo(apiTarget),
       '/admin': { ...proxyTo(apiTarget), bypass: spaBypass },

@@ -383,7 +383,8 @@
     },
     "search": {
       "organizations": "Search organizations and requests",
-      "serviceAccounts": "Search service accounts"
+      "serviceAccounts": "Search service accounts",
+      "sessions": "Search sessions"
     },
     "fields": {
       "displayName": "Display name",
@@ -520,7 +521,8 @@
       "makePrimary": "Make primary",
       "joined": "Joined",
       "pendingRequestsTitle": "Pending Join Requests",
-      "requested": "Requested"
+      "requested": "Requested",
+      "role": "Role"
     },
     "serviceAccounts": {
       "title": "Service Accounts",
@@ -1015,7 +1017,8 @@
           "authorizations": "Authorizations ever granted to it.",
           "users": "Distinct people who have used it.",
           "share": "Its share of every active session."
-        }
+        },
+        "search": "Search services"
       },
       "insights": {
         "title": "Insights",
@@ -1143,7 +1146,8 @@
         "errors": {
           "not_blocked": "not currently blocked"
         }
-      }
+      },
+      "search": "Search blocked addresses"
     },
     "terms": {
       "title": "Terms",
@@ -1319,7 +1323,9 @@
     "update": {
       "title": "Update Available",
       "message": "A new version (v{{latestVersion}}) is available. You are currently running v{{currentVersion}}.",
-      "instructions": "To update, run the following command on your server:"
+      "instructions": "To update, run the following command on your server:",
+      "confirmTitle": "Update {{app}}",
+      "confirmMessage": "Update {{app}} from {{currentVersion}} to {{latestVersion}}? The update is downloaded and applied, then {{app}} restarts on the new version."
     }
   },
   "configManager": {
@@ -1621,6 +1627,7 @@
     "activeFilters_one": "{{count}} filter active",
     "activeFilters_other": "{{count}} filters active",
     "appPlaceholder": "Search {{app}}",
+    "everywhere": "Search everywhere",
     "elsewhere": "Elsewhere in {{app}}",
     "inApp": "In {{app}}",
     "showAll": "Show all {{count}} results",
@@ -1628,10 +1635,29 @@
     "loading": "Searching…",
     "results_one": "{{count}} result",
     "results_other": "{{count}} results",
+    "status": {
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "pending_one": "{{count}} host still searching",
+      "pending_other": "{{count}} hosts still searching",
+      "failed": "{{host}} did not answer"
+    },
+    "scope": {
+      "label": "Scope",
+      "remove": "Remove scope {{scope}}"
+    },
     "page": {
       "title": "Search",
       "count_one": "{{count}} result for “{{query}}”",
-      "count_other": "{{count}} results for “{{query}}”"
+      "count_other": "{{count}} results for “{{query}}”",
+      "host": {
+        "pending": "Searching…",
+        "done": "Answered",
+        "failed": "Did not answer"
+      },
+      "retry": "Retry",
+      "previous": "Previous",
+      "next": "Next"
     },
     "kinds": {
       "organization": "Organizations",
@@ -1648,12 +1674,21 @@
       "session": "Sessions",
       "login": "Logins",
       "registration": "Registrations",
-      "blocked-address": "Blocked addresses"
+      "blocked-address": "Blocked addresses",
+      "host": "Host",
+      "machine": "Machine",
+      "task": "Task",
+      "service": "Service",
+      "config": "Configuration",
+      "template": "Template",
+      "page": "Page"
     },
     "columns": {
       "title": "Title",
       "where": "Where",
-      "matched": "Matched"
+      "matched": "Matched",
+      "host": "Host",
+      "score": "Score"
     },
     "matched": {
       "name": "Name",
@@ -2853,6 +2888,29 @@
         "assigned": "Assigned ({{count}})",
         "available": "Available"
       }
+    },
+    "nav": {
+      "host": "Host",
+      "network": "Network",
+      "links": "Links",
+      "hostnameDns": "Hostname and DNS",
+      "spaces": "Spaces",
+      "pools": "Pools and datasets",
+      "arc": "ARC",
+      "disks": "Disks",
+      "system": "System",
+      "updates": "Updates",
+      "files": "Files",
+      "logs": "Logs",
+      "agent": "Agent",
+      "apiKeys": "API keys",
+      "secrets": "Secrets",
+      "update": "Update",
+      "arcHitRatio": "{{ratio}} hit ratio",
+      "updateAvailable": "Update to {{version}} available",
+      "updateCurrent": "Up to date",
+      "updateCurrentVersion": "Current version",
+      "updateLatestVersion": "Latest version"
     }
   },
   "pages": {
@@ -4156,7 +4214,8 @@
       "statusYes": "Yes",
       "statusNo": "No",
       "never": "Never",
-      "deleteKeyTableButton": "Delete"
+      "deleteKeyTableButton": "Delete",
+      "search": "Search API keys"
     },
     "applicationsTab": {
       "configureToolsDescription": "Configure desktop tools (PuTTY, WinSCP, mstsc…) launched per machine from its Controls menu. Each launch spawns on the",
@@ -5379,7 +5438,13 @@
       "notAvailable": "N/A",
       "memory": "Memory",
       "viewDetails": "View Details",
-      "connectionFailedFull": "Connection Failed"
+      "connectionFailedFull": "Connection Failed",
+      "health": "Health",
+      "healthOf": {
+        "healthy": "Healthy",
+        "warning": "Warning",
+        "offline": "Offline"
+      }
     },
     "healthModal": {
       "connectionFailed": "Connection failed",
@@ -5400,7 +5465,8 @@
       "collapse": "Collapse",
       "expand": "Expand",
       "hide": "Hide widget"
-    }
+    },
+    "search": "Search hosts"
   },
   "fileManager": {
     "createArchiveModal": {
@@ -6032,7 +6098,8 @@
       "ppid": "PPID",
       "viewProcessDetails": "View Process Details",
       "sendSignal": "Send Signal",
-      "killProcess": "Kill Process"
+      "killProcess": "Kill Process",
+      "notAvailable": "Not available"
     },
     "repositoryTable": {
       "online": "Online",
@@ -11459,35 +11526,6 @@
     }
   },
   "settings": {
-    "hyperweaverSettings": {
-      "pageTitleDenied": "System Settings - Hyperweaver",
-      "accessDeniedTitle": "Access Denied",
-      "superAdminRequired": "Super Admin Access Required",
-      "superAdminOnly": "Only super administrators can modify Hyperweaver system settings.",
-      "yourCurrentRole": "Your current role:",
-      "unknownRole": "Unknown",
-      "pageTitle": "Hyperweaver Settings - Hyperweaver",
-      "systemSettings": "Hyperweaver System Settings",
-      "save": "Save",
-      "backup": "Backup",
-      "restore": "Restore",
-      "restart": "Restart",
-      "apiServers": "API Servers",
-      "restartRequiredTitle": "Server Restart Required",
-      "restartRequiredText": "Some of your changes require a server restart to take effect.",
-      "restartServerNow": "Restart Server Now",
-      "settingsInformation": "Settings Information",
-      "importantLabel": "Important:",
-      "importantText": "These settings affect the entire Hyperweaver application for all users.",
-      "changesRequireAdmin": "Changes require super-admin privileges and take effect immediately",
-      "refreshBrowsers": "Some settings may require users to refresh their browsers",
-      "performanceSettings": "Performance settings affect resource usage and responsiveness",
-      "securitySettings": "Security settings impact user sessions and authentication",
-      "currentUserLabel": "Current User:",
-      "superAdmin": "Super Admin",
-      "restartServerTitle": "Restart Server",
-      "restartConfirmMessage": "Are you sure you want to restart the server? This will briefly interrupt service for all users."
-    },
     "backupManager": {
       "failedToLoad": "Failed to load backups: {{message}}",
       "errorLoading": "Error loading backups: {{error}}",

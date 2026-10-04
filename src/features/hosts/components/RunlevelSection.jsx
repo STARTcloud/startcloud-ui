@@ -14,16 +14,17 @@ import TaskDialog from './TaskDialog';
 const NONE = { current: '', available: [] };
 
 /**
- * The runlevel of a host, the calls hyperweaver-ui's
- * `useHostSystemManagement` carried with no view, as the body of the
- * Manage page's Runlevel section behind `host-power`: the current
+ * The body of a host's Runlevel page, behind `runlevel`: the current
  * runlevel of `GET system/host/runlevel`, the runlevel chosen among the
  * ones the host offers with Change runlevel, and Single-user and
  * Multi-user with the network services switch, each a queued task
  * behind the typed confirmation, `POST system/host/runlevel`,
  * `POST system/host/single-user` and `POST system/host/multi-user`,
  * raising one notice with View task and reading the runlevel again on
- * a success. Nothing polls.
+ * a success.
+ *
+ * @param {Object} props
+ * @param {string} props.id - The registry id, or `self` on an agent role
  */
 const RunlevelSection = ({ id }) => {
   const { t } = useTranslation();

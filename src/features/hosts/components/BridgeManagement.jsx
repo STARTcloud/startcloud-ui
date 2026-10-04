@@ -9,6 +9,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { createBridge, deleteBridge, fetchBridge } from '../api/networking';
 import { useHostReading } from '../hooks/useHostReadings';
 import { bridgeBody, bridgeableLinksOf } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import BridgeCreateModal from './BridgeCreateModal';
 import { BRIDGE_COLUMNS, BridgeRowActions } from './BridgeTable';
@@ -24,9 +25,11 @@ import NetworkingTable from './NetworkingTable';
  * sends `DELETE network/bridges/{name}`; the details read
  * `GET network/bridges/{name}` with the links and the forwarding table
  * once and show the answer as hyperweaver-ui did, as it came. Every
- * write goes through the page's one `useNetworkingTools`.
+ * write goes through the page's one `useNetworkingTools`. Create and
+ * the delete draw for a role that controls hosts alone; every other
+ * role reads the table with the details.
  */
-const BridgeManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools }) => {
+const BridgeManagement = ({ id, role, rows, reading, table, ctx, filtering, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -34,6 +37,7 @@ const BridgeManagement = ({ id, rows, reading, table, ctx, filtering, fold, tool
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [details, setDetails] = useState(null);
+  const writable = canControlHosts(role);
   const links = useMemo(() => bridgeableLinksOf(interfaces.data?.interfaces), [interfaces.data]);
 
   const create = async form => {
@@ -92,13 +96,18 @@ const BridgeManagement = ({ id, rows, reading, table, ctx, filtering, fold, tool
         table={table}
         rowKey={row => row.name}
         RowActions={BridgeRowActions}
-        actionsProps={{ busy: tools.busy, onDetails: open, onDelete: setRemoving }}
+        actionsProps={{
+          busy: tools.busy,
+          canEdit: writable,
+          onDetails: open,
+          onDelete: setRemoving,
+        }}
         ctx={ctx}
         emptyKey="host.bridgeTable.empty"
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <BridgeCreateModal
@@ -131,6 +140,7 @@ const BridgeManagement = ({ id, rows, reading, table, ctx, filtering, fold, tool
 
 BridgeManagement.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,

@@ -2,6 +2,7 @@ import { lazy } from 'react';
 
 export {
   adminConfig,
+  appUpdate,
   resumeUser,
   roleNames,
   setUserRoles,
@@ -9,7 +10,7 @@ export {
   suspendUser,
   updateStatus,
 } from './api/admin';
-export { sidebar } from './sidebar';
+export { searchKinds, sidebar } from './sidebar';
 export { organizationBodyOf, organizationRowOf, pageOf, usersOf } from './utils/accounts';
 
 export const AdminPage = lazy(() => import('./components/AdminPage'));

@@ -33,9 +33,8 @@ const NO_HIDDEN = new Set();
 const NAME_SORT = [{ column: 'name', direction: 'asc' }];
 
 /**
- * The columns of the databases table, hyperweaver-ui's row: the name,
- * the size, the counts of tables and indexes, and the files with their
- * sizes.
+ * The columns of the databases table: the name, the size, the counts of
+ * tables and indexes, and the files with their sizes.
  */
 export const DATABASE_COLUMNS = [
   {
@@ -100,9 +99,9 @@ export const DATABASE_COLUMNS = [
 ];
 
 /**
- * The action of one row of the databases table, hyperweaver-ui's caret:
- * Explore, which opens the database's tables under the table, pressed
- * while it is the one explored.
+ * The action of one row of the databases table: Explore, which opens the
+ * database's tables under its own row, pressed while it is the one
+ * explored.
  */
 export const DatabaseRowActions = ({ row, expanded, onToggle }) => {
   const { t } = useTranslation();
@@ -184,13 +183,15 @@ BrowseAction.propTypes = {
 };
 
 /**
- * The tables of one explored database, hyperweaver-ui's list as the one
- * table: read once when the database is explored and again on the
- * page's Refresh, each row's Browse opening the row browser.
+ * The tables of one explored database, drawn as the detail row of its
+ * row in the databases table: `row` is the database's row, the tables
+ * read once when it is explored and again on the page's Refresh, each
+ * table's Browse calling `onBrowse(database, table)`.
  */
-export const DatabaseTables = ({ id, database, ctx, onBrowse }) => {
+export const DatabaseTables = ({ id, row: record, ctx, onBrowse }) => {
   const { t } = useTranslation();
   const status = useStatus();
+  const database = record.name;
   const [sort, setSort] = useState(NAME_SORT);
   const reading = useManageRead(
     useCallback(() => fetchDatabaseTables(status, id, database), [status, id, database]),
@@ -229,17 +230,16 @@ export const DatabaseTables = ({ id, database, ctx, onBrowse }) => {
 
 DatabaseTables.propTypes = {
   id: PropTypes.string.isRequired,
-  database: PropTypes.string.isRequired,
+  row: PropTypes.shape({ name: PropTypes.string.isRequired }).isRequired,
   ctx: PropTypes.object.isRequired,
   onBrowse: PropTypes.func.isRequired,
 };
 
 /**
- * The read-only row browser of one table, hyperweaver-ui's dialog as a
- * list dialog of the pages contract: fifty rows a page from
- * `GET database/{name}/tables/{table}/rows`, the order by one column the
- * agent validates and its direction, the page's range and the two
- * pagers; the UI never sends SQL.
+ * The read-only row browser of one table, a list dialog: fifty rows a
+ * page from `GET database/{name}/tables/{table}/rows`, the order by one
+ * column the agent validates and its direction, the page's range and
+ * the two pagers; the UI never sends SQL.
  */
 export const TableBrowserModal = ({ id, database, table, onClose }) => {
   const { t } = useTranslation();

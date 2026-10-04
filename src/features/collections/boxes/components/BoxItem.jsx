@@ -153,10 +153,7 @@ const CopyButton = ({ text }) => {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     copyToClipboard(text).then(
-      () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      },
+      () => setCopied(true),
       error => {
         log.component.error('Could not copy text to clipboard', { error: error.message });
       }
@@ -167,6 +164,7 @@ const CopyButton = ({ text }) => {
       type="button"
       className={`btn btn-sm ${copied ? 'btn-success' : 'btn-outline-light'}`}
       onClick={copy}
+      onBlur={() => setCopied(false)}
     >
       {copied ? t('boxes.box.useThisBox.copied') : t('boxes.buttons.copy')}
     </button>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { drawnColumns } from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
+import { columnsGroup } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { hostGroup, hostSort } from '../../../utils/capabilities';
 import {
@@ -150,23 +151,22 @@ const ownGroup = ({ collection, group, items, filters, prefixed, setPrefs, ctx, 
     })),
 });
 
-const columnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) => ({
-  key: `${collection.key}.columns`,
-  label: groupLabel(collection, 'pages.filter.columns', prefixed, t),
-  entries: Object.fromEntries(columns.map(column => [column.key, null])),
-  activeSet: new Set(columns.map(column => column.key).filter(key => !hidden.has(key))),
-  activeClass: 'bg-secondary',
-  columns: true,
-  labelFor: key => t(columns.find(column => column.key === key).labelKey),
-  onToggle: key =>
-    setPrefs(current => ({
-      ...current,
-      hiddenColumns: {
-        ...current.hiddenColumns,
-        [collection.key]: toggleIn(current.hiddenColumns[collection.key], key),
-      },
-    })),
-});
+const collectionColumnsGroup = ({ collection, columns, hidden, prefixed, setPrefs, t }) =>
+  columnsGroup({
+    key: `${collection.key}.columns`,
+    label: groupLabel(collection, 'pages.filter.columns', prefixed, t),
+    columns,
+    hidden,
+    onToggle: key =>
+      setPrefs(current => ({
+        ...current,
+        hiddenColumns: {
+          ...current.hiddenColumns,
+          [collection.key]: toggleIn(current.hiddenColumns[collection.key], key),
+        },
+      })),
+    t,
+  });
 
 const directionMark = (sort, key) => {
   const entry = sort.find(candidate => candidate.column === key);
@@ -200,30 +200,21 @@ const groupByGroup = ({ collection, groupBy, prefixed, setGroup, t }) => ({
 });
 
 /**
- * Registers one navbar search binding for a page that lists one or more
- * collections, and returns the collections left visible by the Collection
- * group plus the filtered, sorted items per collection. The Collection,
- * Visibility and Watched groups are shared across the page; the collection's
- * own groups follow them and, in list view, a Columns group per collection
- * that shows or hides the columns that table is drawing (their `when`
- * true for its rows and the context `ctxFor(collection)` answers, the
- * one its table receives), in card view a Sort group per collection in
- * its place, one pill per drawn column that a click cycles through
- * ascending, descending and off, the active pills marked with the
- * direction, never counted as a filter, and, for a collection that can
- * group its items, a Group by group after it, one pill per group field,
- * the active one the field the items are grouped by, a click on another
- * picking it and a click on the active one turning grouping off. Watched
- * ids arrive as one Set per collection key, because item ids only mean
- * something inside their own collection. Filters, sort, the Group by
- * pick, the one view, the hidden columns, the column widths (per
- * collection, set through `setColumnWidth(collectionKey, column,
- * pixels)`, null resetting one) and the collapsed groups persist per page
- * under the app's prefs prefix. A collection with no saved sort draws the
- * host's `sorts` for its items, else its `defaultSort`; one with no Group
- * by pick groups by the host's `groups` entry for its items, else not at
- * all, `groupBy` answering the field per collection and `ctxFor` receiving
- * it beside the collection.
+ * The navbar search binding of a page that lists one or more collections:
+ * the Collection, Visibility and Watched groups, each collection's own
+ * groups, its Columns group in table view or Sort group in card view, and
+ * its Group by group; filters, sorts, picks, view, hidden columns, widths
+ * and folds kept under `prefsKey`.
+ *
+ * @param {Object} options
+ * @param {Array<Object>} options.collections - The collections the page lists
+ * @param {Object} options.itemsByCollection - The items of each collection by its key
+ * @param {string} options.org - The organization the page is scoped to, empty for none
+ * @param {boolean} options.signedIn - Whether a person is signed in
+ * @param {Object} options.watchedIds - One Set of watched item ids per collection key
+ * @param {Function} options.ctxFor - `ctxFor(collection, groupBy)`, the context a collection's table receives
+ * @param {string} options.prefsKey - The localStorage key of this page's prefs
+ * @returns {Object} The visible collections, the narrowed items per collection and the search state
  */
 export const useCatalogSearch = ({
   collections,
@@ -318,7 +309,7 @@ export const useCatalogSearch = ({
     });
     const columns = drawnColumns(collection.columns, filtered[collection.key], tableCtx);
     if (prefs.view === 'table') {
-      groups.push(columnsGroup({ collection, columns, hidden, prefixed, setPrefs, t }));
+      groups.push(collectionColumnsGroup({ collection, columns, hidden, prefixed, setPrefs, t }));
     } else {
       groups.push(
         sortGroup({ collection, columns, sort: sort[collection.key], prefixed, setSort, t })

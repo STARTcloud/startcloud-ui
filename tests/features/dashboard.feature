@@ -24,13 +24,13 @@ Feature: dashboard
     When I press the dashboard action "view-host"
     Then the path is "/hosts/self"
 
-  Scenario: Dashboard: Settings opens the agent's settings on an agent role and Manage machines the machines of the host
+  Scenario: Dashboard: Settings opens the agent's API keys page, the first of its Agent group, on an agent role and Manage machines the machines of the host
     Given the host answers the agent fixture
     And the host answers the agent-dashboard fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/"
     And I press the dashboard action "settings"
-    Then the path is "/hosts/self/settings"
+    Then the path is "/hosts/self/agent/api-keys"
     When I open "/"
     And I press the dashboard action "manage-machines"
     Then the path is "/hosts/self/machines"

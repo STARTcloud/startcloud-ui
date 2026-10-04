@@ -1,25 +1,27 @@
 Feature: host recipes and provisioning network
 
-  Scenario: Recipes: the section on a bhyve host that lists `provisioning` alone, the one table from the one read with the default badge
+  Scenario: Recipes: the page on a bhyve host that lists `provisioning` alone, the one table from the one read with the default badge
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "recipes" section
-    And the "recipes" table of the manage page lists 3 rows
-    And the "recipes" table of the manage page draws the "steps" column
-    And the manage page notes "recipe-default"
-    And the row "debian-console-setup" of the "recipes" table of the manage page offers no "default"
-    And the row "windows-first-boot" of the "recipes" table of the manage page offers "default"
+    When I open "/hosts/3/provisioning/recipes"
+    Then the section page "recipes" draws
+    And the host row "recipes" is the active one
+    And the "recipes" table of the section page lists 3 rows
+    And the "recipes" table of the section page draws the "steps" column
+    And the section page notes "recipe-default"
+    And the row "debian-console-setup" of the "recipes" table of the section page offers no "default"
+    And the row "windows-first-boot" of the "recipes" table of the section page offers "default"
     And the host was sent GET to "/api/agents/3/provisioning/recipes" 1 times
 
-  Scenario: Recipes: a VirtualBox host that lists `provisioning` draws no recipes section
+  Scenario: Recipes: a VirtualBox host that lists `provisioning` draws no Recipes row, the not-available stub on the route, and is asked for none
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the manage page draws its frame
-    And the manage page draws no "recipes" section
+    When I open "/hosts/1/provisioning/recipes"
+    Then the section page draws the not-available stub
+    And the host column draws the "provisioning-network" row to "/hosts/1/provisioning/network"
+    And the host column draws no "recipes" row
     And the host was not sent GET to "/api/agents/1/provisioning/recipes"
 
   Scenario: Recipes: the family pill reads again with `os_family`
@@ -27,9 +29,9 @@ Feature: host recipes and provisioning network
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
-    When I open "/hosts/3/manage"
-    Then the "recipes" table of the manage page lists 3 rows
-    When I press "Control+f"
+    When I open "/hosts/3/provisioning/recipes"
+    Then the "recipes" table of the section page lists 3 rows
+    When I press "Control+k"
     And I open the filter panel
     And I toggle the request pill "windows"
     Then the host was asked "/api/agents/3/provisioning/recipes" with "os_family" as "windows"
@@ -38,8 +40,8 @@ Feature: host recipes and provisioning network
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "recipe-new" action
+    When I open "/hosts/3/provisioning/recipes"
+    And I press the section page's "recipe-new" action
     Then the catalog dialog "recipe-edit" draws
     When I type "alpine-setup" into the field "recipe-name"
     And I submit the catalog dialog "recipe-edit"
@@ -59,8 +61,8 @@ Feature: host recipes and provisioning network
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "edit" on the row "debian-console-setup" of the "recipes" table of the manage page
+    When I open "/hosts/3/provisioning/recipes"
+    And I press "edit" on the row "debian-console-setup" of the "recipes" table of the section page
     Then the catalog dialog "recipe-edit" draws 5 steps
     When I submit the catalog dialog "recipe-edit"
     Then the host was sent PUT to "/api/agents/3/provisioning/recipes/r-1" carrying "name" as "debian-console-setup"
@@ -70,10 +72,10 @@ Feature: host recipes and provisioning network
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "default" on the row "windows-first-boot" of the "recipes" table of the manage page
+    When I open "/hosts/3/provisioning/recipes"
+    And I press "default" on the row "windows-first-boot" of the "recipes" table of the section page
     Then the host was sent PUT to "/api/agents/3/provisioning/recipes/r-2" carrying "is_default" as "true"
-    When I press "delete" on the row "windows-first-boot" of the "recipes" table of the manage page
+    When I press "delete" on the row "windows-first-boot" of the "recipes" table of the section page
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/recipes/r-2"
 
@@ -81,8 +83,8 @@ Feature: host recipes and provisioning network
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "test" on the row "debian-console-setup" of the "recipes" table of the manage page
+    When I open "/hosts/3/provisioning/recipes"
+    And I press "test" on the row "debian-console-setup" of the "recipes" table of the section page
     Then the catalog dialog "recipe-test" draws
     When I submit the catalog dialog "recipe-test"
     Then the catalog dialog "recipe-test" says why it cannot be sent
@@ -93,18 +95,19 @@ Feature: host recipes and provisioning network
     And the open dialog draws the panel "recipe-dry-run"
     And I see "domain"
 
-  Scenario: Provisioning network: the panel behind `provisioning`, the status with its components and configuration over the one table, Set up and Tear down queued tasks
+  Scenario: Provisioning network: the page behind `provisioning`, the status with its components and configuration over the one table, Set up and Tear down queued tasks
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "provisioning-network" section
-    And the manage page notes "network-not-ready"
-    And the "network-components" table of the manage page lists 3 rows
-    And the "network-config" table of the manage page lists 4 rows
-    When I press the manage page's "network-setup" action
+    When I open "/hosts/3/provisioning/network"
+    Then the section page "provisioning-network" draws
+    And the host row "provisioning-network" is the active one
+    And the section page notes "network-not-ready"
+    And the "network-components" table of the section page lists 3 rows
+    And the "network-config" table of the section page lists 4 rows
+    When I press the section page's "network-setup" action
     Then the host was sent POST to "/api/agents/3/provisioning/network/setup"
-    When I press the manage page's "network-teardown" action
+    When I press the section page's "network-teardown" action
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/network/teardown"
 
@@ -112,19 +115,19 @@ Feature: host recipes and provisioning network
     Given the host answers the zones fixture
     And the host answers the zones-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/self/manage"
-    Then the manage page draws the "provisioning-network" section
-    And the manage page notes "network-not-ready"
+    When I open "/hosts/self/provisioning/network"
+    Then the section page "provisioning-network" draws
+    And the section page notes "network-not-ready"
     And the host was sent GET to "/api/provisioning/network/status"
-    And the manage page offers "network-settings"
-    When I press the manage page's "network-settings" action
+    And the section page offers "network-settings"
+    When I press the section page's "network-settings" action
     Then the path is "/admin/config/machines"
 
   Scenario: Provisioning network: Edit settings does not draw on the server role, whose config engine over a proxied agent is not there
     Given the host answers the hosts fixture
     And the host answers the hosts-recipes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "provisioning-network" section
-    And the manage page notes "network-not-ready"
-    And the manage page offers no "network-settings"
+    When I open "/hosts/3/provisioning/network"
+    Then the section page "provisioning-network" draws
+    And the section page notes "network-not-ready"
+    And the section page offers no "network-settings"

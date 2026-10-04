@@ -4,7 +4,6 @@ import { now, ok, refusal } from './kit.js';
 import { openSocket } from './socket.js';
 import { emit } from './stream.js';
 
-const STEP_MS = 900;
 const TASK_LIMIT = 50;
 const ACTIVE = ['pending', 'running'];
 const ENDED = ['completed', 'completed_with_errors', 'failed', 'cancelled'];
@@ -21,6 +20,17 @@ const SETTLED = {
 };
 const steps = { begin: null, finish: null };
 const effects = new Map();
+const endListeners = new Set();
+
+/**
+ * Adds a listener called with the host and the task each time a task ends.
+ *
+ * @param {Function} listener - Called with the host and the task
+ * @returns {void}
+ */
+export const onTaskEnd = listener => {
+  endListeners.add(listener);
+};
 
 export const stoppedWord = host => STOPPED[host.kind];
 
@@ -120,11 +130,6 @@ const release = (host, task) => {
 };
 
 const finish = (host, task, status) => {
-  const run = host.runs.get(task.id);
-  if (run) {
-    clearInterval(run.timer);
-    host.runs.delete(task.id);
-  }
   task.status = status;
   task.completed_at = now();
   announceTask(host, task);
@@ -135,6 +140,7 @@ const finish = (host, task, status) => {
   host.streams.delete(task.id);
   release(host, task);
   refreshParent(host, task);
+  endListeners.forEach(listener => listener(host, task));
 };
 
 const settle = (host, task) => {
@@ -159,24 +165,20 @@ const settle = (host, task) => {
 
 const begin = (host, task, from = 0) => {
   const lines = linesFor(task.operation);
-  const run = { index: from, timer: null };
-  const step = () => {
-    pushOutput(host, task, lines[run.index]);
-    run.index += 1;
-    task.progress_percent = Math.round((run.index / lines.length) * 100);
-    task.progress_info = movedInfo(task);
-    if (run.index < lines.length) {
-      announceTask(host, task);
-      return;
-    }
-    finish(host, task, 'completed');
-    settle(host, task);
-  };
   task.status = 'running';
   task.started_at ||= now();
   announceTask(host, task);
-  run.timer = setInterval(step, STEP_MS);
-  host.runs.set(task.id, run);
+  lines.slice(from).forEach((line, offset) => {
+    const written = from + offset + 1;
+    pushOutput(host, task, line);
+    task.progress_percent = Math.round((written / lines.length) * 100);
+    task.progress_info = movedInfo(task);
+    if (written < lines.length) {
+      announceTask(host, task);
+    }
+  });
+  finish(host, task, 'completed');
+  settle(host, task);
 };
 
 steps.begin = begin;
@@ -185,7 +187,7 @@ steps.finish = finish;
 const isParent = (host, task) => host.tasks.some(row => row.parent_task_id === task.id);
 
 const resume = (host, task) => {
-  if (task.status !== 'running' || host.runs.has(task.id) || isParent(host, task)) {
+  if (task.status !== 'running' || isParent(host, task)) {
     return;
   }
   const lines = linesFor(task.operation);
@@ -198,9 +200,10 @@ const resume = (host, task) => {
 
 /**
  * Queue one task on a host as the agents do: the row is created pending,
- * announced on the `tasks` topic, and begins at once unless it waits for
- * the task `after` names, which releases it when it completes and cancels
- * it when it does not.
+ * announced on the `tasks` topic, and runs to its end at once, one output
+ * line and one `task-updated` a step, unless it waits for the task `after`
+ * names, which releases it when it completes and cancels it when it does
+ * not, at once when that task has already ended.
  *
  * @param {Object} options - `host`, `by`, `operation`, `target`, and optionally `metadata`, `after` and `priority`
  * @returns {Object} The task row
@@ -220,8 +223,11 @@ export const queue = ({ host, by, operation, target, metadata, after, priority }
   });
   host.tasks = [task, ...host.tasks];
   announceTask(host, task);
+  const held = after ? host.tasks.find(row => row.id === after) : null;
   if (!after) {
     begin(host, task);
+  } else if (held && ENDED.includes(held.status)) {
+    release(host, held);
   }
   return task;
 };
@@ -310,7 +316,7 @@ export const cancelledTask = ctx => {
  * The `/tasks/{id}/stream` socket: the output the task already wrote, then
  * every new line as an `output` frame and a `status` frame at the end; a
  * task that already ended gets the replay and the status at once, and a
- * seeded running task starts moving when its first stream opens.
+ * seeded running task runs to its end when its first stream opens.
  *
  * @param {Object} options - `req`, `socket`, `host` and `task`
  * @returns {void}

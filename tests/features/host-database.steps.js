@@ -4,9 +4,8 @@ import { expect, test } from './support/fixtures.js';
 
 const { Then } = createBdd(test);
 
-const frameOf = page => page.locator('[data-page="manage"]');
+const frameOf = page => page.locator('[data-page="host-section"][data-section="database"]');
 
-Then('the manage page draws no {string} panel', async ({ page }, name) => {
-  await expect(frameOf(page)).toBeVisible();
-  await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveCount(0);
+Then('the database page draws its totals', async ({ page }) => {
+  await expect(frameOf(page).locator('[data-note="database-totals"]')).toBeVisible();
 });

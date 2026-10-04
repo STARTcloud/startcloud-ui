@@ -21,7 +21,7 @@ export const configNamesOf = server =>
  * @returns {string} The route
  */
 export const configPath = (id, name) =>
-  `/hosts/${encodeURIComponent(id)}/settings/${encodeURIComponent(name)}`;
+  `/hosts/${encodeURIComponent(id)}/agent/config/${encodeURIComponent(name)}`;
 
 const titleOf = (config, name) =>
   config.schema(name).then(
@@ -35,7 +35,7 @@ const titleOf = (config, name) =>
  * labelled by the file's schema root `title` once
  * `GET config/<name>/schema` answers through the host's adapter and by
  * the name until then, each a deep link to
- * `/hosts/{id}/settings/<name>`; none for a row without the list.
+ * `/hosts/{id}/agent/config/<name>`; none for a row without the list.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} server - The registry row

@@ -15,6 +15,8 @@ const modalOf = page => page.locator('.notifications-modal');
 
 const recordOf = page => page.locator('.tab-content');
 
+const storedOf = (page, key) => page.evaluate(name => window.localStorage.getItem(name), key);
+
 Given('the browser may show notifications', async ({ page }) => {
   await page.context().grantPermissions(['notifications']);
 });
@@ -38,6 +40,13 @@ Then(
 
 Then("the account menu's profile row opens {string}", async ({ page }, href) => {
   await expect(cardOf(page)).toHaveAttribute('href', href);
+});
+
+Then("the account menu's Preferences row opens {string}", async ({ page }, href) => {
+  await expect(menuOf(page).locator('a.dropdown-item', { hasText: 'Preferences' })).toHaveAttribute(
+    'href',
+    href
+  );
 });
 
 Then('the account menu offers the favorite {string} at {string}', async ({ page }, label, home) => {
@@ -68,6 +77,10 @@ Then('the push switch stays off with its feedback', async ({ page }) => {
 
 When('I pick {string} in the profile select {string}', async ({ page }, value, id) => {
   await recordOf(page).locator(`[id="${id}"]`).selectOption(value);
+});
+
+Then('the browser kept {string} as {string}', async ({ page }, key, value) => {
+  await expect.poll(() => storedOf(page, key)).toBe(value);
 });
 
 Then('the profile page draws the editable preferences', async ({ page }) => {

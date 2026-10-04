@@ -7,6 +7,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../../components/common/PageHeader';
 import { useStatus } from '../../../../contexts/StatusContext';
+import { useDetailSearch } from '../../../../hooks/useDetailSearch';
 import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
@@ -25,7 +26,11 @@ import DashboardHealthModal from './DashboardHealthModal';
 import DashboardQuickActions from './DashboardQuickActions';
 import DashboardServerCards from './DashboardServerCards';
 import DashboardSummaryCards from './DashboardSummaryCards';
-import { calculateInfrastructureSummary, serverResultOf } from './dashboardUtils';
+import {
+  calculateInfrastructureSummary,
+  getServerHealthStatus,
+  serverResultOf,
+} from './dashboardUtils';
 import DashboardWidget from './DashboardWidget';
 import useDashboardLayout from './useDashboardLayout';
 
@@ -34,6 +39,24 @@ const SERVER_SETTINGS = '/admin/config';
 const ADD_HOST = '/?add=host';
 
 const NO_GRAPHS = {};
+
+const NO_COLUMNS = [];
+
+const hostMatches = (result, needle) =>
+  [result.server.entity_name || '', result.data?.hostname || '', result.server.hostname || ''].some(
+    text => text.toLowerCase().includes(needle)
+  );
+
+const HOST_GROUPS = [
+  {
+    key: 'health',
+    labelKey: 'dashboard.serverCards.health',
+    values: result => [getServerHealthStatus(result)],
+    order: ['healthy', 'warning', 'offline'],
+    activeClass: 'bg-success',
+    labelFor: (value, t) => t(`dashboard.serverCards.healthOf.${value}`),
+  },
+];
 
 /**
  * One host's feed of the dashboard: draws nothing and hands the page the
@@ -140,6 +163,10 @@ const useHeld = () => {
  * manages, the widget menu and Refresh; then the widgets in the saved
  * order, each folding and hiding, the summary tiles, the quick actions,
  * one card a host and, on the server role alone, the network topology.
+ * The navbar search is bound over the hosts' names, the Health `toggle`
+ * group narrowing the host cards client-side under
+ * `<prefix>_dashboard_hosts` through `useDetailSearch`, the summary
+ * tiles and the quick actions over every host still.
  * Every host's stats and health are the copies the hosts feature's
  * context holds, read once as the page draws, again when the stream
  * opens fresh or answers `reset`, renewed by the `hosts` topic between
@@ -149,8 +176,9 @@ const useHeld = () => {
  * the create wizard of the first host that offers it, Manage machines
  * the machines of the first host that lists them, Add host the hosts
  * page with the registry panel's form open and Settings the agent's
- * settings on an agent role and the server's own configuration at
- * `/admin/config` on the server role. The `create=machine`
+ * API keys page, the first page of its Agent group, on an agent role
+ * and the server's own configuration at `/admin/config` on the server
+ * role. The `create=machine`
  * query, the Deploy hand-off landing on `/`, moves to the page of the
  * first host that offers a create, `hostCreates`, the query and its seed
  * kept, the way the hosts page moves it on the server role, and stays on
@@ -183,6 +211,15 @@ const Dashboard = ({ context }) => {
   }
   const updatedAt = stamp.at;
   const summary = useMemo(() => calculateInfrastructureSummary(results), [results]);
+  const search = useDetailSearch({
+    rows: results,
+    matches: hostMatches,
+    placeholderKey: 'dashboard.search',
+    columns: NO_COLUMNS,
+    ctx: { t },
+    prefsKey: `${context.prefsPrefix}_dashboard_hosts`,
+    filterGroups: HOST_GROUPS,
+  });
   const plural = t(nounKeyOf(servers, true));
   const machines = servers.some(server => hostHasFeature(server, 'machines'));
   const firstMachines = servers.find(server => hostHasFeature(server, 'machines'));
@@ -204,7 +241,7 @@ const Dashboard = ({ context }) => {
   const widgetAvailable = id => (id === 'topology' ? serverRole && servers.length > 0 : true);
 
   const openSettings = () =>
-    navigate(serverRole ? SERVER_SETTINGS : `/hosts/${servers[0].id}/settings`);
+    navigate(serverRole ? SERVER_SETTINGS : `/hosts/${servers[0].id}/agent/api-keys`);
 
   if (!loaded) {
     return (
@@ -289,7 +326,7 @@ const Dashboard = ({ context }) => {
     if (id === 'serverCards') {
       return (
         <DashboardServerCards
-          results={results}
+          results={search.rows}
           graphs={graphs || NO_GRAPHS}
           onNavigateToServer={server => navigate(`/hosts/${server.id}`)}
         />

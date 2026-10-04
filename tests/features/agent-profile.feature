@@ -12,6 +12,7 @@ Feature: agent-profile
     When I open the account menu
     Then the account menu draws the person "Mark" with the email "person@example.com"
     And the account menu's profile row opens "https://auth.example.com/user/profile"
+    And the account menu's Preferences row opens "/profile/preferences"
     And the account menu offers the favorite "Conductor" at "https://conductor.example.com"
     And the account menu offers the favorite "Boxes" at "https://boxvault.example.com"
     And the account menu's Notifications row carries the count 2
@@ -32,7 +33,8 @@ Feature: agent-profile
     When I open "/profile/preferences"
     Then the profile page draws the editable preferences
     When I pick "dark" in the profile select "profile-preferences-mode"
-    Then the host was sent PATCH to "/api/user/preferences" carrying "dark" at "/mode"
+    Then the browser kept "mode" as "dark"
+    And the host was not sent PATCH to "/api/user/preferences"
 
   Scenario: Agent profile: the full inbox page opens on a key whose agent lists inbox beside notifications and draws the relayed rows
     Given the host answers the agent-profile fixture
@@ -64,6 +66,7 @@ Feature: agent-profile
     When I open the account menu
     Then the account menu draws the person "Mark" with the email "person@example.com"
     And the account menu's profile row opens "/profile"
+    And the account menu's Preferences row opens "/profile/preferences"
     And the account menu offers no Notifications row
     And the host was not sent GET to "/api/user/favorites"
     And the host was not sent GET to "/api/notifications/unread-count"
@@ -73,7 +76,7 @@ Feature: agent-profile
     And the profile page draws no Manage link
     And I see "person@example.com"
 
-  Scenario: Agent profile: a plain key's Preferences card is editable and a mode picked is written at once through PATCH /api/user/preferences
+  Scenario: Agent profile: a plain key's Preferences card is editable, a mode picked lands in the browser's own key and nothing is sent, and the SHI theme picked writes ui.shi_mode through PUT /api/config/app, false again when another theme is picked
     Given the host answers the agent-signins fixture
     And the host answers the agent-profile-plain fixture
     And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
@@ -83,8 +86,15 @@ Feature: agent-profile
     And the chrome draws the sidebar row "Preferences"
     And the profile page draws the editable preferences
     When I pick "dark" in the profile select "profile-preferences-mode"
-    Then the host was sent PATCH to "/api/user/preferences" carrying "dark" at "/mode"
-    And the host was sent PATCH to "/api/user/preferences" 1 times
+    Then the browser kept "mode" as "dark"
+    And the host was not sent PATCH to "/api/user/preferences"
+    When I pick "shi" in the profile select "profile-preferences-theme"
+    Then the browser kept "theme" as "shi"
+    And the host was sent PUT to "/api/config/app" carrying "true" at "/ui/shi_mode"
+    When I pick "" in the profile select "profile-preferences-theme"
+    Then the host was sent PUT to "/api/config/app" carrying "false" at "/ui/shi_mode"
+    And the host was sent PUT to "/api/config/app" 2 times
+    And the host was not sent PATCH to "/api/user/preferences"
 
   Scenario: Agent profile: a key whose GET /api/user answers 404 keeps the key's profile as the whole identity
     Given the host answers the agent-signins fixture

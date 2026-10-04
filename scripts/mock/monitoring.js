@@ -1,4 +1,4 @@
-import { featuresOf, hosts } from './fleet.js';
+import { featuresOf } from './fleet.js';
 import { AGENT_MODE, ok, problem, secondsUp } from './kit.js';
 import { linkRows } from './machine-metrics.js';
 import { emit } from './stream.js';
@@ -304,10 +304,33 @@ const historyOf = ({ host, member, entity, since, limit }) => {
     : { rows: agentHistory({ rows, limit }), strategy: 'stored', applied: false };
 };
 
+const SAMPLE_EVENTS = {
+  cpu: 'cpu-sample',
+  memory: 'memory-sample',
+  usage: 'network-sample',
+  poolio: 'pool-io-sample',
+  arc: 'arc-sample',
+  diskio: 'disk-io-sample',
+};
+
+const sampled = (host, member) => {
+  if (silent(host)) {
+    return;
+  }
+  const rows = sampleOf(host, Date.now())[member];
+  if (rows.length === 0) {
+    return;
+  }
+  const state = stateOf(host);
+  states.set(host.id, { ...state, [member]: kept([...state[member], ...rows], rows.length) });
+  emit({ host, topic: 'monitoring', event: SAMPLE_EVENTS[member], data: { [member]: rows } });
+};
+
 const series =
   (member, entity = '') =>
   ctx => {
     const { host, url } = ctx;
+    sampled(host, member);
     const since = Date.parse(url.searchParams.get('since') || '') || 0;
     const limit = Number(url.searchParams.get('limit')) || 100;
     const held = historyOf({ host, member, entity, since, limit });
@@ -573,49 +596,6 @@ const service = ctx => ok(serviceOf(ctx.host));
 const behind = (tokens, handler) => ctx =>
   tokens.every(token => offers(ctx.host, token)) ? handler(ctx) : problem(404, 'Not Found');
 
-const pushed = (host, sample) => {
-  const events = [
-    ['cpu-sample', { cpu: sample.cpu }],
-    ['memory-sample', { memory: sample.memory }],
-    ['network-sample', { usage: sample.usage }],
-    ['pool-io-sample', { poolio: sample.poolio }],
-    ['arc-sample', { arc: sample.arc }],
-    ['disk-io-sample', { diskio: sample.diskio }],
-  ];
-  events
-    .filter(([, data]) => Object.values(data)[0].length > 0)
-    .forEach(([event, data]) => emit({ host, topic: 'monitoring', event, data }));
-};
-
-const collect = () => {
-  const at = Date.now();
-  hosts.forEach(host => {
-    if (!host.online || !offers(host, 'monitoring') || silent(host)) {
-      return;
-    }
-    const sample = sampleOf(host, at);
-    states.set(host.id, added(stateOf(host), sample));
-    pushed(host, sample);
-  });
-};
-
-/**
- * The collector of the mock: every five seconds each host that lists
- * `monitoring` takes one sample of its CPU, its memory, its interfaces
- * and, where it lists `zfs`, its pools, its disks and its ARC, keeps it
- * in its history, an hour of it, and sends it on the `monitoring` topic
- * as `cpu-sample`, `memory-sample`, `network-sample`, `pool-io-sample`,
- * `arc-sample` and `disk-io-sample`, each carrying the rows of the one collection under the
- * member the REST route answers them in. Lab, on the server role, keeps
- * no history and sends nothing, as an agent in realtime mode without the
- * events does.
- *
- * @returns {void}
- */
-export const startSampling = () => {
-  setInterval(collect, SAMPLE_MS).unref();
-};
-
 /**
  * What the host page's Overview and its charts read, each route answered
  * as the agent of the host's kind answers it and 404 on a host that does
@@ -624,7 +604,11 @@ export const startSampling = () => {
  * and the CPU, memory and network series behind `monitoring`; the pools,
  * the datasets, the pool I/O and the ARC behind `monitoring` and `zfs`;
  * the task queue's counts behind `tasks`, the swap summary behind `swap`
- * and the provisioning tools behind `provisioning`. A series read with
+ * and the provisioning tools behind `provisioning`. Every series read of
+ * a host that keeps history first takes one sample of its member, keeps
+ * it and sends it on the `monitoring` topic as `cpu-sample`,
+ * `memory-sample`, `network-sample`, `pool-io-sample`, `arc-sample` or
+ * `disk-io-sample`. A series read with
  * `since` answers the history from that instant, thinned to `limit`
  * samples an entity and oldest first on the zoneweaver kind, the newest
  * `limit` rows newest first on the hyperweaver kind, and the one sample

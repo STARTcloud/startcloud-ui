@@ -4,7 +4,7 @@ import { expect, test } from './support/fixtures.js';
 
 const { When, Then } = createBdd(test);
 
-const frameOf = page => page.locator('[data-page="devices"]');
+const frameOf = page => page.locator('[data-page="host-section"][data-section="devices"]');
 
 const inventoryOf = page => frameOf(page).locator('[data-panel="devices-inventory"]');
 
@@ -50,7 +50,7 @@ Then('the devices page draws the not-available stub', async ({ page }) => {
 });
 
 Then('the devices route draws the host that did not answer', async ({ page }) => {
-  const unknown = page.locator('[data-page="devices-unknown"]');
+  const unknown = page.locator('[data-page="host-section-unknown"]');
   await expect(unknown.locator('.alert-danger')).toBeVisible();
   await expect(page.locator('.card .alert-info')).toHaveCount(0);
   await expect(frameOf(page)).toHaveCount(0);

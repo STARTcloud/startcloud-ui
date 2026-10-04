@@ -12,13 +12,19 @@ import { NavbarSearchProvider } from '../contexts/SearchContext';
 import { useStatus } from '../contexts/StatusContext';
 import { UnreadProvider } from '../contexts/UnreadContext';
 import { hasAbout } from '../features/about';
+import { adminConfig } from '../features/admin';
 import {
   RebuildItem,
   resetCatalogCache,
   setMemberships,
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
-import { ServersProvider, apiReference, filtersByOrganization } from '../features/hosts';
+import {
+  ServersProvider,
+  apiReference,
+  filtersByOrganization,
+  useHostSearchSources,
+} from '../features/hosts';
 import {
   createNotificationsAdapter,
   createPushAdapter,
@@ -55,15 +61,38 @@ import { isGlobalAdmin } from '../utils/permissions';
 
 import AppRoutes, {
   actionMenuFor,
+  controlCommandsFor,
   footerPaneFor,
   routeCrumbParent,
   routeTitleKey,
+  searchKindsFor,
   sidebarEntries,
 } from './router';
 
 const persistMode = mode => session.savePreferences({ mode });
 
+const SHI_THEME = 'shi';
+
 const persistTheme = theme => session.savePreferences({ theme: theme || null });
+
+/**
+ * The theme write-through of the host: the session's preferences write,
+ * and on an `apikey` host, hyperweaver-agent's, `ui.shi_mode` written
+ * through `PUT /api/config/app` beside it, true on a pick of the `shi`
+ * theme and false on any other, so the agent's tray swaps its icon on
+ * that save; a refused write is logged by the client and changes nothing
+ * in the browser.
+ *
+ * @param {boolean} apiKey - Whether the host's first `auth` token is `apikey`
+ * @returns {Function} Called with the theme's name, empty for the host's own
+ */
+const persistThemeOf = apiKey =>
+  apiKey
+    ? theme => {
+        adminConfig.update('app', { ui: { shi_mode: theme === SHI_THEME } }).catch(() => null);
+        return persistTheme(theme);
+      }
+    : persistTheme;
 
 const persistMotion = value => session.savePreferences({ motion: value === 'auto' ? null : value });
 
@@ -76,12 +105,8 @@ const createRuntimeAdapters = status => ({
 
 /**
  * The notifications adapter the shell's bell and the inbox route share,
- * null when the host lists no `notifications`, when the session carries
- * no notifications scope, or when the account is guest-only, the shared
- * download login, which keeps nothing of its own and so has no inbox; on
- * an `apikey` host the token alone is the scope, because the agent lists
- * it only while it holds a live token for its bound account and relays
- * the inbox under that token.
+ * null without `notifications`, without a notifications scope, or for a
+ * guest-only account.
  */
 const notificationsFor = ({ status, cookie, claims, user, memberships, notifications }) => {
   const scoped =
@@ -99,23 +124,13 @@ const ownApiRows = status =>
   status.links?.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
 
 /**
- * The API reference rows of the user menu's app section: the rows the
- * hosts feature answers on the `hyperweaver-server` role, Server API and
- * on a host's route Agent API, else the one row of `links.api`, none
- * while the host answers no `links.api`.
+ * The API reference rows of the user menu's app section: the hosts
+ * feature's, else the one row of `links.api`.
  */
 const apiRowsFor = (status, pathname) => apiReference(status, pathname) || ownApiRows(status);
 
 /**
- * The shell's flags from the status and the session. On a host that
- * narrows by organization, `orgFilter`, the switcher draws the session's
- * own memberships under All organizations and reads no list when it
- * opens, because the profile of such a host answers every member the
- * switcher draws and the host has no route that lists them again; on
- * every other `backend` host the switcher reads the memberships as it
- * opens. The Organization console row draws for a manager of the active
- * organization, the membership found by its uuid and judged by its
- * name.
+ * The shell's flags from the status and the session.
  */
 const shellFlags = ({
   status,
@@ -141,36 +156,27 @@ const shellFlags = ({
 });
 
 /**
- * The app behind the status: the session from the host's first `auth`
- * token, the mode, the theme over the themes the host offers, painted by
- * the shared theme store and chosen on the profile's Preferences page
- * alone, the motion switch written through to the account as the mode
- * is and read by the Preferences tab from its own store, and the
- * favicon, the setup gate while the host advertises
- * `setup`, the identity avatar (Gravatar for a backend session, the
- * profile's picture for a cookie one, the provider's picture for an
- * identity-provider one), the event stream a session keeps, its
- * terminate and profile events, the favorites read while the host lists
- * `favorites`, never asked of a host that lists no such route, the read
- * the session deferred while it was adopted on an auth path run the
- * first time the route leaves those paths, the ticket link, the
- * notification adapters (the inbox one handed to the shell's bell and to
- * the inbox route alike, its unread count in the notifications feature's
- * one context around them both, neither drawn for a guest-only
- * account), the hosts feature's one list of servers in its context
- * around the shell, dropped and asked for again when a person signs in
- * or out, handed the active organization on a host that narrows by
- * organization (`filtersByOrganization`, the `hyperweaver-server` role
- * that lists `hosts`), where the session takes All organizations as a
- * choice and the hosts and machines every surface draws are the ones
- * under the choice, the sidebar entries the mounted
- * features export, the action menu the first mounted feature exports for
- * the header's account slot while one does, the views hook the first
- * mounted feature exports for the footer's pane while one does, the
- * crumb context a page names its own crumb through, and the shell around
- * the routes. A sign-out from the user menu forgets the session and moves
- * home in one transition, so the page signed out of never draws itself
- * for a visitor and sends nobody to the sign-in page on the way home.
+ * The navbar search's provider inside the hosts feature's context, so the
+ * hosts' search sources read the rows it holds.
+ */
+const SearchProvider = ({ collections, sidebar, kinds, children }) => {
+  const status = useStatus();
+  const hostSources = useHostSearchSources();
+  const appSearch = useAppSearch({ status, collections, sidebar, kinds, hostSources });
+  return <NavbarSearchProvider appSearch={appSearch}>{children}</NavbarSearchProvider>;
+};
+
+SearchProvider.propTypes = {
+  collections: PropTypes.array.isRequired,
+  sidebar: PropTypes.array.isRequired,
+  kinds: PropTypes.object.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+/**
+ * The app behind the status: the session, the theme, the providers of the
+ * unread count, the hosts feature, the navbar search and the crumbs, the
+ * mounted feature's command list, and the shell around the routes.
  */
 const App = ({ getSupportedLanguages }) => {
   const { t, i18n } = useTranslation();
@@ -182,6 +188,7 @@ const App = ({ getSupportedLanguages }) => {
   const orgFilter = filtersByOrganization(status);
   const [collections] = useState(() => collectionsFor(status));
   const [{ notifications, push, pushAdapter }] = useState(() => createRuntimeAdapters(status));
+  const [onPersistTheme] = useState(() => persistThemeOf(authMethod(status) === 'apikey'));
   const account = useSession({
     provider: session,
     events,
@@ -208,7 +215,7 @@ const App = ({ getSupportedLanguages }) => {
     hostTheme: status.brand.theme || null,
     themes: offeredThemes(status.brand),
     onPersistMode: persistMode,
-    onPersistTheme: persistTheme,
+    onPersistTheme,
   });
   const { setMotion } = useMotion({ onPersist: persistMotion });
   const setupComplete = useSetupGate({
@@ -223,7 +230,6 @@ const App = ({ getSupportedLanguages }) => {
   });
   const avatarUrl = useAccountAvatar({ backend, cookie, user, claims });
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
-  const appSearch = useAppSearch(collections, isGlobalAdmin(user));
 
   useFavicon(brandMarkUrl(status.brand, theme, themes), brandLogoUrl(status.brand));
   usePwa(status.brand.name);
@@ -248,7 +254,17 @@ const App = ({ getSupportedLanguages }) => {
       }),
     [status, user, oidc, issuerUrl, memberships, collections]
   );
+  const kinds = useMemo(
+    () =>
+      searchKindsFor({
+        status,
+        account: { user, oidc, issuerUrl, organizations: memberships },
+        collections,
+      }),
+    [status, user, oidc, issuerUrl, memberships, collections]
+  );
   const actionMenu = actionMenuFor({ status, account: { user } });
+  const controlCommands = controlCommandsFor({ status, account: { user } });
   const footerPane = footerPaneFor({ status, account: { user } });
 
   if (setupComplete === null) {
@@ -291,8 +307,9 @@ const App = ({ getSupportedLanguages }) => {
   return (
     <UnreadProvider>
       <ServersProvider signedIn={Boolean(user)} organization={orgFilter ? activeOrgUuid : ''}>
-        <NavbarSearchProvider appSearch={appSearch}>
+        <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
           <CrumbProvider>
+            {controlCommands}
             <AppShell
               account={account}
               avatarUrl={avatarUrl}
@@ -327,7 +344,7 @@ const App = ({ getSupportedLanguages }) => {
               />
             </AppShell>
           </CrumbProvider>
-        </NavbarSearchProvider>
+        </SearchProvider>
       </ServersProvider>
     </UnreadProvider>
   );

@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Dropdown } from 'react-bootstrap';
 import {
   FaArrowsRotate,
   FaBolt,
@@ -27,220 +26,181 @@ import { guestToolsOf } from '../utils/guestTools';
 import { isRunning } from '../utils/hosts';
 import { canDestroyMachines, canRestartMachines, canStartStopMachines } from '../utils/permissions';
 
-import ApplicationRows from './ApplicationRows';
-import ConsoleRows from './ConsoleRows';
+import { useApplicationCommands } from './ApplicationRows';
+import { useConsoleCommands } from './ConsoleRows';
 import DisplayResizeModal from './DisplayResizeModal';
 import GuestExecModal from './GuestExecModal';
-import { ActionRow, PrivilegeLine, ShareLinkRow } from './HostActionOptions';
+import { PRIVILEGE_NOTE, useShareCommand } from './HostActionOptions';
 import MachineDangerDialogs from './MachineDangerDialogs';
-import MachineToolRows from './MachineToolRows';
-import ProvisioningRows from './ProvisioningRows';
-import ZoneRows from './ZoneRows';
+import { useMachineToolCommands } from './MachineToolRows';
+import { useProvisioningCommands } from './ProvisioningRows';
+import { useZoneCommands } from './ZoneRows';
 
-const gatesShape = PropTypes.shape({
-  utm: PropTypes.bool.isRequired,
-  pause: PropTypes.bool.isRequired,
-  suspend: PropTypes.bool.isRequired,
-  resume: PropTypes.bool.isRequired,
-  guest: PropTypes.bool.isRequired,
+const command = (key, group, icon, tone, labelKey, titleKey = '') => ({
+  key,
+  group,
+  icon,
+  tone,
+  labelKey,
+  titleKey,
 });
 
-const RestartRows = ({ utm, busy, onAction }) => (
-  <>
-    <ActionRow
-      icon={FaRotate}
-      tone="text-warning"
-      labelKey="hosts.controls.restart"
-      disabled={busy}
-      onClick={() => onAction('restart')}
-    />
-    {utm ? null : (
-      <ActionRow
-        icon={FaBolt}
-        tone="text-danger"
-        labelKey="hosts.controls.reset"
-        titleKey="hosts.controls.resetTitle"
-        disabled={busy}
-        onClick={() => onAction('reset')}
-      />
-    )}
-    <ActionRow
-      icon={FaBug}
-      tone="text-danger"
-      labelKey="hosts.controls.injectNmi"
-      titleKey="hosts.controls.injectNmiTitle"
-      disabled={busy}
-      onClick={() => onAction('nmi')}
-    />
-  </>
-);
-
-RestartRows.propTypes = {
-  utm: PropTypes.bool.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onAction: PropTypes.func.isRequired,
-};
-
-const PowerRows = ({ role, running, utm, busy, onAction }) => {
+const powerCommands = ({ role, running, gates }) => {
   if (!canStartStopMachines(role)) {
-    return null;
+    return [];
   }
-  return (
-    <>
-      {running ? (
-        <ActionRow
-          icon={FaStop}
-          tone="text-danger"
-          labelKey="hosts.controls.shutdown"
-          disabled={busy}
-          onClick={() => onAction('shutdown')}
-        />
-      ) : (
-        <ActionRow
-          icon={FaPlay}
-          tone="text-success"
-          labelKey="hosts.controls.powerOn"
-          disabled={busy}
-          onClick={() => onAction('start')}
-        />
-      )}
-      {running && canRestartMachines(role) ? (
-        <RestartRows utm={utm} busy={busy} onAction={onAction} />
-      ) : null}
-    </>
-  );
+  const restart =
+    running && canRestartMachines(role)
+      ? [
+          command('restart', 'power', FaRotate, 'text-warning', 'hosts.controls.restart'),
+          ...(gates.utm
+            ? []
+            : [
+                command(
+                  'reset',
+                  'power',
+                  FaBolt,
+                  'text-danger',
+                  'hosts.controls.reset',
+                  'hosts.controls.resetTitle'
+                ),
+              ]),
+          command(
+            'nmi',
+            'power',
+            FaBug,
+            'text-danger',
+            'hosts.controls.injectNmi',
+            'hosts.controls.injectNmiTitle'
+          ),
+        ]
+      : [];
+  return [
+    running
+      ? command('shutdown', 'power', FaStop, 'text-danger', 'hosts.controls.shutdown')
+      : command('start', 'power', FaPlay, 'text-success', 'hosts.controls.powerOn'),
+    ...restart,
+  ];
 };
 
-PowerRows.propTypes = {
-  role: PropTypes.string,
-  running: PropTypes.bool.isRequired,
-  utm: PropTypes.bool.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onAction: PropTypes.func.isRequired,
-};
-
-const HoldRows = ({ role, running, gates, busy, onAction }) => {
+const holdCommands = ({ role, running, gates }) => {
   if (!canStartStopMachines(role)) {
-    return null;
+    return [];
   }
-  return (
-    <>
-      {running && gates.pause ? (
-        <ActionRow
-          icon={FaCirclePause}
-          tone="text-warning"
-          labelKey="hosts.controls.pause"
-          titleKey="hosts.controls.pauseTitle"
-          disabled={busy}
-          onClick={() => onAction('pause')}
-        />
-      ) : null}
-      {running && gates.suspend ? (
-        <ActionRow
-          icon={FaPause}
-          tone="text-warning"
-          labelKey="hosts.controls.suspend"
-          titleKey="hosts.controls.suspendTitle"
-          disabled={busy}
-          onClick={() => onAction('suspend')}
-        />
-      ) : null}
-      {gates.resume ? (
-        <ActionRow
-          icon={FaCirclePlay}
-          tone="text-success"
-          labelKey="hosts.controls.resume"
-          titleKey="hosts.controls.resumeTitle"
-          disabled={busy}
-          onClick={() => onAction('resume')}
-        />
-      ) : null}
-    </>
-  );
+  return [
+    ...(running && gates.pause
+      ? [
+          command(
+            'pause',
+            'power',
+            FaCirclePause,
+            'text-warning',
+            'hosts.controls.pause',
+            'hosts.controls.pauseTitle'
+          ),
+        ]
+      : []),
+    ...(running && gates.suspend
+      ? [
+          command(
+            'suspend',
+            'power',
+            FaPause,
+            'text-warning',
+            'hosts.controls.suspend',
+            'hosts.controls.suspendTitle'
+          ),
+        ]
+      : []),
+    ...(gates.resume
+      ? [
+          command(
+            'resume',
+            'power',
+            FaCirclePlay,
+            'text-success',
+            'hosts.controls.resume',
+            'hosts.controls.resumeTitle'
+          ),
+        ]
+      : []),
+  ];
 };
 
-HoldRows.propTypes = {
-  role: PropTypes.string,
-  running: PropTypes.bool.isRequired,
-  gates: gatesShape.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onAction: PropTypes.func.isRequired,
-};
-
-const GuestRows = ({ role, running, gates, busy, onAction }) => {
+const guestCommands = ({ role, running, gates }) => {
   if (!running || !gates.guest || !canStartStopMachines(role)) {
-    return null;
+    return [];
   }
-  return (
-    <>
-      <ActionRow
-        icon={FaPowerOff}
-        tone="text-danger"
-        labelKey="hosts.controls.guestShutdown"
-        titleKey="hosts.controls.guestShutdownTitle"
-        disabled={busy}
-        onClick={() => onAction('guest-powerdown')}
-      />
-      {gates.utm ? null : (
-        <ActionRow
-          icon={FaArrowsRotate}
-          tone="text-warning"
-          labelKey="hosts.controls.guestReboot"
-          titleKey="hosts.controls.guestRebootTitle"
-          disabled={busy}
-          onClick={() => onAction('guest-reboot')}
-        />
-      )}
-    </>
-  );
+  return [
+    command(
+      'guest-powerdown',
+      'power',
+      FaPowerOff,
+      'text-danger',
+      'hosts.controls.guestShutdown',
+      'hosts.controls.guestShutdownTitle'
+    ),
+    ...(gates.utm
+      ? []
+      : [
+          command(
+            'guest-reboot',
+            'power',
+            FaArrowsRotate,
+            'text-warning',
+            'hosts.controls.guestReboot',
+            'hosts.controls.guestRebootTitle'
+          ),
+        ]),
+  ];
 };
 
-GuestRows.propTypes = {
-  role: PropTypes.string,
-  running: PropTypes.bool.isRequired,
-  gates: gatesShape.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onAction: PropTypes.func.isRequired,
+const guestToolCommands = tools => [
+  ...(tools.exec
+    ? [
+        {
+          ...command(
+            'exec',
+            'power',
+            FaTerminal,
+            'text-info',
+            'hosts.controls.guestExec',
+            'hosts.controls.guestExecTitle'
+          ),
+          action: 'guest-exec',
+        },
+      ]
+    : []),
+  ...(tools.display
+    ? [
+        {
+          ...command(
+            'display',
+            'power',
+            FaDisplay,
+            'text-info',
+            'hosts.controls.displayResize',
+            'hosts.controls.displayResizeTitle'
+          ),
+          action: 'display-resize',
+        },
+      ]
+    : []),
+];
+
+const dangerCommands = ({ role, running }) => {
+  if (!canDestroyMachines(role)) {
+    return [PRIVILEGE_NOTE];
+  }
+  return [
+    ...(running
+      ? [command('kill', 'danger', FaSkull, 'text-danger', 'hosts.controls.forceKill')]
+      : []),
+    command('destroy', 'danger', FaTrash, 'text-danger', 'hosts.controls.destroy'),
+  ];
 };
 
-const GuestToolRows = ({ tools, busy, onTool }) => (
-  <>
-    {tools.exec ? (
-      <ActionRow
-        icon={FaTerminal}
-        tone="text-info"
-        labelKey="hosts.controls.guestExec"
-        titleKey="hosts.controls.guestExecTitle"
-        action="guest-exec"
-        disabled={busy}
-        onClick={() => onTool('exec')}
-      />
-    ) : null}
-    {tools.display ? (
-      <ActionRow
-        icon={FaDisplay}
-        tone="text-info"
-        labelKey="hosts.controls.displayResize"
-        titleKey="hosts.controls.displayResizeTitle"
-        action="display-resize"
-        disabled={busy}
-        onClick={() => onTool('display')}
-      />
-    ) : null}
-  </>
-);
-
-GuestToolRows.propTypes = {
-  tools: PropTypes.shape({
-    exec: PropTypes.bool.isRequired,
-    display: PropTypes.bool.isRequired,
-    flavor: PropTypes.string.isRequired,
-  }).isRequired,
-  busy: PropTypes.bool.isRequired,
-  onTool: PropTypes.func.isRequired,
-};
-
-const GuestToolDialogs = ({ status, id, name, running, tool, gates, tools, onClose }) => {
+const GuestToolDialogs = ({ status, id, name, running, tool, utm, flavor, onClose }) => {
   if (tool === 'exec') {
     return (
       <GuestExecModal
@@ -248,8 +208,8 @@ const GuestToolDialogs = ({ status, id, name, running, tool, gates, tools, onClo
         hostId={id}
         name={name}
         running={running}
-        flavor={tools.flavor}
-        utm={gates.utm}
+        flavor={flavor}
+        utm={utm}
         onClose={onClose}
       />
     );
@@ -274,77 +234,34 @@ GuestToolDialogs.propTypes = {
   name: PropTypes.string.isRequired,
   running: PropTypes.bool.isRequired,
   tool: PropTypes.string.isRequired,
-  gates: gatesShape.isRequired,
-  tools: PropTypes.object.isRequired,
+  utm: PropTypes.bool.isRequired,
+  flavor: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 
-const DangerRows = ({ role, running, busy, onDanger }) => {
-  if (!canDestroyMachines(role)) {
-    return <PrivilegeLine />;
-  }
-  return (
-    <>
-      {running ? (
-        <ActionRow
-          icon={FaSkull}
-          tone="text-danger"
-          labelKey="hosts.controls.forceKill"
-          disabled={busy}
-          onClick={() => onDanger('kill')}
-        />
-      ) : null}
-      <ActionRow
-        icon={FaTrash}
-        tone="text-danger"
-        labelKey="hosts.controls.destroy"
-        disabled={busy}
-        onClick={() => onDanger('destroy')}
-      />
-    </>
-  );
-};
-
-DangerRows.propTypes = {
-  role: PropTypes.string,
-  running: PropTypes.bool.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onDanger: PropTypes.func.isRequired,
-};
+const withRun = (commands, busy, runOf) =>
+  commands.map(entry => (entry.note ? entry : { ...entry, disabled: busy, run: runOf(entry.key) }));
 
 /**
- * The machine rows of the Controls menu on `/hosts/{id}/machines/{name}`,
- * each one request through `useHostActions` and one notice: Share link,
- * hyperweaver-ui's first row, first; Power on
- * while the machine is stopped; Shutdown, Restart, Reset and Inject NMI
- * while it runs; Pause on a VirtualBox host and Suspend on a host that
- * lists `machine-suspend` while it runs, Resume while its own row reads
- * paused on such a host or reads suspended on a host that lists
- * `machine-resume-suspended`; Guest shutdown and Guest reboot while it runs and
- * its guest can be reached from outside; a machine on UTM draws no Reset,
- * no Pause and no Guest reboot; Run in guest and Set display size by
- * `guestToolsOf`, each opening its dialog, the command sent through the
- * guest agent on a host that lists `guest-agent` and through the Guest
- * Additions on a VirtualBox host otherwise, the display size on a
- * VirtualBox host alone and never of a machine on UTM; the console rows
- * of `ConsoleRows`, one a console the host's row lists, each opening it
- * on the machine's page; then the Open in application rows of a
- * host that lists `host-launchers`, the tool rows of `MachineToolRows`,
- * Snapshot, Clone, Convert to template and the move of a VirtualBox
- * machine's files, each behind its own gate, the zone lifecycle rows of
- * a bhyve host, the provisioning rows of `ProvisioningRows`, Provision,
- * Sync files, Sync back and Run provisioners, each opening the
- * Provisioning page with its action, and, for a role that may destroy,
- * Force kill while it runs and
- * Destroy, both behind the dialogs of `MachineDangerDialogs`. The host's
- * tokens and hypervisors come from its registry row, `server`, the
- * running state from the host's stats and the machine's hypervisor and
- * state from the host's machine rows, both read again once after every
- * success, and the machine's detail with them while the machine page
- * holds it, so the page's state row follows the action. A role short of
- * destroying reads the privilege line instead.
+ * The commands of the Controls menu on `/hosts/{id}/machines/{name}`:
+ * Share link; Power on, Shutdown, Restart, Reset and Inject NMI, Pause,
+ * Suspend and Resume, Guest shutdown and Guest reboot, Run in guest and
+ * Set display size, each by the machine's state and the host's gates; the
+ * console, application, tool, zone and provisioning commands; Force kill
+ * and Destroy for a role that may destroy, the privilege line otherwise.
+ * An action is one request through `useHostActions`, the host's stats,
+ * machine rows and the machine's detail read again after a success.
+ *
+ * @param {Object} options
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {string} options.name - The machine's name
+ * @param {Object|null} options.server - The host's registry row
+ * @param {Object|null} options.user - The signed-in person
+ * @param {boolean} options.wanted - Whether the menu or the search box is open, the reads of the application and provisioning commands waiting for it
+ * @returns {{ commands: Array<Object>, dialogs: import('react').ReactNode }} The commands and their dialogs
  */
-const MachineRows = ({ status, id, name, server = null, user = null }) => {
+export const useMachineCommands = ({ status, id, name, server, user, wanted }) => {
   const role = user?.role;
   const { stats, refresh: refreshStats } = useHostStats(id);
   const { machine, refresh: refreshMachines } = useMachineRow(id, name);
@@ -360,44 +277,39 @@ const MachineRows = ({ status, id, name, server = null, user = null }) => {
   const running = isRunning(stats, name);
   const gates = gatesOf({ server, machine });
   const guestTools = guestToolsOf({ server, machine, role, running });
+  const share = useShareCommand();
+  const consoles = useConsoleCommands({ id, name, server, busy });
+  const applications = useApplicationCommands({
+    id,
+    busy,
+    wanted,
+    onLaunch: application => run('launch', { application }),
+  });
+  const tools = useMachineToolCommands({ status, id, name, server, machine, user, busy });
+  const zones = useZoneCommands({ status, id, name, server, user, busy, onAction: run });
+  const provisioning = useProvisioningCommands({ id, name, server, user, busy, wanted });
+  const state = { role, running, gates };
 
-  return (
+  const commands = [
+    share,
+    ...withRun(
+      [...powerCommands(state), ...holdCommands(state), ...guestCommands(state)],
+      busy,
+      key => () => run(key)
+    ),
+    ...withRun(guestToolCommands(guestTools), busy, key => () => setTool(key)),
+    ...consoles,
+    ...applications,
+    ...tools.commands,
+    ...zones.commands,
+    ...provisioning,
+    ...withRun(dangerCommands(state), busy, key => () => setDanger(key)),
+  ];
+
+  const dialogs = (
     <>
-      <ShareLinkRow />
-      <Dropdown.Divider />
-      <PowerRows role={role} running={running} utm={gates.utm} busy={busy} onAction={run} />
-      <HoldRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
-      <GuestRows role={role} running={running} gates={gates} busy={busy} onAction={run} />
-      <GuestToolRows tools={guestTools} busy={busy} onTool={setTool} />
-      <ConsoleRows id={id} name={name} server={server} busy={busy} />
-      <ApplicationRows
-        status={status}
-        id={id}
-        server={server}
-        busy={busy}
-        onLaunch={application => run('launch', { application })}
-      />
-      <MachineToolRows
-        status={status}
-        id={id}
-        name={name}
-        server={server}
-        machine={machine}
-        user={user}
-        busy={busy}
-      />
-      <ZoneRows
-        status={status}
-        id={id}
-        name={name}
-        server={server}
-        user={user}
-        busy={busy}
-        onAction={run}
-      />
-      <ProvisioningRows id={id} name={name} server={server} user={user} busy={busy} />
-      <Dropdown.Divider />
-      <DangerRows role={role} running={running} busy={busy} onDanger={setDanger} />
+      {tools.dialogs}
+      {zones.dialogs}
       <MachineDangerDialogs action={danger} name={name} onClose={() => setDanger('')} onRun={run} />
       <GuestToolDialogs
         status={status}
@@ -405,20 +317,12 @@ const MachineRows = ({ status, id, name, server = null, user = null }) => {
         name={name}
         running={running}
         tool={tool}
-        gates={gates}
-        tools={guestTools}
+        utm={gates.utm}
+        flavor={guestTools.flavor}
         onClose={() => setTool('')}
       />
     </>
   );
-};
 
-MachineRows.propTypes = {
-  status: PropTypes.object.isRequired,
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  server: PropTypes.object,
-  user: PropTypes.object,
+  return { commands, dialogs };
 };
-
-export default MachineRows;

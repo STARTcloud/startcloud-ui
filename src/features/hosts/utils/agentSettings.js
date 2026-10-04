@@ -1,30 +1,15 @@
 const listOf = value => (Array.isArray(value) ? value : []);
 
 /**
- * Whether a host's own row offers the Agent settings page: hyperweaver-ui
- * drew its door behind no token, so the page is gated by the hypervisor
- * instead, offered to a row that names any hypervisor, because every
- * agent that serves a hypervisor serves its own API keys and update
- * check.
+ * Whether a host's own row offers the agent's own pages, API keys,
+ * Database and Update: offered to a row that names any hypervisor,
+ * because every agent that serves a hypervisor serves its own API keys
+ * and update check.
  *
  * @param {Object|null} server - The registry row, or the one serving agent's
  * @returns {boolean} True when the page is offered
  */
 export const hostHasSettings = server => listOf(server?.capabilities?.hypervisors).length > 0;
-
-/**
- * The update the check offers, hyperweaver-ui's gate: the current and
- * the latest version while the answer says `update_available`, null
- * otherwise, so an agent that is current or without the surface draws
- * no button.
- *
- * @param {Object|null} answer - The answer of `GET app/updates/check`
- * @returns {{ current: string, latest: string }|null} The update
- */
-export const updateOf = answer =>
-  answer?.update_available
-    ? { current: String(answer.current_version ?? ''), latest: String(answer.latest_version ?? '') }
-    : null;
 
 /**
  * The API key rows of the agent's answer, `entities`.
@@ -35,7 +20,7 @@ export const updateOf = answer =>
 export const apiKeysOf = answer => listOf(answer?.entities);
 
 /**
- * The six secret categories, hyperweaver-ui's wire shapes: the key of
+ * The six secret categories as the agent's document names them: the key of
  * each, the key of its label and its fields, a `checkbox` field a
  * switch and a `multiline` field a textarea.
  */
@@ -125,8 +110,7 @@ export const emptySecretEntry = category =>
 export const secretEntriesOf = (document, categoryKey) => listOf(document?.[categoryKey]);
 
 /**
- * The entries a category is saved with, hyperweaver-ui's rule: the ones
- * that carry a name.
+ * The entries a category is saved with: the ones that carry a name.
  *
  * @param {Array<Object>} entries - The edited entries
  * @returns {Array<Object>} The entries to send

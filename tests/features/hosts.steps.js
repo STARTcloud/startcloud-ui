@@ -260,11 +260,17 @@ Then(
 );
 
 When('I pick the chart window {string}', async ({ page }, value) => {
-  await panelOf(page, 'performance').locator('select[name="window"]').selectOption(value);
+  await page
+    .locator('.host-frame-body .section-heading select[name="window"]')
+    .first()
+    .selectOption(value);
 });
 
 When('I pick the chart resolution {string}', async ({ page }, value) => {
-  await panelOf(page, 'performance').locator('select[name="resolution"]').selectOption(value);
+  await page
+    .locator('.host-frame-body .section-heading select[name="resolution"]')
+    .first()
+    .selectOption(value);
 });
 
 When('I toggle the {string} series of the {string} chart', async ({ page }, group, metric) => {

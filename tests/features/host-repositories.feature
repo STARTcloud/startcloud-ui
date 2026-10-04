@@ -1,31 +1,34 @@
 Feature: host-repositories
 
-  Scenario: Repositories: the section behind packages with repositories, a host that lists repositories alone draws no section and is asked for nothing
+  Scenario: Repositories: the row behind packages with repositories, a host that lists repositories alone draws no row, the not-available stub on the route, and is asked for nothing
     Given the host answers the hosts fixture
     And the host answers the hosts-repositories fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/manage"
-    Then the manage page draws the "boot-environments" section
-    And the manage page draws no "repositories" section
+    When I open "/hosts/1/updates/repositories"
+    Then the section page draws the not-available stub
+    And the host column draws the "boot-environments" row to "/hosts/1/storage/boot-environments"
+    And the host column draws no "repositories" row
+    And the host column draws no "updates" group
     And the host was not sent GET to "/api/agents/1/system/repositories"
 
   Scenario: Repositories: the publishers over the one table, Enable and Disable each one request with the list read again
     Given the host answers the hosts fixture
     And the host answers the hosts-repositories fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "repositories" section
-    And the "repositories" table of the manage page lists 4 rows
-    And the "repositories" table of the manage page draws the "type" column
+    When I open "/hosts/3/updates/repositories"
+    Then the section page "repositories" draws
+    And the host row "repositories" is the active one
+    And the "repositories" table of the section page lists 4 rows
+    And the "repositories" table of the section page draws the "type" column
     And the host was sent GET to "/api/agents/3/system/repositories" 1 times
-    And the row "ooce" of the "repositories" table of the manage page offers "enable"
-    And the row "ooce" of the "repositories" table of the manage page offers no "disable"
-    And the row "extra.omnios" of the "repositories" table of the manage page offers "disable"
-    When I press "enable" on the row "ooce" of the "repositories" table of the manage page
+    And the row "ooce" of the "repositories" table of the section page offers "enable"
+    And the row "ooce" of the "repositories" table of the section page offers no "disable"
+    And the row "extra.omnios" of the "repositories" table of the section page offers "disable"
+    When I press "enable" on the row "ooce" of the "repositories" table of the section page
     Then the host was sent POST to "/api/agents/3/system/repositories/ooce/enable" 1 times
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/repositories" 2 times
-    When I press "disable" on the row "extra.omnios" of the "repositories" table of the manage page
+    When I press "disable" on the row "extra.omnios" of the "repositories" table of the section page
     Then the host was sent POST to "/api/agents/3/system/repositories/extra.omnios/disable" 1 times
     And the page raised 2 success notices
 
@@ -33,8 +36,9 @@ Feature: host-repositories
     Given the host answers the hosts fixture
     And the host answers the hosts-repositories fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "repository-add" action
+    And the window is 1600 wide
+    When I open "/hosts/3/updates/repositories"
+    And I press the section page's "repository-add" action
     Then the "repository-add" dialog is open
     When I press the open dialog's "submit" action
     Then the open dialog notes "problem"
@@ -47,13 +51,13 @@ Feature: host-repositories
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/repositories" 2 times
     And no dialog is open
-    When I press "edit" on the row "extra.omnios" of the "repositories" table of the manage page
+    When I press "edit" on the row "extra.omnios" of the "repositories" table of the section page
     Then the "repository-edit" dialog is open
     And I see "https://pkg.omnios.org/r151054/extra/"
     When I press the open dialog's "submit" action
     Then the host was sent PUT to "/api/agents/3/system/repositories/extra.omnios" carrying "refresh" as "false"
     And no dialog is open
-    When I press "delete" on the row "ooce" of the "repositories" table of the manage page
+    When I press "delete" on the row "ooce" of the "repositories" table of the section page
     Then the "repository-delete" dialog is open
     When I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/system/repositories/ooce" 1 times
@@ -64,7 +68,7 @@ Feature: host-repositories
     Given the host answers the hosts fixture
     And the host answers the hosts-repositories fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
+    When I open "/hosts/3/updates/repositories"
     Then the host was sent GET to "/api/agents/3/system/repositories" 1 times
     When I click "Refresh"
     Then the host was sent GET to "/api/agents/3/system/repositories" 2 times

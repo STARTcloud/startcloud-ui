@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaFloppyDisk } from 'react-icons/fa6';
 
+import RecordRows from '../../../components/common/RecordRows';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useStatus } from '../../../contexts/StatusContext';
 import { saveDns } from '../api/networking';
 import { dnsBody, dnsFormOf } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 const stateOf = ({ loaded, failed }) => {
   if (!loaded) {
@@ -45,20 +47,39 @@ Lines.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+const listWord = value => (Array.isArray(value) ? value.join(', ') : '');
+
+const recordRows = (answer, t) =>
+  [
+    ['nameservers', 'host.dnsSettings.nameservers', listWord(answer?.nameservers)],
+    ['searchDomains', 'host.dnsSettings.searchDomains', listWord(answer?.search_domains)],
+    ['domain', 'host.dnsSettings.domain', answer?.domain || ''],
+    ['options', 'host.dnsSettings.options', listWord(answer?.options)],
+  ]
+    .filter(([, , value]) => value)
+    .map(([key, labelKey, value]) => ({
+      key,
+      label: t(labelKey),
+      value: <code>{value}</code>,
+    }));
+
 /**
  * The DNS section of the networking page's management, hyperweaver-ui's
- * `DnsSettings` as a folding section: the resolver's nameservers,
- * search domains, domain and options as the parsed fields, or the raw
- * file behind the switch, the raw winning on the wire; Save sends
- * `PUT system/dns` with `dnsBody` through the page's one
- * `useNetworkingTools`, the notice carrying the backup the agent wrote,
- * and the held answer is read again. The form follows the held answer
- * until a person types, and again after a save.
+ * `DnsSettings` as a folding section: for a role that controls hosts
+ * the resolver's nameservers, search domains, domain and options as the
+ * parsed fields, or the raw file behind the switch, the raw winning on
+ * the wire, and Save, which sends `PUT system/dns` with `dnsBody`
+ * through the page's one `useNetworkingTools`, the notice carrying the
+ * backup the agent wrote, and the held answer is read again; every
+ * other role reads the members the agent answered as record rows. The
+ * form follows the held answer until a person types, and again after a
+ * save.
  */
-const DnsSettings = ({ id, reading, fold, tools }) => {
+const DnsSettings = ({ id, role, reading, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [draft, setDraft] = useState(null);
+  const writable = canControlHosts(role);
   const form = draft || dnsFormOf(reading.data);
   const change = (field, value) => setDraft({ ...form, [field]: value });
 
@@ -119,7 +140,7 @@ const DnsSettings = ({ id, reading, fold, tools }) => {
         folded={fold.folded}
         onFold={fold.onFold}
         foldTitle={fold.title}
-        actions={actions}
+        actions={writable ? actions : null}
       />
       {fold.folded ? null : (
         <div className="card">
@@ -129,11 +150,16 @@ const DnsSettings = ({ id, reading, fold, tools }) => {
                 {t('hosts.overview.readError')}
               </div>
             ) : null}
-            <p className="form-text text-muted mt-0">
-              {t('host.dnsSettings.backupNote')}
-              {form.rawMode ? t('host.dnsSettings.rawModeNote') : t('host.dnsSettings.parsedNote')}
-            </p>
-            {form.rawMode ? (
+            {writable ? null : <RecordRows className="mb-0" rows={recordRows(reading.data, t)} />}
+            {writable ? (
+              <p className="form-text text-muted mt-0">
+                {t('host.dnsSettings.backupNote')}
+                {form.rawMode
+                  ? t('host.dnsSettings.rawModeNote')
+                  : t('host.dnsSettings.parsedNote')}
+              </p>
+            ) : null}
+            {writable && form.rawMode ? (
               <textarea
                 id="dns-raw"
                 className="form-control font-monospace"
@@ -143,7 +169,8 @@ const DnsSettings = ({ id, reading, fold, tools }) => {
                 disabled={tools.busy}
                 aria-label={t('host.dnsSettings.rawAriaLabel')}
               />
-            ) : (
+            ) : null}
+            {writable && !form.rawMode ? (
               <div className="row g-3">
                 <div className="col-12 col-md-4">
                   <Lines
@@ -191,7 +218,7 @@ const DnsSettings = ({ id, reading, fold, tools }) => {
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -201,6 +228,7 @@ const DnsSettings = ({ id, reading, fold, tools }) => {
 
 DnsSettings.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   reading: PropTypes.object.isRequired,
   fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,

@@ -3,7 +3,6 @@ import { ok, problem, refusal } from './kit.js';
 import { announceStats, queue, stoppedWord } from './tasks.js';
 
 const GUEST_MODES = ['powerdown', 'reboot', 'halt'];
-const GUEST_SETTLE_MS = 1800;
 const LAUNCH_PATH = 'machines/:name/applications/:application/launch';
 const NOT_RUNNING = 'Machine is not running';
 const MACHINE_MISSING = 'Machine not found';
@@ -186,16 +185,6 @@ const nmi = ctx => {
   return ok({ success: true, machine_name: row.name, message: `NMI injected${into}` });
 };
 
-const powerDownSoon = (host, name) => {
-  const timer = setTimeout(() => {
-    if (machineOf(host, name)) {
-      setStatus(host, name, stoppedWord(host));
-      announceStats(host);
-    }
-  }, GUEST_SETTLE_MS);
-  timer.unref();
-};
-
 const guestAnswer = mode => ctx => {
   const { host, row } = ctx;
   const utm = row.hypervisor === 'utm';
@@ -206,7 +195,8 @@ const guestAnswer = mode => ctx => {
     return refusal(400, NOT_RUNNING);
   }
   if (mode !== 'reboot') {
-    powerDownSoon(host, row.name);
+    setStatus(host, row.name, stoppedWord(host));
+    announceStats(host);
   }
   return ok({
     success: true,

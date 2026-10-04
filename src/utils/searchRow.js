@@ -1,123 +1,254 @@
 import PropTypes from 'prop-types';
 
-import { architecturePath, itemPath, providerPath, versionPath } from './routes';
+import { compareRowsFor, textOf } from './searchScore';
 
-export const SEARCH_KINDS = [
-  'organization',
-  'item',
-  'version',
-  'provider',
-  'architecture',
-  'artifact',
-  'user',
-  'application',
-  'identity-provider',
-  'terms',
-  'notification',
-  'session',
-  'login',
-  'registration',
-  'blocked-address',
-];
+export const MIN_QUERY = 2;
 
 export const searchRowShape = PropTypes.shape({
   kind: PropTypes.string.isRequired,
+  id: PropTypes.string.isRequired,
+  host: PropTypes.string,
   collection: PropTypes.string,
-  org: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  version: PropTypes.string.isRequired,
-  provider: PropTypes.string.isRequired,
-  architecture: PropTypes.string.isRequired,
+  org: PropTypes.string,
+  name: PropTypes.string,
+  version: PropTypes.string,
+  provider: PropTypes.string,
+  architecture: PropTypes.string,
+  anchor: PropTypes.string,
+  source: PropTypes.object,
+  score: PropTypes.number.isRequired,
   title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string.isRequired,
-  matched: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
+  matched: PropTypes.string,
+  highlight: PropTypes.object,
+  facets: PropTypes.object,
 });
 
-export const searchAnswerShape = PropTypes.shape({
-  query: PropTypes.string.isRequired,
-  results: PropTypes.arrayOf(searchRowShape).isRequired,
-  truncated: PropTypes.objectOf(PropTypes.number).isRequired,
+export const searchKindShape = PropTypes.shape({
+  kind: PropTypes.string.isRequired,
+  feature: PropTypes.string.isRequired,
+  token: PropTypes.string,
+  locators: PropTypes.arrayOf(PropTypes.string).isRequired,
+  route: PropTypes.func,
+  icon: PropTypes.func,
+  labelKey: PropTypes.string.isRequired,
+  matched: PropTypes.objectOf(PropTypes.string),
+  facets: PropTypes.arrayOf(PropTypes.string),
 });
 
-export const collectionOfRow = (row, collections) =>
-  collections.find(collection => collection.key === row.collection) || null;
+const STRING_MEMBERS = [
+  'id',
+  'org',
+  'name',
+  'version',
+  'provider',
+  'architecture',
+  'anchor',
+  'title',
+  'subtitle',
+  'matched',
+];
 
-const narrowed = (path, key, value) => `${path}?${key}=${encodeURIComponent(value)}`;
+/**
+ * One result as the UI holds it: every string member a string, the host
+ * it was asked of stamped on it.
+ *
+ * @param {Object} row - The result as a source answered it
+ * @param {string} host - The host the request went to, empty for the serving backend
+ * @returns {Object} The row
+ */
+export const searchRowOf = (row, host) => ({
+  ...row,
+  ...Object.fromEntries(STRING_MEMBERS.map(member => [member, textOf(row[member])])),
+  kind: textOf(row.kind),
+  collection: row.collection || null,
+  source: row.source || null,
+  score: typeof row.score === 'number' ? row.score : 0,
+  highlight: row.highlight || {},
+  facets: row.facets || {},
+  host,
+});
 
-const configItem = (file, key) => `/admin/config/${file}#${encodeURIComponent(key)}`;
+/**
+ * An answer as the UI holds it: the results stamped with the host, the
+ * counts by kind and the cursor.
+ *
+ * @param {Object} data - `{ counts, results, next }` as a source answered it
+ * @param {string} host - The host the request went to, empty for the serving backend
+ * @returns {{ counts: Object, results: Array<Object>, next: string|null }} The answer
+ */
+export const searchAnswerOf = (data, host) => ({
+  counts: data?.counts && typeof data.counts === 'object' ? data.counts : {},
+  results: (Array.isArray(data?.results) ? data.results : []).map(row => searchRowOf(row, host)),
+  next: typeof data?.next === 'string' && data.next !== '' ? data.next : null,
+});
 
-const ISSUER_PATHS = {
-  organization: ({ admin, row }) =>
-    admin ? narrowed('/admin/organizations', 'search', row.org) : '/user/organizations',
-  user: ({ row }) => narrowed('/admin/users', 'search', row.name),
-  application: ({ admin, row }) => (admin ? configItem('clients', row.name) : '/user/applications'),
-  'identity-provider': ({ admin, row }) =>
-    admin ? configItem('providers', row.name) : '/user/profile/security',
-  terms: ({ admin, row }) =>
-    admin ? '/admin/terms' : `/public/policies/${encodeURIComponent(row.name)}`,
-  notification: () => '/notifications',
-  session: ({ admin }) => (admin ? '/admin/sessions' : '/user/profile/sessions'),
-  login: ({ row }) => narrowed('/admin/logins', 'username', row.name),
-  registration: ({ row }) => narrowed('/admin/registrations', 'username', row.name),
-  'blocked-address': () => '/admin/brute-force',
+/**
+ * The key one result is held by: its kind, its host and its id.
+ *
+ * @param {Object} row - The result
+ * @returns {string} The key
+ */
+export const rowKeyOf = row => [row.kind, row.host || '', row.id].join('|');
+
+const inScope = (row, scope) => {
+  const [kind, ...rest] = scope.split(':');
+  const value = rest.join(':');
+  if (kind === 'org') {
+    return row.org === value;
+  }
+  if (kind === 'collection') {
+    return row.collection === value;
+  }
+  return true;
 };
 
 /**
- * The in-app path a search row leads to: on the `auth-server` role the page
- * the identity contract's search table names for the kind (an organization
- * to `/user/organizations` or `/admin/organizations?search=` for an admin,
- * a user to `/admin/users?search=`, an application to `/user/applications`
- * or, for an admin, the config item deep link `/admin/config/clients#<name>`
- * over the client whose id the row's `name` carries, an identity provider
- * to `/user/profile/security` or, for an admin,
- * `/admin/config/providers#<name>`, terms to `/public/policies/<name>` or `/admin/terms`
- * for an admin, a notification to `/notifications`, a session to
- * `/user/profile/sessions` or `/admin/sessions` for an admin, a login to
- * `/admin/logins?username=`, a registration to
- * `/admin/registrations?username=`, a blocked address to
- * `/admin/brute-force`); elsewhere the organization page for an
- * organization, the org console or the admin board for a user, and for
- * everything else the deepest page of the row's collection the row names
- * (the file's own address where the collection's leaf is a file, provider,
- * an architecture where the collection has no providers, version, else
- * item).
+ * The answer of a source that matches rows the browser holds: the rows of
+ * the kinds and scope asked for, sorted, each kind cut to `limit`, every
+ * count exact.
  *
- * @param {Object} row - One search result row
- * @param {{ collections: Array<Object>, role: string, admin: boolean }} app - The app search: the collections the host mounts, the host's role and whether the person is a global admin
- * @returns {string} The path
+ * @param {Array<Object>} rows - The matched rows, each from `searchRowOf`
+ * @param {Object} request - `{ query, kinds, scope, limit }`
+ * @returns {{ counts: Object, results: Array<Object>, next: null }} The answer
  */
-export const searchRowPath = (row, { collections, role, admin }) => {
-  if (role === 'auth-server' && ISSUER_PATHS[row.kind]) {
-    return ISSUER_PATHS[row.kind]({ admin, row });
+export const localAnswer = (rows, { query, kinds = [], scope = '', limit = 0 }) => {
+  const wanted = rows
+    .filter(row => kinds.length === 0 || kinds.includes(row.kind))
+    .filter(row => !scope || inScope(row, scope))
+    .sort(compareRowsFor(query));
+  const counts = {};
+  const results = [];
+  wanted.forEach(row => {
+    const value = (counts[row.kind]?.value || 0) + 1;
+    counts[row.kind] = { value, relation: 'eq' };
+    if (!limit || value <= limit) {
+      results.push(row);
+    }
+  });
+  return { counts, results, next: null };
+};
+
+/**
+ * The query parameters of one search request, the empty ones left out.
+ *
+ * @param {string} query - The text searched for
+ * @param {Object} request - `{ kinds, scope, limit, after }`
+ * @returns {Object} The parameters
+ */
+export const searchParamsOf = (query, { kinds = [], scope = '', limit = 0, after = '' }) =>
+  Object.fromEntries(
+    Object.entries({ q: query, kinds: kinds.join(','), scope, limit, after }).filter(
+      ([, value]) => value !== '' && value !== 0
+    )
+  );
+
+/**
+ * Whether the failure of a request was its abort.
+ *
+ * @param {Error} error - The failure
+ * @returns {boolean} True for an abort
+ */
+export const isAbortError = error =>
+  error?.name === 'AbortError' || error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED';
+
+const TYPE = /^type:(?<value>\S+)$/u;
+const ORG = /^org:(?<value>\S+)$/u;
+
+/**
+ * The text typed in the box read as the request: `type:<kind>[,<kind>]`
+ * as the kinds, `org:<name>` as the scope, the rest as the query.
+ *
+ * @param {string} typed - The text in the box
+ * @returns {{ text: string, kinds: Array<string>, scope: string }} The request
+ */
+export const parseQuery = typed => {
+  const kinds = [];
+  let scope = '';
+  const rest = [];
+  typed
+    .split(/\s+/u)
+    .filter(Boolean)
+    .forEach(word => {
+      const type = TYPE.exec(word);
+      const org = ORG.exec(word);
+      if (type) {
+        kinds.push(...type.groups.value.split(',').filter(Boolean));
+      } else if (org) {
+        scope = `org:${org.groups.value}`;
+      } else {
+        rest.push(word);
+      }
+    });
+  return { text: rest.join(' '), kinds, scope };
+};
+
+const HOSTS_FEATURE = 'hosts';
+
+const ownersOf = (row, kinds) => {
+  const entries = kinds[row.kind] || [];
+  if (!row.host) {
+    return entries;
   }
-  if (row.kind === 'organization') {
-    return `/${row.org}`;
+  return [
+    ...entries.filter(entry => entry.feature === HOSTS_FEATURE),
+    ...entries.filter(entry => entry.feature !== HOSTS_FEATURE),
+  ];
+};
+
+/**
+ * The kind table's entry that owns one result: the first owner of its
+ * kind whose route places it, a row carrying a host asking the hosts
+ * feature first; the kind's first owner when none places it.
+ *
+ * @param {Object} row - The result
+ * @param {Object<string, Array<Object>>} kinds - The kind table, the owners of each kind in fold order
+ * @param {string} [query] - The text searched for
+ * @returns {{ entry: Object|null, to: string }} The owner and the route, empty for none
+ */
+export const searchRowOwner = (row, kinds, query = '') => {
+  const owners = ownersOf(row, kinds);
+  for (const entry of owners) {
+    const to = entry.route ? entry.route(row, query) || '' : '';
+    if (to) {
+      return { entry, to };
+    }
   }
-  if (row.kind === 'user') {
-    return row.org ? '/org-console' : '/admin';
-  }
-  const collection = collectionOfRow(row, collections);
-  if (!collection) {
-    return row.org ? `/${row.org}` : '/';
-  }
-  if (row.architecture && row.provider && collection.leafIsFile) {
-    return architecturePath(
-      collection,
-      row.org,
-      row.name,
-      row.version,
-      row.provider,
-      row.architecture
-    );
-  }
-  if (row.provider && collection.hasProviders) {
-    return providerPath(collection, row.org, row.name, row.version, row.provider);
-  }
-  if (row.architecture && collection.hasVersions && !collection.hasProviders) {
-    return providerPath(collection, row.org, row.name, row.version, row.architecture);
-  }
-  if (row.version && collection.hasVersions) {
-    return versionPath(collection, row.org, row.name, row.version);
-  }
-  return itemPath(collection, row.org, row.name);
+  return { entry: owners[0] || null, to: '' };
+};
+
+/**
+ * The route one result opens, empty for a row no owner places.
+ *
+ * @param {Object} row - The result
+ * @param {Object<string, Array<Object>>} kinds - The kind table
+ * @param {string} [query] - The text searched for
+ * @returns {string} The route
+ */
+export const searchRowPath = (row, kinds, query = '') => searchRowOwner(row, kinds, query).to;
+
+/**
+ * The first owner of a kind in the kind table.
+ *
+ * @param {Object<string, Array<Object>>} kinds - The kind table
+ * @param {string} kind - The kind
+ * @returns {Object|null} The entry
+ */
+export const kindEntryOf = (kinds, kind) => (kinds[kind] || [])[0] || null;
+
+/**
+ * The route of a row on a page that lists it: the page's route with the
+ * query searched for as the page's `q`, any further parameters, and the
+ * row's anchor as the hash.
+ *
+ * @param {string} path - The page's route
+ * @param {Object} row - The result
+ * @param {string} query - The text searched for
+ * @param {Object} [params] - Further query parameters
+ * @returns {string} The route
+ */
+export const arrivalPath = (path, row, query, params = {}) => {
+  const search = new URLSearchParams({ ...params, ...(query ? { q: query } : {}) }).toString();
+  const hash = row.anchor ? `#${encodeURIComponent(row.anchor)}` : '';
+  return `${path}${search ? `?${search}` : ''}${hash}`;
 };

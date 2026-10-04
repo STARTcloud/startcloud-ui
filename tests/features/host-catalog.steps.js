@@ -4,7 +4,7 @@ import { expect, test } from './support/fixtures.js';
 
 const { When, Then } = createBdd(test);
 
-const frameOf = page => page.locator('[data-page="manage"]');
+const frameOf = page => page.locator('[data-page="host-section"]');
 
 const tableOf = (page, name) => frameOf(page).locator(`[data-table="${name}"]`);
 
@@ -27,7 +27,7 @@ When('I pick {string} in the catalog dialog select {string}', async ({ page }, v
   await dialogOf(page).locator(`[id="${id}"]`).selectOption(value);
 });
 
-When('I check the manage switch {string}', async ({ page }, id) => {
+When('I check the section switch {string}', async ({ page }, id) => {
   await frameOf(page).locator(`[id="${id}"]`).check();
 });
 
@@ -105,13 +105,13 @@ Then('the catalog location {string} offers no {string}', async ({ page }, id, ac
   await expect(locationOf(page, id).locator(`[data-action="${action}"]`)).toHaveCount(0);
 });
 
-Then('the manage page offers no {string}', async ({ page }, action) => {
+Then('the section page offers no {string}', async ({ page }, action) => {
   await expect(frameOf(page)).toBeVisible();
   await expect(frameOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
 });
 
 Then(
-  'the row {string} of the {string} table of the manage page holds {string}',
+  'the row {string} of the {string} table of the section page holds {string}',
   async ({ page }, text, name, action) => {
     await expect(rowOf(page, name, text).locator(`[data-action="${action}"]`)).toBeDisabled();
   }

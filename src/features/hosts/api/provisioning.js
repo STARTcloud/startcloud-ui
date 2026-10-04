@@ -159,12 +159,37 @@ export const saveHostsYml = (status, id, name, yaml) =>
 export const fetchRecipes = (status, id, filters = {}) =>
   client.get(agentPath(status, id, 'provisioning/recipes'), { params: filters });
 
+/**
+ * Create a recipe, `POST provisioning/recipes`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The recipe
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const createRecipe = (status, id, body) =>
   client.post(agentPath(status, id, 'provisioning/recipes'), body);
 
+/**
+ * Replace a recipe, `PUT provisioning/recipes/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} recipeId - The recipe's id
+ * @param {Object} body - The recipe
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const updateRecipe = (status, id, recipeId, body) =>
   client.put(agentPath(status, id, `provisioning/recipes/${encodeURIComponent(recipeId)}`), body);
 
+/**
+ * Delete a recipe, `DELETE provisioning/recipes/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} recipeId - The recipe's id
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const deleteRecipe = (status, id, recipeId) =>
   client.delete(agentPath(status, id, `provisioning/recipes/${encodeURIComponent(recipeId)}`));
 
@@ -183,26 +208,6 @@ export const testRecipe = (status, id, recipeId, body) =>
     agentPath(status, id, `provisioning/recipes/${encodeURIComponent(recipeId)}/test`),
     body
   );
-
-/**
- * The global secrets document, `GET secrets`.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @returns {Promise<Object>} The secrets
- */
-export const fetchSecrets = (status, id) => client.get(agentPath(status, id, 'secrets'));
-
-/**
- * Replace the submitted secrets categories, `PUT secrets`.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {Object} categories - The categories
- * @returns {Promise<Object>} The agent's answer
- */
-export const saveSecrets = (status, id, categories) =>
-  client.put(agentPath(status, id, 'secrets'), categories);
 
 /**
  * Create a machine from a provisioner spec, `POST machines`.
@@ -319,12 +324,38 @@ export const fetchNextServerId = (status, id) =>
  */
 export const fetchTemplates = (status, id) => client.get(agentPath(status, id, 'templates'));
 
+/**
+ * Pull a template from a source into the registry, `POST templates/pull`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The pull
+ * @returns {Promise<Object>} The queued task
+ */
 export const pullTemplate = (status, id, body) =>
   client.post(agentPath(status, id, 'templates/pull'), body);
 
+/**
+ * Delete a template, `DELETE templates/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} templateId - The template's id
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const deleteTemplate = (status, id, templateId) =>
   client.delete(agentPath(status, id, `templates/${encodeURIComponent(templateId)}`));
 
+/**
+ * Move a template to another storage path, `POST templates/{id}/move`
+ * with `target_path`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} templateId - The template's id
+ * @param {string} targetPath - The destination
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const moveTemplate = (status, id, templateId, targetPath) =>
   client.post(agentPath(status, id, `templates/${encodeURIComponent(templateId)}/move`), {
     target_path: targetPath,
@@ -341,15 +372,49 @@ export const moveTemplate = (status, id, templateId, targetPath) =>
 export const fetchRemoteTemplates = (status, id, source) =>
   client.get(agentPath(status, id, `templates/remote/${encodeURIComponent(source)}`));
 
+/**
+ * The artifact storage locations, `GET artifacts/storage/paths`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} `{ paths }`
+ */
 export const fetchArtifactStoragePaths = (status, id) =>
   client.get(agentPath(status, id, 'artifacts/storage/paths'));
 
+/**
+ * Create a storage location, `POST artifacts/storage/paths`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The location
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const createArtifactStoragePath = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/storage/paths'), body);
 
+/**
+ * Change a storage location, `PUT artifacts/storage/paths/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} pathId - The location's id
+ * @param {Object} body - The changed members
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const updateArtifactStoragePath = (status, id, pathId, body) =>
   client.put(agentPath(status, id, `artifacts/storage/paths/${encodeURIComponent(pathId)}`), body);
 
+/**
+ * Delete a storage location, `DELETE artifacts/storage/paths/{id}` with
+ * the body the agent reads.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} pathId - The location's id
+ * @param {Object} body - The options of the delete
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const deleteArtifactStoragePath = (status, id, pathId, body) =>
   client.request({
     method: 'DELETE',
@@ -369,33 +434,107 @@ export const deleteArtifactStoragePath = (status, id, pathId, body) =>
 export const fetchArtifacts = (status, id, filters = {}) =>
   client.get(agentPath(status, id, 'artifacts'), { params: filters });
 
+/**
+ * The ISO artifacts, `GET artifacts/iso`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchIsoArtifacts = (status, id) => client.get(agentPath(status, id, 'artifacts/iso'));
 
+/**
+ * The disk image artifacts, `GET artifacts/image`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchImageArtifacts = (status, id) =>
   client.get(agentPath(status, id, 'artifacts/image'));
 
+/**
+ * The artifact registry's counts, `GET artifacts/stats`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchArtifactStats = (status, id) =>
   client.get(agentPath(status, id, 'artifacts/stats'));
 
+/**
+ * Move an artifact to another location, `POST artifacts/{id}/move` with
+ * `destination_storage_location_id`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} artifactId - The artifact's id
+ * @param {string} destinationId - The location's id
+ * @returns {Promise<Object>} The queued task
+ */
 export const moveArtifact = (status, id, artifactId, destinationId) =>
   client.post(agentPath(status, id, `artifacts/${encodeURIComponent(artifactId)}/move`), {
     destination_storage_location_id: destinationId,
   });
 
+/**
+ * Copy an artifact to another location, `POST artifacts/{id}/copy` with
+ * `destination_storage_location_id`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} artifactId - The artifact's id
+ * @param {string} destinationId - The location's id
+ * @returns {Promise<Object>} The queued task
+ */
 export const copyArtifact = (status, id, artifactId, destinationId) =>
   client.post(agentPath(status, id, `artifacts/${encodeURIComponent(artifactId)}/copy`), {
     destination_storage_location_id: destinationId,
   });
 
+/**
+ * Scan the storage locations for artifacts, `POST artifacts/scan`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The scan
+ * @returns {Promise<Object>} The queued task
+ */
 export const scanArtifacts = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/scan'), body);
 
+/**
+ * Download an artifact from a URL, `POST artifacts/download`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The download
+ * @returns {Promise<Object>} The queued task
+ */
 export const downloadArtifact = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/download'), body);
 
+/**
+ * Download an artifact from the HCL portal, `POST artifacts/hcl-download`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The download
+ * @returns {Promise<Object>} The queued task
+ */
 export const hclDownloadArtifact = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/hcl-download'), body);
 
+/**
+ * Prepare an upload, `POST artifacts/upload/prepare`, answered with the
+ * task the bytes go to.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The upload's description
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const prepareArtifactUpload = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/upload/prepare'), body);
 
@@ -422,9 +561,27 @@ export const uploadArtifactFile = (status, id, taskId, file, onUploadProgress = 
   });
 };
 
+/**
+ * Register a file already on the host as an artifact,
+ * `POST artifacts/register`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The file and its description
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const registerArtifact = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/register'), body);
 
+/**
+ * Delete artifacts and their files, `DELETE artifacts/files` with the
+ * body the agent reads.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The artifacts and the options of the delete
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const deleteArtifacts = (status, id, body) =>
   client.request({ method: 'DELETE', path: agentPath(status, id, 'artifacts/files'), body });
 
@@ -440,22 +597,52 @@ export const deleteArtifacts = (status, id, body) =>
 export const fetchIpSuggestions = (status, id, count = 20) =>
   client.get(agentPath(status, id, 'network/ip-suggestions'), { params: { count } });
 
+/**
+ * The media the host knows, `GET media`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchMediaList = (status, id) => client.get(agentPath(status, id, 'media'));
 
+/**
+ * The host interfaces a machine may bridge to,
+ * `GET provisioning/bridged-interfaces`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchBridgedInterfaces = (status, id) =>
   client.get(agentPath(status, id, 'provisioning/bridged-interfaces'));
 
+/**
+ * The provisioning network's state, `GET provisioning/network/status`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const fetchProvisioningNetworkStatus = (status, id) =>
   client.get(agentPath(status, id, 'provisioning/network/status'));
 
+/**
+ * Set the provisioning network up, `POST provisioning/network/setup`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const setupProvisioningNetwork = (status, id) =>
   client.post(agentPath(status, id, 'provisioning/network/setup'));
 
+/**
+ * Tear the provisioning network down, `DELETE provisioning/network/teardown`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The agent's answer
+ */
 export const teardownProvisioningNetwork = (status, id) =>
   client.delete(agentPath(status, id, 'provisioning/network/teardown'));
-
-export const checkAgentUpdate = (status, id) =>
-  client.get(agentPath(status, id, 'app/updates/check'));
-
-export const applyAgentUpdate = (status, id) =>
-  client.post(agentPath(status, id, 'app/updates/apply'));

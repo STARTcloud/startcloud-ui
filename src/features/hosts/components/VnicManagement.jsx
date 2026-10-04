@@ -9,6 +9,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { createVnic, deleteVnic, fetchVnic } from '../api/networking';
 import { useHostReading } from '../hooks/useHostReadings';
 import { vnicBody, vnicLinksOf } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import NetworkingTable from './NetworkingTable';
 import VnicCreateModal from './VnicCreateModal';
@@ -23,9 +24,11 @@ import { VNIC_COLUMNS, VnicRowActions } from './VnicTable';
  * `vnicBody`, a queued task; a delete, behind the typed confirmation,
  * sends `DELETE network/vnics/{link}`; the details read
  * `GET network/vnics/{link}` once and open the dialog on the answer.
- * Every write goes through the page's one `useNetworkingTools`.
+ * Every write goes through the page's one `useNetworkingTools`. Create
+ * and the delete draw for a role that controls hosts alone; every other
+ * role reads the table with the details.
  */
-const VnicManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools }) => {
+const VnicManagement = ({ id, role, rows, reading, table, ctx, filtering, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -36,6 +39,7 @@ const VnicManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [details, setDetails] = useState(null);
+  const writable = canControlHosts(role);
   const links = useMemo(
     () =>
       vnicLinksOf({
@@ -106,13 +110,18 @@ const VnicManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
         table={table}
         rowKey={row => row.link}
         RowActions={VnicRowActions}
-        actionsProps={{ busy: tools.busy, onDetails: open, onDelete: setRemoving }}
+        actionsProps={{
+          busy: tools.busy,
+          canEdit: writable,
+          onDetails: open,
+          onDelete: setRemoving,
+        }}
         ctx={ctx}
         emptyKey="host.vnicTable.noVnicsFound"
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <VnicCreateModal
@@ -145,6 +154,7 @@ const VnicManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
 
 VnicManagement.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,

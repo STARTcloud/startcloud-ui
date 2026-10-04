@@ -80,8 +80,8 @@ Feature: agent-loop
     When I open "/admin/config"
     Then the pathname is "/admin/config/app"
     And the page navigated to "/login" 0 times
-    When I open "/hosts/self/settings"
-    Then the pathname is "/hosts/self/settings"
+    When I open "/hosts/self/agent/api-keys"
+    Then the pathname is "/hosts/self/agent/api-keys"
     And the page navigated to "/login" 0 times
     When I open "/profile"
     Then the pathname is "/profile"

@@ -732,14 +732,15 @@ const services = ctx => {
 
 const serviceAction = ctx => {
   const { host, body } = ctx;
-  if (body.fmri !== CDP_FMRI) {
-    return refusal(404, `Service ${body.fmri || ''} not found`);
+  const fmri = decodeURIComponent(body.fmri || '');
+  if (fmri !== CDP_FMRI) {
+    return refusal(404, `Service ${fmri} not found`);
   }
   if (!['enable', 'disable', 'restart'].includes(body.action)) {
     return refusal(400, 'action must be enable, disable or restart');
   }
   stateOf(host).cdp = body.action === 'disable' ? 'disabled' : 'online';
-  return ok({ success: true, message: `Service ${body.fmri} ${body.action}d`, fmri: body.fmri });
+  return ok({ success: true, message: `Service ${fmri} ${body.action}d`, fmri });
 };
 
 const hostname = ctx => {

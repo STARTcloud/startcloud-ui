@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { NETWORKING_READS, READS, readOffered } from '../../src/features/hosts/utils/monitoring.js';
 import {
   AGGREGATE_FILTERS,
-  CDP_DISABLE_BODY,
+  CDP_FMRI,
   MANAGED_ADDRESS_FILTERS,
   MANAGEMENT_SECTIONS,
   SPACE_FILTERS,
@@ -566,7 +566,7 @@ describe('the VLANs, the etherstubs, the bridges and the aggregates', () => {
       unicast_address: '02:08:20:aa:bb:cc',
     });
     expect(aggregateBody(base)).not.toHaveProperty('unicast_address');
-    expect(CDP_DISABLE_BODY).toEqual({ action: 'disable', fmri: 'svc:/network/cdp:default' });
+    expect(CDP_FMRI).toBe('svc:/network/cdp:default');
     expect(cdpRunning([{ fmri: 'svc:/network/cdp:default', state: 'online' }])).toBe(true);
     expect(cdpRunning([{ fmri: 'svc:/network/cdp:default', state: 'disabled' }])).toBe(false);
     expect(cdpRunning(null)).toBe(false);

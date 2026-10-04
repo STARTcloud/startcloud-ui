@@ -14,10 +14,7 @@ const UpdateNotice = ({ updateInfo, command }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyCommand = () => {
-    copyToClipboard(command).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    copyToClipboard(command).then(() => setCopied(true));
   };
 
   return (
@@ -40,6 +37,7 @@ const UpdateNotice = ({ updateInfo, command }) => {
           className="btn btn-outline-secondary"
           type="button"
           onClick={handleCopyCommand}
+          onBlur={() => setCopied(false)}
           title={t('admin.buttons.copy')}
         >
           {copied ? <FaCheck className="text-success" /> : <FaCopy />}

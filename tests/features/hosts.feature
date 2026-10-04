@@ -272,7 +272,8 @@ Feature: hosts
     When I right-click the tree node "Desk"
     Then the tree menu offers "overview"
     And the tree menu offers "machines"
-    And the tree menu offers "settings"
+    And the tree menu offers "api-keys"
+    And the tree menu offers "update"
 
   Scenario: Sidebar tree: the Configuration node under a host lists its files by title and opens the file on the shared engine over the host's proxy
     Given the host answers the hosts fixture
@@ -286,8 +287,10 @@ Feature: hosts
     And the tree lists the row "Storage" under the tree node "Configuration"
     And the host was sent GET to "/api/agents/1/config/machines/schema" 1 times
     When I follow the tree row "Machines" under the tree node "Configuration"
-    Then the path is "/hosts/1/settings/machines"
-    And the host tab "settings" is the active one
+    Then the path is "/hosts/1/agent/config/machines"
+    And the host row "config:machines" is the active one
+    And the host column draws the "config:app" row to "/hosts/1/agent/config/app"
+    And the host group "agent" is open
     And I see "Schema version 1"
     And the control "Base directory" has the value "/var/lib/machines"
     And the host was sent GET to "/api/agents/1/config/machines" 1 times

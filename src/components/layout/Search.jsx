@@ -2,9 +2,9 @@ import PropTypes from 'prop-types';
 import { useContext, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaGear, FaMagnifyingGlass, FaXmark } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
 
 import {
-  APP_SEARCH_LIMIT,
   NavbarSearchContext,
   activeFilterCount,
   hasPanel,
@@ -13,16 +13,17 @@ import {
 } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { hasFeature } from '../../utils/capabilities';
+import { parseQuery, rowKeyOf, searchRowPath } from '../../utils/searchRow';
+
+import { LIST_ID, optionIdOf, optionOrder } from './SearchPanel';
 
 const HOVER_DWELL_MS = 400;
-const DEBOUNCE_MS = 250;
-const MIN_QUERY = 2;
 const EDITABLE = 'input,select,textarea,[contenteditable]';
 
 const isFindShortcut = event =>
-  event.key.toLowerCase() === 'f' && (event.ctrlKey || event.metaKey) && !event.altKey;
+  event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey) && !event.altKey;
 
-const useFindShortcut = ({ on, setExpanded, inputRef }) => {
+const useFindShortcut = ({ on, open }) => {
   useEffect(() => {
     if (!on) {
       return undefined;
@@ -32,12 +33,11 @@ const useFindShortcut = ({ on, setExpanded, inputRef }) => {
         return;
       }
       event.preventDefault();
-      setExpanded(true);
-      inputRef.current?.focus();
+      open();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [on, setExpanded, inputRef]);
+  }, [on, open]);
 };
 
 const SearchIconButton = ({ filtersOn, onOpen, onMouseEnter, onMouseLeave }) => {
@@ -96,43 +96,54 @@ const SearchBox = ({
   placeholder,
   inputRef,
   panelOpen,
+  filters,
+  list,
+  everywhere,
+  hits,
+  modeLabel,
+  onToggleMode,
   onQueryChange,
   onTogglePanel,
   onClear,
-  onEscape,
-  onDown,
+  onKeyDown,
 }) => {
   const { t } = useTranslation();
-  const filters = binding ? activeFilterCount(binding) : 0;
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [inputRef]);
 
-  const onKeyDown = event => {
-    if (event.key === 'Escape') {
-      onEscape();
-    }
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      onDown();
-    }
-  };
-
   return (
     <li className="nav-item">
-      <div className="navbar-search">
-        <FaMagnifyingGlass className="text-body-secondary flex-shrink-0" aria-hidden />
+      <search className="navbar-search">
+        <button
+          type="button"
+          className="btn btn-link p-0 border-0 d-inline-flex text-body-secondary flex-shrink-0"
+          onClick={onToggleMode}
+          title={modeLabel}
+          aria-label={modeLabel}
+        >
+          <FaMagnifyingGlass aria-hidden />
+        </button>
         <input
           ref={inputRef}
           type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={list.open}
+          aria-controls={LIST_ID}
+          aria-activedescendant={list.activeId || undefined}
           value={query}
           placeholder={placeholder}
           aria-label={t('search.open')}
           onChange={event => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
         />
-        <SearchCount binding={binding} />
+        {everywhere ? (
+          <span className="navbar-search-count">{t('search.results', { count: hits })}</span>
+        ) : (
+          <SearchCount binding={binding} />
+        )}
 
         {hasPanel(binding) ? (
           <button
@@ -155,7 +166,7 @@ const SearchBox = ({
         >
           <FaXmark />
         </button>
-      </div>
+      </search>
     </li>
   );
 };
@@ -166,101 +177,91 @@ SearchBox.propTypes = {
   placeholder: PropTypes.string.isRequired,
   inputRef: PropTypes.shape({ current: PropTypes.object }).isRequired,
   panelOpen: PropTypes.bool.isRequired,
+  filters: PropTypes.number.isRequired,
+  list: PropTypes.shape({ open: PropTypes.bool.isRequired, activeId: PropTypes.string }).isRequired,
+  everywhere: PropTypes.bool.isRequired,
+  hits: PropTypes.number.isRequired,
+  modeLabel: PropTypes.string.isRequired,
+  onToggleMode: PropTypes.func.isRequired,
   onQueryChange: PropTypes.func.isRequired,
   onTogglePanel: PropTypes.func.isRequired,
   onClear: PropTypes.func.isRequired,
-  onEscape: PropTypes.func.isRequired,
-  onDown: PropTypes.func.isRequired,
-};
-
-const useAppResults = ({ context, expanded, query }) => {
-  const appSearch = context?.appSearch;
-  const setAppResults = context?.setAppResults;
-  const needle = query.trim();
-
-  const active = Boolean(setAppResults && expanded) && needle.length >= MIN_QUERY;
-
-  useEffect(() => {
-    if (!active) {
-      return undefined;
-    }
-    let live = true;
-    const timer = setTimeout(() => {
-      appSearch
-        .search(needle, APP_SEARCH_LIMIT)
-        .then(answer => {
-          if (live) {
-            setAppResults({
-              query: needle,
-              results: answer.results || [],
-              truncated: answer.truncated || {},
-              loading: false,
-            });
-          }
-        })
-        .catch(() => {
-          if (live) {
-            setAppResults({ query: needle, results: [], truncated: {}, loading: false });
-          }
-        });
-    }, DEBOUNCE_MS);
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [active, appSearch, setAppResults, needle]);
+  onKeyDown: PropTypes.func.isRequired,
 };
 
 /**
  * The navbar search module, drawn only while the host lists the `search`
  * feature token (a host without it draws no icon and no box, a page's
- * binding then published to nobody): the icon, then on click or hover the
- * box. With a page binding the box drives the page's search and filters
- * and, from two characters on, the app-wide search too; with none it
- * drives only the app-wide search under the brand's placeholder. The
- * app-wide answer lands in the context for the panel to draw. Ctrl+F, or
- * Cmd+F on a Mac, pressed outside any input, select, textarea or editable
- * element expands the box and puts focus in it in place of the browser's
- * find; once the box holds focus the browser's own find is untouched.
+ * binding then published to nobody): the icon, then on click or a hover of
+ * 400 ms the box, holding the page's query when it opens, in a `<search>`
+ * landmark, its input a combobox over the results list the panel draws.
+ * Its leading magnifier is a mode switch,
+ * each click flipping between this app and everywhere; in this-app mode
+ * the box carries the page's placeholder and count, everywhere it reads
+ * "Search everywhere" and the run's hit count.
+ * The text in the box feeds the one run of the context; with a page
+ * binding the box drives the page's search and filters too, the `type:`
+ * and `org:` words read off the text before it reaches the page; with none
+ * the box carries the brand's placeholder. Down moves the focus to the
+ * first result link, Alt+Down leaves the focus in the input, Enter opens
+ * the highlighted result or the first; Escape returns to this-app mode
+ * with the query kept, then clears the query, then folds the box back
+ * into the icon. Ctrl+K,
+ * or Cmd+K on a Mac, pressed outside any input, select, textarea or
+ * editable element expands the box and puts focus in it.
  */
 export const NavbarSearchControl = () => {
   const { t } = useTranslation();
   const status = useStatus();
+  const navigate = useNavigate();
   const context = useContext(NavbarSearchContext);
   const binding = useNavbarSearch(context?.store);
   const expanded = Boolean(context?.expanded);
-  const query = binding ? binding.query : context?.appQuery || '';
   const dwell = useRef(null);
   const drawn = Boolean(context) && hasFeature(status, 'search');
 
+  const open = () => {
+    if (expanded) {
+      context.inputRef.current?.focus();
+      return;
+    }
+    context.setAppQuery(context.store.get()?.query || '');
+    context.setExpanded(true);
+  };
+
   useEffect(() => () => clearTimeout(dwell.current), []);
-  useAppResults({ context, expanded, query });
-  useFindShortcut({
-    on: drawn,
-    setExpanded: context?.setExpanded,
-    inputRef: context?.inputRef,
-  });
+  useFindShortcut({ on: drawn, open });
 
   if (!drawn) {
     return null;
   }
 
-  const { store, setExpanded, panelOpen, setPanelOpen, setAppQuery, inputRef, resultsRef } =
-    context;
+  const { store, setExpanded, panelOpen, setPanelOpen, setAppQuery, setPinned, inputRef } = context;
+  const { appSearch, run, activeKey, setActiveKey, everywhere, setEverywhere } = context;
+  const appName = t('search.appPlaceholder', { app: status.brand.name });
+  const query = context.appQuery;
   const live = () => store.get() || binding;
+  const order = optionOrder(run.rows, appSearch.collections, appSearch.kinds);
+  const keys = order.map(rowKeyOf);
+  const held = keys.includes(activeKey) ? activeKey : '';
+  const showList = run.active && keys.length > 0 && !context.folded;
+  const filters = binding ? activeFilterCount(binding, context) : 0;
 
   const setQuery = value => {
-    if (binding) {
-      live().onQueryChange(value);
-      return;
-    }
     setAppQuery(value);
+    if (binding) {
+      const parsed = parseQuery(value);
+      live().onQueryChange(parsed.text, parsed);
+    }
   };
 
   const collapse = () => {
     setPanelOpen(false);
     setExpanded(false);
     setAppQuery('');
+    setPinned('');
+    setActiveKey('');
+    setEverywhere(false);
   };
 
   const clearAll = () => {
@@ -268,10 +269,29 @@ export const NavbarSearchControl = () => {
     if (binding) {
       live().onClearFilters();
     }
+    context.dropChip();
     collapse();
   };
 
+  const openKey = key => {
+    const row = order.find(entry => rowKeyOf(entry) === key);
+    if (row?.command) {
+      collapse();
+      row.command();
+      return;
+    }
+    const to = row ? searchRowPath(row, appSearch.kinds, run.query) : '';
+    if (to) {
+      collapse();
+      navigate(to);
+    }
+  };
+
   const onEscape = () => {
+    if (everywhere) {
+      setEverywhere(false);
+      return;
+    }
     if (query) {
       setQuery('');
       return;
@@ -279,9 +299,25 @@ export const NavbarSearchControl = () => {
     collapse();
   };
 
+  const onKeyDown = event => {
+    if (event.key === 'Escape') {
+      onEscape();
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!event.altKey) {
+        context.resultsRef.current?.querySelector('a')?.focus();
+      }
+    }
+    if (event.key === 'Enter' && showList) {
+      event.preventDefault();
+      openKey(held || keys[0]);
+    }
+  };
+
   const startDwell = () => {
     clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => setExpanded(true), HOVER_DWELL_MS);
+    dwell.current = setTimeout(open, HOVER_DWELL_MS);
   };
 
   const stopDwell = () => clearTimeout(dwell.current);
@@ -289,8 +325,8 @@ export const NavbarSearchControl = () => {
   if (!expanded) {
     return (
       <SearchIconButton
-        filtersOn={Boolean(binding) && activeFilterCount(binding) > 0}
-        onOpen={() => setExpanded(true)}
+        filtersOn={filters > 0}
+        onOpen={open}
         onMouseEnter={startDwell}
         onMouseLeave={stopDwell}
       />
@@ -301,16 +337,19 @@ export const NavbarSearchControl = () => {
     <SearchBox
       binding={binding}
       query={query}
-      placeholder={
-        binding ? binding.placeholder : t('search.appPlaceholder', { app: status.brand.name })
-      }
+      placeholder={everywhere ? t('search.everywhere') : binding?.placeholder || appName}
       inputRef={inputRef}
       panelOpen={panelOpen}
+      filters={filters}
+      list={{ open: showList, activeId: showList && held ? optionIdOf(held) : '' }}
+      everywhere={everywhere}
+      hits={Object.values(run.counts).reduce((sum, count) => sum + count.value, 0)}
+      modeLabel={everywhere ? appName : t('search.everywhere')}
+      onToggleMode={() => setEverywhere(current => !current)}
       onQueryChange={setQuery}
-      onTogglePanel={() => setPanelOpen(open => !open)}
+      onTogglePanel={() => setPanelOpen(current => !current)}
       onClear={clearAll}
-      onEscape={onEscape}
-      onDown={() => resultsRef.current?.querySelector('a')?.focus()}
+      onKeyDown={onKeyDown}
     />
   );
 };

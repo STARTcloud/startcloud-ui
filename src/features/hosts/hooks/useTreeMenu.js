@@ -155,12 +155,15 @@ const settingsRows = ({ server, role, aim, navigate }) =>
 
 const pageRows = ({ server, id, navigate }) => [
   divider('pages'),
-  ...hostPagesFor(server, id).map(page => ({
-    key: page.key,
-    labelKey: page.labelKey,
-    icon: page.icon,
-    onClick: () => navigate(page.to),
-  })),
+  ...hostPagesFor(server, id)
+    .flatMap(group => group.pages)
+    .filter(page => page.labelKey)
+    .map(page => ({
+      key: page.key,
+      labelKey: page.labelKey,
+      icon: page.icon,
+      onClick: () => navigate(page.to),
+    })),
 ];
 
 const createRows = ({ server, role, create }) =>

@@ -2,8 +2,15 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { drawnColumns } from '../../../components/common/SubTable';
-import { useClientFilters } from '../../../hooks/useClientFilters';
-import { columnsGroup } from '../../../hooks/useDetailSearch';
+import { useArrival, useArrivalQuery } from '../../../hooks/useArrival';
+import {
+  columnsGroup,
+  filterGroupOf,
+  hiddenToggle,
+  narrowRows,
+  selectGroup,
+  switchGroup,
+} from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { readDetailPrefs, withWidth, writeDetailPrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -12,65 +19,7 @@ const NO_GROUPS = [];
 
 const NO_SORT = [];
 
-const NO_PARAMS = [];
-
-const labelOf = (table, label, t) => `${t(table.labelKey)} · ${label}`;
-
-const ownGroup = (table, group, t) => ({
-  ...group,
-  key: `${table.key}.${group.key}`,
-  label: labelOf(table, group.label, t),
-});
-
-/**
- * One panel group of the navbar for a request filter that picks one
- * value, hyperweaver-ui's zone, user and limit selects: a `select` group
- * whose pills are the values, no count on any, the chosen one active, a
- * click choosing it and a second click on it choosing none.
- *
- * @param {Object} options - The group
- * @param {string} options.key - The group's key
- * @param {string} options.label - The group's label
- * @param {Array<string>} options.values - The values offered
- * @param {string} options.value - The chosen value, empty for none
- * @param {Function} options.onChange - Called with the next value
- * @param {Function} [options.labelFor] - The label of one value, the value itself otherwise
- * @returns {Object} The panel group
- */
-export const selectGroup = ({ key, label, values, value, onChange, labelFor = null }) => ({
-  kind: 'select',
-  key,
-  label,
-  entries: Object.fromEntries(values.map(entry => [String(entry), null])),
-  activeSet: new Set(value === '' ? [] : [String(value)]),
-  activeClass: 'bg-primary',
-  labelFor: entry => (labelFor ? labelFor(entry) : entry),
-  onToggle: entry => onChange(String(entry) === String(value) ? '' : entry),
-});
-
-/**
- * One panel group of the navbar for a request switch, hyperweaver-ui's
- * include-system and detailed toggles: a `toggle` group with one pill,
- * active while the switch is on, a click flipping it.
- *
- * @param {Object} options - The group
- * @param {string} options.key - The group's key
- * @param {string} options.label - The group's label
- * @param {string} options.pill - The pill's label
- * @param {boolean} options.on - Whether the switch is on
- * @param {Function} options.onChange - Called with the next state
- * @returns {Object} The panel group
- */
-export const switchGroup = ({ key, label, pill, on, onChange }) => ({
-  kind: 'toggle',
-  key,
-  label,
-  entries: { on: null },
-  activeSet: new Set(on ? ['on'] : []),
-  activeClass: 'bg-info',
-  labelFor: () => pill,
-  onToggle: () => onChange(!on),
-});
+const NO_SPECS = [];
 
 const ACCOUNT_LIMITS = [25, 50, 100, 200];
 
@@ -113,14 +62,9 @@ const systemGroup = ({ table, labelKey, pillKey, params, setParam, resetParams, 
   );
 
 /**
- * The request filters of the Manage page's tables as panel groups of
- * the navbar, hyperweaver-ui's selects and switches over each request:
- * the zone and the disabled services of the services, the zone on a
- * host that names `bhyve`, the user and the detail of the processes,
- * the system accounts and the limit of the users and the groups, the
- * limit of the roles, the authorizations and the profiles. A change
- * sends that table's request again; Clear filters puts every filter
- * back to what the page opened with.
+ * The request filters of the services, processes, users, groups, roles,
+ * authorizations and profiles tables as panel groups, each clearing its
+ * table's filters.
  *
  * @param {Object} options - The filters and the vocabularies
  * @param {Object} options.params - The filters of `useHostManageData`
@@ -272,38 +216,99 @@ export const manageParamGroups = ({ params, setParam, resetParams, zones, users,
 });
 
 /**
- * One table of the Manage page narrowed by the page's query and by its
- * own filter groups, its preferences, the sort, the hidden columns and
- * the widths, kept as the one object under `table_prefs_manage_` and
- * the table's key; the table's request filters, `paramGroups`, publish
- * before its client-side groups; a table the host does not offer
- * publishes no group.
+ * One table a page hands `useHostManageSearch`.
  *
- * @param {Object} options - The table, the needle, the context and the prefix
- * @returns {Object} The rows drawn, the counts, the groups and the preferences
+ * @param {Object} spec - `{ key, labelKey, rows, columns, matches, filterGroups?, paramGroups?, sort?, defaultSort?, offered }`
+ * @returns {Object} The table, its default sort ascending on `sort` unless `defaultSort` is given
  */
-const useManageTable = ({ table, needle, ctx, prefsPrefix }) => {
-  const { t } = useTranslation();
-  const prefsKey = `${prefsPrefix}_manage_${table.key}`;
-  const [prefs, setPrefs] = useState(() => readDetailPrefs(prefsKey, table.columns));
+export const tableOf = ({
+  key,
+  labelKey,
+  rows,
+  columns,
+  matches,
+  filterGroups = NO_SPECS,
+  paramGroups = NO_SPECS,
+  sort = '',
+  defaultSort = null,
+  offered,
+}) => ({
+  key,
+  labelKey,
+  rows,
+  columns,
+  matches,
+  filterGroups,
+  paramGroups,
+  defaultSort: defaultSort || [{ column: sort, direction: 'asc' }],
+  offered,
+});
 
-  useEffect(() => {
-    writeDetailPrefs(prefsKey, prefs);
-  }, [prefsKey, prefs]);
+/**
+ * The sorted names of the host's machines.
+ *
+ * @param {Array<Object>} machines - The host's machine rows
+ * @returns {Array<string>} The names
+ */
+export const zonesOf = machines =>
+  machines
+    .map(machine => machine.name)
+    .filter(Boolean)
+    .sort();
 
+const labelOf = (table, label, t) => `${t(table.labelKey)} · ${label}`;
+
+const ownGroup = (table, group, t) => ({
+  ...group,
+  key: `${table.key}.${group.key}`,
+  label: labelOf(table, group.label, t),
+});
+
+const prefsKeyOf = (prefsPrefix, section, key) => `${prefsPrefix}_${section}_${key}`;
+
+const emptySets = specs => Object.fromEntries(specs.map(spec => [spec.key, new Set()]));
+
+const readAllPrefs = (tables, prefsPrefix, section) =>
+  Object.fromEntries(
+    Object.values(tables).map(table => [
+      table.key,
+      readDetailPrefs(prefsKeyOf(prefsPrefix, section, table.key), table.columns),
+    ])
+  );
+
+const emptyAllSets = tables =>
+  Object.fromEntries(
+    Object.values(tables).map(table => [table.key, emptySets(table.filterGroups)])
+  );
+
+const setTablePrefs = (setAll, key) => update =>
+  setAll(current => ({ ...current, [key]: update(current[key]) }));
+
+const drawnTable = ({ table, needle, ctx, prefs, sets, setPrefs, setSets, rowRef, t }) => {
+  const specs = table.filterGroups;
+  const params = table.paramGroups;
   const searched = needle ? table.rows.filter(row => table.matches(row, needle)) : table.rows;
-  const filters = useClientFilters({ specs: table.filterGroups, rows: searched });
+  const narrowed = narrowRows(searched, specs, sets);
   const shown = table.columns.filter(column => !prefs.hiddenColumns.has(column.key));
   const sort = prefs.sort.length > 0 ? prefs.sort : table.defaultSort;
-  const rows = sortItems(filters.rows, sort, shown, ctx);
+  const rows = sortItems(narrowed, sort, shown, ctx);
+  const filters = specs.map(spec =>
+    filterGroupOf({
+      spec,
+      rows: searched,
+      active: sets[spec.key],
+      onToggle: next => setSets(current => ({ ...current, [spec.key]: next })),
+      t,
+    })
+  );
   const groups = table.offered
     ? [
-        ...(table.paramGroups || NO_PARAMS),
-        ...filters.groups,
+        ...params,
+        ...filters,
         columnsGroup({
           columns: drawnColumns(table.columns, rows, ctx),
           hidden: prefs.hiddenColumns,
-          setPrefs,
+          onToggle: hiddenToggle(setPrefs),
           t,
         }),
       ].map(group => ownGroup(table, group, t))
@@ -311,12 +316,13 @@ const useManageTable = ({ table, needle, ctx, prefsPrefix }) => {
 
   return {
     rows,
+    rowRef,
     total: table.rows.length,
     groups,
-    active: filters.active,
+    active: specs.some(spec => sets[spec.key].size > 0),
     clear: () => {
-      filters.clear();
-      (table.paramGroups || NO_PARAMS).forEach(group => group.onClear?.());
+      setSets(() => emptySets(specs));
+      params.forEach(group => group.onClear?.());
     },
     sort,
     setSort: (column, options) =>
@@ -330,123 +336,64 @@ const useManageTable = ({ table, needle, ctx, prefsPrefix }) => {
 };
 
 /**
- * The one navbar search binding of the Manage page over its twenty-four
- * tables, the services, the processes, the users, the groups, the roles,
- * the RBAC authorizations, profiles and roles, the time peers, the
- * update history, the storage locations, the artifacts, the syslog
- * rules, the log files, the boot environments, the faults, the fault
- * manager modules, the databases, the repositories, the packages, the
- * installer files, the recipes, the templates and the provisioners: the query
- * narrows every table at once, in place of
- * the pattern box hyperweaver-ui debounced into each request, each
- * table publishes its request filters, one filter group per enumerable
- * column and its Columns group last, each group named by its table, and
- * the counts are the rows of all ten. Every table keeps its own sort,
- * hidden columns and widths under `table_prefs_manage_` and its key;
- * Clear filters empties the groups and the request filters of every
- * table and keeps the query.
+ * The navbar search binding of a host's page over its tables: one query
+ * over them all, first the one the page arrived with, each offered
+ * table's request, filter and Columns groups, each table's sort, hidden
+ * columns and widths kept under `<prefsPrefix>_<section>_<key>`, and the
+ * `rowRef` that brings the row the URL's hash names into view.
  *
  * @param {Object} options - The page's side
- * @param {Object} options.tables - The twenty-four tables by key, each `{ key, labelKey, rows, columns, matches, filterGroups, paramGroups, defaultSort, offered }`
+ * @param {string} options.section - The section's key, the infix of the prefs keys
+ * @param {Object} options.tables - The tables by key, each from `tableOf`
  * @param {Object} options.ctx - The context the tables' columns receive
  * @param {string} options.prefsPrefix - The prefix of the page's prefs keys
- * @returns {Object} The twenty-four tables' rows and preferences and `filtering`
+ * @param {string} options.placeholderKey - The key of the search box's placeholder
+ * @returns {{ tables: Object, filtering: boolean }} Each table's rows, row ref, sort, hidden columns and widths by its `key`, and whether a query or a filter narrows
  */
-export const useHostManageSearch = ({ tables, ctx, prefsPrefix }) => {
+export const useHostManageSearch = ({ section, tables, ctx, prefsPrefix, placeholderKey }) => {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  const arrivedQuery = useArrivalQuery();
+  const arrival = useArrival(Object.values(tables).map(table => table.rows));
+  const [query, setQuery] = useState(arrivedQuery);
+  const [prefs, setPrefs] = useState(() => readAllPrefs(tables, prefsPrefix, section));
+  const [sets, setSets] = useState(() => emptyAllSets(tables));
   const needle = query.trim().toLowerCase();
-  const services = useManageTable({ table: tables.services, needle, ctx, prefsPrefix });
-  const processes = useManageTable({ table: tables.processes, needle, ctx, prefsPrefix });
-  const users = useManageTable({ table: tables.users, needle, ctx, prefsPrefix });
-  const groups = useManageTable({ table: tables.groups, needle, ctx, prefsPrefix });
-  const roles = useManageTable({ table: tables.roles, needle, ctx, prefsPrefix });
-  const authorizations = useManageTable({ table: tables.authorizations, needle, ctx, prefsPrefix });
-  const profiles = useManageTable({ table: tables.profiles, needle, ctx, prefsPrefix });
-  const rbacRoles = useManageTable({ table: tables.rbacRoles, needle, ctx, prefsPrefix });
-  const peers = useManageTable({ table: tables.peers, needle, ctx, prefsPrefix });
-  const history = useManageTable({ table: tables.history, needle, ctx, prefsPrefix });
-  const storagePaths = useManageTable({ table: tables.storagePaths, needle, ctx, prefsPrefix });
-  const artifacts = useManageTable({ table: tables.artifacts, needle, ctx, prefsPrefix });
-  const syslogRules = useManageTable({ table: tables.syslogRules, needle, ctx, prefsPrefix });
-  const logFiles = useManageTable({ table: tables.logFiles, needle, ctx, prefsPrefix });
-  const bootEnvironments = useManageTable({
-    table: tables.bootEnvironments,
-    needle,
-    ctx,
-    prefsPrefix,
-  });
-  const faults = useManageTable({ table: tables.faults, needle, ctx, prefsPrefix });
-  const faultModules = useManageTable({ table: tables.faultModules, needle, ctx, prefsPrefix });
-  const databases = useManageTable({ table: tables.databases, needle, ctx, prefsPrefix });
-  const repositories = useManageTable({ table: tables.repositories, needle, ctx, prefsPrefix });
-  const packages = useManageTable({ table: tables.packages, needle, ctx, prefsPrefix });
-  const installers = useManageTable({ table: tables.installers, needle, ctx, prefsPrefix });
-  const recipes = useManageTable({ table: tables.recipes, needle, ctx, prefsPrefix });
-  const templates = useManageTable({ table: tables.templates, needle, ctx, prefsPrefix });
-  const provisioners = useManageTable({ table: tables.provisioners, needle, ctx, prefsPrefix });
-  const drawn = [
-    services,
-    processes,
-    users,
-    groups,
-    roles,
-    authorizations,
-    profiles,
-    rbacRoles,
-    peers,
-    history,
-    storagePaths,
-    artifacts,
-    syslogRules,
-    logFiles,
-    bootEnvironments,
-    faults,
-    faultModules,
-    databases,
-    repositories,
-    packages,
-    installers,
-    recipes,
-    templates,
-    provisioners,
-  ];
+
+  useEffect(() => {
+    Object.entries(prefs).forEach(([key, entry]) =>
+      writeDetailPrefs(prefsKeyOf(prefsPrefix, section, key), entry)
+    );
+  }, [prefsPrefix, section, prefs]);
+
+  const drawn = Object.fromEntries(
+    Object.values(tables).map(table => [
+      table.key,
+      drawnTable({
+        table,
+        needle,
+        ctx,
+        prefs:
+          prefs[table.key] ||
+          readDetailPrefs(prefsKeyOf(prefsPrefix, section, table.key), table.columns),
+        sets: sets[table.key] || emptySets(table.filterGroups),
+        setPrefs: setTablePrefs(setPrefs, table.key),
+        setSets: setTablePrefs(setSets, table.key),
+        rowRef: arrival.ref,
+        t,
+      }),
+    ])
+  );
+  const list = Object.values(drawn);
 
   useNavbarSearchBinding({
     query,
     onQueryChange: setQuery,
-    placeholder: t('hosts.manage.search'),
-    matched: drawn.reduce((sum, table) => sum + table.rows.length, 0),
-    total: drawn.reduce((sum, table) => sum + table.total, 0),
-    groups: drawn.flatMap(table => table.groups),
-    onClearFilters: () => drawn.forEach(table => table.clear()),
+    placeholder: t(placeholderKey),
+    matched: list.reduce((sum, table) => sum + table.rows.length, 0),
+    total: list.reduce((sum, table) => sum + table.total, 0),
+    groups: list.flatMap(table => table.groups),
+    onClearFilters: () => list.forEach(table => table.clear()),
   });
 
-  return {
-    services,
-    processes,
-    users,
-    groups,
-    roles,
-    authorizations,
-    profiles,
-    rbacRoles,
-    peers,
-    history,
-    storagePaths,
-    artifacts,
-    syslogRules,
-    logFiles,
-    bootEnvironments,
-    faults,
-    faultModules,
-    databases,
-    repositories,
-    packages,
-    installers,
-    recipes,
-    templates,
-    provisioners,
-    filtering: needle !== '' || drawn.some(table => table.active),
-  };
+  return { tables: drawn, filtering: needle !== '' || list.some(table => table.active) };
 };

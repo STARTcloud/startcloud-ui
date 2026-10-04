@@ -8,8 +8,8 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useTablePrefs } from '../../../hooks/useTablePrefs';
-import { sortItems } from '../../../utils/sort';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { bruteForce, unblock, unblockAll, unblockBulk } from '../api/security';
 import { useAdminRead } from '../hooks/useAdminRead';
 import { BRUTE_FORCE } from '../utils/examples';
@@ -18,6 +18,8 @@ import AdminLoading from './AdminLoading';
 
 const PREFS_KEY = 'table_prefs_admin_blocked';
 const DEFAULT_SORT = [{ column: 'ip', direction: 'asc' }];
+
+const matches = (row, needle) => row.ip.toLowerCase().includes(needle);
 
 const columns = [
   {
@@ -158,11 +160,13 @@ BulkActions.propTypes = {
  * confirm, the table's select column a real checkbox header, the
  * select-all for the page, the per-row Unblock behind its own confirm,
  * and the heading's action pane gaining, while rows are picked, "N
- * selected", Clear selection and Unblock beside Unblock all; the table's
- * columns sorting by what their cells show, its sort, hidden columns and
- * column widths under `table_prefs_admin_blocked`;
- * the sidebar's badge is the shell's, from the `admin` topic's
- * `blocked-count`.
+ * selected", Clear selection and Unblock beside Unblock all; its search
+ * bound to the navbar box over the address, the query mirrored in the URL
+ * as `search` through `useUrlNarrowing`, with the Columns group, the
+ * table's columns sorting by what their cells show, its sort, hidden
+ * columns and column widths under `table_prefs_admin_blocked` through
+ * `useDetailSearch`; the sidebar's badge is the shell's, from the `admin`
+ * topic's `blocked-count`.
  */
 const BlockedIpsPage = () => {
   const { t, i18n } = useTranslation();
@@ -172,7 +176,24 @@ const BlockedIpsPage = () => {
   const [unblockingAll, setUnblockingAll] = useState(false);
   const blockedRows = useMemo(() => data?.blocked || [], [data]);
   const selection = useSelection(blockedRows);
-  const prefs = useTablePrefs(PREFS_KEY, columns, DEFAULT_SORT);
+  const url = useUrlNarrowing({ queryKey: 'search' });
+  const ctx = { t, language: i18n.language };
+  const search = useDetailSearch({
+    rows: blockedRows,
+    matches,
+    placeholderKey: 'admin.blocked.search',
+    columns,
+    ctx,
+    prefsKey: PREFS_KEY,
+    filterGroups: [],
+    url,
+    bound: {
+      query: url.query,
+      onQueryChange: url.setQuery,
+      placeholder: t('admin.blocked.search'),
+    },
+    defaultSort: DEFAULT_SORT,
+  });
 
   useEffect(() => {
     document.title = t('admin.blocked.title');
@@ -205,7 +226,6 @@ const BlockedIpsPage = () => {
   }
 
   const blocked = data.blocked || [];
-  const ctx = { t, language: i18n.language };
   const enabledCount = data.enabled
     ? t('admin.blocked.enabled', { count: blocked.length })
     : t('admin.blocked.disabled');
@@ -247,18 +267,18 @@ const BlockedIpsPage = () => {
       />
       <SubTable
         columns={columns}
-        rows={sortItems(blocked, prefs.sort, columns, ctx)}
+        rows={search.rows}
         rowKey={row => row.ip}
         RowActions={RowActions}
         actionsProps={{ onUnblock: setUnblocking }}
         rowProp="entry"
-        sort={prefs.sort}
-        onSort={prefs.setSort}
-        hiddenColumns={prefs.hiddenColumns}
-        widths={prefs.widths}
-        onResize={prefs.setColumnWidth}
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
         ctx={ctx}
-        emptyText={t('pages.empty')}
+        emptyText={search.filtering ? t('pages.noMatches') : t('pages.empty')}
         selection={selection.subtable}
       />
       <ConfirmModal

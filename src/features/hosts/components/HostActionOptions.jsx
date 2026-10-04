@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { Fragment } from 'react';
 import { Button, Dropdown, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaShareNodes } from 'react-icons/fa6';
@@ -264,15 +265,16 @@ ActionOptionsModal.propTypes = {
 
 /**
  * One row of the Controls menu: a fa6 glyph in its tone and the label,
- * `titleKey` the sentence its tooltip carries when the label alone does
- * not say what the row does, `action` the word the row carries as
- * `data-action`.
+ * the label's or the tooltip's key or its text, `action` the word the row
+ * carries as `data-action`.
  */
 export const ActionRow = ({
   icon: Icon,
   tone,
-  labelKey,
+  labelKey = '',
+  label = '',
   titleKey = '',
+  title = '',
   action = '',
   disabled = false,
   onClick,
@@ -283,12 +285,12 @@ export const ActionRow = ({
       as="button"
       type="button"
       disabled={disabled}
-      title={titleKey ? t(titleKey) : undefined}
+      title={titleKey ? t(titleKey) : title || undefined}
       data-action={action || undefined}
       onClick={onClick}
     >
       <Icon className={`${tone} me-2`} />
-      {t(labelKey)}
+      {label || t(labelKey)}
     </Dropdown.Item>
   );
 };
@@ -296,46 +298,102 @@ export const ActionRow = ({
 ActionRow.propTypes = {
   icon: PropTypes.elementType.isRequired,
   tone: PropTypes.string.isRequired,
-  labelKey: PropTypes.string.isRequired,
+  labelKey: PropTypes.string,
+  label: PropTypes.string,
   titleKey: PropTypes.string,
+  title: PropTypes.string,
   action: PropTypes.string,
   disabled: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
 };
 
 /**
- * Share link, hyperweaver-ui's first row of both Controls menus: copies
- * the page's own address, which names the host and the machine, to the
- * clipboard and raises one notice; a refused clipboard raises none.
+ * Share link, the first command of both Controls menus: copies the page's
+ * own address to the clipboard and raises one notice.
+ *
+ * @returns {Object} The command
  */
-export const ShareLinkRow = () => {
+export const useShareCommand = () => {
   const { t } = useTranslation();
   const notify = useNotify();
-  return (
-    <ActionRow
-      icon={FaShareNodes}
-      tone="text-info"
-      labelKey="navbar.navbar.shareLink"
-      titleKey="navbar.navbar.shareLinktitle"
-      action="share-link"
-      onClick={() =>
-        copyToClipboard(window.location.href)
-          .then(() => notify('success', t('copyButton.copied')))
-          .catch(() => null)
-      }
-    />
-  );
+  return {
+    key: 'share-link',
+    group: 'share',
+    icon: FaShareNodes,
+    tone: 'text-info',
+    labelKey: 'navbar.navbar.shareLink',
+    titleKey: 'navbar.navbar.shareLinktitle',
+    action: 'share-link',
+    run: () =>
+      copyToClipboard(window.location.href)
+        .then(() => notify('success', t('copyButton.copied')))
+        .catch(() => null),
+  };
 };
 
 /**
- * The muted last line of the Controls menu for a person whose role does
- * not reach the advanced rows.
+ * The command that stands for the muted line of a role short of the
+ * advanced rows; drawn as the line and never searched.
  */
-export const PrivilegeLine = () => {
+export const PRIVILEGE_NOTE = { key: 'privilege', group: 'privilege', note: true };
+
+const PrivilegeLine = () => {
   const { t } = useTranslation();
   return (
     <Dropdown.ItemText className="text-body-secondary text-center small">
       {t('hosts.controls.privilege')}
     </Dropdown.ItemText>
   );
+};
+
+const groupsOf = commands =>
+  commands.reduce((groups, command) => {
+    const last = groups[groups.length - 1];
+    if (last && last.key === command.group) {
+      last.commands.push(command);
+      return groups;
+    }
+    return [...groups, { key: command.group, header: command.header, commands: [command] }];
+  }, []);
+
+const CommandRow = ({ command }) =>
+  command.note ? (
+    <PrivilegeLine />
+  ) : (
+    <ActionRow
+      icon={command.icon}
+      tone={command.tone}
+      labelKey={command.labelKey}
+      label={command.label}
+      titleKey={command.titleKey}
+      title={command.title}
+      action={command.action}
+      disabled={command.disabled}
+      onClick={command.run}
+    />
+  );
+
+CommandRow.propTypes = {
+  command: PropTypes.object.isRequired,
+};
+
+/**
+ * The rows of the Controls menu from its commands, a divider before each
+ * group after the first and a group's header above its rows.
+ */
+export const CommandRows = ({ commands }) => {
+  const { t } = useTranslation();
+  return groupsOf(commands).map((group, index) => (
+    <Fragment key={group.key}>
+      {index > 0 ? <Dropdown.Divider /> : null}
+      {group.header ? <Dropdown.Header>{t(group.header)}</Dropdown.Header> : null}
+      {group.commands.map(command => (
+        <CommandRow key={command.key} command={command} />
+      ))}
+    </Fragment>
+  ));
+};
+
+CommandRows.propTypes = {
+  commands: PropTypes.arrayOf(PropTypes.object).isRequired,
 };

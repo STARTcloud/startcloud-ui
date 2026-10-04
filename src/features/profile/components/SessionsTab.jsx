@@ -8,6 +8,9 @@ import MethodList, { MethodRow } from '../../../components/common/MethodList';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
+import { useArrivalQuery } from '../../../hooks/useArrival';
+import { useClientFilters } from '../../../hooks/useClientFilters';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 
@@ -26,6 +29,32 @@ const deviceOf = userAgent => {
   );
   return [browser, os].filter(Boolean).join(' · ') || agent;
 };
+
+const matches = (row, needle) =>
+  [
+    row.client_name || '',
+    row.client_id || '',
+    deviceOf(row.user_agent),
+    row.location || '',
+    row.ip_address || '',
+  ].some(text => text.toLowerCase().includes(needle));
+
+const FILTER_GROUPS = [
+  {
+    key: 'client',
+    labelKey: 'admin.activity.sessions.client',
+    values: row => (row.client_name ? [row.client_name] : []),
+    activeClass: 'bg-primary',
+    labelFor: value => value,
+  },
+  {
+    key: 'current',
+    labelKey: 'profile.sessions.current',
+    values: row => (row.current ? ['current'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`profile.sessions.${value}`),
+  },
+];
 
 const SessionSubline = ({ row }) => {
   const { t, i18n } = useTranslation();
@@ -96,13 +125,32 @@ SignOutButton.propTypes = {
  * the revoke-all are stepped up, the current row's Sign out is the plain
  * sign-out, and an answer's `next` is followed when the call ended this
  * session; the list is a glass section of the pages contract, a
- * `SectionHeading` carrying Revoke all over the rows on the page's ground.
+ * `SectionHeading` carrying the total and Revoke all over the rows on the
+ * page's ground; the navbar search bound with a query over the client,
+ * the device, the location and the address, first the one the page
+ * arrived with, and the Client and This session `toggle` groups
+ * narrowing the rows client-side, Clear filters keeping the query.
  */
 const SessionsTab = ({ account, guard, onSignedOut }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [rows, setRows] = useState([]);
   const [pending, setPending] = useState(null);
+  const arrivedQuery = useArrivalQuery();
+  const [query, setQuery] = useState(arrivedQuery);
+  const needle = query.trim().toLowerCase();
+  const searched = needle ? rows.filter(row => matches(row, needle)) : rows;
+  const filters = useClientFilters({ specs: FILTER_GROUPS, rows: searched });
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('profile.search.sessions'),
+    matched: filters.rows.length,
+    total: rows.length,
+    groups: filters.groups,
+    onClearFilters: filters.clear,
+  });
 
   const load = useCallback(
     () =>
@@ -202,8 +250,10 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
         count={rows.length}
         actions={revokeAllButton}
       />
-      <MethodList empty={t('profile.sessions.none')}>
-        {rows.map(row => (
+      <MethodList
+        empty={needle || filters.active ? t('pages.noMatches') : t('profile.sessions.none')}
+      >
+        {filters.rows.map(row => (
           <MethodRow
             key={row.id}
             icon={<FaDesktop aria-hidden />}

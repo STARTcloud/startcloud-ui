@@ -10,7 +10,7 @@ Feature: machine provisioning
     And the provisioning page names the provisioner "startcloud"
     And the provisioning status reads "provisioned"
     And I see "https://dev-1.example.com/welcome.html"
-    And the machine tab "provisioning" is the active one
+    And the machine row "provisioning" is the active one
     And the provisioning page draws no "machine-info" panel
     And the host was sent GET to "/api/agents/1/machines/dev-1/provision/status" 1 times
     And the host was sent GET to "/api/agents/1/machines/dev-1" 1 times

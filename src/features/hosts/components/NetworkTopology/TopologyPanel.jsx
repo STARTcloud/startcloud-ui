@@ -181,8 +181,9 @@ const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
  * copies the hosts feature's context holds, so nothing polls: the
  * structure follows the held reads and the motion the samples the
  * `monitoring` topic pushes. A machine opens at its route and its
- * settings at `/settings`; the host's networking is this page, so the
- * open scrolls to its top on this host and navigates on another; a
+ * settings at `/settings`; the host's networking is the Interfaces page,
+ * so the open scrolls to its top on this host and navigates to
+ * `/hosts/{id}/network/interfaces` on another; a
  * wire's click scrolls to the charts. Apply sends `PUT machines/{name}`
  * with `buildNicBody` per machine, then reads the host's machines and
  * each machine's detail again.
@@ -269,7 +270,7 @@ const TopologyPanel = ({ id, fold }) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
-      navigate(`/hosts/${hostKey}/networking`);
+      navigate(`/hosts/${hostKey}/network/interfaces`);
     },
     [id, navigate]
   );

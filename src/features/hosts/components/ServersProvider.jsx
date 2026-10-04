@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { createStore } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
@@ -9,6 +10,7 @@ import { ServersContext } from '../hooks/useServers';
 import { isServerRole, selfServer } from '../utils/hosts';
 import { visibleRows } from '../utils/organizations';
 
+import HostApplicationsProvider from './HostApplicationsProvider';
 import HostMachinesProvider from './HostMachinesProvider';
 import HostReadingsProvider from './HostReadingsProvider';
 import HostSeriesProvider from './HostSeriesProvider';
@@ -33,42 +35,22 @@ const answered = (epoch, patch) => current =>
   current.epoch === epoch ? { ...current, ...patch, loaded: true } : current;
 
 /**
- * The hosts feature's one context, the list of servers behind
- * `useServers`: on the server role one `GET /api/servers` when the first
- * caller asks, a second caller while that request is in flight starting
- * none, the rows held for every caller after it; read again when the
- * event stream opens fresh or answers `reset` and on the `hosts` topic's
- * `servers-updated` event, once a caller has asked, and on a caller's
- * `refresh`. The list belongs to the session: when
- * `signedIn` changes the held rows are dropped and the callers that draw
- * ask again, an answer of the session before it discarded. On an agent
- * role the list is the one serving agent and nothing is requested.
- * `organization` is the uuid of the organization a person operates
- * under, empty for All and on every host that narrows by none: the
- * servers handed out are the held rows that show under it
- * (`visibleUnder`, failing open), a view over what the server already
- * answered, so the tree, the pages, the Controls menu and the footer's
- * focus follow the choice without learning of organizations, and a
- * change of the choice asks for nothing; the providers of the stats and
- * of the machine rows are handed the same choice. `held` is every row
- * the server answered, the choice aside: the list a host named by its id
- * is found in, so the page, the Controls menu and the footer's focus of a
- * host the person reached by its address draw whole under any choice, the
- * server having answered for it.
- * Inside it draws `HostStatsProvider`, `HostMachinesProvider`,
- * `MachineDetailProvider`, `HostReadingsProvider` and
- * `HostSeriesProvider`, the stats, the machine rows, the detail of each
- * machine, the Overview's answers and the charts' series of each host
- * held the same way, so the app mounts one provider for the feature;
- * and `MachineSnapshotsProvider` and `MachineSeriesProvider`, the
- * snapshots and the charts' series of each machine; `MachineRestoreProvider`,
- * the start that follows a restore; and innermost `ZoneTerminalProvider`,
- * the zlogin terminals of the zones a person opened.
+ * The hosts feature's one context: the list of servers behind
+ * `useServers`, read once on the server role and again on the stream's
+ * fresh `ready`, `reset` and `servers-updated` and on `refresh`, the
+ * serving agent alone on an agent role, narrowed to the chosen
+ * organization with every answered row kept as `held`; the store of the
+ * feature's command list and whether the Controls menu is open; and
+ * inside it the providers of the stats,
+ * machine rows, machine detail, host applications, readings, series,
+ * snapshots, restores and zone terminals.
  */
 const ServersProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
   const server = isServerRole(status);
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
+  const [commands] = useState(createStore);
+  const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(IDLE);
 
   if (state.signedIn !== signedIn) {
@@ -115,9 +97,10 @@ const ServersProvider = ({ signedIn, organization, children }) => {
   });
 
   const value = useMemo(() => {
+    const menu = { commands, menuOpen, setMenuOpen };
     if (!server) {
       const servers = [selfServer(status)];
-      return { servers, held: servers, loaded: true, failed: false, epoch: 0, read };
+      return { servers, held: servers, loaded: true, failed: false, epoch: 0, read, ...menu };
     }
     return {
       servers: visibleRows(state.servers, organization),
@@ -126,25 +109,28 @@ const ServersProvider = ({ signedIn, organization, children }) => {
       failed: state.failed,
       epoch: state.epoch,
       read,
+      ...menu,
     };
-  }, [server, status, state, read, organization]);
+  }, [server, status, state, read, organization, commands, menuOpen]);
 
   return (
     <ServersContext.Provider value={value}>
       <HostStatsProvider signedIn={signedIn} organization={organization}>
         <HostMachinesProvider signedIn={signedIn} organization={organization}>
           <MachineDetailProvider signedIn={signedIn}>
-            <HostReadingsProvider signedIn={signedIn}>
-              <HostSeriesProvider signedIn={signedIn}>
-                <MachineSnapshotsProvider signedIn={signedIn}>
-                  <MachineSeriesProvider signedIn={signedIn}>
-                    <MachineRestoreProvider signedIn={signedIn}>
-                      <ZoneTerminalProvider signedIn={signedIn}>{children}</ZoneTerminalProvider>
-                    </MachineRestoreProvider>
-                  </MachineSeriesProvider>
-                </MachineSnapshotsProvider>
-              </HostSeriesProvider>
-            </HostReadingsProvider>
+            <HostApplicationsProvider signedIn={signedIn}>
+              <HostReadingsProvider signedIn={signedIn}>
+                <HostSeriesProvider signedIn={signedIn}>
+                  <MachineSnapshotsProvider signedIn={signedIn}>
+                    <MachineSeriesProvider signedIn={signedIn}>
+                      <MachineRestoreProvider signedIn={signedIn}>
+                        <ZoneTerminalProvider signedIn={signedIn}>{children}</ZoneTerminalProvider>
+                      </MachineRestoreProvider>
+                    </MachineSeriesProvider>
+                  </MachineSnapshotsProvider>
+                </HostSeriesProvider>
+              </HostReadingsProvider>
+            </HostApplicationsProvider>
           </MachineDetailProvider>
         </HostMachinesProvider>
       </HostStatsProvider>

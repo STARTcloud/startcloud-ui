@@ -22,7 +22,6 @@ const SENSITIVE_KEYS = new Set([
   'cookie',
 ]);
 const MAX_ERROR_QUEUE_SIZE = 50;
-const ERROR_FLUSH_DEBOUNCE_MS = 1000;
 const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
 
 const cookieValue = name =>
@@ -48,7 +47,7 @@ const configured = new Promise(resolve => {
 let initPromise = null;
 
 const errorQueue = [];
-let flushTimer = null;
+let shipping = false;
 
 /**
  * Replace the value of every credential-named key, at any depth, with
@@ -72,13 +71,20 @@ export const redact = value => {
 };
 
 const flushErrors = () => {
-  flushTimer = null;
+  shipping = true;
   fetch(settings.reportUrl, {
     method: 'POST',
     credentials: 'same-origin',
     headers: reportHeaders(),
     body: JSON.stringify({ entries: errorQueue.splice(0) }),
-  }).catch(() => null);
+  })
+    .catch(() => null)
+    .then(() => {
+      shipping = false;
+      if (errorQueue.length > 0) {
+        flushErrors();
+      }
+    });
 };
 
 const queueErrorForShipping = entry => {
@@ -86,7 +92,9 @@ const queueErrorForShipping = entry => {
     errorQueue.shift();
   }
   errorQueue.push(entry);
-  flushTimer ||= setTimeout(flushErrors, ERROR_FLUSH_DEBOUNCE_MS);
+  if (!shipping) {
+    flushErrors();
+  }
 };
 
 const hasLocalStorageOverride = category => {

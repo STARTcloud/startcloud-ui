@@ -613,9 +613,13 @@ PoolDialogs.propTypes = {
  * Refresh and the end of a task this page queued; the disks are the copy
  * the hosts feature's context holds, read again by Rescan after the
  * monitoring service collected. Every write is one request through
- * `tools`, a queued task, one notice.
+ * `tools`, a queued task, one notice. `view` names what the panel draws
+ * of the two surfaces, `pools` the cards alone on the Pools and
+ * datasets page, `disks` the chassis alone on the Disks page, the
+ * pools still read there for the bays' tints and the disk dialog, and
+ * `all` both.
  */
-const ZfsPoolsPanel = ({ id, turn, disks, tools }) => {
+const ZfsPoolsPanel = ({ id, turn, disks, tools, view = 'all' }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [pools, setPools] = useState([]);
@@ -716,34 +720,41 @@ const ZfsPoolsPanel = ({ id, turn, disks, tools }) => {
     </>
   );
 
+  const showPools = view !== 'disks';
+  const showChassis = view !== 'pools' && disks.offered;
+
   return (
-    <div data-panel="storage-zfs-pools" data-count={pools.length}>
-      <SectionHeading title={title} count={pools.length} actions={actions} />
+    <div data-panel="storage-zfs-pools" data-view={view} data-count={pools.length}>
+      {showPools ? <SectionHeading title={title} count={pools.length} actions={actions} /> : null}
       {failed ? (
         <div className="alert alert-danger py-2" role="alert" data-note="pools-failed">
           {failed}
         </div>
       ) : null}
-      {!loaded ? <p className="text-muted">{t('pages.loading')}</p> : null}
-      {loaded && !failed && pools.length === 0 ? (
+      {showPools && !loaded ? <p className="text-muted">{t('pages.loading')}</p> : null}
+      {showPools && loaded && !failed && pools.length === 0 ? (
         <p className="text-muted mb-0">{t('host.zfsPoolsPanel.noPools')}</p>
       ) : null}
-      <div className="row g-3">
-        {pools.map(pool => (
-          <div className="col-12 col-xl-6" key={pool.name}>
-            <PoolCard
-              pool={pool}
-              topology={statuses[pool.name] || null}
-              accent={poolColorOf(pool.name)}
-              busy={tools.busy}
-              onAction={runSimple}
-              onModal={setModal}
-              onDiskClick={(poolName, device) => setModal({ kind: 'disk', pool: poolName, device })}
-            />
-          </div>
-        ))}
-      </div>
-      {disks.offered ? (
+      {showPools ? (
+        <div className="row g-3">
+          {pools.map(pool => (
+            <div className="col-12 col-xl-6" key={pool.name}>
+              <PoolCard
+                pool={pool}
+                topology={statuses[pool.name] || null}
+                accent={poolColorOf(pool.name)}
+                busy={tools.busy}
+                onAction={runSimple}
+                onModal={setModal}
+                onDiskClick={(poolName, device) =>
+                  setModal({ kind: 'disk', pool: poolName, device })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {showChassis ? (
         <DiskChassis
           disks={disks.rows}
           poolColorOf={poolColorOf}
@@ -777,6 +788,7 @@ ZfsPoolsPanel.propTypes = {
     send: PropTypes.func.isRequired,
     busy: PropTypes.bool.isRequired,
   }).isRequired,
+  view: PropTypes.oneOf(['all', 'pools', 'disks']),
 };
 
 export default ZfsPoolsPanel;

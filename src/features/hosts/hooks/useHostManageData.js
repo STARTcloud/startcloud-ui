@@ -45,21 +45,25 @@ const rowsOf = reading => (Array.isArray(reading.data) ? reading.data : NO_ROWS)
  * the update history, each behind the token of its section, hyperweaver-ui's
  * request filters kept as `params` and `setParam(table, key, value)`, a
  * change sending the request again the way hyperweaver-ui reloaded on
- * a filter change, with no debounce.
+ * a filter change, with no debounce; `only` names the reads a page
+ * draws, every other asked for nothing, so a page of one section reads
+ * its own tables alone.
  *
  * @param {Object} options - The host
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {Object|null} options.server - The registry row, or the one serving agent's
+ * @param {Array<string>} [options.only] - The keys of the reads wanted, every read without the list
  * @returns {{ params: Object, setParam: Function, resetParams: Function, reads: Object, rows: Object }} The data
  */
-export const useHostManageData = ({ id, server }) => {
+export const useHostManageData = ({ id, server, only = null }) => {
   const status = useStatus();
   const [params, setParams] = useState(MANAGE_PARAMS);
-  const services = hostHasFeature(server, 'services');
-  const processes = hostHasFeature(server, 'processes');
+  const wanted = key => !only || only.includes(key);
+  const services = hostHasFeature(server, 'services') && wanted('services');
+  const processes = hostHasFeature(server, 'processes') && wanted('processes');
   const accounts = hostHasFeature(server, 'system-users');
-  const time = hostHasFeature(server, 'time-sync');
-  const packages = hostHasFeature(server, 'packages');
+  const time = hostHasFeature(server, 'time-sync') && wanted('timeSync');
+  const packages = hostHasFeature(server, 'packages') && wanted('history');
 
   const setParam = useCallback((table, key, value) => {
     setParams(current => ({ ...current, [table]: { ...current[table], [key]: value } }));
@@ -83,30 +87,30 @@ export const useHostManageData = ({ id, server }) => {
     ),
     users: useManageRead(
       useCallback(() => fetchUsers(status, id, params.users), [status, id, params.users]),
-      accounts
+      accounts && wanted('users')
     ),
     groups: useManageRead(
       useCallback(() => fetchGroups(status, id, params.groups), [status, id, params.groups]),
-      accounts
+      accounts && wanted('groups')
     ),
     roles: useManageRead(
       useCallback(() => fetchRoles(status, id, params.roles), [status, id, params.roles]),
-      accounts
+      accounts && wanted('roles')
     ),
     authorizations: useManageRead(
       useCallback(
         () => fetchAuthorizations(status, id, params.authorizations),
         [status, id, params.authorizations]
       ),
-      accounts
+      accounts && wanted('authorizations')
     ),
     profiles: useManageRead(
       useCallback(() => fetchProfiles(status, id, params.profiles), [status, id, params.profiles]),
-      accounts
+      accounts && wanted('profiles')
     ),
     rbacRoles: useManageRead(
       useCallback(() => fetchRbacRoles(status, id), [status, id]),
-      accounts
+      accounts && wanted('rbacRoles')
     ),
     timeSync: useManageRead(
       useCallback(() => fetchTimeSyncStatus(status, id), [status, id]),

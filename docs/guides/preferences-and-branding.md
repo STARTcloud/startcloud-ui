@@ -12,13 +12,8 @@ permalink: /docs/guides/preferences-and-branding/
 
 The estate-wide contract for user preferences (language, theme, mode,
 timezone), notification localization, and tenant branding. Relying apps build against
-this page. Agreed across the authorization server, BoxVault and
-hyperweaver-ui; every clause below carries its reasoning, because a rule
-without its rationale gets pruned by whoever inherits it. The visual
-reference is [preferences-and-branding.html](../preferences-and-branding.html):
-the first frame is live on the authorization server's four sites, and a
-yellow note there marks what this contract changes against `auth.css` as it
-paints them today.
+this page. The visual reference is
+[preferences-and-branding.html](../preferences-and-branding.html).
 
 ## Table of contents
 
@@ -31,16 +26,7 @@ paints them today.
 
 ## Theme and mode
 
-In Mark's words: "theme is a pack, theme not set is the default, the
-default is always the startcloud pack, the theme is the pack files, fonts,
-images, brands, etc"; "theme mode is light, dark and OS"; "I should have
-never had a config holding a default theme of light"; "the default theme
-of an app, when it's not following a user, or part of a brand, is that it
-should default to the operating system's default"; "we want the
-first-time users to have their OS's theme, not the light theme as the
-default"; "everyone keeps confusing the theme with the theme mode".
-
-So, everywhere in this contract and the code: the word **theme** means the
+Everywhere in this contract and the code: the word **theme** means the
 pack (`startcloud`, `lcars`, `moonshinedev`: the pack's files, fonts,
 images and brands); the word **mode** means `light`, `dark` or the
 operating system's (`auto`). A site or host names its theme and may offer
@@ -156,8 +142,7 @@ CSS, and its entire dark layer sits behind exact-match selectors
 (`[data-bs-theme=dark] { … }`). A composed value such as
 `moonshinedev-dark` matches none of them, so body colors, borders, form
 controls and dropdowns silently revert to light while the brand appears to
-apply. This is the single most expensive mistake available here; an earlier
-draft of this page recommended it.
+apply. This is the single most expensive mistake available here.
 
 **No theme painted: omit the attribute and the stylesheet link entirely.**
 No empty `data-brand`, no dead `<link>`. Two implementations will
@@ -179,13 +164,7 @@ as intermittent and sends people hunting in the wrong place.
 
 Appending the `<link>` to `<head>` at runtime satisfies this by
 construction. Server-side injection is the shape where it must be done
-deliberately. The rule stays recorded even while trivially satisfied,
-because "trivially satisfied today" is how load-bearing rules get deleted
-and rediscovered.
-
-> **Open evaluation:** CSS Cascade Level 5 `@layer` would make this rule
-> unnecessary — a theme in its own layer wins regardless of source order.
-> Worth assessing before the rule calcifies.
+deliberately.
 
 ---
 
@@ -222,12 +201,8 @@ a change at its next login or token refresh. Apps on the SCIM push (RFC
 ## The pre-paint script — theme-independent
 
 **This section is not part of the theme system and must not be read as
-conditional on it.** The script's first job is the mode, it fixes a
-defect that predates this contract, and it belongs in every app whether
-or not that app ever adopts Layer 2. Three apps in this estate shipped
-this defect independently: one hardcoded `data-bs-theme="dark"`, one
-stamped the attribute from a post-mount effect, one put a theme name in
-the mode slot.
+conditional on it.** The script's first job is the mode, and it belongs in
+every app whether or not that app ever adopts Layer 2.
 
 Without it, the page paints in the wrong color scheme and repaints once the
 app resolves the mode — the whole page, not an accent. That is a
@@ -259,17 +234,12 @@ The script is the resolver for `auto` and for the accountless case.
 
 A host names no mode. No UI backend carries a mode member in its
 `/api/status`, no site configuration holds a default mode, and the served
-page carries no site default on `<html>`, because, in Mark's words, "I
-should have never had a config holding a default theme of light" and "the
-default theme of an app, when it's not following a user, or part of a
-brand, is that it should default to the operating system's default": a
-first-time visitor gets the operating system's scheme, "we want the
-first-time users to have their OS's theme, not the light theme as the
-default", `auto` resolved through `prefers-color-scheme` by the script and
-the mount alike, and the script resolves the same scheme when it fails,
-never a fixed mode. The mode is the person's alone, the account's
-`preferred_mode`, then the browser's `mode` key, then the operating
-system's, the mode table above.
+page carries no site default on `<html>`: a first-time visitor gets the
+operating system's scheme, `auto` resolved through `prefers-color-scheme`
+by the script and the mount alike, and the script resolves the same scheme
+when it fails, never a fixed mode. The mode is the person's alone, the
+account's `preferred_mode`, then the browser's `mode` key, then the
+operating system's, the mode table above.
 
 A UI backend that rewrites `index.html` per site stamps `data-brand` and
 the theme's `<link>` as it serves the file, by hostname, the link after
@@ -326,9 +296,7 @@ GET {issuer}/api/public/site/branding?client_id=<optional>
 The path sits under `/api` because the estate's rule is that programs
 call `/api` and every other path on a UI backend is a page of the SPA;
 `/public/policies/*` is such a page, and a program call beside it would
-be told apart only by the order the server matches routes in. The old
-`/public/site/branding` path is retired with the move; every consumer
-changes in the same release.
+be told apart only by the order the server matches routes in.
 
 ```json
 {
@@ -396,10 +364,9 @@ is an object and never a mode word; a stale host that still answers a
 bare string there is a host naming no theme, never a mode. A UI backend
 that rewrites `index.html` per site stamps the same two values into the
 file and answers the same `brand.theme`, so the shell finds them present
-and appends nothing, the identity provider and BoxVault being such
-backends, the hostnames and what may differ per host fixed by the navbar
-contract's status payload section. One member, one branch, and the
-branding endpoint stays a server-to-server call, because a shell that
+and appends nothing, the hostnames and what may differ per host fixed by
+the navbar contract's status payload section. One member, one branch, and
+the branding endpoint stays a server-to-server call, because a shell that
 guessed a route per UI backend would carry a per-app path the status
 payload exists to remove.
 
@@ -529,15 +496,14 @@ nothing from elsewhere, `@font-face` because a face is named under
 `fonts`, and a top-level `@keyframes` block is hoisted above the wrapper,
 since a nested block cannot hold one, its name global and prefixed by the
 pack. The one typographic value the variables carry is `--brand-auth-display`,
-the brand's display face (decision 5 of the Universal Identity Contract):
-the headline of the shared auth column, and, while a pack is stamped, the
-brand name in the header's `.navbar-brand` and the sidebar's top, every
-page's `h1`, `h2` and `h3` and every card title, so the face of the wordmark
-is the face of the site's headings; the body face, the table face and every
-control's face stay the chrome's, because a display face is drawn for size
-and a monospace or a geometric face at 13px in a table is not readable, and
-a pack that names no face leaves Montserrat on the chrome and Source Serif 4
-on the auth column.
+the brand's display face: the headline of the shared auth column, and,
+while a pack is stamped, the brand name in the header's `.navbar-brand`
+and the sidebar's top, every page's `h1`, `h2` and `h3` and every card
+title, so the face of the wordmark is the face of the site's headings; the
+body face, the table face and every control's face stay the chrome's,
+because a display face is drawn for size and a monospace or a geometric
+face at 13px in a table is not readable, and a pack that names no face
+leaves Montserrat on the chrome and Source Serif 4 on the auth column.
 
 ### Variable contract
 
@@ -570,11 +536,10 @@ the pack's own risk.
 ### Source format and generation
 
 **Pack source is YAML; the CSS is generated.** The generator derives the
-`--bs-*-rgb` comma triples from the hex values, exactly as the Sass
-`rgb-list()` it replaces did — plain CSS cannot emit that format, so
-hand-maintained pairs would drift. The generator writes one file per pack,
-`public/themes/<pack>/<pack>.css`, and nothing beside it: no digest file,
-no second name, no version for a server to read.
+`--bs-*-rgb` comma triples from the hex values — plain CSS cannot emit that
+format, so hand-maintained pairs would drift. The generator writes one file
+per pack, `public/themes/<pack>/<pack>.css`, and nothing beside it: no
+digest file, no second name, no version for a server to read.
 
 A **raw-CSS escape hatch** exists for anything exotic. Hand-written packs
 must invert the derivation to keep one source of truth:
@@ -645,19 +610,16 @@ that is expected behavior, not a fault.
 
 Every site of the identity provider names a theme; a site with no theme is
 not a valid site, because the auth column and the chrome then paint stock
-Bootstrap where the site's own accent belongs, and `theme_id: light` is
-retired as a site value (the mode is the person's, decision 70's list
-is amended). The `startcloud` pack is the shared UI's own base look under
-its name and the default theme of every host that names none: Bootstrap's
-`#0d6efd` accent with white on it, stock light surfaces, and the dark
-surfaces `#1a1d20` with the `#4d565e` border, the same values the base
-sheet paints with no theme at all, so a site or a host names `startcloud`
-for that look and a host that names nothing gets it.
+Bootstrap where the site's own accent belongs. The `startcloud` pack is the
+shared UI's own base look under its name and the default theme of every
+host that names none: Bootstrap's `#0d6efd` accent with white on it, stock
+light surfaces, and the dark surfaces `#1a1d20` with the `#4d565e` border,
+the same values the base sheet paints with no theme at all, so a site or a
+host names `startcloud` for that look and a host that names nothing gets it.
 
 Email is branded through the identity provider's email-template
 documents, a copy per site and per locale edited on its Email templates
-page (Universal Identity Contract decision 164), never through a key in
-the server's jar.
+page, never through a key in the server's jar.
 
 ---
 
@@ -722,9 +684,7 @@ into 640×104, each on a transparent ground; the branding endpoint's slot
 names (`mark`, `small`, `icon`) are the identity provider's API and are
 not file names.
 
-The files the identity provider's sites need in the shared build, every
-one supplied by the estate's owner and none drawn by the UI work; the
-shell ships the fallbacks until each lands:
+The files the identity provider's sites need in the shared build:
 
 | File                                                                                                                                                                      | Size                                                                                                                                                                                                                                                                                                                                   | Used by                                                                                                                                                                                                               |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -797,7 +757,7 @@ For a consuming app:
 
 - **`style-src`** — the theme host, for the pack stylesheet, plus
   `'unsafe-inline'` on the identity provider until the shared build is free
-  of inline styles, identity contract decision 106.
+  of inline styles.
 - **`img-src`** — the theme host; CSS-loaded mask images are fetched under
   this directive.
 - **`script-src`** — a per-response **nonce** (natural, since hosts already
@@ -817,11 +777,7 @@ For a consuming app:
 
 The whole policy the identity provider sends, directive by directive, is
 written in the Universal Identity Contract's interstitial group, since it
-names the map, Places and analytics origins that contract keeps. The
-worked cautionary example was this server's own Report-Only policy, which
-once shipped `script-src 'self'` — a policy written in good faith that forbade
-the very inline script this contract requires; it carries a per-request
-nonce today and the published hash after the cutover.
+names the map, Places and analytics origins that contract keeps.
 
 ---
 
@@ -841,8 +797,7 @@ nonce today and the published hash after the cutover.
   hash to a file name or to a query string, ever; caching is the server's
   job through `Cache-Control: no-cache` with an ETag per file, a
   conditional request and the bytes only when they changed, never
-  `immutable`, `index.html` and `/` `no-store` (identity contract decision
-  132).
+  `immutable`, `index.html` and `/` `no-store`.
 - **A re-brand reaches reloads, not live sessions** — absent app-shell
   caching of the served HTML, which a service worker with a `fetch` handler
   would introduce; the estate's worker caches only the manifest and the
@@ -857,16 +812,6 @@ render path (RFC 9111).
 ---
 
 ## Staging
-
-Server-side injection is the recorded end state. For a first pass it is
-**deferred**, because the two flashes it addresses are not the same size:
-
-| Item                                | Status                                                                                                 | Reason                                                                                                                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pre-paint mode script               | **Ship**                                                                                               | Wrong-mode paint is the whole page; it is also a live defect independent of themes                                                                                                 |
-| Server-side injection               | Defer on a UI backend that serves one static file; **ship** on one that rewrites `index.html` per site | Late-brand was an accent-and-mark shift while themes set colors only; a theme that sets surfaces makes it a whole-page repaint, and a per-site server already has the site in hand |
-| `Vary: Sec-CH-Prefers-Color-Scheme` | Defer                                                                                                  | Attaches only to the client-hint leg                                                                                                                                               |
-| CSP nonce                           | Defer                                                                                                  | Obligation stands the day any CSP is enforced                                                                                                                                      |
 
 **Client hints are an enhancement, not a mechanism.** `Sec-CH-Prefers-Color-Scheme`
 is opt-in by protocol (RFC 8942) — the first request never carries it, and a
@@ -904,8 +849,6 @@ login, which is accepted. SCIM is additive, never required.
 
 ## Deliberately out of scope for v1
 
-Recorded so they surface as decisions rather than discoveries:
-
 - **Typography.** v1 is colors and marks, with the one exception above:
   `--brand-auth-display` and its files on the theme host, `font-src`
   joining the CSP list for it, the one face reaching the auth headline,
@@ -917,22 +860,10 @@ Recorded so they surface as decisions rather than discoveries:
   them and its text paints in the fallback at once and settles without a
   blank gap; a face that blocks paint or swaps late on the sign-in page is the
   most visible flash a visitor can meet.
-- **`prefers-reduced-motion`.** Modeled now, as the `motion` preference,
+- **`prefers-reduced-motion`.** Modeled as the `motion` preference,
   the same user-preference shape as the mode axis: `auto` follows the
   device and `reduce` stamps `data-motion="reduce"` on `<html>` from the
   account value, local storage or the pre-paint script, and one rule of
   the chrome stops every animation and transition under it so a pack
   needs nothing, because a user may set animations off for accessibility
-  or performance reasons and the choice must stay sticky for them, so the
-  end user's wishes are preserved.
-
----
-
-## Specification anchors
-
-BCP 47 / RFC 5646 (language tags) · RFC 4647 (lookup) · RFC 7643/7644
-(SCIM) · RFC 8942 (client hints) · RFC 9110/9111 (caching, `Vary`) ·
-WCAG 2.2 §1.4.3, §1.4.11, §2.4.11 · CSS Cascade 5 (specificity, `@layer`) ·
-CSS Color 5 (`color-mix()`) · CSS Masking 1 · CSS Media Queries 5
-(`prefers-color-scheme`, `forced-colors`) · CSS Logical Properties 1 (for
-RTL, since the notification contract already carries `dir`) · CSP Level 3.
+  or performance reasons and the choice must stay sticky for them.

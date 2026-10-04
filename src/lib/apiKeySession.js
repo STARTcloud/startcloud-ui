@@ -2,7 +2,6 @@ import { createApiClient } from './apiClient';
 
 const INFO_PATH = '/api/api-keys/info';
 const USER_PATH = '/api/user';
-const PREFERENCES_PATH = '/api/user/preferences';
 const TRAY_CLAIM_PATH = '/api/auth/tray-claim';
 const SILENT_START_PATH = '/api/auth/oidc/silent-start';
 const DEVICE_START_PATH = '/api/auth/oidc/device-start';
@@ -23,12 +22,14 @@ const KEPT_MEMBERS = [
   'issuer',
   'subject',
 ];
-const PAINTED_MEMBERS = [
+const PREFERENCE_MEMBERS = [
   'preferred_mode',
   'preferred_theme',
   'preferred_motion',
   'preferred_language',
+  'preferred_timezone',
 ];
+const TIMEZONE_KEY = 'timezone';
 const NOT_FOUND = 404;
 const PUBLIC = { auth: false };
 const TAB_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -58,15 +59,26 @@ const recordOf = profile =>
     ])
   );
 
-const paintedOf = account =>
-  account
-    ? Object.fromEntries(PAINTED_MEMBERS.map(member => [member, account[member] ?? null]))
-    : {};
+const recordOfAccount = account =>
+  Object.fromEntries(
+    Object.entries(account || {}).filter(([member]) => !PREFERENCE_MEMBERS.includes(member))
+  );
 
-const storedPainted = record =>
-  PAINTED_MEMBERS.some(member => member in (record || {}))
-    ? Object.fromEntries(PAINTED_MEMBERS.map(member => [member, record[member] ?? null]))
-    : null;
+const writeOwn = (key, value) => {
+  if (value) {
+    localStorage.setItem(key, value);
+  } else {
+    localStorage.removeItem(key);
+  }
+};
+
+/**
+ * The time zone the person chose on an agent host, the browser's own
+ * `timezone` key; empty while none is chosen.
+ *
+ * @returns {string} The IANA zone name, or the empty string
+ */
+export const ownTimezone = () => localStorage.getItem(TIMEZONE_KEY) || '';
 
 /**
  * The tray token a URL fragment carries, hyperweaver-ui's `#tray=`, the
@@ -109,18 +121,18 @@ export const userOfKeyProfile = profile => ({
 
 /**
  * The session's user while the agent answers `GET /api/user`: that
- * record in the identity provider's shape, the same members the backend
- * provider reads, `preferred_mode`, `preferred_theme`, `preferred_motion`,
- * `preferred_language` and `preferred_timezone` among them, under the
- * key's own profile, whose role map decides `role` and `roles`; the
- * key's profile alone while the agent answered none.
+ * record in the identity provider's shape without its `preferred_*`
+ * members, because the agent keeps no user preferences and the chrome
+ * applies the browser's own keys, under the key's own profile, whose role
+ * map decides `role` and `roles`; the key's profile alone while the agent
+ * answered none.
  *
  * @param {Object} profile - The stored profile of `GET /api/api-keys/info`
  * @param {Object|null} account - The answer of `GET /api/user`, or null
  * @returns {Object} The user
  */
 export const userOfAccount = (profile, account) => ({
-  ...(account || {}),
+  ...recordOfAccount(account),
   ...userOfKeyProfile(profile),
 });
 
@@ -162,20 +174,15 @@ export const userOfAccount = (profile, account) => ({
  * no self-close, hyperweaver-ui's two timers, the handoff tab staying
  * open. Once the key is proved, `GET /api/user` is read with the same
  * bearer and held in memory, the person's record in the identity
- * provider's shape with the five `preferred_*` members the chrome
- * applies, the identity provider's own values on a key a federated login
- * minted and the agent's local store's on a plain key; its
- * `preferred_mode`, `preferred_theme`, `preferred_motion` and
- * `preferred_language` are stored beside the key, so `restore()` answers
- * them before the record is read again and the pre-paint script paints
- * the person's mode and theme before the first frame, the way the `user`
- * and `account` records do; a `404` there leaves the key's profile as
- * the whole identity and no stored member, and any other failure keeps
- * the record last held. `savePreferences()` writes
- * `PATCH /api/user/preferences` while such a record is held, the agent
- * relaying it to the identity provider on a federated key and merging its
- * own store on a plain one, and updates the held and the stored members
- * on success, and does nothing while none is. The agent has no organizations and no sign-out
+ * provider's shape without its `preferred_*` members, because the agent
+ * keeps no user preferences: the mode, the theme, the motion switch and
+ * the language are the browser's own `mode`, `theme`, `motion` and
+ * `language` keys, written by the person's own controls, and the time
+ * zone the browser's own `timezone` key, read through `ownTimezone()`; a
+ * `404` there leaves the key's profile as the whole identity, and any
+ * other failure keeps the record last held. `savePreferences()` writes
+ * the patch's `timezone` under that key, a null removing it, and sends
+ * nothing, the agent having no preferences write. The agent has no organizations and no sign-out
  * route: the session is
  * `{ user, organizations: [], oidc: false, issuerUrl, clientId: '' }`,
  * `issuerUrl` the profile's `issuer` while a federated login minted the
@@ -199,11 +206,8 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
 
   const current = () => JSON.parse(localStorage.getItem(storageKey) || 'null');
 
-  const store = (key, profile, record) => {
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({ key, profile: recordOf(profile), ...paintedOf(record) })
-    );
+  const store = (key, profile) => {
+    localStorage.setItem(storageKey, JSON.stringify({ key, profile: recordOf(profile) }));
     held = key;
   };
 
@@ -248,7 +252,7 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
   const sessionOf = record =>
     record?.key && record.profile
       ? {
-          user: userOfAccount(record.profile, account || storedPainted(record)),
+          user: userOfAccount(record.profile, account),
           organizations: [],
           oidc: false,
           issuerUrl: record.profile.issuer || '',
@@ -271,7 +275,7 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
   const prove = async key => {
     const profile = await profileOf(key);
     account = await accountOf(key);
-    store(key, profile, account);
+    store(key, profile);
     return restore();
   };
 
@@ -417,26 +421,11 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
 
   const claims = () => Promise.resolve(null);
 
-  const savePreferences = async patch => {
-    if (!account) {
-      return;
+  const savePreferences = patch => {
+    if ('timezone' in patch) {
+      writeOwn(TIMEZONE_KEY, patch.timezone);
     }
-    const saved = await client
-      .patch(PREFERENCES_PATH, patch)
-      .then(() => true)
-      .catch(() => false);
-    const record = current();
-    if (saved && account && record?.key) {
-      account = {
-        ...account,
-        ...('mode' in patch ? { preferred_mode: patch.mode } : {}),
-        ...('theme' in patch ? { preferred_theme: patch.theme } : {}),
-        ...(patch.language ? { preferred_language: patch.language } : {}),
-        ...('motion' in patch ? { preferred_motion: patch.motion } : {}),
-        ...('timezone' in patch ? { preferred_timezone: patch.timezone } : {}),
-      };
-      localStorage.setItem(storageKey, JSON.stringify({ ...record, ...paintedOf(account) }));
-    }
+    return Promise.resolve();
   };
 
   const signOut = () => forget();

@@ -103,10 +103,10 @@ export const BRIDGE_COLUMNS = [
 ];
 
 /**
- * The actions of one bridge, hyperweaver-ui's: the details and the
- * delete.
+ * The actions of one bridge, hyperweaver-ui's: the details and, for a
+ * role that controls hosts, the delete.
  */
-export const BridgeRowActions = ({ row, busy, onDetails, onDelete }) => {
+export const BridgeRowActions = ({ row, busy, canEdit, onDetails, onDelete }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -120,16 +120,18 @@ export const BridgeRowActions = ({ row, busy, onDetails, onDelete }) => {
       >
         <FaCircleInfo aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-danger"
-        onClick={() => onDelete(row)}
-        disabled={busy}
-        title={t('host.bridgeTable.deleteButtonTitle')}
-        data-tool="delete"
-      >
-        <FaTrash aria-hidden="true" />
-      </button>
+      {canEdit ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-danger"
+          onClick={() => onDelete(row)}
+          disabled={busy}
+          title={t('host.bridgeTable.deleteButtonTitle')}
+          data-tool="delete"
+        >
+          <FaTrash aria-hidden="true" />
+        </button>
+      ) : null}
     </>
   );
 };
@@ -137,6 +139,7 @@ export const BridgeRowActions = ({ row, busy, onDetails, onDelete }) => {
 BridgeRowActions.propTypes = {
   row: PropTypes.object.isRequired,
   busy: PropTypes.bool.isRequired,
+  canEdit: PropTypes.bool.isRequired,
   onDetails: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };

@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { selectGroup, switchGroup } from '../../../hooks/useClientFilters';
+import { fetchSecrets } from '../api/agentSettings';
 import { fetchPackages, searchPackages } from '../api/packages';
 import {
   fetchArtifactStoragePaths,
@@ -8,7 +10,6 @@ import {
   fetchCatalog,
   fetchProvisioners,
   fetchRecipes,
-  fetchSecrets,
   fetchTemplates,
 } from '../api/provisioning';
 import { fetchTemplateSources } from '../api/templates';
@@ -27,17 +28,13 @@ import {
 } from '../utils/manageCatalog';
 
 import { useManageRead } from './useHostManage';
-import { selectGroup, switchGroup } from './useHostManageSearch';
 
 const NO_ROWS = [];
 
 const NO_NEWEST = {};
 
 /**
- * The request filters the catalog sections of the Manage page open with,
- * hyperweaver-ui's: every package but the ones a host hides, no remote
- * search, every artifact type and location two hundred at a time, every
- * recipe family and brand.
+ * The request filters the catalog sections open with.
  */
 export const CATALOG_PARAMS = {
   packages: PACKAGE_PARAMS,
@@ -53,12 +50,8 @@ const rowsOf = reading => (Array.isArray(reading.data) ? reading.data : NO_ROWS)
 const withClear = (group, onClear) => ({ ...group, onClear });
 
 /**
- * The request filters of the catalog tables as panel groups of the
- * navbar, hyperweaver-ui's selects and switches over each request: the
- * show-all switch of the packages, the type and the location of the
- * installer files, the family and the brand of the recipes. A change
- * sends that table's request again; Clear filters puts every filter
- * back to what the page opened with.
+ * The request filters of the packages, installer files and recipes tables
+ * as panel groups, each clearing its table's filters.
  *
  * @param {Object} options - The filters and the vocabularies
  * @param {Object} options.params - The filters of `useManageCatalogData`
@@ -130,11 +123,7 @@ export const catalogParamGroups = ({ params, setParam, resetParams, locations, t
 });
 
 /**
- * Whether a host's own row offers the catalog sections: the packages
- * behind `packages`, the installer files behind `artifacts` and
- * `provisioner-registry`, the recipes behind `provisioning` on a host
- * that names `bhyve`, the templates behind `templates` and the
- * provisioners behind `provisioner-registry`.
+ * Whether a host's own row offers each catalog section.
  *
  * @param {Object|null} server - The registry row, or the one serving agent's
  * @returns {Object<string, boolean>} The gates by section
@@ -148,25 +137,23 @@ export const catalogGates = server => ({
 });
 
 /**
- * The reads the catalog sections of the Manage page draw, held once at
- * the page so its one search binding narrows them all: the packages, or
- * the repository search's hits while a query stands, the storage
- * locations and the artifacts, the secrets that name the
- * keys the dialogs offer, the recipes, the templates and the registries
- * they come from, the provisioner families and the catalog's newest
- * versions; each behind the token of its section, hyperweaver-ui's
- * request filters kept as `params` and `setParam(table, key, value)`, a
- * change sending the request again with no debounce.
+ * The reads of a host's catalog sections, each behind its section's gate
+ * and `only`, under the request filters `params`.
  *
  * @param {Object} options - The host
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {Object|null} options.server - The registry row, or the one serving agent's
+ * @param {Array<string>} [options.only] - The sections wanted, every section without the list
  * @returns {{ params: Object, setParam: Function, resetParams: Function, reads: Object, rows: Object, gates: Object }} The data
  */
-export const useManageCatalogData = ({ id, server }) => {
+export const useManageCatalogData = ({ id, server, only = null }) => {
   const status = useStatus();
   const [params, setParams] = useState(CATALOG_PARAMS);
-  const gates = catalogGates(server);
+  const wanted = key => !only || only.includes(key);
+  const offers = catalogGates(server);
+  const gates = Object.fromEntries(
+    Object.entries(offers).map(([key, offered]) => [key, offered && wanted(key)])
+  );
   const secretsWanted = gates.installers || gates.provisioners;
 
   const setParam = useCallback((table, key, value) => {

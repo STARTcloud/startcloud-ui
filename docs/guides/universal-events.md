@@ -21,10 +21,7 @@ per topic below. It extends the
 [Universal Navbar Contract](universal-navbar/), whose status payload
 advertises the stream, and the
 [Universal Session Contract](universal-session/), whose provider signs the
-request and whose bus a `401` ends the session on. It replaces the
-per-app streams the estate had before it: BoxVault's session terminate
-stream under `/api/notifications/events` and the VDI Health Monitor's
-ad-hoc dashboard stream both become topics on the one path.
+request and whose bus a `401` ends the session on.
 
 ## Table of contents
 
@@ -47,8 +44,7 @@ ad-hoc dashboard stream both become topics on the one path.
   monotonic id, the server keeps a ring of recent events, and a client
   that reconnects with `Last-Event-ID` gets exactly what it missed or a
   reset with fresh snapshots. Nothing is lost silently.
-- **The wire is the spec.** Frames are plain
-  [WHATWG server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html):
+- **The wire is the spec.** Frames are plain WHATWG server-sent events:
   `id:`, `event:`, `data:`, `retry:` and comment lines, nothing else. Any
   spec parser reads the stream; the shared client is one.
 - **Auth is the session's.** The request carries the same headers the
@@ -130,9 +126,8 @@ X-Accel-Buffering: no
 
 The stream is never compressed and the headers are flushed before the
 first frame, so a proxy between the UI backend and the browser cannot buffer it.
-No `Connection` header is sent: it is hop-by-hop (RFC 9110 §7.6.1) and an
-HTTP/2 endpoint must not generate it (RFC 9113 §8.2.2), while HTTP/1.1
-connections persist by default (RFC 9112 §9.3).
+No `Connection` header is sent, because it is hop-by-hop and an HTTP/2
+endpoint must not generate it.
 
 The first frame is the retry hint followed by `ready`, which carries the
 current id and the topics actually subscribed (the requested ones the
@@ -193,18 +188,16 @@ backend follows the stream and never a timer, and `profile` when it holds
 a person's record that can change from outside the tab (a SCIM push from
 the identity provider, an administrator's edit, a write from another
 tab), sending `profile-updated` to that person alone on every such
-change, because a look changed at the identity provider did not change to
-the new one in another app's open tab very quickly or at all, only on a
-refresh, and that is made part of the SSE stuff instead: the client
-reloads the profile on the event and the preferences it carries are
-re-applied within the second; a UI backend that answers `auth: []` has
-neither `session`, `notifications` nor `profile`.
+change, so a look changed at the identity provider reaches every open tab
+without a refresh: the client reloads the profile on the event and the
+preferences it carries are re-applied within the second; a UI backend that
+answers `auth: []` has neither `session`, `notifications` nor `profile`.
 
 ### VDI Health Monitor: topic `fleet`
 
 The UI backend whose `role` is `vdi-health` streams one app topic. Every object
 inside these events keeps every field and every `snake_case` name the
-Python server's REST routes use; nothing inside `vm`, `pool`, `uds` or
+UI backend's REST routes use; nothing inside `vm`, `pool`, `uds` or
 `state_event` is renamed.
 
 | Event            | Data                                                                                   |
@@ -279,8 +272,8 @@ timer in its place.
 
 A task's output and every terminal are not events: they keep the
 WebSocket the agent pushes them on, one per open task or terminal, the
-whole buffer replayed on connect, because "for task output speed and
-reliability is the key". What the stream carries of a task is its row, so
+whole buffer replayed on connect, because task output needs speed and
+reliability above all. What the stream carries of a task is its row, so
 the progress bar and the step name arrive by push and no page asks on a
 timer.
 
@@ -315,6 +308,14 @@ next with an older id. The `ready`
 frame's `id` is the newest id the server has, and is what the client sends
 back on its next reconnect if nothing else arrives in between.
 
+What a server keeps per connection is the subscribed topic set and the
+response; what it keeps per UI backend is the ring and the id counter.
+The reference shape is a registry of topics with their snapshot function,
+a ring of `(id, topic, event, data)`, a monotonic id from the clock and a
+per-millisecond sequence, a queue per subscriber, the 25-second heartbeat,
+and a `broadcast(topic, event, data)` that appends to the ring and fans out
+to every subscriber of the topic.
+
 ---
 
 ## Auth
@@ -344,7 +345,7 @@ admin-only topic answers `403` on it to everyone else).
 The shared client lives once in the STARTcloud UI and every UI backend's page
 uses it through the runtime; no feature opens a stream of its own.
 
-### `src/lib/sse.js`
+### Stream reader
 
 `openEventStream({ url, topics, headers, onEvent, onReady, onReset, onStatus, onUnauthorized, signal })`
 returns a stop function.
@@ -368,7 +369,7 @@ returns a stop function.
 - `onStatus` reports `connecting`, `live`, `reconnecting`, `paused` and
   `stopped`, the words a page's live indicator reads.
 
-### `src/lib/eventHub.js` and `src/lib/runtime.js`
+### Event hub and runtime
 
 `createEventHub()` is the tab's one subscription surface: `subscribe(name,
 handler)` for named events (`ready` and `reset` included), `connect` and
@@ -401,7 +402,7 @@ and never on an in-ring reconnect. `events.path` is a same-origin path; a
 value carrying a scheme is ignored, so a status payload can never point
 the session's headers at another host.
 
-### `src/hooks/useEventStream.js`
+### Page hook
 
 `useEventStream(name, handler)` subscribes a component to one named event
 on the hub for as long as it is mounted, the newest handler always called,
@@ -413,48 +414,9 @@ times and stale flags between events.
 
 ---
 
-## Server reference
-
-| Host                 | Where                                                                                                                                                                                                                                              | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| VDI Health Monitor   | `vdi_health/sse.py`: the topic registry, the ring, the id generator, the heartbeat, `subscribe` and `broadcast(topic, event, data)`; `vdi_health/routes/events.py` answers `GET /api/events`                                                       | the first implementation of this contract; every fleet broadcast in the server is `broadcast("fleet", "<event>", data)`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| BoxVault             | `backend/app/utils/events.js` (the ring, ids, ready, heartbeat, replay, reset, per-user delivery) behind `routes/events.routes.js` at `/api/events`, the `events` token and object in `status.controller.js`, `tests/events.test.js`               | `session` and `notifications` topics; `unread-count` is pushed after a read, read-all or delete BoxVault proxied, since it holds the user's hub token only inside a request; `profile` streamed, `profile-updated` sent to the one person whose profile changed unless it says every member: the person's own record (`PATCH /api/user/preferences`, `PATCH /api/user`, `PUT /api/users/{id}/change-name`, `PUT /api/users/{id}/change-email`, the admin's `PUT /api/organization/{organization}/users/{userName}` when it changes the email, `PUT /api/users/{id}/roles`); the primary organization (`PUT /api/user/primary-organization/{orgName}`); memberships (`POST /api/organization`, the creator becoming owner, `POST /api/organization/{organization}/join`, `POST /api/auth/invitations/{token}/accept`, `POST /api/organization/{organization}/requests/{requestId}/approve` on a local organization, the requester, `PUT /api/organization/{organization}/users/{userId}/role`, `DELETE /api/organization/{organization}/users/{userId}` and `DELETE /api/organization/{organization}/users/{username}`, `POST /api/user/leave/{orgName}`); the organization itself, to every member (`PUT /api/organization/{organizationName}` when the name changed, `DELETE /api/organization/{organizationName}`); the identity provider's pushes (`POST` and `PUT /scim/v2/Users` when a column changed or the primary flag moved; `POST`, `PUT` and `DELETE /scim/v2/Groups`, to every person whose membership or role the reconcile changed, and to every member when the last group deletes the mirrored organization); the OIDC sign-in's organizations claim sync when it created, changed or dropped a membership or moved the primary pointer; not sent, by design, on the password write, suspend and resume, since none changes a member `GET /api/user` answers |
-| Provisioner catalog  | the Worker                                                                                                                                                                                                                                         | none; the catalog has no live data and advertises no `events`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Authorization server | `GET /api/events` on the issuer, the `session`, `notifications`, `health`, `profile` and `admin` topics; `/api/notifications/stream` with its `connected` and `notification` events retires with `notifications.js`, so a tab holds one connection | ✓ `startcloud.events.EventStreamService` behind `EventsApiController` — the cookie session of the [Universal Identity Contract](universal-identity/); the hub is local, so `unread-count` is pushed on every write to the person's inbox; `session-terminated` fires when the HTTP session that opened the stream is invalidated (a logout in another tab, an RP-initiated logout, expiry, a back-channel logout), never when an OAuth client session of the same person is revoked, because that session is not the one holding the stream; emitters are keyed by session id, closed by the logout handler and the session-destroyed event, capped per person, and refused to a `ROLE_2FA_REQUIRED` or `ROLE_ONBOARDING` principal, so a tab signed out on a shared machine stops receiving within the second; `profile-updated` is sent to the person alone, after the write's transaction commits, on every write of what `GET /api/user` answers: `PATCH /api/user/preferences`, the profile's details, address, contact phone and email writes, the password, the two-factor switch and preferred method, the favorites, every membership change (a join, an invite accepted, a leave or removal, an organization role change, the primary flag, an organization deleted or transferred, a SCIM group reconcile), the administrator's edits of another account through the same writes and its email, phone, roles and `password_change_required` routes, and an inbound SCIM `PUT` or `PATCH` of the record                                                                                                                                                                                                                                                                                                                                                             |
-
-What a server keeps per connection is the subscribed topic set and the
-response; what it keeps per UI backend is the ring and the id counter. The
-Python server's `sse.py` is the reference shape: a registry of topics
-with their snapshot function, a ring of `(id, topic, event, data)`, a
-monotonic id from the clock and a per-millisecond sequence, an asyncio
-queue per subscriber, the 25-second heartbeat, and a `broadcast` that
-appends to the ring and fans out to every subscriber of the topic.
-
----
-
-## Conformance checklist
-
-Tick each line in the PR that claims conformance.
-
-| Line                                                                                                                                                                    | Catalog                     | BoxVault                                                                                   | VDI Health                                                                                    | Auth server                                                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `events` token and `events: { path, topics }` in `/api/status`, omitted when the UI backend has no live data                                                            | n/a — omitted, no live data | ✓ `status.controller.js`, `["session", "notifications", "profile"]`; `health` to come      | ✓ `/api/events`, `["fleet"]` plus `session` under `auth.mode: idp`; `health` to come          | ✓ `/api/events`, `["notifications", "session", "health", "profile"]`, plus `admin` for a session holding `ROLE_ADMIN`                         |
-| One path, one connection per tab, topics from `?topics=`, unknown topics ignored, empty means core                                                                      | n/a                         | ✓ `events.routes.js`                                                                       | ✓ `routes/events.py`                                                                          | ✓ `EventsApiController`, `?topics=` parsed, unknown names dropped, empty opens the core topics                                                |
-| The session's headers on the request; `401` ends the session on the bus, `403` and `204` stop for good                                                                  | n/a                         | ✓ `x-access-token` through `verifyToken`; no credential → `401`, a service account → `403` | ✓ `auth.py` verifies as on every `/api/vdi/*` route; no headers under `auth.mode: none`       | ✓ the session cookie; no session → `401`; a `ROLE_2FA_REQUIRED` or pending onboarding principal refused; `admin` answers `403` to a non-admin |
-| `text/event-stream; charset=utf-8`, `no-cache, no-transform`, `X-Accel-Buffering: no`, no `Connection` header, never compressed, headers flushed first                  | n/a                         | ✓                                                                                          | ✓                                                                                             | ✓ the three headers set on the emitter's answer, no `Connection` header, no response compression configured on the server                     |
-| `retry: 3000` then `event: ready` with the id and the subscribed topics                                                                                                 | n/a                         | ✓                                                                                          | ✓                                                                                             | ✓ `EventStreamService.subscribe`                                                                                                              |
-| Every event `id: <epoch-ms>-<seq>`, kebab-case `event:`, one-line JSON `data:`; `:hb` every 25 s                                                                        | n/a                         | ✓ `events.js`                                                                              | ✓ `sse.py`                                                                                    | ✓ `EventStreamService`, `:hb` armed 25 s after the last frame of each connection                                                              |
-| Ring of 500 events or 5 minutes; `Last-Event-ID` inside it replays in order, outside it answers `reset` then every snapshot event                                       | n/a                         | ✓ no snapshot topics, `reset` alone                                                        | ✓ `fleet-snapshot` after `reset`                                                              | ✓ no snapshot topics, `reset` alone; the replay is filtered by the connection's person, session and site as well as its topics                |
-| Core topics by their fixed names: `session` → `session-terminated`, `notifications` → `unread-count`, `health` → `health`, `profile` → `profile-updated`                | n/a                         | ✓ `session`, `notifications` and `profile`; `health` to come                               | ✓ `session` while `auth.mode` is `idp`; `health` to come; `profile` n/a, no record of its own | ✓ all four                                                                                                                                    |
-| App topics registered in this guide with every event and its snapshot                                                                                                   | n/a                         | n/a — none yet                                                                             | ✓ `fleet`: `fleet-snapshot`, `vm-updated`, `vm-removed`, `vm-events`, `pools-updated`         | ✓ `admin`: `restart-required` from the configuration write, `blocked-count` from the brute-force list, no snapshot                            |
-| Every broadcast through one server module; no ad-hoc queue list                                                                                                         | n/a                         | ✓ `broadcast` in `events.js`; `sessionEvents.js` removed                                   | ✓ `broadcast("fleet", …)` everywhere                                                          | ✓ `EventStreamService.emit` and `emitToSite`; `/api/notifications/stream` and `notifications.js` retired                                      |
-| The UI opens the stream through `connectEventStream` and pages read it through `useEventStream`; no page opens a stream of its own                                      | n/a                         | ✓ the runtime stream                                                                       | ✓ `useFleet`, `useVmHistory`                                                                  | ✓ the runtime stream                                                                                                                          |
-| `useSessionKeepalive` answers `session-terminated` on the one stream with the provider's `endSession()` and `profile-updated` and `reset` with the session's `reload()` | n/a                         | ✓                                                                                          | ✓                                                                                             | ✓                                                                                                                                             |
-
----
-
 **Related:** [Universal Navbar Contract](universal-navbar/) |
 [Universal Pages Contract](universal-pages/) |
 [Universal Session Contract](universal-session/) |
 [Notification Hub](../../features/notification-hub/) |
-[Integrating Your App](integrating-your-app/)
+[Integrating Your App](integrating-your-app/) |
+[WHATWG server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html)

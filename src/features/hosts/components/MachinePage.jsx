@@ -1,13 +1,17 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaPlay, FaRotate, FaStop } from 'react-icons/fa6';
+import { Link } from 'react-router-dom';
 
 import EmptyState from '../../../components/common/EmptyState';
-import PageHeader from '../../../components/common/PageHeader';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { useFolds } from '../../../hooks/useFolds';
+import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
+import { useHostActions } from '../hooks/useHostActions';
 import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostReadingsRefresh } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
@@ -16,24 +20,28 @@ import { useMachineDetail } from '../hooks/useMachineDetail';
 import { useMachineSeriesRefresh } from '../hooks/useMachineSeries';
 import { useMachineSnapshotsRefresh } from '../hooks/useMachineSnapshots';
 import { useServers } from '../hooks/useServers';
+import { consoleDoorsOf, consoleRoute } from '../utils/consoles';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 import { isUnknownMachine, nounKeyOf } from '../utils/machines';
+import { canRestartMachines, canStartStopMachines } from '../utils/permissions';
 
+import HostNav from './HostNav';
 import MachineCharts from './MachineCharts';
 import MachineConsolePanel from './MachineConsolePanel';
 import MachineGuestAgentCard from './MachineGuestAgentCard';
 import MachineGuestInfoCard from './MachineGuestInfoCard';
 import MachineHardwareCard from './MachineHardwareCard';
-import MachineInfoCard from './MachineInfoCard';
+import MachineInfoCard, { stateOf } from './MachineInfoCard';
 import MachineProvisioningView from './MachineProvisioningView';
 import MachineSettingsView from './MachineSettingsView';
 import MachineSnapshotsView from './MachineSnapshotsView';
-import MachineTabs from './MachineTabs';
 import MachineTagsNotesCard from './MachineTagsNotesCard';
 import MachineTopologySlice from './NetworkTopology/MachineTopologySlice';
 import RefreshButton from './RefreshButton';
 
 const TOPOLOGY_FOLD = 'machine-topology';
+
+const SEPARATOR = ' · ';
 
 const labelOf = ({ status, held, id, stats }) => {
   if (isServerRole(status)) {
@@ -44,50 +52,114 @@ const labelOf = ({ status, held, id, stats }) => {
 };
 
 /**
- * One machine at `/hosts/{id}/machines/{name}`, hyperweaver-ui's machine
- * page: under the heading the tab row of the machine's pages,
- * `MachineTabs` over the one list of `MACHINE_PAGES`, and under it the
- * page the route names, `page`. The Overview, the machine's own route,
- * is hyperweaver-ui's machine overview in its order, each surface a
- * section card that folds under `table_prefs_machine`: the machine
- * information; the console of `MachineConsolePanel`, the one surface
- * that shows the machine's screen, a frame while no console is live and
- * the live console once one is; the tags and notes; the hardware; the guest agent; the guest information;
- * the machine's slice of the host's topology, `MachineTopologySlice`,
- * while the machine has a network presence; and the charts of
- * `MachineCharts` behind `monitoring`. The Snapshots,
- * at `/hosts/{id}/machines/{name}/snapshots`, hyperweaver-ui's Snapshots
- * tab as one unit, `MachineSnapshotsView`, the snapshots with their
- * retention policy, which reads what it draws through the hosts
- * feature's hooks; the Settings, at
- * `/hosts/{id}/machines/{name}/settings`, hyperweaver-ui's Settings tab
- * as one unit, `MachineSettingsView`, every editor over the modify wire;
- * the Provisioning, at
- * `/hosts/{id}/machines/{name}/provisioning`, hyperweaver-ui's
- * Provisioning tab as one unit, `MachineProvisioningView`, the status
- * card, the document editor and the pipeline. The detail is the one copy
- * `useMachineDetail` holds of `GET machines/{name}`, the machine's own
- * row the one `useMachineRow` holds of `GET machines`, found whatever
- * the organization chosen, and the running state the host's stats of
- * `useHostStats`, the copies the Controls menu renews after an action.
- * A surface draws only while the host's own row lists its token and the
- * agent answers what it draws, so the page of a hyperweaver-agent
- * machine and of a zoneweaver-agent zone differ by what each agent
- * answers and never by a test of which agent it is. Refresh in the
- * heading's actions reads the list of servers, the host's stats, every
- * answer the page holds of the host, its health among them, its machine
- * rows, the detail, the series of the machine's charts and its
- * snapshots again and raises `turn`, on which the surfaces
- * that hold a read of their own, the guest's operating system, the
- * guest properties and the console's frame, read again; the stream's fresh
- * opening and its `reset` raise it too, and nothing reads on a clock,
- * hyperweaver-ui's thirty-second read of the detail not carried over.
- * The loading line draws while the stats have not answered, the danger
- * alert when they failed and the two lines saying the details are not
- * available, named by the noun the host's hypervisors fix, when the
- * detail did. A route that names a machine the host does not have, one
- * that neither its stats, its machine rows nor a detail names once each
- * has answered, draws the placard saying so in place of the surfaces.
+ * The power verbs of the machine's heading row, the ones the Controls
+ * menu offers for the state and a role that may start and stop
+ * machines: Power on while the machine is stopped, Shutdown while it
+ * runs and Restart beside it for a role that may restart, each one
+ * request through the page's runner and held while one is in flight.
+ */
+const PowerButtons = ({ role, running, busy, onAction }) => {
+  const { t } = useTranslation();
+  if (!canStartStopMachines(role)) {
+    return null;
+  }
+  if (!running) {
+    return (
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-success"
+        disabled={busy}
+        data-action="start"
+        onClick={() => onAction('start')}
+      >
+        <FaPlay className="me-1" aria-hidden="true" />
+        {t('hosts.controls.powerOn')}
+      </button>
+    );
+  }
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-warning"
+        disabled={busy}
+        data-action="shutdown"
+        onClick={() => onAction('shutdown')}
+      >
+        <FaStop className="me-1" aria-hidden="true" />
+        {t('hosts.controls.shutdown')}
+      </button>
+      {canRestartMachines(role) ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={busy}
+          data-action="restart"
+          onClick={() => onAction('restart')}
+        >
+          <FaRotate className="me-1" aria-hidden="true" />
+          {t('hosts.controls.restart')}
+        </button>
+      ) : null}
+    </>
+  );
+};
+
+PowerButtons.propTypes = {
+  role: PropTypes.string,
+  running: PropTypes.bool.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onAction: PropTypes.func.isRequired,
+};
+
+/**
+ * The first console door of the machine's heading row, the first
+ * console the host's row lists in the order of `CONSOLE_DOORS`, a link
+ * to the machine's page with the console named in its `console` query;
+ * nothing for a host that lists none.
+ */
+const ConsoleDoor = ({ id, name, server }) => {
+  const { t } = useTranslation();
+  const [door] = consoleDoorsOf(server);
+  if (!door) {
+    return null;
+  }
+  const Icon = door.icon;
+  return (
+    <Link
+      to={consoleRoute(id, name, door.key)}
+      className="btn btn-sm btn-outline-primary"
+      data-action={`console-${door.key}`}
+    >
+      <Icon className="me-1" aria-hidden="true" />
+      {t(door.labelKey)}
+    </Link>
+  );
+};
+
+ConsoleDoor.propTypes = {
+  id: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  server: PropTypes.object,
+};
+
+/**
+ * One machine at `/hosts/{id}/machines/{name}`, the body of the
+ * machine's column, `HostNav` over `MACHINE_PAGES`, naming the host's
+ * label and its noun for the crumbs through `usePageName`: the heading
+ * with the machine's name, its state, hypervisor and host as muted text,
+ * and `PowerButtons`, `ConsoleDoor` and Refresh in its pane; under it
+ * the page `page` names. The Overview draws the machine information, the
+ * console, the tags and notes, the hardware, the guest agent, the guest
+ * information, the topology slice and the charts, each a card folding
+ * under `table_prefs_machine`; Settings, Snapshots and Provisioning draw
+ * `MachineSettingsView`, `MachineSnapshotsView` and
+ * `MachineProvisioningView`. A surface draws only while the host's row
+ * lists its token and the agent answers what it draws. Refresh reads the
+ * servers, the host's stats and held answers, the machine's rows, detail,
+ * series and snapshots again and raises `turn`, as the stream's fresh
+ * opening and `reset` do. A machine the host does not have draws the
+ * placard saying so.
  */
 const MachinePage = ({ id, name, context, organizations, page = 'overview' }) => {
   const { t } = useTranslation();
@@ -104,6 +176,17 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
   const server = useHostRow(id);
   const host = labelOf({ status, held, id, stats });
   const resource = t(nounKeyOf(server ? [server] : []));
+  usePageName(host, t(nounKeyOf(server ? [server] : [], true)));
+  const { run, busy } = useHostActions({
+    status,
+    id,
+    name,
+    onDone: () => {
+      refreshStats();
+      row.refresh();
+      answer.refresh();
+    },
+  });
 
   useEffect(() => {
     document.title = name;
@@ -152,100 +235,126 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
     answer: { detail, settled: answer.loaded || !answer.offered },
   });
 
+  const role = context.user?.role;
+
   if (unknown) {
     return (
-      <div className="list row" data-page="machine">
-        <PageHeader title={name} actions={<RefreshButton onRefresh={refresh} />} />
-        <div data-note="not-found">
-          <EmptyState title={t('pages.machines.machineNotFound', { machineParam: name })} />
+      <HostNav id={id} name={name} role={role}>
+        <div className="list row" data-page="machine">
+          <SectionHeading title={name} actions={<RefreshButton onRefresh={refresh} />} />
+          <div data-note="not-found">
+            <EmptyState title={t('pages.machines.machineNotFound', { machineParam: name })} />
+          </div>
         </div>
-      </div>
+      </HostNav>
     );
   }
 
+  const info = detail?.machine_info || machine || {};
+  const stateText = [stateOf({ detail, machine, running }), info.hypervisor || '', host]
+    .filter(Boolean)
+    .join(SEPARATOR);
+
+  const actions = (
+    <>
+      <PowerButtons role={role} running={running} busy={busy} onAction={run} />
+      <ConsoleDoor id={id} name={name} server={server} />
+      <RefreshButton onRefresh={refresh} />
+    </>
+  );
+
   return (
-    <div className="list row" data-page="machine">
-      <PageHeader title={name} actions={<RefreshButton onRefresh={refresh} />} />
-      <MachineTabs id={id} name={name} role={context.user?.role} />
-      {failed ? (
-        <div className="alert alert-danger" role="alert">
-          {t('hosts.host.loadError')}
-        </div>
-      ) : null}
-      {answer.failed ? (
-        <div className="alert alert-info" role="status" data-note="no-detail">
-          <p className="mb-1">{t('pages.machines.detailsUnavailable', { resource })}</p>
-          <p className="small text-muted mb-0">
-            {t('pages.machines.detailsUnavailableNote', { resource })}
-          </p>
-        </div>
-      ) : null}
-      {page === 'settings' ? (
-        <MachineSettingsView key={name} id={id} name={name} context={context} />
-      ) : null}
-      {page === 'snapshots' ? <MachineSnapshotsView id={id} name={name} context={context} /> : null}
-      {page === 'provisioning' ? (
-        <MachineProvisioningView id={id} name={name} context={context} />
-      ) : null}
-      {page === 'overview' ? (
-        <div className="row g-3 mb-3">
-          <MachineInfoCard
-            id={id}
-            name={name}
-            host={host}
-            machine={machine}
-            detail={detail}
-            running={running}
-            organizations={organizations}
-            folds={folds}
-          />
-          <MachineConsolePanel
-            id={id}
-            name={name}
-            detail={detail}
-            running={running}
-            turn={turn}
-            user={context.user}
-            folds={folds}
-          />
-          {detail ? (
-            <>
-              <MachineTagsNotesCard
-                id={id}
-                name={name}
-                detail={detail}
-                onSaved={reread}
-                folds={folds}
-              />
-              <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
-              <MachineGuestAgentCard
-                id={id}
-                name={name}
-                detail={detail}
-                turn={turn}
-                onChanged={answer.refresh}
-                folds={folds}
-              />
-              <MachineGuestInfoCard id={id} name={name} detail={detail} turn={turn} folds={folds} />
-              <MachineTopologySlice
-                id={id}
-                name={name}
-                folded={folds.folded(TOPOLOGY_FOLD)}
-                onFold={() => folds.toggle(TOPOLOGY_FOLD)}
-              />
-              <MachineCharts
-                id={id}
-                name={name}
-                host={host}
-                detail={detail}
-                running={running}
-                folds={folds}
-              />
-            </>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+    <HostNav id={id} name={name} role={role}>
+      <div className="list row" data-page="machine">
+        <SectionHeading title={name} count={stateText} actions={actions} />
+        {failed ? (
+          <div className="alert alert-danger" role="alert">
+            {t('hosts.host.loadError')}
+          </div>
+        ) : null}
+        {answer.failed ? (
+          <div className="alert alert-info" role="status" data-note="no-detail">
+            <p className="mb-1">{t('pages.machines.detailsUnavailable', { resource })}</p>
+            <p className="small text-muted mb-0">
+              {t('pages.machines.detailsUnavailableNote', { resource })}
+            </p>
+          </div>
+        ) : null}
+        {page === 'settings' ? (
+          <MachineSettingsView key={name} id={id} name={name} context={context} />
+        ) : null}
+        {page === 'snapshots' ? (
+          <MachineSnapshotsView id={id} name={name} context={context} />
+        ) : null}
+        {page === 'provisioning' ? (
+          <MachineProvisioningView id={id} name={name} context={context} />
+        ) : null}
+        {page === 'overview' ? (
+          <div className="row g-3 mb-3">
+            <MachineInfoCard
+              id={id}
+              name={name}
+              host={host}
+              machine={machine}
+              detail={detail}
+              running={running}
+              organizations={organizations}
+              folds={folds}
+            />
+            <MachineConsolePanel
+              id={id}
+              name={name}
+              detail={detail}
+              running={running}
+              turn={turn}
+              user={context.user}
+              folds={folds}
+            />
+            {detail ? (
+              <>
+                <MachineTagsNotesCard
+                  id={id}
+                  name={name}
+                  detail={detail}
+                  onSaved={reread}
+                  folds={folds}
+                />
+                <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
+                <MachineGuestAgentCard
+                  id={id}
+                  name={name}
+                  detail={detail}
+                  turn={turn}
+                  onChanged={answer.refresh}
+                  folds={folds}
+                />
+                <MachineGuestInfoCard
+                  id={id}
+                  name={name}
+                  detail={detail}
+                  turn={turn}
+                  folds={folds}
+                />
+                <MachineTopologySlice
+                  id={id}
+                  name={name}
+                  folded={folds.folded(TOPOLOGY_FOLD)}
+                  onFold={() => folds.toggle(TOPOLOGY_FOLD)}
+                />
+                <MachineCharts
+                  id={id}
+                  name={name}
+                  host={host}
+                  detail={detail}
+                  running={running}
+                  folds={folds}
+                />
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </HostNav>
   );
 };
 

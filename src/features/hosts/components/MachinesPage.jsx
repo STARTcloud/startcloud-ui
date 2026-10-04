@@ -9,6 +9,7 @@ import PageHeader from '../../../components/common/PageHeader';
 import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
 import { importMachine } from '../api/machines';
 import { useActionRunner } from '../hooks/useHostActions';
@@ -36,7 +37,7 @@ import {
 } from '../utils/machines';
 import { hostImports } from '../utils/machineTools';
 
-import HostTabs from './HostTabs';
+import HostNav from './HostNav';
 import MachineImportDialog from './MachineImportDialog';
 import MachineRowActions from './MachineRowActions';
 import MachineToolDialogs from './MachineToolDialogs';
@@ -84,14 +85,12 @@ const badges = (words, tone) => (
 );
 
 /**
- * The columns of the machines list, hyperweaver-ui's machine row carried
- * into the one table: the name linking to the machine's page, the status
- * badge in its tone and the sentence that says it in words, the server
- * id, the provisioner, the roles, the system line, the hypervisor and
- * the backing as badges, the orphaned and auto-discovered flags and the
- * tags, every column after the status drawn only while a row carries
- * its value, because hyperweaver-agent and zoneweaver-agent answer
- * different rows.
+ * The columns of the machines list: the name linking to the machine's
+ * page, the status badge in its tone and the sentence that says it, the
+ * server id, the provisioner, the roles, the system line, the hypervisor
+ * and the backing as badges, the orphaned and auto-discovered flags and
+ * the tags, every column after the sentence drawn only while a row
+ * carries its value, because the agents answer different rows.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @returns {Array<Object>} The columns
@@ -341,31 +340,20 @@ NotOffered.propTypes = {
 };
 
 /**
- * The machines of one host at `/hosts/{id}/machines`, hyperweaver-ui's
- * machine list: the heading names the machines by the noun the host's
- * hypervisors fix, the host under it and the counts of all, running and
- * stopped as its chips; under it the tab row of the host's pages,
- * `HostTabs`, with Machines active; under it the one `SubTable` over the rows of
- * `GET machines`, the copy `useHostMachines` shares with the Controls
- * menu and the tree, narrowed to the organization a person operates
- * under and by the navbar binding of `useDetailSearch` under
- * `table_prefs_machines`, its Actions column the row buttons of
- * `MachineRowActions`. A row's action is one request through the
- * Controls menu's runner and one notice, the host's stats and its
- * machine rows read again once after a success, and the machine's
- * detail with them while it is held; what a queued task changes
- * afterwards reaches the rows through the `hosts` topic, and nothing
- * reads on a clock. Refresh in the heading's actions reads the list of
- * servers, the host's stats and its machine rows again. New draws first
- * while `hostCreates` offers it, a host that lists `machine-create`, and
- * opens the create wizard on the host's page; Import draws
- * before Refresh while `hostImports` offers it, a host that names
- * `virtualbox`, and opens the dialog that imports an appliance, one
- * request through `useMachineTools` and one notice; Clone in a row's
- * More menu opens the clone dialog of `MachineToolDialogs` on that
- * machine. A read that failed draws the agent's own message. Nothing is
- * asked of a host whose own row does not list `machines`, which draws
- * the placard saying so.
+ * The machines of one host at `/hosts/{id}/machines`, the body of the
+ * host's column, `HostNav`, naming the host's label and its noun for the
+ * crumbs through `usePageName`: the heading names the machines by the noun the
+ * host's hypervisors fix, the host under it and the counts of all,
+ * running and stopped as its chips; under it one `SubTable` over the
+ * rows of `useHostMachines`, narrowed by the navbar binding of
+ * `useDetailSearch` under `table_prefs_machines`, its Actions column
+ * `MachineRowActions`. A row's action is one request and one notice,
+ * the host's stats, its machine rows and the machine's detail read again
+ * after a success. Refresh reads the list of servers, the host's stats
+ * and its machine rows again. New opens the create wizard while
+ * `hostCreates` offers it; Import opens the import dialog while
+ * `hostImports` offers it. A host whose row does not list `machines`
+ * draws the placard saying so and is asked nothing.
  */
 const MachinesPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
@@ -409,15 +397,19 @@ const MachinesPage = ({ id, context }) => {
   });
   const label = labelOf({ status, server, id, stats });
 
+  usePageName(label, plural);
+
   useEffect(() => {
     document.title = `${plural} · ${label}`;
   }, [plural, label]);
 
   if (!held || (offered && !loaded)) {
     return (
-      <div className="list row">
-        <div>{t('pages.loading')}</div>
-      </div>
+      <HostNav id={id}>
+        <div className="list row">
+          <div>{t('pages.loading')}</div>
+        </div>
+      </HostNav>
     );
   }
 
@@ -467,73 +459,74 @@ const MachinesPage = ({ id, context }) => {
   );
 
   return (
-    <div className="list row" data-page="machines">
-      <PageHeader
-        title={plural}
-        subtitle={label}
-        chips={offered ? <Counts counts={machineCounts(machines)} /> : null}
-        actions={actions}
-      />
-      <HostTabs id={id} />
-      {failed ? (
-        <div className="alert alert-danger" role="alert" data-note="machines-failed">
-          {t('machine.machineListPanel.loadFailed', { plural: plural.toLowerCase(), message })}
-        </div>
-      ) : null}
-      {offered ? (
-        <SubTable
-          columns={columns}
-          rows={search.rows}
-          rowKey={row => row.name}
-          rowProp="machine"
-          RowActions={MachineRowActions}
-          actionsProps={{
-            id,
-            server,
-            role: context.user?.role,
-            noun: ctx.noun,
-            busy,
-            onAction: act,
-            onTool: (machine, tool) => setOpen({ tool, name: machine.name }),
-          }}
-          sort={search.sort}
-          onSort={search.setSort}
-          hiddenColumns={search.hiddenColumns}
-          widths={search.widths}
-          onResize={search.setColumnWidth}
-          ctx={ctx}
-          emptyText={
-            search.filtering
-              ? t('pages.noMatches')
-              : t('machine.machineListPanel.noneOnHost', { plural: plural.toLowerCase() })
-          }
+    <HostNav id={id}>
+      <div className="list row" data-page="machines">
+        <PageHeader
+          title={plural}
+          subtitle={label}
+          chips={offered ? <Counts counts={machineCounts(machines)} /> : null}
+          actions={actions}
         />
-      ) : (
-        <EmptyState title={<NotOffered resource={resource} />} />
-      )}
-      <MachineToolDialogs
-        status={status}
-        tool={open.tool}
-        id={id}
-        name={open.name}
-        onClose={() => setOpen(NO_TOOL)}
-      />
-      {importing ? (
-        <MachineImportDialog
-          busy={tools.busy}
-          onClose={() => setImporting(false)}
-          onSubmit={sendImport}
-        />
-      ) : null}
-      {tools.task ? (
-        <TaskDialog
+        {failed ? (
+          <div className="alert alert-danger" role="alert" data-note="machines-failed">
+            {t('machine.machineListPanel.loadFailed', { plural: plural.toLowerCase(), message })}
+          </div>
+        ) : null}
+        {offered ? (
+          <SubTable
+            columns={columns}
+            rows={search.rows}
+            rowKey={row => row.name}
+            rowProp="machine"
+            RowActions={MachineRowActions}
+            actionsProps={{
+              id,
+              server,
+              role: context.user?.role,
+              noun: ctx.noun,
+              busy,
+              onAction: act,
+              onTool: (machine, tool) => setOpen({ tool, name: machine.name }),
+            }}
+            sort={search.sort}
+            onSort={search.setSort}
+            hiddenColumns={search.hiddenColumns}
+            widths={search.widths}
+            onResize={search.setColumnWidth}
+            ctx={ctx}
+            emptyText={
+              search.filtering
+                ? t('pages.noMatches')
+                : t('machine.machineListPanel.noneOnHost', { plural: plural.toLowerCase() })
+            }
+          />
+        ) : (
+          <EmptyState title={<NotOffered resource={resource} />} />
+        )}
+        <MachineToolDialogs
           status={status}
-          id={tools.task.id}
-          task={tools.task.row}
-          onHide={tools.closeTask}
+          tool={open.tool}
+          id={id}
+          name={open.name}
+          onClose={() => setOpen(NO_TOOL)}
         />
-      ) : null}
-    </div>
+        {importing ? (
+          <MachineImportDialog
+            busy={tools.busy}
+            onClose={() => setImporting(false)}
+            onSubmit={sendImport}
+          />
+        ) : null}
+        {tools.task ? (
+          <TaskDialog
+            status={status}
+            id={tools.task.id}
+            task={tools.task.row}
+            onHide={tools.closeTask}
+          />
+        ) : null}
+      </div>
+    </HostNav>
   );
 };
 

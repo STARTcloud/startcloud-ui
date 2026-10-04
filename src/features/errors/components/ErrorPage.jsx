@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -14,7 +14,6 @@ const REFERENCE = /^[0-9a-f]{16}$/;
 const SAFE_PATH = /^\/(?![/\\])/;
 const TITLED = ['403', '404', '500'];
 const GENERIC = { status: '500', reference: '', path: '' };
-const COPIED_MS = 2000;
 
 const stamped = () => {
   const html = document.documentElement;
@@ -114,20 +113,15 @@ const useErrorDetails = ({ reference, admin }) => {
 
 const useCopied = () => {
   const [copied, setCopied] = useState(false);
-  const timer = useRef(null);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
 
   const copy = text =>
     copyToClipboard(text)
-      .then(() => {
-        setCopied(true);
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => setCopied(false), COPIED_MS);
-      })
+      .then(() => setCopied(true))
       .catch(() => null);
 
-  return { copied, copy };
+  const reset = () => setCopied(false);
+
+  return { copied, copy, reset };
 };
 
 /**
@@ -153,7 +147,7 @@ const ErrorPage = ({ ticketUrl = '', admin = false, notFound = false }) => {
   );
   const [time] = useState(() => formatTime(new Date()));
   const details = useErrorDetails({ reference: fault.reference, admin });
-  const { copied, copy } = useCopied();
+  const { copied, copy, reset } = useCopied();
   const canGoBack = window.history.length > 1;
   const known = TITLED.includes(fault.status);
   const title = t(known ? `errors.title.${fault.status}` : 'errors.title.other', {
@@ -224,6 +218,7 @@ const ErrorPage = ({ ticketUrl = '', admin = false, notFound = false }) => {
           type="button"
           className="auth-btn auth-btn-secondary"
           onClick={() => copy(copyText({ fault, time, details }))}
+          onBlur={reset}
           aria-live="polite"
         >
           {copied ? t('errors.copied') : t('errors.copy')}

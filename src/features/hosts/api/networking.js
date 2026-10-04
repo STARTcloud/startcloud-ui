@@ -202,18 +202,6 @@ export const deleteAggregate = (status, id, name) =>
   client.delete(named(status, id, 'aggregates', name), { params: { temporary: false } });
 
 /**
- * Act on a service, `POST services/action` with `{ action, fmri }`, the
- * disable of the CDP service before an aggregate is made.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {Object} body - `{ action, fmri }`
- * @returns {Promise<Object>} The agent's answer
- */
-export const serviceAction = (status, id, body) =>
-  client.post(agentPath(status, id, 'services/action'), body);
-
-/**
  * Write the host's hostname, `PUT network/hostname` with the body of
  * `hostnameBody`, offered while the host lists `hostname` or `vnics`.
  *

@@ -41,6 +41,7 @@
           "machines",
           "tasks",
           "host-power",
+          "runlevel",
           "services",
           "processes",
           "system-users",

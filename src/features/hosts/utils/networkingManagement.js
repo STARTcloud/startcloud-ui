@@ -21,7 +21,6 @@ const NAME_ATTEMPTS = 100;
 const LINKS_SHOWN = 2;
 const ZONE_NAME_CAP = 20;
 const NO_LINK = '--';
-const CDP_FMRI = 'svc:/network/cdp:default';
 const VLAN_TONES = [
   'primary',
   'info',
@@ -798,7 +797,11 @@ export const aggregateBody = form => ({
   ...(trimmed(form.unicast_address) ? { unicast_address: trimmed(form.unicast_address) } : {}),
 });
 
-export const CDP_DISABLE_BODY = { action: 'disable', fmri: CDP_FMRI };
+/**
+ * The FMRI of the CDP service, the one `POST services/action` disables
+ * before an aggregate is made.
+ */
+export const CDP_FMRI = 'svc:/network/cdp:default';
 
 /**
  * Whether the host's CDP service is online among the services answered

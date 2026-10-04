@@ -6,15 +6,17 @@ import { FaPlus, FaTriangleExclamation } from 'react-icons/fa6';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
-import { createAggregate, deleteAggregate, fetchAggregate, serviceAction } from '../api/networking';
+import { serviceAction } from '../api/manage';
+import { createAggregate, deleteAggregate, fetchAggregate } from '../api/networking';
 import { useHostReading } from '../hooks/useHostReadings';
 import {
-  CDP_DISABLE_BODY,
+  CDP_FMRI,
   aggregateBody,
   aggregateLinksOf,
   cdpRunning as cdpRunningOf,
   namedKey,
 } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import AggregateCreateModal from './AggregateCreateModal';
 import AggregateDetailsModal from './AggregateDetailsModal';
@@ -29,13 +31,15 @@ import NetworkingTable from './NetworkingTable';
  * table while the CDP service reads online among the host's services
  * (`GET services` with `pattern=cdp`). A create sends
  * `POST network/aggregates` with `aggregateBody`, a queued task, after
- * `POST services/action` disabling CDP where the dialog's box is
- * ticked; a delete, behind the typed confirmation, sends
+ * the one `serviceAction` of the manage API disabling CDP where the
+ * dialog's box is ticked; a delete, behind the typed confirmation, sends
  * `DELETE network/aggregates/{name}`; the details read
  * `GET network/aggregates/{name}` with `lacp` once. Every write goes
- * through the page's one `useNetworkingTools`.
+ * through the page's one `useNetworkingTools`. Create, the delete and
+ * the CDP warning draw for a role that controls hosts alone; every
+ * other role reads the table with the details.
  */
-const AggregateManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools }) => {
+const AggregateManagement = ({ id, role, rows, reading, table, ctx, filtering, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -46,12 +50,13 @@ const AggregateManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
   const [details, setDetails] = useState(null);
   const links = useMemo(() => aggregateLinksOf(interfaces.data?.interfaces), [interfaces.data]);
   const cdpRunning = cdpRunningOf(services.data?.services || services.data);
+  const writable = canControlHosts(role);
 
   const create = async form => {
     if (cdpRunning && form.disableCdp) {
       const { error } = await tools.send({
         id,
-        call: () => serviceAction(status, id, CDP_DISABLE_BODY),
+        call: () => serviceAction(status, id, CDP_FMRI, 'disable'),
         doneKey: 'hosts.networking.tools.cdpDisabled',
         failKey: 'host.aggregateCreateModal.errors.disableCdpFailed',
         keys: ['services-cdp'],
@@ -109,7 +114,7 @@ const AggregateManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
 
   return (
     <>
-      {cdpRunning ? (
+      {writable && cdpRunning ? (
         <div className="alert alert-warning d-flex align-items-center gap-2" data-note="cdp">
           <FaTriangleExclamation aria-hidden="true" />
           <div>
@@ -128,13 +133,18 @@ const AggregateManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
         table={table}
         rowKey={namedKey}
         RowActions={AggregateRowActions}
-        actionsProps={{ busy: tools.busy, onDetails: open, onDelete: setRemoving }}
+        actionsProps={{
+          busy: tools.busy,
+          canEdit: writable,
+          onDetails: open,
+          onDelete: setRemoving,
+        }}
         ctx={ctx}
         emptyKey="host.aggregateTable.empty"
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <AggregateCreateModal
@@ -170,6 +180,7 @@ const AggregateManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
 
 AggregateManagement.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,

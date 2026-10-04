@@ -68,12 +68,9 @@ whose write-through the provider carries.
   timeout is a person signed out for nothing.
 - **The spec supersedes this contract.** Where a clause of this contract
   and a specification it cites disagree, the specification wins and the
-  clause changes; the specifications are RFC 6749, RFC 6750, RFC 7009,
-  RFC 9449, RFC 9700, RFC 9110, OpenID Connect Core 1.0, Back-Channel
-  Logout 1.0, Front-Channel Logout 1.0, RP-Initiated Logout 1.0 and
-  Session Management 1.0, and a clause that names a rule names the
-  section it comes from, because a contract that only restates a
-  specification has nothing of its own to defend against it.
+  clause changes, and a clause that names a rule names the section it
+  comes from, because a contract that only restates a specification has
+  nothing of its own to defend against it.
 - **A session ends on the bus.** Whatever decides the session is gone — a
   refresh the provider refused, a `401` the client could not clear with
   one fresh token, a server-sent terminate — calls `events.endSession()`
@@ -87,27 +84,25 @@ whose write-through the provider carries.
 url)` is the one source, and the shared API client of the
   [API client](#api-client) section is the one caller, resolving those
   headers per request against the absolute URL it sends.
-- **The provider is built once.** `initRuntime(status)` in `src/lib/runtime.js`
-  creates the bus, then the provider and the return-path helper through
+- **The provider is built once.** `initRuntime(status)` creates the bus,
+  then the provider and the return-path helper through
   `createSession(status, events)`, then the API client at the serving
-  origin and the hub client; every screen imports those from `runtime.js`,
+  origin and the hub client; every screen imports those from the runtime,
   and nothing else reads or writes session storage.
-- **Every protocol the estate uses is in the shared folder.** Converging
-  did not mean choosing between the browser and the backend as the OIDC
-  client; the browser shape, the backend shape and the issuer's own cookie
-  session all live in `src/lib/`, behind one contract, so a UI backend
-  changes shape by changing the first entry of `auth` in its status.
+- **Every protocol the estate uses is in the shared folder.** The browser
+  shape, the backend shape and the issuer's own cookie session all live
+  in the shared layer, behind one contract, so a UI backend changes shape
+  by changing the first entry of `auth` in its status.
 
 ---
 
 ## Session state
 
 `useSession({ provider, events, returnTo, navigate, activeOrgKey, allOrganizations, push, onAdopt, loadFavorites })`
-returns the object below; `sessionStateShape` in `src/hooks/useSession.jsx`
-is its prop-type and every shell takes it as `account`; `navigate` is the
-router's own, handed by the hook to the provider's `load`, `reload`,
-`refresh` and `begin`, so a provider that must move the page moves it
-in-router.
+returns the object below; `sessionStateShape` is its prop-type and every
+shell takes it as `account`; `navigate` is the router's own, handed by the
+hook to the provider's `load`, `reload`, `refresh` and `begin`, so a
+provider that must move the page moves it in-router.
 
 | Field                    | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -257,12 +252,8 @@ served the page:
   and on a machine) are keyed on it. A row without one is in BoxVault's
   shape, `{ name, role, is_primary }`, and is read with the name as the
   uuid, because BoxVault's routes are keyed by the name. This is the one
-  two-shape reader of the layer, and the BoxVault branch leaves when
-  BoxVault's round converges its profile on the identity provider's
-  shape; an app's own permission rules
-  read the same mapping (BoxVault's `permissions.js` adds only its
-  global-admin flag and its box-owner rule over `isMember`, `isManager`
-  and `isOwner`);
+  two-shape reader of the layer; an app's own permission rules read the
+  same mapping over `isMember`, `isManager` and `isOwner`;
 - `oidc` is whether the profile's `provider` starts with `oidc-`, and
   `issuerUrl` is resolved from the ID token the backend embeds in its JWT,
   checked against the backend's trusted issuers, so the user menu's profile
@@ -325,23 +316,25 @@ fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
 key that still validates outranking it, the claimed session answered once
 and never after the record was forgotten, `claims()` null; once the key
 is proved, `GET /api/user` read with the same bearer and held in memory,
-the person's record in the identity provider's shape with the five
-`preferred_*` members the chrome applies, the identity provider's own
-values on a key a federated login minted and the agent's local store's
-on a plain key, its `preferred_mode`, `preferred_theme`,
-`preferred_motion` and `preferred_language` stored beside the key so
-the pre-paint script paints the person's mode and theme before the
-first frame, the way the `user` and `account` records do, a `404` there
-leaving the key's profile as the whole identity and no stored member,
-and `savePreferences()` `PATCH /api/user/preferences` while such a
-record is held, the agent relaying it to the identity provider on a
-federated key and merging its own store on a plain one, the held and
-stored members updated on success, nothing while none is; the stored
+the person's record in the identity provider's shape without its
+`preferred_*` members, because the agent keeps no user preferences: the
+mode, the theme, the motion switch and the language are the browser's
+own `mode`, `theme`, `motion` and `language` keys, written by the
+person's own controls and painted by the pre-paint script, and the time
+zone the browser's own `timezone` key, the profile page reading it as
+the record's `preferences.timezone`, a `404` there leaving the key's
+profile as the whole identity, and `savePreferences()` writing the
+patch's `timezone` under that key and sending nothing; a pick of the
+`shi` theme on this host writes `ui.shi_mode` true through
+`PUT /api/config/app` beside the browser's `theme` key, and a pick of
+any other theme writes it false, so the agent's tray swaps its icon on
+that save; the stored
 record carries the profile's `issuer` and `subject`, the
 identity provider's origin and the account's stable id on a key a
 federated login minted, and the session's `issuerUrl` is that issuer, so
-the user menu's identity card, its Preferences row and the profile
-page's Manage at identity provider link point at it, the profile page at
+the user menu's identity card and the profile page's Manage at identity
+provider link point at it, the menu's Preferences row opening the local
+`/profile/preferences` as the sidebar's row does, the profile page at
 `/profile` drawing the record `readOnly` on every key because the agent
 serves no write of it;
 both sign-outs forgetting the record, the agent having no sign-out
@@ -424,10 +417,9 @@ on failure shows `session.failed` with the translated `messageKey` or the
 message, a `session.returnLink` to `homeHref` and `session.tryAgain`;
 while it runs it shows `session.completing`. Those keys live in
 `shared.json`. An `idp` UI backend renders it as its own HTML entry at
-`/callback/` (`src/app/callback.jsx`) and `onDone` replaces the location
-with the consumed return path; a `backend` UI backend renders it on the
-`/auth/callback` route inside the app and `onDone` navigates there with
-`replace`.
+`/callback/` and `onDone` replaces the location with the consumed return
+path; a `backend` UI backend renders it on the `/auth/callback` route
+inside the app and `onDone` navigates there with `replace`.
 
 ---
 
@@ -471,10 +463,9 @@ cluster's Sign in carries that page, and dismissing the banner keeps it.
   user goes away, a sign-out or a session ended elsewhere, the mode, the
   theme and the motion switch return to the visitor's own values under
   the browser's keys. The theme is applied from the account's record and
-  never mirrored into the browser's own keys, so, in Mark's words, the
-  theme never spills into the app's theme when they are signed out, and
-  nothing is deleted at sign-out but the credentials and the cached
-  record.
+  never mirrored into the browser's own keys, so the theme never spills
+  into the app's theme when they are signed out, and nothing is deleted
+  at sign-out but the credentials and the cached record.
 - `claims()` is memoized per session and reset by a sign-out or a reload,
   so the user menu, the favorites and the ticket URL read one fetch.
 
@@ -515,13 +506,12 @@ A `cookie` UI backend (the identity provider) keeps `account` (the cached displa
 
 ## API client
 
-`createApiClient({ baseUrl, requestOrigin, session, onError })` in
-`src/lib/apiClient.js` is the one HTTP client every request of an app goes
-through; no screen, adapter or service calls axios or `fetch` with a
-session header of its own, the root entry's `probeStatus` being the one
-call outside it, made before any session exists. `initRuntime` builds it
-once over the provider, at the origin that served the page, and every
-feature's `api/` file calls it.
+`createApiClient({ baseUrl, requestOrigin, session, onError })` is the one
+HTTP client every request of an app goes through; no screen, adapter or
+service calls axios or `fetch` with a session header of its own, the root
+entry's `probeStatus` being the one call outside it, made before any
+session exists. `initRuntime` builds it once over the provider, at the
+origin that served the page, and every feature's `api/` file calls it.
 
 - `baseUrl` is the public origin the API answers at and the one the
   session signs headers for; `requestOrigin` is where the browser sends
@@ -559,24 +549,22 @@ onUploadProgress, responseType, skipAuthRefresh, messageKeys })` and the
   `errors.accessDenied` for 403, `errors.notFound` for 404, `errors.network` when the server could
   not be reached, `errors.request` otherwise; a call overrides a status
   through `messageKeys`. An aborted request rethrows the
-  abort as is. `onError` sees every `ApiError` once before it is thrown;
-  BoxVault logs it through the shared logger's `api` category.
+  abort as is. `onError` sees every `ApiError` once before it is thrown.
 - `encodePath(...segments)` builds a path from raw names, each segment
   URL-encoded, so a name with a reserved character never breaks a route.
 - Per UI backend: `initRuntime` builds `client` at the serving origin for
   everything under `/api/*`, and `hubClient` for the notification hub, a
   second client at `idp.issuer` for an `idp` UI backend and the same `client`
   for a `backend` UI backend whose backend proxies the hub. The box collection
-  sends its files through `uploadChunked.js` on the same client: 5 MB
-  chunks with in-chunk progress, then the assembly poll.
+  sends its files on the same client: 5 MB chunks with in-chunk progress,
+  then the assembly poll.
 
 ---
 
 ## Backends
 
 A backend behind the browser OIDC provider verifies what `session.headers`
-sends, the way the catalog Worker does (`worker/src/index.js`) and
-BoxVault's request resolver does (`backend/app/utils/requestAuth.js`):
+sends, the way the catalog Worker and BoxVault's request resolver do:
 
 - the access token against the issuer's JWKS, its `iss` a configured
   provider and its `aud` the backend's own audience (on BoxVault
@@ -617,14 +605,14 @@ one with local accounts keeps `auth: ["backend"]`. Either way the catalog can ca
 
 The three pages an app with its own accounts routes to are shared pages of
 the [Universal Pages Contract](universal-pages/): `LoginPage`,
-`RegisterPage` and `InvitePage` in `src/features/auth/`, drawn from the
-provider, the return-path helper and one `auth` adapter the router builds,
-routed while the UI backend's first `auth` token is `backend` or `cookie`
-(`/register` also needs `local-accounts`) and answered with
-`NotAvailableStub` on an `idp` UI backend, whose sign-in is one click.
+`RegisterPage` and `InvitePage`, drawn from the provider, the return-path
+helper and one `auth` adapter the router builds, routed while the UI
+backend's first `auth` token is `backend` or `cookie` (`/register` also
+needs `local-accounts`) and answered with `NotAvailableStub` on an `idp`
+UI backend, whose sign-in is one click.
 
 - `auth` is `{ methods, register, validateInvitation, acceptInvitation,
-loginMethodKey, silentSsoKey }`: the four calls of `features/auth/api`
+loginMethodKey, silentSsoKey }`: the four calls of the auth feature's API
   and the two localStorage keys the pages remember the chosen sign-in
   method and the one silent SSO attempt under.
 - `LoginPage({ session, account, returnTo, auth, appName })` reads
@@ -657,51 +645,45 @@ method })` (the default provider filled and full width, the rest full
 
 ---
 
-## Reference implementation
+## Shared layer
 
-One repository, [STARTcloud/startcloud-ui](https://github.com/STARTcloud/startcloud-ui):
-
-| Path                                                  | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/`                                            | The shared layer, see below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `src/lib/createSession.js`                            | `createSession(status, events)`: `createBrowserOidc` over the `issuer`, `client_id`, `scopes` and `storage_prefix` of `status.idp` with `events` and `apiBase`, and `createReturnTo` with `/callback` as the auth path for an `idp` UI backend; `createCookieSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the identity contract's sign-in paths for a `cookie` UI backend; `createBackendSession({ baseUrl: origin, events })` and `createReturnTo` with `/login` and the auth paths otherwise; `intended_url` in all three |
-| `src/lib/runtime.js`                                  | `initRuntime(status)`: `events`, `session`, `returnTo`, `client` at the serving origin with `onError` logging, `hubClient` at `idp.issuer` or the same client; every feature's `api/` file calls `client`                                                                                                                                                                                                                                                                                                                                                   |
-| `src/app/App.jsx`                                     | `useSession` with `onAdopt` feeding the provisioners adapter's memberships while the UI backend advertises `private-catalogs`, the mode, theme and language write-through, the event stream of the events contract while the UI backend advertises `events` (`useSessionKeepalive`, no timer of any kind), the account state into `AppShell`                                                                                                                                                                                                                |
-| `src/app/router.jsx`                                  | The `auth` adapter over `features/auth/api` and the `/login`, `/register`, `/invite/:token` and `/auth/callback` routes while the UI backend's first `auth` token is `backend`; the `account` adapter over `features/profile/api` and the `/profile` route on the shared `ProfilePage`, which calls `signOutEverywhere`, `reload` and emits `login` on the bus                                                                                                                                                                                              |
-| `src/app/callback.jsx`                                | The `/callback/` entry of an `idp` UI backend rendering `CallbackPage`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/features/collections/boxes/api/uploadChunked.js` | The chunked box upload on `client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-
-Shared by every UI backend, once: `src/lib/` — `browserOidc.js`,
-`backendSession.js` (`createBackendSession`, `profileMemberships`),
-`cookieSession.js` (`createCookieSession`, `accountMembership`), `dpop.js` (`createDpop`, `base64url`), `jwt.js`
-(`decodeJwt`), `events.js` (`createSessionEvents`), `returnTo.js` (`createReturnTo`,
-`currentPath`, `safeReturnPath`), `createSession.js` and `runtime.js`;
-`src/hooks/useSession.jsx` (`useSession`, `sessionStateShape`) and
-`src/features/auth/components/CallbackPage.jsx`. The layer imports only
-react, prop-types, react-bootstrap, react-i18next, axios and the chrome's
-organization shape; the `session.*` keys it reads live in `shared.json`.
-
----
-
-## Conformance checklist
-
-| Line                                                                                                                                                 | Catalog                                                                                 | BoxVault                                                                                                                                       | Auth server                                                                                                            |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| One session layer in startcloud-ui; the provider, the bus and the return-path helper built by `initRuntime` from the UI backend's first `auth` token | ✓ `["idp"]` with `idp`                                                                  | ✓ `["backend"]`                                                                                                                                | to come — `["cookie"]`, `createCookieSession`                                                                          |
-| First render from the stored session, then `load()`                                                                                                  | ✓ token claims, refresh a minute before expiry                                          | ✓ stored profile, issuer resolved from the embedded ID token                                                                                   | to come — the cached `account` profile, then `GET /api/user`                                                           |
-| Every request through the shared API client, its header from the provider, one replay on `401`, every failure an `ApiError`                          | ✓ `session.headers` with DPoP proofs; `client` at the Worker, `hubClient` at the issuer | ✓ `x-access-token` through `session.headers`; one client, every call in the features' `api/` files                                             | to come — `X-XSRF-TOKEN` through `session.headers`, no replay (`retryAuth` false)                                      |
-| The backend verifies the browser provider's token and DPoP proof on every gate                                                                       | ✓ the Worker                                                                            | ✓ `requestAuth.js` under `verifyToken`, `sessionAuth` and discover                                                                             | n/a — the issuer                                                                                                       |
-| Sign-in returns to the page it started on, never an auth page                                                                                        | ✓ `/callback/` consumes `intended_url`                                                  | ✓ `/auth/callback` consumes `intended_url`; form, providers and silent SSO remember it                                                         | to come — `intended_url` consumed after the sign-in step's `next`                                                      |
-| Session ended elsewhere ends on the bus and raises the session-ended banner with the return path                                                     | ✓ refresh failure, the client's unrecovered `401`                                       | ✓ the client's unrecovered `401`, `session-terminated` on the `events` stream                                                                  | to come — the client's `401` on an authenticated call                                                                  |
-| Claims memoized from the provider                                                                                                                    | ✓ `/userinfo`                                                                           | ✓ `/api/userinfo/claims`                                                                                                                       | to come — `/api/userinfo/claims`                                                                                       |
-| Preferences write through the provider; account value applied on sign-in                                                                             | ✓ `PATCH` the issuer with a proof; `preferences` from `/userinfo` on every `load()`     | ✓ `PATCH` the backend; `preferred_mode`, `preferred_theme`, `preferred_motion` and `preferred_language` from `GET /api/user` on every `load()` | to come — `PATCH /api/user/preferences`; `preferences.mode`, `theme` and `language` applied by `load()` on every adopt |
-| Sign out: this app and everywhere                                                                                                                    | ✓ tokens and key dropped; end-session form `POST` with `id_token_hint`                  | ✓ profile dropped; `/api/auth/oidc/logout` then its redirect                                                                                   | to come — `POST /user/logout` for both answering `{ next }`; the plain red row                                         |
-| Active organization persisted, validated, primary → first; All organizations where the UI backend narrows by organization                            | ✓ by uuid                                                                               | ✓ by name                                                                                                                                      | to come — `activeOrganization` by uuid, a console context only                                                         |
-| Push subscription synced while signed in                                                                                                             | ✓                                                                                       | ✓                                                                                                                                              | to come — the push worker at scope `/`                                                                                 |
+- `createSession(status, events)` builds `createBrowserOidc` over the
+  `issuer`, `client_id`, `scopes` and `storage_prefix` of `status.idp`
+  with `events` and `apiBase`, and `createReturnTo` with `/callback` as
+  the auth path, for an `idp` UI backend; `createCookieSession({ baseUrl:
+origin, events })` and `createReturnTo` with `/login` and the identity
+  contract's sign-in paths for a `cookie` UI backend;
+  `createBackendSession({ baseUrl: origin, events })` and `createReturnTo`
+  with `/login` and the auth paths otherwise; `intended_url` in all three.
+- `initRuntime(status)` answers `events`, `session`, `returnTo`, `client`
+  at the serving origin with `onError` logging, and `hubClient` at
+  `idp.issuer` or the same client.
+- The app runs `useSession` with `onAdopt` feeding the provisioners
+  adapter's memberships while the UI backend advertises
+  `private-catalogs`, the mode, theme and language write-through, the
+  event stream of the events contract while the UI backend advertises
+  `events` (`useSessionKeepalive`, no timer of any kind), and the account
+  state into `AppShell`.
+- The router builds the `auth` adapter and the `/login`, `/register`,
+  `/invite/:token` and `/auth/callback` routes while the UI backend's
+  first `auth` token is `backend`, and the `account` adapter and the
+  `/profile` route on the shared `ProfilePage`, which calls
+  `signOutEverywhere`, `reload` and emits `login` on the bus.
+- The layer exports `createBrowserOidc`, `createBackendSession`,
+  `profileMemberships`, `createCookieSession`, `accountMembership`,
+  `createDpop`, `base64url`, `decodeJwt`, `createSessionEvents`,
+  `createReturnTo`, `currentPath`, `safeReturnPath`, `createSession`,
+  `initRuntime`, `useSession`, `sessionStateShape` and `CallbackPage`. It
+  imports only react, prop-types, react-bootstrap, react-i18next, axios
+  and the chrome's organization shape; the `session.*` keys it reads live
+  in `shared.json`.
 
 ---
 
 **Related:** [Universal Navbar Contract](universal-navbar/) |
 [Universal Pages Contract](universal-pages/) |
 [Preferences, Language & Branding Contract](preferences-and-branding/) |
-[Integrating Your App](integrating-your-app/)
+[Integrating Your App](integrating-your-app/) | RFC 6749, RFC 6750, RFC
+7009, RFC 9449, RFC 9700, RFC 9110, OpenID Connect Core 1.0, Back-Channel
+Logout 1.0, Front-Channel Logout 1.0, RP-Initiated Logout 1.0 and Session
+Management 1.0

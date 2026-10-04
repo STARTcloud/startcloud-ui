@@ -4,7 +4,8 @@ import { expect, test } from './support/fixtures.js';
 
 const { Then } = createBdd(test);
 
-const managerOf = page => page.locator('[data-page="manage"] [data-panel="file-manager"]');
+const managerOf = page =>
+  page.locator('[data-page="host-section"][data-section="files"] [data-panel="file-manager"]');
 
 Then('the file manager draws the path {string}', async ({ page }, path) => {
   await expect(managerOf(page)).toHaveAttribute('data-path', path);

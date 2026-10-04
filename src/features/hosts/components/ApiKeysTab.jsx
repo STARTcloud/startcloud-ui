@@ -10,15 +10,49 @@ import SectionCard, { foldsShape } from '../../../components/common/SectionCard'
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
-import { nextSort, sortItems } from '../../../utils/sort';
+import { dayOf } from '../../../hooks/useClientFilters';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { bootstrapApiKey, deleteApiKey, generateApiKey, getApiKeys } from '../api/apiKeyAPI';
 import { useManageRead, useManageSend } from '../hooks/useHostManage';
 import { apiKeysOf } from '../utils/agentSettings';
 import { formatTaskDate } from '../utils/tasks';
 
+const PREFS_KEY = 'table_prefs_api_keys';
+
 const DEFAULT_SORT = [{ column: 'created_at', direction: 'desc' }];
 
-const NO_HIDDEN = new Set();
+const matches = (row, needle) =>
+  [row.name || '', row.description || ''].some(text => text.toLowerCase().includes(needle));
+
+const emptyKeyOf = (loaded, filtering) => {
+  if (!loaded) {
+    return 'accounts.apiKeysTab.loadingKeys';
+  }
+  return filtering ? 'pages.noMatches' : 'pages.empty';
+};
+
+const FILTER_GROUPS = [
+  {
+    key: 'active',
+    labelKey: 'accounts.apiKeysTab.columnActive',
+    values: row => (row.is_active ? ['active'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) =>
+      t(value === 'active' ? 'accounts.apiKeysTab.statusYes' : 'accounts.apiKeysTab.statusNo'),
+  },
+  {
+    kind: 'date-range',
+    key: 'last_used',
+    labelKey: 'accounts.apiKeysTab.columnLastUsed',
+    values: row => [dayOf(row.last_used)],
+  },
+  {
+    kind: 'date-range',
+    key: 'created_at',
+    labelKey: 'accounts.apiKeysTab.columnCreatedAt',
+    values: row => [dayOf(row.created_at)],
+  },
+];
 
 const COLUMNS = [
   {
@@ -133,7 +167,12 @@ GeneratedKeyModal.propTypes = {
  * with Delete behind the typed confirmation, `DELETE api-keys/{id}`.
  * Every write is one request and one notice, the keys read again once
  * after a success; the list reads once as the tab draws, again when the
- * stream opens fresh or answers `reset` and on the page's Refresh.
+ * stream opens fresh or answers `reset` and on the page's Refresh. The
+ * navbar search is bound over the key's name and description, with the
+ * Active `toggle` group and the Last used and Created `date-range`
+ * groups narrowing the rows client-side, and the Columns group, the
+ * sort, hidden columns and widths under `table_prefs_api_keys` through
+ * `useDetailSearch`.
  */
 const ApiKeysTab = ({ id, folds }) => {
   const { t, i18n } = useTranslation();
@@ -146,9 +185,18 @@ const ApiKeysTab = ({ id, folds }) => {
   const [form, setForm] = useState({ name: '', description: '' });
   const [generated, setGenerated] = useState('');
   const [deleting, setDeleting] = useState(null);
-  const [sort, setSort] = useState(DEFAULT_SORT);
   const ctx = useMemo(() => ({ t, language: i18n.language }), [t, i18n.language]);
   const rows = useMemo(() => apiKeysOf(keys.data), [keys.data]);
+  const search = useDetailSearch({
+    rows,
+    matches,
+    placeholderKey: 'accounts.apiKeysTab.search',
+    columns: COLUMNS,
+    ctx,
+    prefsKey: PREFS_KEY,
+    filterGroups: FILTER_GROUPS,
+    defaultSort: DEFAULT_SORT,
+  });
 
   const generate = async event => {
     event.preventDefault();
@@ -259,16 +307,18 @@ const ApiKeysTab = ({ id, folds }) => {
       ) : null}
       <SubTable
         columns={COLUMNS}
-        rows={sortItems(rows, sort, COLUMNS, ctx)}
+        rows={search.rows}
         rowKey={row => String(row.id)}
         rowProp="apiKey"
         RowActions={KeyActions}
         actionsProps={{ busy, onDelete: setDeleting }}
-        sort={sort}
-        onSort={(column, options) => setSort(current => nextSort(current, column, options))}
-        hiddenColumns={NO_HIDDEN}
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
         ctx={ctx}
-        emptyText={t(keys.loaded ? 'pages.empty' : 'accounts.apiKeysTab.loadingKeys')}
+        emptyText={t(emptyKeyOf(keys.loaded, search.filtering))}
       />
       {generated ? <GeneratedKeyModal apiKey={generated} onClose={() => setGenerated('')} /> : null}
       <ConfirmModal

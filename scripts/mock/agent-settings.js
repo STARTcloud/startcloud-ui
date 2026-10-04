@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { favoritesOf, savedFavorites } from './account.js';
 import { SETUP_TOKEN } from './config.js';
 import { featuresOf } from './fleet.js';
-import { APIKEY_MODE, ago, failure, invalid, missing, now, ok, refusal } from './kit.js';
+import { APIKEY_MODE, ago, missing, now, ok, refusal } from './kit.js';
 import {
   FIXTURE_PERSON,
   ISSUER,
@@ -13,7 +13,6 @@ import {
   personById,
   registerApiKey,
 } from './people.js';
-import { publish } from './stream.js';
 import { queue } from './tasks.js';
 
 const DAY_MINUTES = 60 * 24;
@@ -37,9 +36,6 @@ const SEED_KEYS = [
   ['old-laptop', 'Revoked when the laptop was retired', null, DAY_MINUTES * 90, '', 'viewer'],
 ];
 const bootstrap = { open: true };
-const PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion', 'timezone'];
-const PREFERENCE_CHOICES = { mode: ['light', 'dark', 'auto'], motion: ['auto', 'reduce'] };
-const preferences = new Map();
 const SECRET_CATEGORIES = [
   'hcl_download_portal_api_keys',
   'git_api_keys',
@@ -231,19 +227,8 @@ const keyInfo = ctx => {
 export const oidcBound = () =>
   [...states.values()].some(state => state.keys.some(row => row.key && row.identity));
 
-const personKeyOf = row => row.identity?.email || row.name;
-
-const prefsOf = row => {
-  const name = personKeyOf(row);
-  if (!preferences.has(name)) {
-    preferences.set(name, Object.fromEntries(PREFERENCE_MEMBERS.map(member => [member, null])));
-  }
-  return preferences.get(name);
-};
-
 const agentUser = ctx => {
   const row = keyOf(ctx);
-  const stored = prefsOf(row);
   return ok({
     id: row.id,
     username: row.name,
@@ -256,48 +241,12 @@ const agentUser = ctx => {
     ...identityOf(row),
     role: row.role,
     organizations: [],
-    preferred_language: stored.language,
-    preferred_mode: stored.mode,
-    preferred_theme: stored.theme,
-    preferred_motion: stored.motion,
-    preferred_timezone: stored.timezone,
+    preferred_language: null,
+    preferred_mode: null,
+    preferred_theme: null,
+    preferred_motion: null,
+    preferred_timezone: null,
   });
-};
-
-const preferenceFailure = (member, value) => {
-  if (!PREFERENCE_MEMBERS.includes(member)) {
-    return failure({ pointer: `/${member}`, rule: 'not' });
-  }
-  if (value !== null && typeof value !== 'string') {
-    return failure({ pointer: `/${member}`, rule: 'type', params: { type: 'string' } });
-  }
-  const choices = PREFERENCE_CHOICES[member];
-  if (value && choices && !choices.includes(value)) {
-    return failure({ pointer: `/${member}`, rule: 'enum', params: { enum: choices } });
-  }
-  return null;
-};
-
-const patchedPreferences = ctx => {
-  const row = keyOf(ctx);
-  const body = ctx.body && typeof ctx.body === 'object' ? ctx.body : {};
-  const failures = Object.entries(body)
-    .map(([member, value]) => preferenceFailure(member, value))
-    .filter(Boolean);
-  if (failures.length > 0) {
-    return invalid(failures);
-  }
-  const stored = prefsOf(row);
-  let changed = false;
-  Object.entries(body).forEach(([member, value]) => {
-    const next = value || null;
-    changed ||= stored[member] !== next;
-    stored[member] = next;
-  });
-  if (changed) {
-    publish({ topic: 'profile', event: 'profile-updated', data: {}, to: ctx.person.id });
-  }
-  return ok(stored);
 };
 
 const bound = ctx => Boolean(keyOf(ctx)?.identity);
@@ -404,12 +353,9 @@ const silentStart = () =>
  * 502 since no identity provider is reachable here. A minted key signs
  * in as the fixture's person. Beside them the person behind a key:
  * `GET /api/user` in the identity provider's shape under the key's own
- * role, the preferences read and merged through `GET` and
- * `PATCH /api/user/preferences`, kept per person by the email a federated
- * login minted the key with, else the key's name, a change sent as
- * `profile-updated` on the `profile` topic, and the favorites relayed as
- * the mock's own store under a key a federated login minted, 404 for a
- * plain one.
+ * role, every `preferred_*` member null because the agent keeps no user
+ * preferences, and the favorites relayed as the mock's own store under a
+ * key a federated login minted, 404 for a plain one.
  *
  * @param {Object} router - `publicRoute`, `sessionRoute` and `agentRoute`
  * @returns {void}
@@ -423,8 +369,6 @@ export const mountAgentSettings = ({ publicRoute, sessionRoute, agentRoute }) =>
     publicRoute('GET', '/api/auth/oidc/device-status', deviceStatus);
     publicRoute('POST', '/api/auth/oidc/silent-start', silentStart);
     sessionRoute('GET', '/api/user', agentUser);
-    sessionRoute('GET', '/api/user/preferences', ctx => ok(prefsOf(keyOf(ctx))));
-    sessionRoute('PATCH', '/api/user/preferences', patchedPreferences);
     sessionRoute('GET', '/api/user/favorites', relayedFavorites);
     sessionRoute('PUT', '/api/user/favorites', savedRelayedFavorites);
   }

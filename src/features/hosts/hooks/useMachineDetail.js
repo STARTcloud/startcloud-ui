@@ -27,23 +27,25 @@ const NO_PROVIDER = {
  * the read a surface asks for after its own write or on the person's
  * Refresh; never on a clock. Nothing is asked of a host whose own row
  * does not list `machines`, because an agent without the surface answers
- * 404; `offered` says whether it does.
+ * 404; `offered` says whether it does. A caller passing `ask: false`
+ * reads the held detail alone and asks for nothing.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
+ * @param {{ ask: boolean }} [options] - `ask` whether this caller asks for the detail, true when absent
  * @returns {{ detail: Object|null, loaded: boolean, failed: boolean, offered: boolean, refresh: Function }} The detail
  */
-export const useMachineDetail = (id, name) => {
+export const useMachineDetail = (id, name, { ask: asking = true } = {}) => {
   const server = useHostRow(id);
   const offered = hostHasFeature(server, 'machines');
   const { epoch, machines, read, ask } = useContext(MachineDetailContext) || NO_PROVIDER;
   const { detail, loaded, failed, stale } = machines[detailKey(id, name)] || EMPTY;
 
   useEffect(() => {
-    if (offered && (!loaded || stale)) {
+    if (asking && offered && (!loaded || stale)) {
       ask(epoch, id, name);
     }
-  }, [offered, loaded, stale, epoch, id, name, ask]);
+  }, [asking, offered, loaded, stale, epoch, id, name, ask]);
 
   const refresh = useCallback(() => {
     if (offered) {

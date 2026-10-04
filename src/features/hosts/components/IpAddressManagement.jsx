@@ -14,6 +14,7 @@ import {
   isGoAgent,
   managedAddressKey,
 } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import IpAddressCreateModal from './IpAddressCreateModal';
 import { IpAddressRowActions, MANAGED_ADDRESS_COLUMNS } from './IpAddressTableManagement';
@@ -32,9 +33,22 @@ const NONE = { kind: '', row: null };
  * behind a confirmation of its own, hyperweaver-ui's, because that
  * agent takes the whole interface down. Every write goes through the
  * page's one `useNetworkingTools`, which raises the notice, follows the
- * queued task and reads the held addresses again.
+ * queued task and reads the held addresses again. Create, Enable,
+ * Disable and Delete draw for a role that controls hosts alone; every
+ * other role reads the table with no actions column.
  */
-const IpAddressManagement = ({ id, server, rows, reading, table, ctx, filtering, fold, tools }) => {
+const IpAddressManagement = ({
+  id,
+  server,
+  role,
+  rows,
+  reading,
+  table,
+  ctx,
+  filtering,
+  fold,
+  tools,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
   const vnics = useHostReading(id, 'vnics');
@@ -42,6 +56,7 @@ const IpAddressManagement = ({ id, server, rows, reading, table, ctx, filtering,
   const [creating, setCreating] = useState(false);
   const [confirm, setConfirm] = useState(NONE);
   const goAgent = isGoAgent(server);
+  const writable = canControlHosts(role);
   const options = useMemo(
     () =>
       addressInterfacesOf({ vnics: vnics.data?.vnics, interfaces: interfaces.data?.interfaces }),
@@ -135,7 +150,7 @@ const IpAddressManagement = ({ id, server, rows, reading, table, ctx, filtering,
         columns={MANAGED_ADDRESS_COLUMNS}
         table={table}
         rowKey={managedAddressKey}
-        RowActions={IpAddressRowActions}
+        RowActions={writable ? IpAddressRowActions : null}
         actionsProps={{
           busy: tools.busy,
           onEnable: row => toggle(row, 'enable'),
@@ -147,7 +162,7 @@ const IpAddressManagement = ({ id, server, rows, reading, table, ctx, filtering,
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <IpAddressCreateModal
@@ -183,6 +198,7 @@ const IpAddressManagement = ({ id, server, rows, reading, table, ctx, filtering,
 IpAddressManagement.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,

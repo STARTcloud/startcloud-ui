@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "query": "web",
+      "rows": [
+        { "id": "mail", "title": "mail", "fields": [{ "field": "name", "text": "mail" }] },
+        {
+          "id": "db",
+          "title": "db",
+          "fields": [
+            { "field": "name", "text": "db" },
+            { "field": "notes", "text": "web tier" }
+          ]
+        },
+        { "id": "my-web", "title": "my-web", "fields": [{ "field": "name", "text": "my-web" }] },
+        { "id": "web-1", "title": "web-1", "fields": [{ "field": "name", "text": "web-1" }] },
+        { "id": "web", "title": "web", "fields": [{ "field": "name", "text": "web" }] }
+      ],
+      "expected": [
+        { "id": "web", "score": 3 },
+        { "id": "web-1", "score": 2 },
+        { "id": "my-web", "score": 1 },
+        { "id": "db", "score": 0 }
+      ]
+    },
+    {
+      "query": "db 1",
+      "rows": [
+        {
+          "id": "build-1",
+          "title": "build-1",
+          "fields": [
+            { "field": "name", "text": "build-1" },
+            { "field": "notes", "text": "db host" }
+          ]
+        },
+        { "id": "db-10", "title": "db-10", "fields": [{ "field": "name", "text": "db-10" }] },
+        { "id": "db-1", "title": "db-1", "fields": [{ "field": "name", "text": "db-1" }] },
+        { "id": "cache", "title": "cache", "fields": [{ "field": "name", "text": "cache" }] }
+      ],
+      "expected": [
+        { "id": "db-1", "score": 1 },
+        { "id": "db-10", "score": 1 },
+        { "id": "build-1", "score": 0 }
+      ]
+    },
+    {
+      "query": "ALMA",
+      "rows": [
+        { "id": "rocky", "title": "rocky", "fields": [{ "field": "name", "text": "rocky" }] },
+        { "id": "alma9", "title": "alma9", "fields": [{ "field": "name", "text": "alma9" }] },
+        { "id": "alma", "title": "alma", "fields": [{ "field": "name", "text": "Alma" }] }
+      ],
+      "expected": [
+        { "id": "alma", "score": 3 },
+        { "id": "alma9", "score": 2 }
+      ]
+    }
+  ]
+}

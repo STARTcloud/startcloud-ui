@@ -18,7 +18,7 @@ import {
   natNetworkService,
 } from '../../api/networkSpaces';
 import { spaceFamiliesOf } from '../../utils/networkingManagement';
-import { canStartStopMachines } from '../../utils/permissions';
+import { canControlHosts } from '../../utils/permissions';
 import NetworkingTable from '../NetworkingTable';
 
 import { HostOnlyIfModal, HostOnlyNetModal } from './HostOnlyModals';
@@ -142,8 +142,8 @@ export const SPACE_COLUMNS = [
  * The actions of one space, hyperweaver-ui's: Edit and Delete on a
  * host-only interface, a host-only network and a NAT network, Start and
  * Stop on a NAT network before them, and none on an internal network,
- * which is read only by the platform's rule; all only for a person who
- * may start and stop machines.
+ * which is read only by the platform's rule; all only for a role that
+ * controls hosts.
  */
 const SpaceRowActions = ({ row, busy, canEdit, onEdit, onDelete, onService }) => {
   const { t } = useTranslation();
@@ -236,7 +236,8 @@ const DIALOGS = {
  * as hyperweaver-ui's platform rule has it (`spaceFamiliesOf`), a Darwin
  * host the networks alone and every other host the interfaces alone, and
  * hyperweaver-ui's note on the internal networks under the table. Create
- * in the heading, one button a family the host draws; every write goes
+ * in the heading, one button a family the host draws, and the row
+ * actions, each for a role that controls hosts alone; every write goes
  * through the page's one `useNetworkingTools`, the create and modify of
  * each family their `POST` and `PUT`, the delete behind the typed
  * confirmation its `DELETE`, Start and Stop the NAT network's service
@@ -258,7 +259,7 @@ const NetworkSpacesPanel = ({
   const status = useStatus();
   const [dialog, setDialog] = useState(null);
   const [removing, setRemoving] = useState(null);
-  const canEdit = canStartStopMachines(role);
+  const canEdit = canControlHosts(role);
   const families = spaceFamiliesOf(server);
   const intnets = rows.filter(row => row.type === 'intnet');
   const creatable = ['hostonly', 'hostonlynet', 'natnetwork'].filter(

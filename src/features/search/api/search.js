@@ -1,12 +1,11 @@
 import { client } from '../../../lib/runtime';
 
 /**
- * The host's own search: `GET /api/search?q=&limit=`, answering
- * `{ query, results, truncated }`.
+ * One search request, `GET {path}?q=&kinds=&scope=&limit=&after=`.
  *
- * @param {string} query - The text to search for
- * @param {number} limit - How many rows per kind to answer
+ * @param {string} path - The search path
+ * @param {Object} params - `{ q, kinds, scope, limit, after }`
+ * @param {AbortSignal} signal - Aborts the request
  * @returns {Promise<Object>} The answer
  */
-export const searchServer = (query, limit) =>
-  client.get('/api/search', { params: { q: query, limit } });
+export const searchAt = (path, params, signal) => client.get(path, { params, signal });

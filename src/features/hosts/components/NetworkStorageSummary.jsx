@@ -10,8 +10,8 @@ import SubTable from '../../../components/common/SubTable';
 import { nextSort, sortItems } from '../../../utils/sort';
 import { useHostReading } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
+import { sectionOffered } from '../pages';
 import { READS, hostOffers } from '../utils/monitoring';
-import { hostHasNetworking } from '../utils/networking';
 import { interfaceCounts, latestPer } from '../utils/resources';
 
 const DEFAULT_SORT = [{ column: 'link', direction: 'asc' }];
@@ -68,9 +68,9 @@ const Interfaces = ({ id }) => {
         title={t('hosts.overview.interfaces')}
         count={rows.length > 0 ? t('hosts.overview.interfaceCounts', counts) : null}
         actions={
-          hostHasNetworking(server) ? (
+          sectionOffered('interfaces', server) ? (
             <Link
-              to={`/hosts/${id}/networking`}
+              to={`/hosts/${id}/network/interfaces`}
               className="btn btn-sm btn-outline-secondary"
               data-link="networking"
             >
@@ -139,16 +139,12 @@ Storage.propTypes = {
 
 /**
  * The network and storage summary of the host page, two glass sections
- * side by side, one under the other on a narrow page: the network
- * interfaces behind `monitoring`, every interface the agent answers once,
- * the newest row of each where the agent keeps a history of them, in the
- * one table over Interface, Class and State, the heading counting them in
- * all, physical, virtual, up and down, its View all the link to the
- * networking of the host at `/hosts/{id}/networking` while the host's
- * own row lists `vnics` or `network-spaces`; and the storage summary behind
- * `monitoring` and `zfs` both, the count of the ZFS pools and of the
- * datasets as two stat cards, the network section taking the whole width
- * on a host without it. Nothing draws on a host whose own row does not
+ * side by side: the network interfaces behind `monitoring`, the newest
+ * row of each interface in one table over Interface, Class and State,
+ * the heading counting them, its View all linking to the host's
+ * Interfaces page while the host's row offers it; and the storage
+ * summary behind `monitoring` and `zfs`, the counts of ZFS pools and
+ * datasets as two stat cards. Nothing draws on a host whose row does not
  * list `monitoring`.
  */
 const NetworkStorageSummary = ({ id }) => {

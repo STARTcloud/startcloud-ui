@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 
+import { columnsGroup, hiddenToggle } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { sortStackOf, toggleIn, widthsOf, withWidth } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -253,18 +254,6 @@ const setGroup = ({ dimension, labelKey, keys, counts, filters, setPrefs, labelF
     })),
 });
 
-const columnsGroup = ({ columns, hidden, setPrefs, t }) => ({
-  key: 'columns',
-  label: t('pages.filter.columns'),
-  entries: Object.fromEntries(columns.map(column => [column.key, null])),
-  activeSet: new Set(columns.map(column => column.key).filter(key => !hidden.has(key))),
-  activeClass: 'bg-secondary',
-  columns: true,
-  labelFor: key => t(columns.find(column => column.key === key).labelKey),
-  onToggle: key =>
-    setPrefs(current => ({ ...current, hiddenColumns: toggleIn(current.hiddenColumns, key) })),
-});
-
 const buildGroups = ({ vms, counts, filters, hidden, columns, setPrefs, t }) => {
   const shared = { counts, filters, setPrefs, t };
   const pools = keysIn(counts, 'pool');
@@ -326,7 +315,7 @@ const buildGroups = ({ vms, counts, filters, hidden, columns, setPrefs, t }) => 
       })
     );
   }
-  groups.push(columnsGroup({ columns, hidden, setPrefs, t }));
+  groups.push(columnsGroup({ columns, hidden, onToggle: hiddenToggle(setPrefs), t }));
   return groups;
 };
 
@@ -344,18 +333,10 @@ const filtering = (needle, filters) =>
   SETS.some(dimension => filters[dimension].size > 0);
 
 /**
- * The fleet page's navbar binding and its filtered, sorted rows: the
- * query over hostname, user names, UNC paths, pool, IP, MAC, instance id
- * and UDS user; the groups Status and Pool (tristate, a pill cycling
- * neutral → include → exclude), Session, Cache, Drives and Publication,
- * then Columns; the sort stack over the given columns' `value`, the
- * translator as the columns' context, hostname ascending the default
- * while nothing is saved, with hostname as
- * the tiebreak; the column widths with their setter; every choice, the
- * widths and the pool fold persisted under `prefsKey`.
- * A `pool` or `session` member of the route's query, the routes the
- * sidebar tree's pool and session-state nodes carry, is laid over the
- * saved filters as the Pool include or the Session filter while present.
+ * The fleet page's navbar binding and its narrowed, sorted rows: the
+ * query, the Status and Pool tristate groups, Session, Cache, Drives,
+ * Publication and Columns, every choice kept under `prefsKey`, and the
+ * route's `pool` and `session` laid over the saved filters.
  *
  * @param {Object} options - The page's data
  * @param {Array<Object>} options.vms - Every vm object

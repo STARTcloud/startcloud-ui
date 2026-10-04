@@ -1,16 +1,17 @@
 Feature: host installer files and provisioners
 
-  Scenario: Installer files: the section behind `artifacts` and `provisioner-registry` together, the storage locations card and the artifacts table from the one read each, beside the artifacts section of `artifacts` alone
+  Scenario: Installer files: the section behind `artifacts` and `provisioner-registry` together, the storage locations card and the artifacts table from the one read each, beside the artifacts section of `artifacts` alone, on the Installer files page
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "installer-files" section
-    And the manage page draws no "recipes" section
+    When I open "/hosts/3/provisioning/installers"
+    Then the section page "installers" draws
+    And the host column draws no "recipes" row
+    And the artifact section draws
     And the catalog card "installer-locations" lists 3 locations
-    And the "installers" table of the manage page lists 4 rows
-    And the "installers" table of the manage page draws the "status" column
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the manage page offers "move"
+    And the "installers" table of the section page lists 4 rows
+    And the "installers" table of the section page draws the "status" column
+    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
     And the host was sent GET to "/api/agents/3/artifacts/storage/paths"
     And the host was sent GET to "/api/agents/3/artifacts"
     And the host was sent GET to "/api/agents/3/secrets"
@@ -19,22 +20,22 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the "installers" table of the manage page lists 4 rows
-    When I press "Control+f"
-    And I search the manage page for "domino"
-    Then the "installers" table of the manage page lists 2 rows
-    When I search the manage page for ""
+    When I open "/hosts/3/provisioning/installers"
+    Then the "installers" table of the section page lists 4 rows
+    When I press "Control+k"
+    And I search the section page for "domino"
+    Then the "installers" table of the section page lists 2 rows
+    When I search the section page for ""
     And I open the filter panel
     And I toggle the filter pill "Missing"
-    Then the "installers" table of the manage page lists 1 rows
+    Then the "installers" table of the section page lists 1 rows
 
   Scenario: Installer files: Register path sends the path, the location and the move switch, and reads the artifacts again
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "artifact-register" action
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-register" action
     Then the catalog dialog "artifact-register" draws
     When I pick "loc-iso" in the catalog dialog select "artifact-register-location"
     And I type "/rpool/drop/omnios.iso" into the field "artifact-register-path"
@@ -49,8 +50,8 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "artifact-download" action
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-download" action
     And I pick "loc-installers" in the catalog dialog select "artifact-download-location"
     And I type "https://example.com/Domino.tar" into the field "artifact-download-url"
     And I submit the catalog dialog "artifact-download"
@@ -66,8 +67,8 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "artifact-hcl" action
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-hcl" action
     And I type "domino_install" into the field "artifact-hcl-role"
     And I pick "fixpack" in the catalog dialog select "artifact-hcl-kind"
     And I type "Domino_14.5_FP1_Linux.tar" into the field "artifact-hcl-filename"
@@ -80,9 +81,9 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I check the manage switch "artifact-scan-verify"
-    And I press the manage page's "artifact-scan" action
+    When I open "/hosts/3/provisioning/installers"
+    And I check the section switch "artifact-scan-verify"
+    And I press the section page's "artifact-scan" action
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "true"
     When I press the action "location-scan" of the catalog location "loc-installers"
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
@@ -91,10 +92,10 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
+    When I open "/hosts/3/provisioning/installers"
     Then the catalog location "loc-iso" offers no "location-delete"
     And the catalog location "loc-installers" offers "location-delete"
-    When I press the manage page's "location-add" action
+    When I press the section page's "location-add" action
     And I type "Images" into the field "location-name"
     And I pick "image" in the catalog dialog select "location-type"
     And I type "/rpool/images" into the field "location-path"
@@ -108,7 +109,7 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
+    When I open "/hosts/3/provisioning/installers"
     And I press the action "location-delete" of the catalog location "loc-installers"
     And I check the field "location-delete-recursive"
     And I submit the catalog dialog "artifact-location-delete"
@@ -119,11 +120,11 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page offers no "artifact-delete"
+    When I open "/hosts/3/provisioning/installers"
+    Then the section page offers no "artifact-delete"
     When I tick the catalog row "Win11_24H2_English_x64.iso" of the "installers" table
     And I tick the catalog row "Domino_14.5_FP1_Linux.tar" of the "installers" table
-    And I press the manage page's "artifact-delete" action
+    And I press the section page's "artifact-delete" action
     And I check the field "artifact-delete-files-too"
     And I submit the catalog dialog "artifact-delete"
     Then the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "delete_files" as "true"
@@ -133,46 +134,47 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "move" on the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the manage page
+    When I open "/hosts/3/provisioning/installers"
+    And I press "move" on the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page
     Then the catalog dialog select "artifact-transfer-dest" offers 1 options
     When I pick "loc-old" in the catalog dialog select "artifact-transfer-dest"
     And I submit the catalog dialog "artifact-move"
     Then the host was sent POST to "/api/agents/3/artifacts/11/move" carrying "destination_storage_location_id" as "loc-old"
-    And the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the manage page holds "move"
+    And the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page holds "move"
 
   Scenario: Provisioners: the families over the one table with the update badge from the catalog's newest, the versions under a row, and the invalid badge
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    Then the manage page draws the "provisioning" section
-    And the "provisioners" table of the manage page lists 3 rows
-    And the manage page notes "update-available"
-    And the manage page notes "invalid"
-    And the row "STARTcloud" of the "provisioners" table of the manage page offers "update"
-    And the row "STARTcloud" of the "provisioners" table of the manage page offers "refresh-source"
-    And the row "HCL Domino" of the "provisioners" table of the manage page offers no "refresh-source"
-    When I press "versions" on the row "STARTcloud" of the "provisioners" table of the manage page
-    Then the "versions-startcloud" table of the manage page lists 2 rows
+    When I open "/hosts/3/provisioning/provisioners"
+    Then the section page "provisioners" draws
+    And the host row "provisioners" is the active one
+    And the "provisioners" table of the section page lists 3 rows
+    And the section page notes "update-available"
+    And the section page notes "invalid"
+    And the row "STARTcloud" of the "provisioners" table of the section page offers "update"
+    And the row "STARTcloud" of the "provisioners" table of the section page offers "refresh-source"
+    And the row "HCL Domino" of the "provisioners" table of the section page offers no "refresh-source"
+    When I press "versions" on the row "STARTcloud" of the "provisioners" table of the section page
+    Then the "versions-startcloud" table of the section page lists 2 rows
     And the host was sent GET to "/api/agents/3/provisioning/catalog" 1 times
 
   Scenario: Provisioners: Update to installs the catalog's newest and Update from source re-imports the family, each a queued task
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "update" on the row "STARTcloud" of the "provisioners" table of the manage page
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press "update" on the row "STARTcloud" of the "provisioners" table of the section page
     Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
-    When I press "refresh-source" on the row "STARTcloud" of the "provisioners" table of the manage page
+    When I press "refresh-source" on the row "STARTcloud" of the "provisioners" table of the section page
     Then the host was sent POST to "/api/agents/3/provisioning/provisioners/startcloud/refresh-from-source"
 
   Scenario: Provisioners: the import dialog sends a git source with its branch and key, the key picked among the secrets
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "provisioner-import" action
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press the section page's "provisioner-import" action
     And I submit the catalog dialog "provisioner-import"
     Then the catalog dialog "provisioner-import" says why it cannot be sent
     When I pick "git" in the catalog dialog select "import-source-type"
@@ -188,8 +190,8 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press the manage page's "provisioner-catalog" action
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press the section page's "provisioner-catalog" action
     Then the catalog dialog "provisioner-catalog" draws
     And the open dialog lists 3 rows
     And the host was sent GET to "/api/agents/3/provisioning/catalog/sources"
@@ -200,12 +202,12 @@ Feature: host installer files and provisioners
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/manage"
-    And I press "delete-family" on the row "STARTcloud" of the "provisioners" table of the manage page
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press "delete-family" on the row "STARTcloud" of the "provisioners" table of the section page
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/startcloud"
     And I see "db-1, web-1"
-    When I press "delete-family" on the row "HCL Domino" of the "provisioners" table of the manage page
+    When I press "delete-family" on the row "HCL Domino" of the "provisioners" table of the section page
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino"
     And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times

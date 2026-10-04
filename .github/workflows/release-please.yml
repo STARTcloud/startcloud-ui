@@ -67,6 +67,7 @@ jobs:
           - STARTcloud/provisioner-catalog
           - Prominic/VDI-CIFS-Health-private
           - STARTcloud/authorization-server-private
+          - Makr91/hyperweaver-agent
     steps:
       - name: Split owner and repo
         id: target

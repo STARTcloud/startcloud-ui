@@ -112,11 +112,11 @@ const useHostTree = user => {
  * `up` dot while running, and then, on the server role for a row whose
  * `capabilities.config` names a file, one Configuration node folding to
  * one node per file of `configNodes`, each a deep link to
- * `/hosts/{id}/settings/<name>`. The host's node carries the copy's
+ * `/hosts/{id}/agent/config/<name>`. The host's node carries the copy's
  * `revision`, raised as well when the language changes, so the machines
  * and their dots follow a read after an action or a Refresh. The pages
- * of a host are no rows of the tree; they stay the tab row of the host's
- * page and the page rows of the host node's right-click menu of
+ * of a host are no rows of the tree; they stay the column beside the
+ * host's page and the page rows of the host node's right-click menu of
  * `useTreeMenu`, Open and the verbs the person's role and the host's
  * tokens allow, its dialogs the tree's `dialogs`.
  *

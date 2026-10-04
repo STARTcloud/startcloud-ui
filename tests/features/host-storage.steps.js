@@ -15,7 +15,7 @@ const MONITORING_PANELS = [
   'storage-charts',
 ];
 
-const frameOf = page => page.locator('[data-page="storage"]');
+const frameOf = page => page.locator('[data-page="host-section"]');
 
 const tableOf = (page, name) => frameOf(page).locator(`[data-panel="storage-${name}"]`);
 
@@ -89,10 +89,6 @@ When('I press the bay {string}', async ({ page }, name) => {
   await bayOf(page, name).click();
 });
 
-When('I open the ZFS management tab {string}', async ({ page }, key) => {
-  await managementOf(page).locator(`.nav-tabs [data-tab="${key}"]`).click();
-});
-
 When('I press the action {string} of the dataset row {string}', async ({ page }, action, name) => {
   await treeRowOf(page, name).locator(`[data-action="${action}"]`).click();
 });
@@ -123,7 +119,7 @@ Then('the storage page draws the not-available stub', async ({ page }) => {
 });
 
 Then('the storage route draws the host that did not answer', async ({ page }) => {
-  const unknown = page.locator('[data-page="storage-unknown"]');
+  const unknown = page.locator('[data-page="host-section-unknown"]');
   await expect(unknown.locator('.alert-danger')).toBeVisible();
   await expect(page.locator('.card .alert-info')).toHaveCount(0);
   await expect(frameOf(page)).toHaveCount(0);
@@ -230,6 +226,11 @@ Then('the ZFS management draws {int} pools', async ({ page }, count) => {
     String(count)
   );
   await expect(managementOf(page).locator('[data-pool]')).toHaveCount(count);
+});
+
+Then('the ZFS management draws no pool card', async ({ page }) => {
+  await expect(managementOf(page)).toBeVisible();
+  await expect(managementOf(page).locator('[data-pool]')).toHaveCount(0);
 });
 
 Then('the pool {string} draws {int} drives', async ({ page }, name, count) => {

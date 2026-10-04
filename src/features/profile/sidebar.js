@@ -14,6 +14,7 @@ import {
 import { authMethod, hasFeature } from '../../utils/capabilities';
 import { guestOnly } from '../../utils/membership';
 import { isGlobalAdmin } from '../../utils/permissions';
+import { arrivalPath } from '../../utils/searchRow';
 
 import { useIntegrationsTree } from './hooks/useIntegrationsTree';
 import { sectionPath, sectionsFor } from './sections';
@@ -53,24 +54,11 @@ const group = (items, tree) => [
 ];
 
 /**
- * The profile feature's sidebar export of the identity contract: for every
- * signed-in person one Account group whose Profile row is the profile page
- * itself, active on its exact path alone, carrying `children` built from
- * `sectionsFor` over the host's `profile` adapter, the account's
- * `organizations` and its global-admin role, and the host's profile
- * path (`/user/profile` on a `cookie` host, `/profile` on a `backend`
- * or an `apikey` host), so the column never lists a section the page cannot draw
- * (decision 109); on a `cookie` host the group also carries Organizations
- * while the host advertises `org-console`, Applications always, Terms and
- * policies while `policies`, Notifications while `inbox` (the row to the
- * inbox page, carrying the `unread` badge the shell resolves) and, while
- * the host advertises
- * `integrations`, the group's `tree` of decision 68 answering the
- * Integrations entry only once `GET /api/user/integrations`, read once
- * when the tree mounts through the integrations adapter the router hands
- * in, has answered `services`; for a guest-only account (`guestOnly`,
- * the shared download login) the group is the Profile row alone;
- * nothing on any other host.
+ * The profile feature's sidebar groups for a signed-in person: one Account
+ * group whose Profile row carries the sections `sectionsFor` offers, on a
+ * `cookie` host also Organizations, Applications, Terms and policies,
+ * Notifications and the Integrations tree by the host's tokens, the
+ * Profile row alone for a guest-only account.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -127,3 +115,31 @@ export const sidebar = (status, account, integrations, profile) => {
   const useTree = () => useIntegrationsTree(integrations);
   return group(items, hasFeature(status, 'integrations') ? useTree : null);
 };
+
+const organizationIcon = () => FaBuilding;
+
+/**
+ * The profile feature's search kinds on a `backend` host for a signed-in
+ * person: organization, routed to the profile's Organizations section
+ * with the query searched for as its `q`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Object} account - The session state from `useSession`
+ * @returns {Array<Object>} The kind entries
+ */
+export const searchKinds = (status, account) =>
+  authMethod(status) === 'backend' && account?.user
+    ? [
+        {
+          kind: 'organization',
+          feature: 'profile',
+          token: 'backend',
+          locators: ['org'],
+          route: (row, query) => arrivalPath(sectionPath('/profile', 'organizations'), row, query),
+          icon: organizationIcon,
+          labelKey: 'search.kinds.organization',
+          matched: {},
+          facets: [],
+        },
+      ]
+    : [];

@@ -27,8 +27,8 @@ describe('configNamesOf', () => {
 
 describe('configPath', () => {
   it('answers the file route under the host, both segments encoded', () => {
-    expect(configPath(1, 'machines')).toBe('/hosts/1/settings/machines');
-    expect(configPath('self', 'a b')).toBe('/hosts/self/settings/a%20b');
+    expect(configPath(1, 'machines')).toBe('/hosts/1/agent/config/machines');
+    expect(configPath('self', 'a b')).toBe('/hosts/self/agent/config/a%20b');
   });
 });
 
@@ -43,9 +43,9 @@ describe('configNodes', () => {
     const nodes = await configNodes(status, rowOf(['app', 'machines', 'storage']));
     expect(api.hostConfig).toHaveBeenCalledWith(status, 1);
     expect(nodes).toEqual([
-      { key: 'config:1:app', label: 'app', to: '/hosts/1/settings/app' },
-      { key: 'config:1:machines', label: 'Machines', to: '/hosts/1/settings/machines' },
-      { key: 'config:1:storage', label: 'storage', to: '/hosts/1/settings/storage' },
+      { key: 'config:1:app', label: 'app', to: '/hosts/1/agent/config/app' },
+      { key: 'config:1:machines', label: 'Machines', to: '/hosts/1/agent/config/machines' },
+      { key: 'config:1:storage', label: 'storage', to: '/hosts/1/agent/config/storage' },
     ]);
     expect(schema.mock.calls.map(([name]) => name)).toEqual(['app', 'machines', 'storage']);
   });
@@ -53,7 +53,7 @@ describe('configNodes', () => {
   it('labels a file by its name while the schema carries no title', async () => {
     api.hostConfig.mockReturnValue({ schema: vi.fn().mockResolvedValue({}) });
     const nodes = await configNodes(status, rowOf(['db']));
-    expect(nodes).toEqual([{ key: 'config:1:db', label: 'db', to: '/hosts/1/settings/db' }]);
+    expect(nodes).toEqual([{ key: 'config:1:db', label: 'db', to: '/hosts/1/agent/config/db' }]);
   });
 
   it('answers none for a row without capabilities.config and asks nothing', async () => {

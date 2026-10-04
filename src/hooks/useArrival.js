@@ -9,13 +9,11 @@ const focusRow = node => {
 };
 
 /**
- * The row a page arrived at, the pages contract's arrival rule: the URL's
- * hash names the row, read on mount and on every hash change, and the row
- * the page registers under that id is scrolled into view and given focus
- * once the rows are rendered, once per arrival and with nothing painted.
+ * The row the URL's hash names, scrolled into view and focused once per
+ * arrival when the rows it is among are rendered.
  *
- * @param {Array} rows - The rows the page has rendered, so the arrival runs when they arrive
- * @returns {{ key: string, ref: Function }} The arrived key and the ref every row registers with
+ * @param {Array} rows - The rows the page has rendered
+ * @returns {{ key: string, ref: Function }} The arrived key and `ref(id)`, the ref every row registers with
  */
 export const useArrival = (rows = []) => {
   const { hash } = useLocation();
@@ -49,4 +47,15 @@ export const useArrival = (rows = []) => {
   }, [key, rows]);
 
   return { key, ref };
+};
+
+/**
+ * The page query a page arrived with, the URL's `q`, for the page to hold
+ * as its query's first value.
+ *
+ * @returns {string} The query, empty for none
+ */
+export const useArrivalQuery = () => {
+  const { search } = useLocation();
+  return new URLSearchParams(search).get('q') || '';
 };

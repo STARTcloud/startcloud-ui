@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { drawnColumns } from '../../../components/common/SubTable';
-import { filterGroupOf, narrowRows } from '../../../hooks/useClientFilters';
+import { columnsGroup, filterGroupOf, narrowRows } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { readPrefs, toggleIn, withWidth, writePrefs } from '../../../utils/prefs';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -14,23 +14,22 @@ const matches = (row, needle) =>
     .toLowerCase()
     .includes(needle);
 
-const columnsGroup = ({ table, columns, hidden, setPrefs, t }) => ({
-  key: `${table.key}.columns`,
-  label: `${t(table.labelKey)} · ${t('pages.filter.columns')}`,
-  entries: Object.fromEntries(columns.map(column => [column.key, null])),
-  activeSet: new Set(columns.map(column => column.key).filter(key => !hidden.has(key))),
-  activeClass: 'bg-secondary',
-  columns: true,
-  labelFor: key => t(columns.find(column => column.key === key).labelKey),
-  onToggle: key =>
-    setPrefs(current => ({
-      ...current,
-      hiddenColumns: {
-        ...current.hiddenColumns,
-        [table.key]: toggleIn(current.hiddenColumns[table.key], key),
-      },
-    })),
-});
+const tableColumnsGroup = ({ table, columns, hidden, setPrefs, t }) =>
+  columnsGroup({
+    key: `${table.key}.columns`,
+    label: `${t(table.labelKey)} · ${t('pages.filter.columns')}`,
+    columns,
+    hidden,
+    onToggle: key =>
+      setPrefs(current => ({
+        ...current,
+        hiddenColumns: {
+          ...current.hiddenColumns,
+          [table.key]: toggleIn(current.hiddenColumns[table.key], key),
+        },
+      })),
+    t,
+  });
 
 const tableGroups = ({ table, rows, filters, setPrefs, t }) =>
   table.filterGroups.map(spec =>
@@ -63,17 +62,9 @@ const clearedFilters = (tables, filters) =>
   );
 
 /**
- * Registers the Insights page's navbar search binding, a query over every
- * row of its tables, one group per enumerable column each table names in
- * `filterGroups`, narrowing that table's rows client-side, and one
- * Columns group per table over the columns it is drawing, every group
- * prefixed by the table's title,
- * and answers each table's rows left by the query and its groups in its
- * sort order, whether a query or a group is active, the sort with its
- * setter, the hidden column keys and the column widths with their setter,
- * each per table key; a table with no saved sort draws its `defaultSort`.
- * The picked filters, the sorts, the hidden columns and the widths persist
- * under `prefsKey`; Clear filters empties the groups and keeps the query.
+ * The Insights page's navbar search binding over its tables: one query,
+ * each table's filter groups and Columns group, each table's sort, hidden
+ * columns and widths kept under `prefsKey`.
  *
  * @param {Object} options
  * @param {Array} options.tables - `{ key, labelKey, columns, defaultSort, filterGroups, defaultView }` per table
@@ -114,7 +105,7 @@ export const useInsightsSearch = ({ tables, rowsByTable, ctx, placeholderKey, pr
     total += all.length;
     groups.push(...tableGroups({ table, rows: searched, filters, setPrefs, t }));
     groups.push(
-      columnsGroup({
+      tableColumnsGroup({
         table,
         columns: drawnColumns(table.columns, rows[table.key], ctx),
         hidden,

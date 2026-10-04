@@ -8,8 +8,10 @@ import PropTypes from 'prop-types';
  * on a host whose `status.config` names a file (`config` present, absent
  * on a backend with no files); the `users` and `organizations` adapters
  * the identity feature's Users and All organizations pages draw over on
- * a host with accounts of its own (each present only there); and the
- * storage usage on a host that answers it (`storage` present).
+ * a host with accounts of its own (each present only there); the
+ * storage usage on a host that answers it (`storage` present); and the
+ * serving backend's own update check and apply on a host that lists
+ * `update` (`update` present).
  */
 export const adminShape = PropTypes.shape({
   users: PropTypes.shape({
@@ -35,4 +37,8 @@ export const adminShape = PropTypes.shape({
   }),
   storage: PropTypes.func,
   updateStatus: PropTypes.func,
+  update: PropTypes.shape({
+    check: PropTypes.func.isRequired,
+    apply: PropTypes.func.isRequired,
+  }),
 });

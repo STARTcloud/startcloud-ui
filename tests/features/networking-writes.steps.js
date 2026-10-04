@@ -4,7 +4,7 @@ import { expect, test } from './support/fixtures.js';
 
 const { When, Then } = createBdd(test);
 
-const frameOf = page => page.locator('[data-page="networking"]');
+const frameOf = page => page.locator('[data-page="host-section"]');
 
 const sectionOf = (page, name) => frameOf(page).locator(`[data-section="networking-${name}"]`);
 

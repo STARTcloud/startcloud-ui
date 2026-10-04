@@ -67,6 +67,7 @@ const ZONE_FEATURES = [
   'fault-management',
   'log-streaming',
   'syslog',
+  'runlevel',
 ];
 const STUDIO_FEATURES = [
   'machines',
@@ -102,6 +103,7 @@ const STORE_FEATURES = [
   'packages',
   'boot-environments',
   'fault-management',
+  'runlevel',
 ];
 const AGENT_FEATURES = [
   'machines',
@@ -309,7 +311,6 @@ const hostOf = ({ id, kind, facts, machines, kept = [], applications = [], count
     applications,
     tasks: seeded.tasks,
     outputs: new Map([...kept.map(([task, output]) => [task.id, output]), ...seeded.outputs]),
-    runs: new Map(),
     streams: new Map(),
     terminals: new Map(),
   };

@@ -16,15 +16,15 @@ import UserCard from '../../../components/common/UserCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useArrival } from '../../../hooks/useArrival';
+import { dayOf, useClientFilters } from '../../../hooks/useClientFilters';
+import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
-import { useTablePrefs } from '../../../hooks/useTablePrefs';
 import { log } from '../../../lib/logger';
 import { hasFeature } from '../../../utils/capabilities';
 import { isOwner } from '../../../utils/membership';
 import { membershipsOf, organizationsShape } from '../../../utils/organizations';
-import { sortItems } from '../../../utils/sort';
 import { issuerOrganizationsShape } from '../api/issuer';
 import { ORG_CONSOLE_SEGMENTS } from '../segments';
 
@@ -42,6 +42,63 @@ const localeDate = value => new Date(value).toLocaleDateString();
 const localeTime = value => new Date(value).toLocaleString();
 const timeOf = value => new Date(value || 0).getTime();
 const yesNo = (flag, t) => t(flag ? 'yes' : 'no');
+
+const MEMBER_GROUPS = [
+  {
+    key: 'role',
+    labelKey: 'orgConsole.users.roles',
+    values: user => [user.org_role || 'member'],
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`roles.${value}`),
+  },
+  {
+    key: 'suspended',
+    labelKey: 'orgConsole.users.suspended',
+    values: user => (user.suspended ? ['suspended'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`orgConsole.users.${value}`),
+  },
+];
+
+const REQUEST_GROUPS = [
+  {
+    kind: 'date-range',
+    key: 'requested',
+    labelKey: 'orgConsole.joinRequest.requested',
+    values: request => [dayOf(request.created_at)],
+  },
+];
+
+const INVITATION_GROUPS = [
+  {
+    key: 'accepted',
+    labelKey: 'orgConsole.invitation.accepted',
+    values: invitation => (invitation.accepted ? ['accepted'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => yesNo(value === 'accepted', t),
+  },
+  {
+    key: 'expired',
+    labelKey: 'orgConsole.invitation.expired',
+    values: invitation => (invitation.expired ? ['expired'] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => yesNo(value === 'expired', t),
+  },
+  {
+    kind: 'date-range',
+    key: 'expires',
+    labelKey: 'orgConsole.invitation.expires',
+    values: invitation => [dayOf(invitation.expires)],
+  },
+];
+
+const matchesTerm = (fields, term) =>
+  fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
+
+const requestMatches = (request, needle) =>
+  matchesTerm([request.user.username, request.user.email, request.message], needle);
+
+const invitationMatches = (invitation, needle) => matchesTerm([invitation.email], needle);
 
 const JOIN_REQUEST_COLUMNS = [
   {
@@ -111,20 +168,30 @@ const INVITE_LABELS = {
 };
 const EMPTY_INVITE = { email: '', invite_role: 'member' };
 
-const matchesTerm = (fields, term) =>
-  fields.some(field => typeof field === 'string' && field.toLowerCase().includes(term));
+const emptyTextFor = (t, narrowing, key) => (narrowing ? t('pages.noMatches') : t(key));
 
-const emptyTextFor = (t, query, key) => (query ? t('pages.noMatches') : t(key));
-
-const TabSearch = ({ query, onQueryChange, placeholder, matched, total }) => {
+/**
+ * The navbar search binding of one console tab while it is drawn: the
+ * tab's query, placeholder and counts, and its filter groups with their
+ * clear, none by default.
+ */
+const TabSearch = ({
+  query,
+  onQueryChange,
+  placeholder,
+  matched,
+  total,
+  groups = NO_FILTERS,
+  onClearFilters = clearNothing,
+}) => {
   useNavbarSearchBinding({
     query,
     onQueryChange,
     placeholder,
     matched,
     total,
-    groups: NO_FILTERS,
-    onClearFilters: clearNothing,
+    groups,
+    onClearFilters,
   });
   return null;
 };
@@ -135,6 +202,8 @@ TabSearch.propTypes = {
   placeholder: PropTypes.string.isRequired,
   matched: PropTypes.number.isRequired,
   total: PropTypes.number.isRequired,
+  groups: PropTypes.array,
+  onClearFilters: PropTypes.func,
 };
 
 const OrgConsoleTabs = ({
@@ -485,42 +554,54 @@ InvitationActions.propTypes = {
   onDelete: PropTypes.func.isRequired,
 };
 
-const tablePrefsShape = PropTypes.shape({
-  sort: PropTypes.array.isRequired,
-  setSort: PropTypes.func.isRequired,
-  hiddenColumns: PropTypes.instanceOf(Set).isRequired,
-  widths: PropTypes.object.isRequired,
-  setColumnWidth: PropTypes.func.isRequired,
+const boundQueryShape = PropTypes.shape({
+  query: PropTypes.string.isRequired,
+  onQueryChange: PropTypes.func.isRequired,
+  placeholder: PropTypes.string.isRequired,
 });
 
 /**
  * The Join requests tab's list: its `SectionHeading` and one `SubTable`
- * over the requests left by the navbar query, sorted by the header stack
- * of `prefs`, Approve as member, Approve as admin and Deny on every row,
- * each row registered with `rowRef`, the arrival's ref, so a hash naming a
- * request scrolls its row into view and focuses it.
+ * over the requests the navbar query and the Requested `date-range`
+ * group leave, the tab's one query handed in as `bound`, the sort, the
+ * hidden columns and the widths under
+ * `table_prefs_org_console_requests` through `useDetailSearch`, Approve
+ * as member, Approve as admin and Deny on every row, each row registered
+ * with `rowRef`, the arrival's ref, so a hash naming a request scrolls
+ * its row into view and focuses it.
  */
-const JoinRequestsTab = ({ joinRequests, emptyText, prefs, onApprove, onDeny, rowRef }) => {
+const JoinRequestsTab = ({ joinRequests, bound, onApprove, onDeny, rowRef }) => {
   const { t } = useTranslation();
   const ctx = { t };
+  const search = useDetailSearch({
+    rows: joinRequests,
+    matches: requestMatches,
+    placeholderKey: 'orgConsole.search.joinRequests',
+    columns: JOIN_REQUEST_COLUMNS,
+    ctx,
+    prefsKey: REQUESTS_PREFS_KEY,
+    filterGroups: REQUEST_GROUPS,
+    bound,
+    defaultSort: REQUESTS_DEFAULT_SORT,
+  });
   return (
     <>
       <SectionHeading title={t('orgConsole.joinRequest.title')} count={joinRequests.length} />
       <SubTable
         columns={JOIN_REQUEST_COLUMNS}
-        rows={sortItems(joinRequests, prefs.sort, JOIN_REQUEST_COLUMNS, ctx)}
+        rows={search.rows}
         rowKey={request => request.id}
         rowRef={rowRef}
         RowActions={JoinRequestActions}
         actionsProps={{ onApprove, onDeny }}
         rowProp="request"
-        sort={prefs.sort}
-        onSort={prefs.setSort}
-        hiddenColumns={prefs.hiddenColumns}
-        widths={prefs.widths}
-        onResize={prefs.setColumnWidth}
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
         ctx={ctx}
-        emptyText={emptyText}
+        emptyText={emptyTextFor(t, search.filtering, 'orgConsole.joinRequest.noRequests')}
       />
     </>
   );
@@ -528,44 +609,57 @@ const JoinRequestsTab = ({ joinRequests, emptyText, prefs, onApprove, onDeny, ro
 
 JoinRequestsTab.propTypes = {
   joinRequests: PropTypes.array.isRequired,
-  emptyText: PropTypes.string.isRequired,
-  prefs: tablePrefsShape.isRequired,
+  bound: boundQueryShape.isRequired,
   onApprove: PropTypes.func.isRequired,
   onDeny: PropTypes.func.isRequired,
   rowRef: PropTypes.func.isRequired,
 };
 
 /**
- * The active invitations as one `SubTable`, sorted by the header stack of
- * `prefs`, the link cell drawing the invitation link, the provider link or
- * the managed-by-provider note, and Delete on every row.
+ * The active invitations as one `SubTable` over the invitations the
+ * navbar query and the Accepted and Expired `toggle` groups and the
+ * Expires `date-range` group leave, the tab's one query handed in as
+ * `bound`, the sort, the hidden columns and the widths under
+ * `table_prefs_org_console_invitations` through `useDetailSearch`, the
+ * link cell drawing the invitation link, the provider link or the
+ * managed-by-provider note, and Delete on every row.
  */
-const InvitationsTable = ({ invitations, emptyText, prefs, orgIdpLink, onDelete }) => {
+const InvitationsTable = ({ invitations, bound, orgIdpLink, onDelete }) => {
   const { t } = useTranslation();
   const ctx = { t, orgIdpLink };
+  const search = useDetailSearch({
+    rows: invitations,
+    matches: invitationMatches,
+    placeholderKey: 'orgConsole.search.invitations',
+    columns: INVITATION_COLUMNS,
+    ctx,
+    prefsKey: INVITATIONS_PREFS_KEY,
+    filterGroups: INVITATION_GROUPS,
+    bound,
+    defaultSort: INVITATIONS_DEFAULT_SORT,
+  });
   return (
     <SubTable
       columns={INVITATION_COLUMNS}
-      rows={sortItems(invitations, prefs.sort, INVITATION_COLUMNS, ctx)}
+      rows={search.rows}
       rowKey={invitation => invitation.id}
       RowActions={InvitationActions}
       actionsProps={{ onDelete }}
       rowProp="invitation"
-      sort={prefs.sort}
-      onSort={prefs.setSort}
-      hiddenColumns={prefs.hiddenColumns}
-      widths={prefs.widths}
-      onResize={prefs.setColumnWidth}
+      sort={search.sort}
+      onSort={search.setSort}
+      hiddenColumns={search.hiddenColumns}
+      widths={search.widths}
+      onResize={search.setColumnWidth}
       ctx={ctx}
-      emptyText={emptyText}
+      emptyText={emptyTextFor(t, search.filtering, 'orgConsole.invitation.noActive')}
     />
   );
 };
 
 InvitationsTable.propTypes = {
   invitations: PropTypes.array.isRequired,
-  emptyText: PropTypes.string.isRequired,
-  prefs: tablePrefsShape.isRequired,
+  bound: boundQueryShape.isRequired,
   orgIdpLink: PropTypes.string,
   onDelete: PropTypes.func.isRequired,
 };
@@ -581,12 +675,16 @@ InvitationsTable.propTypes = {
  * `SectionCard` whose fold is kept under `table_prefs_org_console`, the
  * members, the join requests and the active invitations glass lists under
  * a `SectionHeading` (the pages contract's frame rule), the two lists
- * `SubTable`s whose sort and column widths persist under
+ * `SubTable`s bound to the navbar through `useDetailSearch` with their
+ * filter groups, the join requests' Requested date range and the
+ * invitations' Accepted, Expired and Expires groups, and the Columns
+ * group, their sort and column widths under
  * `table_prefs_org_console_requests` and
  * `table_prefs_org_console_invitations`, a hash naming a join request
  * scrolling its row into view and focusing it once through `useArrival`,
- * each tab's list
- * searched from the navbar, every call through the app's `organizations`
+ * each tab's list searched from the navbar by the one query the tabs
+ * share, the members narrowed client-side by the Role
+ * and Suspended `toggle` groups, every call through the app's `organizations`
  * adapter; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
@@ -620,16 +718,6 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const [orgDisplayName, setOrgDisplayName] = useState('');
   const [activeTab, setActiveTab] = useState(() => TAB_OF_SEGMENT[tab] || 'organization');
   const folds = useFolds(PREFS_KEY);
-  const requestPrefs = useTablePrefs(
-    REQUESTS_PREFS_KEY,
-    JOIN_REQUEST_COLUMNS,
-    REQUESTS_DEFAULT_SORT
-  );
-  const invitationPrefs = useTablePrefs(
-    INVITATIONS_PREFS_KEY,
-    INVITATION_COLUMNS,
-    INVITATIONS_DEFAULT_SORT
-  );
   const memberArrival = useArrival(users);
   const requestArrival = useArrival(joinRequests);
   const current = session.restore();
@@ -934,12 +1022,12 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const filteredUsers = users.filter(user =>
     matchesTerm([user.name, user.username, user.email], term)
   );
-  const filteredJoinRequests = joinRequests.filter(request =>
-    matchesTerm([request.user.username, request.user.email, request.message], term)
-  );
-  const filteredInvitations = activeInvitations.filter(invitation =>
-    matchesTerm([invitation.email], term)
-  );
+  const memberFilters = useClientFilters({ specs: MEMBER_GROUPS, rows: filteredUsers });
+  const boundOf = placeholderKey => ({
+    query: searchTerm,
+    onQueryChange: setSearchTerm,
+    placeholder: t(placeholderKey),
+  });
 
   const canManageMembership = canManageRoles && !isExternalOrg;
   const currentTab = visibleTab(activeTab, isExternalOrg, orgForm.access_mode, invitationsEnabled);
@@ -1143,11 +1231,13 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                   query={searchTerm}
                   onQueryChange={setSearchTerm}
                   placeholder={t('search.open')}
-                  matched={filteredUsers.length}
+                  matched={memberFilters.rows.length}
                   total={users.length}
+                  groups={memberFilters.groups}
+                  onClearFilters={memberFilters.clear}
                 />
                 <div className="row">
-                  {filteredUsers.map(user => (
+                  {memberFilters.rows.map(user => (
                     <UserCard
                       key={user.id}
                       user={user}
@@ -1171,34 +1261,17 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
           )}
 
           {currentTab === 'joinRequests' && (
-            <>
-              <TabSearch
-                query={searchTerm}
-                onQueryChange={setSearchTerm}
-                placeholder={t('orgConsole.search.joinRequests')}
-                matched={filteredJoinRequests.length}
-                total={joinRequests.length}
-              />
-              <JoinRequestsTab
-                joinRequests={filteredJoinRequests}
-                emptyText={emptyTextFor(t, searchTerm, 'orgConsole.joinRequest.noRequests')}
-                prefs={requestPrefs}
-                onApprove={handleApproveJoinRequest}
-                onDeny={handleDenyJoinRequest}
-                rowRef={requestArrival.ref}
-              />
-            </>
+            <JoinRequestsTab
+              joinRequests={joinRequests}
+              bound={boundOf('orgConsole.search.joinRequests')}
+              onApprove={handleApproveJoinRequest}
+              onDeny={handleDenyJoinRequest}
+              rowRef={requestArrival.ref}
+            />
           )}
 
           {currentTab === 'invitations' && (
             <>
-              <TabSearch
-                query={searchTerm}
-                onQueryChange={setSearchTerm}
-                placeholder={t('orgConsole.search.invitations')}
-                matched={filteredInvitations.length}
-                total={activeInvitations.length}
-              />
               <SectionCard
                 title={t('orgConsole.invitation.sendTitle')}
                 className="mb-4"
@@ -1265,9 +1338,8 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                 count={activeInvitations.length}
               />
               <InvitationsTable
-                invitations={filteredInvitations}
-                emptyText={emptyTextFor(t, searchTerm, 'orgConsole.invitation.noActive')}
-                prefs={invitationPrefs}
+                invitations={activeInvitations}
+                bound={boundOf('orgConsole.search.invitations')}
                 orgIdpLink={orgIdpLink}
                 onDelete={handleDeleteClick}
               />

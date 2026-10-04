@@ -42,7 +42,7 @@ const BOUND_PROFILE = {
   subject: '8f2c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11',
 };
 
-const ACCOUNT = {
+const RECORD = {
   id: 12,
   username: 'Mark',
   name: 'Mark',
@@ -53,11 +53,15 @@ const ACCOUNT = {
   subject: '8f2c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11',
   role: 'admin',
   organizations: [],
-  preferred_language: 'es',
-  preferred_mode: 'dark',
+};
+
+const ACCOUNT = {
+  ...RECORD,
+  preferred_language: null,
+  preferred_mode: null,
   preferred_theme: null,
   preferred_motion: null,
-  preferred_timezone: 'America/Chicago',
+  preferred_timezone: null,
 };
 
 const storage = new Map();
@@ -189,13 +193,15 @@ describe('userOfKeyProfile', () => {
 });
 
 describe('userOfAccount', () => {
-  it("lays the key's profile over the agent's record, the key's role map deciding the role", async () => {
+  it("lays the key's profile over the agent's record without its preferred_* members, the key's role map deciding the role", async () => {
     const { userOfAccount } = await import('../../src/lib/apiKeySession.js');
-    expect(userOfAccount(BOUND_PROFILE, ACCOUNT)).toEqual({
-      ...ACCOUNT,
+    const user = userOfAccount(BOUND_PROFILE, ACCOUNT);
+    expect(user).toEqual({
+      ...RECORD,
       role: 'super-admin',
       roles: ['ROLE_USER', 'ROLE_ADMIN'],
     });
+    expect('preferred_mode' in user).toBe(false);
     expect(userOfAccount(PROFILE, null)).toEqual({
       ...PROFILE,
       username: 'Mark',
@@ -278,14 +284,14 @@ describe('createApiKeySession', () => {
     const loaded = await session.load();
     expect(sent('GET', '/api/user')[0].headers.Authorization).toBe('Bearer hw_good');
     expect(loaded.user).toEqual({
-      ...ACCOUNT,
+      ...RECORD,
       role: 'super-admin',
       roles: ['ROLE_USER', 'ROLE_ADMIN'],
     });
     expect(loaded.issuerUrl).toBe('https://auth.example.com');
     expect(loaded.organizations).toEqual([]);
-    expect(stored().profile).toEqual(BOUND_PROFILE);
-    expect(session.restore().user.preferred_mode).toBe('dark');
+    expect(stored()).toEqual({ key: 'hw_good', profile: BOUND_PROFILE });
+    expect('preferred_mode' in session.restore().user).toBe(false);
     expect(session.restore().issuerUrl).toBe('https://auth.example.com');
   });
 
@@ -310,64 +316,48 @@ describe('createApiKeySession', () => {
     storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
     answers.set('GET /api/user', okUser);
     const session = await freshProvider();
-    expect((await session.load()).user.preferred_language).toBe('es');
+    expect((await session.load()).user.organizations).toEqual([]);
     answers.set('GET /api/user', { status: 500, data: {} });
-    expect((await session.reload()).user.preferred_language).toBe('es');
+    expect((await session.reload()).user.organizations).toEqual([]);
     answers.set('GET /api/user', { status: 404, data: { msg: 'Not Found' } });
-    expect((await session.reload()).user.preferred_language).toBeUndefined();
+    expect((await session.reload()).user.organizations).toBeUndefined();
     answers.set('GET /api/user', okUser);
-    expect((await session.reload()).user.preferred_language).toBe('es');
+    expect((await session.reload()).user.organizations).toEqual([]);
     session.signOut();
     expect(session.restore()).toBeNull();
     storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
-    expect(session.restore().user.preferred_language).toBeUndefined();
+    expect(session.restore().user.organizations).toBeUndefined();
   });
 
   it('proves a pasted key with both reads and the next load answers the record without a read', async () => {
     answers.set('GET /api/user', okUser);
     const session = await freshProvider();
     const signedIn = await session.login('hw_good');
-    expect(signedIn.user.preferred_timezone).toBe('America/Chicago');
+    expect(signedIn.user.organizations).toEqual([]);
     expect(sent('GET', '/api/user')).toHaveLength(1);
-    expect((await session.load()).user.preferred_timezone).toBe('America/Chicago');
+    expect((await session.load()).user.organizations).toEqual([]);
     expect(sent('GET', '/api/user')).toHaveLength(1);
     await session.load();
     expect(sent('GET', '/api/user')).toHaveLength(2);
   });
 
-  it('writes the preferences through PATCH /api/user/preferences while a record is held and updates the held members', async () => {
+  it("writes the patch's timezone under the browser's timezone key, sends nothing and stores no preference", async () => {
     storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
     answers.set('GET /api/user', okUser);
-    answers.set('PATCH /api/user/preferences', { status: 200, data: {} });
     const session = await freshProvider();
+    const { ownTimezone } = await import('../../src/lib/apiKeySession.js');
     await session.load();
     await session.savePreferences({ mode: 'light', theme: 'lcars', language: 'en' });
-    const [patch] = sent('PATCH', '/api/user/preferences');
-    expect(patch.headers.Authorization).toBe('Bearer hw_good');
-    expect(patch.data).toEqual({ mode: 'light', theme: 'lcars', language: 'en' });
-    expect(session.restore().user).toMatchObject({
-      preferred_mode: 'light',
-      preferred_theme: 'lcars',
-      preferred_language: 'en',
-      preferred_timezone: 'America/Chicago',
-    });
-    await session.savePreferences({ motion: 'reduce', timezone: 'Europe/Berlin' });
-    expect(session.restore().user).toMatchObject({
-      preferred_motion: 'reduce',
-      preferred_timezone: 'Europe/Berlin',
-    });
-    answers.set('PATCH /api/user/preferences', { status: 422, data: {} });
-    await session.savePreferences({ mode: 'dark' });
-    expect(session.restore().user.preferred_mode).toBe('light');
-    expect(stored().profile).toEqual(PROFILE);
-  });
-
-  it('writes no preference while the agent answered no record', async () => {
-    storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
-    const session = await freshProvider();
-    await session.load();
-    await session.savePreferences({ mode: 'dark' });
     expect(sent('PATCH', '/api/user/preferences')).toHaveLength(0);
+    expect(storage.has('timezone')).toBe(false);
+    expect(ownTimezone()).toBe('');
+    await session.savePreferences({ motion: 'reduce', timezone: 'Europe/Berlin' });
+    expect(storage.get('timezone')).toBe('Europe/Berlin');
+    expect(ownTimezone()).toBe('Europe/Berlin');
+    await session.savePreferences({ timezone: null });
+    expect(storage.has('timezone')).toBe(false);
+    expect(requests.filter(call => call.method === 'PATCH')).toHaveLength(0);
+    expect(stored()).toEqual({ key: 'hw_good', profile: PROFILE });
   });
 
   it('proves a pasted key with the profile read as its bearer, stores it, and the next load answers it once without a read', async () => {
@@ -552,42 +542,17 @@ describe('createApiKeySession', () => {
     expect(location.reload).toHaveBeenCalledTimes(2);
   });
 
-  it('stores the four painted members beside the key, answers them from restore before any read, and drops them on a 404', async () => {
+  it('stores the key and the profile alone, never a preferred_* member, so the pre-paint script reads the browser keys', async () => {
     storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
     answers.set('GET /api/user', okUser);
     const session = await freshProvider();
     await session.load();
-    expect(stored()).toEqual({
-      key: 'hw_good',
-      profile: PROFILE,
-      preferred_mode: 'dark',
-      preferred_theme: null,
-      preferred_motion: null,
-      preferred_language: 'es',
-    });
+    expect(stored()).toEqual({ key: 'hw_good', profile: PROFILE });
     const fresh = await freshProvider();
-    expect(fresh.restore().user).toMatchObject({
-      preferred_mode: 'dark',
-      preferred_theme: null,
-      preferred_language: 'es',
-    });
-    expect(fresh.restore().user.preferred_timezone).toBeUndefined();
+    expect('preferred_mode' in fresh.restore().user).toBe(false);
     answers.set('GET /api/user', { status: 404, data: { msg: 'Not Found' } });
     await fresh.load();
     expect(stored()).toEqual({ key: 'hw_good', profile: PROFILE });
-    expect(fresh.restore().user.preferred_mode).toBeUndefined();
-  });
-
-  it('writes a saved preference into the stored record too', async () => {
-    storage.set('apikey', JSON.stringify({ key: 'hw_good', profile: PROFILE }));
-    answers.set('GET /api/user', okUser);
-    answers.set('PATCH /api/user/preferences', { status: 200, data: {} });
-    const session = await freshProvider();
-    await session.load();
-    await session.savePreferences({ theme: 'lcars', mode: 'light' });
-    expect(stored()).toMatchObject({ preferred_theme: 'lcars', preferred_mode: 'light' });
-    answers.set('PATCH /api/user/preferences', { status: 422, data: {} });
-    await session.savePreferences({ theme: 'shi' });
-    expect(stored().preferred_theme).toBe('lcars');
+    expect('preferred_mode' in fresh.restore().user).toBe(false);
   });
 });

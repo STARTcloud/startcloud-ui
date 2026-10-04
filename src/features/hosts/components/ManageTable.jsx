@@ -30,13 +30,11 @@ const EMPTY_KEYS = {
 };
 
 /**
- * One table of the Manage page, the one `SubTable` over the rows the
- * page's one search binding left, in the table's own sort, hidden
- * columns and widths, with the row actions the section hands it. While
- * the read has not answered the table draws the loading line, the read
- * error when it failed, the no matches line while a query or a filter
- * left no row, and the table's own empty line otherwise; `data-table`
- * names the table and `data-state` which of them stands.
+ * One table of a page of a host: the `SubTable` over the rows the page's
+ * search leaves, in the table's own sort, hidden columns and widths, the
+ * row the URL's hash names brought into view, `data-table` naming the
+ * table and `data-state` whether it is loading, failed, filtered, empty
+ * or drawing rows.
  */
 const ManageTable = ({
   name,
@@ -46,6 +44,9 @@ const ManageTable = ({
   rowProp = 'row',
   RowActions = null,
   actionsProps = NO_PROPS,
+  Detail = null,
+  detailProps = NO_PROPS,
+  expandedKeys = null,
   ctx,
   emptyKey,
   reading,
@@ -59,9 +60,13 @@ const ManageTable = ({
         columns={columns}
         rows={table.rows}
         rowKey={rowKey}
+        rowRef={table.rowRef || null}
         rowProp={rowProp}
         RowActions={RowActions}
         actionsProps={actionsProps}
+        Detail={Detail}
+        detailProps={detailProps}
+        expandedKeys={expandedKeys}
         sort={table.sort}
         onSort={table.setSort}
         hiddenColumns={table.hiddenColumns}
@@ -84,11 +89,15 @@ ManageTable.propTypes = {
     hiddenColumns: PropTypes.instanceOf(Set).isRequired,
     widths: PropTypes.objectOf(PropTypes.number).isRequired,
     setColumnWidth: PropTypes.func.isRequired,
+    rowRef: PropTypes.func,
   }).isRequired,
   rowKey: PropTypes.func.isRequired,
   rowProp: PropTypes.string,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
+  Detail: PropTypes.elementType,
+  detailProps: PropTypes.object,
+  expandedKeys: PropTypes.instanceOf(Set),
   ctx: PropTypes.object.isRequired,
   emptyKey: PropTypes.string.isRequired,
   reading: PropTypes.shape({
@@ -99,11 +108,9 @@ ManageTable.propTypes = {
 };
 
 /**
- * A list inside a dialog of the Manage page, the properties of a
- * service, the open files and the limits of a process: the one
- * `SubTable` over rows the page's binding does not reach, its sort the
- * dialog's own, every column shown and no width kept, with the row
- * actions the dialog hands it.
+ * A list inside a dialog of a page of a host: the `SubTable` over rows
+ * the page's search does not reach, sorted by the dialog alone, every
+ * column shown.
  */
 export const DialogTable = ({
   name,

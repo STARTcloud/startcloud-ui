@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect } from 'react';
 
+import { useNavbarSearch } from '../../../contexts/SearchContext';
+
 export const ServersContext = createContext(null);
 
 const NO_PROVIDER = {
@@ -9,24 +11,17 @@ const NO_PROVIDER = {
   failed: false,
   epoch: 0,
   read: () => undefined,
+  commands: null,
 };
 
+const NO_PUBLISHED = { label: '', commands: [], disabled: true };
+
 /**
- * The servers the host lists, from the hosts feature's one context, so
- * the sidebar's tree, the footer's focus, the Controls menu and the
- * pages share one list and one request: on the server role the registry
- * rows of `GET /api/servers`, asked for by the first caller that draws
- * and held for every other, read again by the provider when the event
- * stream opens fresh or answers `reset` and when a person signs in; on
- * an agent role the one serving agent as `selfServer`, with no request.
- * On a host that narrows by organization the servers are the rows that
- * show under the organization a person operates under, every row while
- * the choice is All, the provider narrowing the held rows and asking for
- * nothing when the choice changes. `held` is every row the server
- * answered, the choice aside, the list a host named by its id is found
- * in, so a host reached by its address draws whole under any choice.
- * `refresh` reads the list again for every caller, the read a person
- * asks for; a caller outside the provider holds an empty list.
+ * The servers the host lists, from the hosts feature's one context: the
+ * registry rows on the server role, read by the first caller and held for
+ * every other, the one serving agent on an agent role; `servers` narrowed
+ * to the chosen organization, `held` every row answered, and `refresh`
+ * reading the list again.
  *
  * @returns {{ servers: Array<Object>, held: Array<Object>, loaded: boolean, failed: boolean, refresh: Function }} The servers
  */
@@ -42,4 +37,64 @@ export const useServers = () => {
   const refresh = useCallback(() => read(epoch), [read, epoch]);
 
   return { servers, held, loaded, failed, refresh };
+};
+
+const signatureOf = published =>
+  JSON.stringify([
+    published.label,
+    published.disabled,
+    published.commands.map(command => [
+      command.key,
+      command.labelKey,
+      command.label,
+      command.disabled,
+    ]),
+  ]);
+
+/**
+ * Publishes the hosts feature's command list to its context while the
+ * caller is mounted, so the Controls menu draws it and search runs the
+ * same handlers.
+ *
+ * @param {{ label: string, commands: Array<Object>, disabled: boolean }} published - The menu's label, the commands and whether the menu is disabled
+ */
+export const useControlCommandsPublish = published => {
+  const store = (useContext(ServersContext) || NO_PROVIDER).commands;
+  const signature = signatureOf(published);
+
+  useEffect(() => {
+    store?.replace(published);
+  });
+
+  useEffect(() => {
+    store?.notify();
+  }, [store, signature]);
+
+  useEffect(
+    () => () => {
+      store?.replace(null);
+      store?.notify();
+    },
+    [store]
+  );
+};
+
+/**
+ * The hosts feature's published command list, and the runner of one
+ * command by its key through its newest handler.
+ *
+ * @returns {{ commands: Array<Object>, label: string, disabled: boolean, run: Function }} The commands, empty while nothing is published, the menu's label and whether it is disabled, and `run(key)`
+ */
+export const useControlCommands = () => {
+  const store = (useContext(ServersContext) || NO_PROVIDER).commands;
+  const published = useNavbarSearch(store || undefined) || NO_PUBLISHED;
+  const run = useCallback(
+    key =>
+      store
+        ?.get()
+        ?.commands.find(command => command.key === key)
+        ?.run(),
+    [store]
+  );
+  return { ...published, run };
 };

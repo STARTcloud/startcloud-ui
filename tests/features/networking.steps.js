@@ -15,7 +15,16 @@ const STREAM_HEADERS = {
 };
 const RAW_KEY = /\b(?:host|navbar|chrome)\.[a-z][A-Za-z]+\.[a-z][A-Za-z]+/u;
 
-const frameOf = page => page.locator('[data-page="networking"]');
+const frameOf = page => page.locator('[data-page="host-section"][data-section="interfaces"]');
+
+const MONITORING_PANELS = [
+  'networking-summary',
+  'networking-addresses',
+  'networking-routes',
+  'networking-interfaces',
+  'networking-bandwidth',
+  'networking-charts',
+];
 
 const tableOf = (page, name) => frameOf(page).locator(`[data-panel="networking-${name}"]`);
 
@@ -135,9 +144,11 @@ Then('the networking page draws its frame', async ({ page }) => {
   await expect(frameOf(page)).toBeVisible();
 });
 
-Then('the networking page draws no table and no chart', async ({ page }) => {
+Then('the networking page draws no monitoring table and no chart', async ({ page }) => {
   await expect(frameOf(page)).toBeVisible();
-  await expect(frameOf(page).locator('[data-panel]')).toHaveCount(0);
+  await expect(
+    frameOf(page).locator(MONITORING_PANELS.map(panel => `[data-panel="${panel}"]`).join(', '))
+  ).toHaveCount(0);
   await expect(frameOf(page).locator('[data-chart]')).toHaveCount(0);
 });
 
@@ -147,7 +158,7 @@ Then('the networking page draws the not-available stub', async ({ page }) => {
 });
 
 Then('the networking route draws the host that did not answer', async ({ page }) => {
-  const unknown = page.locator('[data-page="networking-unknown"]');
+  const unknown = page.locator('[data-page="host-section-unknown"]');
   await expect(unknown.locator('.alert-danger')).toBeVisible();
   await expect(page.locator('.card .alert-info')).toHaveCount(0);
   await expect(frameOf(page)).toHaveCount(0);
@@ -285,9 +296,9 @@ Then('the networking page draws {int} interface charts', async ({ page }, count)
   await expect(interfaceCharts(page)).toHaveCount(count);
 });
 
-Then('the overview draws no networking link', async ({ page }) => {
+Then("the overview's networking link opens {string}", async ({ page }, href) => {
   await expect(page.locator('[data-panel="interfaces"]')).toBeVisible();
-  await expect(overviewLink(page)).toHaveCount(0);
+  await expect(overviewLink(page)).toHaveAttribute('href', href);
 });
 
 Then('the page draws no key of hyperweaver-ui in place of its text', async ({ page }) => {

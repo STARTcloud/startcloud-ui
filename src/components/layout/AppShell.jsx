@@ -6,6 +6,7 @@ import { FaBook, FaBuilding, FaCircleInfo, FaCode, FaEnvelope, FaGear } from 're
 import { Link, useLocation } from 'react-router-dom';
 
 import { POWERED_BY } from '../../config/brand';
+import { ColumnContext } from '../../contexts/ColumnContext';
 import { useCrumb } from '../../contexts/CrumbContext';
 import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
@@ -48,6 +49,14 @@ const localProfileFor = status => {
   return to ? { to, LinkComponent: Link } : null;
 };
 
+/**
+ * The links of the user menu's universal rows: on a `cookie` host the
+ * issuer's own pages, elsewhere the identity provider's notifications
+ * page and, wherever the host serves a local profile page, that page's
+ * Preferences section as the Preferences row, the identity card's glyph
+ * being the way to the identity provider; a host with no local page
+ * leaves the row to the identity provider's preferences.
+ */
 const menuLinksFor = ({ status, cookie, issuerUrl }) => {
   if (cookie) {
     return {
@@ -57,11 +66,12 @@ const menuLinksFor = ({ status, cookie, issuerUrl }) => {
       preferencesTo: '/user/profile/preferences',
     };
   }
+  const local = localProfileFor(status);
   return {
     issuerUrl,
     viewAllUrl: issuerUrl ? `${issuerUrl}/notifications` : '',
     viewAllTo: '',
-    preferencesTo: '',
+    preferencesTo: local ? `${local.to}/preferences` : '',
   };
 };
 
@@ -134,17 +144,35 @@ const shellCrumbs = ({ showSidebar, sidebarMatch, routeCrumbs, reservedRoute, ti
   return reservedRoute ? titleCrumb(titleKey, t) : [];
 };
 
-const pageCrumbsFor = ({ groups, parented, organizations, activeOrgUuid, pageName, t }) => {
+/**
+ * The crumbs `routeCrumbParent` answers for the route: the whole trail
+ * its `crumbs` resolver builds, or the parent row's crumbs with the
+ * page's name its `name` resolver answers after them; none for a route
+ * it answers null for. Each resolver receives `{ activeOrganization,
+ * pageName, pageNoun, status, t }`.
+ *
+ * @param {Object} options - The sidebar groups, the route's entry, the memberships, the active organization's uuid, the page's name and noun, the status and `t`
+ * @returns {Array} The crumbs
+ */
+const pageCrumbsFor = ({
+  groups,
+  parented,
+  organizations,
+  activeOrgUuid,
+  pageName,
+  pageNoun,
+  status,
+  t,
+}) => {
   if (!parented) {
     return [];
   }
   const activeOrganization = organizations.find(entry => entry.uuid === activeOrgUuid) || null;
-  return parentedCrumbs({
-    groups,
-    parent: parented.parent,
-    name: parented.name({ activeOrganization, pageName, t }),
-    t,
-  });
+  const held = { activeOrganization, pageName, pageNoun, status, t };
+  if (parented.crumbs) {
+    return parented.crumbs(held);
+  }
+  return parentedCrumbs({ groups, parent: parented.parent, name: parented.name(held), t });
 };
 
 const sidebarMatchFor = ({
@@ -155,6 +183,8 @@ const sidebarMatchFor = ({
   organizations,
   activeOrgUuid,
   pageName,
+  pageNoun,
+  status,
   t,
 }) => {
   if (!showSidebar) {
@@ -168,6 +198,8 @@ const sidebarMatchFor = ({
       organizations,
       activeOrgUuid,
       pageName,
+      pageNoun,
+      status,
       t,
     }),
   ];
@@ -221,9 +253,9 @@ const useSidebarOverlay = pathname => {
   };
 };
 
-const menuFor = ({ cookie, issuerUrl, onAuthPage, rows, adapters }) => ({
+const menuFor = ({ cookie, issuerUrl, localProfile, onAuthPage, rows, adapters }) => ({
   appRows: cookie && onAuthPage ? null : rows,
-  showPreferences: cookie || Boolean(issuerUrl),
+  showPreferences: cookie || Boolean(issuerUrl) || Boolean(localProfile),
   ...adapters,
 });
 
@@ -246,12 +278,15 @@ const identityFor = ({ user, claims, t }) => {
 };
 
 /**
- * The account slot's two placements of the navbar contract's Foot
- * exception: while the app hands an `actionMenu`, a person is signed in,
- * a column draws and there is a user menu, the header's slot takes the
- * action menu and the user menu becomes the sidebar's foot, a drop-up
- * with the avatar alone in the rail; otherwise the header keeps the user
- * menu, the action menu beside it while signed in, and the foot is empty.
+ * Where the action menu and the user menu draw: while an `actionMenu` is
+ * handed, a person is signed in, a column draws and there is a user
+ * menu, the header's account slot takes the action menu and the user
+ * menu becomes the sidebar's foot, a drop-up with the avatar alone in
+ * the rail; otherwise the header keeps the user menu, the action menu
+ * beside it while signed in, and the foot is empty.
+ *
+ * @param {Object} options - The action menu, whether signed in, whether the column draws and the user menu
+ * @returns {{ userMenu: Object|null, actionMenu: import('react').ReactNode, foot: Function|null }} The placements
  */
 const accountSlots = ({ actionMenu, signedIn, showSidebar, userMenu }) => {
   const swap = Boolean(actionMenu) && signedIn && showSidebar && Boolean(userMenu);
@@ -265,10 +300,8 @@ const accountSlots = ({ actionMenu, signedIn, showSidebar, userMenu }) => {
 /**
  * The footer while the host lists the `footer` token, nothing otherwise:
  * the name and version from the status, `about` whether the role has
- * About text, resolved by the app and never by the footer, and `pane`
- * the views hook a mounted feature exported for the footer's pane, null
- * on a host no feature offers one for, and `sidebar` the sidebar's size
- * while the column draws, for the footer's corner handle, null without a
+ * About text, `pane` the views hook of the footer's pane or null, and
+ * `sidebar` the sidebar's size for the corner handle, null without a
  * column.
  */
 const ShellFooter = ({ fetchHealth, about, pane, sidebar }) => {
@@ -362,82 +395,30 @@ const appRowsFor = ({
 };
 
 /**
- * The whole chrome around the routes, described by the host's status: the
- * sidebar first while the host lists `sidebar` and a mounted feature
- * exported entries for it (the gate on `sidebarEntries`, the shell only
- * reading whether the list is empty), then
- * the header with the brand from `status.brand` (in the sidebar's top
- * while one draws, one link to `/`), the crumbs (while the sidebar draws,
- * from the route alone, never from the tree: `<group> › <row>`
- * on a route a sidebar row matches, `<group> › <row> › <child>` on a
- * route a child row matches, `<group> › <row> › <name>` on a page
- * `routeCrumbParent` names a parent row for, the page's own name last,
- * resolved from what the shell holds (the organization console's the
- * active membership's name) and from the name the page itself sets
- * through `usePageName` into the crumb context, the resolver handed
- * `{ activeOrganization, pageName, params, t }` so a translated
- * placeholder stands in while the page has not loaded, else the route
- * parser's crumbs on a catalog route, else the page's title from
- * `routeTitleKey` on a reserved route, else nothing; without a column
- * the route parser's crumbs alone), the user
- * menu and the notice banners; the notice cards; the one scroll region
- * with the page inside its own error boundary so a page that throws keeps
- * the chrome; and the footer while the host lists the `footer` token,
- * its name and year the link to `/about` while the role has About text,
- * and under its row the pane of the navbar contract's Footer status
- * section while the app hands a `footerPane`, the views hook a mounted
- * feature exported, and the hook answers a view, the pane the last child
- * of the column and the page region giving up the height; the shell
- * holds the sidebar's size, `useSidebarSize`, and hands it to the column
- * and to the footer, whose corner handle sets the column's width and the
- * pane's height in one drag. The
- * column and the app section are hidden on the auth routes of the
- * session's return-path helper, and on every host the cluster's Sign in
- * button is hidden there too, the page below carrying the sign-in, and
- * the session-ended banner carries no button anywhere, the cluster's
- * Sign in or the page's own form being the thing to press; the header
- * row carries the host's name, version and hostname as `data-app`,
- * `data-version` and `data-host`, drawn by nothing until a pack's rules
- * give them a place, so a pack can show real, relevant data instead of
- * decoration; on a
- * `cookie` host the menu draws no
- * Organization console row, the sidebar's Organizations row being that
- * destination, its app section holding the About row, an in-router link
- * to `/about`, with the docs, contact and API reference rows as on every
- * other host, and
- * its Preferences row an in-router link to `/user/profile/preferences`,
- * the one destination drawn in both the column and the menu; while the
- * host advertises `discover` the cluster carries Discover, an in-router
- * link to the discovery page drawn as the compass cluster button; the
- * cluster keeps one order in both states, search, Discover, the ticket
- * icon, the mode control (the cycling button over the mode alone, the
- * theme chosen on the profile's Preferences page), language, then the
- * account menu or Sign in, each control
- * drawn only in the state it belongs to: signed out the left of the bar
- * holds the brand alone and the cluster is Discover, the ticket icon
- * (the ticket link the app supplies, built from the fallback customer id
- * alone, in a new tab, drawn only while there is a ticket system), the
- * mode control, language and Sign in, with no search icon because app-wide search
- * needs a session; signed in, the search icon, its box and the panel
- * under the bar draw only while the host lists `search`, a host without
- * the token drawing none of them. While the app hands an `actionMenu`,
- * the navbar contract's Foot exception, signed in and with a column
- * drawn, the header's account slot draws that menu in the user menu's
- * place and the user menu draws at the sidebar's foot as a drop-up, the
- * avatar alone in the rail; without a column the header keeps the user
- * menu and draws the action menu right before it. While the app hands
- * `allOrganizations`, on a host that narrows by organization, the user
- * menu's organization row draws from one membership on and the switcher
- * carries All organizations as its first row. The API reference rows
- * are `apiRows`, `[{ key, labelKey, href }]`, drawn last in the app
- * section, after Docs, each opened in a new tab: the one row of
- * `links.api` on most hosts, and on the `hyperweaver-server` role the
- * hosts feature's Server API and, on a host's route, Agent API. The app
- * supplies
- * the session state, the
- * collections the host mounts, the avatar, the ticket link, the
- * notification adapters, the sidebar entries, the action menu, the
- * footer's pane and the menu rows the host's features unlock.
+ * The whole chrome around the routes, drawn from the host's status and
+ * the props the app hands it: the sidebar while `sidebar` carries
+ * entries, the header with the brand (in the sidebar's top while one
+ * draws), the crumbs, the cluster, the user menu and the notice banners,
+ * the notice cards, the page's column slot beside the one scroll region,
+ * handed to the pages through `ColumnContext` so a host's column stands
+ * under the header and above the footer the way the sidebar stands beside
+ * the stack, the scroll region with the page inside its own error
+ * boundary, and the footer while the host lists `footer`, with its pane
+ * while `footerPane` answers a view.
+ *
+ * The crumbs come from the route. With a column: the crumbs of the
+ * sidebar row the route matches, else the crumbs `routeCrumbParent`
+ * answers for the route, else the route parser's crumbs on a catalog
+ * route, else the title `routeTitleKey` names on a reserved route.
+ * Without a column: the route parser's crumbs alone.
+ *
+ * The column and the app section are hidden on the auth routes, where
+ * Sign in is hidden too. While `actionMenu` is handed, a person is
+ * signed in and a column draws, the header's account slot draws the
+ * action menu and the user menu draws at the sidebar's foot.
+ * `allOrganizations` puts All organizations first in the switcher.
+ * `apiRows`, `[{ key, labelKey, href }]`, draw last in the app section,
+ * each opened in a new tab.
  */
 const AppShell = ({
   account,
@@ -471,8 +452,9 @@ const AppShell = ({
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const { pathname, search } = useLocation();
-  const { name: pageName } = useCrumb();
+  const { name: pageName, noun: pageNoun } = useCrumb();
   const scrollRef = useRef(null);
+  const [column, setColumn] = useState(null);
   const { user, claims, activeOrgUuid } = account;
   const signedIn = Boolean(user);
   const anonymous = authMethod(status) === 'none';
@@ -513,6 +495,8 @@ const AppShell = ({
       organizations,
       activeOrgUuid,
       pageName,
+      pageNoun,
+      status,
       t,
     }),
     routeCrumbs: route.crumbs,
@@ -553,6 +537,7 @@ const AppShell = ({
     menu: menuFor({
       cookie,
       issuerUrl: account.issuerUrl,
+      localProfile: localProfileFor(status),
       onAuthPage,
       rows: appRowsFor({
         ...gates,
@@ -604,10 +589,13 @@ const AppShell = ({
         readout={readout}
       />
       <NoticeCards LinkComponent={Link} />
-      <div ref={scrollRef} className="container-fluid app-scroll py-3">
-        <ErrorBoundary showErrorDetails={import.meta.env.DEV} onError={reportRenderError}>
-          {children}
-        </ErrorBoundary>
+      <div className="app-body d-flex flex-grow-1 min-height-0">
+        <div ref={setColumn} className="app-column" />
+        <div ref={scrollRef} className="container-fluid app-scroll py-3">
+          <ErrorBoundary showErrorDetails={import.meta.env.DEV} onError={reportRenderError}>
+            <ColumnContext.Provider value={column}>{children}</ColumnContext.Provider>
+          </ErrorBoundary>
+        </div>
       </div>
       <ShellFooter
         fetchHealth={fetchHealth}

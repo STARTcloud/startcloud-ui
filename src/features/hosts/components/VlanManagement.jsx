@@ -9,6 +9,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { createVlan, deleteVlan, fetchVlan } from '../api/vlans';
 import { useHostReading } from '../hooks/useHostReadings';
 import { physicalLinksOf, vlanBody } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import NetworkingTable from './NetworkingTable';
 import VlanCreateModal from './VlanCreateModal';
@@ -23,9 +24,11 @@ import { VLAN_COLUMNS, VlanRowActions } from './VlanTable';
  * `vlanBody`, a queued task; a delete, behind the typed confirmation,
  * sends `DELETE network/vlans/{link}`; the details read
  * `GET network/vlans/{link}` once. Every write goes through the page's
- * one `useNetworkingTools`.
+ * one `useNetworkingTools`. Create and the delete draw for a role that
+ * controls hosts alone; every other role reads the table with the
+ * details.
  */
-const VlanManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools }) => {
+const VlanManagement = ({ id, role, rows, reading, table, ctx, filtering, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -33,6 +36,7 @@ const VlanManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [details, setDetails] = useState(null);
+  const writable = canControlHosts(role);
   const links = useMemo(() => physicalLinksOf(interfaces.data?.interfaces), [interfaces.data]);
 
   const create = async form => {
@@ -94,13 +98,18 @@ const VlanManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
         table={table}
         rowKey={row => row.link}
         RowActions={VlanRowActions}
-        actionsProps={{ busy: tools.busy, onDetails: open, onDelete: setRemoving }}
+        actionsProps={{
+          busy: tools.busy,
+          canEdit: writable,
+          onDetails: open,
+          onDelete: setRemoving,
+        }}
         ctx={ctx}
         emptyKey="host.vlanTable.noVlansFound"
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <VlanCreateModal
@@ -133,6 +142,7 @@ const VlanManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools 
 
 VlanManagement.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,

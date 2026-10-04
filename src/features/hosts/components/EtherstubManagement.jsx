@@ -8,6 +8,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { createEtherstub, deleteEtherstub, fetchEtherstub } from '../api/networking';
 import { etherstubBody, namedKey } from '../utils/networkingManagement';
+import { canControlHosts } from '../utils/permissions';
 
 import EtherstubCreateModal from './EtherstubCreateModal';
 import EtherstubDetailsModal from './EtherstubDetailsModal';
@@ -23,15 +24,18 @@ import NetworkingTable from './NetworkingTable';
  * delete, behind the typed confirmation, sends
  * `DELETE network/etherstubs/{name}`; the details read
  * `GET network/etherstubs/{name}` with `show_vnics` once. Every write
- * goes through the page's one `useNetworkingTools`.
+ * goes through the page's one `useNetworkingTools`. Create and the
+ * delete draw for a role that controls hosts alone; every other role
+ * reads the table with the details.
  */
-const EtherstubManagement = ({ id, rows, reading, table, ctx, filtering, fold, tools }) => {
+const EtherstubManagement = ({ id, role, rows, reading, table, ctx, filtering, fold, tools }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [details, setDetails] = useState(null);
+  const writable = canControlHosts(role);
 
   const create = async form => {
     const { error } = await tools.send({
@@ -92,13 +96,18 @@ const EtherstubManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
         table={table}
         rowKey={namedKey}
         RowActions={EtherstubRowActions}
-        actionsProps={{ busy: tools.busy, onDetails: open, onDelete: setRemoving }}
+        actionsProps={{
+          busy: tools.busy,
+          canEdit: writable,
+          onDetails: open,
+          onDelete: setRemoving,
+        }}
         ctx={ctx}
         emptyKey="host.etherstubTable.noData"
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={createButton}
+        actions={writable ? createButton : null}
       />
       {creating ? (
         <EtherstubCreateModal
@@ -132,6 +141,7 @@ const EtherstubManagement = ({ id, rows, reading, table, ctx, filtering, fold, t
 
 EtherstubManagement.propTypes = {
   id: PropTypes.string.isRequired,
+  role: PropTypes.string,
   rows: PropTypes.array.isRequired,
   reading: PropTypes.object.isRequired,
   table: PropTypes.object.isRequired,
