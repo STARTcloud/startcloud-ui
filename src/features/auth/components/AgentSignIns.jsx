@@ -9,6 +9,7 @@ import { log } from '../../../lib/logger';
 import { bootstrapFirstKey } from '../api/agentSignIn';
 import { agentSignInsOf, isLoopback } from '../utils/agentSignIns';
 
+import CodeSsoLogin from './CodeSsoLogin';
 import DeviceSsoLogin from './DeviceSsoLogin';
 
 const DESKTOP_HANDOFF = 'hwa://open';
@@ -183,9 +184,13 @@ const silentProbeOf = ({ session, offered, loopback, silentSsoKey, urlParams }) 
 };
 
 /**
- * The sign-ins of hyperweaver-agent on the shared sign-in page, the six
+ * The sign-ins of hyperweaver-agent on the shared sign-in page, the
  * paths of the agent's own brief through the `apikey` provider: the
- * device-flow SSO behind the `oidc` word, primary, with the key form
+ * loopback code SSO behind the `oidc-code` token, first while the agent
+ * lists it, the authorize URL opened in a new tab and a code from the
+ * provider's code page pasted back when the browser is on another
+ * machine; the device-flow SSO behind the `oidc` word, primary while the
+ * code flow is not offered, with the key form
  * demoted behind Use an API key instead; the API key form, the pasted
  * key proved and stored by `session.login`; the first-boot bootstrap
  * while the status says `bootstrapAvailable`, the key generated with
@@ -282,6 +287,13 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
   return (
     <div data-panel="agent-sign-ins">
       {message ? <AuthAlert tone={tone}>{message}</AuthAlert> : null}
+      {offered.codeSso ? (
+        <CodeSsoLogin
+          disabled={loading}
+          onSignIn={signInWithKey}
+          start={() => session.begin({ method: 'code' })}
+        />
+      ) : null}
       {offered.deviceSso ? (
         <DeviceSsoLogin
           disabled={loading}

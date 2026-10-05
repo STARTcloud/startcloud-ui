@@ -6,5 +6,7 @@ export default {
   'POST /api/auth/tray-claim': { status: 200, file: 'tray-claim.json' },
   'POST /api/auth/oidc/device-start': { status: 200, file: 'device-start.json' },
   'GET /api/auth/oidc/device-status': { status: 200, file: 'device-approved.json' },
+  'POST /api/auth/oidc/code-start': { status: 200, file: 'code-start.json' },
+  'POST /api/auth/oidc/code': { status: 200, file: 'code-exchange.json' },
   'POST /api/auth/oidc/silent-start': { status: 502, file: 'silent-unreachable-502.json' },
 };

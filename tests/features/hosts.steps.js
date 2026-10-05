@@ -36,6 +36,12 @@ const sizeOf = (page, selector, side) =>
     .locator(selector)
     .evaluate((node, name) => Math.round(node.getBoundingClientRect()[name]), side);
 
+const insetOf = (page, selector) =>
+  page
+    .locator(selector)
+    .first()
+    .evaluate(node => Math.round(parseFloat(getComputedStyle(node).paddingLeft)));
+
 const rowOf = label => `.sidebar [data-sidebar-row]:has-text(${JSON.stringify(label)})`;
 
 const treeRow = (page, label) =>
@@ -169,10 +175,8 @@ Then('the sidebar draws {string} above {string}', async ({ page }, upper, lower)
 Then(
   'the tree node {string} begins one step right of {string}',
   async ({ page }, child, parent) => {
-    const parentLeft = await sizeOf(page, `${rowOf(parent)} > :first-child`, 'left');
-    await expect
-      .poll(() => sizeOf(page, `${rowOf(child)} > :first-child`, 'left'))
-      .toBe(parentLeft + TREE_STEP);
+    const parentInset = await insetOf(page, rowOf(parent));
+    await expect.poll(() => insetOf(page, rowOf(child))).toBe(parentInset + TREE_STEP);
   }
 );
 

@@ -92,6 +92,11 @@ Feature: identity contract
     And I see "SplxlOBeZQQYbYS6WxSbIA"
     And I see "Copy code"
 
+  Scenario: the interstitials: the authorization-code page joins the state to the code by a hash when the URL carries one
+    When I open "/oauth2/code?code=SplxlOBeZQQYbYS6WxSbIA&state=st4t3"
+    Then I see "SplxlOBeZQQYbYS6WxSbIA#st4t3"
+    And I see "Copy code"
+
   Scenario: the interstitials: the desktop hand-off page draws the swb:// button from the URL
     When I open "/continue?token=desktop-token&email=mark@m4kr.net"
     Then I see "Continue in the Setup Guide"

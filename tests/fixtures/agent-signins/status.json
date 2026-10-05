@@ -18,7 +18,8 @@
     "admin",
     "setup",
     "health",
-    "events"
+    "events",
+    "oidc-code"
   ],
   "config": ["app", "auth", "db", "machines", "storage"],
   "events": {

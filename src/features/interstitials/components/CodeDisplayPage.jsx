@@ -5,10 +5,17 @@ import { useLocation } from 'react-router-dom';
 import AuthShell, { AuthAlert } from '../../../components/common/AuthShell';
 import CopyButton from '../../../components/common/CopyButton';
 
+const shownOf = params => {
+  const code = params.get('code') || '';
+  const state = params.get('state') || '';
+  return code && state ? `${code}#${state}` : code;
+};
+
 /**
- * `/oauth2/code`: the authorization code from the URL in a monospace
- * block with a copy button, the error state as a danger alert from
- * `error` and `error_description`, and the missing state.
+ * `/oauth2/code`: the authorization code from the URL, joined to the
+ * `state` by a hash when the URL carries one, in a monospace block with
+ * a copy button, the error state as a danger alert from `error` and
+ * `error_description`, and the missing state.
  */
 const CodeDisplayPage = () => {
   const { t } = useTranslation(['auth']);
@@ -16,7 +23,7 @@ const CodeDisplayPage = () => {
   const { code, error, description } = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return {
-      code: params.get('code') || '',
+      code: shownOf(params),
       error: params.get('error') || '',
       description: params.get('error_description') || '',
     };

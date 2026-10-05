@@ -90,6 +90,17 @@ Feature: agent-signins
     And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_device_flow_key"
     And the path is "/"
 
+  Scenario: Agent sign-ins: the loopback code flow starts one flow through the provider, opens the authorize URL, reads the agent's answer as soon as the flow is held, and the approved key is proved and signed in with
+    Given the host answers the agent-signins fixture
+    When I open "/login?sso=unavailable"
+    Then the sign-in page offers "code-start"
+    And the sign-in page offers "device-start"
+    When I press the sign-in page's "code-start" action
+    Then the host was sent POST to "/api/auth/oidc/code-start" 1 times
+    And the host was sent GET to "/api/auth/oidc/device-status" 1 times
+    And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_device_flow_key"
+    And the path is "/"
+
   Scenario: Agent sign-ins: the first key is generated with setup_token, shown once, and signed in with on Saved, continue
     Given the host answers the agent-signins fixture
     When I open "/login?sso=unavailable"

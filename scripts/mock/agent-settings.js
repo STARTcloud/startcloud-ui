@@ -313,6 +313,9 @@ const deviceStatus = ctx => {
   if (!flow) {
     return refusal(404, 'Unknown login handle');
   }
+  if (flow.pasted === false) {
+    return ok({ status: 'pending' });
+  }
   flow.checks += 1;
   if (flow.checks < CHECKS_TO_APPROVE) {
     return ok({ status: 'pending' });
@@ -338,6 +341,37 @@ const deviceStatus = ctx => {
 const silentStart = () =>
   refusal(502, 'Identity provider unreachable: no identity provider is configured on the mock');
 
+const CODE_EXPIRES_S = 300;
+
+const codeStart = ctx => {
+  const state = stateOf(selfHost(ctx));
+  const handle = randomBytes(8).toString('hex');
+  const flowState = randomBytes(16).toString('hex');
+  state.flows.set(handle, { checks: CHECKS_TO_APPROVE - 1, state: flowState, pasted: false });
+  return ok({
+    handle,
+    authorize_url: `https://auth.example.com/oauth2/authorize?response_type=code&client_id=hyperweaver-agent&redirect_uri=https%3A%2F%2Fauth.example.com%2Foauth2%2Fcode&state=${flowState}&code_challenge_method=S256`,
+    expires_in: CODE_EXPIRES_S,
+  });
+};
+
+const codeExchange = ctx => {
+  const state = stateOf(selfHost(ctx));
+  const flow = state.flows.get(String(ctx.body.handle || ''));
+  const [code, flowState] = String(ctx.body.code || '').split('#');
+  if (!flow) {
+    return refusal(404, 'Unknown login handle');
+  }
+  if (!code) {
+    return refusal(400, 'code is required');
+  }
+  if (flowState && flow.state && flowState !== flow.state) {
+    return refusal(400, 'state does not match the flow');
+  }
+  flow.pasted = true;
+  return ok({ status: 'approved' });
+};
+
 /**
  * The Agent settings page's routes on every host: the update check and
  * its apply, a queued task, the secrets behind `secrets`, and the API
@@ -349,7 +383,12 @@ const silentStart = () =>
  * claim of the seeded token `tray-demo-token`; the device flow, approved
  * on its second status check and minting a key bound to the fixture's
  * person, whose profile then carries `auth_provider`, `email`,
- * `customer_id`, `issuer` and `subject`; and the silent probe, answered
+ * `customer_id`, `issuer` and `subject`; the loopback code flow, its
+ * start answering a handle and an authorize URL whose state the flow
+ * keeps, its status pending until a code is pasted to
+ * `POST /api/auth/oidc/code` with the handle, a state after the hash
+ * checked against the flow's, and approved on the next status check as
+ * the device flow is; and the silent probe, answered
  * 502 since no identity provider is reachable here. A minted key signs
  * in as the fixture's person. Beside them the person behind a key:
  * `GET /api/user` in the identity provider's shape under the key's own
@@ -367,6 +406,8 @@ export const mountAgentSettings = ({ publicRoute, sessionRoute, agentRoute }) =>
     publicRoute('POST', '/api/auth/tray-claim', trayClaim);
     publicRoute('POST', '/api/auth/oidc/device-start', deviceStart);
     publicRoute('GET', '/api/auth/oidc/device-status', deviceStatus);
+    publicRoute('POST', '/api/auth/oidc/code-start', codeStart);
+    publicRoute('POST', '/api/auth/oidc/code', codeExchange);
     publicRoute('POST', '/api/auth/oidc/silent-start', silentStart);
     sessionRoute('GET', '/api/user', agentUser);
     sessionRoute('GET', '/api/user/favorites', relayedFavorites);

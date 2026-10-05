@@ -1334,7 +1334,7 @@ to another origin with the browser's cookies. The rest answer JSON.
 | `/ciba/approve`                | CibaApprovePage: the client, the binding message, the scopes, approve and deny; then the approved, denied or unavailable state in place | `cookie`, `interstitials` | `GET /api/auth/ciba`, `POST /ciba/approve`, `POST /ciba/deny`                                |
 | `/connect/logout/confirm`      | LogoutConfirmPage                                                                                                                       | `cookie`, `interstitials` | `GET /api/auth/logout/confirm`, `POST /connect/logout/confirm`                               |
 | `/connect/logout/frontchannel` | FrontChannelLogoutPage: the hidden frames, the countdown, "Continue"                                                                    | `interstitials`           | `GET /api/auth/logout/frontchannel`                                                          |
-| `/oauth2/code`                 | CodeDisplayPage: the code with a copy button, or the error                                                                              | `interstitials`           | none; `code`, `error`, `error_description` from the URL                                      |
+| `/oauth2/code`                 | CodeDisplayPage: the code with a copy button, or the error                                                                              | `interstitials`           | none; `code`, `state`, `error`, `error_description` from the URL                             |
 | `/continue`                    | DesktopContinuePage: the `swb://` button and the token to copy                                                                          | `interstitials`           | none; `token`, `email` from the URL                                                          |
 | `/link-account-consent`        | LinkAccountPage: the existing account, the provider, the password step-up, link and cancel                                              | `cookie`, `interstitials` | `GET /api/auth/link`, `POST /link-account/confirm`                                           |
 
@@ -1497,9 +1497,13 @@ false never reaches this page at all.
   `frontchannel_logout_uri`, so each app's own cookie is cleared in the
   browser.
 - **CodeDisplayPage**: "Authorization Code" with the code in a
-  monospace block and `CopyButton`, "You can close this window when you
-  are done."; the error state as a danger alert with `error` and
-  `error_description`; the missing state.
+  monospace block and `CopyButton`, the code joined to the `state` by a
+  hash while the URL carries one, so a client that reads the paste can
+  check the state it sent, "You can close this window when you are
+  done."; the error state as a danger alert with `error` and
+  `error_description`; the missing state. A client reaches the page by
+  registering it as a redirect URI on its own site domain, the server
+  redirecting there with `code`, `state` and `iss` as to any other.
 - **DesktopContinuePage**: "Continue in the Setup Guide", the "Open Setup
   Guide" button to `swb://auth/login?email&token`, the token in a masked
   field with the same `CopyButton` the code page has, the help line; the

@@ -315,7 +315,14 @@ as a top-level navigation and `begin({ method: 'device' })` the RFC 8628
 grant of `POST /api/auth/oidc/device-start`, its approval read with
 `GET /api/auth/oidc/device-status`, one request the agent holds open until
 the status changes or the grant's interval elapses, asked again after
-every `pending` answer and never on a clock, `complete()` the `#tray=`
+every `pending` answer and never on a clock, `begin({ method: 'code' })`
+the RFC 8252 loopback authorization-code flow of
+`POST /api/auth/oidc/code-start` while the status lists `oidc-code`, its
+authorize URL opened in a new tab, the agent's own callback taking the
+code on the agent's machine and a code the person pastes from the
+provider's code page handed to `POST /api/auth/oidc/code` with the flow's
+handle from any other, its approval read with the same held
+`GET /api/auth/oidc/device-status`, `complete()` the `#tray=`
 claim of a tray Open or an `hwa://open`, once per page load with the
 fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
 key that still validates outranking it, the claimed session answered once

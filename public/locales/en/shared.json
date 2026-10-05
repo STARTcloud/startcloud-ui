@@ -4928,6 +4928,17 @@
       "retry": "Try SSO sign-in again",
       "failed": "Sign-in failed — try again.",
       "checkStatus": "Check status"
+    },
+    "codeSso": {
+      "signInWithSso": "Sign in via SSO",
+      "desc": "Opens your identity provider in a new tab. On this machine the sign-in completes by itself; from another machine, paste the code the provider shows you.",
+      "waiting": "Finish signing in at your identity provider. If the browser did not open, visit this URL:",
+      "urlLabel": "Sign-in URL",
+      "openSignIn": "Open",
+      "codeLabel": "Or paste the code the provider showed you",
+      "codePlaceholder": "code#state",
+      "continue": "Continue",
+      "back": "Back"
     }
   },
   "chrome": {

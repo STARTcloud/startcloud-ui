@@ -1,24 +1,29 @@
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
 
+const CODE_SSO_TOKEN = 'oidc-code';
+
 const listOf = value => (Array.isArray(value) ? value : []);
 
 /**
- * The sign-ins of an agent the status lists, hyperweaver-agent's six
- * paths behind its words: the pasted key, the tray hand-off and the
- * desktop sign-in while the first word of `auth` is `apikey`, the
- * federated paths, the silent probe and the device flow, while its
- * second word is `oidc`, and the first-boot bootstrap while the status
- * says `bootstrapAvailable`.
+ * The sign-ins of an agent the status lists, hyperweaver-agent's paths
+ * behind its words: the pasted key, the tray hand-off and the desktop
+ * sign-in while the first word of `auth` is `apikey`, the federated
+ * paths, the silent probe and the device flow, while its second word is
+ * `oidc`, the loopback authorization-code flow with a pasted code while
+ * `features` lists `oidc-code` beside them, and the first-boot bootstrap
+ * while the status says `bootstrapAvailable`.
  *
  * @param {Object|null} status - The payload from `probeStatus`
- * @returns {{ apiKey: boolean, deviceSso: boolean, tray: boolean, bootstrap: boolean }} The sign-ins
+ * @returns {{ apiKey: boolean, deviceSso: boolean, codeSso: boolean, tray: boolean, bootstrap: boolean }} The sign-ins
  */
 export const agentSignInsOf = status => {
   const auth = listOf(status?.auth);
   const apiKey = auth[0] === 'apikey';
+  const deviceSso = apiKey && auth.includes('oidc');
   return {
     apiKey,
-    deviceSso: apiKey && auth.includes('oidc'),
+    deviceSso,
+    codeSso: deviceSso && listOf(status?.features).includes(CODE_SSO_TOKEN),
     tray: apiKey,
     bootstrap: apiKey && Boolean(status?.bootstrapAvailable),
   };

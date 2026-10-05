@@ -4928,6 +4928,17 @@
       "retry": "Reintentar el inicio de sesión con SSO",
       "failed": "El inicio de sesión falló; inténtalo de nuevo.",
       "checkStatus": "Comprobar estado"
+    },
+    "codeSso": {
+      "signInWithSso": "Iniciar sesión con SSO",
+      "desc": "Abre tu proveedor de identidad en una pestaña nueva. En esta máquina el inicio de sesión se completa solo; desde otra máquina, pega el código que te muestre el proveedor.",
+      "waiting": "Termina de iniciar sesión en tu proveedor de identidad. Si el navegador no se abrió, visita esta URL:",
+      "urlLabel": "URL de inicio de sesión",
+      "openSignIn": "Abrir",
+      "codeLabel": "O pega el código que te mostró el proveedor",
+      "codePlaceholder": "código#estado",
+      "continue": "Continuar",
+      "back": "Atrás"
     }
   },
   "chrome": {

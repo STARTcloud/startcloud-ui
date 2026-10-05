@@ -15,6 +15,19 @@ export const deviceSsoStatus = handle =>
   client.get('/api/auth/oidc/device-status', { ...PUBLIC, params: { handle } });
 
 /**
+ * Hand the agent the code a person pasted from the identity provider's
+ * code page, `POST /api/auth/oidc/code` with the flow's `handle` and the
+ * `code`, as `code#state` when the page showed the state beside it,
+ * answered `{ status }`; the approved key is read with `deviceSsoStatus`.
+ *
+ * @param {string} handle - The flow's handle
+ * @param {string} code - The pasted code, with or without `#state`
+ * @returns {Promise<Object>} The answer
+ */
+export const codeSsoExchange = (handle, code) =>
+  client.post('/api/auth/oidc/code', { handle, code }, PUBLIC);
+
+/**
  * Generate the host's first API key on first boot,
  * `POST /api/api-keys/bootstrap` with hyperweaver-ui's name and
  * description and the `setup_token` the agent reads, answered

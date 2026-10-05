@@ -160,6 +160,7 @@ const LIVE_AGENT_FEATURES = [
   'artifacts',
   'file-browser',
   'guest-agent',
+  'oidc-code',
 ];
 const CPU_TIMES = { user: 914520, nice: 0, sys: 402310, idle: 8812400, irq: 0 };
 const STREAMING_AGENT = 'hyperweaver-agent';
