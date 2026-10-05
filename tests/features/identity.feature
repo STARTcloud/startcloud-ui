@@ -36,8 +36,14 @@ Feature: identity contract
     When I open "/activate?error=invalid_user_code"
     Then I see "That code did not match; enter the code shown on your device."
 
-  Scenario: the interstitials: the activated page
-    When I open "/activated"
+  Scenario: the interstitials: the device activation page sends a visitor to sign in with the page, code and all, as the return path
+    Given the host answers the identity-signed-out fixture
+    When I open "/activate?user_code=ABCD-EFGH"
+    Then the path is "/login?returnTo=%2Factivate%3Fuser_code%3DABCD-EFGH"
+
+  Scenario: the interstitials: the activated page closes its tab, and draws its words where the browser refuses
+    When I open "/activate?error=invalid_user_code"
+    And I open "/activated"
     Then I see "Device connected"
     And I see "You can close this window and return to your device."
 

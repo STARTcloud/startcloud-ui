@@ -76,9 +76,15 @@ const sectionAllowed = (section, role) => {
 
 const PAGES = {
   interfaces: lazy(() => import('./sections/InterfacesPage')),
+  topology: lazy(() => import('./sections/TopologyPage')),
+  addresses: lazy(() => import('./sections/AddressesPage')),
+  routes: lazy(() => import('./sections/RoutesPage')),
+  bandwidth: lazy(() => import('./sections/BandwidthPage')),
   links: lazy(() => import('./sections/LinksPage')),
   spaces: lazy(() => import('./sections/SpacesPage')),
   hostname: lazy(() => import('./sections/HostnamePage')),
+  'hosts-file': lazy(() => import('./sections/HostsFilePage')),
+  dns: lazy(() => import('./sections/DnsPage')),
   pools: lazy(() => import('./sections/PoolsPage')),
   snapshots: lazy(() => import('./sections/SnapshotsPage')),
   arc: lazy(() => import('./sections/ArcPage')),

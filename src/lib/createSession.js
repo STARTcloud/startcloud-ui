@@ -20,7 +20,6 @@ const COOKIE_AUTH_PATHS = [
   '/provider-registration',
   '/public',
   '/oauth2',
-  '/activate',
   '/activated',
   '/ciba',
   '/connect',
@@ -37,7 +36,8 @@ const COOKIE_AUTH_PATHS = [
  * auth path, `cookie` is the identity provider's own session on the
  * serving origin with `/login` as the sign-in page and every reserved
  * segment of the identity contract's sign-in, onboarding and interstitial
- * groups plus `/error` as the auth paths, `none` is no session at all,
+ * groups plus `/error` as the auth paths, all but `/activate`, the page a
+ * sign-in returns to with the device's code, `none` is no session at all,
  * `apikey` is hyperweaver-agent's API key session with `/login` as the
  * sign-in page and its only auth path, anything else is the app's own
  * backend session with `/login` as the sign-in page.

@@ -1,47 +1,19 @@
+import { historyParams } from './monitoring';
 import { latestOf, networkRates, timeOf } from './series';
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
-const MINUTE_MS = 60 * 1000;
 const LINK_PREFIX = 'link:';
-
-/**
- * The minutes a machine's charts reach back, hyperweaver-ui's fifteen.
- */
-export const MACHINE_WINDOW_MINUTES = 15;
-
-/**
- * The samples held of a machine's series cut to the window the charts
- * reach back over, hyperweaver-ui's rolling fifteen minutes: of each
- * entity the rows no older than the window before the newest row held
- * of it. The window is measured from the newest sample and never from
- * the clock of the tab, so a series that stopped growing keeps its last
- * fifteen minutes on screen and one that grows sheds its oldest rows as
- * new ones arrive.
- *
- * @param {Array<Object>} rows - The rows held, oldest first per entity
- * @param {string} [entity] - The member that tells one entity's rows from another's
- * @returns {Array<Object>} The rows inside the window
- */
-export const windowOf = (rows, entity = '') => {
-  const keyOf = row => (entity ? String(row[entity]) : '');
-  const newest = new Map();
-  rows.forEach(row => {
-    newest.set(keyOf(row), Math.max(newest.get(keyOf(row)) ?? -Infinity, timeOf(row)));
-  });
-  const span = MACHINE_WINDOW_MINUTES * MINUTE_MS;
-  return rows.filter(row => timeOf(row) >= newest.get(keyOf(row)) - span);
-};
+const ONE_SAMPLE = 1;
 
 /**
  * The series the machine page's charts draw, each the agent path it is
  * read from, the member of the answer that holds its rows, the parameter
  * that names what is asked for, the machine or the link, the member that
- * tells one entity's rows from another's, the most rows a read asks for,
- * hyperweaver-ui's numbers, and whether the read reaches back over the
- * window: the usage and the per-volume disk I/O of a zone, the usage of a
- * VirtualBox machine, which the agent answers as the one sample it takes
- * at the read, and the usage of one link.
+ * tells one entity's rows from another's, and whether the read reaches
+ * back over the host's window: the usage and the per-volume disk I/O of
+ * a zone, the usage of a VirtualBox machine, which the agent answers as
+ * the one sample it takes at the read, and the usage of one link.
  */
 export const MACHINE_SERIES = {
   'zone-usage': {
@@ -49,7 +21,6 @@ export const MACHINE_SERIES = {
     member: 'usage',
     target: 'zone',
     entity: '',
-    limit: 200,
     windowed: true,
   },
   'zone-diskio': {
@@ -57,7 +28,6 @@ export const MACHINE_SERIES = {
     member: 'diskio',
     target: 'zone',
     entity: 'dataset',
-    limit: 500,
     windowed: true,
   },
   'machine-usage': {
@@ -65,7 +35,6 @@ export const MACHINE_SERIES = {
     member: 'usage',
     target: 'machine_name',
     entity: '',
-    limit: 1,
     windowed: false,
   },
   link: {
@@ -73,7 +42,6 @@ export const MACHINE_SERIES = {
     member: 'usage',
     target: 'link',
     entity: '',
-    limit: 200,
     windowed: true,
   },
 };
@@ -117,24 +85,24 @@ export const machineSeriesOf = metric => MACHINE_SERIES[linkOf(metric) ? 'link' 
 /**
  * The parameters a read of a machine's series sends: what is asked for
  * under the series' own parameter, the link of a link's series and the
- * machine of every other, the most rows as `limit` and, for a series
- * read over the window, `since`, the instant fifteen minutes before
- * `now`.
+ * machine of every other, and for a series read over the host's window
+ * the `since` and `limit` of `historyParams`, `limit` 1 for the one
+ * sample a VirtualBox machine's usage answers.
  *
- * @param {Object} options - The series' key, the machine's name and the present
+ * @param {Object} options - The series, the machine, the window, the interval, the newest held sample and the present
  * @param {string} options.metric - The series' key
  * @param {string} options.name - The machine name
+ * @param {string} options.window - The host's window key
+ * @param {number} options.interval - The agent's collection interval in seconds, zero while unknown
+ * @param {number} options.newest - The instant of the newest sample held in milliseconds, zero while none is held
  * @param {number} options.now - The present, in milliseconds
  * @returns {Object} The parameters
  */
-export const machineSeriesParams = ({ metric, name, now }) => {
+export const machineSeriesParams = ({ metric, name, window, interval, newest, now }) => {
   const series = machineSeriesOf(metric);
   return {
     [series.target]: linkOf(metric) || name,
-    limit: series.limit,
-    ...(series.windowed
-      ? { since: new Date(now - MACHINE_WINDOW_MINUTES * MINUTE_MS).toISOString() }
-      : {}),
+    ...(series.windowed ? historyParams({ window, interval, newest, now }) : { limit: ONE_SAMPLE }),
   };
 };
 

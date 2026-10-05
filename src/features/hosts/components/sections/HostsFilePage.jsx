@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../../contexts/StatusContext';
 import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
-import HostnameSettings from '../HostnameSettings';
+import HostsFileEditor from '../HostsFileEditor';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import TaskDialog from '../TaskDialog';
@@ -17,21 +18,22 @@ const foldOf = (folds, key) => ({
 });
 
 /**
- * The Hostname page of a host: the heading reading the host's current
- * hostname, Refresh in its pane, and under it the hostname as a folding
- * section drawn while the host's own row offers its read, every write
- * through the one `useNetworkingTools` and the task dialog it opens
- * drawn once; the read the copy the hosts feature's context holds and
- * the fold kept under the page's `table_prefs_hostname`.
+ * The Hosts file page of a host: the heading with Refresh in its pane,
+ * and under it the hosts file as a folding section drawn while the
+ * host's own row offers its read, every write through the one
+ * `useNetworkingTools` and the task dialog it opens drawn once; the read
+ * the copy the hosts feature's context holds and the fold kept under the
+ * page's `table_prefs_hosts-file`.
  */
-const HostnamePage = ({ id, server, context, section, onRefresh }) => {
+const HostsFilePage = ({ id, server, context, section, onRefresh }) => {
+  const { t, i18n } = useTranslation();
   const status = useStatus();
   const refreshReadings = useHostReadingsRefresh();
   const folds = useFolds(`${context.prefsPrefix}_${section}`);
-  const hostname = useHostReading(id, 'hostname');
+  const hosts = useHostReading(id, 'hosts-file');
   const tools = useNetworkingTools();
+  const ctx = { ...context, t, language: i18n.language };
   const role = context.user?.role;
-  const current = hostname.data?.hostname || '';
 
   const refresh = () => {
     onRefresh();
@@ -42,15 +44,16 @@ const HostnamePage = ({ id, server, context, section, onRefresh }) => {
     <SectionPane
       section={section}
       server={server}
-      count={current ? <code>{current}</code> : null}
+      count={null}
       actions={<RefreshButton onRefresh={refresh} />}
     >
-      {hostname.offered ? (
-        <HostnameSettings
+      {hosts.offered ? (
+        <HostsFileEditor
           id={id}
           role={role}
-          reading={hostname}
-          fold={foldOf(folds, 'manage-hostname')}
+          reading={hosts}
+          ctx={ctx}
+          fold={foldOf(folds, 'manage-hosts')}
           tools={tools}
         />
       ) : null}
@@ -61,7 +64,7 @@ const HostnamePage = ({ id, server, context, section, onRefresh }) => {
   );
 };
 
-HostnamePage.propTypes = {
+HostsFilePage.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   context: pageContextShape.isRequired,
@@ -69,4 +72,4 @@ HostnamePage.propTypes = {
   onRefresh: PropTypes.func.isRequired,
 };
 
-export default HostnamePage;
+export default HostsFilePage;

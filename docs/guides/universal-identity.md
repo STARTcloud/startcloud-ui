@@ -1329,7 +1329,7 @@ to another origin with the browser's cookies. The rest answer JSON.
 | Route                          | Page                                                                                                                                    | Gate                      | Server routes behind it                                                                      |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
 | `/oauth2/consent`              | ConsentPage: the client, the scopes as checked rows, the RAR details, approve and deny                                                  | `cookie`, `interstitials` | `GET /api/auth/consent`, form `POST /oauth2/authorize` or `POST /oauth2/device_verification` |
-| `/activate`                    | DeviceActivatePage: the user code                                                                                                       | `interstitials`           | form `POST /oauth2/device_verification`                                                      |
+| `/activate`                    | DeviceActivatePage: the user code                                                                                                       | `cookie`, `interstitials` | form `POST /oauth2/device_verification`                                                      |
 | `/activated`                   | DeviceActivatedPage: "Device connected"                                                                                                 | `interstitials`           | none                                                                                         |
 | `/ciba/approve`                | CibaApprovePage: the client, the binding message, the scopes, approve and deny; then the approved, denied or unavailable state in place | `cookie`, `interstitials` | `GET /api/auth/ciba`, `POST /ciba/approve`, `POST /ciba/deny`                                |
 | `/connect/logout/confirm`      | LogoutConfirmPage                                                                                                                       | `cookie`, `interstitials` | `GET /api/auth/logout/confirm`, `POST /connect/logout/confirm`                               |
@@ -1463,9 +1463,13 @@ false never reaches this page at all.
   `session.signOut()` first.
 - **DeviceActivatePage**: the code field with its label, uppercase,
   `XXXX-XXXX`, prefilled from `?user_code`, the `?error=invalid_user_code`
-  alert painted on the field, "Continue"; **DeviceActivatedPage**:
-  "Device connected", "You can close this window and return to your
-  device."
+  alert painted on the field, "Continue"; a visitor without a session is
+  sent to `/login` with this page, query and all, kept under
+  `intended_url`, so the code is still prefilled when the sign-in returns
+  here; **DeviceActivatedPage**: the
+  tab closes itself once drawn, and "Device connected", "You can close
+  this window and return to your device." stand for a browser that
+  refuses the close.
 - **CibaApprovePage**: "Sign-in request", "{{client}} is asking to sign
   you in on another device.", the binding message as "Make sure this
   matches the code on your other device: {{message}}", since it is

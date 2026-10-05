@@ -8,22 +8,21 @@ import { fetchSeries } from '../api/monitoring';
 import { HostSeriesContext } from '../hooks/useHostSeries';
 import { agentIdOf } from '../utils/hosts';
 import { DEFAULT_QUERY, SERIES, historyParams } from '../utils/monitoring';
-import { mergeRows, rowsOf } from '../utils/series';
-
-const REALTIME = 'realtime';
+import { loadRing, ringKey, saveRing } from '../utils/ring';
+import { latestOf, mergeRows, ringRows, rowsOf, timeOf } from '../utils/series';
 
 const NO_METRICS = {};
 
 const NO_ROWS = [];
 
-const emptyFor = (signedIn, epoch) => ({ epoch, signedIn, hosts: {} });
+const UNCAPPED = Infinity;
 
-const queryKey = query => `${query.window}|${query.resolution}`;
+const emptyFor = (signedIn, epoch) => ({ epoch, signedIn, hosts: {} });
 
 const seriesKey = ({ epoch, id, metric }) => `${epoch}|${id}|${metric}`;
 
 const flightKey = ({ epoch, id, metric, query }) =>
-  `${seriesKey({ epoch, id, metric })}|${queryKey(query)}`;
+  `${seriesKey({ epoch, id, metric })}|${query.window}`;
 
 const hostOf = (state, id) => state.hosts[id] || { query: DEFAULT_QUERY, metrics: NO_METRICS };
 
@@ -33,37 +32,33 @@ const withMetric = ({ state, id, metric, entry }) => {
   return { ...state, hosts: { ...state.hosts, [id]: { ...host, metrics } } };
 };
 
-const stillAsked = ({ state, epoch, id, query }) =>
-  state.epoch === epoch && queryKey(hostOf(state, id).query) === queryKey(query);
-
-const mergedRows = ({ held, answer, metric, strategy, early }) => {
-  const { member, entity } = SERIES[metric];
-  const read = rowsOf(answer, member);
-  const kept = held ? held.rows : NO_ROWS;
-  const rows =
-    strategy === REALTIME
-      ? mergeRows(kept, read, { entity })
-      : mergeRows(mergeRows(NO_ROWS, read, { entity }), kept, { entity });
-  return mergeRows(rows, early, { entity });
-};
-
-const answered =
-  ({ epoch, id, metric, query, answer, early }) =>
+const hydrated =
+  ({ epoch, id, metric, rows }) =>
   state => {
-    if (!stillAsked({ state, epoch, id, query })) {
+    if (state.epoch !== epoch) {
       return state;
     }
     const held = hostOf(state, id).metrics[metric];
-    const strategy = answer?.sampling?.strategy || '';
-    const rows = mergedRows({ held, answer, metric, strategy, early });
+    const entry = held
+      ? { ...held, rows }
+      : { rows, strategy: '', loaded: false, failed: false, stale: false };
+    return withMetric({ state, id, metric, entry });
+  };
+
+const answered =
+  ({ epoch, id, metric, rows, strategy }) =>
+  state => {
+    if (state.epoch !== epoch) {
+      return state;
+    }
     const entry = { rows, strategy, loaded: true, failed: false, stale: false };
     return withMetric({ state, id, metric, entry });
   };
 
 const refused =
-  ({ epoch, id, metric, query }) =>
+  ({ epoch, id, metric }) =>
   state => {
-    if (!stillAsked({ state, epoch, id, query })) {
+    if (state.epoch !== epoch) {
       return state;
     }
     const held = hostOf(state, id).metrics[metric];
@@ -75,6 +70,13 @@ const refused =
       stale: false,
     };
     return withMetric({ state, id, metric, entry });
+  };
+
+const pushed =
+  ({ id, metric, rows }) =>
+  state => {
+    const held = hostOf(state, id).metrics[metric];
+    return held ? withMetric({ state, id, metric, entry: { ...held, rows } }) : state;
   };
 
 const staleMetrics = metrics =>
@@ -95,102 +97,198 @@ const queried = (id, patch) => state => {
   return { ...state, hosts: { ...state.hosts, [id]: { ...host, query } } };
 };
 
-const pushed = (metric, data) => state => {
-  const id = agentIdOf(data);
-  const held = hostOf(state, id).metrics[metric];
-  if (!held?.loaded) {
-    return state;
-  }
-  const { member, entity } = SERIES[metric];
-  const rows = mergeRows(held.rows, rowsOf(data, member), { entity });
-  return withMetric({ state, id, metric, entry: { ...held, rows } });
-};
-
 const flying = (flights, key) => [...flights.keys()].some(flight => flight.startsWith(`${key}|`));
+
+const forget = (copies, id) =>
+  [...copies]
+    .filter(flight => flight.split('|')[1] === String(id))
+    .forEach(flight => copies.delete(flight));
+
+const merged = ({ held, rows, entity }) =>
+  ringRows(mergeRows(held, rows, { entity, limit: UNCAPPED }), entity);
 
 /**
  * The series the performance charts draw of every host a caller has
- * drawn, behind `useHostSeries`: the history of a series is read once,
- * `since` the start of the host's window and `limit` the samples of its
- * resolution, when the first caller asks, a second caller while it is in
- * flight joining it; an agent that keeps a history answers it and the
- * rows held are replaced by it, the held rows newer than its newest
- * kept, an agent that keeps none answers the one sample it took,
- * `realtime`, and that sample is added to the rows held. Between reads
- * the series grows by push: the `monitoring` topic's `cpu-sample`,
- * `memory-sample`, `network-sample`, `pool-io-sample` and `arc-sample`
- * events each carry the rows of one collection under the member the REST
- * route answers them in, and the rows of a host whose series is held are
- * merged in, newer rows alone, 180 kept of each entity, hyperweaver-ui's
- * number; a sample pushed while the first read of its series is in
- * flight is kept aside and merged into the answer, so none is lost
- * between the agent's answer and its arrival. When the event stream
- * opens fresh or answers `reset`, and when a person changes the host's
- * window or resolution, the held series are marked stale and kept on
- * screen, and only the callers that draw one read it again. Nothing
- * reads on a clock. The series belong to the session: when `signedIn`
- * changes they are dropped, an answer of the session before it
- * discarded.
+ * drawn, behind `useHostSeries`, each held in the browser's ring: the
+ * samples of a series are kept in IndexedDB under the origin, keyed by
+ * host and series, every pushed sample appended as it lands and every
+ * sample older than the widest window dropped as a sample is written or
+ * read, never on a clock. A series opens from the ring's samples at
+ * once, then its history is read, `since` the newest sample the ring
+ * holds or the start of the host's window while it holds none and
+ * `limit` the samples the window holds at the agent's collection
+ * interval, when the first caller asks, a second caller while it is in
+ * flight joining it, and the answer is merged into what is held; `ask`
+ * is the read of a caller that draws, which answers at once while the
+ * answer is held, so a caller whose render crosses the answer asks for
+ * nothing twice, and `read` the one a Refresh makes, which renews it; an
+ * agent that keeps no history answers the one sample it took,
+ * `realtime`, and that sample is merged the same way. Between reads the
+ * series grows by push: the `monitoring` topic's `cpu-sample`,
+ * `memory-sample`, `network-sample`, `pool-io-sample`, `arc-sample` and
+ * `disk-io-sample` events each carry the rows of one collection under
+ * the member the REST route answers them in, and the rows of every host
+ * are appended to its ring, the rows not yet held; a sample pushed while a
+ * read of its series is in flight is kept aside and merged after the
+ * answer, so none is lost between the agent's answer and its arrival.
+ * When the event stream opens fresh or answers `reset`, and when a
+ * person changes the host's window, the held series are marked stale
+ * and kept on screen, and only the callers that draw one read it again,
+ * `refreshHost` reading every series drawn of a host again on Refresh.
+ * Nothing reads on a clock. What is held in memory belongs to the
+ * session: when `signedIn` changes it is dropped and read from the ring
+ * again, the ring itself this browser's and kept.
  */
 const HostSeriesProvider = ({ signedIn, children }) => {
   const status = useStatus();
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
-  const flights = useRef(null);
-  const early = useRef(null);
+  const rings = useRef(new Map());
+  const hydrations = useRef(new Map());
+  const flights = useRef(new Map());
+  const copies = useRef(new Set());
+  const early = useRef(new Map());
+  const intervals = useRef(new Map());
 
   if (state.signedIn !== signedIn) {
     setState(emptyFor(signedIn, state.epoch + 1));
   }
 
+  const hydrate = useCallback((key, entity) => {
+    if (!hydrations.current.has(key)) {
+      hydrations.current.set(
+        key,
+        loadRing(key, entity).then(rows => {
+          rings.current.set(key, rows);
+          return rows;
+        })
+      );
+    }
+    return hydrations.current.get(key);
+  }, []);
+
+  const append = useCallback((key, entity, rows) => {
+    const kept = merged({ held: rings.current.get(key) || NO_ROWS, rows, entity });
+    rings.current.set(key, kept);
+    saveRing(key, kept, entity);
+    return kept;
+  }, []);
+
   const read = useCallback(
-    ({ epoch, id, metric, query }) => {
-      flights.current ||= new Map();
-      early.current ||= new Map();
-      const key = flightKey({ epoch, id, metric, query });
+    ({ epoch, id, metric, query, interval }) => {
+      const { member, entity } = SERIES[metric];
+      const key = ringKey(id, metric);
       const series = seriesKey({ epoch, id, metric });
-      const held = flights.current.get(key);
+      const flight = flightKey({ epoch, id, metric, query });
+      intervals.current.set(id, interval);
+      const held = flights.current.get(flight);
       if (held) {
         return held;
       }
-      const flight = fetchSeries(status, id, metric, historyParams(query, Date.now()))
+      copies.current.delete(flight);
+      let base = NO_ROWS;
+      const request = hydrate(key, entity)
+        .then(() => {
+          base = rings.current.get(key) || NO_ROWS;
+          setState(hydrated({ epoch, id, metric, rows: base }));
+          const newest = latestOf(base);
+          return fetchSeries(
+            status,
+            id,
+            metric,
+            historyParams({
+              window: query.window,
+              interval,
+              newest: newest ? timeOf(newest) : 0,
+              now: Date.now(),
+            })
+          );
+        })
         .then(answer => {
-          const rows = early.current.get(series) || NO_ROWS;
-          setState(answered({ epoch, id, metric, query, answer, early: rows }));
+          const parked = early.current.get(series) || NO_ROWS;
+          const answeredRows = merged({ held: base, rows: rowsOf(answer, member), entity });
+          const kept = merged({ held: answeredRows, rows: parked, entity });
+          rings.current.set(key, kept);
+          saveRing(key, kept, entity);
+          const strategy = answer?.sampling?.strategy || '';
+          copies.current.add(flight);
+          setState(answered({ epoch, id, metric, rows: kept, strategy }));
           return answer;
         })
         .catch(error => {
           log.api.error('Error fetching host series', { id, metric, error: error.message });
-          setState(refused({ epoch, id, metric, query }));
+          copies.current.add(flight);
+          setState(refused({ epoch, id, metric }));
           return null;
         })
         .finally(() => {
-          flights.current.delete(key);
+          flights.current.delete(flight);
           early.current.delete(series);
         });
-      flights.current.set(key, flight);
-      return flight;
+      flights.current.set(flight, request);
+      return request;
     },
-    [status]
+    [status, hydrate]
   );
 
-  const setQuery = useCallback((id, patch) => setState(queried(id, patch)), []);
+  const ask = useCallback(
+    args => {
+      const flight = flightKey({
+        epoch: args.epoch,
+        id: args.id,
+        metric: args.metric,
+        query: args.query,
+      });
+      return copies.current.has(flight) ? Promise.resolve(NO_ROWS) : read(args);
+    },
+    [read]
+  );
+
+  const setQuery = useCallback((id, patch) => {
+    forget(copies.current, id);
+    setState(queried(id, patch));
+  }, []);
+
+  const staleAll = () => {
+    copies.current.clear();
+    setState(staled);
+  };
+
+  const refreshHost = useCallback(
+    id => {
+      const { query, metrics } = hostOf(state, id);
+      const interval = intervals.current.get(id) || 0;
+      Object.keys(metrics).forEach(metric =>
+        read({ epoch: state.epoch, id, metric, query, interval })
+      );
+    },
+    [state, read]
+  );
 
   const take = (metric, data) => {
-    const series = seriesKey({ epoch: state.epoch, id: agentIdOf(data), metric });
-    if (flights.current && flying(flights.current, series)) {
-      const rows = early.current.get(series) || NO_ROWS;
-      early.current.set(series, [...rows, ...rowsOf(data, SERIES[metric].member)]);
+    const { member, entity } = SERIES[metric];
+    const id = agentIdOf(data);
+    const rows = rowsOf(data, member);
+    if (rows.length === 0) {
+      return;
     }
-    setState(pushed(metric, data));
+    const series = seriesKey({ epoch: state.epoch, id, metric });
+    if (flying(flights.current, series)) {
+      early.current.set(series, [...(early.current.get(series) || NO_ROWS), ...rows]);
+    }
+    const key = ringKey(id, metric);
+    hydrate(key, entity).then(() => {
+      const kept = append(key, entity, rows);
+      setState(pushed({ id, metric, rows: kept }));
+    });
   };
 
   useEventStream('ready', (data, resumed) => {
     if (data && !resumed) {
-      setState(staled);
+      staleAll();
     }
   });
 
-  useEventStream('reset', () => setState(staled));
+  useEventStream('reset', staleAll);
 
   useEventStream(SERIES.cpu.event, data => take('cpu', data));
 
@@ -205,8 +303,8 @@ const HostSeriesProvider = ({ signedIn, children }) => {
   useEventStream(SERIES['disk-io'].event, data => take('disk-io', data));
 
   const value = useMemo(
-    () => ({ epoch: state.epoch, hosts: state.hosts, read, setQuery }),
-    [state.epoch, state.hosts, read, setQuery]
+    () => ({ epoch: state.epoch, hosts: state.hosts, read, ask, setQuery, refreshHost }),
+    [state.epoch, state.hosts, read, ask, setQuery, refreshHost]
   );
 
   return <HostSeriesContext.Provider value={value}>{children}</HostSeriesContext.Provider>;

@@ -153,7 +153,7 @@ Feature: host devices
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices page draws its frame
-    And I see "Host actions"
+    And the host controls toggle is "Host actions"
 
   Scenario: Devices: on the zoneweaver-agent role the four reads are sent at the agent's own /api path
     Given the host answers the zones fixture

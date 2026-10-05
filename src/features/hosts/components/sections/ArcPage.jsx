@@ -24,8 +24,8 @@ const ARC_CHARTS = ['arc'];
  * The ARC page of a host, the old storage page's ARC statistics and
  * charts and the old Manage page's ARC configuration as the one body of
  * its own page, behind `zfs`: the heading reading the hit ratio of the
- * newest sample, the time window, the resolution and Refresh in its
- * pane, and under it the ARC statistics card, the three ARC charts,
+ * newest sample, the time window and Refresh in its pane, and under it
+ * the ARC statistics card, the three ARC charts,
  * both behind `monitoring` as the series is, and, for an admin as the
  * old Manage page was, `ArcConfigurationSection` as it was drawn; the
  * series the copy the hosts feature's context holds and every fold kept

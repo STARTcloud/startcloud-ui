@@ -510,9 +510,15 @@ const PAGE_TITLES = {
   '/hosts/:id/machines/:name/console/vnc': 'chrome.sidebarMenu.vncConsole',
   '/hosts/:id/machines/:name/console/rdp': 'console.rdpConsoleDisplay.vrdpLabel',
   '/hosts/:id/network/interfaces': 'hosts.overview.interfaces',
+  '/hosts/:id/network/topology': 'pages.hostNetworking.topologyHeading',
+  '/hosts/:id/network/addresses': 'host.ipAddressTable.title',
+  '/hosts/:id/network/routes': 'host.routingTable.routingTable',
+  '/hosts/:id/network/bandwidth': 'host.bandwidthTable.title',
   '/hosts/:id/network/links': 'hosts.nav.links',
   '/hosts/:id/network/spaces': 'hosts.nav.spaces',
-  '/hosts/:id/network/hostname': 'hosts.nav.hostnameDns',
+  '/hosts/:id/network/hostname': 'host.hostnameSettings.title',
+  '/hosts/:id/network/hosts-file': 'host.hostsFileEditor.hostsFile',
+  '/hosts/:id/network/dns': 'host.dnsSettings.dnsResolver',
   '/hosts/:id/storage/pools': 'hosts.nav.pools',
   '/hosts/:id/storage/snapshots': 'navbar.contextTabs.snapshots',
   '/hosts/:id/storage/arc': 'hosts.nav.arc',
@@ -573,9 +579,15 @@ const PAGE_TITLES = {
  */
 const HOST_SECTION_ROUTES = [
   ['network/interfaces', 'interfaces'],
+  ['network/topology', 'topology'],
+  ['network/addresses', 'addresses'],
+  ['network/routes', 'routes'],
+  ['network/bandwidth', 'bandwidth'],
   ['network/links', 'links'],
   ['network/spaces', 'spaces'],
   ['network/hostname', 'hostname'],
+  ['network/hosts-file', 'hosts-file'],
+  ['network/dns', 'dns'],
   ['storage/pools', 'pools'],
   ['storage/snapshots', 'snapshots'],
   ['storage/arc', 'arc'],
@@ -1312,13 +1324,13 @@ const onboardingRoutes = ({ status, cookie }) => {
   ]);
 };
 
-const interstitialRoutes = ({ status, cookie }) => {
+const interstitialRoutes = ({ status, cookie, account }) => {
   const open = hasFeature(status, 'interstitials');
   const signedIn = cookie && open;
   const row = (path, gate, element) => ({ path, open: gate, element, token: 'interstitials' });
   return gatedRoutes([
     row('/oauth2/consent', signedIn, <ConsentPage returnTo={returnTo} />),
-    row('/activate', open, <DeviceActivatePage />),
+    row('/activate', signedIn, <DeviceActivatePage account={account} returnTo={returnTo} />),
     row('/activated', open, <DeviceActivatedPage />),
     row('/ciba/approve', signedIn, <CibaApprovePage />),
     row('/connect/logout/confirm', signedIn, <LogoutConfirmPage returnTo={returnTo} />),
@@ -1841,7 +1853,7 @@ const AppRoutes = ({
       />
       {signInRoutes({ status, cookie, account })}
       {onboardingRoutes({ status, cookie })}
-      {interstitialRoutes({ status, cookie })}
+      {interstitialRoutes({ status, cookie, account })}
       {['/profile', '/profile/:section'].map(path => (
         <Route
           key={path}

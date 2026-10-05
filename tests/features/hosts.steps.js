@@ -19,6 +19,8 @@ const taskRows = page => page.locator('.footer-pane tbody tr');
 
 const DRAG_STEPS = 8;
 
+const TREE_STEP = 18;
+
 const dragBy = async (page, selector, right, up) => {
   const box = await page.locator(selector).boundingBox();
   const x = box.x + box.width / 2;
@@ -102,6 +104,19 @@ When('I confirm the open dialog', async ({ page }) => {
   await dialog.locator('.modal-footer .btn-danger').click();
 });
 
+When("I double-click the open dialog's header", async ({ page }) => {
+  await page.getByRole('dialog').last().locator('.modal-header').dblclick();
+});
+
+Then('the open dialog is zoomed', async ({ page }) => {
+  await expect(page.locator('.modal-dialog').last()).toHaveClass(/modal-zoomed/);
+});
+
+Then('the open dialog is not zoomed', async ({ page }) => {
+  await expect(page.locator('.modal-dialog').last()).toBeVisible();
+  await expect(page.locator('.modal-dialog').last()).not.toHaveClass(/modal-zoomed/);
+});
+
 When('I right-click the tree node {string}', async ({ page }, label) => {
   await page
     .locator('.sidebar-tree [data-sidebar-row]')
@@ -136,16 +151,28 @@ Then('the sidebar foot draws the avatar before the name', async ({ page }) => {
   await expect(toggle.locator('> :last-child')).toHaveClass(/user-menu-id/);
 });
 
+Then('the host controls toggle is {string}', async ({ page }, name) => {
+  await expect(page.locator('.action-menu-toggle')).toHaveAttribute('aria-label', name);
+});
+
+Then('the open menu is headed {string}', async ({ page }, text) => {
+  await expect(
+    page.locator('.action-menu .dropdown-menu.show .dropdown-header').first()
+  ).toHaveText(text);
+});
+
 Then('the sidebar draws {string} above {string}', async ({ page }, upper, lower) => {
   const lowerTop = await sizeOf(page, rowOf(lower), 'top');
   await expect.poll(() => sizeOf(page, rowOf(upper), 'top')).toBeLessThan(lowerTop);
 });
 
 Then(
-  'the tree node {string} begins where the label of {string} begins',
+  'the tree node {string} begins one step right of {string}',
   async ({ page }, child, parent) => {
-    const labelLeft = await sizeOf(page, `${rowOf(parent)} .sidebar-row-label`, 'left');
-    await expect.poll(() => sizeOf(page, `${rowOf(child)} > :first-child`, 'left')).toBe(labelLeft);
+    const parentLeft = await sizeOf(page, `${rowOf(parent)} > :first-child`, 'left');
+    await expect
+      .poll(() => sizeOf(page, `${rowOf(child)} > :first-child`, 'left'))
+      .toBe(parentLeft + TREE_STEP);
   }
 );
 
@@ -266,11 +293,13 @@ When('I pick the chart window {string}', async ({ page }, value) => {
     .selectOption(value);
 });
 
-When('I pick the chart resolution {string}', async ({ page }, value) => {
-  await page
-    .locator('.host-frame-body .section-heading select[name="resolution"]')
-    .first()
-    .selectOption(value);
+Then('the host page draws no chart resolution select', async ({ page }) => {
+  await expect(
+    page.locator('.host-frame-body .section-heading select[name="window"]').first()
+  ).toBeVisible();
+  await expect(
+    page.locator('.host-frame-body .section-heading select[name="resolution"]')
+  ).toHaveCount(0);
 });
 
 When('I toggle the {string} series of the {string} chart', async ({ page }, group, metric) => {

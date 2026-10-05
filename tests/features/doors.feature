@@ -7,7 +7,7 @@ Feature: doors
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3"
     Then the host column draws the groups "network, storage, provisioning, agent"
-    And the host column draws the rows "overview, machines, interfaces, links, hostname, pools, snapshots, arc, disks, recipes, provisioning-network, orchestration, api-keys, database, update"
+    And the host column draws the rows "overview, machines, interfaces, topology, addresses, routes, bandwidth, links, hostname, dns, pools, snapshots, arc, disks, recipes, provisioning-network, orchestration, api-keys, database, update"
     And the host column draws the "overview" row to "/hosts/3"
     And the host column draws the "machines" row to "/hosts/3/machines"
     And the host column draws the "interfaces" row to "/hosts/3/network/interfaces"
@@ -31,7 +31,7 @@ Feature: doors
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
-    Then the host column draws 9 page rows
+    Then the host column draws 12 page rows
     And the host column draws the groups "network, provisioning, agent"
     When I follow the host row "machines"
     Then the path is "/hosts/1/machines"
@@ -42,7 +42,7 @@ Feature: doors
     And the host answers the hosts-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3"
-    Then the host column draws the rows "overview, machines, interfaces, pools, snapshots, arc, disks, recipes, provisioning-network, orchestration, api-keys, database, update"
+    Then the host column draws the rows "overview, machines, interfaces, topology, addresses, bandwidth, pools, snapshots, arc, disks, recipes, provisioning-network, orchestration, api-keys, database, update"
     And the host column draws no "links" row
     And the host column draws no "system" group
     When I right-click the tree node "Zones"
@@ -66,7 +66,7 @@ Feature: doors
     And the tree menu offers no "interfaces"
     And the tree menu offers no "database"
 
-  Scenario: Host pages: a host that lists the address tokens and no `monitoring` reaches the Interfaces page by its row, with no View all to lead there
+  Scenario: Host pages: a host that lists the address tokens and no `monitoring` reaches the Addresses page by its row, with no Interfaces row and no View all to lead there
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -74,12 +74,13 @@ Feature: doors
     When I open "/hosts/4"
     Then I see "Bare"
     And the host page draws no "interfaces" panel
-    And the host column draws the "interfaces" row to "/hosts/4/network/interfaces"
+    And the host column draws no "interfaces" row
+    And the host column draws the "addresses" row to "/hosts/4/network/addresses"
     And the host column draws no "storage" group
-    When I follow the host row "interfaces"
-    Then the path is "/hosts/4/network/interfaces"
+    When I follow the host row "addresses"
+    Then the path is "/hosts/4/network/addresses"
     And the networking page draws its frame
-    And the host row "interfaces" is the active one
+    And the host row "addresses" is the active one
 
   Scenario: Host pages: the sidebar tree lists a host's machines alone under its node, hyperweaver-ui's shape, and the column opens each page
     Given the host answers the hosts fixture
@@ -169,7 +170,7 @@ Feature: doors
     And the host column draws its resize handle
     When I collapse the host column
     Then the host column is a rail
-    And the host column draws 15 page rows
+    And the host column draws 20 page rows
     And the host column draws the "links" row to "/hosts/3/network/links"
     When I load the page again
     Then the host column is a rail
@@ -187,7 +188,7 @@ Feature: doors
     And the host answers the agent-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/self"
-    Then the host column draws 9 page rows
+    Then the host column draws 12 page rows
     And the host column draws the "interfaces" row to "/hosts/self/network/interfaces"
     And the host column draws the "spaces" row to "/hosts/self/network/spaces"
     And the host column draws no "links" row
@@ -206,7 +207,7 @@ Feature: doors
     And the host answers the agent-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/self"
-    Then the host column draws 8 page rows
+    Then the host column draws 11 page rows
     And the host column draws no "spaces" row
     When I right-click the tree node "lab-1"
     Then the tree menu offers "overview"
@@ -218,7 +219,7 @@ Feature: doors
     And the host answers the zones-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/self"
-    Then the host column draws 10 page rows
+    Then the host column draws 15 page rows
     And the host column draws the "machines" row to "/hosts/self/machines"
     And the host column draws the "interfaces" row to "/hosts/self/network/interfaces"
     And the host column draws the "links" row to "/hosts/self/network/links"

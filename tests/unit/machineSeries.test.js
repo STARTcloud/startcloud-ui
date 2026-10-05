@@ -20,7 +20,6 @@ import {
   machineSeriesParams,
   machineUsageLatest,
   machineUsageSeries,
-  windowOf,
   zoneLinks,
   zoneUsageLatest,
   zoneUsageSeries,
@@ -29,6 +28,7 @@ import {
 const FIRST = '2026-09-27T12:00:00.000Z';
 const SECOND = '2026-09-27T12:00:05.000Z';
 const NOW = new Date('2026-09-27T12:15:00.000Z').getTime();
+const HELD = new Date('2026-09-27T12:10:00.000Z').getTime();
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 
@@ -45,26 +45,30 @@ describe('the series of a machine', () => {
     expect(machineSeriesOf('zone-diskio')).toBe(MACHINE_SERIES['zone-diskio']);
   });
 
-  it('asks for the last fifteen minutes of a zone by its name', () => {
-    expect(machineSeriesParams({ metric: 'zone-usage', name: 'web-1', now: NOW })).toEqual({
+  it("asks for the host's window of a zone by its name, since the newest held sample", () => {
+    const query = { window: '15min', interval: 5, newest: 0, now: NOW };
+    expect(machineSeriesParams({ metric: 'zone-usage', name: 'web-1', ...query })).toEqual({
       zone: 'web-1',
-      limit: 200,
       since: FIRST,
+      limit: 180,
     });
-    expect(machineSeriesParams({ metric: 'zone-diskio', name: 'web-1', now: NOW })).toEqual({
+    expect(
+      machineSeriesParams({ metric: 'zone-diskio', name: 'web-1', ...query, newest: HELD })
+    ).toEqual({
       zone: 'web-1',
-      limit: 500,
-      since: FIRST,
+      since: '2026-09-27T12:10:00.000Z',
+      limit: 180,
     });
   });
 
   it('asks for a link by the link and for a VirtualBox machine its one sample', () => {
-    expect(machineSeriesParams({ metric: 'link:vnic0', name: 'web-1', now: NOW })).toEqual({
+    const query = { window: '1hour', interval: 60, newest: 0, now: NOW };
+    expect(machineSeriesParams({ metric: 'link:vnic0', name: 'web-1', ...query })).toEqual({
       link: 'vnic0',
-      limit: 200,
-      since: FIRST,
+      since: '2026-09-27T11:15:00.000Z',
+      limit: 60,
     });
-    expect(machineSeriesParams({ metric: 'machine-usage', name: 'dev-1', now: NOW })).toEqual({
+    expect(machineSeriesParams({ metric: 'machine-usage', name: 'dev-1', ...query })).toEqual({
       machine_name: 'dev-1',
       limit: 1,
     });
@@ -75,37 +79,6 @@ describe('the series of a machine', () => {
       zoneLinks({ nics: [{ physical: 'vnic0' }, { physical: '' }, { physical: 'vnic1' }] })
     ).toEqual(['vnic0', 'vnic1']);
     expect(zoneLinks(null)).toEqual([]);
-  });
-});
-
-describe('windowOf', () => {
-  const EARLY = '2026-09-27T11:44:59.000Z';
-  const EDGE = '2026-09-27T11:45:05.000Z';
-
-  it('keeps the fifteen minutes before the newest sample held', () => {
-    const rows = [EARLY, EDGE, FIRST, SECOND].map(scan_timestamp => ({ scan_timestamp }));
-    expect(windowOf(rows).map(row => row.scan_timestamp)).toEqual([EDGE, FIRST, SECOND]);
-  });
-
-  it('measures the window of each entity from its own newest sample', () => {
-    const rows = [
-      { scan_timestamp: EARLY, dataset: 'rpool/a' },
-      { scan_timestamp: FIRST, dataset: 'rpool/a' },
-      { scan_timestamp: EARLY, dataset: 'rpool/b' },
-    ];
-    expect(windowOf(rows, 'dataset').map(row => [row.dataset, row.scan_timestamp])).toEqual([
-      ['rpool/a', FIRST],
-      ['rpool/b', EARLY],
-    ]);
-  });
-
-  it('keeps more than two hundred samples of one window and none of an empty series', () => {
-    const start = new Date(FIRST).getTime();
-    const rows = [...Array(300).keys()].map(index => ({
-      scan_timestamp: new Date(start + index * 1000).toISOString(),
-    }));
-    expect(windowOf(rows)).toHaveLength(300);
-    expect(windowOf([])).toEqual([]);
   });
 });
 

@@ -1,6 +1,6 @@
 Feature: networking writes
 
-  Scenario: Network pages: each row and each section behind the tokens its read names, a zoneweaver-agent host draws the Links and the Hostname rows and no Spaces row, the link families on Links, the hostname, the DNS and the hosts file on Hostname and DNS, the addresses on Interfaces
+  Scenario: Network pages: each row and each section behind the tokens its read names, a zoneweaver-agent host draws the Links, the Hostname, the Hosts file and the DNS rows and no Spaces row, the link families on Links, the hostname on Hostname, the hosts file on Hosts file, the DNS on DNS, the addresses on Addresses
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -9,8 +9,14 @@ Feature: networking writes
     When I open "/hosts/3/network/links"
     Then the section page "links" draws
     And the host column draws the "interfaces" row to "/hosts/3/network/interfaces"
+    And the host column draws the "topology" row to "/hosts/3/network/topology"
+    And the host column draws the "addresses" row to "/hosts/3/network/addresses"
+    And the host column draws the "routes" row to "/hosts/3/network/routes"
+    And the host column draws the "bandwidth" row to "/hosts/3/network/bandwidth"
     And the host column draws the "links" row to "/hosts/3/network/links"
     And the host column draws the "hostname" row to "/hosts/3/network/hostname"
+    And the host column draws the "hosts-file" row to "/hosts/3/network/hosts-file"
+    And the host column draws the "dns" row to "/hosts/3/network/dns"
     And the host column draws no "spaces" row
     And the networking page draws the "vnics" section
     And the networking page draws the "vlans" section
@@ -30,27 +36,42 @@ Feature: networking writes
     When I follow the host row "hostname"
     Then the section page "hostname" draws
     And the networking page draws the "hostname" section
-    And the networking page draws the "hosts-file" section
-    And the networking page draws the "dns" section
     And the networking page draws no "vnics" section
+    And the networking page draws no "hosts-file" section
+    And the networking page draws no "dns" section
+    When I follow the host row "hosts-file"
+    Then the section page "hosts-file" draws
+    And the networking page draws the "hosts-file" section
+    And the networking page draws no "hostname" section
     And the host was sent GET to "/api/agents/3/system/hosts"
-    When I follow the host row "interfaces"
+    When I follow the host row "dns"
+    Then the section page "dns" draws
+    And the networking page draws the "dns" section
+    And the networking page draws no "hosts-file" section
+    When I follow the host row "addresses"
     Then the networking page draws the "managed-addresses" section
     And the "managed-addresses" section of the networking page lists 3 rows
     And the host was sent GET to "/api/agents/3/network/addresses"
 
-  Scenario: Network pages: a hyperweaver-agent host draws the Interfaces and the Spaces rows alone, the addresses on Interfaces, the spaces on Spaces, and asks for no link family
+  Scenario: Network pages: a hyperweaver-agent host draws the Interfaces, Topology, Addresses, Bandwidth and Spaces rows alone, the addresses on Addresses, the spaces on Spaces, and asks for no link family
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/network/interfaces"
+    When I open "/hosts/1/network/addresses"
     Then the networking page draws the "managed-addresses" section
     And the "managed-addresses" section of the networking page lists 4 rows
+    And the host column draws the "interfaces" row to "/hosts/1/network/interfaces"
+    And the host column draws the "topology" row to "/hosts/1/network/topology"
+    And the host column draws the "addresses" row to "/hosts/1/network/addresses"
+    And the host column draws the "bandwidth" row to "/hosts/1/network/bandwidth"
     And the host column draws the "spaces" row to "/hosts/1/network/spaces"
+    And the host column draws no "routes" row
     And the host column draws no "links" row
     And the host column draws no "hostname" row
+    And the host column draws no "hosts-file" row
+    And the host column draws no "dns" row
     And the networking page draws no "vnics" section
     And the networking page draws no "spaces" section
     When I follow the host row "spaces"
@@ -72,7 +93,7 @@ Feature: networking writes
     And I search the networking page for "vnic1"
     Then the "vnics" section of the networking page lists 1 rows
     And the "vlans" section of the networking page says "filtered"
-    When I open "/hosts/3/network/interfaces"
+    When I open "/hosts/3/network/addresses"
     Then the "managed-addresses" section of the networking page lists 3 rows
     When I press "Control+k"
     And I search the networking page for "vnic1"
@@ -200,13 +221,13 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/aggregates" carrying "policy" as "L4"
     And the page raised 2 success notices
 
-  Scenario: Interfaces: an address is created over POST network/addresses with the address object named from the interface, enabled over its PUT and deleted behind the typed confirmation
+  Scenario: Addresses: an address is created over POST network/addresses with the address object named from the interface, enabled over its PUT and deleted behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/interfaces"
+    When I open "/hosts/3/network/addresses"
     Then the "managed-addresses" section row "vnic1/v4static" offers "enable"
     And the "managed-addresses" section row "vnic1/v4static" offers no "disable"
     And the "managed-addresses" section row "igb0/v4static" offers "disable"
@@ -229,14 +250,14 @@ Feature: networking writes
     Then the host was sent DELETE to "/api/agents/3/network/addresses/vnic1%2Fv4static"
     And the page raised 3 success notices
 
-  Scenario: Interfaces: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
+  Scenario: Addresses: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
-    When I open "/hosts/1/network/interfaces"
+    When I open "/hosts/1/network/addresses"
     Then the "managed-addresses" section of the networking page lists 4 rows
     When I press "disable" on the "managed-addresses" section row "10.0.0.11"
     Then the host was not sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
@@ -250,7 +271,7 @@ Feature: networking writes
     And the host was asked "/api/agents/1/network/addresses/Ethernet%2Fv4" with "address" as "10.0.0.12"
     And the host was asked "/api/agents/1/network/addresses/Ethernet%2Fv4" with "release" as "false"
 
-  Scenario: Hostname and DNS: the hostname is written over PUT network/hostname with apply_immediately as the box says
+  Scenario: Hostname: the hostname is written over PUT network/hostname with apply_immediately as the box says
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -266,13 +287,13 @@ Feature: networking writes
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/network/hostname" 2 times
 
-  Scenario: Hostname and DNS: the DNS is written over PUT system/dns as the parsed members and, behind the switch, as the raw file
+  Scenario: DNS: the DNS is written over PUT system/dns as the parsed members and, behind the switch, as the raw file
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/hostname"
+    When I open "/hosts/3/network/dns"
     Then the networking field "dns-domain" reads ""
     When I fill the networking field "dns-domain" with "lan"
     And I press the "dns" section's "save-dns" tool
@@ -285,13 +306,13 @@ Feature: networking writes
     Then the host was sent PUT to "/api/agents/3/system/dns" carrying "raw" as "nameserver 9.9.9.9"
     And the page raised 2 success notices
 
-  Scenario: Hostname and DNS: the hosts file lists its entries as rows and is written over PUT system/hosts as the raw file behind the switch
+  Scenario: Hosts file: the hosts file lists its entries as rows and is written over PUT system/hosts as the raw file behind the switch
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/hostname"
+    When I open "/hosts/3/network/hosts-file"
     Then the "hosts-file" section of the networking page lists 2 rows
     And I see "/etc/inet/hosts"
     When I press the "hosts-file" section's "add-entry" tool
@@ -362,7 +383,7 @@ Feature: networking writes
     Then the "spaces" section of the networking page lists 3 rows
     And the "spaces" section offers no "create-hostonly" tool
     And the "spaces" section row "NatNetwork" offers no "edit"
-    When I open "/hosts/1/network/interfaces"
+    When I open "/hosts/1/network/addresses"
     Then the "managed-addresses" section of the networking page lists 4 rows
     And the "managed-addresses" section offers no "create-address" tool
     And the "managed-addresses" section row "10.0.0.11" offers no "disable"
@@ -387,7 +408,7 @@ Feature: networking writes
     Then the "hostname" section of the networking management is folded
     When I load the page again
     Then the "hostname" section of the networking management is folded
-    When I open "/hosts/3/network/interfaces"
+    When I open "/hosts/3/network/topology"
     Then the "topology" section of the networking management is open
     When I fold the "topology" section of the networking management
     And I load the page again
@@ -399,7 +420,7 @@ Feature: networking writes
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/interfaces"
+    When I open "/hosts/3/network/topology"
     Then the networking page draws the "topology" section
     And the topology draws 3 consumers
     And the topology draws the consumer "web-1"
@@ -424,7 +445,7 @@ Feature: networking writes
     And the host answers the hosts-networking fixture
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/network/interfaces"
+    When I open "/hosts/1/network/topology"
     Then the topology draws 2 consumers
     And the topology draws 6 networks
     And the topology draws the network "bridged|Ethernet"

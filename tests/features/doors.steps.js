@@ -68,6 +68,10 @@ Then('the host column draws the {string} row to {string}', async ({ page }, key,
   await expect(rowOf(page, key).locator('svg')).toHaveCount(1);
 });
 
+Then('the host column row {string} reads {string}', async ({ page }, key, text) => {
+  await expect(rowOf(page, key).locator('.host-nav-row-label')).toHaveText(text);
+});
+
 Then('the host column draws no {string} row', async ({ page }, key) => {
   await expect(rowOf(page, 'overview')).toBeVisible();
   await expect(rowOf(page, key)).toHaveCount(0);

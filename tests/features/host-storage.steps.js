@@ -49,10 +49,6 @@ When('I pick the storage chart window {string}', async ({ page }, value) => {
   await frameOf(page).locator('select[name="window"]').selectOption(value);
 });
 
-When('I pick the storage chart resolution {string}', async ({ page }, value) => {
-  await frameOf(page).locator('select[name="resolution"]').selectOption(value);
-});
-
 When('I order the device charts by {string}', async ({ page }, value) => {
   await frameOf(page).locator('select[name="chart-sort"]').selectOption(value);
 });

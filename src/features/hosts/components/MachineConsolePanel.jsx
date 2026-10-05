@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 
@@ -16,8 +16,9 @@ import { consoleParamOf, hostHasConsoles } from '../utils/consoles';
 
 import { startRdpPreview, startSshPreview, startVncPreview } from './consoleActions';
 import ConsoleDisplay from './ConsoleDisplay';
-import VncModal from './VncModal';
 import ZloginModal from './ZloginModal';
+
+const VncModal = lazy(() => import('./VncModal'));
 
 const FOLD = 'machine-console';
 
@@ -269,38 +270,42 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
         setModalReadOnly={setModalReadOnly}
         vncOffered={vncOffered}
       />
-      <VncModal
-        showVncConsole={vnc.showVncConsole}
-        closeVncConsole={vnc.closeVncConsole}
-        isVncFullScreen={vnc.isVncFullScreen}
-        openVncFullScreen={() => vnc.setIsVncFullScreen(!vnc.isVncFullScreen)}
-        vncLoadError={vnc.vncLoadError}
-        openDirectVncFallback={vnc.openDirectVncFallback}
-        setVncLoadError={vnc.setVncLoadError}
-        id={id}
-        name={name}
-        vncReconnectKey={vnc.vncReconnectKey}
-        modalVncRef={modalVncRef}
-        modalVncViewOnly={modalVncViewOnly}
-        setModalVncViewOnly={setModalVncViewOnly}
-        handleVncModalPaste={vnc.handleVncModalPaste}
-        handleVncConsole={vnc.handleVncConsole}
-        handleKillVncSession={vnc.handleKillVncSession}
-        user={user}
-        machineDetails={machineDetails}
-        setShowZloginConsole={zlogin.setShowZloginConsole}
-        handleZloginConsole={zlogin.handleZloginConsole}
-        setError={setError}
-        loading={loading}
-        loadingVnc={vnc.loadingVnc}
-        vncSettings={vnc.vncSettings}
-        handleVncQualityChange={vnc.handleVncQualityChange}
-        handleVncCompressionChange={vnc.handleVncCompressionChange}
-        handleVncResizeChange={vnc.handleVncResizeChange}
-        handleVncShowDotChange={vnc.handleVncShowDotChange}
-        handleVncClipboardPaste={vnc.handleVncClipboardPaste}
-        zloginOffered={zloginOffered}
-      />
+      {vnc.showVncConsole ? (
+        <Suspense fallback={null}>
+          <VncModal
+            showVncConsole={vnc.showVncConsole}
+            closeVncConsole={vnc.closeVncConsole}
+            isVncFullScreen={vnc.isVncFullScreen}
+            openVncFullScreen={() => vnc.setIsVncFullScreen(!vnc.isVncFullScreen)}
+            vncLoadError={vnc.vncLoadError}
+            openDirectVncFallback={vnc.openDirectVncFallback}
+            setVncLoadError={vnc.setVncLoadError}
+            id={id}
+            name={name}
+            vncReconnectKey={vnc.vncReconnectKey}
+            modalVncRef={modalVncRef}
+            modalVncViewOnly={modalVncViewOnly}
+            setModalVncViewOnly={setModalVncViewOnly}
+            handleVncModalPaste={vnc.handleVncModalPaste}
+            handleVncConsole={vnc.handleVncConsole}
+            handleKillVncSession={vnc.handleKillVncSession}
+            user={user}
+            machineDetails={machineDetails}
+            setShowZloginConsole={zlogin.setShowZloginConsole}
+            handleZloginConsole={zlogin.handleZloginConsole}
+            setError={setError}
+            loading={loading}
+            loadingVnc={vnc.loadingVnc}
+            vncSettings={vnc.vncSettings}
+            handleVncQualityChange={vnc.handleVncQualityChange}
+            handleVncCompressionChange={vnc.handleVncCompressionChange}
+            handleVncResizeChange={vnc.handleVncResizeChange}
+            handleVncShowDotChange={vnc.handleVncShowDotChange}
+            handleVncClipboardPaste={vnc.handleVncClipboardPaste}
+            zloginOffered={zloginOffered}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 };

@@ -271,12 +271,9 @@ StatusDot.propTypes = {
   status: PropTypes.string,
 };
 
-const NO_INSET = { icons: 0, steps: 0 };
+const NO_INSET = { steps: 0 };
 
-const insetUnder = (node, inset) => ({
-  icons: inset.icons + (node.icon ? 1 : 0),
-  steps: inset.steps + (node.status || !node.icon ? 1 : 0),
-});
+const insetUnder = inset => ({ steps: inset.steps + 1 });
 
 const TreeNode = ({ node, inset, tree, current }) => {
   const navigate = useNavigate();
@@ -289,7 +286,6 @@ const TreeNode = ({ node, inset, tree, current }) => {
   const fresh = Boolean(kids) && (tree.seen[node.key] || 0) === (node.revision || 0);
   const { load } = tree;
   const row = useRef(null);
-  useCssVar(row, '--sidebar-icons', String(inset.icons));
   useCssVar(row, '--sidebar-steps', String(inset.steps));
 
   useEffect(() => {
@@ -351,7 +347,7 @@ const TreeNode = ({ node, inset, tree, current }) => {
             <TreeNode
               key={child.key}
               node={child}
-              inset={insetUnder(node, inset)}
+              inset={insetUnder(inset)}
               tree={tree}
               current={current}
             />
@@ -365,7 +361,6 @@ const TreeNode = ({ node, inset, tree, current }) => {
 TreeNode.propTypes = {
   node: nodeShape.isRequired,
   inset: PropTypes.shape({
-    icons: PropTypes.number.isRequired,
     steps: PropTypes.number.isRequired,
   }).isRequired,
   tree: PropTypes.shape({
@@ -510,12 +505,12 @@ const sizeShape = PropTypes.shape({
  * tree entries (a hook answering `{ nodes, menu, labelKey, dialogs }`,
  * the `labelKey` drawn as a section heading above the nodes when the
  * answer carries one, `dialogs` the node a feature draws the dialogs of
- * its menu's rows in, nodes with a caret at the row's right end, a
- * child's row beginning where its parent's label begins, its left
- * padding the 20px gutter plus, for every node above it, 28px for the
- * icon that node draws, 18px for its status dot and one 18px step for a
- * node that draws neither, so a machine's dot sits under its host's name
- * and no child begins left of its parent's label,
+ * its menu's rows in, nodes with a caret at the row's right end, every
+ * child row one 18px step right of its parent's, as a section row's
+ * children are, its left padding the 20px gutter plus 18px for every
+ * node above it, a status dot filling the 18px slot a glyph fills, so
+ * every child's glyph, dot and label sit one step right of its
+ * parent's,
  * `children()`
  * called on
  * expand and for the node the current route descends from (its `to` a

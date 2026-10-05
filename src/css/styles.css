@@ -335,6 +335,17 @@ button::-moz-focus-inner {
   margin-bottom: 0;
 }
 
+.modal-dialog.modal-zoomed {
+  width: 95vw;
+  max-width: 95vw;
+  height: 95vh;
+  margin: 2.5vh auto;
+}
+
+.modal-dialog.modal-zoomed .modal-content {
+  height: 100%;
+}
+
 .lang-row-code {
   width: 26px;
   flex-shrink: 0;
@@ -564,7 +575,7 @@ button::-moz-focus-inner {
   width: 100%;
   min-width: 0;
   padding: 6px 20px;
-  padding-left: calc(20px + var(--sidebar-icons, 0) * 28px + var(--sidebar-steps, 0) * 18px);
+  padding-left: calc(20px + var(--sidebar-steps, 0) * 18px);
   border: 0;
   background: transparent;
   color: var(--bs-body-color);
@@ -621,6 +632,7 @@ button::-moz-focus-inner {
 .sidebar-dot {
   width: 8px;
   height: 8px;
+  margin: 0 5px;
   flex-shrink: 0;
   border-radius: 50%;
   border: 1.5px solid var(--bs-secondary-color);
@@ -3044,14 +3056,6 @@ button::-moz-focus-inner {
   gap: 5px;
 }
 
-.navbar .cluster-btn.action-menu-toggle {
-  width: auto;
-  padding: 0 8px;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .lang-code {
   font-size: 11px;
   font-weight: 700;
@@ -4233,7 +4237,6 @@ a.stat-card:focus-visible {
 
 .boot-order-row {
   cursor: grab;
-  max-width: 320px;
 }
 
 .device-child-form {

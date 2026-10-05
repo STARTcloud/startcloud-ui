@@ -63,6 +63,10 @@ Then('the agent page notes no {string}', async ({ page }, note) => {
   await expect(frameOf(page).locator(`[data-note="${note}"]`)).toHaveCount(0);
 });
 
+Then('the agent page links to {string}', async ({ page }, href) => {
+  await expect(frameOf(page).locator(`a[href="${href}"]`)).toBeVisible();
+});
+
 Then('the agent page offers {string}', async ({ page }, action) => {
   await expect(frameOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();
 });

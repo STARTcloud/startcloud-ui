@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import AuthShell from '../../../components/common/AuthShell';
 
 /**
- * `/activated`: "Device connected" and "You can close this window and
- * return to your device."
+ * `/activated`: the tab closes itself once drawn, and "Device connected"
+ * with "You can close this window and return to your device." stands for
+ * a browser that refuses the close.
  */
 const DeviceActivatedPage = () => {
   const { t } = useTranslation(['auth']);
@@ -13,6 +14,10 @@ const DeviceActivatedPage = () => {
   useEffect(() => {
     document.title = t('device.connected');
   }, [t]);
+
+  useEffect(() => {
+    window.close();
+  }, []);
 
   return <AuthShell title={t('device.connected')} subtitle={t('device.close')} />;
 };

@@ -6,13 +6,18 @@ import { FaCaretDown, FaCaretRight, FaDesktop, FaServer } from 'react-icons/fa6'
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { ColumnContext } from '../../../contexts/ColumnContext';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useCssVar } from '../../../hooks/useCssVar';
+import { useConfigTitles } from '../hooks/useConfigTitles';
 import { useHostRow } from '../hooks/useHostRow';
 import { machinePagesFor } from '../machinePages';
 import { HOST_PAGES, hostPagesFor } from '../pages';
+import { configNamesOf } from '../utils/configNodes';
 import { nounKeyOf } from '../utils/machines';
 
 const ROW_SELECTOR = '[data-nav-row]';
+const CONFIG_PREFIX = 'config:';
+const NO_NAMES = [];
 const OPEN_KEY = 'hostnav_open';
 const WIDTH_KEY = 'hostnav_width';
 const MINIMIZED_KEY = 'hostnav_minimized';
@@ -246,7 +251,9 @@ const machineGroups = ({ server, id, name, role }) =>
  * A host's rows are `hostPagesFor`'s groups: a flat group is one root
  * row, every other a parent row whose caret folds its pages, open by
  * default and opened by a route under it, the open set kept under
- * `hostnav_open`. A machine's rows are `machinePagesFor`'s pages as root
+ * `hostnav_open`; a configuration row reads its file's schema title from
+ * `useConfigTitles` and the file's name until the schema answers. A
+ * machine's rows are `machinePagesFor`'s pages as root
  * rows. The top row is the column's glyph, a server for a host and a
  * desktop for a machine, then the label, Host or the machine noun, in
  * the rows' text style; the glyph folds the column to a rail of row
@@ -265,7 +272,9 @@ const HostNav = ({ id, name = '', role = '', children }) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const slot = useContext(ColumnContext);
+  const status = useStatus();
   const server = useHostRow(id);
+  const titles = useConfigTitles(status, id, name ? NO_NAMES : configNamesOf(server));
   const opened = useOpenKeys();
   const { asideRef, width, minimized, toggleMinimized, startResize } = useNavSize();
   const rowsRef = useRef(null);
@@ -278,8 +287,16 @@ const HostNav = ({ id, name = '', role = '', children }) => {
   );
 
   const labelOf = useCallback(
-    entry => (entry.label === undefined ? t(entry.labelKey, { noun }) : entry.label),
-    [t, noun]
+    entry => {
+      if (entry.label === undefined) {
+        return t(entry.labelKey, { noun });
+      }
+      if (entry.key.startsWith(CONFIG_PREFIX)) {
+        return titles[entry.key.slice(CONFIG_PREFIX.length)] || entry.label;
+      }
+      return entry.label;
+    },
+    [t, noun, titles]
   );
 
   const onKeyDown = event => {

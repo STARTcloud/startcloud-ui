@@ -46,9 +46,15 @@ describe('HOST_PAGES', () => {
     };
     expect(segmentsOf('network')).toEqual([
       'network/interfaces',
+      'network/topology',
+      'network/addresses',
+      'network/routes',
+      'network/bandwidth',
       'network/links',
       'network/spaces',
       'network/hostname',
+      'network/hosts-file',
+      'network/dns',
     ]);
     expect(segmentsOf('storage')).toEqual([
       'storage/pools',
@@ -116,12 +122,33 @@ describe('hostPagesFor', () => {
     expect(pagesOf(rowOf(['machines']), 1).provisioning).toEqual(['orchestration']);
   });
 
-  it('offers the Interfaces row behind any of monitoring, ip-addresses, vnics and network-spaces', () => {
-    expect(pagesOf(rowOf(['monitoring']), 1).network).toEqual(['interfaces']);
-    expect(pagesOf(rowOf(['ip-addresses']), 1).network).toEqual(['interfaces']);
-    expect(pagesOf(rowOf(['network-spaces']), 1).network).toEqual(['interfaces', 'spaces']);
-    expect(pagesOf(rowOf(['vnics']), 1).network).toEqual(['interfaces', 'links', 'hostname']);
-    expect(pagesOf(rowOf(['hosts-file']), 1).network).toEqual(['hostname']);
+  it('offers each network row behind the tokens of the reads its page draws', () => {
+    expect(pagesOf(rowOf(['monitoring']), 1).network).toEqual([
+      'interfaces',
+      'topology',
+      'addresses',
+      'bandwidth',
+    ]);
+    expect(pagesOf(rowOf(['ip-addresses']), 1).network).toEqual(['addresses']);
+    expect(pagesOf(rowOf(['network-spaces']), 1).network).toEqual(['topology', 'spaces']);
+    expect(pagesOf(rowOf(['vnics']), 1).network).toEqual([
+      'topology',
+      'addresses',
+      'links',
+      'hostname',
+      'dns',
+    ]);
+    expect(pagesOf(rowOf(['monitoring', 'vnics']), 1).network).toEqual([
+      'interfaces',
+      'topology',
+      'addresses',
+      'routes',
+      'bandwidth',
+      'links',
+      'hostname',
+      'dns',
+    ]);
+    expect(pagesOf(rowOf(['hosts-file']), 1).network).toEqual(['hosts-file']);
     expect(pagesOf(rowOf(['tasks']), 1).network).toBeUndefined();
   });
 
@@ -231,9 +258,11 @@ describe('hostPagesFor', () => {
       }),
     ]);
     expect(groups[2].pages.map(page => [page.key, page.to, page.end])).toEqual([
-      ['interfaces', '/hosts/7/network/interfaces', false],
+      ['topology', '/hosts/7/network/topology', false],
+      ['addresses', '/hosts/7/network/addresses', false],
       ['links', '/hosts/7/network/links', false],
       ['hostname', '/hosts/7/network/hostname', false],
+      ['dns', '/hosts/7/network/dns', false],
     ]);
   });
 

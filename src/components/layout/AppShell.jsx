@@ -395,6 +395,22 @@ const appRowsFor = ({
 };
 
 /**
+ * The double-click on a modal's header that zooms the dialog: takes the
+ * `dblclick` event, leaves one outside a `.modal-header` or on a button,
+ * link, input, select or textarea inside it alone, and otherwise toggles
+ * `modal-zoomed` on the header's `.modal-dialog`.
+ *
+ * @param {MouseEvent} event - The document's `dblclick` event
+ */
+const zoomModalOnHeaderDoubleClick = event => {
+  const header = event.target.closest('.modal-header');
+  if (!header || event.target.closest('button, a, input, select, textarea')) {
+    return;
+  }
+  header.closest('.modal-dialog').classList.toggle('modal-zoomed');
+};
+
+/**
  * The whole chrome around the routes, drawn from the host's status and
  * the props the app hands it: the sidebar while `sidebar` carries
  * entries, the header with the brand (in the sidebar's top while one
@@ -403,8 +419,10 @@ const appRowsFor = ({
  * handed to the pages through `ColumnContext` so a host's column stands
  * under the header and above the footer the way the sidebar stands beside
  * the stack, the scroll region with the page inside its own error
- * boundary, and the footer while the host lists `footer`, with its pane
- * while `footerPane` answers a view.
+ * boundary, the footer while the host lists `footer`, with its pane
+ * while `footerPane` answers a view, and the double-click on any modal's
+ * header that zooms the dialog to 95% of the viewport, a second one
+ * returning it.
  *
  * The crumbs come from the route. With a column: the crumbs of the
  * sidebar row the route matches, else the crumbs `routeCrumbParent`
@@ -509,6 +527,11 @@ const AppShell = ({
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
   }, [pathname]);
+
+  useEffect(() => {
+    document.addEventListener('dblclick', zoomModalOnHeaderDoubleClick);
+    return () => document.removeEventListener('dblclick', zoomModalOnHeaderDoubleClick);
+  }, []);
 
   const changeLanguage = async lng => {
     account.savePreferences({ language: lng });

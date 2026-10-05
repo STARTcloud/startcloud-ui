@@ -1,12 +1,5 @@
-import { AttachAddon } from '@xterm/addon-attach';
-import { ClipboardAddon } from '@xterm/addon-clipboard';
-import { FitAddon } from '@xterm/addon-fit';
-import { SearchAddon } from '@xterm/addon-search';
-import { SerializeAddon } from '@xterm/addon-serialize';
-import { WebLinksAddon } from '@xterm/addon-web-links';
-import { WebglAddon } from '@xterm/addon-webgl';
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
@@ -17,7 +10,37 @@ import { loadTerminalPrefs } from '../utils/terminalPrefs';
 
 const zoneKeyOf = (id, zoneName) => (id && zoneName ? `${id}:${zoneName}` : null);
 
-const webglOrNull = () => {
+let ready = null;
+
+/**
+ * The xterm addon classes the zone terminals are built from, fetched the
+ * first time a zlogin session is started or adopted and never with the
+ * page, once per page.
+ *
+ * @returns {Promise<Object>} `AttachAddon`, `ClipboardAddon`, `FitAddon`, `SearchAddon`, `SerializeAddon`, `WebLinksAddon` and `WebglAddon`
+ */
+const loadAddonClasses = () => {
+  ready ||= Promise.all([
+    import('@xterm/addon-attach'),
+    import('@xterm/addon-clipboard'),
+    import('@xterm/addon-fit'),
+    import('@xterm/addon-search'),
+    import('@xterm/addon-serialize'),
+    import('@xterm/addon-web-links'),
+    import('@xterm/addon-webgl'),
+  ]).then(([attach, clipboard, fit, search, serialize, links, webgl]) => ({
+    AttachAddon: attach.AttachAddon,
+    ClipboardAddon: clipboard.ClipboardAddon,
+    FitAddon: fit.FitAddon,
+    SearchAddon: search.SearchAddon,
+    SerializeAddon: serialize.SerializeAddon,
+    WebLinksAddon: links.WebLinksAddon,
+    WebglAddon: webgl.WebglAddon,
+  }));
+  return ready;
+};
+
+const webglOrNull = WebglAddon => {
   try {
     return new WebglAddon();
   } catch (error) {
@@ -68,6 +91,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
   const starting = useRef(new Set());
   const history = useRef(new Map());
   const addons = useRef(new Map());
+  const [classes, setClasses] = useState(null);
 
   useEffect(
     () => () => {
@@ -78,19 +102,31 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
     [signedIn]
   );
 
-  const addonsOf = useCallback(zoneKey => {
-    if (!addons.current.has(zoneKey)) {
-      addons.current.set(zoneKey, {
-        fit: new FitAddon(),
-        links: new WebLinksAddon(),
-        serialize: new SerializeAddon(),
-        clipboard: new ClipboardAddon(),
-        search: new SearchAddon(),
-        webgl: webglOrNull(),
-      });
-    }
-    return addons.current.get(zoneKey);
+  const ensureClasses = useCallback(async () => {
+    const loaded = await loadAddonClasses();
+    setClasses(current => current || loaded);
+    return loaded;
   }, []);
+
+  const addonsOf = useCallback(
+    zoneKey => {
+      if (!classes) {
+        return null;
+      }
+      if (!addons.current.has(zoneKey)) {
+        addons.current.set(zoneKey, {
+          fit: new classes.FitAddon(),
+          links: new classes.WebLinksAddon(),
+          serialize: new classes.SerializeAddon(),
+          clipboard: new classes.ClipboardAddon(),
+          search: new classes.SearchAddon(),
+          webgl: webglOrNull(classes.WebglAddon),
+        });
+      }
+      return addons.current.get(zoneKey);
+    },
+    [classes]
+  );
 
   const getZoneAddons = useCallback(
     (id, zoneName, readOnly = false) => {
@@ -99,10 +135,13 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         return null;
       }
       const held = addonsOf(zoneKey);
+      if (!held) {
+        return null;
+      }
       const socket = sockets.current.get(zoneKey);
       const attach =
         socket && socket.readyState === WebSocket.OPEN
-          ? new AttachAddon(socket, { bidirectional: !readOnly })
+          ? new classes.AttachAddon(socket, { bidirectional: !readOnly })
           : null;
       return [
         held.fit,
@@ -114,7 +153,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         held.webgl,
       ].filter(Boolean);
     },
-    [addonsOf]
+    [addonsOf, classes]
   );
 
   const fitZoneTerminal = useCallback((id, zoneName) => {
@@ -175,6 +214,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         if (!session?.id) {
           return null;
         }
+        await ensureClasses();
         await openSocket({
           status,
           id,
@@ -195,7 +235,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         starting.current.delete(zoneKey);
       }
     },
-    [status]
+    [status, ensureClasses]
   );
 
   const initializeSessionFromExisting = useCallback(
@@ -205,6 +245,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         return;
       }
       try {
+        await ensureClasses();
         await openSocket({
           status,
           id,
@@ -221,7 +262,7 @@ const ZoneTerminalProvider = ({ signedIn, children }) => {
         });
       }
     },
-    [status]
+    [status, ensureClasses]
   );
 
   const forceZoneSessionCleanup = useCallback(

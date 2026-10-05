@@ -262,8 +262,11 @@ A client keeps of a frame the samples newer than the newest it holds of
 that host and, of a network or a pool sample, of that interface or pool,
 because a read that overlaps the stream and a frame replayed from the
 ring must add nothing twice. The topic has no snapshot event: on connect
-and on `reset` a chart reads its history again, `since` the start of its
-window and `limit` the samples of its resolution. A UI backend lists
+and on `reset` a chart reads its history again, `since` the newest
+sample the browser holds of that host and series, or the start of its
+window while it holds none, and `limit` the samples of its window, so a
+person costs the agent one request a series and the samples already
+held are never asked for twice. A UI backend lists
 `monitoring` in `events.topics` only while an agent behind it lists the
 feature token `monitoring`. An agent that keeps no history and takes a
 sample only when it is asked sends nothing on the topic; its charts draw

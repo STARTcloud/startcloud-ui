@@ -70,8 +70,9 @@ export const serviceAction = (status, id, fmri, action) =>
 
 /**
  * The processes of a host, `GET system/processes`, hyperweaver-ui's
- * read: five thousand at most, the command pattern as `command`, the
- * zone, the user and `detailed`, each only where given.
+ * read: a thousand at most, the ceiling the agent accepts, the command
+ * pattern as `command`, the zone, the user and `detailed`, each only
+ * where given.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -86,7 +87,7 @@ export const fetchProcesses = (
   client
     .get(agentPath(status, id, 'system/processes'), {
       params: {
-        limit: 5000,
+        limit: 1000,
         ...(command ? { command } : {}),
         ...(zone ? { zone } : {}),
         ...(user ? { user } : {}),

@@ -62,7 +62,9 @@ Feature: agent-settings
     And the host answers the hosts-api-keys fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/agent/update"
-    And I press the agent page's "settings-update" action
+    Then the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md"
+    When I press the agent page's "settings-update" action
     And I confirm the open dialog with "update"
     Then the host was sent POST to "/api/agents/1/app/updates/apply" 1 times
     And I see "Update to 1.3.0 queued"

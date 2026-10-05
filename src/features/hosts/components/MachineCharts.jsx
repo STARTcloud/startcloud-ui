@@ -334,11 +334,12 @@ UsageCharts.propTypes = {
  * the megabytes a second over its adapters and over its disks, from one
  * read of the one sample the agent takes; while the guest additions do
  * not answer the memory card says they are needed in the chart's place.
- * Every series is read over the last fifteen minutes once as its card
- * draws, again on the page's Refresh, on the card's own and when the
- * event stream opens fresh, and never on a clock; what is held of it is
- * the fifteen minutes before its newest sample, the window rolling as
- * the series grows. A read that failed draws the agent's own message in
+ * Every series opens from the browser's ring and is read over the
+ * host's window once as its card draws, again on the page's Refresh, on
+ * the card's own, when the host's window changes and when the event
+ * stream opens fresh, and never on a clock; what is drawn of it is the
+ * window before its newest sample, rolling as the series grows. A read
+ * that failed draws the agent's own message in
  * hyperweaver-ui's sentence, under the chart it failed for, and in the
  * volumes' place while no volume is held. hyperweaver-ui read each
  * series every thirty seconds, and that clock is not carried over.

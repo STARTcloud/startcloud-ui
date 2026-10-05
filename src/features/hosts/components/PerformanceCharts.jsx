@@ -19,10 +19,10 @@ const toggled = (visibility, metric, key) => ({
  * The performance charts of the host page, behind `monitoring`: the
  * heading and under it one card a chart in hyperweaver-ui's order, the
  * storage I/O and the ZFS ARC only on a host whose own row lists `zfs`
- * too, then the network, the CPU and the memory, every chart read over
- * the time window and at the resolution the page's heading row holds.
- * The groups of series a person hid are the page's own and are kept
- * while the page is drawn. hyperweaver-ui's refresh interval and its
+ * too, then the network, the CPU and the memory, every chart drawn from
+ * the browser's ring and read over the time window the page's heading
+ * row holds. The groups of series a person hid are the page's own and
+ * are kept while the page is drawn. hyperweaver-ui's refresh interval and its
  * Auto and Manual switch are not carried over, because the series grow
  * by the samples the `monitoring` topic pushes and nothing reads on a
  * clock.

@@ -67,7 +67,8 @@ export const updateStatus = () => client.get('/api/system/update-check');
 /**
  * The serving backend's own update pair, the shared `UpdatePage`'s
  * adapter: `check` is `GET /api/app/updates/check`, answered
- * `{ current_version, latest_version, update_available }`, and `apply`
+ * `{ current_version, latest_version, update_available }` and, where the
+ * backend holds them, `release_url`, `release_date` and `changelog`, and `apply`
  * is `POST /api/app/updates/apply`, answered
  * `{ message, task_id, target_version }`.
  */

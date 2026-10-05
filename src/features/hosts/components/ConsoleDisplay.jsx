@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import InactiveConsoleDisplay from './InactiveConsoleDisplay';
 import SshConsoleDisplay from './SshConsoleDisplay';
-import VncConsoleDisplay from './VncConsoleDisplay';
 import ZloginConsoleDisplay from './ZloginConsoleDisplay';
 
 const RdpConsoleDisplay = lazy(() => import('./RdpConsoleDisplay'));
+const VncConsoleDisplay = lazy(() => import('./VncConsoleDisplay'));
 
 /**
  * Which console the section draws, hyperweaver-ui's rule: the RDP
@@ -43,8 +43,9 @@ export const consoleShown = ({ hasVnc, hasZlogin, hasSsh, hasRdp, activeConsoleT
  * The console section of the machine page, hyperweaver-ui's console
  * display: the active console, VNC, zlogin, SSH or RDP, by
  * `consoleShown`, or the inactive display with the start buttons; the
- * RDP client is loaded only when an RDP console opens, its WASM never
- * with the page.
+ * RDP display and the VNC display are each loaded only when their
+ * console opens, the RDP client's WASM and the VNC viewer never with the
+ * page.
  */
 const ConsoleDisplay = ({
   id,
@@ -151,25 +152,38 @@ const ConsoleDisplay = ({
     );
   }
   if (shown === 'vnc') {
+    const fallback = (
+      <div
+        className="hw-console-container d-flex align-items-center justify-content-center"
+        data-console="vnc-loading"
+      >
+        <div className="text-center text-white-50">
+          <span className="spinner-border" role="status" aria-hidden="true" />
+          <p className="mt-2 small">{t('pages.loading')}</p>
+        </div>
+      </div>
+    );
     return (
-      <VncConsoleDisplay
-        {...common}
-        previewVncViewOnly={previewVncViewOnly}
-        vncReconnectKey={vncReconnectKey}
-        vncSettings={vncSettings}
-        vncRef={previewVncRef}
-        setPreviewVncViewOnly={setPreviewVncViewOnly}
-        handleVncConsole={handleVncConsole}
-        handleKillVncSession={handleKillVncSession}
-        handleVncQualityChange={handleVncQualityChange}
-        handleVncCompressionChange={handleVncCompressionChange}
-        handleVncResizeChange={handleVncResizeChange}
-        handleVncShowDotChange={handleVncShowDotChange}
-        handleVncClipboardPaste={handleVncClipboardPaste}
-        hasZlogin={hasZlogin}
-        hasSsh={hasSsh}
-        hasRdp={hasRdp}
-      />
+      <Suspense fallback={fallback}>
+        <VncConsoleDisplay
+          {...common}
+          previewVncViewOnly={previewVncViewOnly}
+          vncReconnectKey={vncReconnectKey}
+          vncSettings={vncSettings}
+          vncRef={previewVncRef}
+          setPreviewVncViewOnly={setPreviewVncViewOnly}
+          handleVncConsole={handleVncConsole}
+          handleKillVncSession={handleKillVncSession}
+          handleVncQualityChange={handleVncQualityChange}
+          handleVncCompressionChange={handleVncCompressionChange}
+          handleVncResizeChange={handleVncResizeChange}
+          handleVncShowDotChange={handleVncShowDotChange}
+          handleVncClipboardPaste={handleVncClipboardPaste}
+          hasZlogin={hasZlogin}
+          hasSsh={hasSsh}
+          hasRdp={hasRdp}
+        />
+      </Suspense>
     );
   }
   return <InactiveConsoleDisplay {...common} />;

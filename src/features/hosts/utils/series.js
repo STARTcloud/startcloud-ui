@@ -1,10 +1,11 @@
-import { MAX_POINTS } from './monitoring';
+import { MAX_POINTS, WIDEST_MINUTES } from './monitoring';
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 const BITS = 8;
 const MEGA = 1000000;
 const PERCENT = 100;
+const MINUTE_MS = 60 * 1000;
 
 const round = (value, digits) => parseFloat(value.toFixed(digits));
 
@@ -50,11 +51,12 @@ const capped = (rows, keyOf, limit) => {
 };
 
 /**
- * New samples merged into the ones held, a series only ever moving
- * forward: a row is added when it is newer than the newest row held of
- * its entity, so a read that overlaps what is held and a sample pushed
- * twice add nothing; the rows of one entity stay oldest first and the
- * `limit` newest of each are kept, the 180 points hyperweaver-ui kept.
+ * New samples merged into the ones held: a row is added when no row of
+ * its entity is held at its instant, so a read that overlaps what is
+ * held, a history read older than a pushed sample and a sample pushed
+ * twice add only what is new; the rows come out oldest first and the
+ * `limit` newest of each entity are kept, the 180 points hyperweaver-ui
+ * kept.
  *
  * @param {Array<Object>} held - The rows held, oldest first per entity
  * @param {Array<Object>} rows - The rows read or pushed, in any order
@@ -63,22 +65,20 @@ const capped = (rows, keyOf, limit) => {
  */
 export const mergeRows = (held, rows, { entity = '', limit = MAX_POINTS } = {}) => {
   const keyOf = row => (entity ? String(row[entity]) : '');
-  const newest = new Map();
-  held.forEach(row => {
-    newest.set(keyOf(row), Math.max(newest.get(keyOf(row)) ?? -Infinity, timeOf(row)));
+  const instantOf = row => `${keyOf(row)}|${timeOf(row)}`;
+  const seen = new Set(held.map(instantOf));
+  const added = rows.filter(row => {
+    if (!Number.isFinite(timeOf(row)) || (entity && !row[entity]) || seen.has(instantOf(row))) {
+      return false;
+    }
+    seen.add(instantOf(row));
+    return true;
   });
-  const added = [...rows]
-    .filter(row => Number.isFinite(timeOf(row)) && (!entity || row[entity]))
-    .sort((first, second) => timeOf(first) - timeOf(second))
-    .filter(row => {
-      const key = keyOf(row);
-      const fresh = timeOf(row) > (newest.get(key) ?? -Infinity);
-      if (fresh) {
-        newest.set(key, timeOf(row));
-      }
-      return fresh;
-    });
-  return capped([...held, ...added], keyOf, limit);
+  return capped(
+    [...held, ...added].sort((first, second) => timeOf(first) - timeOf(second)),
+    keyOf,
+    limit
+  );
 };
 
 /**
@@ -89,6 +89,46 @@ export const mergeRows = (held, rows, { entity = '', limit = MAX_POINTS } = {}) 
  */
 export const latestOf = rows =>
   rows.reduce((latest, row) => (latest && timeOf(latest) >= timeOf(row) ? latest : row), null);
+
+/**
+ * The rows of a series inside a window measured from the newest row
+ * held of each entity, never from the clock of the tab: of each entity
+ * the rows no older than `minutes` before its newest row.
+ *
+ * @param {Array<Object>} rows - The rows held, oldest first per entity
+ * @param {Object} options - `entity`, the member that tells one entity's rows from another's, and `minutes`, the window
+ * @returns {Array<Object>} The rows inside the window
+ */
+export const windowOf = (rows, { entity = '', minutes }) => {
+  const keyOf = row => (entity ? String(row[entity]) : '');
+  const newest = new Map();
+  rows.forEach(row => {
+    newest.set(keyOf(row), Math.max(newest.get(keyOf(row)) ?? -Infinity, timeOf(row)));
+  });
+  const span = minutes * MINUTE_MS;
+  return rows.filter(row => timeOf(row) >= newest.get(keyOf(row)) - span);
+};
+
+/**
+ * The rows the browser's ring keeps of a series: the ones inside the
+ * widest window before the newest row held of each entity.
+ *
+ * @param {Array<Object>} rows - The rows held, oldest first per entity
+ * @param {string} [entity] - The member that tells one entity's rows from another's
+ * @returns {Array<Object>} The rows kept
+ */
+export const ringRows = (rows, entity = '') => windowOf(rows, { entity, minutes: WIDEST_MINUTES });
+
+/**
+ * The rows a chart draws of a series: the ones inside the window before
+ * the newest row held of each entity, the 180 newest of each.
+ *
+ * @param {Array<Object>} rows - The rows held, oldest first per entity
+ * @param {Object} options - `entity`, the member that tells one entity's rows from another's, and `minutes`, the window
+ * @returns {Array<Object>} The rows drawn
+ */
+export const drawnRows = (rows, { entity = '', minutes }) =>
+  mergeRows([], windowOf(rows, { entity, minutes }), { entity });
 
 /**
  * How many instants a series holds, the rows of several entities taken

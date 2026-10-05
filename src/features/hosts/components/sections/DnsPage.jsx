@@ -5,7 +5,7 @@ import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
-import HostnameSettings from '../HostnameSettings';
+import DnsSettings from '../DnsSettings';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import TaskDialog from '../TaskDialog';
@@ -17,21 +17,20 @@ const foldOf = (folds, key) => ({
 });
 
 /**
- * The Hostname page of a host: the heading reading the host's current
- * hostname, Refresh in its pane, and under it the hostname as a folding
- * section drawn while the host's own row offers its read, every write
- * through the one `useNetworkingTools` and the task dialog it opens
- * drawn once; the read the copy the hosts feature's context holds and
- * the fold kept under the page's `table_prefs_hostname`.
+ * The DNS page of a host: the heading with Refresh in its pane, and
+ * under it the DNS resolver as a folding section drawn while the host's
+ * own row offers its read, every write through the one
+ * `useNetworkingTools` and the task dialog it opens drawn once; the read
+ * the copy the hosts feature's context holds and the fold kept under the
+ * page's `table_prefs_dns`.
  */
-const HostnamePage = ({ id, server, context, section, onRefresh }) => {
+const DnsPage = ({ id, server, context, section, onRefresh }) => {
   const status = useStatus();
   const refreshReadings = useHostReadingsRefresh();
   const folds = useFolds(`${context.prefsPrefix}_${section}`);
-  const hostname = useHostReading(id, 'hostname');
+  const dns = useHostReading(id, 'dns');
   const tools = useNetworkingTools();
   const role = context.user?.role;
-  const current = hostname.data?.hostname || '';
 
   const refresh = () => {
     onRefresh();
@@ -42,15 +41,15 @@ const HostnamePage = ({ id, server, context, section, onRefresh }) => {
     <SectionPane
       section={section}
       server={server}
-      count={current ? <code>{current}</code> : null}
+      count={null}
       actions={<RefreshButton onRefresh={refresh} />}
     >
-      {hostname.offered ? (
-        <HostnameSettings
+      {dns.offered ? (
+        <DnsSettings
           id={id}
           role={role}
-          reading={hostname}
-          fold={foldOf(folds, 'manage-hostname')}
+          reading={dns}
+          fold={foldOf(folds, 'manage-dns')}
           tools={tools}
         />
       ) : null}
@@ -61,7 +60,7 @@ const HostnamePage = ({ id, server, context, section, onRefresh }) => {
   );
 };
 
-HostnamePage.propTypes = {
+DnsPage.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   context: pageContextShape.isRequired,
@@ -69,4 +68,4 @@ HostnamePage.propTypes = {
   onRefresh: PropTypes.func.isRequired,
 };
 
-export default HostnamePage;
+export default DnsPage;

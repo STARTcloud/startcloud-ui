@@ -12,10 +12,11 @@ const NO_TOGGLE = () => undefined;
 
 /**
  * The hosts feature's Controls menu in the header's account slot: the
- * toggle under the label of the command list the feature publishes and a
- * row per command, disabled while the list says so; whether the menu is
- * open is held in the hosts feature's context so the list's reads wait
- * for it.
+ * toggle is the sliders glyph alone, the label of the command list the
+ * feature publishes its tooltip and accessible name, and the menu opens
+ * with that label as its heading over a row per command, disabled while
+ * the list says so; whether the menu is open is held in the hosts
+ * feature's context so the list's reads wait for it.
  */
 const HostControls = () => {
   const { commands, label, disabled } = useControlCommands();
@@ -31,12 +32,14 @@ const HostControls = () => {
         bsPrefix="nav-link"
         className={TOGGLE_CLASS}
         disabled={disabled}
+        title={label}
+        aria-label={label}
       >
         <FaSliders />
-        <span>{label}</span>
       </Dropdown.Toggle>
       {commands.length > 0 ? (
         <Dropdown.Menu>
+          <Dropdown.Header>{label}</Dropdown.Header>
           <CommandRows commands={commands} />
         </Dropdown.Menu>
       ) : null}

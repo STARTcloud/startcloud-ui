@@ -30,7 +30,7 @@ Feature: host storage
     When I open "/hosts/4/storage/pools"
     Then the storage page draws its frame
     And I see "Bare"
-    And the host column draws the rows "overview, machines, interfaces, links, hostname, pools, snapshots, arc, disks, orchestration, api-keys, database, update"
+    And the host column draws the rows "overview, machines, topology, addresses, links, hostname, dns, pools, snapshots, arc, disks, orchestration, api-keys, database, update"
     And the storage page draws no monitoring section
     And the ZFS management draws 2 pools
     And the host was not sent GET to "/api/agents/4/monitoring/storage/pools"
@@ -193,29 +193,26 @@ Feature: host storage
     Then the first device chart is "c0t5000C500B2C3D4E6d0"
     And the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 1 times
 
-  Scenario: Storage: the window and the resolution in each page's heading, a change of either reads that page's series again once
+  Scenario: Storage: the window in each page's heading, the samples of the window at most 180, a change of it reads that page's series again once
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
     When I open "/hosts/3/storage/disks"
     Then the host page draws the "storage-total" chart
-    And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "limit" as "38"
+    And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "limit" as "180"
     And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "per_device" as "true"
-    When I pick the storage chart resolution "low"
-    Then the host was asked "/api/agents/3/monitoring/storage/disk-io" with "limit" as "5"
-    And the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 2 times
     When I pick the storage chart window "1hour"
-    Then the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 3 times
+    Then the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 2 times
     When I open "/hosts/3/storage/pools"
     Then the host page draws the "pool:tank" chart
     And the host was sent GET to "/api/agents/3/monitoring/storage/pool-io" 1 times
-    When I pick the storage chart resolution "low"
+    When I pick the storage chart window "3hour"
     Then the host was sent GET to "/api/agents/3/monitoring/storage/pool-io" 2 times
     When I open "/hosts/3/storage/arc"
     Then the host page draws the "arc-memory" chart
     And the host was sent GET to "/api/agents/3/monitoring/storage/arc" 1 times
-    When I pick the storage chart resolution "low"
+    When I pick the storage chart window "6hour"
     Then the host was sent GET to "/api/agents/3/monitoring/storage/arc" 2 times
 
   Scenario: Storage: the expand button opens a chart in the expanded dialog
@@ -419,7 +416,7 @@ Feature: host storage
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/pools"
     Then the storage page draws its frame
-    And I see "Host actions"
+    And the host controls toggle is "Host actions"
 
   Scenario: Storage: on the zoneweaver-agent role every read is sent at the agent's own /api path
     Given the host answers the zones fixture

@@ -4,14 +4,17 @@ import {
   DEFAULT_QUERY,
   MAX_POINTS,
   READS,
-  RESOLUTIONS,
   SERIES,
+  WIDEST_MINUTES,
   WINDOWS,
   historyParams,
   hostOffers,
+  windowMinutes,
+  windowSamples,
 } from '../../src/features/hosts/utils/monitoring.js';
 
 const NOON = Date.UTC(2026, 8, 27, 12, 0, 0);
+const HELD = Date.UTC(2026, 8, 27, 11, 58, 30);
 
 const agent = { capabilities: { features: ['machines', 'tasks', 'monitoring', 'swap'] } };
 const zones = { capabilities: { features: ['machines', 'monitoring', 'zfs'] } };
@@ -73,37 +76,50 @@ describe('READS and SERIES', () => {
   });
 });
 
-describe('WINDOWS and RESOLUTIONS', () => {
-  it('list the ten windows and the four resolutions', () => {
+describe('WINDOWS', () => {
+  it('list the ten windows, the widest the span the ring keeps', () => {
     const minutes = WINDOWS.map(entry => entry.minutes);
     expect(minutes).toEqual([1, 5, 10, 15, 30, 60, 180, 360, 720, 1440]);
-    expect(RESOLUTIONS.map(entry => [entry.key, entry.limit])).toEqual([
-      ['realtime', 125],
-      ['high', 38],
-      ['medium', 13],
-      ['low', 5],
-    ]);
-    expect(DEFAULT_QUERY).toEqual({ window: '15min', resolution: 'high' });
+    expect(DEFAULT_QUERY).toEqual({ window: '15min' });
     expect(MAX_POINTS).toBe(180);
+    expect(WIDEST_MINUTES).toBe(1440);
+    expect(windowMinutes('1hour')).toBe(60);
+    expect(windowMinutes('week')).toBe(15);
+  });
+});
+
+describe('windowSamples', () => {
+  it('answers the samples the window holds at the interval, 180 at most', () => {
+    expect(windowSamples(15, 60)).toBe(15);
+    expect(windowSamples(15, 7)).toBe(129);
+    expect(windowSamples(1440, 60)).toBe(180);
+    expect(windowSamples(15, 0)).toBe(180);
   });
 });
 
 describe('historyParams', () => {
-  it('reaches back the window from now and asks for the samples of the resolution', () => {
-    expect(historyParams(DEFAULT_QUERY, NOON)).toEqual({
+  it('reaches back the window from now while nothing is held', () => {
+    expect(historyParams({ window: '15min', interval: 60, newest: 0, now: NOON })).toEqual({
       since: '2026-09-27T11:45:00.000Z',
-      limit: 38,
+      limit: 15,
     });
-    expect(historyParams({ window: '24hour', resolution: 'low' }, NOON)).toEqual({
+    expect(historyParams({ window: '24hour', interval: 0, newest: 0, now: NOON })).toEqual({
       since: '2026-09-26T12:00:00.000Z',
-      limit: 5,
+      limit: 180,
     });
   });
 
-  it('reads fifteen minutes and 38 samples for a query it does not know', () => {
-    expect(historyParams({ window: 'week', resolution: 'fine' }, NOON)).toEqual({
+  it('asks since the newest sample held', () => {
+    expect(historyParams({ window: '1hour', interval: 30, newest: HELD, now: NOON })).toEqual({
+      since: '2026-09-27T11:58:30.000Z',
+      limit: 120,
+    });
+  });
+
+  it('reads fifteen minutes for a window it does not know', () => {
+    expect(historyParams({ window: 'week', interval: 0, newest: 0, now: NOON })).toEqual({
       since: '2026-09-27T11:45:00.000Z',
-      limit: 38,
+      limit: 180,
     });
   });
 });

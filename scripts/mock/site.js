@@ -49,7 +49,7 @@ const SHARED_FEATURES = [
   'health',
 ];
 const SEARCH_FEATURES = ['search'];
-const SEARCH_KINDS = AGENT_MODE ? ['machine', 'task', 'config'] : ['organization', 'user', 'host'];
+const SEARCH_KINDS = AGENT_MODE ? ['machine', 'config'] : ['organization', 'user', 'host'];
 const SEARCH_PATH = '/api/search';
 const QUERY_MIN = 2;
 const QUERY_MAX = 200;
@@ -260,23 +260,6 @@ const machineEntries = host =>
     }),
   }));
 
-const taskEntries = host =>
-  host.tasks.map(task => ({
-    fields: [
-      { field: 'title', text: `${task.operation} ${task.machine_name}` },
-      { field: 'machine', text: task.machine_name || '' },
-      { field: 'error', text: task.error_message || '' },
-    ],
-    row: resultOf({
-      kind: 'task',
-      id: task.id,
-      anchor: task.id,
-      title: `${task.operation} ${task.machine_name}`,
-      subtitle: task.status,
-      facets: { status: task.status },
-    }),
-  }));
-
 const configEntries = () =>
   CONFIG_NAMES.map(name => ({
     fields: [{ field: 'name', text: name }],
@@ -288,7 +271,7 @@ const entriesOf = person => {
     return [...organizationEntries(person), ...userEntries(person), ...hostEntries()];
   }
   const host = hostFor(SELF);
-  return [...machineEntries(host), ...taskEntries(host), ...configEntries()];
+  return [...machineEntries(host), ...configEntries()];
 };
 
 const inScope = (row, scope) => {

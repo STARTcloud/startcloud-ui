@@ -20,10 +20,32 @@ describe('hostHasSettings', () => {
 });
 
 describe('updateOf', () => {
-  it('answers the versions while an update is available and null otherwise', () => {
+  it('answers the versions and the release members while an update is available and null otherwise', () => {
     expect(
       updateOf({ update_available: true, current_version: '1.2.0', latest_version: '1.3.0' })
-    ).toEqual({ current: '1.2.0', latest: '1.3.0' });
+    ).toEqual({
+      current: '1.2.0',
+      latest: '1.3.0',
+      releaseUrl: '',
+      releaseDate: '',
+      changelog: '',
+    });
+    expect(
+      updateOf({
+        update_available: true,
+        current_version: '1.2.0',
+        latest_version: '1.3.0',
+        release_url: 'https://example.test/releases/1.3.0',
+        release_date: '2026-10-01T00:00:00Z',
+        changelog: 'https://example.test/CHANGELOG.md',
+      })
+    ).toEqual({
+      current: '1.2.0',
+      latest: '1.3.0',
+      releaseUrl: 'https://example.test/releases/1.3.0',
+      releaseDate: '2026-10-01T00:00:00Z',
+      changelog: 'https://example.test/CHANGELOG.md',
+    });
     expect(updateOf({ update_available: false, current_version: '1.3.0' })).toBeNull();
     expect(updateOf(null)).toBeNull();
   });

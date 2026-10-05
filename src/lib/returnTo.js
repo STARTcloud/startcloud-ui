@@ -1,4 +1,6 @@
-const isSafePath = path => path.startsWith('/') && !path.startsWith('//');
+const SAFE_PATH = /^\/(?![/\\])/;
+
+const isSafePath = path => SAFE_PATH.test(path);
 
 export const safeReturnPath = value => {
   if (!value) {

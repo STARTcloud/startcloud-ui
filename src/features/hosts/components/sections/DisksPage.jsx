@@ -49,8 +49,8 @@ const foldOf = ({ folds, key, t }) => {
 
 /**
  * The Disks page of a host: the heading counting the disks, the time
- * window, the resolution and Refresh in its pane, and under it the disks
- * and disk I/O tables, each one table narrowed by the page's search
+ * window and Refresh in its pane, and under it the disks and disk I/O
+ * tables, each one table narrowed by the page's search
  * under a folding heading, the summary and device charts, and on a host
  * that lists `zfs` the ZFS pool manager's chassis with Rescan and each
  * pool member's disk dialog, every write a queued task through

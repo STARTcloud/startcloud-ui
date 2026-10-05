@@ -15,7 +15,7 @@ const STREAM_HEADERS = {
 };
 const RAW_KEY = /\b(?:host|navbar|chrome)\.[a-z][A-Za-z]+\.[a-z][A-Za-z]+/u;
 
-const frameOf = page => page.locator('[data-page="host-section"][data-section="interfaces"]');
+const frameOf = page => page.locator('[data-page="host-section"]');
 
 const MONITORING_PANELS = [
   'networking-summary',
@@ -96,10 +96,6 @@ When('I toggle column {int} of Columns group {int}', async ({ page }, column, gr
 
 When('I pick the networking chart window {string}', async ({ page }, value) => {
   await frameOf(page).locator('select[name="window"]').selectOption(value);
-});
-
-When('I pick the networking chart resolution {string}', async ({ page }, value) => {
-  await frameOf(page).locator('select[name="resolution"]').selectOption(value);
 });
 
 When('I order the interface charts by {string}', async ({ page }, value) => {

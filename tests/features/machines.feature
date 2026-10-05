@@ -12,7 +12,7 @@ Feature: machines
     And I see "dev-3"
     And the host was sent GET to "/api/agents/1/machines" 1 times
     And the host was sent GET to "/api/agents/1/stats" 1 times
-    And I see "Host actions"
+    And the host controls toggle is "Host actions"
 
   Scenario: Machine page: the machines list by the host's tokens, a host whose row lists no machines is asked for none
     Given the host answers the hosts fixture
@@ -321,8 +321,8 @@ Feature: machines
     And the host was sent GET to "/api/monitoring/zones/diskio" 1 times
     And the host was sent GET to "/api/monitoring/network/usage" 2 times
     And the host was asked "/api/monitoring/zones/usage" with "zone" as "web-1"
-    And the host was asked "/api/monitoring/zones/usage" with "limit" as "200"
-    And the host was asked "/api/monitoring/zones/diskio" with "limit" as "500"
+    And the host was asked "/api/monitoring/zones/usage" with "limit" as "180"
+    And the host was asked "/api/monitoring/zones/diskio" with "limit" as "180"
     And the host was asked "/api/monitoring/network/usage" with "link" as "vnice3_1234_0"
     And the host was not sent GET to "/api/monitoring/machines/usage"
     And the host was not sent GET to "/api/agents/self/monitoring/zones/usage"

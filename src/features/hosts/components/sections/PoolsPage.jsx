@@ -56,8 +56,8 @@ const foldOf = ({ folds, key, t }) => {
 
 /**
  * The Pools and datasets page of a host, behind `zfs`: the heading
- * counting the pools, the time window, the resolution and Refresh in
- * its pane, and under it the storage summary, the pools, datasets and
+ * counting the pools, the time window and Refresh in its pane, and
+ * under it the storage summary, the pools, datasets and
  * pool I/O tables, each one table narrowed by the page's search under a
  * folding heading, the pool charts, the ZFS pool manager's cards and the
  * dataset tree, every write a queued task through `useZfsTools`; the

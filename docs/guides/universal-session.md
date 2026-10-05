@@ -283,7 +283,9 @@ SSO session, so the logout row draws plain), `claims()`
 are every reserved segment of the identity contract's sign-in, onboarding
 and interstitial groups plus `error`, because a page such as
 `/continue?token=` or `/oauth2/code?code=` carries a bearer secret in its
-query and must never be remembered as a return path; its cached `account`
+query and must never be remembered as a return path, all but `activate`,
+whose query carries only the device's user code, so a sign-in begun there
+returns to it with the code prefilled; its cached `account`
 holds the display fields and the four `preferred_*` members; `mode`,
 `theme`, `motion` and `language` are the visitor's own keys, written by
 the person's own controls alone and never from the account; the
@@ -310,7 +312,10 @@ role too low that touches the session not at all, `login(key)` the pasted
 key proved by that read and stored, `begin({ method: 'silent' })` the
 `prompt=none` authorize URL of `POST /api/auth/oidc/silent-start` followed
 as a top-level navigation and `begin({ method: 'device' })` the RFC 8628
-grant of `POST /api/auth/oidc/device-start`, `complete()` the `#tray=`
+grant of `POST /api/auth/oidc/device-start`, its approval read with
+`GET /api/auth/oidc/device-status`, one request the agent holds open until
+the status changes or the grant's interval elapses, asked again after
+every `pending` answer and never on a clock, `complete()` the `#tray=`
 claim of a tray Open or an `hwa://open`, once per page load with the
 fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
 key that still validates outranking it, the claimed session answered once

@@ -1,3 +1,5 @@
+import { FaSliders } from 'react-icons/fa6';
+
 import { hostConfig } from '../api/agentSettings';
 
 const EMPTY_NAMES = [];
@@ -31,7 +33,8 @@ const titleOf = (config, name) =>
 
 /**
  * The children of a host's Configuration node of the sidebar tree: one
- * node per name of the row's `capabilities.config`, in that order,
+ * node per name of the row's `capabilities.config`, in that order, each
+ * under the sliders glyph the host column gives its configuration rows,
  * labelled by the file's schema root `title` once
  * `GET config/<name>/schema` answers through the host's adapter and by
  * the name until then, each a deep link to
@@ -39,7 +42,7 @@ const titleOf = (config, name) =>
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} server - The registry row
- * @returns {Promise<Array<{ key: string, label: string, to: string }>>} The file nodes
+ * @returns {Promise<Array<{ key: string, icon: Function, label: string, to: string }>>} The file nodes
  */
 export const configNodes = (status, server) => {
   const names = configNamesOf(server);
@@ -50,6 +53,7 @@ export const configNodes = (status, server) => {
   return Promise.all(names.map(name => titleOf(config, name))).then(titles =>
     names.map((name, index) => ({
       key: `config:${server.id}:${name}`,
+      icon: FaSliders,
       label: titles[index],
       to: configPath(server.id, name),
     }))

@@ -57,8 +57,9 @@ export const hostConfig = (status, id) => ({
 
 /**
  * Whether a newer agent is published, `GET app/updates/check`,
- * `{ current_version, latest_version, update_available }`; an agent
- * without the surface refuses, which draws no button.
+ * `{ current_version, latest_version, update_available, release_url,
+ * release_date, changelog }`, the last three null while the agent holds
+ * none; an agent without the surface refuses, which draws no button.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role

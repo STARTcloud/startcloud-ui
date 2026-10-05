@@ -4,6 +4,7 @@ import {
   FaBoxArchive,
   FaBoxesStacked,
   FaCamera,
+  FaChartLine,
   FaCircleUp,
   FaClock,
   FaCompactDisc,
@@ -25,11 +26,13 @@ import {
   FaLayerGroup,
   FaLink,
   FaListCheck,
+  FaLocationDot,
   FaMemory,
   FaNetworkWired,
   FaPowerOff,
   FaPuzzlePiece,
   FaRobot,
+  FaRoute,
   FaScroll,
   FaServer,
   FaSliders,
@@ -59,6 +62,9 @@ const feature = token => gate([token], server => hostHasFeature(server, token));
 
 const anyFeature = tokens =>
   gate(tokens, server => tokens.some(token => hostHasFeature(server, token)));
+
+const allFeatures = tokens =>
+  gate(tokens, server => tokens.every(token => hostHasFeature(server, token)));
 
 const sectionEntry = sectionKey =>
   MANAGE_SECTIONS.find(candidate => candidate.key === sectionKey) || null;
@@ -137,7 +143,35 @@ export const HOST_PAGES = [
         segment: 'network/interfaces',
         icon: FaEthernet,
         labelKey: key('hosts.overview.interfaces'),
-        ...anyFeature(['monitoring', 'ip-addresses', 'vnics', 'network-spaces']),
+        ...feature('monitoring'),
+      },
+      {
+        key: 'topology',
+        segment: 'network/topology',
+        icon: FaDiagramProject,
+        labelKey: key('pages.hostNetworking.topologyHeading'),
+        ...anyFeature(['monitoring', 'vnics', 'network-spaces']),
+      },
+      {
+        key: 'addresses',
+        segment: 'network/addresses',
+        icon: FaLocationDot,
+        labelKey: key('host.ipAddressTable.title'),
+        ...anyFeature(['monitoring', 'ip-addresses', 'vnics']),
+      },
+      {
+        key: 'routes',
+        segment: 'network/routes',
+        icon: FaRoute,
+        labelKey: key('host.routingTable.routingTable'),
+        ...allFeatures(['monitoring', 'vnics']),
+      },
+      {
+        key: 'bandwidth',
+        segment: 'network/bandwidth',
+        icon: FaChartLine,
+        labelKey: key('host.bandwidthTable.title'),
+        ...feature('monitoring'),
       },
       {
         key: 'links',
@@ -157,8 +191,22 @@ export const HOST_PAGES = [
         key: 'hostname',
         segment: 'network/hostname',
         icon: FaGlobe,
-        labelKey: key('hosts.nav.hostnameDns'),
-        ...anyFeature(['hostname', 'dns', 'hosts-file', 'vnics']),
+        labelKey: key('host.hostnameSettings.title'),
+        ...anyFeature(['hostname', 'vnics']),
+      },
+      {
+        key: 'hosts-file',
+        segment: 'network/hosts-file',
+        icon: FaFileLines,
+        labelKey: key('host.hostsFileEditor.hostsFile'),
+        ...feature('hosts-file'),
+      },
+      {
+        key: 'dns',
+        segment: 'network/dns',
+        icon: FaGlobe,
+        labelKey: key('host.dnsSettings.dnsResolver'),
+        ...anyFeature(['dns', 'vnics']),
       },
     ],
   },
@@ -617,12 +665,7 @@ const hashOf = row => (row.anchor ? `#${encodeURIComponent(row.anchor)}` : '');
 const configPath = (host, row) =>
   `/hosts/${encodeURIComponent(host)}/agent/config/${encodeURIComponent(row.name)}${hashOf(row)}`;
 
-const taskPath = (host, row) =>
-  `${hostPagePath(host, fixedPage('overview'))}?task=${encodeURIComponent(row.anchor || row.id)}`;
-
 const configRoute = onHost(configPath);
-
-const taskRoute = onHost(taskPath);
 
 const kindEntry = ({ kind, icon, route, locators, facets = [] }) => ({
   kind,
@@ -637,9 +680,10 @@ const kindEntry = ({ kind, icon, route, locators, facets = [] }) => ({
 });
 
 /**
- * The hosts feature's search kinds: host, machine, task, service, config,
+ * The hosts feature's search kinds: host, machine, service, config,
  * template and artifact, each routed under the host the row was asked of,
- * a list page carrying the query searched for as its `q`.
+ * a list page carrying the query searched for as its `q`; a task is no
+ * kind, the footer's pane being where tasks are found.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @returns {Array<Object>} The kind entries
@@ -658,13 +702,6 @@ export const searchKinds = status =>
           icon: FaDesktop,
           route: onHost((host, row) => machineRoute(host, row.name || row.id)),
           locators: ['name'],
-          facets: ['status'],
-        }),
-        kindEntry({
-          kind: 'task',
-          icon: FaListCheck,
-          route: taskRoute,
-          locators: ['anchor'],
           facets: ['status'],
         }),
         kindEntry({

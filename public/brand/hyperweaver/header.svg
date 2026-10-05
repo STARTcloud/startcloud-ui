@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4608 512" role="img" aria-label="Hyperweaver">
   <style>
     .brand-mark-root { color-scheme: light dark; }
-    .hw-frame { stroke: #111111; stroke: light-dark(#111111, #f4f6f8); }
-    .hw-shadow { fill: #111111; fill: light-dark(#111111, #f4f6f8); }
+    .hw-frame { stroke: #111111; }
+    .hw-shadow { fill: #111111; }
     .hw-word { fill: #212529; fill: light-dark(#212529, #f8f9fa); }
   </style>
   <defs>

@@ -142,9 +142,9 @@ export const readOffered = (server, read) =>
   (!read.any || read.any.some(token => hostHasFeature(server, token)));
 
 /**
- * The time windows a chart's history is read over, hyperweaver-ui's ten,
- * each its key, the word of hyperweaver-ui's option, and the minutes it
- * reaches back.
+ * The time windows every chart of a host is read over, hyperweaver-ui's
+ * ten, each its key, the word of hyperweaver-ui's option, and the
+ * minutes it reaches back.
  */
 export const WINDOWS = [
   { key: '1min', minutes: 1 },
@@ -159,40 +159,60 @@ export const WINDOWS = [
   { key: '24hour', minutes: 1440 },
 ];
 
-/**
- * The resolutions a chart's history is read at, hyperweaver-ui's four,
- * each its key and the most samples the read asks for as `limit`.
- */
-export const RESOLUTIONS = [
-  { key: 'realtime', limit: 125 },
-  { key: 'high', limit: 38 },
-  { key: 'medium', limit: 13 },
-  { key: 'low', limit: 5 },
-];
-
-export const DEFAULT_QUERY = { window: '15min', resolution: 'high' };
+export const DEFAULT_QUERY = { window: '15min' };
 
 export const MAX_POINTS = 180;
 
+/**
+ * The minutes of the widest window, the span the browser's ring keeps of
+ * every series.
+ */
+export const WIDEST_MINUTES = Math.max(...WINDOWS.map(entry => entry.minutes));
+
 const MINUTE_MS = 60 * 1000;
+
+const SECONDS = 60;
 
 const DEFAULT_MINUTES = 15;
 
-const DEFAULT_LIMIT = 38;
+/**
+ * The minutes a window's key reaches back, fifteen for a key `WINDOWS`
+ * does not name.
+ *
+ * @param {string} window - The window's key, e.g. `1hour`
+ * @returns {number} The minutes
+ */
+export const windowMinutes = window =>
+  WINDOWS.find(entry => entry.key === window)?.minutes || DEFAULT_MINUTES;
 
 /**
- * The parameters a history read sends for a window and a resolution:
- * `since`, the instant the window reaches back to from `now`, and
- * `limit`, the most samples the resolution asks for; an unknown window
- * reads fifteen minutes and an unknown resolution 38 samples,
- * hyperweaver-ui's defaults.
+ * The samples a window holds at an agent's collection interval, at most
+ * the 180 a chart draws; the 180 while the interval is unknown.
  *
- * @param {{ window: string, resolution: string }} query - The window and the resolution
- * @param {number} now - The present, in milliseconds
+ * @param {number} minutes - The window's minutes
+ * @param {number} interval - The agent's collection interval in seconds, zero while unknown
+ * @returns {number} The sample count
+ */
+export const windowSamples = (minutes, interval) =>
+  interval > 0 ? Math.min(MAX_POINTS, Math.ceil((minutes * SECONDS) / interval)) : MAX_POINTS;
+
+/**
+ * The parameters a history read sends: `since`, the newest sample the
+ * browser holds of the series or, while it holds none, the instant the
+ * window reaches back to from `now`, and `limit`, the samples the window
+ * holds at the agent's collection interval.
+ *
+ * @param {Object} options - The window, the interval, the newest held sample and the present
+ * @param {string} options.window - The window's key
+ * @param {number} options.interval - The agent's collection interval in seconds, zero while unknown
+ * @param {number} options.newest - The instant of the newest sample held in milliseconds, zero while none is held
+ * @param {number} options.now - The present, in milliseconds
  * @returns {{ since: string, limit: number }} The parameters
  */
-export const historyParams = (query, now) => {
-  const minutes = WINDOWS.find(entry => entry.key === query.window)?.minutes || DEFAULT_MINUTES;
-  const limit = RESOLUTIONS.find(entry => entry.key === query.resolution)?.limit || DEFAULT_LIMIT;
-  return { since: new Date(now - minutes * MINUTE_MS).toISOString(), limit };
+export const historyParams = ({ window, interval, newest, now }) => {
+  const minutes = windowMinutes(window);
+  return {
+    since: new Date(newest || now - minutes * MINUTE_MS).toISOString(),
+    limit: windowSamples(minutes, interval),
+  };
 };

@@ -34,11 +34,13 @@ const messageOf = error => error?.data?.error || error?.message || '';
  * `begin({ method: 'device' })`, the verification page opens in a new
  * tab, and the grant is kept in sessionStorage so a refreshed page
  * resumes it; the agent's answer is read with
- * `GET /api/auth/oidc/device-status` when the person comes back to this
- * tab, the window's `focus`, and on Check status, never on a clock,
- * hyperweaver-ui's three-second poll not carried over; an approved
- * grant hands its key to `onSignIn`, a denied, failed or expired one,
- * and a handle already delivered, say so with Retry.
+ * `GET /api/auth/oidc/device-status`, one request the agent holds open
+ * until the status changes or the grant's own interval elapses, asked
+ * as soon as the grant is held and again after every `pending` answer
+ * while the person waits, never on a clock, and on Check status after a
+ * dropped connection; an approved grant hands its key to `onSignIn`, a
+ * denied, failed or expired one, and a handle already delivered, say so
+ * with Retry.
  */
 const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
   const { t } = useTranslation();
@@ -46,6 +48,8 @@ const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
   const [phase, setPhase] = useState(() => (pendingGrant() ? 'waiting' : 'idle'));
   const [error, setError] = useState('');
   const checking = useRef(false);
+  const waiting = useRef(false);
+  const checkRef = useRef(null);
 
   const fail = message => {
     forgetPending();
@@ -59,6 +63,7 @@ const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
       return;
     }
     checking.current = true;
+    let again = false;
     try {
       const answer = await deviceSsoStatus(grant.handle);
       if (answer?.status === 'approved' && answer.api_key) {
@@ -72,6 +77,8 @@ const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
         fail(t('auth.deviceSso.failed'));
       } else if (answer?.status === 'expired') {
         fail(t('auth.deviceSso.expired'));
+      } else {
+        again = true;
       }
     } catch (checkError) {
       if (checkError.status === 404) {
@@ -80,9 +87,11 @@ const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
     } finally {
       checking.current = false;
     }
+    if (again && waiting.current) {
+      checkRef.current();
+    }
   };
 
-  const checkRef = useRef(check);
   useEffect(() => {
     checkRef.current = check;
   });
@@ -91,9 +100,11 @@ const DeviceSsoLogin = ({ disabled, onSignIn, start }) => {
     if (phase !== 'waiting') {
       return undefined;
     }
-    const onFocus = () => checkRef.current();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    waiting.current = true;
+    checkRef.current();
+    return () => {
+      waiting.current = false;
+    };
   }, [phase]);
 
   const begin = async () => {

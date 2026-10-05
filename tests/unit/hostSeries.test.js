@@ -3,15 +3,18 @@ import { describe, expect, it } from 'vitest';
 import {
   arcSeries,
   cpuSeries,
+  drawnRows,
   latestOf,
   memorySeries,
   mergeRows,
   networkRates,
   networkSeries,
   poolSeries,
+  ringRows,
   rowsOf,
   samplesIn,
   timeOf,
+  windowOf,
 } from '../../src/features/hosts/utils/series.js';
 
 const FIRST = '2026-09-27T12:00:00.000Z';
@@ -35,8 +38,13 @@ describe('timeOf and rowsOf', () => {
 });
 
 describe('mergeRows', () => {
-  it('adds the rows newer than the newest held, oldest first', () => {
+  it('adds the rows not yet held, oldest first', () => {
     const merged = mergeRows([sample(FIRST)], [sample(THIRD), sample(FIRST), sample(SECOND)]);
+    expect(merged.map(row => row.scan_timestamp)).toEqual([FIRST, SECOND, THIRD]);
+  });
+
+  it('adds a history read older than a pushed sample before it', () => {
+    const merged = mergeRows([sample(THIRD)], [sample(FIRST), sample(SECOND)]);
     expect(merged.map(row => row.scan_timestamp)).toEqual([FIRST, SECOND, THIRD]);
   });
 
@@ -68,6 +76,56 @@ describe('mergeRows', () => {
     const rows = [sample(FIRST), sample(SECOND), sample(THIRD)];
     const merged = mergeRows([], rows, { limit: 2 });
     expect(merged.map(row => row.scan_timestamp)).toEqual([SECOND, THIRD]);
+  });
+});
+
+describe('windowOf, ringRows and drawnRows', () => {
+  const EARLY = '2026-09-27T11:44:59.000Z';
+  const EDGE = '2026-09-27T11:45:05.000Z';
+  const YESTERDAY = '2026-09-26T11:59:59.000Z';
+
+  it('keeps the window before the newest sample held', () => {
+    const rows = [EARLY, EDGE, FIRST, SECOND].map(stamp => sample(stamp));
+    expect(windowOf(rows, { minutes: 15 }).map(row => row.scan_timestamp)).toEqual([
+      EDGE,
+      FIRST,
+      SECOND,
+    ]);
+  });
+
+  it('measures the window of each entity from its own newest sample', () => {
+    const rows = [
+      sample(EARLY, { dataset: 'rpool/a' }),
+      sample(FIRST, { dataset: 'rpool/a' }),
+      sample(EARLY, { dataset: 'rpool/b' }),
+    ];
+    expect(
+      windowOf(rows, { entity: 'dataset', minutes: 15 }).map(row => [
+        row.dataset,
+        row.scan_timestamp,
+      ])
+    ).toEqual([
+      ['rpool/a', FIRST],
+      ['rpool/b', EARLY],
+    ]);
+  });
+
+  it('keeps the widest window in the ring and drops the day before it', () => {
+    const rows = [sample(YESTERDAY), sample(EARLY), sample(SECOND)];
+    expect(ringRows(rows).map(row => row.scan_timestamp)).toEqual([EARLY, SECOND]);
+    expect(ringRows([])).toEqual([]);
+  });
+
+  it('draws the window before the newest sample, the 180 newest of it', () => {
+    const start = at(FIRST);
+    const rows = [...Array(300).keys()].map(index =>
+      sample(new Date(start + index * 1000).toISOString())
+    );
+    const drawn = drawnRows(rows, { minutes: 15 });
+    expect(drawn).toHaveLength(180);
+    expect(drawn[drawn.length - 1]).toEqual(rows[299]);
+    expect(drawnRows(rows, { minutes: 1 })).toHaveLength(61);
+    expect(drawnRows([], { minutes: 15 })).toEqual([]);
   });
 });
 

@@ -150,10 +150,11 @@ const withoutTask = params => {
 
 /**
  * One host at `/hosts/{id}` inside its column: the heading with the
- * health, uptime and running machines, the overview card, the machines
- * table, the network and storage summary, the performance charts and the
- * monitoring database; the route's `create=machine` query opens the
- * create wizard and its `task` query opens that task's dialog.
+ * health, uptime and running machines, the window select and Refresh in
+ * its pane, the overview card, the machines table, the network and
+ * storage summary, the performance charts and the monitoring database;
+ * the route's `create=machine` query opens the create wizard and its
+ * `task` query opens that task's dialog.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();

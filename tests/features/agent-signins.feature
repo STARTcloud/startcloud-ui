@@ -81,16 +81,12 @@ Feature: agent-signins
     And the sign-in page draws an "info" alert
     And the host was not sent POST to "/api/auth/oidc/silent-start"
 
-  Scenario: Agent sign-ins: the device flow starts one grant through the provider, waits with its code, reads the agent's answer on Check status alone, and the approved key is proved and signed in with
+  Scenario: Agent sign-ins: the device flow starts one grant through the provider, reads the agent's answer as soon as the grant is held, and the approved key is proved and signed in with
     Given the host answers the agent-signins fixture
     When I open "/login?sso=unavailable"
     And I press the sign-in page's "device-start" action
     Then the host was sent POST to "/api/auth/oidc/device-start" 1 times
-    And the sign-in page notes "device-waiting"
-    And I see "ABCD-EFGH"
-    And the host was not sent GET to "/api/auth/oidc/device-status"
-    When I press the sign-in page's "device-check" action
-    Then the host was sent GET to "/api/auth/oidc/device-status" 1 times
+    And the host was sent GET to "/api/auth/oidc/device-status" 1 times
     And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_device_flow_key"
     And the path is "/"
 

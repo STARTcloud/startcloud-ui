@@ -51,7 +51,7 @@ Feature: host-manage
     And the host column draws no "installers" row
     And the host column draws no "network" group
     And the host column draws no "storage" group
-    And I see "Host actions"
+    And the host controls toggle is "Host actions"
     And the page draws no key of hyperweaver-ui in place of its text
 
   Scenario: System: a virtualbox host that lists processes and machines alone draws those rows and no recipes, no runlevel

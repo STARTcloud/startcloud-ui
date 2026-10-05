@@ -45,7 +45,7 @@ Feature: hosts
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-2"
-    Then I see "Machine controls"
+    Then the host controls toggle is "Machine controls"
     And the host was sent GET to "/api/agents/1/stats" 1 times
     When I click "Machine controls"
     And I click "Power on"
@@ -165,6 +165,7 @@ Feature: hosts
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/self"
     And I click "Host actions"
+    And the open menu is headed "Host actions"
     And I click "Restart host"
     Then the restart dialog offers no fast reboot
 
@@ -176,6 +177,17 @@ Feature: hosts
     And I click "Host actions"
     And I click "Restart host"
     Then the restart dialog offers the fast reboot
+
+  Scenario: Controls menu: a double-click on a dialog's header zooms it to the viewport and a second one returns it
+    Given the host answers the zones fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self"
+    And I click "Host actions"
+    And I click "Restart host"
+    And I double-click the open dialog's header
+    Then the open dialog is zoomed
+    When I double-click the open dialog's header
+    Then the open dialog is not zoomed
 
   Scenario: Controls menu: the bulk rows on a host's route pick the stopped machines for a start and send one request per target
     Given the host answers the hosts fixture
@@ -249,7 +261,7 @@ Feature: hosts
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
     Then the sidebar draws "Datacenter" above "Desk"
-    And the tree node "Desk" begins where the label of "Datacenter" begins
+    And the tree node "Desk" begins one step right of "Datacenter"
     And the chrome draws no sidebar row "Hosts"
     When I open the tree node "Datacenter"
     Then the path is "/"
@@ -290,6 +302,7 @@ Feature: hosts
     Then the path is "/hosts/1/agent/config/machines"
     And the host row "config:machines" is the active one
     And the host column draws the "config:app" row to "/hosts/1/agent/config/app"
+    And the host column row "config:app" reads "Application"
     And the host group "agent" is open
     And I see "Schema version 1"
     And the control "Base directory" has the value "/var/lib/machines"
@@ -352,18 +365,18 @@ Feature: hosts
     Then the hosts page draws the registry form
     And the path is "/"
 
-  Scenario: Sidebar tree: a machine's row begins where its host's label begins
+  Scenario: Sidebar tree: a machine's row begins one step right of its host's
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1"
     Then I see "dev-1"
-    And the tree node "dev-1" begins where the label of "Desk" begins
+    And the tree node "dev-1" begins one step right of "Desk"
 
   Scenario: The user menu draws at the sidebar's foot while the Controls menu holds the account slot
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
-    Then I see "Host actions"
+    Then the host controls toggle is "Host actions"
     And the sidebar foot holds the account menu
     And the sidebar foot draws the avatar before the name
 
@@ -579,7 +592,6 @@ Feature: hosts
     And the host page draws the "interfaces" panel
     And the host page draws the "performance" panel
     And I see "Windows_NT 10.0.19045"
-    And I see "Ethernet"
     And I see "healthy"
     And I see "vagrant"
     And the host was sent GET to "/api/agents/1/monitoring/status" 1 times
@@ -587,6 +599,7 @@ Feature: hosts
     And the host was sent GET to "/api/agents/1/tasks/stats" 1 times
     And the host was sent GET to "/api/agents/1/system/swap/summary" 1 times
     And the host was sent GET to "/api/agents/1/provisioning/status" 1 times
+    And the host was not sent GET to "/api/agents/1/monitoring/network/interfaces"
 
   Scenario: Host overview: the monitoring ones behind `monitoring`, a host without it draws the overview card alone and asks no monitoring route
     Given the host answers the hosts fixture
@@ -628,14 +641,6 @@ Feature: hosts
     And the host was sent GET to "/api/agents/3/monitoring/storage/datasets" 1 times
     And the host was sent GET to "/api/agents/3/monitoring/storage/pool-io" 1 times
 
-  Scenario: Host overview: every interface is listed once, the newest row of each where the agent answers the rows of several scans
-    Given the host answers the hosts fixture
-    And the host answers the hosts-overview fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3"
-    Then I see "vnic0"
-    And the interfaces table lists 3 interfaces
-
   Scenario: Host overview: every answer and series one copy per host, the bar and the chart share one read and Refresh reads each again
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
@@ -652,21 +657,19 @@ Feature: hosts
     And the host was sent GET to "/api/agents/3/monitoring/storage/arc" 2 times
     And the host was sent GET to "/api/agents/3/monitoring/status" 2 times
 
-  Scenario: Host overview: the charts read their history over the window and at the resolution, a change of either reading it again once
+  Scenario: Host overview: the charts read their history over the window, the samples of the window at most 180, a change of the window reading it again once
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
     When I open "/hosts/3"
     Then the host page draws the "cpu" chart
-    And the host was asked "/api/agents/3/monitoring/system/cpu" with "limit" as "38"
+    And the host was asked "/api/agents/3/monitoring/system/cpu" with "limit" as "180"
     And the host was asked "/api/agents/3/monitoring/system/cpu" with "include_cores" as "true"
     And the host was asked "/api/agents/3/monitoring/network/usage" with "per_interface" as "true"
-    When I pick the chart resolution "low"
-    Then the host was asked "/api/agents/3/monitoring/system/cpu" with "limit" as "5"
-    And the host was sent GET to "/api/agents/3/monitoring/system/cpu" 2 times
+    And the host page draws no chart resolution select
     When I pick the chart window "1hour"
-    Then the host was sent GET to "/api/agents/3/monitoring/system/cpu" 3 times
+    Then the host was sent GET to "/api/agents/3/monitoring/system/cpu" 2 times
 
   Scenario: Host overview: an agent that keeps no history draws the one sample it read and says so, an agent that keeps one draws its history
     Given the host answers the hosts fixture
@@ -747,7 +750,7 @@ Feature: hosts
     Then the host page draws the "interfaces" panel
     And the host page draws the "database" panel
     And the host page draws the "cpu" chart
-    And I see "eth0"
     And the host was sent GET to "/api/monitoring/status"
     And the host was sent GET to "/api/monitoring/system/cpu"
     And the host was not sent GET to "/api/agents/self/monitoring/status"
+    And the host was not sent GET to "/api/monitoring/network/interfaces"

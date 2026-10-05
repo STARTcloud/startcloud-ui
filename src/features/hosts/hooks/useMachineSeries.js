@@ -1,12 +1,17 @@
-import { createContext, useCallback, useContext, useEffect } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 
 import { detailKey } from '../utils/machines';
+import { machineSeriesOf } from '../utils/machineSeries';
+import { windowMinutes } from '../utils/monitoring';
+import { collectionOf } from '../utils/resources';
+import { drawnRows } from '../utils/series';
+
+import { useHostReading } from './useHostReadings';
+import { useHostSeriesQuery } from './useHostSeries';
 
 export const MachineSeriesContext = createContext(null);
 
 const NO_ROWS = [];
-
-const NO_METRICS = {};
 
 const EMPTY = {
   rows: NO_ROWS,
@@ -15,28 +20,33 @@ const EMPTY = {
   failed: false,
   message: '',
   stale: false,
+  window: '',
 };
 
 const NO_PROVIDER = {
   epoch: 0,
   machines: {},
   read: () => Promise.resolve(null),
+  ask: () => Promise.resolve(null),
+  refreshMachine: () => undefined,
 };
 
 /**
  * One series of one machine, `metric` naming it in `MACHINE_SERIES` or a
  * link as `link:` and its name, from the hosts feature's context, so a
- * chart, its expanded dialog and its badges share one copy: read once
- * while `wanted` by the first caller that draws the series, again by
- * the callers that draw it after the event stream opened fresh or
- * answered `reset`, and on `refresh`, the read a person asks for; the
- * series of a link grows between reads by the samples the `monitoring`
- * topic pushes of that link, and nothing reads on a clock. The caller
- * decides `wanted` by the host's own row, `machineChartGates`, each
- * route existing on one agent alone. `strategy` is the agent's own word
- * for how it answered, `realtime` of an agent that answers the one
- * sample it takes at the read, and `message` its own word for a read
- * that failed.
+ * chart, its expanded dialog and its badges share one copy: the series
+ * opens from the browser's ring and is read over the host's window
+ * while `wanted` by the first caller that draws it, again by the callers
+ * that draw it after the event stream opened fresh or answered `reset`,
+ * after the host's window changed, and on `refresh`, the read a person
+ * asks for; the series of a link grows between reads by the samples the
+ * `monitoring` topic pushes of that link, and nothing reads on a clock.
+ * `rows` are the samples inside the host's window before the newest
+ * held, the 180 newest of each entity. The caller decides `wanted` by
+ * the host's own row, `machineChartGates`, each route existing on one
+ * agent alone. `strategy` is the agent's own word for how it answered,
+ * `realtime` of an agent that answers the one sample it takes at the
+ * read, and `message` its own word for a read that failed.
  *
  * @param {Object} options - The machine, the series and whether to read it
  * @param {string} options.id - The registry id, or `self` on an agent role
@@ -46,24 +56,36 @@ const NO_PROVIDER = {
  * @returns {{ rows: Array<Object>, strategy: string, loaded: boolean, failed: boolean, message: string, refresh: Function }} The series, oldest first
  */
 export const useMachineSeries = ({ id, name, metric, wanted }) => {
-  const { epoch, machines, read } = useContext(MachineSeriesContext) || NO_PROVIDER;
+  const { epoch, machines, read, ask } = useContext(MachineSeriesContext) || NO_PROVIDER;
+  const { query } = useHostSeriesQuery(id);
+  const status = useHostReading(id, 'monitoring-status');
+  const { interval } = collectionOf(status.data);
+  const { window } = query;
   const held = machines[detailKey(id, name)]?.[metric] || EMPTY;
   const { loaded, stale } = held;
+  const changed = held.window !== window;
+  const { entity } = machineSeriesOf(metric);
+  const minutes = windowMinutes(window);
 
   useEffect(() => {
-    if (wanted && (!loaded || stale)) {
-      read({ epoch, id, name, metric });
+    if (wanted && (!loaded || stale || changed)) {
+      ask({ epoch, id, name, metric, window, interval });
     }
-  }, [wanted, loaded, stale, epoch, id, name, metric, read]);
+  }, [wanted, loaded, stale, changed, epoch, id, name, metric, window, interval, ask]);
 
   const refresh = useCallback(() => {
     if (wanted) {
-      read({ epoch, id, name, metric });
+      read({ epoch, id, name, metric, window, interval });
     }
-  }, [wanted, read, epoch, id, name, metric]);
+  }, [wanted, read, epoch, id, name, metric, window, interval]);
+
+  const rows = useMemo(
+    () => (wanted ? drawnRows(held.rows, { entity, minutes }) : NO_ROWS),
+    [wanted, held.rows, entity, minutes]
+  );
 
   return {
-    rows: wanted ? held.rows : NO_ROWS,
+    rows,
     strategy: held.strategy,
     loaded: wanted && loaded,
     failed: wanted && held.failed,
@@ -80,13 +102,6 @@ export const useMachineSeries = ({ id, name, metric, wanted }) => {
  * @returns {Function} `refresh(id, name)`
  */
 export const useMachineSeriesRefresh = () => {
-  const { epoch, machines, read } = useContext(MachineSeriesContext) || NO_PROVIDER;
-  return useCallback(
-    (id, name) => {
-      Object.keys(machines[detailKey(id, name)] || NO_METRICS).forEach(metric =>
-        read({ epoch, id, name, metric })
-      );
-    },
-    [epoch, machines, read]
-  );
+  const { refreshMachine } = useContext(MachineSeriesContext) || NO_PROVIDER;
+  return refreshMachine;
 };
