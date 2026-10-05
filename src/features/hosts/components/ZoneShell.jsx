@@ -2,9 +2,10 @@ import PropTypes from 'prop-types';
 import { memo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaTerminal } from 'react-icons/fa6';
-import { XTerm } from 'react-xtermjs';
 
 import { useZoneTerminal } from '../hooks/useZoneTerminal';
+
+import XTerm from './XTerm';
 
 /**
  * The terminal of one zone's zlogin session, hyperweaver-ui's zone

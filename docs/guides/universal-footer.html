@@ -1601,16 +1601,16 @@
           <td>
             <code>@xterm/xterm</code> with <code>addon-fit</code>, <code>addon-attach</code>,
             <code>addon-clipboard</code>, <code>addon-search</code>, <code>addon-serialize</code>,
-            <code>addon-web-links</code>, <code>addon-webgl</code>, and <code>react-xtermjs</code>;
-            no <code>react-resizable</code>, the grip is the row's own pointer events
+            <code>addon-web-links</code> and <code>addon-webgl</code>; no
+            <code>react-resizable</code>, the grip is the row's own pointer events
           </td>
         </tr>
         <tr>
           <td>Bundle</td>
           <td>
             one more <code>manualChunks</code> entry in <code>vite.config.js</code>:
-            <code>xterm</code> for <code>node_modules/@xterm</code> and <code>react-xtermjs</code>,
-            lazy behind the shell pane, so a UI backend without the token never fetches it
+            <code>xterm</code> for <code>node_modules/@xterm</code>, lazy behind the shell pane, so
+            a UI backend without the token never fetches it
           </td>
         </tr>
         <tr>

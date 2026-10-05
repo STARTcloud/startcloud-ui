@@ -170,7 +170,7 @@ export default defineConfig(({ command }) => ({
           ) {
             return 'tel-input';
           }
-          if (id.includes('node_modules/@xterm') || id.includes('node_modules/react-xtermjs')) {
+          if (id.includes('node_modules/@xterm')) {
             return 'xterm';
           }
           if (id.includes('node_modules/echarts') || id.includes('node_modules/zrender')) {

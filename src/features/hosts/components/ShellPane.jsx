@@ -8,14 +8,13 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useXTerm } from 'react-xtermjs';
-import '@xterm/xterm/css/xterm.css';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
 import { HOST_SHELL } from '../api/terminal';
 import { useFocus } from '../hooks/useFocus';
 import { closeTerminalPrefs, useTerminal, useTerminalPrefsOpen } from '../hooks/useTerminal';
+import { useXTerm } from '../hooks/useXTerm';
 import { loadTerminalPrefs, onTerminalPrefs } from '../utils/terminalPrefs';
 
 import TerminalPrefsDialog from './TerminalPrefsDialog';

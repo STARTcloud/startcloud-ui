@@ -4,12 +4,12 @@ import PropTypes from 'prop-types';
 import { memo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaPaste, FaShuffle, FaStop } from 'react-icons/fa6';
-import { useXTerm } from 'react-xtermjs';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
 import { sshSocketPath, stopSshSession } from '../api/consoleAPI';
 import { socketUrl, wsTicket } from '../api/terminal';
+import { useXTerm } from '../hooks/useXTerm';
 import { sshAddressesOf } from '../utils/consoles';
 import { isServerRole } from '../utils/hosts';
 import { loadTerminalPrefs } from '../utils/terminalPrefs';
