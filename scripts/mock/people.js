@@ -291,7 +291,8 @@ export const membershipRows = row =>
 
 const claimedMembership = row => ({
   uuid: organizations.get(row.name).uuid,
-  name: row.display_name,
+  name: row.name,
+  display_name: row.display_name,
   roles: [row.role.toUpperCase()],
   primary: row.is_primary,
   personal: row.personal,
@@ -308,10 +309,11 @@ const mobileOf = row => {
  * One person's record as `GET /api/user` and the sign-in answer it: the
  * backend's own snake_case members, `role` the hyperweaver role the hosts
  * feature reads, `roles` the global roles the admin pages read, the
- * memberships in the identity provider's shape, `{ uuid, name, roles,
- * primary, personal, logo_url, email_hash }`, the uuid the one a host's
- * and a machine's `org_uuids` name, and the preferences that ride the
- * record.
+ * memberships in the identity provider's shape, `{ uuid, name,
+ * display_name, roles, primary, personal, logo_url, email_hash }`, the
+ * name the route slug and the display name beside it, the uuid the one a
+ * host's and a machine's `org_uuids` name, and the preferences that ride
+ * the record.
  *
  * @param {Object} row - The person
  * @param {string} provider - `local`, or `oidc-` and the provider's name

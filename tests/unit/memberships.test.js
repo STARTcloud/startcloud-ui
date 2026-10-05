@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { profileMemberships } from '../../src/lib/backendSession.js';
 import { accountMembership, accountMemberships } from '../../src/lib/cookieSession.js';
 import { isManager, routeNameOf } from '../../src/utils/membership.js';
 
@@ -16,18 +15,27 @@ const issuerRow = {
   email_hash: 'abc123',
 };
 
-const boxVaultRow = { name: 'acme', role: 'admin', is_primary: true };
+const boxVaultRow = { ...issuerRow, name: 'acme', display_name: 'Acme Corporation' };
 
 describe('accountMembership', () => {
-  it('reads the identity provider shape, the uuid as the uuid', () => {
+  it('reads the identity provider shape, the uuid as the uuid, no display name where none is answered', () => {
     expect(accountMembership(issuerRow)).toEqual({
       uuid: ACME,
       name: 'Acme',
+      displayName: '',
       roles: ['OWNER'],
       primary: true,
       personal: false,
       logo: 'https://acme.example.com/logo.png',
       emailHash: 'abc123',
+    });
+  });
+
+  it("carries BoxVault's display name beside the name", () => {
+    expect(accountMembership(boxVaultRow)).toMatchObject({
+      uuid: ACME,
+      name: 'acme',
+      displayName: 'Acme Corporation',
     });
   });
 
@@ -44,45 +52,25 @@ describe('accountMemberships', () => {
       accountMembership(issuerRow),
     ]);
     expect(accountMemberships(null)).toEqual([]);
+    expect(accountMemberships(undefined)).toEqual([]);
     expect(accountMemberships({ organizations: 'acme' })).toEqual([]);
   });
 });
 
-describe('profileMemberships', () => {
-  it('reads a row that carries a uuid as the identity provider shape', () => {
-    expect(profileMemberships({ organizations: [issuerRow] })).toEqual([
-      accountMembership(issuerRow),
-    ]);
-  });
-
-  it('reads a row without a uuid as BoxVault answers it, the name as the uuid', () => {
-    expect(profileMemberships({ organizations: [boxVaultRow] })).toEqual([
-      { uuid: 'acme', name: 'acme', roles: ['ADMIN'], primary: true },
-    ]);
-  });
-
-  it('answers no roles for a BoxVault row without a role and none for no profile', () => {
-    expect(profileMemberships({ organizations: [{ name: 'acme' }] })).toEqual([
-      { uuid: 'acme', name: 'acme', roles: [], primary: false },
-    ]);
-    expect(profileMemberships(undefined)).toEqual([]);
-  });
-});
-
 describe('routeNameOf', () => {
-  it('answers the name of the membership that carries the uuid in both shapes', () => {
-    expect(routeNameOf(profileMemberships({ organizations: [issuerRow] }), ACME)).toBe('Acme');
-    expect(routeNameOf(profileMemberships({ organizations: [boxVaultRow] }), 'acme')).toBe('acme');
+  it('answers the name of the membership that carries the uuid', () => {
+    expect(routeNameOf(accountMemberships({ organizations: [issuerRow] }), ACME)).toBe('Acme');
+    expect(routeNameOf(accountMemberships({ organizations: [boxVaultRow] }), ACME)).toBe('acme');
   });
 
   it('answers the empty name for All organizations and for a uuid no membership carries', () => {
-    const memberships = profileMemberships({ organizations: [issuerRow] });
+    const memberships = accountMemberships({ organizations: [issuerRow] });
     expect(routeNameOf(memberships, '')).toBe('');
     expect(routeNameOf(memberships, 'Acme')).toBe('');
   });
 
   it('lets an owner found by uuid read as a manager by name', () => {
-    const memberships = profileMemberships({ organizations: [issuerRow] });
+    const memberships = accountMemberships({ organizations: [issuerRow] });
     expect(isManager(memberships, routeNameOf(memberships, ACME))).toBe(true);
     expect(isManager(memberships, ACME)).toBe(false);
   });

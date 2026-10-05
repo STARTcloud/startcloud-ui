@@ -241,19 +241,18 @@ served the page:
   issuers and its preferences write go through an instance of that client
   built over itself, so a JWT rotated in a response header on any of
   them is adopted;
-- memberships come from the profile's `organizations`, mapped to the chrome
-  shape by the exported `profileMemberships`, which reads two shapes. A
-  row that carries a `uuid` is in the identity provider's shape,
-  `{ uuid, name, roles, primary, personal, logo_url, email_hash }`, the
-  shape hyperweaver-server's `GET /api/user` answers, and is read through
-  `accountMembership`, the cookie provider's own mapping, the uuid as the
-  uuid, because the uuid is the organization's identity, a name can be
-  renamed, and the rows a resource server answers (`org_uuids` on a host
-  and on a machine) are keyed on it. A row without one is in BoxVault's
-  shape, `{ name, role, is_primary }`, and is read with the name as the
-  uuid, because BoxVault's routes are keyed by the name. This is the one
-  two-shape reader of the layer; an app's own permission rules read the
-  same mapping over `isMember`, `isManager` and `isOwner`;
+- memberships come from the profile's `organizations`, every row in the
+  identity provider's shape,
+  `{ uuid, name, roles, primary, personal, logo_url, email_hash }`, with
+  `display_name` beside `name` where the backend answers one, read
+  through `accountMembership`, the cookie provider's own mapping, the
+  uuid as the uuid, because the uuid is the organization's identity, a
+  name can be renamed, and the rows a resource server answers
+  (`org_uuids` on a host and on a machine) are keyed on it; the display
+  name is the name a page draws where it draws one, the switcher's row
+  and the user menu's organization row among them, and `name` stays the
+  word the organization's routes are keyed by; an app's own permission
+  rules read the same mapping over `isMember`, `isManager` and `isOwner`;
 - `oidc` is whether the profile's `provider` starts with `oidc-`, and
   `issuerUrl` is resolved from the ID token the backend embeds in its JWT,
   checked against the backend's trusted issuers, so the user menu's profile
@@ -509,7 +508,7 @@ the `idp.storage_prefix` the UI backend names for its tokens.
 | session                           | `<storagePrefix>.access_token`, `.refresh_token`, `.id_token`, `.token_type`, `.expires_at` and `.preferences`, the last userinfo `preferences`, in `localStorage`; `<storagePrefix>.oidc_discovery` in `sessionStorage`; the DPoP key in IndexedDB `<storagePrefix>-dpop`                                                     | `user` in `localStorage`: the profile with its four `preferred_*` members, the JWT, `stay_logged_in`                                                                                                                                                       |
 | sign-in round trip                | `<storagePrefix>.pkce_verifier`, `<storagePrefix>.pkce_state`, kept for the one round trip and dropped by `complete()`                                                                                                                                                                                                         | n/a — the backend holds the verifier                                                                                                                                                                                                                       |
 | return path                       | `intended_url`                                                                                                                                                                                                                                                                                                                 | `intended_url`                                                                                                                                                                                                                                             |
-| active organization               | `activeOrganization` (uuid)                                                                                                                                                                                                                                                                                                    | `activeOrganization` (organization name on BoxVault; uuid on hyperweaver-server, the key absent while the choice is All organizations)                                                                                                                     |
+| active organization               | `activeOrganization` (uuid)                                                                                                                                                                                                                                                                                                    | `activeOrganization` (uuid; on hyperweaver-server the key absent while the choice is All organizations)                                                                                                                                                    |
 | push switch                       | `push_enabled`                                                                                                                                                                                                                                                                                                                 | `push_enabled`                                                                                                                                                                                                                                             |
 | sign-in method chosen             | n/a — sign-in is one click                                                                                                                                                                                                                                                                                                     | `login_method`                                                                                                                                                                                                                                             |
 | join intent kept across a sign-in | n/a                                                                                                                                                                                                                                                                                                                            | `join_org`                                                                                                                                                                                                                                                 |

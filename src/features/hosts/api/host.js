@@ -76,6 +76,18 @@ export const fastRebootHost = (status, id, { bootEnvironment }) =>
   });
 
 /**
+ * The host's USB devices as VirtualBox lists them, `GET system/usb`,
+ * asked for only of a host that lists `devices` and names `virtualbox`,
+ * answered `{ devices: [{ uuid, vendor_id, product_id, manufacturer,
+ * product, serial_number, address, state }], total }`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The devices
+ */
+export const fetchUsbDevices = (status, id) => client.get(agentPath(status, id, 'system/usb'));
+
+/**
  * One directory of the host's file system, `GET filesystem` with `path`,
  * asked for only of a host that lists `file-browser`, answered
  * `{ items: [{ name, path, isDirectory }] }`.

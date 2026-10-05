@@ -2886,7 +2886,32 @@
         "notCapable": "No compatible",
         "assigned": "Asignado ({{count}})",
         "available": "Disponible"
+      },
+      "usb": {
+        "product": "Producto",
+        "manufacturer": "Fabricante",
+        "ids": "Fabricante:Producto",
+        "serial": "Número de serie",
+        "address": "Dirección",
+        "state": "Estado",
+        "none": "Sin dispositivos USB"
       }
+    },
+    "media": {
+      "disks": "Discos",
+      "isos": "ISOs",
+      "path": "Ruta",
+      "format": "Formato",
+      "size": "Tamaño",
+      "source": "Origen",
+      "inUseBy": "En uso por",
+      "sourceTemplate": "Plantilla",
+      "sourceBlank": "En blanco",
+      "filename": "Archivo",
+      "location": "Ubicación",
+      "noDisks": "Sin imágenes de disco",
+      "noIsos": "Sin ISOs",
+      "search": "Buscar medios"
     },
     "nav": {
       "host": "Host",
@@ -2896,6 +2921,7 @@
       "pools": "Pools y datasets",
       "arc": "ARC",
       "disks": "Discos",
+      "media": "Medios",
       "system": "Sistema",
       "updates": "Actualizaciones",
       "files": "Archivos",

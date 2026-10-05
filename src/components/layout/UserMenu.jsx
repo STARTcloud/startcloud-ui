@@ -182,7 +182,7 @@ const ActiveOrgItem = ({ organizations, activeOrg, allOrganizations, orgMark, on
         className="rounded-circle avatar-sm me-2"
         fallback={orgMark}
       />
-      <span className="text-truncate">{activeOrg.name}</span>
+      <span className="text-truncate">{activeOrg.displayName || activeOrg.name}</span>
     </Dropdown.Item>
   );
 };

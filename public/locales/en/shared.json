@@ -2886,7 +2886,32 @@
         "notCapable": "Not capable",
         "assigned": "Assigned ({{count}})",
         "available": "Available"
+      },
+      "usb": {
+        "product": "Product",
+        "manufacturer": "Manufacturer",
+        "ids": "Vendor:Product",
+        "serial": "Serial",
+        "address": "Address",
+        "state": "State",
+        "none": "No USB devices"
       }
+    },
+    "media": {
+      "disks": "Disks",
+      "isos": "ISOs",
+      "path": "Path",
+      "format": "Format",
+      "size": "Size",
+      "source": "Source",
+      "inUseBy": "In use by",
+      "sourceTemplate": "Template",
+      "sourceBlank": "Blank",
+      "filename": "File",
+      "location": "Location",
+      "noDisks": "No disk images",
+      "noIsos": "No ISOs",
+      "search": "Search media"
     },
     "nav": {
       "host": "Host",
@@ -2896,6 +2921,7 @@
       "pools": "Pools and datasets",
       "arc": "ARC",
       "disks": "Disks",
+      "media": "Media",
       "system": "System",
       "updates": "Updates",
       "files": "Files",

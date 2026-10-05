@@ -1,0 +1,26 @@
+{
+  "media": [
+    {
+      "path": "/var/lib/hyperweaver/machines/build-win11/build-win11.vdi",
+      "format": "VDI",
+      "size_bytes": 68719476736,
+      "source_stamp": null,
+      "in_use_by": ["build-win11"]
+    },
+    {
+      "path": "/var/lib/hyperweaver/machines/ci-runner-1/disk1.vmdk",
+      "format": "VMDK",
+      "size_bytes": 42949672960,
+      "source_stamp": "template",
+      "in_use_by": ["ci-runner-1"]
+    },
+    {
+      "path": "/var/lib/hyperweaver/machines/db-replica/data.vdi",
+      "format": "VDI",
+      "size_bytes": 107374182400,
+      "source_stamp": "blank",
+      "in_use_by": []
+    }
+  ],
+  "total": 3
+}

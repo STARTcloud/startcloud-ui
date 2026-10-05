@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 
 import { log } from '../lib/logger';
+import { routeNameOf } from '../utils/membership';
 
 /**
  * The active organization's record from the primary collection's adapter,
+ * read by the route name of the membership that carries the active uuid,
  * the memberships with its logo filled in, and its customer code (the
  * record's `orgCode`, else the membership's `customer_id`).
  *
@@ -16,15 +18,16 @@ import { log } from '../lib/logger';
  */
 export const useActiveOrganization = ({ collections, memberships, user, activeOrgUuid }) => {
   const [activeOrg, setActiveOrg] = useState(null);
+  const routeName = routeNameOf(memberships, activeOrgUuid);
 
   useEffect(() => {
     const [primary] = collections;
-    if (!user || !activeOrgUuid || !primary) {
+    if (!user || !routeName || !primary) {
       return undefined;
     }
     let mounted = true;
     primary.adapter
-      .getOrganization(activeOrgUuid)
+      .getOrganization(routeName)
       .then(organization => {
         if (mounted) {
           setActiveOrg(organization);
@@ -36,9 +39,9 @@ export const useActiveOrganization = ({ collections, memberships, user, activeOr
     return () => {
       mounted = false;
     };
-  }, [collections, user, activeOrgUuid]);
+  }, [collections, user, routeName]);
 
-  const active = activeOrg?.name === activeOrgUuid ? activeOrg : null;
+  const active = routeName && activeOrg?.name === routeName ? activeOrg : null;
   const membership = memberships.find(org => org.uuid === activeOrgUuid) || null;
 
   return {

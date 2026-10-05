@@ -247,7 +247,7 @@ Feature: doors
 
   Scenario: Organization console: the tab strip draws as it did, a button a tab, the count of the join requests on its tab and the picked tab active
     Given the host answers the org-console fixture
-    And the browser holds "user" as "{\"id\":42,\"username\":\"mark\",\"access_token\":\"t\",\"organizations\":[{\"name\":\"acme\",\"role\":\"admin\",\"is_primary\":true}]}"
+    And the browser holds "user" as "{\"id\":42,\"username\":\"mark\",\"access_token\":\"t\",\"organizations\":[{\"uuid\":\"0d6b7e2a-1111-4c0a-9a1e-000000000001\",\"name\":\"acme\",\"display_name\":\"Acme\",\"roles\":[\"ADMIN\"],\"primary\":true,\"personal\":false,\"logo_url\":null,\"email_hash\":\"\"}]}"
     When I open "/org-console"
     Then the console tab strip draws 3 tabs as buttons
     And the console tab "organization" is the active one

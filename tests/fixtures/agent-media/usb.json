@@ -1,0 +1,35 @@
+{
+  "devices": [
+    {
+      "uuid": "2f1a7b9c-0001-4d3e-9a6b-1c2d3e4f5a01",
+      "vendor_id": "046d",
+      "product_id": "c52b",
+      "manufacturer": "Logitech",
+      "product": "USB Receiver",
+      "serial_number": "",
+      "address": "{2f1a7b9c-0001}#0002",
+      "state": "Available"
+    },
+    {
+      "uuid": "2f1a7b9c-0002-4d3e-9a6b-1c2d3e4f5a02",
+      "vendor_id": "0781",
+      "product_id": "5583",
+      "manufacturer": "SanDisk",
+      "product": "Ultra Fit",
+      "serial_number": "4C530001230512345678",
+      "address": "{2f1a7b9c-0002}#0003",
+      "state": "Captured"
+    },
+    {
+      "uuid": "2f1a7b9c-0003-4d3e-9a6b-1c2d3e4f5a03",
+      "vendor_id": "1050",
+      "product_id": "0407",
+      "manufacturer": "Yubico",
+      "product": "YubiKey OTP+FIDO+CCID",
+      "serial_number": "",
+      "address": "{2f1a7b9c-0003}#0004",
+      "state": "Busy"
+    }
+  ],
+  "total": 3
+}

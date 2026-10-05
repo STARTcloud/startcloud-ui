@@ -89,6 +89,7 @@ const PAGES = {
   snapshots: lazy(() => import('./sections/SnapshotsPage')),
   arc: lazy(() => import('./sections/ArcPage')),
   disks: lazy(() => import('./sections/DisksPage')),
+  media: lazy(() => import('./sections/MediaPage')),
   'boot-environments': lazy(() => import('./sections/BootEnvironmentsPage')),
   devices: lazy(() => import('./sections/DevicesSectionPage')),
   services: lazy(() => import('./sections/ServicesPage')),

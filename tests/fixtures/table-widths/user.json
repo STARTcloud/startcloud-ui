@@ -5,6 +5,17 @@
   "verified": true,
   "roles": ["user"],
   "organization": "STARTcloud",
-  "organizations": [{ "name": "STARTcloud", "role": "admin", "is_primary": true }],
+  "organizations": [
+    {
+      "uuid": "0d6b7e2a-2222-4c0a-9a1e-000000000001",
+      "name": "STARTcloud",
+      "display_name": "STARTcloud",
+      "roles": ["ADMIN"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": ""
+    }
+  ],
   "entitlements": [{ "value": "hyperweaver" }]
 }

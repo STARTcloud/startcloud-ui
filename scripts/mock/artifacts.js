@@ -258,6 +258,11 @@ const listedArtifacts = ctx => {
 
 const shownArtifact = ({ row }) => ok({ success: true, ...row });
 
+const listedIsos = ctx => {
+  const rows = storeOf(ctx.host).artifacts.filter(row => row.file_type === 'iso');
+  return ok({ success: true, artifacts: rows, total: rows.length });
+};
+
 const deletedArtifacts = ctx => {
   const { host, body } = ctx;
   const store = storeOf(host);
@@ -506,7 +511,8 @@ const downloadedFile = ({ row }) => ({
  * route hyperweaver-ui's artifact management calls as hyperweaver-agent
  * answers it: the storage locations at `artifacts/storage/paths`, read,
  * made, changed and removed; the artifacts at `artifacts` with the
- * type, the location, the search, the sort and the page, one artifact's
+ * type, the location, the search, the sort and the page, the ISO images
+ * alone at `artifacts/iso`, one artifact's
  * detail, its bytes at `download`, the batch delete at
  * `artifacts/files`; the scan, the download from a URL, the move and
  * the copy each a queued task on the target `artifact` that changes the
@@ -527,6 +533,7 @@ export const mountArtifacts = agentRoute => {
   agentRoute('PUT', 'artifacts/storage/paths/:path', behind(pathOf(updatedPath)));
   agentRoute('DELETE', 'artifacts/storage/paths/:path', behind(pathOf(deletedPath)));
   agentRoute('GET', 'artifacts', behind(listedArtifacts));
+  agentRoute('GET', 'artifacts/iso', behind(listedIsos));
   agentRoute('DELETE', 'artifacts/files', behind(deletedArtifacts));
   agentRoute('POST', 'artifacts/scan', behind(scanned));
   agentRoute('POST', 'artifacts/download', behind(downloadedFromUrl));

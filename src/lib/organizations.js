@@ -37,25 +37,6 @@ export const fetchOrganization = async name => {
   };
 };
 
-export const loadOrganizations = async () => {
-  const rows = (await userOrganizations()) || [];
-  return Promise.all(
-    rows.map(async membership => {
-      const name = membership.name || membership.organization?.name;
-      return {
-        uuid: name,
-        name,
-        description: membership.description || membership.organization?.description || '',
-        roles: membership.role ? [String(membership.role).toUpperCase()] : [],
-        primary: Boolean(membership.is_primary),
-        personal: Boolean(membership.personal),
-        logo: await organizationLogo(membership),
-        emailHash: membership.email_hash || membership.organization?.email_hash || '',
-      };
-    })
-  );
-};
-
 export const logoFor = organization => {
   const name = organization?.name;
   if (!name) {

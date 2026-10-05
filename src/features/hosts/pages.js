@@ -244,6 +244,13 @@ export const HOST_PAGES = [
         ...feature('zfs'),
       },
       {
+        key: 'media',
+        segment: 'storage/media',
+        icon: FaCompactDisc,
+        labelKey: key('hosts.nav.media'),
+        ...feature('media'),
+      },
+      {
         key: 'boot-environments',
         segment: 'storage/boot-environments',
         icon: FaLayerGroup,

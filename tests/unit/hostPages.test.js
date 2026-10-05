@@ -61,6 +61,7 @@ describe('HOST_PAGES', () => {
       'storage/snapshots',
       'storage/arc',
       'storage/disks',
+      'storage/media',
       'storage/boot-environments',
     ]);
     expect(segmentsOf('devices')).toEqual(['devices']);
@@ -152,9 +153,10 @@ describe('hostPagesFor', () => {
     expect(pagesOf(rowOf(['tasks']), 1).network).toBeUndefined();
   });
 
-  it('offers the storage rows and the disks behind zfs alone and the boot environments behind their token', () => {
+  it('offers the storage rows and the disks behind zfs alone, the media and the boot environments behind their tokens', () => {
     expect(pagesOf(rowOf(['zfs']), 1).storage).toEqual(['pools', 'snapshots', 'arc', 'disks']);
     expect(pagesOf(rowOf(['monitoring']), 1).storage).toBeUndefined();
+    expect(pagesOf(rowOf(['media']), 1).storage).toEqual(['media']);
     expect(pagesOf(rowOf(['boot-environments']), 1).storage).toEqual(['boot-environments']);
     expect(pagesOf(rowOf(['devices']), 1).devices).toEqual(['devices']);
   });

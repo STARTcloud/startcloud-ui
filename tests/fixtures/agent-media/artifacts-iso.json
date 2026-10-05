@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "artifacts": [
+    {
+      "id": "9a2b4c6d-0000-4000-8000-000000000001",
+      "filename": "debian-13.0.0-amd64-netinst.iso",
+      "path": "/rpool/iso/debian-13.0.0-amd64-netinst.iso",
+      "file_type": "iso",
+      "extension": ".iso",
+      "size": 777000000,
+      "storage_location": { "id": "7c1e5d3a-0000-4000-8000-000000000001", "name": "ISO library" }
+    },
+    {
+      "id": "9a2b4c6d-0000-4000-8000-000000000002",
+      "filename": "windows-11-eval.iso",
+      "path": "/rpool/iso/windows-11-eval.iso",
+      "file_type": "iso",
+      "extension": ".iso",
+      "size": 6657199308,
+      "storage_location": { "id": "7c1e5d3a-0000-4000-8000-000000000001", "name": "ISO library" }
+    }
+  ],
+  "total": 2
+}

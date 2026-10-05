@@ -140,7 +140,72 @@ const DEVICES = [
   },
 ];
 
+const USB_DEVICES = [
+  {
+    uuid: '2f1a7b9c-0001-4d3e-9a6b-1c2d3e4f5a01',
+    vendor_id: '046d',
+    product_id: 'c52b',
+    manufacturer: 'Logitech',
+    product: 'USB Receiver',
+    serial_number: '',
+    address: '{2f1a7b9c-0001}#0002',
+    state: 'Available',
+  },
+  {
+    uuid: '2f1a7b9c-0002-4d3e-9a6b-1c2d3e4f5a02',
+    vendor_id: '0781',
+    product_id: '5583',
+    manufacturer: 'SanDisk',
+    product: 'Ultra Fit',
+    serial_number: '4C530001230512345678',
+    address: '{2f1a7b9c-0002}#0003',
+    state: 'Captured',
+  },
+  {
+    uuid: '2f1a7b9c-0003-4d3e-9a6b-1c2d3e4f5a03',
+    vendor_id: '1050',
+    product_id: '0407',
+    manufacturer: 'Yubico',
+    product: 'YubiKey OTP+FIDO+CCID',
+    serial_number: '',
+    address: '{2f1a7b9c-0003}#0004',
+    state: 'Busy',
+  },
+];
+
+const MEDIA = [
+  [
+    '/var/lib/hyperweaver/machines/build-win11/build-win11.vdi',
+    'VDI',
+    68719476736,
+    null,
+    ['build-win11'],
+  ],
+  [
+    '/var/lib/hyperweaver/machines/ci-runner-1/disk1.vmdk',
+    'VMDK',
+    42949672960,
+    'template',
+    ['ci-runner-1'],
+  ],
+  ['/var/lib/hyperweaver/machines/db-replica/data.vdi', 'VDI', 107374182400, 'blank', []],
+];
+
 const offers = (host, token) => featuresOf(host).includes(token);
+
+const usbListed = () => ok({ devices: USB_DEVICES, total: USB_DEVICES.length });
+
+const mediaListed = () =>
+  ok({
+    media: MEDIA.map(([path, format, size, stamp, users]) => ({
+      path,
+      format,
+      size_bytes: size,
+      source_stamp: stamp,
+      in_use_by: users,
+    })),
+    total: MEDIA.length,
+  });
 
 const behind = (token, handler) => ctx =>
   offers(ctx.host, token) ? handler(ctx) : problem(404, 'Not Found');
@@ -234,22 +299,26 @@ const shown = ctx => {
 };
 
 /**
- * The devices page's reads on a host that lists `devices`, each answered
- * as zoneweaver-agent's device controller answers it: the PCI devices
- * with their summary at `GET host/devices`, narrowed by `category`,
- * `ppt_enabled`, `driver_attached` and `available`; the devices free for
- * passthrough at `host/devices/available`; the count by category at
- * `host/devices/categories`; the passthrough overview at
- * `host/ppt-status`; a discovery asked again at `POST host/devices/refresh`;
- * and one device by its id or its PCI address. A device enabled for
- * passthrough is assigned to as many of the host's running machines as
- * its row names, the first of them.
+ * The devices and media pages' reads on a host that lists `devices` and
+ * `media`: the PCI devices as zoneweaver-agent's device controller
+ * answers them, with their summary at `GET host/devices`, narrowed by
+ * `category`, `ppt_enabled`, `driver_attached` and `available`, the
+ * devices free for passthrough at `host/devices/available`, the count by
+ * category at `host/devices/categories`, the passthrough overview at
+ * `host/ppt-status`, a discovery asked again at `POST host/devices/refresh`
+ * and one device by its id or its PCI address, a device enabled for
+ * passthrough assigned to as many of the host's running machines as its
+ * row names; the USB devices as hyperweaver-agent lists them from
+ * VirtualBox at `GET system/usb`; and the hard-disk images VirtualBox
+ * registers at `GET media` behind `media`.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
  * @returns {void}
  */
 export const mountDevices = agentRoute => {
   const devices = handler => behind('devices', handler);
+  agentRoute('GET', 'system/usb', devices(usbListed));
+  agentRoute('GET', 'media', behind('media', mediaListed));
   agentRoute('GET', 'host/devices', devices(listed));
   agentRoute('GET', 'host/devices/available', devices(available));
   agentRoute('GET', 'host/devices/categories', devices(categories));

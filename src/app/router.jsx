@@ -405,15 +405,10 @@ const backendUsers = {
   remove: removeAccount,
 };
 
-const renameActiveOrganization = async (name, next) => {
-  if (session.restore()?.user?.organization === name) {
-    localStorage.setItem(ACTIVE_ORG_KEY, next);
-    await session.refresh();
-  }
-};
-
 /**
- * The All organizations page's adapter of a `backend` host.
+ * The All organizations page's adapter of a `backend` host; a rename
+ * reads the profile again, the uuid the active organization is kept by
+ * never moving.
  */
 const backendOrganizations = {
   list: () =>
@@ -433,7 +428,7 @@ const backendOrganizations = {
       );
     }
     if (next !== name) {
-      await renameActiveOrganization(name, next);
+      await session.refresh();
     }
   },
   remove: removeOrganization,
@@ -523,6 +518,7 @@ const PAGE_TITLES = {
   '/hosts/:id/storage/snapshots': 'navbar.contextTabs.snapshots',
   '/hosts/:id/storage/arc': 'hosts.nav.arc',
   '/hosts/:id/storage/disks': 'hosts.nav.disks',
+  '/hosts/:id/storage/media': 'hosts.nav.media',
   '/hosts/:id/storage/boot-environments': 'pages.hostManage.tabBootEnvironments',
   '/hosts/:id/devices': 'navbar.contextTabs.devices',
   '/hosts/:id/system/services': 'pages.hostManage.tabServices',
@@ -592,6 +588,7 @@ const HOST_SECTION_ROUTES = [
   ['storage/snapshots', 'snapshots'],
   ['storage/arc', 'arc'],
   ['storage/disks', 'disks'],
+  ['storage/media', 'media'],
   ['storage/boot-environments', 'boot-environments'],
   ['devices', 'devices'],
   ['system/services', 'services'],

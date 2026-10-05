@@ -54,7 +54,9 @@
     "host-power",
     "artifacts",
     "file-browser",
-    "guest-agent"
+    "guest-agent",
+    "devices",
+    "media"
   ],
   "shi_mode": false,
   "uptime": 1036800

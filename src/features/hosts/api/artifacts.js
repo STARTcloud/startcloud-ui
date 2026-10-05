@@ -68,6 +68,30 @@ export const fetchArtifacts = (status, id, params) =>
   client.get(agentPath(status, id, 'artifacts'), { params });
 
 /**
+ * The ISO images of a host's artifact storage, `GET artifacts/iso`,
+ * asked for only of a host that lists `artifacts`, answered the artifact
+ * list shape, `{ artifacts, total }`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The answer
+ */
+export const fetchIsoArtifacts = (status, id) => client.get(agentPath(status, id, 'artifacts/iso'));
+
+/**
+ * The hard-disk images VirtualBox registers on a host, `GET media`,
+ * asked for only of a host that lists `media`, answered
+ * `{ media: [{ path, format, size_bytes, source_stamp, in_use_by }], total }`,
+ * `source_stamp` `template`, `blank` or null for a disk the agent did not
+ * make.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<Object>} The answer
+ */
+export const fetchMedia = (status, id) => client.get(agentPath(status, id, 'media'));
+
+/**
  * One artifact's detail, `GET artifacts/{id}`.
  *
  * @param {Object} status - The payload from `probeStatus`

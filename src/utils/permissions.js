@@ -1,4 +1,4 @@
-import { profileMemberships } from '../lib/backendSession';
+import { accountMemberships } from '../lib/cookieSession';
 
 import { hasFeature } from './capabilities';
 import { guestOnly, isGuest, isManager, isMember, isOwner, managesAny } from './membership';
@@ -14,28 +14,28 @@ export const isGlobalAdmin = user =>
 
 /** Member of the organization (any role). Mirrors verifyOrgAccess.isOrgMember. */
 export const isOrgMember = (user, organizationName) =>
-  isMember(profileMemberships(user), organizationName);
+  isMember(accountMemberships(user), organizationName);
 
 /**
  * The organization's read-only membership: a guest sees what a member
  * sees and every write control is absent for one.
  */
 export const isOrgGuest = (user, organizationName) =>
-  isGuest(profileMemberships(user), organizationName);
+  isGuest(accountMemberships(user), organizationName);
 
 /**
  * A guest-only account, the shared download login: every membership a
  * guest's, so the viewer may read and download and keep nothing of their
  * own, which is why a listing draws no watch star for one.
  */
-export const isGuestOnly = user => guestOnly(profileMemberships(user));
+export const isGuestOnly = user => guestOnly(accountMemberships(user));
 
 /**
  * Owner or admin of at least one organization, or a global admin: what a
  * listing spanning organizations asks before it draws its select column.
  */
 export const managesAnyOrganization = user =>
-  managesAny(profileMemberships(user), isGlobalAdmin(user));
+  managesAny(accountMemberships(user), isGlobalAdmin(user));
 
 /**
  * Org admin/owner, or a global admin.
@@ -43,14 +43,14 @@ export const managesAnyOrganization = user =>
  * Used for org settings, member-role management, and bulk delete.
  */
 export const isOrgManager = (user, organizationName) =>
-  isManager(profileMemberships(user), organizationName, isGlobalAdmin(user));
+  isManager(accountMemberships(user), organizationName, isGlobalAdmin(user));
 
 /**
  * Org owner specifically, or a global admin.
  * Mirrors verifyOrgAccess.isOrgOwner (gates per-org role changes + org deletion).
  */
 export const isOrgOwner = (user, organizationName) =>
-  isOwner(profileMemberships(user), organizationName, isGlobalAdmin(user));
+  isOwner(accountMemberships(user), organizationName, isGlobalAdmin(user));
 
 /**
  * Whether the user may mutate a box's content (edit/delete the box, and
@@ -64,13 +64,13 @@ export const isOrgOwner = (user, organizationName) =>
  * @param {object|null} box - the raw box row, its `user_id` the owner.
  */
 export const canManageBox = (user, organizationName, box) => {
-  if (!user || isGuest(profileMemberships(user), organizationName)) {
+  if (!user || isGuest(accountMemberships(user), organizationName)) {
     return false;
   }
   if (box && box.user_id === user.id) {
     return true;
   }
-  return isManager(profileMemberships(user), organizationName);
+  return isManager(accountMemberships(user), organizationName);
 };
 
 /**

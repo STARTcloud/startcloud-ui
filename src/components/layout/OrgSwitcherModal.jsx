@@ -17,6 +17,7 @@ const ROLE_CLASSES = {
 export const organizationShape = PropTypes.shape({
   uuid: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
+  displayName: PropTypes.string,
   description: PropTypes.string,
   roles: PropTypes.arrayOf(PropTypes.string),
   primary: PropTypes.bool,
@@ -89,7 +90,7 @@ const OrgRow = ({ org, active, orgMark, onPick }) => {
         <div className="d-flex align-items-center">
           <OrgLogo org={org} fallback={orgMark} />
           <div>
-            <div className="fw-bold">{org.name}</div>
+            <div className="fw-bold">{org.displayName || org.name}</div>
             <MarkdownText text={org.description} className="small text-muted" />
           </div>
         </div>
@@ -152,7 +153,8 @@ AllRow.propTypes = {
 
 /**
  * The organization switcher modal of the navbar contract: one row per
- * membership, personal organizations last, each its logo, name,
+ * membership, personal organizations last, each its logo, its display
+ * name where the membership carries one and its name otherwise, its
  * description, role badges, the crown on the primary and the check on
  * the active one; with `allOrganizations`, on a host that narrows by
  * organization, the All organizations row first, active while

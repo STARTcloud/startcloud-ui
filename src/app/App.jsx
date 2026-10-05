@@ -44,7 +44,6 @@ import { useSessionKeepalive } from '../hooks/useSessionKeepalive';
 import { useSetupGate } from '../hooks/useSetupGate';
 import { useTheme } from '../hooks/useTheme';
 import { useTicketUrl } from '../hooks/useTicketUrl';
-import { loadOrganizations } from '../lib/organizations';
 import {
   client,
   events,
@@ -135,7 +134,6 @@ const apiRowsFor = (status, pathname) => apiReference(status, pathname) || ownAp
 const shellFlags = ({
   status,
   i18n,
-  backend,
   cookie,
   globalAdmin,
   memberships,
@@ -145,7 +143,6 @@ const shellFlags = ({
 }) => ({
   allOrganizations: orgFilter,
   apiRows: apiRowsFor(status, pathname),
-  loadOrganizations: backend && !orgFilter ? loadOrganizations : null,
   showAbout: hasAbout(status, i18n),
   showAdminBoard: hasFeature(status, 'admin') && globalAdmin && !cookie,
   showOrgConsole:
@@ -275,7 +272,6 @@ const App = ({ getSupportedLanguages }) => {
   const flags = shellFlags({
     status,
     i18n,
-    backend,
     cookie,
     globalAdmin,
     memberships,
