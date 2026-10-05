@@ -299,7 +299,9 @@ adapter, registers the search binding, and renders:
   the navbar's own Sign in control, a link to the sign-in page carrying
   the page as its return path or the one-click sign-in of an `idp` host,
   drawn only while no filter is on and only on a host whose `auth` names
-  a session; an item, version or provider page whose record the host
+  a session and whose `features` lists `landing`, a host without the
+  token sending the visitor to sign in before any page draws (the
+  navbar contract's token table); an item, version or provider page whose record the host
   refused answers the same placard titled `pages.notFound`, the hint and
   the control for a signed-out visitor and the title alone for a
   signed-in one, and never
@@ -1388,7 +1390,9 @@ The navbar's Sign in button always carries the page it was pressed on as
 in-app redirect to the login page carries its own; every sign-in path on
 the login page, the local form, the provider buttons and the silent SSO
 redirect, remembers it and returns there after the callback, never to the
-profile page.
+profile page. A host that does not list `landing` makes that redirect
+itself for every signed-out visitor on any route but an auth path, the
+page the return path.
 
 ---
 

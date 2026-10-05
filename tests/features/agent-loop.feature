@@ -1,6 +1,6 @@
 Feature: agent-loop
 
-  Scenario: Agent loop: a sign-out on the admin page after a tray sign-in lands home once on the placard, and the sign-in page opened after it stays, the claim of the page load answering it no more
+  Scenario: Agent loop: a sign-out on the admin page after a tray sign-in lands once on the sign-in page, which stays, the claim of the page load answering it no more
     Given the host answers the agent-signins fixture
     And the page's navigations are watched
     When I open "/login#tray=tray-demo-token"
@@ -11,17 +11,11 @@ Feature: agent-loop
     And I press the account menu's admin board
     Then the path is "/admin/config/app"
     When I sign out from the account menu
-    Then the pathname is "/"
-    And the chrome draws the Sign in control
-    And the page draws the sign-in placard
-    And the browser holds no "apikey"
-    And the page navigated to "/admin" 1 times
-    And the page navigated to "/login" 1 times
-    When I click "Sign in"
     Then the pathname is "/login"
     And the sign-in page draws the agent sign-ins
-    And the page navigated to "/login" 2 times
+    And the browser holds no "apikey"
     And the page navigated to "/admin" 1 times
+    And the page navigated to "/login" 2 times
     And the pathname is "/login"
     And the host was sent POST to "/api/auth/tray-claim" 1 times
 
@@ -33,18 +27,18 @@ Feature: agent-loop
     And the host was sent GET to "/api/api-keys/info" 1 times
     And the host was not sent GET to "/api/user/favorites"
 
-  Scenario: Agent loop: the hosts home and the host page draw the sign-in placard for a visitor and read nothing
+  Scenario: Agent loop: the hosts home and the host page send a visitor to sign in with the page as the return path and read nothing
     Given the host answers the agent-signins fixture
     When I open "/"
-    Then the chrome draws the Sign in control
-    And the page draws the sign-in placard
+    Then the path is "/login?returnTo=%2F"
+    And the sign-in page draws the agent sign-ins
     And the host was not sent GET to "/api/stats"
     When I open "/hosts/self"
-    Then the page draws the sign-in placard
+    Then the path is "/login?returnTo=%2Fhosts%2Fself"
     And the host was not sent GET to "/api/stats"
     And the host was not sent GET to "/api/machines"
 
-  Scenario: Agent loop: a sign-out on the dashboard draws the placard and sends no read without the credential
+  Scenario: Agent loop: a sign-out on the dashboard sends the person to sign in and sends no read without the credential
     Given the host answers the agent-signins fixture
     And the host answers the agent fixture
     And the host answers the agent-live fixture
@@ -53,20 +47,20 @@ Feature: agent-loop
     Then the dashboard draws its frame
     And the host was sent GET to "/api/stats" 1 times
     When I sign out from the account menu
-    Then the chrome draws the Sign in control
-    And the page draws the sign-in placard
+    Then the path is "/login?returnTo=%2F"
+    And the sign-in page draws the agent sign-ins
     And the browser holds no "apikey"
     And every GET to "/api/stats" carried the header "authorization"
     And every GET to "/api/machines" carried the header "authorization"
     And the host was sent GET to "/api/stats" 1 times
 
-  Scenario: Agent loop: a 401 on a read ends the session once, the record forgotten and nothing read again
+  Scenario: Agent loop: a 401 on a read ends the session once, the record forgotten, the person sent to sign in and nothing read again
     Given the host answers the agent-signins fixture
     And the host answers the agent-signins-unauthorized fixture
     And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
     When I open "/"
-    Then the chrome draws the Sign in control
-    And the page draws the sign-in placard
+    Then the path is "/login?returnTo=%2F"
+    And the sign-in page draws the agent sign-ins
     And the browser holds no "apikey"
     And the host was sent GET to "/api/stats" 1 times
 

@@ -487,22 +487,30 @@ describe('createApiKeySession', () => {
     expect(requests).toHaveLength(0);
   });
 
-  it('begins the silent path by asking the authorize URL and navigating there, the device path by answering the grant, and Sign in by moving to /login', async () => {
+  it('begins the silent path by asking the authorize URL and navigating there, the code path by answering the flow, and Sign in by moving to /login', async () => {
     answers.set('POST /api/auth/oidc/silent-start', {
       status: 200,
       data: { authorize_url: 'https://idp.test/authorize?prompt=none' },
     });
-    answers.set('POST /api/auth/oidc/device-start', {
+    answers.set('POST /api/auth/oidc/code-start', {
       status: 200,
-      data: { handle: 'h1', user_code: 'ABCD-EFGH' },
+      data: {
+        handle: 'h1',
+        authorize_url: 'https://idp.test/authorize?state=s1',
+        manual_url: 'https://idp.test/authorize?state=s1',
+        expires_in: 300,
+      },
     });
     const session = await freshProvider();
     await session.begin({ method: 'silent' });
     expect(location.assign).toHaveBeenCalledWith('https://idp.test/authorize?prompt=none');
-    expect(await session.begin({ method: 'device' })).toEqual({
+    expect(await session.begin({ method: 'code' })).toEqual({
       handle: 'h1',
-      user_code: 'ABCD-EFGH',
+      authorize_url: 'https://idp.test/authorize?state=s1',
+      manual_url: 'https://idp.test/authorize?state=s1',
+      expires_in: 300,
     });
+    expect(sent('POST', '/api/auth/oidc/device-start')).toHaveLength(0);
     const navigate = vi.fn();
     await session.begin({ navigate });
     expect(navigate).toHaveBeenCalledWith('/login');

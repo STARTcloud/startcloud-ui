@@ -20,9 +20,15 @@ export const currentPath = () => `${window.location.pathname}${window.location.s
  * @param {string} options.storageKey - localStorage key holding the remembered path
  * @param {string} [options.signInPath] - The app's login page, empty when sign-in is one click
  * @param {string[]} [options.authPaths] - Path prefixes that are never remembered
- * @returns {Object} remember, consume, fromParams, onAuthPage and signInTo
+ * @param {string[]} [options.barePaths] - Path prefixes drawn without the column and the app section; the auth paths when absent
+ * @returns {Object} remember, consume, fromParams, onAuthPage, onBarePage and signInTo
  */
-export const createReturnTo = ({ storageKey, signInPath = '', authPaths = [] }) => ({
+export const createReturnTo = ({
+  storageKey,
+  signInPath = '',
+  authPaths = [],
+  barePaths = authPaths,
+}) => ({
   remember: path => {
     if (path) {
       localStorage.setItem(storageKey, path);
@@ -35,6 +41,7 @@ export const createReturnTo = ({ storageKey, signInPath = '', authPaths = [] }) 
   },
   fromParams: params => safeReturnPath(params.get('returnTo')),
   onAuthPage: pathname => authPaths.some(path => pathname.startsWith(path)),
+  onBarePage: pathname => barePaths.some(path => pathname.startsWith(path)),
   signInTo: returnTo => {
     if (!signInPath) {
       return '';

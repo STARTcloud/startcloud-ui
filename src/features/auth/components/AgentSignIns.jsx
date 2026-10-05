@@ -10,7 +10,6 @@ import { bootstrapFirstKey } from '../api/agentSignIn';
 import { agentSignInsOf, isLoopback } from '../utils/agentSignIns';
 
 import CodeSsoLogin from './CodeSsoLogin';
-import DeviceSsoLogin from './DeviceSsoLogin';
 
 const DESKTOP_HANDOFF = 'hwa://open';
 
@@ -167,7 +166,7 @@ ApiKeyForm.propTypes = {
 
 const silentProbeOf = ({ session, offered, loopback, silentSsoKey, urlParams }) => {
   const bounced = urlParams.get('sso') === SSO_UNAVAILABLE;
-  const wanted = offered.deviceSso && loopback && !bounced;
+  const wanted = offered.sso && loopback && !bounced;
   return () => {
     if (!wanted || silentProbeStarted || sessionStorage.getItem(silentSsoKey)) {
       return;
@@ -185,25 +184,24 @@ const silentProbeOf = ({ session, offered, loopback, silentSsoKey, urlParams }) 
 
 /**
  * The sign-ins of hyperweaver-agent on the shared sign-in page, the
- * paths of the agent's own brief through the `apikey` provider: the
- * loopback code SSO behind the `oidc-code` token, first while the agent
- * lists it, the authorize URL opened in a new tab and a code from the
- * provider's code page pasted back when the browser is on another
- * machine; the device-flow SSO behind the `oidc` word, primary while the
- * code flow is not offered, with the key form
- * demoted behind Use an API key instead; the API key form, the pasted
- * key proved and stored by `session.login`; the first-boot bootstrap
- * while the status says `bootstrapAvailable`, the key generated with
+ * paths of the agent's own brief through the `apikey` provider: Login
+ * with SSO, the authorization-code flow behind the `oidc` word and the
+ * `oidc-code` token, the authorize URL opened in a new tab and a code
+ * from the provider's code page pasted back when the browser never
+ * reached the agent, with the key form demoted behind Use an API key
+ * instead; Login Locally, the desktop sign-in button on a loopback page,
+ * `hwa://open` on the click alone; the API key form, the pasted key
+ * proved and stored by `session.login`; the first-boot bootstrap while
+ * the status says `bootstrapAvailable`, the key generated with
  * `POST /api/api-keys/bootstrap` under the `setup_token`, shown once and
  * signed in with on Saved, continue; the tray hand-off, a `#tray=` token
  * claimed through `session.complete()`, once per page load with the
  * fragment stripped first, a stored key that still validates outranking
- * the claim; the desktop sign-in button on a loopback page, `hwa://open`
- * on the click alone, hyperweaver-ui's seven-second countdown not carried
- * over; and on a loopback page behind `oidc` the one silent probe per
- * browser session, `session.begin({ method: 'silent' })`, run once the
- * claim has answered nothing and never from the `?sso=unavailable`
- * bounce, which draws the chooser with a quiet line instead.
+ * the claim; and on a loopback page that offers the SSO the one silent
+ * probe per browser session, `session.begin({ method: 'silent' })`, run
+ * once the claim has answered nothing and never from the
+ * `?sso=unavailable` bounce, which draws the chooser with a quiet line
+ * instead.
  */
 const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) => {
   const { t } = useTranslation();
@@ -212,7 +210,7 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
   const [apiKey, setApiKey] = useState('');
   const [setupToken, setSetupToken] = useState('');
   const [showKeyEntry, setShowKeyEntry] = useState(false);
-  const [showKeyForm, setShowKeyForm] = useState(!offered.deviceSso);
+  const [showKeyForm, setShowKeyForm] = useState(!offered.sso);
   const [bootstrappedKey, setBootstrappedKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(
@@ -282,24 +280,31 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
   }
 
   const firstBoot = offered.bootstrap && !showKeyEntry;
-  const keyEntry = offered.apiKey && (!offered.deviceSso || showKeyForm);
+  const keyEntry = offered.apiKey && (!offered.sso || showKeyForm);
 
   return (
     <div data-panel="agent-sign-ins">
       {message ? <AuthAlert tone={tone}>{message}</AuthAlert> : null}
-      {offered.codeSso ? (
+      {offered.sso ? (
         <CodeSsoLogin
           disabled={loading}
           onSignIn={signInWithKey}
           start={() => session.begin({ method: 'code' })}
         />
       ) : null}
-      {offered.deviceSso ? (
-        <DeviceSsoLogin
-          disabled={loading}
-          onSignIn={signInWithKey}
-          start={() => session.begin({ method: 'device' })}
-        />
+      {offered.tray && loopback ? (
+        <div className="mb-3">
+          <button
+            type="button"
+            className="btn btn-outline-secondary w-100"
+            data-action="desktop-sign-in"
+            onClick={() => window.location.assign(DESKTOP_HANDOFF)}
+            disabled={loading}
+          >
+            {t('auth.login.signInWithDesktopBtn')}
+          </button>
+          <div className="form-text text-muted">{t('auth.login.desktopAgentDesc')}</div>
+        </div>
       ) : null}
       {keyEntry && firstBoot ? (
         <BootstrapForm
@@ -319,7 +324,7 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
           loading={loading}
         />
       ) : null}
-      {offered.apiKey && offered.deviceSso && !showKeyForm ? (
+      {offered.apiKey && offered.sso && !showKeyForm ? (
         <div className="mb-3">
           <button
             type="button"
@@ -329,20 +334,6 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
           >
             {t('auth.login.useApiKeyInstead')}
           </button>
-        </div>
-      ) : null}
-      {offered.tray && loopback ? (
-        <div className="mb-3">
-          <button
-            type="button"
-            className="btn btn-outline-secondary w-100"
-            data-action="desktop-sign-in"
-            onClick={() => window.location.assign(DESKTOP_HANDOFF)}
-            disabled={loading}
-          >
-            {t('auth.login.signInWithDesktopBtn')}
-          </button>
-          <div className="form-text text-muted">{t('auth.login.desktopAgentDesc')}</div>
         </div>
       ) : null}
     </div>

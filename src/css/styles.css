@@ -3070,6 +3070,13 @@ button::-moz-focus-inner {
   margin: 0 auto 16px;
 }
 
+.auth-brand-mark {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+}
+
 .auth-icon-circle.danger {
   background: var(--auth-danger-bg);
   color: var(--auth-danger);

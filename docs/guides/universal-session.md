@@ -285,7 +285,9 @@ and interstitial groups plus `error`, because a page such as
 `/continue?token=` or `/oauth2/code?code=` carries a bearer secret in its
 query and must never be remembered as a return path, all but `activate`,
 whose query carries only the device's user code, so a sign-in begun there
-returns to it with the code prefilled; its cached `account`
+returns to it with the code prefilled, and which stands with them among
+its `barePaths`, the paths drawn without the column and the app section;
+its cached `account`
 holds the display fields and the four `preferred_*` members; `mode`,
 `theme`, `motion` and `language` are the visitor's own keys, written by
 the person's own controls alone and never from the account; the
@@ -311,18 +313,20 @@ record while any other failure keeps it and a `403` on any other route a
 role too low that touches the session not at all, `login(key)` the pasted
 key proved by that read and stored, `begin({ method: 'silent' })` the
 `prompt=none` authorize URL of `POST /api/auth/oidc/silent-start` followed
-as a top-level navigation and `begin({ method: 'device' })` the RFC 8628
-grant of `POST /api/auth/oidc/device-start`, its approval read with
-`GET /api/auth/oidc/device-status`, one request the agent holds open until
-the status changes or the grant's interval elapses, asked again after
-every `pending` answer and never on a clock, `begin({ method: 'code' })`
-the RFC 8252 loopback authorization-code flow of
-`POST /api/auth/oidc/code-start` while the status lists `oidc-code`, its
-authorize URL opened in a new tab, the agent's own callback taking the
-code on the agent's machine and a code the person pastes from the
-provider's code page handed to `POST /api/auth/oidc/code` with the flow's
-handle from any other, its approval read with the same held
-`GET /api/auth/oidc/device-status`, `complete()` the `#tray=`
+as a top-level navigation, `begin({ method: 'code' })` the RFC 8252
+authorization-code flow of `POST /api/auth/oidc/code-start` while the
+status lists `oidc-code`, answered
+`{ handle, authorize_url, manual_url, expires_in }`: the `authorize_url`
+opened in a new tab, the agent's own callback taking the code on the
+agent's machine, and the `manual_url`, the same request aimed at the
+provider's code page, shown with Copy beside a field for the code the
+person pastes from that page, `code#state`, handed to
+`POST /api/auth/oidc/code` with the flow's handle, the approval of either
+read with `GET /api/auth/oidc/device-status`, one request the agent holds
+open until the flow ends or its life runs out, asked again after every
+`pending` answer and never on a clock; the device grant is the agent's
+own, for the machine's notifications and its joins, and the page offers it
+to no person; `complete()` the `#tray=`
 claim of a tray Open or an `hwa://open`, once per page load with the
 fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
 key that still validates outranking it, the claimed session answered once
@@ -389,10 +393,11 @@ screen opens a stream of its own.
 
 ## Sign-in return
 
-`createReturnTo({ storageKey, signInPath, authPaths })` is the one place a
-return path is remembered and read; `createSession` builds it beside the
-provider, under `intended_url`, with `/login` and the auth paths for a
-`backend` UI backend and `/callback` as the only auth path for an `idp` UI backend:
+`createReturnTo({ storageKey, signInPath, authPaths, barePaths })` is the
+one place a return path is remembered and read; `createSession` builds it
+beside the provider, under `intended_url`, with `/login` and the auth
+paths for a `backend` UI backend and `/callback` as the only auth path for
+an `idp` UI backend:
 
 - `remember(path)` stores it; `consume()` reads and clears it and answers
   `''` unless the path matches `^/(?![/\\])`, because `/\evil.com` starts
@@ -404,9 +409,20 @@ provider, under `intended_url`, with `/login` and the auth paths for a
   rule, so a link to the login page can carry the page it came from;
 - `onAuthPage(pathname)` says whether the current page is one of the
   `authPaths`, which are never remembered;
+- `onBarePage(pathname)` says whether the current page is one of the
+  `barePaths`, drawn without the column and the app section, the
+  `authPaths` unless the provider names more, the `cookie` provider
+  adding `/activate`;
 - `signInTo(returnTo)` builds `<signInPath>?returnTo=` for an app whose
   Sign in button is a link to its login page, and `''` for an app whose
   sign-in is one click.
+
+On a UI backend whose `auth` names a session and whose `features` does not
+list `landing`, a signed-out visitor on any route but an auth path is sent
+to `signInTo` with the page as the return path, the ended session's page
+while the session-ended banner shows, once `loaded` says there is no
+session and nothing drawn before; a UI backend whose sign-in is one click
+draws its page, because `signInTo` names no page to send the visitor to.
 
 The navbar's Sign in button carries the page it was pressed on, the ended
 session's page while the session-ended banner shows, and never an auth page; on BoxVault

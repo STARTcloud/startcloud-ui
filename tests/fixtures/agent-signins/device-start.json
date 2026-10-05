@@ -1,8 +1,0 @@
-{
-  "handle": "d1e2v3",
-  "user_code": "ABCD-EFGH",
-  "verification_uri": "/activate",
-  "verification_uri_complete": "/activate?user_code=ABCD-EFGH",
-  "expires_in": 600,
-  "interval": 5
-}

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaArrowUpRightFromSquare, FaRightToBracket, FaRotate } from 'react-icons/fa6';
+import { FaRightToBracket } from 'react-icons/fa6';
 
 import CopyButton from '../../../components/common/CopyButton';
 import { codeSsoExchange, deviceSsoStatus } from '../api/agentSignIn';
@@ -29,21 +29,22 @@ const pendingGrant = () => {
 const messageOf = error => error?.data?.error || error?.message || '';
 
 /**
- * The loopback authorization-code sign-in of an agent, RFC 8252 with the
- * agent as the client: Sign in via SSO mints a flow through `start`, the
- * provider's `begin({ method: 'code' })`, the authorize URL opens in a
- * new tab and the flow is kept in sessionStorage so a refreshed page
- * resumes it; on the agent's own machine the browser lands on the
- * agent's callback and the agent exchanges the code itself, and from
- * another machine the identity provider shows the code on its code page,
- * the person pastes it here and Continue hands it to the agent with the
- * flow's handle through `POST /api/auth/oidc/code`; the agent's answer is
- * read with `GET /api/auth/oidc/device-status`, one request the agent
- * holds open until the flow ends or its life runs out, asked as soon as
- * the flow is held and again after every `pending` answer, never on a
- * clock, and on Check status after a dropped connection; an approved flow
- * hands its key to `onSignIn`, a denied, failed or expired one, and a
- * handle already delivered, say so with Retry, and Back forgets the flow.
+ * The SSO sign-in of an agent, RFC 8252 with the agent as the client:
+ * Login with SSO mints a flow through `start`, the provider's
+ * `begin({ method: 'code' })`, opens the flow's `authorize_url` in a new
+ * tab and keeps the flow in sessionStorage so a refreshed page resumes
+ * it; the card then says to continue in the browser, shows the flow's
+ * `manual_url` with Copy for a browser that never opened or that cannot
+ * reach the agent, and a field for the code the provider's code page
+ * shows, `code#state`, which Continue hands to the agent with the flow's
+ * handle through `POST /api/auth/oidc/code`; the agent's answer is read
+ * with `GET /api/auth/oidc/device-status`, one request the agent holds
+ * open until the flow ends or its life runs out, asked as soon as the
+ * flow is held and again after every `pending` answer, never on a clock,
+ * so a callback the agent took on its own machine signs the person in
+ * with nothing pasted; an approved flow hands its key to `onSignIn`, a
+ * denied, failed or expired one, and a handle already delivered, say so
+ * with Retry, and Back forgets the flow.
  */
 const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
   const { t } = useTranslation();
@@ -173,7 +174,7 @@ const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
     return (
       <div className="alert alert-info text-start mb-3" role="status" data-note="code-waiting">
         <p className="mb-2">{t('auth.codeSso.waiting')}</p>
-        {grant.authorize_url ? (
+        {grant.manual_url ? (
           <>
             <p className="mb-1 small">{t('auth.codeSso.urlLabel')}</p>
             <div className="input-group input-group-sm mb-2">
@@ -181,24 +182,15 @@ const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
                 type="text"
                 className="form-control font-monospace"
                 aria-label={t('auth.codeSso.urlLabel')}
-                value={grant.authorize_url}
+                value={grant.manual_url}
                 readOnly
                 onFocus={event => event.target.select()}
               />
               <CopyButton
-                text={grant.authorize_url}
+                text={grant.manual_url}
                 label={t('copyButton.copy')}
                 className="btn btn-outline-secondary"
               />
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                data-action="code-open"
-                onClick={() => window.open(grant.authorize_url, '_blank')}
-              >
-                <FaArrowUpRightFromSquare className="me-1" aria-hidden="true" />
-                {t('auth.codeSso.openSignIn')}
-              </button>
             </div>
           </>
         ) : null}
@@ -229,16 +221,6 @@ const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
             disabled={sending || !pasted.trim()}
           >
             {t('auth.codeSso.continue')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary"
-            data-action="code-check"
-            onClick={check}
-            disabled={sending}
-          >
-            <FaRotate className="me-2" aria-hidden="true" />
-            {t('auth.deviceSso.checkStatus')}
           </button>
           <button
             type="button"

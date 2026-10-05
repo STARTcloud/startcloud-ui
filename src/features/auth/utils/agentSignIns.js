@@ -7,23 +7,21 @@ const listOf = value => (Array.isArray(value) ? value : []);
 /**
  * The sign-ins of an agent the status lists, hyperweaver-agent's paths
  * behind its words: the pasted key, the tray hand-off and the desktop
- * sign-in while the first word of `auth` is `apikey`, the federated
- * paths, the silent probe and the device flow, while its second word is
- * `oidc`, the loopback authorization-code flow with a pasted code while
- * `features` lists `oidc-code` beside them, and the first-boot bootstrap
- * while the status says `bootstrapAvailable`.
+ * sign-in while the first word of `auth` is `apikey`; the federated
+ * sign-in, the silent probe and the authorization-code flow with a
+ * pasted code, while its second word is `oidc` and `features` lists
+ * `oidc-code`; and the first-boot bootstrap while the status says
+ * `bootstrapAvailable`.
  *
  * @param {Object|null} status - The payload from `probeStatus`
- * @returns {{ apiKey: boolean, deviceSso: boolean, codeSso: boolean, tray: boolean, bootstrap: boolean }} The sign-ins
+ * @returns {{ apiKey: boolean, sso: boolean, tray: boolean, bootstrap: boolean }} The sign-ins
  */
 export const agentSignInsOf = status => {
   const auth = listOf(status?.auth);
   const apiKey = auth[0] === 'apikey';
-  const deviceSso = apiKey && auth.includes('oidc');
   return {
     apiKey,
-    deviceSso,
-    codeSso: deviceSso && listOf(status?.features).includes(CODE_SSO_TOKEN),
+    sso: apiKey && auth.includes('oidc') && listOf(status?.features).includes(CODE_SSO_TOKEN),
     tray: apiKey,
     bootstrap: apiKey && Boolean(status?.bootstrapAvailable),
   };

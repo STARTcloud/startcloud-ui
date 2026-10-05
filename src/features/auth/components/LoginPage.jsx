@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa6';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
+import BrandLogo from '../../../components/common/BrandLogo';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -307,7 +308,10 @@ const ApiKeyLoginPage = ({ session, account, returnTo, auth, appName }) => {
     navigate(returnTo.fromParams(urlParams) || returnTo.consume() || '/', { replace: true });
 
   return (
-    <AuthShell title={t('login.headline', { app: appName })}>
+    <AuthShell
+      title={t('login.headline', { app: appName })}
+      icon={<BrandLogo className="auth-brand-mark" />}
+    >
       <AgentSignIns
         status={status}
         session={session}
@@ -621,9 +625,10 @@ BackendLoginPage.propTypes = {
  * path kept for the callback; Create an account is drawn only while the
  * host answers `local_registration_enabled`, never merely because a
  * provider exists; on hyperweaver-agent (`session.id` is `apikey`) the
- * page is the agent's own sign-ins alone through `AgentSignIns`, the six
- * paths of the `apikey` provider, no methods read and no password form,
- * a person whose adopted session is live sent away;
+ * page is the agent's own sign-ins alone through `AgentSignIns`, the
+ * paths of the `apikey` provider under the active theme's mark, no
+ * methods read and no password form, a person whose adopted session is
+ * live sent away;
  * on the identity provider (`session.id` is `cookie`) the page grows by the
  * issuer's modes and states through `CookieLogin`, which sends a person
  * whose adopted session (`account`) is live away and hands the session

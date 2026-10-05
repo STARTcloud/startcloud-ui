@@ -4,7 +4,7 @@
   "brand": { "name": "BoxVault", "logo_url": "/brand/boxvault/mark.svg" },
   "auth": ["backend"],
   "collections": ["boxes"],
-  "features": ["deploy", "watches"],
+  "features": ["deploy", "watches", "landing"],
   "links": { "docs": "", "contact": "" },
   "ticket": null
 }

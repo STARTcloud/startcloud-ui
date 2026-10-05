@@ -4712,7 +4712,7 @@
       "saveKeyWarning": "Guarda esta clave ahora. Se muestra solo una vez — el host solo almacena un hash, y el endpoint de inicialización ha sido deshabilitado.",
       "copyToClipboard": "Copiar al portapapeles",
       "savedContinueBtn": "Ya la guardé — continuar",
-      "signInWithDesktopBtn": "Iniciar sesión con el agente de escritorio",
+      "signInWithDesktopBtn": "Iniciar sesión localmente",
       "desktopAgentDesc": "Le pide al Agente de Hyperweaver que se ejecuta en esta máquina que abra una sesión iniciada — no se necesita clave.",
       "autoSignInCountdown": "Iniciando sesión automáticamente en {{count}}s…",
       "authMethodLabel": "Método de autenticación",
@@ -4918,24 +4918,17 @@
       "createGravatarSuffix": "para mostrar aquí la información de tu perfil."
     },
     "deviceSso": {
-      "signInWithSso": "Iniciar sesión con SSO",
-      "desc": "Aprueba el inicio de sesión en tu proveedor de identidad; no se necesita clave API.",
-      "waitingApproval": "Esperando la aprobación en tu proveedor de identidad…",
-      "codeLabel": "Tu código:",
-      "openVerification": "Abrir la página de aprobación",
       "denied": "El inicio de sesión fue denegado en el proveedor de identidad.",
       "expired": "La solicitud de inicio de sesión caducó; inténtalo de nuevo.",
       "retry": "Reintentar el inicio de sesión con SSO",
-      "failed": "El inicio de sesión falló; inténtalo de nuevo.",
-      "checkStatus": "Comprobar estado"
+      "failed": "El inicio de sesión falló; inténtalo de nuevo."
     },
     "codeSso": {
       "signInWithSso": "Iniciar sesión con SSO",
       "desc": "Abre tu proveedor de identidad en una pestaña nueva. En esta máquina el inicio de sesión se completa solo; desde otra máquina, pega el código que te muestre el proveedor.",
-      "waiting": "Termina de iniciar sesión en tu proveedor de identidad. Si el navegador no se abrió, visita esta URL:",
-      "urlLabel": "URL de inicio de sesión",
-      "openSignIn": "Abrir",
-      "codeLabel": "O pega el código que te mostró el proveedor",
+      "waiting": "Continúa en el navegador",
+      "urlLabel": "Si el navegador no se abrió, visita esta URL",
+      "codeLabel": "O pega tu código de autorización manualmente",
       "codePlaceholder": "código#estado",
       "continue": "Continuar",
       "back": "Atrás"

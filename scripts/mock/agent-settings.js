@@ -347,12 +347,9 @@ const codeStart = ctx => {
   const state = stateOf(selfHost(ctx));
   const handle = randomBytes(8).toString('hex');
   const flowState = randomBytes(16).toString('hex');
+  const url = `https://auth.example.com/oauth2/authorize?response_type=code&client_id=hyperweaver-agent&redirect_uri=https%3A%2F%2Fauth.example.com%2Foauth2%2Fcode&state=${flowState}&code_challenge_method=S256`;
   state.flows.set(handle, { checks: CHECKS_TO_APPROVE - 1, state: flowState, pasted: false });
-  return ok({
-    handle,
-    authorize_url: `https://auth.example.com/oauth2/authorize?response_type=code&client_id=hyperweaver-agent&redirect_uri=https%3A%2F%2Fauth.example.com%2Foauth2%2Fcode&state=${flowState}&code_challenge_method=S256`,
-    expires_in: CODE_EXPIRES_S,
-  });
+  return ok({ handle, authorize_url: url, manual_url: url, expires_in: CODE_EXPIRES_S });
 };
 
 const codeExchange = ctx => {
@@ -383,9 +380,10 @@ const codeExchange = ctx => {
  * claim of the seeded token `tray-demo-token`; the device flow, approved
  * on its second status check and minting a key bound to the fixture's
  * person, whose profile then carries `auth_provider`, `email`,
- * `customer_id`, `issuer` and `subject`; the loopback code flow, its
- * start answering a handle and an authorize URL whose state the flow
- * keeps, its status pending until a code is pasted to
+ * `customer_id`, `issuer` and `subject`; the code flow, its start
+ * answering a handle, an authorize URL and the same URL as the one a
+ * person visits by hand, whose state the flow keeps, its status pending
+ * until a code is pasted to
  * `POST /api/auth/oidc/code` with the handle, a state after the hash
  * checked against the flow's, and approved on the next status check as
  * the device flow is; and the silent probe, answered

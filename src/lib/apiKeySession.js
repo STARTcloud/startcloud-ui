@@ -4,7 +4,6 @@ const INFO_PATH = '/api/api-keys/info';
 const USER_PATH = '/api/user';
 const TRAY_CLAIM_PATH = '/api/auth/tray-claim';
 const SILENT_START_PATH = '/api/auth/oidc/silent-start';
-const DEVICE_START_PATH = '/api/auth/oidc/device-start';
 const CODE_START_PATH = '/api/auth/oidc/code-start';
 const AUTH_CHANNEL = 'hw-auth';
 const AUTH_UPDATED = 'auth-updated';
@@ -150,18 +149,17 @@ export const userOfAccount = (profile, account) => ({
  * key, a `401` or `403` there clearing the record, a dead credential,
  * while any other failure keeps it, so an agent that is restarting never
  * signs a person out; a `403` on any other route is a role too low and
- * touches the session not at all. Six ways in: `login(key)` proves a
+ * touches the session not at all. Five ways in: `login(key)` proves a
  * pasted key with the profile read and stores it; `begin({ method:
  * 'silent' })` asks `POST /api/auth/oidc/silent-start` for a
  * `prompt=none` authorize URL and navigates there, the identity provider
  * returning through the agent's own callback to `/#tray=`;
- * `begin({ method: 'device' })` starts the RFC 8628 device flow and
- * answers the grant, whose approved key the page hands to `login`;
- * `begin({ method: 'code' })` starts the RFC 8252 loopback
- * authorization-code flow through `POST /api/auth/oidc/code-start` and
- * answers the flow, its handle, its authorize URL and its life, the
- * page opening the URL and reading the approved key as the device flow
- * does; `complete()` claims the `#tray=` token of a tray Open or an
+ * `begin({ method: 'code' })` starts the RFC 8252 authorization-code
+ * flow through `POST /api/auth/oidc/code-start` and answers the flow,
+ * its handle, its authorize URL, the URL a person visits by hand and its
+ * life, the page opening the authorize URL and reading the approved key
+ * with the agent's held device-status request; `complete()` claims the
+ * `#tray=` token of a tray Open or an
  * `hwa://open` once per page load, the fragment stripped before the
  * claim is sent, a stored key that still validates outranking the claim
  * so the agent's key list never grows by one per Open, and answers the
@@ -410,9 +408,6 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
         }
         return answer;
       });
-    }
-    if (method === 'device') {
-      return client.post(DEVICE_START_PATH, {}, PUBLIC);
     }
     if (method === 'code') {
       return client.post(CODE_START_PATH, {}, PUBLIC);

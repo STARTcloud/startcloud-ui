@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { agentSignInsOf, isLoopback } from '../../src/features/auth/utils/agentSignIns.js';
 
 describe('agentSignInsOf', () => {
-  it("reads the agent's paths from the words of auth, the code flow from oidc-code and the bootstrap from bootstrapAvailable", () => {
+  it("reads the agent's paths from the words of auth, the SSO from oidc with oidc-code and the bootstrap from bootstrapAvailable", () => {
     expect(
       agentSignInsOf({
         auth: ['apikey', 'oidc'],
@@ -12,29 +12,25 @@ describe('agentSignInsOf', () => {
       })
     ).toEqual({
       apiKey: true,
-      deviceSso: true,
-      codeSso: true,
+      sso: true,
       tray: true,
       bootstrap: true,
     });
     expect(agentSignInsOf({ auth: ['apikey', 'oidc'] })).toEqual({
       apiKey: true,
-      deviceSso: true,
-      codeSso: false,
+      sso: false,
       tray: true,
       bootstrap: false,
     });
     expect(agentSignInsOf({ auth: ['apikey'], features: ['oidc-code'] })).toEqual({
       apiKey: true,
-      deviceSso: false,
-      codeSso: false,
+      sso: false,
       tray: true,
       bootstrap: false,
     });
     expect(agentSignInsOf({ auth: ['backend', 'oidc'], bootstrapAvailable: true })).toEqual({
       apiKey: false,
-      deviceSso: false,
-      codeSso: false,
+      sso: false,
       tray: false,
       bootstrap: false,
     });

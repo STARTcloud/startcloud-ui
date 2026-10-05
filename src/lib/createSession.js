@@ -37,7 +37,9 @@ const COOKIE_AUTH_PATHS = [
  * serving origin with `/login` as the sign-in page and every reserved
  * segment of the identity contract's sign-in, onboarding and interstitial
  * groups plus `/error` as the auth paths, all but `/activate`, the page a
- * sign-in returns to with the device's code, `none` is no session at all,
+ * sign-in returns to with the device's code, which joins them as a bare
+ * path, drawn without the column and the app section, `none` is no
+ * session at all,
  * `apikey` is hyperweaver-agent's API key session with `/login` as the
  * sign-in page and its only auth path, anything else is the app's own
  * backend session with `/login` as the sign-in page.
@@ -74,6 +76,7 @@ export const createSession = (status, events) => {
         storageKey: STORAGE_KEY,
         signInPath: '/login',
         authPaths: COOKIE_AUTH_PATHS,
+        barePaths: [...COOKIE_AUTH_PATHS, '/activate'],
       }),
     };
   }

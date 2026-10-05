@@ -1,12 +1,13 @@
 Feature: agent-signins
 
-  Scenario: Agent sign-ins: the apikey host draws its six paths alone, the device flow first, the key form demoted, the first boot behind bootstrapAvailable, the desktop hand-off on a loopback page, no password form and no methods read, and the one silent probe on a loopback page
+  Scenario: Agent sign-ins: the apikey host draws its paths alone, Login with SSO first, Login Locally on a loopback page, the key form demoted, the first boot behind bootstrapAvailable, no password form and no methods read, and the one silent probe on a loopback page
     Given the host answers the agent-signins fixture
     When I open "/login"
     Then the sign-in page draws the agent sign-ins
-    And the sign-in page offers "device-start"
+    And the sign-in page offers "code-start"
     And the sign-in page offers "desktop-sign-in"
     And the sign-in page offers "use-api-key"
+    And the sign-in page offers no "device-start"
     And the sign-in page notes no "first-boot"
     And the sign-in page offers no "api-key-sign-in"
     And the sign-in page draws no password form
@@ -35,13 +36,14 @@ Feature: agent-signins
     And the host was sent GET to "/api/events" carrying the header "authorization" as "Bearer hw_seed_0001_initial"
     And the host was sent GET to "/api/api-keys/info" 1 times
 
-  Scenario: Agent sign-ins: a stored key is read again on load, and a dead key's 403 on GET /api/api-keys/info ends the session
+  Scenario: Agent sign-ins: a stored key is read again on load, and a dead key's 403 on GET /api/api-keys/info ends the session and sends the visitor to sign in
     Given the host answers the agent-signins fixture
     And the host answers the agent-signins-dead fixture
     And the browser holds "apikey" as "{\"key\":\"hw_dead_key\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
     When I open "/"
     Then the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_dead_key"
-    And the chrome draws the Sign in control
+    And the path is "/login?returnTo=%2F"
+    And the sign-in page draws the agent sign-ins
     And the browser holds no "apikey"
 
   Scenario: Agent sign-ins: a 403 on another route is a role too low and keeps the session
@@ -77,27 +79,17 @@ Feature: agent-signins
     Given the host answers the agent-signins fixture
     When I open "/login?sso=unavailable"
     Then the sign-in page draws the agent sign-ins
-    And the sign-in page offers "device-start"
+    And the sign-in page offers "code-start"
     And the sign-in page draws an "info" alert
     And the host was not sent POST to "/api/auth/oidc/silent-start"
 
-  Scenario: Agent sign-ins: the device flow starts one grant through the provider, reads the agent's answer as soon as the grant is held, and the approved key is proved and signed in with
+  Scenario: Agent sign-ins: Login with SSO starts one flow through the provider, opens the authorize URL, reads the agent's answer as soon as the flow is held, and the approved key is proved and signed in with
     Given the host answers the agent-signins fixture
     When I open "/login?sso=unavailable"
-    And I press the sign-in page's "device-start" action
-    Then the host was sent POST to "/api/auth/oidc/device-start" 1 times
-    And the host was sent GET to "/api/auth/oidc/device-status" 1 times
-    And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_device_flow_key"
-    And the path is "/"
-
-  Scenario: Agent sign-ins: the loopback code flow starts one flow through the provider, opens the authorize URL, reads the agent's answer as soon as the flow is held, and the approved key is proved and signed in with
-    Given the host answers the agent-signins fixture
-    When I open "/login?sso=unavailable"
-    Then the sign-in page offers "code-start"
-    And the sign-in page offers "device-start"
-    When I press the sign-in page's "code-start" action
+    And I press the sign-in page's "code-start" action
     Then the host was sent POST to "/api/auth/oidc/code-start" 1 times
     And the host was sent GET to "/api/auth/oidc/device-status" 1 times
+    And the host was not sent POST to "/api/auth/oidc/device-start"
     And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_device_flow_key"
     And the path is "/"
 
@@ -116,7 +108,7 @@ Feature: agent-signins
     Then the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_first_boot_key"
     And the path is "/"
 
-  Scenario: Agent sign-ins: the key's admin role reaches the host's highest role, and sign-out forgets the record with no route asked
+  Scenario: Agent sign-ins: the key's admin role reaches the host's highest role, and sign-out forgets the record with no route asked and sends the person to sign in
     Given the host answers the agent-signins fixture
     And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
     When I open "/"
@@ -126,5 +118,6 @@ Feature: agent-signins
     Then the account menu offers the admin board
     When I sign out from the account menu
     Then the browser holds no "apikey"
-    And the chrome draws the Sign in control
+    And the path is "/login?returnTo=%2F"
+    And the sign-in page draws the agent sign-ins
     And the host was not sent POST to "/api/auth/oidc/logout"

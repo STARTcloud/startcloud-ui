@@ -4712,7 +4712,7 @@
       "saveKeyWarning": "Save this key now. It is shown only once — the host stores only a hash, and the bootstrap endpoint has been disabled.",
       "copyToClipboard": "Copy to clipboard",
       "savedContinueBtn": "I saved it — continue",
-      "signInWithDesktopBtn": "Sign in with the desktop agent",
+      "signInWithDesktopBtn": "Login Locally",
       "desktopAgentDesc": "Asks the Hyperweaver Agent running on this machine to open a signed-in session — no key needed.",
       "autoSignInCountdown": "Signing in automatically in {{count}}s…",
       "authMethodLabel": "Authentication Method",
@@ -4918,24 +4918,17 @@
       "createGravatarSuffix": "to display your profile information here."
     },
     "deviceSso": {
-      "signInWithSso": "Sign in with SSO",
-      "desc": "Approve the sign-in at your identity provider — no API key needed.",
-      "waitingApproval": "Waiting for approval at your identity provider…",
-      "codeLabel": "Your code:",
-      "openVerification": "Open the approval page",
       "denied": "The sign-in was denied at the identity provider.",
       "expired": "The sign-in request expired — try again.",
       "retry": "Try SSO sign-in again",
-      "failed": "Sign-in failed — try again.",
-      "checkStatus": "Check status"
+      "failed": "Sign-in failed — try again."
     },
     "codeSso": {
-      "signInWithSso": "Sign in via SSO",
+      "signInWithSso": "Login with SSO",
       "desc": "Opens your identity provider in a new tab. On this machine the sign-in completes by itself; from another machine, paste the code the provider shows you.",
-      "waiting": "Finish signing in at your identity provider. If the browser did not open, visit this URL:",
-      "urlLabel": "Sign-in URL",
-      "openSignIn": "Open",
-      "codeLabel": "Or paste the code the provider showed you",
+      "waiting": "Continue in browser",
+      "urlLabel": "If the browser didn't open, visit this URL",
+      "codeLabel": "Or, paste your authorization code manually",
       "codePlaceholder": "code#state",
       "continue": "Continue",
       "back": "Back"

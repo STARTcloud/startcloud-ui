@@ -430,8 +430,9 @@ const zoomModalOnHeaderDoubleClick = event => {
  * route, else the title `routeTitleKey` names on a reserved route.
  * Without a column: the route parser's crumbs alone.
  *
- * The column and the app section are hidden on the auth routes, where
- * Sign in is hidden too. While `actionMenu` is handed, a person is
+ * The column and the app section are hidden on the bare routes, the
+ * auth routes and the device activation page, and Sign in is hidden on
+ * the auth routes. While `actionMenu` is handed, a person is
  * signed in and a column draws, the header's account slot draws the
  * action menu and the user menu draws at the sidebar's foot.
  * `allOrganizations` puts All organizations first in the switcher.
@@ -490,7 +491,8 @@ const AppShell = ({
     logoFor: logoResolver(primary),
   };
   const onAuthPage = returnTo.onAuthPage(pathname);
-  const showSidebar = sidebar.length > 0 && !onAuthPage;
+  const onBarePage = returnTo.onBarePage(pathname);
+  const showSidebar = sidebar.length > 0 && !onBarePage;
   const overlay = useSidebarOverlay(pathname);
   const sidebarSize = useSidebarSize();
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
@@ -561,7 +563,7 @@ const AppShell = ({
       cookie,
       issuerUrl: account.issuerUrl,
       localProfile: localProfileFor(status),
-      onAuthPage,
+      onAuthPage: onBarePage,
       rows: appRowsFor({
         ...gates,
         showAdminBoard,

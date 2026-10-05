@@ -1,5 +1,6 @@
 {
   "handle": "c0d3f1",
   "authorize_url": "https://auth.example.com/oauth2/authorize?response_type=code&client_id=hyperweaver-agent&redirect_uri=https%3A%2F%2Fauth.example.com%2Foauth2%2Fcode&state=st4t3&code_challenge_method=S256",
+  "manual_url": "https://auth.example.com/oauth2/authorize?response_type=code&client_id=hyperweaver-agent&redirect_uri=https%3A%2F%2Fauth.example.com%2Foauth2%2Fcode&state=st4t3&code_challenge_method=S256",
   "expires_in": 300
 }

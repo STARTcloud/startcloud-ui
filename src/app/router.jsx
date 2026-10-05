@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, Route, Routes, matchPath, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, matchPath, useLocation, useParams } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
 import NotAvailableStub from '../components/common/NotAvailableStub';
@@ -1701,10 +1701,59 @@ const homeElementFor = ({
 };
 
 /**
+ * What a signed-out visitor is shown on a host that needs a session and
+ * does not list `landing`, on any route but an auth path: nothing until
+ * the session has answered, then the sign-in page with the page kept as
+ * the return path, the ended session's page while one is held; the route
+ * itself, `undefined`, everywhere else and where the host's sign-in is
+ * one click.
+ *
+ * @param {Object} options - The router's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @param {boolean} options.signedOut - Whether the host needs a session and none is held
+ * @param {string} options.pathname - The current path
+ * @param {string} options.search - The current query
+ * @returns {import('react').ReactElement|null|undefined} The redirect, null before the answer, undefined to draw the route
+ */
+const signInRedirectFor = ({ status, account, signedOut, pathname, search }) => {
+  if (!signedOut || hasFeature(status, 'landing') || returnTo.onAuthPage(pathname)) {
+    return undefined;
+  }
+  if (!account.loaded) {
+    return null;
+  }
+  const signInTo = returnTo.signInTo(account.sessionEnded?.returnTo || `${pathname}${search}`);
+  return signInTo ? <Navigate to={signInTo} replace /> : undefined;
+};
+
+/**
+ * What stands before every route: the setup routes alone while the host
+ * lists `setup` and setup is incomplete, else what `signInRedirectFor`
+ * answers, `undefined` meaning the routes draw.
+ *
+ * @param {Object} options - The router's side, `signInRedirectFor`'s members with `setupComplete`, `setupRoute` and `zoneRoute`
+ * @returns {import('react').ReactElement|null|undefined} The gate, or undefined
+ */
+const gateFor = ({ status, setupComplete, setupRoute, zoneRoute, ...rest }) => {
+  if (hasFeature(status, 'setup') && !setupComplete) {
+    return (
+      <Routes>
+        {setupRoute}
+        {zoneRoute}
+        <Route path="*" element={<Navigate to="/setup" replace />} />
+      </Routes>
+    );
+  }
+  return signInRedirectFor({ status, ...rest });
+};
+
+/**
  * Every route the app serves, each gated by its feature token or the
  * host's first `auth` token, a route the host lacks drawing
  * `NotAvailableStub`; every route goes to `/setup` while setup is
- * incomplete.
+ * incomplete, and a signed-out visitor is sent to sign in as
+ * `signInRedirectFor` says.
  */
 const AppRoutes = ({
   account,
@@ -1718,6 +1767,7 @@ const AppRoutes = ({
   ticketUrl = '',
 }) => {
   const status = useStatus();
+  const { pathname, search } = useLocation();
   const backend = authMethod(status) === 'backend';
   const cookie = authMethod(status) === 'cookie';
   const apiKey = authMethod(status) === 'apikey';
@@ -1727,14 +1777,18 @@ const AppRoutes = ({
   const { organizations, oidc } = account;
   const { setupRoute, zoneRoute, serverRoute } = setupRoutesOf({ status, hosts, context });
 
-  if (hasFeature(status, 'setup') && !setupComplete) {
-    return (
-      <Routes>
-        {setupRoute}
-        {zoneRoute}
-        <Route path="*" element={<Navigate to="/setup" replace />} />
-      </Routes>
-    );
+  const gate = gateFor({
+    status,
+    setupComplete,
+    setupRoute,
+    zoneRoute,
+    account,
+    signedOut,
+    pathname,
+    search,
+  });
+  if (gate !== undefined) {
+    return gate;
   }
 
   const homeElement = homeElementFor({
