@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.54.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.53.0...v0.54.0) (2026-10-05)
+
+
+### Features
+
+* BoxVault memberships read in the identity provider's one shape through accountMembership, display_name drawn by the switcher and the user menu, the two-shape chooser, loadOrganizations and renameActiveOrganization gone, the active organization keyed by uuid everywhere and the route name derived from the memberships; the agent's Devices page reading GET system/usb on a virtualbox host with the PCI body kept for every other host, a Media page under Storage behind media with Disks over GET media and ISOs over GET artifacts/iso while artifacts is listed, both reading once as the page draws, on a fresh stream and on Refresh; the mock's usb, media and artifacts/iso routes, its claimed membership answering the slug and the display name, the agent-media fixtures and feature, the host pages unit test, the console scenario and the user fixtures in the identity provider's shape, the navbar and session contracts, and the English and Spanish keys following ([34b3602](https://github.com/STARTcloud/startcloud-ui/commit/34b3602f4ad55f3a2dae708944382b5cd5dd0fa8))
+* the agent sign-in as two doors, Login with SSO opening the authorization URL in a new tab and drawing the Continue in browser card with the provider's manual URL and Copy, a field for the pasted code#state handed to the agent with the flow's handle, Continue and Back, the approval read through the one held device-status request, the device grant offered to no person and its component gone, Login Locally as the desktop hand-off on a loopback page, Use an API key instead last, the silent probe behind the SSO, the active theme's glyph mark over the sign-in heading; a landing feature token, a signed-out visitor on a host that needs a session and does not list it sent to the sign-in page with the page as the return path once the session has answered, a one-click host drawing its pages as before; bare paths beside the auth paths, the device activation page drawn without the column and the app section on the identity provider; the setup gate and the redirect folded into one gate before the routes; the session, navbar and pages contracts, the fixtures, the dev mock, the unit and feature tests and the English and Spanish keys following ([57fc22d](https://github.com/STARTcloud/startcloud-ui/commit/57fc22d1ae27d018aca673c09300193f72320233))
+
 ## [0.53.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.52.0...v0.53.0) (2026-10-05)
 
 
