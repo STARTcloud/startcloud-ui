@@ -1,0 +1,8 @@
+{
+  "hostname": "zone-1",
+  "platform": "omnios",
+  "arch": "x86_64",
+  "uptime": 1036800,
+  "allmachines": ["4001--fw-os-n1.home.m4kr.net"],
+  "runningmachines": ["4001--fw-os-n1.home.m4kr.net"]
+}

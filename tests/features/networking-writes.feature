@@ -388,7 +388,7 @@ Feature: networking writes
     And the "managed-addresses" section offers no "create-address" tool
     And the "managed-addresses" section row "10.0.0.11" offers no "disable"
 
-  Scenario: Network pages: the sections fold under manage- on each page and the fold is kept over a reload
+  Scenario: Network pages: the sections of Links fold under manage- and the fold is kept over a reload
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -402,12 +402,26 @@ Feature: networking writes
     Then the "vnics" section of the networking management is folded
     When I fold the "vnics" section of the networking management
     Then the "vnics" section of the networking page lists 2 rows
+
+  Scenario: Network pages: the section of Hostname folds under manage- and the fold is kept over a reload
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/hostname"
     Then the "hostname" section of the networking management is open
     When I fold the "hostname" section of the networking management
     Then the "hostname" section of the networking management is folded
     When I load the page again
     Then the "hostname" section of the networking management is folded
+
+  Scenario: Network pages: the topology of Topology folds and the fold is kept over a reload
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/topology"
     Then the "topology" section of the networking management is open
     When I fold the "topology" section of the networking management

@@ -1,0 +1,16 @@
+{
+  "role": "provisioner-catalog",
+  "version": "0.12.0",
+  "brand": { "name": "Provisioner Catalog", "logo_url": "/brand/catalog/mark.svg" },
+  "auth": ["idp"],
+  "idp": {
+    "issuer": "https://auth.example.com",
+    "client_id": "provisioner-catalog",
+    "scopes": "openid profile email organizations notifications:read",
+    "storage_prefix": "catalog"
+  },
+  "collections": [],
+  "features": ["notifications"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
@@ -20,11 +20,15 @@ import SubTable from '../../../components/common/SubTable';
 import { notificationsAdapterShape } from '../../../components/layout/NotificationsModal';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useUnread } from '../../../contexts/UnreadContext';
+import { useEventStream } from '../../../hooks/useEventStream';
+import { useInboxEvents } from '../../../hooks/useInboxEvents';
 import { useListSearch } from '../../../hooks/useListSearch';
 import { useSelection } from '../../../hooks/useSelection';
+import { applyInboxPage } from '../../../utils/inboxEvents';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 
 const PREFS_KEY = 'table_prefs_inbox';
+const EMPTY_LISTING = { rows: [], total: 0, totalPages: 0 };
 const NO_GROUPS = [];
 const DEFAULT_SORT = [{ column: 'time', direction: 'desc' }];
 
@@ -323,20 +327,31 @@ BulkPane.propTypes = {
  * the relative time with the absolute time in its tooltip, the Type
  * column a badge hidden by default; the row actions Mark as read while
  * unread, View details while the row carries a followable link, and
- * Delete; the pager as the section's foot; every change to the unread
- * count goes through the notifications feature's one context (identity
- * contract decision 142).
+ * Delete; the pager as the section's foot; the `notifications` topic's
+ * row events applied in place with no read, a created row on the first
+ * page alone, the total and the page count following, and the page read
+ * again when the stream opens fresh or answers `reset`; every change to
+ * the unread count goes through the notifications feature's one context
+ * (identity contract decision 142).
  */
 const InboxPage = ({ notifications }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
-  const { adjust: adjustUnread } = useUnread();
+  const { adjust: adjustUnread, observe } = useUnread();
   const [page, setPage] = useState(0);
-  const [entries, setEntries] = useState([]);
+  const [listing, setListing] = useState(EMPTY_LISTING);
   const [query, setQuery] = useState('');
-  const [paging, setPaging] = useState({ totalPages: 0, total: 0 });
   const [loadFailed, setLoadFailed] = useState(false);
+  const entries = listing.rows;
+  const setEntries = useCallback(
+    next =>
+      setListing(previous => ({
+        ...previous,
+        rows: typeof next === 'function' ? next(previous.rows) : next,
+      })),
+    []
+  );
   const [showDeleteAll, setShowDeleteAll] = useState(false);
   const selection = useSelection(entries, { labelOf: row => row.title });
 
@@ -370,22 +385,52 @@ const InboxPage = ({ notifications }) => {
     document.title = t('inbox.title');
   }, [t]);
 
-  const load = useCallback(
-    () =>
-      notifications
-        .list({ page, size: search.size })
-        .then(data => {
-          setLoadFailed(false);
-          setEntries(extractEntries(data));
-          setPaging({ totalPages: totalPagesOf(data), total: totalOf(data) });
-        })
-        .catch(() => setLoadFailed(true)),
-    [notifications, page, search.size]
-  );
+  const pendingRef = useRef(null);
+  const placement = { size: search.size, first: page === 0 };
+
+  const load = useCallback(() => {
+    pendingRef.current = [];
+    const held = { size: search.size, first: page === 0 };
+    return notifications
+      .list({ page, size: search.size })
+      .then(data => {
+        const pending = pendingRef.current || [];
+        pendingRef.current = null;
+        const read = {
+          rows: extractEntries(data),
+          totalPages: totalPagesOf(data),
+          total: totalOf(data),
+        };
+        const next = pending.reduce(
+          (current, [name, event]) => applyInboxPage(current, name, event, held),
+          read
+        );
+        setLoadFailed(false);
+        setListing(next);
+        observe(next.rows);
+      })
+      .catch(() => {
+        pendingRef.current = null;
+        setLoadFailed(true);
+      });
+  }, [notifications, page, search.size, observe]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  useInboxEvents((name, data) => {
+    pendingRef.current?.push([name, data]);
+    setListing(previous => applyInboxPage(previous, name, data, placement));
+  });
+
+  useEventStream('ready', (data, resumed) => {
+    if (data && !resumed) {
+      load();
+    }
+  });
+
+  useEventStream('reset', () => load());
 
   const markRead = async entry => {
     if (entry.read_at) {
@@ -497,7 +542,7 @@ const InboxPage = ({ notifications }) => {
 
   return (
     <div className="page-column">
-      <SectionHeading title={t('inbox.title')} count={paging.total} actions={headingActions} />
+      <SectionHeading title={t('inbox.title')} count={listing.total} actions={headingActions} />
       {resultLine ? (
         <p className="small text-muted" role="status">
           {resultLine}
@@ -522,9 +567,9 @@ const InboxPage = ({ notifications }) => {
       />
       <Pager
         page={page}
-        totalPages={paging.totalPages}
+        totalPages={listing.totalPages}
         size={search.size}
-        total={paging.total}
+        total={listing.total}
         onChange={setPage}
       />
       <ConfirmModal

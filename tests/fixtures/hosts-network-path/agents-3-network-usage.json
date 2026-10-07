@@ -1,0 +1,154 @@
+{
+  "usage": [
+    {
+      "link": "ixgbe0",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "2400.50",
+      "tx_mbps": "950.20",
+      "interface_speed_mbps": 10000,
+      "interface_class": "phys",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "ixgbe1",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "5400.00",
+      "tx_mbps": "4620.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "phys",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnice3_4001_0",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "2400.00",
+      "tx_mbps": "950.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00",
+      "rbytes_delta": "1500000000",
+      "ipackets_delta": "1162791",
+      "obytes_delta": "593750000",
+      "opackets_delta": "1349432"
+    },
+    {
+      "link": "vnici3_4001_0",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "900.00",
+      "tx_mbps": "600.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00",
+      "rbytes_delta": "562500000",
+      "ipackets_delta": "407609",
+      "obytes_delta": "375000000",
+      "opackets_delta": "614754"
+    },
+    {
+      "link": "vnici3_4001_1",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "410.00",
+      "tx_mbps": "560.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_2",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "1500.00",
+      "tx_mbps": "1100.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00",
+      "rbytes_delta": "937500000",
+      "ipackets_delta": "1736111",
+      "obytes_delta": "687500000",
+      "opackets_delta": "470890"
+    },
+    {
+      "link": "vnici3_4001_3",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "820.00",
+      "tx_mbps": "210.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_4",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "0.00",
+      "tx_mbps": "0.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_5",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "95.00",
+      "tx_mbps": "40.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_6",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "0.40",
+      "tx_mbps": "0.10",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_7",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "1300.00",
+      "tx_mbps": "900.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_8",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "12.00",
+      "tx_mbps": "6.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_9",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "0.00",
+      "tx_mbps": "0.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_10",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "330.00",
+      "tx_mbps": "1200.00",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    },
+    {
+      "link": "vnici3_4001_11",
+      "scan_timestamp": "2026-10-07T12:00:00.000Z",
+      "rx_mbps": "0.05",
+      "tx_mbps": "0.02",
+      "interface_speed_mbps": 10000,
+      "interface_class": "vnic",
+      "time_delta_seconds": "5.00"
+    }
+  ],
+  "totalCount": 15,
+  "returnedCount": 15,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 15 }
+}

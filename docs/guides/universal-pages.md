@@ -387,26 +387,33 @@ adapter, registers the search binding, and renders:
   the same rows; cards carry `ItemChips`, a row of link glyphs for the
   item's `links` (repository, homepage, issues, pipeline, docs, notes,
   each drawn only when present) with the collection's `CardGlyph` slot at
-  the row's right, and `CardExtras`. The Downloads column carries the
+  the row's right, and `CardExtras`; a collection that draws its own card
+  body gives `CardByline`, drawn under the title in the byline's place,
+  and `CardBody`, drawn in the place of the foot line, the links row and
+  `CardExtras`. The Downloads column carries the
   same `when` its level tables carry, so a viewer answered no counts is
   drawn no column rather than a header over blank cells. A table draws the Deploy column
   (`key` `deploy`, `kind` `badge`, the label `pages.table.deploy`) right
   after Name and before Visibility, present only while the UI backend
-  advertises `deploy`, the viewer is signed in and entitled and a row has
-  a deployable version, its `when` receiving `(rows, ctx)` with
+  advertises `deploy` and a row has a deployable version, signed in or
+  not, its `when` receiving `(rows, ctx)` with
   `ctx.status` carrying the host's payload; each cell is the bare
   Hyperweaver glyph link of `features/deploy` at text size, `DeployGlyph`,
   aimed at the row's newest non-deprecated version, and a card draws the
   same glyph at the right of its links row through `CardGlyph`, on every
   box or provisioner alike. The collection's `components/deploy.jsx` supplies only the
-  entitlement check (a Hyperweaver entry in the viewer's `entitlements`)
-  and the seed of the deep link: boxes
+  seed of the deep link: boxes
   `box`, `box_version`, `box_arch=amd64` and `box_url`, provisioners
-  `provisioner`, `provisioner_version` and `provisioner_url`. Where the
-  link goes is the session's `integrations` claim: no `hyperweaver` entry,
-  or a `deploy_target` of `local`, is the agent's `hwa://open?create=machine&…`
-  link opened in this window, and any other `deploy_target` is that
-  origin's `/?create=machine&…` page opened in a new tab.
+  `provisioner`, `provisioner_version`, `provisioner_url` and
+  `provisioner_catalog`. Where the link goes is the session's
+  `integrations` claim: signed out, no `hyperweaver` entry, or a
+  `deploy_target` of `local`, is the agent's
+  `com.startcloud.hyperweaver-agent:/open?create=machine&…` link opened in
+  this window, and any other `deploy_target` is that origin's
+  `/?create=machine&…` page opened in a new tab; a press asks the target's
+  status first, as the Universal Deploy Contract says. A host that relays
+  a catalog draws the same provisioners collection on its Provisioner
+  catalog page with Install in place of Deploy.
 - **Home is home.** A box or ISO is created inside an organization, so
   create and delete actions live on the org page; home carries the toggle
   alone on its first heading row, Discover being the navbar's.
@@ -469,18 +476,18 @@ lowest of its table, folds first, and is not drawn at all while every
 file of the table says `any`; the fleet folds Cycle, Pool, User, Last
 seen, Session, Icons then Drives, the hostname last:
 
-| Column      | Boxes                                                                                       | ISOs                                                                                        | Provisioners                                                               |
-| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| select      | checkbox, the header the select-all                                                         | checkbox, the header the select-all                                                         | checkbox, the header the select-all                                        |
-| watch       | star signed in, blank signed out                                                            | star signed in, blank signed out                                                            | star signed in, blank signed out                                           |
-| Name        | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | icon + label link, slug beside it                                          |
-| Deploy      | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled                  | none                                                                                        | the Hyperweaver glyph while `deploy` is advertised and the viewer entitled |
-| Visibility  | Public / Guests / Private                                                                   | Public / Guests / Private                                                                   | Public / Private, the catalog marking nothing for guests                   |
-| Created     | `createdAt`, hidden until shown                                                             | `createdAt`, hidden until shown                                                             | none                                                                       |
-| Updated     | `updatedAt`, hidden until shown                                                             | `updatedAt`, hidden until shown                                                             | none                                                                       |
-| Downloads   | sum of file `downloadCount`                                                                 | sum of file `downloadCount`                                                                 | health downloads                                                           |
-| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown)    | Status · OS · Latest release · Versions · Architectures (hidden until shown)                | Tier · Latest release · Versions · Providers                               |
-| row actions | none                                                                                        | none                                                                                        | none                                                                       |
+| Column      | Boxes                                                                                       | ISOs                                                                                        | Provisioners                                             |
+| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| select      | checkbox, the header the select-all                                                         | checkbox, the header the select-all                                                         | checkbox, the header the select-all                      |
+| watch       | star signed in, blank signed out                                                            | star signed in, blank signed out                                                            | star signed in, blank signed out                         |
+| Name        | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | org logo + `org/name` as one link, the org dropping first, the full `org/name` in the title | icon + label link, slug beside it                        |
+| Deploy      | the Hyperweaver glyph while `deploy` is advertised                                          | none                                                                                        | the Hyperweaver glyph while `deploy` is advertised       |
+| Visibility  | Public / Guests / Private                                                                   | Public / Guests / Private                                                                   | Public / Private, the catalog marking nothing for guests |
+| Created     | `createdAt`, hidden until shown                                                             | `createdAt`, hidden until shown                                                             | none                                                     |
+| Updated     | `updatedAt`, hidden until shown                                                             | `updatedAt`, hidden until shown                                                             | none                                                     |
+| Downloads   | sum of file `downloadCount`                                                                 | sum of file `downloadCount`                                                                 | health downloads                                         |
+| then        | Status · OS · Latest release · Versions · Providers · Architectures (hidden until shown)    | Status · OS · Latest release · Versions · Architectures (hidden until shown)                | Tier · Latest release · Versions · Providers             |
+| row actions | none                                                                                        | none                                                                                        | none                                                     |
 
 Downloads draw the same shared columns, then Status · Family · Vendor ·
 Latest release · Releases · Platforms (hidden until shown), Downloads
@@ -642,7 +649,7 @@ architecture {
 | version        | `VersionService.getVersion` + providers + architectures + `FileService.getDownloadLink`; the ISO version's files as artifacts, each with its download link                                                                                                                                                            | the version's artifacts                                                                                                                                                                                                          |
 | provider       | `ProviderService.getProvider` + `ArchitectureService.getArchitectures` + `FileService.info`; the ISO architecture's one file from its version, drawn by the same ProviderPage                                                                                                                                         | the version's artifacts                                                                                                                                                                                                          |
 | watches        | `BoxService.watch/unwatch/getUserWatches`, `IsoService.watch/unwatch/getUserWatches`, one watch set per collection; dropped by the registry when the UI backend lacks `watches`                                                                                                                                       | the Worker's `/api/watches`: `GET` the caller's ids, `POST { id }`, `DELETE ?id=`, kept in KV under the token's uuid so they follow the user; the data job notifies each watcher of a new version through the hub inbox and push |
-| health extras  | none                                                                                                                                                                                                                                                                                                                  | `tier`, `failed_rules`, `presentation`, coverage per version                                                                                                                                                                     |
+| health extras  | none                                                                                                                                                                                                                                                                                                                  | `tier`, `rules`, `failed_rules`, `presentation`, coverage per version, and each version's `tier`, `rules`, `failed_rules` and `boxes`                                                                                            |
 | downloads      | `DownloadService.discoverAll` and `getAll` widened by the caller's token; `get` with its releases; `ReleaseService.get` with its patches; `PatchService.get` with its files, each with its download link from `get-download-link`; the upload through the chunked route the box slot uses; watches as boxes have them | none                                                                                                                                                                                                                             |
 
 ---
@@ -681,6 +688,7 @@ collection {
   slots {
     ListActions, CardGlyph, RowActions,
     ItemActions, ItemChips, ItemHeaderExtra, ItemExtras, ItemSections, CardExtras,
+    CardByline, CardBody,
     VersionsActions, VersionRowActions, VersionActions, VersionBannerActions, VersionNotesActions,
     ProvidersActions, ProviderRowActions, ProviderActions,
     ArchitecturesActions, ArchitectureRowActions
@@ -939,8 +947,8 @@ adds its own foldable section to an item page (the catalog's Quality).
   organization, so a change of either remounts it.
 - **ItemPage**: PageHeader (its action row opens with the bare Deploy
   glyph link, `DeployGlyph`, for the newest non-deprecated version
-  whenever the viewer is signed in, entitled to Hyperweaver and
-  Hyperweaver is configured, on boxes and provisioners alike), the
+  whenever the host advertises `deploy`, signed in or not, on boxes and
+  provisioners alike), the
   `ItemExtras` slot (BoxVault's use-this strip with the version select
   and the same glyph beside it for the selected version, opening
   Hyperweaver with the box pre-selected),
@@ -1367,9 +1375,42 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   `notify(kind, text, options)` through the chrome's notice surface of the
   navbar contract; no page draws an alert row of its own.
 - The catalog's Quality is an `ItemSections` entry under Versions, a
-  section header in the Versions style ("Quality", the tier chip, the
-  count of unmet rules) collapsed by default, expanding to the unmet
-  rules or "All quality rules pass."; the cards keep their accordion.
+  section header in the Versions style ("Quality", the tier pill, the
+  rules passed over every rule) collapsed by default, expanding to the
+  quality panel of the newest version.
+- **A provisioner card.** Under the title one muted line: the
+  organization's logo and name, the family's name in monospace and a
+  button that copies it. The badge row: the tier pill, a plain badge in
+  the tier's own colour; the newest version beside a tag glyph; how long
+  ago it released beside a calendar glyph; the downloads beside a download
+  glyph, each badge saying what it counts in its tooltip. Under the
+  description the health strip, always drawn: Artifacts and Sidecars with
+  a check in muted text, or "Artifacts failed" and "Sidecars missing" in
+  danger text, each with one sentence in its tooltip and a link to the
+  catalog guide that explains it, then Providers, the selected version's
+  verified providers on one line fitted to its width, a `+N` chip naming
+  the rest in its tooltip, fitted again whenever the line's size changes.
+  Then two folds, both folded: Quality, its header carrying a small ring
+  and the rules passed over every rule, over Versions, its header carrying
+  the newest version and the count. The Quality body says which version it
+  was measured on, draws the score ring with the tier pill inside it under
+  "rules pass", then one meter a tier, Bronze to Diamond, the tier held
+  outlined in its colour and the tier above it open, each meter opening to
+  its rules as named dots and every rule with its definition link and its
+  description. The Versions body is a frame of about five rows, newest
+  first: a fold cell, a dot in the tier the version held, the version, its
+  release date, a small Download button and the collection's version
+  action, Deploy on the catalog; the fold cell opens that version's
+  providers, each linking to its verified box where the catalog names one,
+  and its sha256; a row's click selects the version, and the strip's
+  providers and Quality follow it; "All versions (N)" links to the item
+  page while more versions exist. A version reads its own `providers`,
+  `tier`, `rules`, `failed_rules` and `boxes` from
+  `health.versions[<version>]`, every member optional; a box is
+  `{ organization, name, version, architecture, url }`, its provider chip
+  linking to `url`, the box's version and provider page, and naming the
+  box in its tooltip; a version the catalog did not measure draws the
+  family's quality, measured on the newest version.
 
 ---
 

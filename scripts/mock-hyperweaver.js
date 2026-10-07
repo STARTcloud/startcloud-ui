@@ -385,8 +385,9 @@ const announce = () => {
  * The stream is the events contract's: `retry`, `ready`, ids of
  * `<epoch-ms>-<seq>`, a ring of 500 events or 5 minutes, `Last-Event-ID`
  * replayed from the ring or answered `reset`, `:hb` after 25 idle
- * seconds. `unread-count`, `profile-updated` and `session-terminated`
- * reach the one person they are for, in the ring as on the wire. The
+ * seconds. The `notifications` topic's row events and `unread-count`,
+ * `profile-updated` and `session-terminated` reach the one person they
+ * are for, in the ring as on the wire. The
  * health takes a new state each time a task ends and is sent on `health`.
  *
  * The two WebSockets are hand-written over the upgrade, text frames

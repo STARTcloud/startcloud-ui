@@ -47,6 +47,7 @@ import {
   seedVariableRows,
   sourceDefaultPatch,
   sourceEntryPatch,
+  sourceFieldErrorsOf,
   sourceProblem,
   sourceRemovePatch,
   sourceTogglePatch,
@@ -336,8 +337,8 @@ describe('the recipes', () => {
 
 describe('the templates', () => {
   const sources = [
-    { name: 'mirror', url: 'https://m', enabled: true, default: false },
-    { name: 'boxvault', url: 'https://b', enabled: true, default: true },
+    { id: 'mirror', name: 'Mirror', url: 'https://m', enabled: true, default: false },
+    { id: 'boxvault', name: 'BoxVault', url: 'https://b', enabled: true, default: true },
   ];
 
   const sourceForm = {
@@ -440,6 +441,64 @@ describe('the templates', () => {
       sourcesPatch({ boxvault: { default: true } })
     );
     expect(sourceRemovePatch(sources[0])).toEqual(sourcesPatch({ mirror: null }));
+  });
+
+  it('keys a row that carries no id by its own name, as its agent answers it', () => {
+    const zones = [
+      { name: 'mirror', url: 'https://m', enabled: true, default: false },
+      { name: 'boxvault', url: 'https://b', enabled: true, default: true },
+    ];
+    expect(sourceDefaultPatch(zones, zones[0])).toEqual(
+      sourcesPatch({ boxvault: { default: false }, mirror: { default: true } })
+    );
+    expect(sourceRemovePatch(zones[1])).toEqual(sourcesPatch({ boxvault: null }));
+  });
+
+  it('lays each entry of a refused save on the form field its pointer names', () => {
+    const error = {
+      fieldErrors: [
+        {
+          pointer: '/template_sources/sources/boxvault/url',
+          rule: 'format',
+          params: { format: 'uri' },
+        },
+        { pointer: '/template_sources/sources/boxvault/url', rule: 'required', params: {} },
+        { pointer: '/template_sources/sources/boxvault/display_name', rule: 'required' },
+        { pointer: '/template_sources/sources/mirror/url', rule: 'format', params: {} },
+      ],
+    };
+    expect(sourceFieldErrorsOf(error, 'boxvault')).toEqual({
+      url: { rule: 'format', params: { format: 'uri' } },
+      displayName: { rule: 'required', params: {} },
+    });
+    expect(
+      sourceFieldErrorsOf(
+        {
+          fieldErrors: [
+            { pointer: '/template_sources/sources', rule: 'propertyNames', params: { key: 'Bad' } },
+          ],
+        },
+        'Bad'
+      )
+    ).toEqual({ name: { rule: 'propertyNames', params: { key: 'Bad' } } });
+    expect(
+      sourceFieldErrorsOf(
+        {
+          fieldErrors: [
+            {
+              pointer: '/template_sources/sources/new',
+              rule: 'required',
+              params: { required: ['display_name', 'url'] },
+            },
+          ],
+        },
+        'new'
+      )
+    ).toEqual({
+      displayName: { rule: 'required', params: {} },
+      url: { rule: 'required', params: {} },
+    });
+    expect(sourceFieldErrorsOf(null, 'new')).toEqual({});
   });
 
   it('refuses a registry without an id, a URL or a display name, and an id outside the key rule', () => {

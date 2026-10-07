@@ -21,6 +21,9 @@
   "scope": "/",
   "start_url": "/",
   "display": "standalone",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
   "theme_color": "#0d6efd",
   "background_color": "#ffffff"
 }

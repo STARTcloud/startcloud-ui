@@ -7,6 +7,8 @@ import {
   buildCloudInit,
   buildDisks,
   buildSpec,
+  catalogSourceBody,
+  catalogVersionOf,
   cleanNetworks,
   createRouteOf,
   createSeedOf,
@@ -16,8 +18,10 @@ import {
   emptyDiskConfig,
   emptySettings,
   hostCreates,
+  installOfferOf,
   nextServerIdOf,
   parseVboxPassthrough,
+  seedFamilyOf,
   stepProblemOf,
   withoutCreateSeed,
 } from '../../src/features/hosts/utils/machineCreate.js';
@@ -82,11 +86,12 @@ describe('the deep link', () => {
       provisioner: '',
       provisioner_version: '',
       provisioner_url: '',
+      provisioner_catalog: '',
     });
     expect(
       createSeedOf(
         new URLSearchParams(
-          'create=machine&provisioner=startcloud&provisioner_version=0.1.27&provisioner_url=https://c/p.tar.gz'
+          'create=machine&provisioner=startcloud&provisioner_version=0.1.27&provisioner_url=https://c/p.tar.gz&provisioner_catalog=https://c/catalog.json'
         )
       )
     ).toMatchObject({
@@ -94,6 +99,7 @@ describe('the deep link', () => {
       provisioner: 'startcloud',
       provisioner_version: '0.1.27',
       provisioner_url: 'https://c/p.tar.gz',
+      provisioner_catalog: 'https://c/catalog.json',
     });
     expect(createSeedOf(new URLSearchParams('create=zone'))).toBeNull();
     expect(createSeedOf(new URLSearchParams(''))).toBeNull();
@@ -101,9 +107,18 @@ describe('the deep link', () => {
 
   it('takes the deep link out of the query and leaves the rest', () => {
     const params = new URLSearchParams(
-      'tab=x&create=machine&box=a&box_version=1&provisioner=p&provisioner_version=2&provisioner_url=u'
+      'tab=x&create=machine&box=a&box_version=1&provisioner=p&provisioner_version=2&provisioner_url=u&provisioner_catalog=c'
     );
     expect(withoutCreateSeed(params).toString()).toBe('tab=x');
+  });
+
+  it('names the host family by the part of the handed provisioner after its slash', () => {
+    expect(seedFamilyOf('STARTcloud/hcl_domino_additional_provisioner')).toBe(
+      'hcl_domino_additional_provisioner'
+    );
+    expect(seedFamilyOf('startcloud')).toBe('startcloud');
+    expect(seedFamilyOf('')).toBe('');
+    expect(seedFamilyOf(undefined)).toBe('');
   });
 
   it('routes a door to the host page with the query and the seed', () => {
@@ -114,6 +129,76 @@ describe('the deep link', () => {
     expect(
       createRouteOf('self', { provisioner: 'startcloud', provisioner_version: '0.1.27' })
     ).toBe('/hosts/self?create=machine&provisioner=startcloud&provisioner_version=0.1.27');
+    expect(
+      createRouteOf('self', { provisioner: 'a/b', provisioner_catalog: 'https://c/catalog.json' })
+    ).toBe(
+      '/hosts/self?create=machine&provisioner=a%2Fb&provisioner_catalog=https%3A%2F%2Fc%2Fcatalog.json'
+    );
+  });
+});
+
+const catalogOf = (name, versions) => ({
+  provisioners: [{ name, versions: versions.map(version => ({ version })) }],
+});
+
+describe('the install of a handed family', () => {
+  it('reads the named version of a family from a catalog, the first while none is named', () => {
+    const catalog = catalogOf('hcl', ['0.3.0', '0.2.0']);
+    expect(catalogVersionOf(catalog, 'hcl', '0.2.0')).toBe('0.2.0');
+    expect(catalogVersionOf(catalog, 'hcl', '')).toBe('0.3.0');
+    expect(catalogVersionOf(catalog, 'hcl', '9.9.9')).toBeNull();
+    expect(catalogVersionOf(catalog, 'other', '')).toBeNull();
+    expect(catalogVersionOf(null, 'hcl', '')).toBeNull();
+  });
+
+  it('offers the install from the first source that lists the family and the version', () => {
+    const sources = [
+      { id: 'staging', url: 'https://s/catalog.json' },
+      { id: 'main', url: 'https://m/catalog.json' },
+    ];
+    const catalogs = { staging: catalogOf('hcl', ['0.2.0']), main: catalogOf('hcl', ['0.3.0']) };
+    expect(
+      installOfferOf({ sources, catalogs, name: 'hcl', version: '0.3.0', catalogUrl: '' })
+    ).toEqual({ kind: 'install', source: 'main', version: '0.3.0' });
+  });
+
+  it('offers the source add while no source lists it and the handed catalog is no source', () => {
+    const sources = [{ id: 'main', url: 'https://m/catalog.json' }];
+    const catalogs = { main: catalogOf('other', ['1.0.0']) };
+    expect(
+      installOfferOf({
+        sources,
+        catalogs,
+        name: 'hcl',
+        version: '0.3.0',
+        catalogUrl: 'https://c/catalog.json',
+      })
+    ).toEqual({ kind: 'add', source: '', version: '0.3.0' });
+    expect(
+      installOfferOf({
+        sources,
+        catalogs,
+        name: 'hcl',
+        version: '0.3.0',
+        catalogUrl: 'https://m/catalog.json',
+      }).kind
+    ).toBe('missing');
+    expect(
+      installOfferOf({ sources: [], catalogs: {}, name: 'hcl', version: '', catalogUrl: '' }).kind
+    ).toBe('missing');
+  });
+
+  it('adds a handed catalog under its host, oidc for an organization private catalog', () => {
+    expect(catalogSourceBody('https://provisioner-catalog.startcloud.com/catalog.json')).toEqual({
+      display_name: 'provisioner-catalog.startcloud.com',
+      url: 'https://provisioner-catalog.startcloud.com/catalog.json',
+      auth: 'none',
+    });
+    expect(
+      catalogSourceBody(
+        'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
+      ).auth
+    ).toBe('oidc');
   });
 });
 

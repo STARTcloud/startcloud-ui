@@ -1858,7 +1858,8 @@
       "artifactScan": "Escaneo de la caché de archivos",
       "artifactDownload": "Descarga de archivo",
       "hclDownload": "Descarga del portal HCL",
-      "agentUpdate": "Actualización del agente"
+      "agentUpdate": "Actualización del agente",
+      "provisionerCatalogInstall": "Instalación desde el catálogo"
     },
     "shell": {
       "noSession": "No hay sesión disponible",
@@ -3089,7 +3090,8 @@
       "language": "Idioma",
       "variant": "Variante",
       "resize": "Cambiar el ancho de la columna",
-      "resizeHint": "Arrastra para cambiar el ancho, doble clic para restablecer"
+      "resizeHint": "Arrastra para cambiar el ancho, doble clic para restablecer",
+      "install": "Instalar"
     },
     "status": {
       "published": "Publicado",
@@ -3157,7 +3159,14 @@
       "error": "Error al actualizar el seguimiento. Por favor intenta de nuevo."
     },
     "deploy": {
-      "versionTitle": "Desplegar {{version}} con Hyperweaver"
+      "versionTitle": "Desplegar {{version}} con Hyperweaver",
+      "agentTitle": "Obtener Hyperweaver",
+      "agentBody": "Desplegar necesita el Agente de Hyperweaver en esta máquina, o un servidor Hyperweaver al que te unas.",
+      "installAgent": "Instalar el Agente de Hyperweaver",
+      "joinServer": "Unirse a un servidor Hyperweaver",
+      "support": "Soporte",
+      "serverDown": "Tu servidor Hyperweaver no responde",
+      "openLocal": "Abrir en esta máquina"
     },
     "about": {
       "startHere": "Empieza aquí",
@@ -3195,6 +3204,7 @@
       "tabOrchestration": "Orquestación",
       "tabInstallerFiles": "Archivos de instalación",
       "tabDatabase": "Base de datos",
+      "tabProvisionerCatalog": "Catálogo de aprovisionadores",
       "titleAccessDenied": "Acceso denegado - Hyperweaver",
       "titleNoServerSelected": "Ningún servidor seleccionado - Hyperweaver",
       "titleManageHost": "Administrar {{hostname}} - Hyperweaver",
@@ -3825,23 +3835,18 @@
     "card": {
       "version_one": "{{count}} versión",
       "version_other": "{{count}} versiones",
-      "download": "descargar",
-      "showAll": "Mostrar las {{count}} versiones",
-      "showFewer": "Mostrar menos versiones",
-      "released": "publicado hace {{count}} días",
       "downloads_one": "{{count}} descarga",
       "downloads_other": "{{count}} descargas",
       "homepage": "Página web",
       "viewOnGithub": "Ver en GitHub",
       "reportIssue": "Informar de un problema",
-      "quality": "Calidad: {{tier}}",
       "qualityHeading": "Calidad",
-      "unmetCount_one": "{{count}} regla incumplida",
-      "unmetCount_other": "{{count}} reglas incumplidas",
-      "allRulesPass": "Todas las reglas de calidad se cumplen.",
-      "unmetRules": "Reglas incumplidas:",
-      "tierTooltip": "Nivel de calidad medido — recalculado en cada ejecución de datos",
-      "providerCoverage": "Imagen verificada en {{count}} de {{total}} versiones"
+      "providerCoverage": "Imagen verificada en {{count}} de {{total}} versiones",
+      "copyName": "Copiar el nombre",
+      "tierMeasured": "{{tier}}: nivel medido en cada ejecución de datos",
+      "latestVersion": "Versión más reciente {{version}}",
+      "releasedShort": "{{count}}d",
+      "releasedOn": "Publicado hace {{count}} días, {{date}}"
     },
     "tiers": {
       "unrated": "Sin calificar",
@@ -3924,9 +3929,29 @@
       }
     },
     "health": {
-      "stale": "obsoleto — última versión hace {{count}} días",
-      "artifactErrors": "errores de artefactos en esta ejecución",
-      "sidecarGaps": "sumas de verificación incompletas"
+      "artifacts": "Artefactos",
+      "artifactsFailed": "Artefactos fallidos",
+      "artifactsTip": "Cada artefacto versionado se descargó en la última ejecución de datos",
+      "artifactsFailedTip": "Un artefacto versionado no se pudo descargar en la última ejecución de datos",
+      "sidecars": "Sumas de verificación",
+      "sidecarsMissing": "Faltan sumas de verificación",
+      "sidecarsTip": "Cada versión lleva su suma sha256 correspondiente",
+      "sidecarsMissingTip": "A una versión le falta su suma sha256 o la suma no coincidió",
+      "providersFor": "Proveedores verificados para {{version}}"
+    },
+    "quality": {
+      "measuredOn": "Medido en {{version}}",
+      "rulesPass": "reglas cumplidas",
+      "meterLabel": "{{passed}} de {{total}} reglas cumplidas",
+      "rulePassed": "Cumplida: {{requirement}}",
+      "ruleUnmet": "Incumplida: {{requirement}}"
+    },
+    "versions": {
+      "toggle": "Mostrar u ocultar {{version}}",
+      "select": "Mostrar la calidad y los proveedores de {{version}}",
+      "tierWhen": "{{tier}} cuando se midió {{version}}",
+      "download": "Descargar {{version}}",
+      "all": "Todas las versiones ({{count}})"
     },
     "errors": {
       "accessDenied": "Acceso denegado por la puerta del catálogo."
@@ -7658,17 +7683,12 @@
       "seriesCompressionRatio": "Tasa de Compresión"
     },
     "provisionerManagement": {
-      "catalogFetchFailed": "Error al obtener el catálogo: {{message}}",
       "installFailed": "Error en la instalación: {{message}}",
-      "catalogTitle": "Catálogo de aprovisionadores",
       "catalogSource": "Fuente del catálogo",
       "default": "Predeterminado",
-      "fetchingCatalog": "Obteniendo el catálogo…",
-      "noProvisionersInCatalog": "El catálogo no lista ningún aprovisionador.",
       "version": "Versión",
       "actions": "Acciones",
       "installed": "instalado",
-      "alreadyInstalledTitle": "Ya está en el registro — las versiones son inmutables",
       "installVersionTitle": "Descargar, verificar e importar esta versión",
       "install": "Instalar",
       "noVersionsPublished": "No hay versiones publicadas.",
@@ -9961,6 +9981,49 @@
       "addModalTitle": "Nueva nic en {{machine}}",
       "addModalStage": "Poner en cola",
       "addModalVlanHelp": "0 = sin etiqueta"
+    },
+    "networkPath": {
+      "kind": {
+        "vnic": "vNIC",
+        "portgroup": "Grupo de puertos",
+        "switch": "Switch",
+        "uplink": "Enlace ascendente",
+        "member": "Enlace miembro"
+      },
+      "mode": {
+        "nat": "nat",
+        "hostonly": "solo-host",
+        "natnetwork": "Red NAT",
+        "etherstub": "etherstub",
+        "internal": "interna"
+      },
+      "noUplink": "sin enlace ascendente · termina en este switch",
+      "busiest": "Salto más cargado",
+      "openChart": "Abrir la gráfica",
+      "focusStream": "haz clic para enfocar este flujo",
+      "openHop": "haz clic para abrir la gráfica",
+      "showing": "Mostrando {{name}}",
+      "clear": "quitar",
+      "hopTitle": "{{name}} · {{kind}}",
+      "ofSpeed": "de {{speed}} · {{percent}}",
+      "openBandwidth": "Abrir en Ancho de banda",
+      "memberCount_one": "{{count}} miembro · {{down}} sin enlace",
+      "memberCount_other": "{{count}} miembros · {{down}} sin enlace",
+      "down": "sin enlace",
+      "facts": {
+        "detail": "Detalle",
+        "packets": "Paquete medio",
+        "mode": "Modo",
+        "cable": "Cable",
+        "nicType": "Tipo de NIC",
+        "ports": "Puertos",
+        "live": "Activas",
+        "planned": "Planificadas",
+        "link": "Enlace",
+        "subnet": "Subred",
+        "memberOf": "Miembro de",
+        "share": "Proporción"
+      }
     }
   },
   "machine": {
@@ -10970,8 +11033,7 @@
       "existingBootNeedsPath": "Un disco de arranque existente necesita la ruta de su imagen.",
       "selectVersionOrNone": "Selecciona una versión para el aprovisionador elegido — o vuelve a establecerlo en Ninguno.",
       "fixHighlightedFields": "Corrige el campo de configuración resaltado: {{names}}.",
-      "fixHighlightedFields_plural": "Corrige los campos de configuración resaltados: {{names}}.",
-      "provisionerNotHeld": "El aprovisionador {{name}} no está instalado en este host. Importa su paquete desde la sección Aprovisionadores de la página Administrar: {{url}}"
+      "fixHighlightedFields_plural": "Corrige los campos de configuración resaltados: {{names}}."
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11206,7 +11268,16 @@
       "primaryOrgDefault": "Organización principal (predeterminada)",
       "owningOrgHint": "Cuál de tus organizaciones es propietaria de la nueva máquina.",
       "browseBoxVault": "Explorar BoxVault…",
-      "browseBoxVaultHint": "Elige una box de BoxVault con tu propia cuenta, incluidas las privadas de tu organización."
+      "browseBoxVaultHint": "Elige una box de BoxVault con tu propia cuenta, incluidas las privadas de tu organización.",
+      "provisionerLooking": "Buscando {{name}} en los catálogos de este host…",
+      "provisionerMissing": "{{name}} {{version}} no está instalado en este host.",
+      "installAndContinue": "Instalar y continuar",
+      "addSourceAndInstall": "Agregar el origen e instalar",
+      "installing": "Instalando {{name}} {{version}}…",
+      "provisionerSignIn": "Inicia sesión con SSO para continuar",
+      "provisionerNotFound": "No se encontró este aprovisionador en su catálogo",
+      "retry": "Reintentar",
+      "provisionerNoStream": "Este host no informa del progreso de las tareas; instala {{name}} desde la página del catálogo de aprovisionadores."
     },
     "resources": {
       "hint": "Controles de recursos de zonecfg — «Establecer» reemplaza el recurso completo, «Eliminar» lo borra, «Sin cambios» no toca nada. Se aplica en el próximo arranque / ciclo de energía como el resto de cambios de infraestructura.",

@@ -1,0 +1,31 @@
+{
+  "usage": [
+    {
+      "host": "vbox-1",
+      "link": "Ethernet 2",
+      "ipackets": 1820344,
+      "rbytes": 2104887123,
+      "opackets": 912455,
+      "obytes": 310442871,
+      "rx_bps": 75000000,
+      "tx_bps": 15000000,
+      "rx_mbps": 600,
+      "tx_mbps": 120,
+      "time_delta_seconds": 5,
+      "scan_timestamp": "2026-10-07T12:00:00Z"
+    },
+    {
+      "host": "vbox-1",
+      "link": "Wi-Fi",
+      "rx_bps": 0,
+      "tx_bps": 0,
+      "rx_mbps": 0,
+      "tx_mbps": 0,
+      "time_delta_seconds": 5,
+      "scan_timestamp": "2026-10-07T12:00:00Z"
+    }
+  ],
+  "totalCount": 2,
+  "returnedCount": 2,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 2 }
+}

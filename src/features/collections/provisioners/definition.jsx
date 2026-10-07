@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Accordion, Badge, Button, ListGroup } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBug, FaCubes, FaGithub, FaHouse } from 'react-icons/fa6';
+import { FaBug, FaCalendar, FaCubes, FaDownload, FaGithub, FaHouse, FaTag } from 'react-icons/fa6';
 
 import {
   badgesText,
@@ -22,11 +21,13 @@ import { itemShape } from '../../../utils/itemShape';
 
 import { catalogAdapter } from './api/adapter';
 import { CardGlyph, DeployGlyph, deployColumn, deployableVersion } from './components/deploy';
+import { CardByline, cardBodyWith } from './components/ProvisionerCard';
+import { QualityPanel, QualitySignal, TierPill } from './components/Quality';
+import { qualityOf } from './utils/quality';
 
 export const TIER_ORDER = ['diamond', 'platinum', 'gold', 'silver', 'bronze', 'unrated'];
-const VISIBLE_VERSIONS = 10;
-const RULES_GUIDE = '/docs/guides/quality-tiers/';
 const NONE = 'N/A';
+const DAY_MS = 86400000;
 
 const coverageProviders = item => Object.keys(item.extras.coverage.counts).sort();
 
@@ -50,13 +51,13 @@ const CoverageChips = ({ item }) => {
   return (
     <span className="d-inline-flex flex-wrap gap-1">
       {providers.map(provider => (
-        <Badge
+        <span
           key={provider}
-          className={`provider-chip ${coverageClass(counts[provider], total)}`}
+          className={`badge provider-chip ${coverageClass(counts[provider], total)}`}
           title={t('provisioners.card.providerCoverage', { count: counts[provider], total })}
         >
           {provider}
-        </Badge>
+        </span>
       ))}
     </span>
   );
@@ -69,12 +70,12 @@ CoverageChips.propTypes = {
 const TierBadge = ({ item }) => {
   const { t } = useTranslation();
   return (
-    <Badge
-      className={`tier-badge tier-${item.extras.tier}`}
-      title={t('provisioners.card.tierTooltip')}
-    >
-      {t(`provisioners.tiers.${item.extras.tier}`)}
-    </Badge>
+    <TierPill
+      tier={item.extras.tier}
+      title={t('provisioners.card.tierMeasured', {
+        tier: t(`provisioners.tiers.${item.extras.tier}`),
+      })}
+    />
   );
 };
 
@@ -82,45 +83,62 @@ TierBadge.propTypes = {
   item: itemShape.isRequired,
 };
 
-const staleDays = item => {
-  if (!item.latestReleaseAt) {
-    return null;
-  }
-  return Math.floor((Date.now() - new Date(item.latestReleaseAt).getTime()) / 86400000);
-};
+const daysSince = date =>
+  date ? Math.floor((Date.now() - new Date(date).getTime()) / DAY_MS) : null;
 
-const ItemChips = ({ item }) => {
+/**
+ * The badge row of a provisioner: the tier pill, the newest version
+ * beside a tag glyph, how long ago it released beside a calendar glyph
+ * and the downloads beside a download glyph, each saying in its tooltip
+ * what it counts.
+ */
+const ItemChips = ({ item, ctx }) => {
   const { t } = useTranslation();
-  const days = staleDays(item);
+  const latest = item.versions[0]?.version || '';
+  const days = daysSince(item.latestReleaseAt);
   return (
     <>
       <TierBadge item={item} />
-      {item.versions[0] ? <Badge bg="primary">v{item.versions[0].version}</Badge> : null}
+      {latest ? (
+        <span
+          className="badge bg-primary glyph-badge"
+          title={t('provisioners.card.latestVersion', { version: latest })}
+          data-badge="latest"
+        >
+          <FaTag aria-hidden="true" />
+          {latest}
+        </span>
+      ) : null}
       {days !== null ? (
-        <Badge bg="secondary">{t('provisioners.card.released', { count: days })}</Badge>
+        <span
+          className="badge bg-secondary glyph-badge"
+          title={t('provisioners.card.releasedOn', {
+            count: days,
+            date: new Date(item.latestReleaseAt).toLocaleDateString(ctx?.language),
+          })}
+          data-badge="released"
+        >
+          <FaCalendar aria-hidden="true" />
+          {t('provisioners.card.releasedShort', { count: days })}
+        </span>
       ) : null}
       {typeof item.downloads === 'number' ? (
-        <Badge bg="secondary">{t('provisioners.card.downloads', { count: item.downloads })}</Badge>
+        <span
+          className="badge bg-secondary glyph-badge"
+          title={t('provisioners.card.downloads', { count: item.downloads })}
+          data-badge="downloads"
+        >
+          <FaDownload aria-hidden="true" />
+          {item.downloads}
+        </span>
       ) : null}
-      {days !== null && days > 365 ? (
-        <Badge bg="warning" text="dark">
-          {t('provisioners.health.stale', { count: days })}
-        </Badge>
-      ) : null}
-      {item.extras.artifactsOk ? null : (
-        <Badge bg="danger">{t('provisioners.health.artifactErrors')}</Badge>
-      )}
-      {item.extras.sidecarsOk ? null : (
-        <Badge bg="warning" text="dark">
-          {t('provisioners.health.sidecarGaps')}
-        </Badge>
-      )}
     </>
   );
 };
 
 ItemChips.propTypes = {
   item: itemShape.isRequired,
+  ctx: PropTypes.shape({ language: PropTypes.string }),
 };
 
 const ItemHeaderExtra = ({ item }) => (
@@ -176,59 +194,26 @@ ItemActions.propTypes = {
   ctx: PropTypes.shape({ user: PropTypes.object }).isRequired,
 };
 
-const QualityRules = ({ item }) => {
-  const { t } = useTranslation();
-  if (item.extras.failedRules.length === 0) {
-    return <p className="mb-0">{t('provisioners.card.allRulesPass')}</p>;
-  }
-  return (
-    <>
-      <p className="mb-1">{t('provisioners.card.unmetRules')}</p>
-      <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-        {item.extras.failedRules.map(rule => {
-          const [tier] = rule.split('.');
-          return (
-            <li key={rule} className="d-flex align-items-start gap-2">
-              <Badge className={`tier-badge tier-${tier}`}>{t(`provisioners.tiers.${tier}`)}</Badge>
-              <span>
-                <a
-                  href={`${RULES_GUIDE}#${tier}-rules`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="fw-semibold"
-                >
-                  {t(`provisioners.rules.${rule}.label`, { defaultValue: rule })}
-                </a>
-                <span className="d-block small text-body-secondary">
-                  {t(`provisioners.rules.${rule}.requirement`, { defaultValue: '' })}
-                </span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </>
-  );
-};
-
-QualityRules.propTypes = {
-  item: itemShape.isRequired,
-};
-
+/**
+ * The quality section of the item page: its heading with the rules passed
+ * and the tier held, folded by default, opening to the quality the newest
+ * version was measured with.
+ */
 const QualitySection = ({ item }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const quality = qualityOf(item, item.versions[0] || null);
   return (
-    <div className="list-table">
+    <div className="list-table" data-section="quality">
       <div className="d-flex align-items-center gap-2 mb-3">
         <CollapseButton collapsed={!open} onToggle={() => setOpen(current => !current)} />
         <h4 className="mb-0">{t('provisioners.card.qualityHeading')}</h4>
-        <TierBadge item={item} />
-        <span className="badge bg-secondary bg-opacity-50">
-          {t('provisioners.card.unmetCount', { count: item.extras.failedRules.length })}
+        <TierPill tier={quality.tier} />
+        <span className="q-signal ms-0">
+          <QualitySignal rules={quality.rules} />
         </span>
       </div>
-      {open ? <QualityRules item={item} /> : null}
+      {open ? <QualityPanel quality={quality} /> : null}
     </div>
   );
 };
@@ -237,87 +222,14 @@ QualitySection.propTypes = {
   item: itemShape.isRequired,
 };
 
-const CardExtras = ({ item, ctx }) => {
-  const { t } = useTranslation();
-  const [showAll, setShowAll] = useState(false);
-  const versions = showAll ? item.versions : item.versions.slice(0, VISIBLE_VERSIONS);
-  const hidden = item.versions.length - versions.length;
-  return (
-    <>
-      <CoverageChips item={item} />
-      <Accordion flush>
-        <Accordion.Item eventKey="versions">
-          <Accordion.Header>
-            {t('provisioners.card.version', { count: item.versions.length })}
-          </Accordion.Header>
-          <Accordion.Body className="p-0">
-            <ListGroup variant="flush" className="version-list">
-              {versions.map(version => (
-                <ListGroup.Item key={version.version}>
-                  <div className="d-flex justify-content-between align-items-center gap-2">
-                    <span className="d-inline-flex align-items-baseline gap-2 flex-wrap">
-                      <strong>{version.version}</strong>
-                      {version.createdAt ? (
-                        <span className="small text-body-secondary">
-                          {new Date(version.createdAt).toLocaleDateString(ctx.language)}
-                        </span>
-                      ) : null}
-                      {version.providers.map(provider => (
-                        <Badge key={provider.name} bg="secondary" className="badge-xs">
-                          {provider.name}
-                        </Badge>
-                      ))}
-                    </span>
-                    <span>
-                      {version.artifacts.map(artifact => (
-                        <a key={artifact.downloadUrl} href={artifact.downloadUrl}>
-                          {t('provisioners.card.download')}
-                        </a>
-                      ))}
-                    </span>
-                  </div>
-                  {version.artifacts.map(artifact => (
-                    <code key={artifact.checksum} className="checksum d-block text-break">
-                      {artifact.checksumType}:{artifact.checksum}
-                    </code>
-                  ))}
-                </ListGroup.Item>
-              ))}
-              {hidden > 0 || showAll ? (
-                <ListGroup.Item className="text-center">
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0"
-                    onClick={() => setShowAll(current => !current)}
-                  >
-                    {showAll
-                      ? t('provisioners.card.showFewer')
-                      : t('provisioners.card.showAll', { count: item.versions.length })}
-                  </Button>
-                </ListGroup.Item>
-              ) : null}
-            </ListGroup>
-          </Accordion.Body>
-        </Accordion.Item>
-        <Accordion.Item eventKey="quality">
-          <Accordion.Header>
-            {t('provisioners.card.quality', {
-              tier: t(`provisioners.tiers.${item.extras.tier}`),
-            })}
-          </Accordion.Header>
-          <Accordion.Body>
-            <QualityRules item={item} />
-          </Accordion.Body>
-        </Accordion.Item>
-      </Accordion>
-    </>
-  );
-};
+const VersionDeploy = ({ item, version, ctx }) => (
+  <DeployGlyph user={ctx.user} item={item} version={version} />
+);
 
-CardExtras.propTypes = {
+VersionDeploy.propTypes = {
   item: itemShape.isRequired,
-  ctx: PropTypes.shape({ language: PropTypes.string.isRequired }).isRequired,
+  version: PropTypes.string.isRequired,
+  ctx: PropTypes.shape({ user: PropTypes.object }).isRequired,
 };
 
 const tierColumn = {
@@ -338,7 +250,33 @@ const coverageColumn = {
   render: item => (coverageProviders(item).length > 0 ? <CoverageChips item={item} /> : NONE),
 };
 
-export const provisioners = {
+/**
+ * The provisioners collection over one adapter of catalog items: cards by
+ * default and the table as the toggle, the tier and provider filters; a
+ * card's byline names the organization and the family with a copy
+ * button, its badge row the tier, the newest version, its release and the
+ * downloads, and its body the health strip, the Quality and Versions
+ * folds and the links row; the one action column the caller gives sits in
+ * the Deploy column's place, `actionColumn`, with its card glyph and the
+ * action drawn on each version row, `VersionAction`.
+ *
+ * @param {Object} options - What differs between the catalog and a host
+ * @param {Object} options.adapter - The adapter `Listing` reads the items through
+ * @param {boolean} options.itemRoute - Whether a card opens the item's page
+ * @param {Object} options.actionColumn - The column after Name
+ * @param {Function} options.CardGlyph - The glyph at the right of a card's links row
+ * @param {Function} [options.VersionAction] - Drawn on each version row of a card, given `{ item, version, ctx }`
+ * @param {Function} [options.ItemActions] - The actions of the item's page
+ * @returns {Object} The collection
+ */
+export const provisionerCollection = ({
+  adapter,
+  itemRoute,
+  actionColumn,
+  CardGlyph: Glyph,
+  VersionAction = null,
+  ItemActions: Actions = null,
+}) => ({
   key: 'provisioners',
   labelKey: 'collections.provisioners',
   countKey: 'collections.provisionersCount',
@@ -346,10 +284,10 @@ export const provisioners = {
   segment: '',
   hasVersions: true,
   hasProviders: true,
-  itemRoute: true,
+  itemRoute,
   searchKey: 'provisioners.search.placeholder',
   defaultView: 'cards',
-  adapter: catalogAdapter,
+  adapter,
   filterGroups: [
     {
       key: 'tier',
@@ -369,7 +307,7 @@ export const provisioners = {
   ],
   columns: [
     labelColumn,
-    deployColumn,
+    actionColumn,
     visibilityColumn,
     downloadsColumn,
     tierColumn,
@@ -398,9 +336,19 @@ export const provisioners = {
   slots: {
     ItemChips,
     ItemHeaderExtra,
-    ItemActions,
+    ...(Actions ? { ItemActions: Actions } : {}),
     ItemSections: QualitySection,
-    CardGlyph,
-    CardExtras,
+    CardGlyph: Glyph,
+    CardByline,
+    CardBody: cardBodyWith({ VersionAction, Glyph }),
   },
-};
+});
+
+export const provisioners = provisionerCollection({
+  adapter: catalogAdapter,
+  itemRoute: true,
+  actionColumn: deployColumn,
+  CardGlyph,
+  VersionAction: VersionDeploy,
+  ItemActions,
+});

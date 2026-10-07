@@ -301,7 +301,7 @@ const App = ({ getSupportedLanguages }) => {
   };
 
   return (
-    <UnreadProvider>
+    <UnreadProvider notifications={user && loaded ? inbox : null}>
       <ServersProvider signedIn={Boolean(user)} organization={orgFilter ? activeOrgUuid : ''}>
         <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
           <CrumbProvider>

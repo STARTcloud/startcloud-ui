@@ -153,7 +153,7 @@ ConsoleDoor.propTypes = {
  * and `PowerButtons`, `ConsoleDoor` and Refresh in its pane; under it
  * the page `page` names. The Overview draws the machine information, the
  * console, the tags and notes, the hardware, the guest agent, the guest
- * information, the topology slice and the charts under the page's chart
+ * information, the network path and the charts under the page's chart
  * controls, each a card folding
  * under `table_prefs_machine`; Settings, Snapshots and Provisioning draw
  * `MachineSettingsView`, `MachineSnapshotsView` and
@@ -343,6 +343,9 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
                 <MachineTopologySlice
                   id={id}
                   name={name}
+                  host={host}
+                  detail={detail}
+                  running={running}
                   folded={folds.folded(TOPOLOGY_FOLD)}
                   onFold={() => folds.toggle(TOPOLOGY_FOLD)}
                 />

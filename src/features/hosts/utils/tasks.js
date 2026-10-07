@@ -55,6 +55,7 @@ export const priorityKey = value => {
 
 const OPERATION_KEYS = {
   provisioner_import: 'footer.operation.provisionerImport',
+  provisioner_catalog_install: 'footer.operation.provisionerCatalogInstall',
   machine_prepare: 'footer.operation.machinePrepare',
   machine_create_orchestration: 'footer.operation.machineCreateOrchestration',
   machine_create_storage: 'footer.operation.machineCreateStorage',

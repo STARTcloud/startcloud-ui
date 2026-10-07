@@ -186,17 +186,59 @@ Feature: host installer files and provisioners
     And the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "branch" as "release"
     And the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "token_name" as "github-startcloud"
 
-  Scenario: Provisioners: the catalog browser lists every family's versions, the installed ones badged, and Install queues one
+  Scenario: Provisioner catalog: Browse catalog opens the host's catalog drawn as the catalog's own provisioners, cards by default with tier pills, Install on a version the host lacks and Installed on one it holds, and Install queues one
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
     And I press the section page's "provisioner-catalog" action
-    Then the catalog dialog "provisioner-catalog" draws
-    And the open dialog lists 3 rows
-    And the host was sent GET to "/api/agents/3/provisioning/catalog/sources"
-    When I press the open dialog's "catalog-install" action
+    Then the path is "/hosts/3/provisioning/catalog"
+    And the section page "provisioner-catalog" draws
+    And the host row "provisioner-catalog" is the active one
+    And the provisioner catalog draws 2 cards
+    And the provisioner catalog draws a "gold" pill
+    And the provisioner catalog draws a "silver" pill
+    And the provisioner catalog offers Install on "startcloud" "0.1.28"
+    And the provisioner catalog notes Installed on "startcloud" "0.1.27"
+    And the provisioner catalog notes Installed on "hcl-domino" "2.0.0"
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/health" 1 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 1 times
+    When I press Install on "startcloud" "0.1.28" in the provisioner catalog
     Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "name" as "startcloud"
+    And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
+    And the page raised 1 success notice
+
+  Scenario: Provisioner catalog: a card draws its health strip and its two folds folded, and a version row's click moves the providers and the quality to that version
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/catalog"
+    Then the card "startcloud" health reads "artifacts" as "true"
+    And the card "startcloud" health reads "sidecars" as "true"
+    And the card "hcl-domino" health reads "artifacts" as "false"
+    And the card "startcloud" strip lists the providers "virtualbox,bhyve"
+    And the card "startcloud" folds are folded
+    When I open the "versions-fold" fold of the card "startcloud"
+    And I select the version "0.1.27" of the card "startcloud"
+    Then the card "startcloud" strip lists the providers "virtualbox"
+    When I open the "quality-fold" fold of the card "startcloud"
+    Then the card "startcloud" quality is measured as "silver" with "10/15"
+    When I select the version "0.1.28" of the card "startcloud"
+    Then the card "startcloud" quality is measured as "gold" with "13/15"
+    When I open the details of the version "0.1.28" of the card "startcloud"
+    Then the card "startcloud" version "0.1.28" links the box of "virtualbox" to "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
+
+  Scenario: Provisioner catalog: the table is the toggle and the source select reads the catalog of the source picked, sent by its id
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/catalog"
+    And I switch the provisioner catalog to the table
+    Then the provisioner catalog draws the table
+    And the provisioner catalog offers Install on "startcloud" "0.1.28"
+    When I pick "staging" in the provisioner catalog source
+    Then the provisioner catalog is of the source "staging"
+    And the host was sent GET to "/api/agents/3/provisioning/catalog" at least 2 times
 
   Scenario: Provisioners: a family's delete behind the typed confirmation, refused while machines reference it, the refusal naming them
     Given the host answers the hosts fixture

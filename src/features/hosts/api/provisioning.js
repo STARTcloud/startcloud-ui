@@ -73,17 +73,22 @@ export const deleteProvisioner = (status, id, name) =>
 export const deleteProvisionerVersion = (status, id, name, version) =>
   client.delete(agentPath(status, id, provisionerPath(name, version)));
 
+const CATALOG_AUTH = { skipAuthRefresh: true };
+
 /**
- * The public provisioner catalog the agent relays, `GET provisioning/catalog`,
- * `source` naming a configured catalog source where given.
+ * The provisioner catalog the agent relays, `GET provisioning/catalog`,
+ * `source` naming a configured catalog source's id where given; a `401`
+ * there is the catalog refusing the agent's own sign-in, so it never ends
+ * the session.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
- * @param {string} [source] - The catalog source's name
+ * @param {string} [source] - The catalog source's id
  * @returns {Promise<Object>} The catalog
  */
 export const fetchCatalog = (status, id, source = '') =>
   client.get(agentPath(status, id, 'provisioning/catalog'), {
+    ...CATALOG_AUTH,
     params: source ? { source } : {},
   });
 
@@ -98,8 +103,41 @@ export const fetchCatalogSources = (status, id) =>
   client.get(agentPath(status, id, 'provisioning/catalog/sources'));
 
 /**
+ * The `health.json` of one catalog source the agent relays,
+ * `GET provisioning/catalog/health`, `source` naming the source's id
+ * where given; 404 while the source publishes none, and a `401` never
+ * ending the session.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} [source] - The catalog source's id
+ * @returns {Promise<Object>} The health document
+ */
+export const fetchCatalogHealth = (status, id, source = '') =>
+  client.get(agentPath(status, id, 'provisioning/catalog/health'), {
+    ...CATALOG_AUTH,
+    params: source ? { source } : {},
+  });
+
+/**
+ * Add a catalog source, `POST provisioning/catalog/sources`, the body
+ * `{ display_name, url, auth }`; answered 201 `{ success, source }`, or
+ * 409 with the `source` of that URL already held; a `401` never ends the
+ * session.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The source
+ * @returns {Promise<Object>} `{ success, source: { id, name, url, default } }`
+ */
+export const addCatalogSource = (status, id, body) =>
+  client.post(agentPath(status, id, 'provisioning/catalog/sources'), body, CATALOG_AUTH);
+
+/**
  * Install a catalog version into the registry, `POST provisioning/catalog/install`,
- * the body `{ source_name?, name, version }`.
+ * the body `{ source_name?, name, version }`, `source_name` the source's
+ * id; a `401` is the catalog refusing the agent's own sign-in and never
+ * ends the session.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -107,7 +145,7 @@ export const fetchCatalogSources = (status, id) =>
  * @returns {Promise<Object>} The queued task
  */
 export const installFromCatalog = (status, id, body) =>
-  client.post(agentPath(status, id, 'provisioning/catalog/install'), body);
+  client.post(agentPath(status, id, 'provisioning/catalog/install'), body, CATALOG_AUTH);
 
 /**
  * Re-import a git-imported family from its stored source,

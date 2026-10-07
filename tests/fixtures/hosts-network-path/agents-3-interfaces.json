@@ -1,0 +1,38 @@
+{
+  "interfaces": [
+    {
+      "link": "ixgbe0",
+      "state": "up",
+      "class": "phys",
+      "mtu": 1500,
+      "over": "--",
+      "speed": 10000,
+      "duplex": "full",
+      "zone": "--",
+      "scan_timestamp": "2026-10-07T11:59:00.000Z"
+    },
+    {
+      "link": "ixgbe1",
+      "state": "up",
+      "class": "phys",
+      "mtu": 9000,
+      "over": "--",
+      "speed": 10000,
+      "duplex": "full",
+      "zone": "--",
+      "scan_timestamp": "2026-10-07T11:59:00.000Z"
+    },
+    {
+      "link": "ixgbe2",
+      "state": "down",
+      "class": "phys",
+      "mtu": 9000,
+      "over": "--",
+      "speed": 10000,
+      "duplex": "unknown",
+      "zone": "--",
+      "scan_timestamp": "2026-10-07T11:59:00.000Z"
+    }
+  ],
+  "totalCount": 3
+}

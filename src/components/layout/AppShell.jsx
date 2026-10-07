@@ -495,7 +495,7 @@ const AppShell = ({
   const showSidebar = sidebar.length > 0 && !onBarePage;
   const overlay = useSidebarOverlay(pathname);
   const sidebarSize = useSidebarSize();
-  const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [], notifications });
+  const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [] });
   const route = useRouteCrumbs({
     pathname,
     reserved,

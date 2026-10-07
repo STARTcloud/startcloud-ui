@@ -116,6 +116,25 @@ Feature: host templates
     And the host was not sent GET to "/api/agents/1/config/storage"
     And the host was sent GET to "/api/agents/1/templates/sources" 2 times
 
+  Scenario: Templates: a registry's edit opens on its id and its display name, sends the entry under the id, and a refused save draws the pointer on its field
+    Given the host answers the hosts fixture
+    And the host answers the hosts-templates fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/templates"
+    Then I see "BoxVault"
+    When I press the action "source-edit" of the catalog source "boxvault"
+    Then the field "source-name" of the catalog dialog "template-source" reads "boxvault"
+    And the field "source-display-name" of the catalog dialog "template-source" reads "BoxVault"
+    When the host refuses the next PUT to "/api/agents/1/config/storage"
+    And I submit the catalog dialog "template-source"
+    Then the host was sent PUT to "/api/agents/1/config/storage" carrying "BoxVault" at "/template_sources/sources/boxvault/display_name"
+    And the host was sent PUT to "/api/agents/1/config/storage" carrying "https://boxvault.example.com" at "/template_sources/sources/boxvault/url"
+    And the host was sent PUT to "/api/agents/1/config/storage" carrying "true" at "/template_sources/sources/boxvault/default"
+    And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/BoxVault"
+    And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/boxvault/name"
+    And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/boxvault/auth_token"
+    And the catalog dialog "template-source" marks the field "source-url" invalid
+
   Scenario: Templates: a registry's toggle and its removal behind the typed confirmation each one merge patch of the storage file, the removal null under its id
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture

@@ -121,6 +121,13 @@ const LINES = {
     'Unpacking the template',
     `${DONE} the template is ready`,
   ],
+  provisioner_catalog_install: [
+    'Fetching catalog STARTcloud',
+    `${CYAN}download${RESET} started`,
+    `${CYAN}download${RESET} half way`,
+    `${DONE} verified sha256`,
+    `${DONE} import complete`,
+  ],
   agent_update: [
     'Reading the package index',
     `${CHANGED} the agent package moves one version up`,

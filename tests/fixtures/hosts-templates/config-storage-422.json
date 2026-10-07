@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The configuration did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/template_sources/sources/boxvault/url",
+      "rule": "format",
+      "params": { "format": "uri" },
+      "detail": "/template_sources/sources/boxvault/url failed format"
+    }
+  ]
+}

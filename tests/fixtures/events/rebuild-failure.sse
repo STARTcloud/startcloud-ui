@@ -1,0 +1,13 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["health","tasks","hosts","admin","monitoring","notifications"]}
+
+id: 1757068800412-0
+event: notification-created
+data: {"id":"6c0f7b15-40d3-4186-9e5f-7ecd1a6b4f56","title":"Catalog rebuild finished: failure","body":"Build failure, deploy skipped.","type":"SYSTEM","severity":"INFO","navigate":"/","tag":"catalog-rebuild","created_at":"2026-09-27T22:10:00-05:00","read_at":null}
+
+id: 1757068800412-1
+event: unread-count
+data: {"count":3}
+

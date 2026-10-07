@@ -1,0 +1,123 @@
+{
+  "vnics": [
+    {
+      "link": "vnici3_4001_0",
+      "over": "aggr0",
+      "vid": 4,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:00",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnice3_4001_0",
+      "over": "ixgbe0",
+      "vid": 99,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:00:00",
+      "mtu": 1500,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_1",
+      "over": "aggr0",
+      "vid": 5,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:01",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_2",
+      "over": "aggr0",
+      "vid": 6,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:02",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_3",
+      "over": "aggr0",
+      "vid": 7,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:03",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_4",
+      "over": "aggr0",
+      "vid": 8,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:04",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_5",
+      "over": "aggr0",
+      "vid": 9,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:05",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_6",
+      "over": "aggr0",
+      "vid": 10,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:06",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_7",
+      "over": "aggr0",
+      "vid": 11,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:07",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_8",
+      "over": "aggr0",
+      "vid": 12,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:08",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_9",
+      "over": "aggr0",
+      "vid": 13,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:09",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_10",
+      "over": "aggr0",
+      "vid": 14,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:10",
+      "mtu": 9000,
+      "state": "up"
+    },
+    {
+      "link": "vnici3_4001_11",
+      "over": "aggr0",
+      "vid": 15,
+      "zone": "4001--fw-os-n1.home.m4kr.net",
+      "macaddress": "f0:01:00:01:01:11",
+      "mtu": 9000,
+      "state": "up"
+    }
+  ],
+  "returned": 13,
+  "source": "live"
+}

@@ -1,0 +1,13 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["health","tasks","hosts","admin","monitoring","notifications"]}
+
+id: 1757068800412-0
+event: notification-created
+data: {"id":"4a8d5f93-2eb1-4f64-bc3d-5cab9e4f2d34","title":"The backup of lab-1 finished","body":"Every machine of lab-1 was backed up.","type":"SYSTEM","severity":"SUCCESS","navigate":"","tag":null,"created_at":"2026-09-27T22:10:00-05:00","read_at":null}
+
+id: 1757068800412-1
+event: unread-count
+data: {"count":3}
+

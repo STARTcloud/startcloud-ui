@@ -1,0 +1,37 @@
+{
+  "usage": [
+    {
+      "host": "vbox-1",
+      "machine_name": "8617--switchboard.m4kr.net",
+      "cpu_guest_pct": 12.5,
+      "cpu_vmm_pct": 2.5,
+      "cpu_pct": 15,
+      "rss_bytes": 4294967296,
+      "guest_additions": true,
+      "net_rx_bps": 62600000,
+      "net_tx_bps": 12525000,
+      "nics": [
+        {
+          "adapter": 1,
+          "device": "e1000#0",
+          "rx_bps": 100000,
+          "tx_bps": 25000,
+          "rx_total_bytes": 1000000,
+          "tx_total_bytes": 250000
+        },
+        {
+          "adapter": 2,
+          "device": "virtio-net#0",
+          "rx_bps": 62500000,
+          "tx_bps": 12500000,
+          "rx_total_bytes": 625000000,
+          "tx_total_bytes": 125000000
+        }
+      ],
+      "scan_timestamp": "2026-10-07T12:00:00Z"
+    }
+  ],
+  "totalCount": 1,
+  "returnedCount": 1,
+  "sampling": { "applied": false, "strategy": "realtime", "samplesReturned": 1 }
+}

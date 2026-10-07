@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "source": {
+    "id": "provisioner_catalog_example_com_api_private_0b7c1d52_6f0e_4c0a_9a54_3c1f6f2a9e11_catalog",
+    "name": "provisioner-catalog.example.com",
+    "url": "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog",
+    "default": false
+  }
+}

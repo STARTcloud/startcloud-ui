@@ -1,0 +1,22 @@
+{
+  "machine_info": {
+    "id": 4001,
+    "name": "4001--fw-os-n1.home.m4kr.net",
+    "host": "zone-1",
+    "status": "running",
+    "brand": "bhyve",
+    "hypervisor": "bhyve",
+    "is_orphaned": false,
+    "auto_discovered": false,
+    "notes": "",
+    "tags": [],
+    "created_at": "2026-09-01T00:00:00Z",
+    "updatedAt": "2026-10-07T00:00:00Z"
+  },
+  "configuration": { "zonename": "4001--fw-os-n1.home.m4kr.net", "brand": "bhyve" },
+  "active_vnc_session": null,
+  "pending_tasks": [],
+  "system_status": "running",
+  "web_address": null,
+  "pending_changes": null
+}

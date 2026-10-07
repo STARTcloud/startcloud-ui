@@ -35,6 +35,17 @@ Then('the open dialog draws no list {string}', async ({ page }, name) => {
   await expect(dialogOf(page).locator(`[data-list="${name}"]`)).toHaveCount(0);
 });
 
+Then("the wizard's provisioner card reads {string}", async ({ page }, state) => {
+  await expect(wizardOf(page).locator('[data-note="provisioner-install"]')).toHaveAttribute(
+    'data-state',
+    state
+  );
+});
+
+Then('the open dialog offers {string}', async ({ page }, action) => {
+  await expect(dialogOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();
+});
+
 Then('the open dialog offers no {string}', async ({ page }, action) => {
   await expect(dialogOf(page).locator('.modal-footer')).toBeVisible();
   await expect(dialogOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);

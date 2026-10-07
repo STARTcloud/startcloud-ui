@@ -21,11 +21,13 @@ import { deleteTemplate, moveTemplate, pullTemplate } from '../api/provisioning'
 import { exportTemplate, publishTemplate } from '../api/templates';
 import { useHostMachines } from '../hooks/useHostMachines';
 import { useManageSend, useTaskFollow } from '../hooks/useHostManage';
+import { sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
 import { exportBody } from '../utils/machineTools';
 import {
   formatSize,
   sourceDefaultPatch,
   sourceEntryPatch,
+  sourceFieldErrorsOf,
   sourceRemovePatch,
   sourceTogglePatch,
   templateKey,
@@ -155,8 +157,9 @@ const SourceRow = ({ source, busy, onAction }) => {
   const { t } = useTranslation();
   const disabled = source.enabled === false;
   return (
-    <div className="d-flex align-items-center gap-2 flex-wrap" data-source={source.name}>
-      <code className="small">{source.name}</code>
+    <div className="d-flex align-items-center gap-2 flex-wrap" data-source={sourceKeyOf(source)}>
+      <span className="fw-semibold small">{sourceLabelOf(source)}</span>
+      <code className="small">{sourceKeyOf(source)}</code>
       <span className="text-muted small">{source.url}</span>
       {source.default ? (
         <span className="badge text-bg-success" data-note="source-default">
@@ -230,7 +233,7 @@ SourceRow.propTypes = {
 
 const rowKey = row => templateKey(row);
 
-const TemplateDialog = ({ dialog, id, server, rows, machines, busy, on }) => {
+const TemplateDialog = ({ dialog, id, server, rows, machines, busy, sourceErrors, on }) => {
   switch (dialog?.kind) {
     case 'pull':
       return (
@@ -274,6 +277,7 @@ const TemplateDialog = ({ dialog, id, server, rows, machines, busy, on }) => {
           id={id}
           server={server}
           editing={dialog.source || null}
+          errors={sourceErrors}
           busy={busy}
           onClose={on.close}
           onSubmit={on.saveSource}
@@ -291,6 +295,7 @@ TemplateDialog.propTypes = {
   rows: PropTypes.object.isRequired,
   machines: PropTypes.array.isRequired,
   busy: PropTypes.bool.isRequired,
+  sourceErrors: PropTypes.object.isRequired,
   on: PropTypes.shape({
     close: PropTypes.func.isRequired,
     pull: PropTypes.func.isRequired,
@@ -304,11 +309,13 @@ TemplateDialog.propTypes = {
 /**
  * The templates of a host, hyperweaver-ui's template registry view as
  * the body of the Manage page's Templates section: the box registries
- * card, one line a source with its default and disabled badges and Make
- * default, Enable or Disable, Edit and Remove, Add registry in its
- * heading, every write of it one merge patch of `PUT config/storage`
- * over the `/template_sources/sources` map, `null` removing an entry,
- * and the sources read again on success; Pull template,
+ * card, one line a source, its display name and its key, with its
+ * default and disabled badges and Make default, Enable or Disable, Edit
+ * and Remove, Add registry in its heading, every write of it one merge
+ * patch of `PUT config/storage` over the `/template_sources/sources` map
+ * keyed by each source's key, `null` removing an entry, the sources read
+ * again on success and a refused registry form drawing each `errors[]`
+ * pointer on the field it names; Pull template,
  * Export machine and Publish over the one table narrowed by the page's
  * binding, and on each row Move and Delete behind the typed
  * confirmation. Every mutation is a queued task followed on
@@ -320,7 +327,12 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
   const status = useStatus();
   const { send, busy, task, closeTask } = useManageSend(id);
   const { machines } = useHostMachines(id);
-  const [dialog, setDialog] = useState(null);
+  const [dialog, setDialogState] = useState(null);
+  const [sourceErrors, setSourceErrors] = useState({});
+  const setDialog = next => {
+    setSourceErrors({});
+    setDialogState(next);
+  };
   const follow = useTaskFollow({ id, onEnd: () => reads.templates.refresh() });
 
   const queue = async ({ call, doneKey, values = {} }) => {
@@ -337,7 +349,8 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
     }
   };
 
-  const saveSources = async ({ patch, doneKey, values }) => {
+  const saveSources = async ({ patch, doneKey, values, id: sourceId = '' }) => {
+    setSourceErrors({});
     const { error } = await send({
       call: () => patchConfigFile(status, id, 'storage', patch),
       doneKey,
@@ -347,7 +360,9 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
     if (!error) {
       setDialog(null);
       reads.sources.refresh();
+      return;
     }
+    setSourceErrors(sourceFieldErrorsOf(error, sourceId));
   };
 
   const onSourceAction = (action, source) => {
@@ -362,14 +377,14 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
           source.enabled === false
             ? 'hosts.manage.templates.sourceEnabled'
             : 'hosts.manage.templates.sourceDisabled',
-        values: { name: source.name },
+        values: { name: sourceLabelOf(source) },
       });
       return;
     }
     saveSources({
       patch: sourceDefaultPatch(rows.sources, source),
       doneKey: 'hosts.manage.templates.sourceDefault',
-      values: { name: source.name },
+      values: { name: sourceLabelOf(source) },
     });
   };
 
@@ -438,7 +453,12 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
           ) : null}
           <div className="d-flex flex-column gap-1">
             {rows.sources.map(source => (
-              <SourceRow key={source.name} source={source} busy={busy} onAction={onSourceAction} />
+              <SourceRow
+                key={sourceKeyOf(source)}
+                source={source}
+                busy={busy}
+                onAction={onSourceAction}
+              />
             ))}
           </div>
           <p className="form-text text-muted mb-0 mt-1">
@@ -465,6 +485,7 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
         rows={rows}
         machines={machines}
         busy={busy}
+        sourceErrors={sourceErrors}
         on={{
           close: () => setDialog(null),
           pull: body =>
@@ -498,11 +519,16 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
             }),
           saveSource: form =>
             saveSources({
-              patch: sourceEntryPatch(rows.sources, form, dialog.source?.name || ''),
+              patch: sourceEntryPatch(
+                rows.sources,
+                form,
+                dialog.source ? sourceKeyOf(dialog.source) : ''
+              ),
               doneKey: dialog.source
                 ? 'hosts.manage.templates.sourceUpdated'
                 : 'hosts.manage.templates.sourceAdded',
-              values: { name: form.name.trim() },
+              values: { name: form.displayName.trim() || form.name.trim() },
+              id: form.name.trim(),
             }),
         }}
       />
@@ -529,12 +555,12 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
           saveSources({
             patch: sourceRemovePatch(dialog.source),
             doneKey: 'hosts.manage.templates.sourceRemoved',
-            values: { name: dialog.source.name },
+            values: { name: sourceLabelOf(dialog.source) },
           })
         }
         title={t('host.templatesManagement.removeRegistry')}
         message={t('host.templatesManagement.removeRegistryConfirm', {
-          name: dialog?.source?.name || '',
+          name: dialog?.source ? sourceLabelOf(dialog.source) : '',
         })}
         confirmText={t('host.templatesManagement.remove')}
       />

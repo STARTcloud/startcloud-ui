@@ -1,0 +1,19 @@
+{
+  "name": "STARTcloud provisioner catalog",
+  "format_version": 1,
+  "updated": "2026-09-27T00:00:00.000Z",
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "repo": "STARTcloud/startcloud-provisioner",
+      "description": "The STARTcloud provisioner",
+      "versions": [
+        {
+          "version": "0.1.27",
+          "released_at": "2026-08-30",
+          "artifacts": []
+        }
+      ]
+    }
+  ]
+}

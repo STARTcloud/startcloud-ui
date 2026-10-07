@@ -1,3 +1,4 @@
+import { pickDefaultSource, sourceKeyOf } from './boxCatalog';
 import { hostHasFeature, hostHasHypervisor } from './capabilities';
 import { canCreateMachines } from './permissions';
 
@@ -419,10 +420,9 @@ export const publishBody = ({ name, snapshot, form }) => ({
  * `default`, the first otherwise, and none while the host lists none.
  *
  * @param {Array<Object>} sources - The sources of `GET templates/sources`
- * @returns {string} The source's name, or the empty string
+ * @returns {string} The source's key of `sourceKeyOf`, or the empty string
  */
-export const defaultSourceOf = sources =>
-  (sources.find(source => source.default) || sources[0])?.name || '';
+export const defaultSourceOf = sources => sourceKeyOf(pickDefaultSource(sources));
 
 /**
  * The body of `POST machines/import`: the appliance's path on the host

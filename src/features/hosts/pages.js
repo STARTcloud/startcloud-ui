@@ -36,6 +36,7 @@ import {
   FaScroll,
   FaServer,
   FaSliders,
+  FaStore,
   FaTriangleExclamation,
   FaUsb,
   FaUsers,
@@ -381,6 +382,13 @@ export const HOST_PAGES = [
         segment: 'provisioning/provisioners',
         icon: FaPuzzlePiece,
         labelKey: key('pages.hostManage.tabProvisioners'),
+        ...section('provisioning'),
+      },
+      {
+        key: 'provisioner-catalog',
+        segment: 'provisioning/catalog',
+        icon: FaStore,
+        labelKey: key('pages.hostManage.tabProvisionerCatalog'),
         ...section('provisioning'),
       },
       {

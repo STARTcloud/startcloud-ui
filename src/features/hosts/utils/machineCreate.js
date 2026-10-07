@@ -49,6 +49,7 @@ const SEED_KEYS = [
   'provisioner',
   'provisioner_version',
   'provisioner_url',
+  'provisioner_catalog',
 ];
 const BOOT_TYPES = { template: 'template', scratch: 'blank', existing: 'image', none: 'none' };
 const NUMERIC_SETTINGS = ['setup_wait', 'consoleport'];
@@ -122,9 +123,9 @@ export const hostCreates = (server, role) =>
 /**
  * What a `?create=machine` deep link seeds the wizard with, the Deploy
  * hand-off's two seeds: BoxVault's `box`, `box_version`, `box_arch` and
- * `box_url`, and the catalog's `provisioner`, `provisioner_version` and
- * `provisioner_url`, each member empty where the query leaves it out, or
- * null while the query asks for no machine.
+ * `box_url`, and the catalog's `provisioner`, `provisioner_version`,
+ * `provisioner_url` and `provisioner_catalog`, each member empty where
+ * the query leaves it out, or null while the query asks for no machine.
  *
  * @param {URLSearchParams} params - The route's search params
  * @returns {Object|null} The seed, one member a key of the two seeds
@@ -168,6 +169,83 @@ export const withoutCreateSeed = params => {
   const next = new URLSearchParams(params);
   [CREATE_PARAM, ...SEED_KEYS].forEach(key => next.delete(key));
   return next;
+};
+
+/**
+ * The host's family a handed `provisioner` names, the part after its last
+ * slash, the whole value while it carries none.
+ *
+ * @param {string} provisioner - The seed's `provisioner`, `organization/name`
+ * @returns {string} The family name
+ */
+export const seedFamilyOf = provisioner =>
+  String(provisioner || '')
+    .split('/')
+    .pop();
+
+/**
+ * The version a catalog document lists for one family: the named version,
+ * else the family's first, null while the document holds no such family
+ * or the family no version.
+ *
+ * @param {Object|null} catalog - The answer of `GET provisioning/catalog`
+ * @param {string} name - The family name
+ * @param {string} version - The handed version, empty for the first
+ * @returns {string|null} The version
+ */
+export const catalogVersionOf = (catalog, name, version) => {
+  const family = (Array.isArray(catalog?.provisioners) ? catalog.provisioners : []).find(
+    entry => entry.name === name
+  );
+  const versions = Array.isArray(family?.versions) ? family.versions : [];
+  const named = versions.find(entry => entry.version === version);
+  return (named || (version ? null : versions[0]))?.version || null;
+};
+
+/**
+ * What the wizard offers for a handed family the host does not hold:
+ * `install` from the first source whose catalog lists the family and its
+ * version, `add` while none does and the handed catalog is no source of
+ * the host, and `missing` otherwise.
+ *
+ * @param {Object} options - The handed family and what the host answered
+ * @param {Array<Object>} options.sources - `{ id, url }` of `GET provisioning/catalog/sources`
+ * @param {Object<string, Object|null>} options.catalogs - The catalog document of each source by its id
+ * @param {string} options.name - The family name
+ * @param {string} options.version - The handed version
+ * @param {string} options.catalogUrl - The handed `provisioner_catalog`
+ * @returns {{ kind: string, source: string, version: string }} The offer
+ */
+export const installOfferOf = ({ sources, catalogs, name, version, catalogUrl }) => {
+  const holding = sources.find(source => catalogVersionOf(catalogs[source.id], name, version));
+  if (holding) {
+    return {
+      kind: 'install',
+      source: holding.id,
+      version: catalogVersionOf(catalogs[holding.id], name, version),
+    };
+  }
+  if (catalogUrl && !sources.some(source => source.url === catalogUrl)) {
+    return { kind: 'add', source: '', version };
+  }
+  return { kind: 'missing', source: '', version };
+};
+
+/**
+ * The body of `POST provisioning/catalog/sources` for a handed catalog:
+ * its host as the display name, the URL as given, and `auth` `oidc` for an
+ * organization's private catalog, `none` otherwise.
+ *
+ * @param {string} url - The handed `provisioner_catalog`
+ * @returns {{ display_name: string, url: string, auth: string }} The body
+ */
+export const catalogSourceBody = url => {
+  const parsed = new URL(url);
+  return {
+    display_name: parsed.host,
+    url,
+    auth: parsed.pathname.startsWith('/api/private/') ? 'oidc' : 'none',
+  };
 };
 
 const bootEntryOf = ({ diskConfig, bootSource, bhyve, vbox }) => {

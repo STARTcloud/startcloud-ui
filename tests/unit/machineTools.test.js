@@ -453,6 +453,12 @@ describe('the template bodies', () => {
     expect(defaultSourceOf([{ name: 'a' }, { name: 'b', default: true }])).toBe('b');
     expect(defaultSourceOf([{ name: 'a' }, { name: 'b' }])).toBe('a');
     expect(defaultSourceOf([])).toBe('');
+    expect(
+      defaultSourceOf([
+        { id: 'a', name: 'Alpha' },
+        { id: 'b', name: 'Beta', default: true },
+      ])
+    ).toBe('b');
   });
 });
 

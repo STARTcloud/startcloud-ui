@@ -8,13 +8,16 @@ import {
   events,
   session,
 } from '../lib/runtime';
-import { authMethod, hasFeature } from '../utils/capabilities';
+import { streamsEvents } from '../lib/streamTarget';
+import { authMethod } from '../utils/capabilities';
 
 const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded && Boolean(user));
 
 /**
- * What a session keeps running: the tab's event stream while the host
- * advertises `events` and either needs no session or has a signed-in user
+ * What a session keeps running: the tab's event stream while
+ * `streamsEvents` places one for the host, its own `events` or, on an
+ * `idp` host without them, the identity provider's, and the host either
+ * needs no session or has a signed-in user
  * confirmed by `load()`, never from the restored cache alone, with the
  * stream's `session-terminated` event ending the session through the
  * provider's own `endSession()`, which clears the cached record and ends
@@ -38,7 +41,7 @@ const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded &&
  */
 export const useSessionKeepalive = ({ user, loaded, reload }) => {
   const status = useStatus();
-  const streaming = hasFeature(status, 'events') && Boolean(status.events);
+  const streaming = streamsEvents(status);
   const connected = streaming && hasSession({ method: authMethod(status), user, loaded });
 
   useEffect(() => {

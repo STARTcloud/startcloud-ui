@@ -1858,7 +1858,8 @@
       "artifactScan": "File Cache Scan",
       "artifactDownload": "File Download",
       "hclDownload": "HCL Portal Download",
-      "agentUpdate": "Agent Update"
+      "agentUpdate": "Agent Update",
+      "provisionerCatalogInstall": "Catalog install"
     },
     "shell": {
       "noSession": "No session available",
@@ -3089,7 +3090,8 @@
       "language": "Language",
       "variant": "Variant",
       "resize": "Resize column",
-      "resizeHint": "Drag to resize, double-click to reset"
+      "resizeHint": "Drag to resize, double-click to reset",
+      "install": "Install"
     },
     "status": {
       "published": "Published",
@@ -3157,7 +3159,14 @@
       "error": "Failed to update the watch. Please try again."
     },
     "deploy": {
-      "versionTitle": "Deploy {{version}} with Hyperweaver"
+      "versionTitle": "Deploy {{version}} with Hyperweaver",
+      "agentTitle": "Get Hyperweaver",
+      "agentBody": "Deploy needs the Hyperweaver Agent on this machine, or a Hyperweaver server you join.",
+      "installAgent": "Install Hyperweaver Agent",
+      "joinServer": "Join a Hyperweaver server",
+      "support": "Support",
+      "serverDown": "Your Hyperweaver server isn't answering",
+      "openLocal": "Open on this machine"
     },
     "about": {
       "startHere": "Start here",
@@ -3195,6 +3204,7 @@
       "tabOrchestration": "Orchestration",
       "tabInstallerFiles": "Installer Files",
       "tabDatabase": "Database",
+      "tabProvisionerCatalog": "Provisioner catalog",
       "titleAccessDenied": "Access Denied - Hyperweaver",
       "titleNoServerSelected": "No Server Selected - Hyperweaver",
       "titleManageHost": "Manage {{hostname}} - Hyperweaver",
@@ -3825,23 +3835,18 @@
     "card": {
       "version_one": "{{count}} version",
       "version_other": "{{count}} versions",
-      "download": "download",
-      "showAll": "Show all {{count}} versions",
-      "showFewer": "Show fewer versions",
-      "released": "released {{count}}d ago",
       "downloads_one": "{{count}} download",
       "downloads_other": "{{count}} downloads",
       "homepage": "Homepage",
       "viewOnGithub": "View on GitHub",
       "reportIssue": "Report an issue",
-      "quality": "Quality: {{tier}}",
       "qualityHeading": "Quality",
-      "unmetCount_one": "{{count}} unmet rule",
-      "unmetCount_other": "{{count}} unmet rules",
-      "allRulesPass": "All quality rules pass.",
-      "unmetRules": "Unmet rules:",
-      "tierTooltip": "Measured quality tier — recomputed every data run",
-      "providerCoverage": "Verified image in {{count}} of {{total}} versions"
+      "providerCoverage": "Verified image in {{count}} of {{total}} versions",
+      "copyName": "Copy name",
+      "tierMeasured": "{{tier}}: tier measured every data run",
+      "latestVersion": "Latest version {{version}}",
+      "releasedShort": "{{count}}d",
+      "releasedOn": "Released {{count}} days ago, {{date}}"
     },
     "tiers": {
       "unrated": "Unrated",
@@ -3924,9 +3929,29 @@
       }
     },
     "health": {
-      "stale": "stale — last release {{count}}d ago",
-      "artifactErrors": "artifact errors this run",
-      "sidecarGaps": "checksum sidecars incomplete"
+      "artifacts": "Artifacts",
+      "artifactsFailed": "Artifacts failed",
+      "artifactsTip": "Every versioned asset downloaded on the last data run",
+      "artifactsFailedTip": "A versioned asset could not be downloaded on the last data run",
+      "sidecars": "Sidecars",
+      "sidecarsMissing": "Sidecars missing",
+      "sidecarsTip": "Every version carries a matching sha256 sidecar",
+      "sidecarsMissingTip": "A version lacks its sha256 sidecar or the sidecar did not match",
+      "providersFor": "Verified providers for {{version}}"
+    },
+    "quality": {
+      "measuredOn": "Measured on {{version}}",
+      "rulesPass": "rules pass",
+      "meterLabel": "{{passed}} of {{total}} rules passed",
+      "rulePassed": "Passed: {{requirement}}",
+      "ruleUnmet": "Not met: {{requirement}}"
+    },
+    "versions": {
+      "toggle": "Toggle {{version}}",
+      "select": "Show the quality and providers of {{version}}",
+      "tierWhen": "{{tier}} when {{version}} was measured",
+      "download": "Download {{version}}",
+      "all": "All versions ({{count}})"
     },
     "errors": {
       "accessDenied": "Access denied by the catalog gate."
@@ -7658,17 +7683,12 @@
       "seriesCompressionRatio": "Compression Ratio"
     },
     "provisionerManagement": {
-      "catalogFetchFailed": "Catalog fetch failed: {{message}}",
       "installFailed": "Install failed: {{message}}",
-      "catalogTitle": "Provisioner Catalog",
       "catalogSource": "Catalog source",
       "default": "Default",
-      "fetchingCatalog": "Fetching the catalog…",
-      "noProvisionersInCatalog": "The catalog lists no provisioners.",
       "version": "Version",
       "actions": "Actions",
       "installed": "installed",
-      "alreadyInstalledTitle": "Already in the registry — versions are immutable",
       "installVersionTitle": "Download, verify, and import this version",
       "install": "Install",
       "noVersionsPublished": "No versions published.",
@@ -9961,6 +9981,49 @@
       "addModalTitle": "New nic on {{machine}}",
       "addModalStage": "Stage",
       "addModalVlanHelp": "0 = untagged"
+    },
+    "networkPath": {
+      "kind": {
+        "vnic": "vNIC",
+        "portgroup": "Port group",
+        "switch": "Switch",
+        "uplink": "Uplink",
+        "member": "Member link"
+      },
+      "mode": {
+        "nat": "nat",
+        "hostonly": "host-only",
+        "natnetwork": "NAT network",
+        "etherstub": "etherstub",
+        "internal": "internal"
+      },
+      "noUplink": "no uplink · ends at this switch",
+      "busiest": "Busiest hop",
+      "openChart": "Open the chart",
+      "focusStream": "click to focus this stream",
+      "openHop": "click to open the chart",
+      "showing": "Showing {{name}}",
+      "clear": "clear",
+      "hopTitle": "{{name}} · {{kind}}",
+      "ofSpeed": "of {{speed}} · {{percent}}",
+      "openBandwidth": "Open in Bandwidth",
+      "memberCount_one": "{{count}} member · {{down}} down",
+      "memberCount_other": "{{count}} members · {{down}} down",
+      "down": "down",
+      "facts": {
+        "detail": "Detail",
+        "packets": "Avg packet",
+        "mode": "Mode",
+        "cable": "Cable",
+        "nicType": "NIC type",
+        "ports": "Ports",
+        "live": "Live",
+        "planned": "Planned",
+        "link": "Link",
+        "subnet": "Subnet",
+        "memberOf": "Member of",
+        "share": "Share"
+      }
     }
   },
   "machine": {
@@ -10970,8 +11033,7 @@
       "existingBootNeedsPath": "An existing boot disk needs its image path.",
       "selectVersionOrNone": "Select a version for the chosen provisioner — or set it back to None.",
       "fixHighlightedFields": "Fix the highlighted configuration field: {{names}}.",
-      "fixHighlightedFields_plural": "Fix the highlighted configuration fields: {{names}}.",
-      "provisionerNotHeld": "The provisioner {{name}} is not installed on this host. Import its package from the Provisioners section of the Manage page: {{url}}"
+      "fixHighlightedFields_plural": "Fix the highlighted configuration fields: {{names}}."
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11206,7 +11268,16 @@
       "primaryOrgDefault": "Primary organization (default)",
       "owningOrgHint": "Which of your organizations owns the new machine.",
       "browseBoxVault": "Browse BoxVault…",
-      "browseBoxVaultHint": "Pick a box from BoxVault with your own account — org-private boxes included."
+      "browseBoxVaultHint": "Pick a box from BoxVault with your own account — org-private boxes included.",
+      "provisionerLooking": "Looking for {{name}} in this host's catalogs…",
+      "provisionerMissing": "{{name}} {{version}} is not installed on this host.",
+      "installAndContinue": "Install and continue",
+      "addSourceAndInstall": "Add source and install",
+      "installing": "Installing {{name}} {{version}}…",
+      "provisionerSignIn": "Sign in with SSO to continue",
+      "provisionerNotFound": "Couldn't find this provisioner at its catalog",
+      "retry": "Retry",
+      "provisionerNoStream": "This host does not report task progress; install {{name}} from the Provisioner catalog page."
     },
     "resources": {
       "hint": "zonecfg resource controls — set replaces the whole resource, remove deletes it, unchanged touches nothing. Applies at the next boot / power cycle like other infrastructure changes.",

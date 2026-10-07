@@ -15,7 +15,11 @@ export default {
   'DELETE /api/agents/1/templates/tpl-2': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/1/templates/tpl-1/move': { status: 202, file: 'queued-202.json' },
   'GET /api/agents/1/config/storage': { status: 200, file: 'agents-1-config-storage.json' },
-  'PUT /api/agents/1/config/storage': { status: 200, file: 'config-saved-200.json' },
+  'PUT /api/agents/1/config/storage': {
+    status: 200,
+    file: 'config-saved-200.json',
+    refused: 'config-storage-422.json',
+  },
   'GET /api/agents/1/machines/orchestration/status': {
     status: 200,
     file: 'agents-1-orchestration-status.json',

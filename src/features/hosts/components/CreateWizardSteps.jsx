@@ -27,6 +27,7 @@ import { PathInput } from './PathPicker';
 import PickOrType from './PickOrType';
 import DslConfigForm from './ProvisionerFieldDsl';
 import { RolesEditor } from './ProvisionerFormFields';
+import ProvisionerInstallCard from './ProvisionerInstallCard';
 
 const BOOT_SOURCES = ['template', 'scratch', 'existing', 'none'];
 const BOOT_ORDER_DEVICES = ['disk', 'dvd', 'net', 'floppy', 'none'];
@@ -526,7 +527,8 @@ BoxAdvancedFields.propTypes = {
 
 /**
  * The OS / Box step: the boot media, a box template, a blank disk, an
- * existing image or no disk; on a template boot the registry filter, the
+ * existing image or no disk; on a template boot the registry filter, each
+ * registry by its key and drawn by its display name, the
  * one merged image list of every registry's catalog and the local
  * templates with Custom for a hand-typed image, the version, under
  * Advanced the architecture and the registry URL, and Browse BoxVault
@@ -539,7 +541,7 @@ export const BoxStep = ({
   catalogNote,
   remoteBoxes,
   onBoxPicked,
-  sourceNames,
+  sourceChoices,
   sourceFilter,
   onSourceFilterChange,
   boxPickCustom,
@@ -620,9 +622,9 @@ export const BoxStep = ({
               disabled={loading}
             >
               <option value="">{t('machineEdit.createWizardSteps.allRegistries')}</option>
-              {sourceNames.map(sourceName => (
-                <option key={sourceName} value={sourceName}>
-                  {sourceName}
+              {sourceChoices.map(choice => (
+                <option key={choice.value} value={choice.value}>
+                  {choice.label}
                 </option>
               ))}
             </select>
@@ -679,7 +681,9 @@ BoxStep.propTypes = {
   catalogNote: PropTypes.string.isRequired,
   remoteBoxes: PropTypes.array.isRequired,
   onBoxPicked: PropTypes.func.isRequired,
-  sourceNames: PropTypes.arrayOf(PropTypes.string).isRequired,
+  sourceChoices: PropTypes.arrayOf(
+    PropTypes.shape({ value: PropTypes.string.isRequired, label: PropTypes.string.isRequired })
+  ).isRequired,
   sourceFilter: PropTypes.string.isRequired,
   onSourceFilterChange: PropTypes.func.isRequired,
   boxPickCustom: PropTypes.bool.isRequired,
@@ -3077,13 +3081,16 @@ VersionFields.propTypes = {
 };
 
 /**
- * The Provisioning step: the provisioner family, none by default, its
- * version and the sync method; while a family is picked, whether the
- * provisioning transport is removed when the pipeline ends; the
- * version's field DSL, its roles, the Safe ID path where the manifest
- * declares id files, and under Advanced the package setting overrides.
+ * The Provisioning step: the install card of a handed family the host
+ * does not hold, `install` the state of `useProvisionerInstall`; the
+ * provisioner family, none by default, its version and the sync method;
+ * while a family is picked, whether the provisioning transport is removed
+ * when the pipeline ends; the version's field DSL, its roles, the Safe ID
+ * path where the manifest declares id files, and under Advanced the
+ * package setting overrides.
  */
 export const ProvisioningStep = ({
+  install = null,
   provisioners,
   familyName,
   onFamilyChange,
@@ -3119,6 +3126,7 @@ export const ProvisioningStep = ({
   const defaultLabel = key => agentDefaultLabel(agentDefaults, key);
   return (
     <>
+      {install ? <ProvisionerInstallCard install={install} /> : null}
       <ProvisionerPickers
         provisioners={provisioners}
         familyName={familyName}
@@ -3215,6 +3223,7 @@ export const ProvisioningStep = ({
 };
 
 ProvisioningStep.propTypes = {
+  install: PropTypes.object,
   provisioners: PropTypes.array.isRequired,
   familyName: PropTypes.string.isRequired,
   onFamilyChange: PropTypes.func.isRequired,

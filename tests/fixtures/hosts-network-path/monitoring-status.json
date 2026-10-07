@@ -1,0 +1,8 @@
+{
+  "isRunning": true,
+  "isInitialized": true,
+  "config": {
+    "enabled": true,
+    "intervals": { "network_config": 60, "network_usage": 5, "storage": 300, "system_metrics": 5 }
+  }
+}

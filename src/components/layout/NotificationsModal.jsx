@@ -1,13 +1,19 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Form, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaArrowUpRightFromSquare, FaDesktop, FaPaperPlane } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import { useNotify } from '../../contexts/NoticeContext';
+import { useUnread } from '../../contexts/UnreadContext';
+import { useEventStream } from '../../hooks/useEventStream';
+import { useInboxEvents } from '../../hooks/useInboxEvents';
+import { applyInboxEvent } from '../../utils/inboxEvents';
 import InboxList, { extractEntries, linkOf } from '../common/InboxList';
 import { inAppPath } from '../common/MethodList';
+
+const MODAL_SIZE = 20;
 
 export const notificationsAdapterShape = PropTypes.shape({
   list: PropTypes.func.isRequired,
@@ -137,6 +143,12 @@ PushSwitch.propTypes = {
  * two test glyphs and View all notifications, an in-router link when
  * `viewAllTo` names a path of this app (the issuer's `/notifications`) and
  * a new-tab link to `viewAllUrl` at the identity provider otherwise.
+ * The first 20 rows are read as it opens, again when the stream opens
+ * fresh or answers `reset` while it is open, and the `notifications`
+ * topic's row events apply in place with no read: a created row first, a
+ * read or unread row flipped, a dismissed row gone, every row read on
+ * read-all and none on cleared, an event that lands while a read is
+ * under way applied again over the rows the read answers.
  */
 const NotificationsModal = ({
   show,
@@ -151,22 +163,56 @@ const NotificationsModal = ({
   const { t } = useTranslation();
   const notify = useNotify();
   const navigate = useNavigate();
+  const { observe } = useUnread();
   const [entries, setEntries] = useState([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(push.isEnabled);
 
-  useEffect(() => {
-    if (!show) {
-      return;
-    }
-    notifications
-      .list({ page: 0, size: 20 })
+  const pendingRef = useRef(null);
+
+  const load = useCallback(() => {
+    pendingRef.current = [];
+    return notifications
+      .list({ page: 0, size: MODAL_SIZE })
       .then(data => {
+        const pending = pendingRef.current || [];
+        pendingRef.current = null;
+        const rows = pending.reduce(
+          (held, [name, event]) => applyInboxEvent(held, name, event, MODAL_SIZE),
+          extractEntries(data)
+        );
         setLoadFailed(false);
-        setEntries(extractEntries(data));
+        setEntries(rows);
+        observe(rows);
       })
-      .catch(() => setLoadFailed(true));
-  }, [show, notifications]);
+      .catch(() => {
+        pendingRef.current = null;
+        setLoadFailed(true);
+      });
+  }, [notifications, observe]);
+
+  useEffect(() => {
+    if (show) {
+      load();
+    }
+  }, [show, load]);
+
+  useInboxEvents((name, data) => {
+    pendingRef.current?.push([name, data]);
+    setEntries(rows => applyInboxEvent(rows, name, data, MODAL_SIZE));
+  });
+
+  useEventStream('ready', (data, resumed) => {
+    if (show && data && !resumed) {
+      load();
+    }
+  });
+
+  useEventStream('reset', () => {
+    if (show) {
+      load();
+    }
+  });
 
   const markRead = async entry => {
     if (entry.read_at) {

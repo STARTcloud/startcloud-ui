@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCloudArrowDown, FaCodeBranch, FaCubes, FaFileImport, FaTrash } from 'react-icons/fa6';
+import { Link } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import SubTable from '../../../components/common/SubTable';
@@ -21,14 +22,12 @@ import {
   TABLE_STATE_KEYS,
   importBody,
   importProblem,
-  installedKeysOf,
   referencingMachinesOf,
   secretNamesOf,
   tableStateOf,
   updateFor,
 } from '../utils/manageCatalog';
 
-import CatalogBrowseModal from './CatalogBrowseModal';
 import { DialogTable } from './ManageTable';
 import { PathInput } from './PathPicker';
 import TaskDialog from './TaskDialog';
@@ -393,8 +392,8 @@ ImportModal.propTypes = {
  * the body of the Manage page's Provisioners section: Import
  * provisioner, whose dialog sends `POST provisioning/provisioners/import`
  * from a folder, an archive or a git repository with a key among the
- * secrets, and Browse catalog, which opens the catalog the agent relays
- * and installs a version from it; the families over the one table
+ * secrets, and Browse catalog, which opens the host's Provisioner catalog
+ * page; the families over the one table
  * narrowed by the page's binding, each row opening the table of its
  * versions under it, the update badge while the catalog's newest is
  * newer than every installed version, and on each row Update to, Update
@@ -500,16 +499,14 @@ const ProvisionerSection = ({ id, server, ctx, table, reads, rows, filtering }) 
             <FaFileImport className="me-1" aria-hidden="true" />
             {t('host.provisionerManagement.importProvisioner')}
           </button>
-          <button
-            type="button"
+          <Link
             className="btn btn-sm btn-outline-primary"
             data-action="provisioner-catalog"
-            onClick={() => setDialog({ kind: 'catalog' })}
-            disabled={busy}
+            to={`/hosts/${encodeURIComponent(id)}/provisioning/catalog`}
           >
             <FaCloudArrowDown className="me-1" aria-hidden="true" />
             {t('host.provisionerManagement.browseCatalog')}
-          </button>
+          </Link>
         </div>
         <span className="badge text-bg-secondary" data-note="family-count">
           {t('host.provisionerManagement.familiesCount', { count: rows.provisioners.length })}
@@ -549,22 +546,6 @@ const ProvisionerSection = ({ id, server, ctx, table, reads, rows, filtering }) 
               doneKey: 'host.provisionerManagement.importQueuedDefault',
             })
           }
-        />
-      ) : null}
-      {dialog?.kind === 'catalog' ? (
-        <CatalogBrowseModal
-          id={id}
-          ctx={ctx}
-          installedKeys={installedKeysOf(rows.provisioners)}
-          busy={busy}
-          onInstall={(name, version) =>
-            queue({
-              call: () => installFromCatalog(status, id, { name, version }),
-              doneKey: 'host.provisionerManagement.installQueued',
-              values: { label: `${name}/${version}` },
-            })
-          }
-          onClose={() => setDialog(null)}
         />
       ) : null}
       <ConfirmModal

@@ -24,7 +24,13 @@ import { getZfsDatasets, getZfsPools } from '../api/zfsAPI';
 import { HostMachinesContext } from '../hooks/useHostMachines';
 import { useHostRow } from '../hooks/useHostRow';
 import { useMachineTools } from '../hooks/useMachineTools';
-import { flattenBoxCatalog, pickDefaultSource } from '../utils/boxCatalog';
+import { useProvisionerInstall } from '../hooks/useProvisionerInstall';
+import {
+  flattenBoxCatalog,
+  pickDefaultSource,
+  sourceKeyOf,
+  sourceLabelOf,
+} from '../utils/boxCatalog';
 import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
 import { isServerRole } from '../utils/hosts';
 import {
@@ -37,6 +43,7 @@ import {
   emptyDiskConfig,
   emptySettings,
   nextServerIdOf,
+  seedFamilyOf,
   stepProblemOf,
 } from '../utils/machineCreate';
 import { flattenBridgedInterfaces, isoFilenames } from '../utils/machineHelpers';
@@ -67,7 +74,7 @@ const listOf = value => (Array.isArray(value) ? value : []);
 const settle = promise => promise.then(data => data ?? null).catch(() => null);
 
 const catalogFailure = (source, failure) =>
-  `${source.name} (${failure.status || ''} ${failure.message || ''})`.trim();
+  `${sourceLabelOf(source)} (${failure.status || ''} ${failure.message || ''})`.trim();
 
 const catalogNoteOf = ({ failures, counts, merged, t }) => {
   const notes = [];
@@ -82,7 +89,7 @@ const catalogNoteOf = ({ failures, counts, merged, t }) => {
   return notes.join('. ');
 };
 
-const mergedCatalogs = ({ catalogs, defaultName, t }) => {
+const mergedCatalogs = ({ catalogs, defaultKey, t }) => {
   const merged = [];
   const failures = [];
   const counts = [];
@@ -92,13 +99,13 @@ const mergedCatalogs = ({ catalogs, defaultName, t }) => {
       return;
     }
     const boxes = flattenBoxCatalog(catalog);
-    counts.push(`${source.name}: ${boxes.length}`);
+    counts.push(`${sourceLabelOf(source)}: ${boxes.length}`);
     boxes.forEach(entry => {
       merged.push({
         ...entry,
-        source: source.name,
+        source: sourceKeyOf(source),
         sourceUrl: source.url || '',
-        isDefaultSource: source.name === defaultName,
+        isDefaultSource: sourceKeyOf(source) === defaultKey,
       });
     });
   });
@@ -129,7 +136,8 @@ const templateAvailablePoolsOf = ({ templates, settings, agentDefaults }) => {
  * datasets and volumes of a host that lists `zfs`, the registered media
  * of a VirtualBox host, the uplinks and the free addresses, each read
  * when its step is entered, so a picker is never older than the visit to
- * its step, and nothing reads on a clock.
+ * its step, the provisioners again through `loadProvisioners` once a
+ * handed family is installed, and nothing reads on a clock.
  */
 const useCreateFeeds = ({ status, id, server, t }) => {
   const [feeds, setFeeds] = useState({
@@ -140,7 +148,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     nextServerId: '',
     templates: [],
     remoteBoxes: [],
-    sourceNames: [],
+    sourceChoices: [],
     catalogNote: '',
     artifacts: null,
     isoOptions: [],
@@ -199,16 +207,21 @@ const useCreateFeeds = ({ status, id, server, t }) => {
         patch({ catalogNote: t('machineEdit.machineCreateModal.noTemplateSourcesConfigured') });
         return;
       }
-      patch({ sourceNames: enabled.map(source => source.name) });
+      patch({
+        sourceChoices: enabled.map(source => ({
+          value: sourceKeyOf(source),
+          label: sourceLabelOf(source),
+        })),
+      });
       Promise.all(
         enabled.map(source =>
-          fetchRemoteTemplates(status, id, source.name).then(
+          fetchRemoteTemplates(status, id, sourceKeyOf(source)).then(
             catalog => ({ source, catalog, failure: null }),
             failure => ({ source, catalog: null, failure })
           )
         )
       ).then(catalogs =>
-        patch(mergedCatalogs({ catalogs, defaultName: pickDefaultSource(sources)?.name, t }))
+        patch(mergedCatalogs({ catalogs, defaultKey: sourceKeyOf(pickDefaultSource(sources)), t }))
       );
     },
     [status, id, patch, t]
@@ -226,16 +239,28 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     [status, id, patch, t, readCatalogs]
   );
 
+  const loadProvisioners = useCallback(
+    () =>
+      fetchProvisioners(status, id).then(
+        data => {
+          const provisioners = listOf(data?.provisioners);
+          patch({ provisioners, provisionersLoaded: true });
+          return provisioners;
+        },
+        failure => {
+          patch({
+            failure: t('machineEdit.machineCreateModal.failedToLoadProvisioners', {
+              message: failure.message,
+            }),
+          });
+          return [];
+        }
+      ),
+    [status, id, patch, t]
+  );
+
   useEffect(() => {
-    fetchProvisioners(status, id).then(
-      data => patch({ provisioners: listOf(data?.provisioners), provisionersLoaded: true }),
-      failure =>
-        patch({
-          failure: t('machineEdit.machineCreateModal.failedToLoadProvisioners', {
-            message: failure.message,
-          }),
-        })
-    );
+    loadProvisioners();
     settle(fetchMachineDefaults(status, id)).then(data => patch({ agentDefaults: data }));
     settle(fetchMachineOsTypes(status, id)).then(data => {
       const list = listOf(data?.ostypes);
@@ -260,9 +285,9 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     }
     loadZfs();
     loadMedia();
-  }, [status, id, templated, cached, patch, t, loadCatalogs, loadZfs, loadMedia]);
+  }, [status, id, templated, cached, patch, loadProvisioners, loadCatalogs, loadZfs, loadMedia]);
 
-  return { ...feeds, loadZfs, loadMedia, loadUplinks, loadIpSuggestions };
+  return { ...feeds, loadProvisioners, loadZfs, loadMedia, loadUplinks, loadIpSuggestions };
 };
 
 /**
@@ -460,9 +485,11 @@ const ProvisioningBody = ({ wizard }) => {
     fieldErrors,
     needsSafeId,
     fieldInventory,
+    install,
   } = wizard;
   return (
     <ProvisioningStep
+      install={install}
       provisioners={feeds.provisioners}
       familyName={form.familyName}
       onFamilyChange={picked.changeFamily}
@@ -567,7 +594,7 @@ const StepBody = ({ wizard }) => {
               entry && entry.sourceUrl && !entry.isDefaultSource ? entry.sourceUrl : ''
             )
           }
-          sourceNames={feeds.sourceNames}
+          sourceChoices={feeds.sourceChoices}
           sourceFilter={form.sourceFilter}
           onSourceFilterChange={setter('sourceFilter')}
           boxPickCustom={form.boxPickCustom}
@@ -676,12 +703,14 @@ StepBody.propTypes = {
  * server's per-user proxy and the owning organization is chosen among
  * the ones the person manages; `seed`, the Deploy hand-off's query, lands
  * its box members on the box fields as a custom pick and its provisioner
- * on the Provisioning step, the family picked once the provisioners have
- * answered and the version named, or the family's first, picked once the
+ * on the Provisioning step, the host's family named by the part after the
+ * handed `provisioner`'s slash, picked once the provisioners have
+ * answered, and the version named, or the family's first, picked once the
  * family is, so the version's manifest is read as a person's pick reads
- * it; a family the host does not hold is left unpicked and a warning
- * names it with its `provisioner_url`, the package the Manage page's
- * Provisioners section imports.
+ * it; a family the host does not hold puts `useProvisionerInstall`'s card
+ * on the Provisioning step, its press installing the family through the
+ * host's catalog and the provisioners read again, so the same picks land.
+ * Create stays the one machine write.
  */
 const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const { t } = useTranslation();
@@ -711,10 +740,16 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const needsSafeId = Boolean(picked.versionInfo?.id_files);
   const seeded = useRef(false);
   const provisionerSeeded = useRef('');
-  const missingProvisioner =
-    Boolean(seed?.provisioner) &&
-    feeds.provisionersLoaded &&
-    !feeds.provisioners.some(collection => collection.name === seed.provisioner);
+  const seedFamily = seedFamilyOf(seed?.provisioner);
+  const install = useProvisionerInstall({
+    status,
+    id,
+    server,
+    seed,
+    provisioners: feeds.provisioners,
+    loaded: feeds.provisionersLoaded,
+    onInstalled: feeds.loadProvisioners,
+  });
 
   useEffect(() => {
     if (feeds.nextServerId) {
@@ -762,16 +797,15 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const { changeFamily, changeVersion, family: pickedFamily } = picked;
 
   useEffect(() => {
-    const wanted = seed?.provisioner || '';
-    if (!wanted || provisionerSeeded.current) {
+    if (!seedFamily || provisionerSeeded.current) {
       return;
     }
-    if (!feeds.provisioners.some(collection => collection.name === wanted)) {
+    if (!feeds.provisioners.some(collection => collection.name === seedFamily)) {
       return;
     }
     provisionerSeeded.current = 'family';
-    changeFamily(wanted);
-  }, [seed, feeds.provisioners, changeFamily]);
+    changeFamily(seedFamily);
+  }, [seedFamily, feeds.provisioners, changeFamily]);
 
   useEffect(() => {
     if (provisionerSeeded.current !== 'family' || !pickedFamily) {
@@ -953,6 +987,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     fieldErrors,
     needsSafeId,
     fieldInventory,
+    install,
     availablePools,
     bhyveBootDevices,
     spec,
@@ -982,14 +1017,6 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
             {feeds.failure ? (
               <div className="alert alert-warning" role="status" data-note="feeds-failed">
                 {feeds.failure}
-              </div>
-            ) : null}
-            {missingProvisioner ? (
-              <div className="alert alert-warning" role="status" data-note="provisioner-missing">
-                {t('machineEdit.machineCreateModal.provisionerNotHeld', {
-                  name: seed.provisioner,
-                  url: seed.provisioner_url || '',
-                })}
               </div>
             ) : null}
             {problem ? (
@@ -1068,6 +1095,7 @@ const seedShape = PropTypes.shape({
   provisioner: PropTypes.string,
   provisioner_version: PropTypes.string,
   provisioner_url: PropTypes.string,
+  provisioner_catalog: PropTypes.string,
 });
 
 CreateWizard.propTypes = {

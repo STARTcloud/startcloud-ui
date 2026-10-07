@@ -1,5 +1,5 @@
 import { featuresOf, hypervisorsOf, machineOf } from './fleet.js';
-import { ago, now, ok, problem, refusal } from './kit.js';
+import { ago, failure, invalid, missing, now, ok, problem, refusal } from './kit.js';
 import { queue, settles } from './tasks.js';
 
 const GIB = 1024 ** 3;
@@ -79,6 +79,19 @@ const TEMPLATES = [
   ['startcloud', 'ubuntu2404', '24.04.2', 'amd64', 'virtualbox', 1.1 * GIB, 900],
   ['acme', 'windows-server-2025', '2025.1', 'amd64', 'virtualbox', 9.4 * GIB, 300],
 ];
+const SHA = 'c0ffee00'.repeat(8);
+const artifactOf = (repo, name, version) => [
+  {
+    url: `https://github.com/${repo}/releases/download/v${version}/${name}-${version}.tar.gz`,
+    checksum_type: 'sha256',
+    checksum: SHA,
+  },
+];
+const catalogVersion = (repo, name, version, released) => ({
+  version,
+  released_at: released,
+  artifacts: artifactOf(repo, name, version),
+});
 const CATALOG = {
   name: 'STARTcloud provisioner catalog',
   format_version: 1,
@@ -86,26 +99,158 @@ const CATALOG = {
   provisioners: [
     {
       name: 'startcloud',
-      repo: 'https://github.com/STARTcloud/startcloud-provisioner',
+      repo: 'STARTcloud/startcloud-provisioner',
       description: 'The STARTcloud provisioner',
       versions: [
-        { version: '0.1.28', artifacts: [] },
-        { version: '0.1.27', artifacts: [] },
-        { version: '0.1.26', artifacts: [] },
+        catalogVersion('STARTcloud/startcloud-provisioner', 'startcloud', '0.1.28', '2026-09-18'),
+        catalogVersion('STARTcloud/startcloud-provisioner', 'startcloud', '0.1.27', '2026-08-30'),
+        catalogVersion('STARTcloud/startcloud-provisioner', 'startcloud', '0.1.26', '2026-08-02'),
       ],
     },
     {
       name: 'hcl-domino',
-      repo: 'https://github.com/STARTcloud/hcl-domino-provisioner',
+      repo: 'STARTcloud/hcl-domino-provisioner',
       description: 'HCL Domino on any box',
-      versions: [{ version: '2.0.0', artifacts: [] }],
+      versions: [
+        catalogVersion('STARTcloud/hcl-domino-provisioner', 'hcl-domino', '2.0.0', '2026-07-11'),
+      ],
+    },
+    {
+      name: 'hcl_domino_additional_provisioner',
+      repo: 'STARTcloud/hcl_domino_additional_provisioner',
+      description: 'An additional HCL Domino server beside an existing one',
+      versions: [
+        catalogVersion(
+          'STARTcloud/hcl_domino_additional_provisioner',
+          'hcl_domino_additional_provisioner',
+          '0.3.0',
+          '2026-09-26'
+        ),
+      ],
     },
   ],
 };
+const RULE_NAMES = {
+  bronze: ['description', 'label', 'semver_versions', 'latest_alias'],
+  silver: ['changelog', 'readme', 'release_within_12_months', 'lint_ci'],
+  gold: ['config_fields_documented', 'roles_documented', 'example_hosts'],
+  platinum: ['automated_tests', 'multi_provider', 'release_cadence'],
+  diamond: ['booted_providers'],
+};
+const TIER_RANK = ['unrated', 'bronze', 'silver', 'gold', 'platinum', 'diamond'];
+const rulesFor = tier =>
+  Object.fromEntries(
+    Object.entries(RULE_NAMES).map(([rulesTier, names]) => [
+      rulesTier,
+      Object.fromEntries(
+        names.map((name, index) => [
+          name,
+          TIER_RANK.indexOf(rulesTier) <= TIER_RANK.indexOf(tier) || index === 1,
+        ])
+      ),
+    ])
+  );
+const failedOf = rules =>
+  Object.entries(rules).flatMap(([tier, entries]) =>
+    Object.entries(entries)
+      .filter(([, passed]) => !passed)
+      .map(([name]) => `${tier}.${name}`)
+  );
+const versionHealth = ([version, list, tier]) => {
+  const rules = rulesFor(tier);
+  return [
+    version,
+    {
+      providers: list,
+      tier,
+      rules,
+      failed_rules: failedOf(rules),
+      boxes: {
+        virtualbox: {
+          organization: 'STARTcloud',
+          name: 'debian13',
+          version: '13.1.0',
+          architecture: 'amd64',
+          url: 'https://boxvault.startcloud.com/STARTcloud/debian13/13.1.0/virtualbox',
+        },
+      },
+    },
+  ];
+};
+const healthEntry = (tier, versions, label) => {
+  const rules = rulesFor(tier);
+  return {
+    tier,
+    rules,
+    failed_rules: failedOf(rules),
+    presentation: { label },
+    health: {
+      downloads: 120,
+      artifacts_ok: true,
+      sidecars_ok: true,
+      versions: Object.fromEntries(versions.map(versionHealth)),
+    },
+  };
+};
+const HEALTH = {
+  provisioners: {
+    startcloud: healthEntry(
+      'gold',
+      [
+        ['0.1.28', ['virtualbox', 'bhyve', 'utm', 'zones'], 'gold'],
+        ['0.1.27', ['virtualbox'], 'silver'],
+        ['0.1.26', ['virtualbox'], 'silver'],
+      ],
+      'STARTcloud'
+    ),
+    'hcl-domino': healthEntry('silver', [['2.0.0', ['virtualbox'], 'silver']], 'HCL Domino'),
+    hcl_domino_additional_provisioner: healthEntry(
+      'bronze',
+      [['0.3.0', ['virtualbox'], 'bronze']],
+      'HCL Domino additional server'
+    ),
+  },
+};
+const PRIVATE_URL =
+  'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog';
+const PRIVATE_CATALOG = {
+  name: 'Acme private catalog',
+  format_version: 1,
+  updated: '2026-09-20T00:00:00.000Z',
+  provisioners: [
+    {
+      name: 'acme_portal',
+      repo: 'acme/acme_portal',
+      description: 'The Acme portal',
+      versions: [catalogVersion('acme/acme_portal', 'acme_portal', '1.4.0', '2026-09-01')],
+    },
+  ],
+};
+const DOCUMENTS = {
+  'https://provisioner-catalog.startcloud.com/catalog.json': { catalog: CATALOG, health: HEALTH },
+  'https://provisioner-catalog-staging.startcloud.com/catalog.json': {
+    catalog: CATALOG,
+    health: HEALTH,
+  },
+  [PRIVATE_URL]: { catalog: PRIVATE_CATALOG, health: null },
+};
 const CATALOG_SOURCES = [
-  { name: 'startcloud', url: 'https://catalog.startcloud.com/catalog.json', default: true },
-  { name: 'staging', url: 'https://catalog-staging.startcloud.com/catalog.json', default: false },
+  {
+    id: 'startcloud',
+    name: 'STARTcloud',
+    url: 'https://provisioner-catalog.startcloud.com/catalog.json',
+    default: true,
+    auth: 'none',
+  },
+  {
+    id: 'staging',
+    name: 'STARTcloud staging',
+    url: 'https://provisioner-catalog-staging.startcloud.com/catalog.json',
+    default: false,
+    auth: 'none',
+  },
 ];
+const SOURCE_ID = /^[a-z0-9_]+$/u;
 const FAMILY_SOURCES = {
   startcloud: {
     source_type: 'git',
@@ -213,6 +358,7 @@ const storeOf = host => {
       ],
       network: { enabled: !isZone(host), ready: false },
       registered: 0,
+      catalogSources: CATALOG_SOURCES.map(source => ({ ...source })),
     });
   }
   return stores.get(host.id);
@@ -593,27 +739,123 @@ const deletedVersion = ctx => {
   return ok({ success: true, message: `Provisioner ${family.name} ${version} deleted` });
 };
 
-const catalog = ctx => {
-  const source = paramOf(ctx, 'source');
-  if (source && !CATALOG_SOURCES.some(row => row.name === source)) {
-    return refusal(404, 'Catalog source not found');
-  }
-  return ok(CATALOG);
+const sourceOf = (host, id) => {
+  const sources = storeOf(host).catalogSources;
+  return id ? sources.find(row => row.id === id) || null : sources.find(row => row.default) || null;
 };
 
-const installedFromCatalog = ctx => {
-  const { body } = ctx;
-  const family = CATALOG.provisioners.find(row => row.name === body.name);
-  if (!family || !family.versions.some(row => row.version === body.version)) {
-    return refusal(404, 'Catalog version not found');
+const documentOf = source => DOCUMENTS[source.url] || null;
+
+const sourceRow = source => ({
+  id: source.id,
+  name: source.name,
+  url: source.url,
+  default: source.default,
+});
+
+const catalogSources = ctx =>
+  ok({ enabled: true, sources: storeOf(ctx.host).catalogSources.map(sourceRow) });
+
+const catalog = ctx => {
+  const source = sourceOf(ctx.host, paramOf(ctx, 'source'));
+  if (!source) {
+    return refusal(404, 'No enabled catalog source with that id');
   }
-  return queued({
-    ctx,
-    operation: 'provisioner_import',
+  const held = documentOf(source);
+  return held ? ok(held.catalog) : refusal(502, `Catalog ${source.name} answered HTTP 404`);
+};
+
+const catalogHealth = ctx => {
+  const source = sourceOf(ctx.host, paramOf(ctx, 'source'));
+  if (!source) {
+    return refusal(404, 'No enabled catalog source with that id');
+  }
+  const held = documentOf(source);
+  return held?.health ? ok(held.health) : missing(`${source.name} publishes no health`);
+};
+
+const sourceIdOf = url => {
+  const parsed = new URL(url);
+  return `${parsed.host}${parsed.pathname}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '');
+};
+
+const sourceFailures = body =>
+  ['display_name', 'url']
+    .filter(member => typeof body[member] !== 'string' || !body[member].trim())
+    .map(member => failure({ pointer: `/${member}`, rule: 'required' }));
+
+const addedSource = ctx => {
+  const { body, host } = ctx;
+  const errors = sourceFailures(body);
+  if (errors.length > 0) {
+    return invalid(errors);
+  }
+  const store = storeOf(host);
+  const held = store.catalogSources.find(row => row.url === body.url);
+  if (held) {
+    return refusal(409, 'A catalog source with that url is already configured', {
+      source: sourceRow(held),
+    });
+  }
+  const id = sourceIdOf(body.url);
+  if (!SOURCE_ID.test(id)) {
+    return invalid([failure({ pointer: '/url', rule: 'format', params: { format: 'uri' } })]);
+  }
+  const source = {
+    id,
+    name: body.display_name.trim(),
+    url: body.url,
+    default: false,
+    auth: body.auth === 'oidc' ? 'oidc' : 'none',
+  };
+  store.catalogSources = [...store.catalogSources, source];
+  return ok({ success: true, source: sourceRow(source) }, 201);
+};
+
+const heldVersion = (host, name, version) =>
+  storeOf(host).families.some(
+    row => row.name === name && row.versions.some(entry => entry.version === version)
+  );
+
+const installedFromCatalog = ctx => {
+  const { body, host } = ctx;
+  const source = sourceOf(host, body.source_name || '');
+  if (!source) {
+    return refusal(404, 'No enabled catalog source with that id');
+  }
+  const family = documentOf(source)?.catalog.provisioners.find(row => row.name === body.name);
+  if (!family || !family.versions.some(row => row.version === body.version)) {
+    return refusal(404, `${body.name} has no version ${body.version} in the catalog`);
+  }
+  if (heldVersion(host, body.name, body.version)) {
+    return refusal(
+      409,
+      `${body.name}/${body.version} is already in the registry — versions are immutable`
+    );
+  }
+  const task = queue({
+    host,
+    by: ctx.person.username,
+    operation: 'provisioner_catalog_install',
     target: 'system',
-    metadata: { name: body.name, version: body.version, source: { source_type: 'catalog' } },
-    message: `Install of ${body.name}/${body.version} queued`,
+    metadata: { name: body.name, version: body.version, source_name: source.id },
+    progressInfo: { status: 'downloading', received_bytes: 0, total_bytes: 48 * MIB },
   });
+  return ok(
+    {
+      success: true,
+      task_id: task.id,
+      name: body.name,
+      version: body.version,
+      source: source.id,
+      status: 'pending',
+      message: `Catalog install task queued for ${body.name}/${body.version}`,
+    },
+    202
+  );
 };
 
 const refreshedFamily = ctx => {
@@ -709,8 +951,11 @@ const hclDownload = ctx => {
  * bhyve host that lists `provisioning`; the templates with the pull,
  * the delete and the move queued as tasks behind `templates`; the
  * provisioner families with the import, the deletes refused 409 with
- * the referencing machines, the catalog, its sources, the install and
- * the refresh from source behind `provisioner-registry`; the
+ * the referencing machines, the catalog and its health of a source by its
+ * id, the sources with a source added by its URL, the install queued as
+ * `provisioner_catalog_install` with its download's bytes and refused 409
+ * for a version held, and the refresh from source behind
+ * `provisioner-registry`; the
  * provisioning network's status, setup and teardown behind
  * `provisioning`; and the register and the HCL portal download of the
  * artifacts behind `artifacts`. Mounted before the create wizard's
@@ -726,6 +971,7 @@ export const mountCatalog = agentRoute => {
   settles('template_delete', afterTemplateDelete);
   settles('template_move', afterTemplateMove);
   settles('provisioner_import', afterImport);
+  settles('provisioner_catalog_install', afterImport);
   settles('provisioning_network_setup', afterNetwork);
   settles('provisioning_network_teardown', afterNetwork);
   const registry = ['provisioner-registry'];
@@ -766,11 +1012,9 @@ export const mountCatalog = agentRoute => {
     behind(registry, refreshedFamily)
   );
   agentRoute('GET', 'provisioning/catalog', behind(registry, catalog));
-  agentRoute(
-    'GET',
-    'provisioning/catalog/sources',
-    behind(registry, () => ok({ sources: CATALOG_SOURCES }))
-  );
+  agentRoute('GET', 'provisioning/catalog/health', behind(registry, catalogHealth));
+  agentRoute('GET', 'provisioning/catalog/sources', behind(registry, catalogSources));
+  agentRoute('POST', 'provisioning/catalog/sources', behind(registry, addedSource));
   agentRoute('POST', 'provisioning/catalog/install', behind(registry, installedFromCatalog));
   agentRoute('GET', 'provisioning/network/status', behind(['provisioning'], networkStatus));
   agentRoute(

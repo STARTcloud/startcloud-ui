@@ -3,20 +3,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaFilter } from 'react-icons/fa6';
 
+import { networkTitleOf } from './pathModel';
 import { RateLine } from './TopologyCards';
 import { Tinted } from './TopologyTint';
 
 const VBOX_KINDS = ['bridged', 'hostonly', 'hostonlynet', 'internal', 'natnetwork', 'nat'];
 
 const BHYVE_KINDS = ['vlan', 'untagged', 'internal'];
-
-const TITLE_KEYS = {
-  internal: 'hostTools.topology.internalNetwork',
-  bridged: 'hostTools.topology.bridgedNetwork',
-  hostonly: 'hostTools.topology.hostOnlyNetwork',
-  hostonlynet: 'hostTools.topology.hostOnlyNetNetwork',
-  natnetwork: 'hostTools.topology.natNetwork',
-};
 
 /**
  * Whether a staged rewire may target a network, hyperweaver-ui's wire
@@ -52,16 +45,8 @@ export const dropAllowed = (dragging, network) => {
  * @returns {string} The title
  */
 export const networkTitle = (network, t) => {
-  if (TITLE_KEYS[network.kind]) {
-    return t(TITLE_KEYS[network.kind], { name: network.carrier });
-  }
-  if (network.kind === 'nat') {
-    return t('hostTools.topology.natShared');
-  }
-  if (network.vlanId > 0) {
-    return t('hostTools.topology.vlanNetwork', { vlanId: network.vlanId });
-  }
-  return t('hostTools.topology.untaggedNetwork');
+  const { key, values } = networkTitleOf(network);
+  return t(key, values);
 };
 
 /**

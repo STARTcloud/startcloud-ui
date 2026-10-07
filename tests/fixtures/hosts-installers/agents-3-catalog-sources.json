@@ -1,9 +1,16 @@
 {
+  "enabled": true,
   "sources": [
-    { "name": "startcloud", "url": "https://catalog.startcloud.com/catalog.json", "default": true },
     {
-      "name": "staging",
-      "url": "https://catalog-staging.startcloud.com/catalog.json",
+      "id": "startcloud",
+      "name": "STARTcloud",
+      "url": "https://provisioner-catalog.startcloud.com/catalog.json",
+      "default": true
+    },
+    {
+      "id": "staging",
+      "name": "STARTcloud staging",
+      "url": "https://provisioner-catalog-staging.startcloud.com/catalog.json",
       "default": false
     }
   ]

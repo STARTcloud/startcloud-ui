@@ -1,0 +1,13 @@
+retry: 3000
+id: 1757068800000-0
+event: ready
+data: {"id":"1757068800000-0","topics":["health","tasks","hosts","admin","monitoring","notifications"]}
+
+id: 1757068800412-0
+event: inbox-read-all
+data: {"read_at":"2026-09-27T22:10:00-05:00"}
+
+id: 1757068800412-1
+event: unread-count
+data: {"count":0}
+

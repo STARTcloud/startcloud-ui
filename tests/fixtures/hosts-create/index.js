@@ -96,4 +96,24 @@ export default {
     status: 200,
     file: 'task-create-output-200.json',
   },
+  'GET /api/agents/1/provisioning/catalog/sources': {
+    status: 200,
+    file: 'catalog-sources-200.json',
+  },
+  'GET /api/agents/1/provisioning/catalog': {
+    status: 200,
+    file: 'catalog-200.json',
+  },
+  'POST /api/agents/1/provisioning/catalog/sources': {
+    status: 201,
+    file: 'source-201.json',
+  },
+  'POST /api/agents/1/provisioning/catalog/install': {
+    status: 202,
+    file: 'install-202.json',
+  },
+  'GET /api/agents/1/tasks/c1000000-0000-4000-8000-000000000031': {
+    status: 200,
+    file: 'task-install-200.json',
+  },
 };

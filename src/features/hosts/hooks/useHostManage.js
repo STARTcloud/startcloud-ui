@@ -5,6 +5,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
+import { getTask } from '../api/tasks';
 import { agentIdOf, withoutAgentId } from '../utils/hosts';
 import { hostStreamsTasks, queuedTaskOf } from '../utils/machineTools';
 import { TERMINAL_TASK_STATUSES } from '../utils/tasks';
@@ -184,4 +185,73 @@ export const useTaskFollow = ({ id, onEnd }) => {
     },
     [streams]
   );
+};
+
+/**
+ * One queued task of a host watched row by row on the `tasks` topic:
+ * `watch(answer)` holds the task a queued answer names as `row` and reads
+ * it once with `GET tasks/{id}`, so a task that ended before its answer
+ * arrived still ends the watch, a row read still running taken from the
+ * stream alone; every `task-updated` of that task on this
+ * host replaces `row`, so its `progress_percent` and `progress_info` draw
+ * as they move, and a terminal status calls `onEnd(row)` once and stops
+ * the watch. `clear()` forgets the task. Nothing reads on a clock.
+ *
+ * @param {Object} options - The host and what runs at the task's end
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {Function} options.onEnd - Called with the task's row
+ * @returns {{ row: Object|null, watch: Function, clear: Function }} The watch
+ */
+export const useTaskRow = ({ id, onEnd }) => {
+  const status = useStatus();
+  const [row, setRow] = useState(null);
+  const watched = useRef('');
+  const onEndRef = useRef(onEnd);
+
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  });
+
+  const take = useCallback(pushed => {
+    if (!watched.current || String(pushed.id) !== watched.current) {
+      return;
+    }
+    setRow(pushed);
+    if (TERMINAL_TASK_STATUSES.includes(pushed.status)) {
+      watched.current = '';
+      onEndRef.current(pushed);
+    }
+  }, []);
+
+  useEventStream('task-updated', data => {
+    if (agentIdOf(data) === String(id)) {
+      take(withoutAgentId(data));
+    }
+  });
+
+  const watch = useCallback(
+    answer => {
+      const queued = queuedTaskOf(answer, '');
+      watched.current = queued ? queued.id : '';
+      setRow(queued);
+      if (queued) {
+        getTask(status, id, queued.id).then(
+          read => {
+            if (TERMINAL_TASK_STATUSES.includes(read?.status)) {
+              take({ ...read, id: read.id ?? queued.id });
+            }
+          },
+          () => null
+        );
+      }
+    },
+    [status, id, take]
+  );
+
+  const clear = useCallback(() => {
+    watched.current = '';
+    setRow(null);
+  }, []);
+
+  return { row, watch, clear };
 };

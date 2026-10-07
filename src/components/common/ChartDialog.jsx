@@ -22,8 +22,9 @@ const NO_VISIBILITY = {};
  * carries, so a line hidden in one is hidden in the other, Export as two
  * glyphs, a CSV of the drawn range and a PNG of the canvas, and Close;
  * under it the chart in the `lg` box with the zoom slider, its legend
- * where the card has one and the entity the card isolates. A click on
- * the backdrop and Escape close it. It takes the form dialog's metric,
+ * where the card has one and the entity the card isolates, and after the
+ * chart `children`, the facts a caller draws under it. A click on the
+ * backdrop and Escape close it. It takes the form dialog's metric,
  * because a chart needs the width a form does.
  */
 const ChartDialog = ({
@@ -39,6 +40,7 @@ const ChartDialog = ({
   isolated = null,
   onIsolate = null,
   onHide,
+  children = null,
 }) => {
   const { t } = useTranslation();
   const apiRef = useRef(null);
@@ -88,6 +90,7 @@ const ChartDialog = ({
           apiRef={apiRef}
           slider
         />
+        {children}
       </Modal.Body>
     </Modal>
   );
@@ -106,6 +109,7 @@ ChartDialog.propTypes = {
   isolated: PropTypes.string,
   onIsolate: PropTypes.func,
   onHide: PropTypes.func.isRequired,
+  children: PropTypes.node,
 };
 
 export default ChartDialog;

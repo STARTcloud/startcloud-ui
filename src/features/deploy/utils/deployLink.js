@@ -6,16 +6,21 @@ const SEED_KEYS = [
   'provisioner',
   'provisioner_version',
   'provisioner_url',
+  'provisioner_catalog',
 ];
 const SERVICE = 'hyperweaver';
 const LOCAL = 'local';
-const SCHEME = 'hwa://open';
+const SCHEME = 'com.startcloud.hyperweaver-agent:/open';
+
+export const AGENT_ORIGIN = 'https://127.0.0.1:9421';
+
+export const AGENT_DOWNLOAD_URL = 'https://github.com/Makr91/hyperweaver-agent/releases/latest';
 
 /**
  * The query of the Deploy hand-off, `create=machine` first and then the
  * seed's members in the agent's order, `box`, `box_version`, `box_arch`,
- * `box_url`, `provisioner`, `provisioner_version`, `provisioner_url`, an
- * empty member left out, each given once.
+ * `box_url`, `provisioner`, `provisioner_version`, `provisioner_url`,
+ * `provisioner_catalog`, an empty member left out, each given once.
  *
  * @param {Object} seed - The seed, one member a key of the two seeds
  * @returns {string} The query, without the leading `?`
@@ -46,9 +51,9 @@ export const deployTargetOf = claims => {
 };
 
 /**
- * The link the Deploy glyph opens: `hwa://open?<query>` for the `local`
- * target, the agent's protocol link, else `<origin>/?<query>`, the origin
- * with no trailing slash.
+ * The link the Deploy glyph opens: `com.startcloud.hyperweaver-agent:/open?<query>`
+ * for the `local` target, the agent's reverse-domain private-use scheme,
+ * else `<origin>/?<query>`, the origin with no trailing slash.
  *
  * @param {string} target - `local` or the origin, from `deployTargetOf`
  * @param {Object} seed - The seed of `deployQuery`
@@ -70,3 +75,13 @@ export const deployHref = (target, seed) => {
  * @returns {boolean} True for the protocol link
  */
 export const isLocalTarget = target => target === LOCAL;
+
+/**
+ * The origin whose `GET /api/status` a press asks before it follows the
+ * link: the local agent's for the `local` target, else the target itself.
+ *
+ * @param {string} target - `local` or the origin
+ * @returns {string} The origin, no trailing slash
+ */
+export const probeOriginOf = target =>
+  target === LOCAL ? AGENT_ORIGIN : target.replace(/\/+$/, '');

@@ -23,6 +23,5 @@ export const api = {
   },
   rebuild: {
     start: () => client.post('/api/admin/rebuild'),
-    status: () => client.get('/api/admin/rebuild/status'),
   },
 };

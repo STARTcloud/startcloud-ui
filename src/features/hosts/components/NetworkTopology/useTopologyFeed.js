@@ -10,6 +10,7 @@ import { hostHasFeature } from '../../utils/capabilities';
 import { detailKey } from '../../utils/machines';
 import { intervalOf, usageRows } from '../../utils/networking';
 
+import { megabitsOf } from './pathModel';
 import { buildHostGraph } from './topologyModel';
 import { buildVBoxGraph } from './topologyModelVBox';
 
@@ -19,13 +20,12 @@ const NO_MAP = new Map();
 
 const NO_PROVIDER = { epoch: 0, machines: {}, ask: () => Promise.resolve(null) };
 
-const MEGA = 1000000;
-
 const listOf = (data, member) => (Array.isArray(data?.[member]) ? data[member] : NO_ROWS);
 
 /**
  * The per-machine adapter rates `monitoring/machines/usage` answers, by
- * machine and adapter, hyperweaver-ui's reading of the payload.
+ * machine and adapter, hyperweaver-ui's reading of the payload, each
+ * adapter's bytes a second as megabits a second.
  *
  * @param {Object|null} payload - The answer
  * @returns {Map<string, Map<string, Object>>} Machine name to adapter to rates
@@ -42,8 +42,8 @@ export const machineUsageOf = payload => {
     const byAdapter = new Map();
     adapterRows.forEach(nicRow => {
       byAdapter.set(String(nicRow.adapter), {
-        rxMbps: (parseFloat(nicRow.rx_bps) || 0) / MEGA,
-        txMbps: (parseFloat(nicRow.tx_bps) || 0) / MEGA,
+        rxMbps: megabitsOf(nicRow.rx_bps),
+        txMbps: megabitsOf(nicRow.tx_bps),
         speedMbps: 0,
       });
     });
@@ -65,13 +65,14 @@ const pulseOf = rows => {
  * spaces, the machine rows, on a host that lists `network-spaces` each
  * machine's detail asked of the machine detail context and the
  * per-machine usage, and the newest usage sample of every link from the
- * host's network series, which grows by `network-sample` events. `pulse`
+ * host's network series, which grows by `network-sample` events. `rows`
+ * are the samples of that series inside the host's window, `pulse`
  * moves with the newest sample and `seconds` is the seconds that sample
  * spans, the cadence the header names; `loaded` says whether the
  * structure reads answered.
  *
  * @param {string} id - The registry id, or `self` on an agent role
- * @returns {{ server: Object|null, graph: Object, loaded: boolean, pulse: number, seconds: number }} The host's graph
+ * @returns {{ server: Object|null, graph: Object, loaded: boolean, rows: Array<Object>, pulse: number, seconds: number }} The host's graph
  */
 export const useTopologyHostGraph = id => {
   const server = useHostRow(id);
@@ -170,6 +171,7 @@ export const useTopologyHostGraph = id => {
       server,
       graph,
       loaded,
+      rows: usage.rows,
       pulse: pulseOf(usage.rows),
       seconds: intervalOf(last),
     }),

@@ -37,6 +37,10 @@ request and whose bus a `401` ends the session on.
 - **One stream per UI backend, one connection per tab.** A UI backend has exactly one
   event path; a tab opens it once and every page, hook and chrome piece
   subscribes to that one connection. No page opens a stream of its own.
+  An `idp` UI backend with no stream of its own opens the identity
+  provider's stream at `{issuer}/api/events` for the core `notifications`
+  and `session` topics, still one connection per tab, because a public
+  SPA has no backend to carry the person's inbox.
 - **Topics multiplex the stream.** The client names the topics it wants in
   the request; the server sends only those. A topic is a named bundle of
   events with a snapshot so a client can rebuild from nothing.
@@ -73,15 +77,19 @@ answers a top-level `events` object in `GET /api/status`:
 }
 ```
 
-| Field                        | Meaning                                                                                                                                                           |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `features` contains `events` | the UI opens the stream at all; without the token nothing is opened and no page subscribes                                                                        |
-| `events.path`                | the stream path on the serving origin, `/api/events` on every UI backend that follows the [Where the UI is served](universal-navbar/#where-the-ui-is-served) rule |
-| `events.topics`              | every topic the UI backend can stream, core and app topics alike; the client asks for the ones its pages need from this list and never for one outside it         |
+| Field                        | Meaning                                                                                                                                                                                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `features` contains `events` | the UI opens the stream at all; without the token nothing is opened and no page subscribes, but for an `idp` UI backend that lists `notifications`, which opens the identity provider's stream                                                 |
+| `events.path`                | the stream path on the serving origin, `/api/events` on every UI backend that follows the [Where the UI is served](universal-navbar/#where-the-ui-is-served) rule, or on an `idp` UI backend the identity provider's own `{issuer}/api/events` |
+| `events.topics`              | every topic the UI backend can stream, core and app topics alike; the client asks for the ones its pages need from this list and never for one outside it                                                                                      |
 
 A UI backend without live data omits both the token and the object. The token
 is the gate and the object is data, the same split the navbar contract
-makes between `features` and `collections`.
+makes between `features` and `collections`. An `idp` UI backend that lists
+`notifications` and omits both opens the identity provider's stream at
+`{status.idp.issuer}/api/events?topics=notifications,session`; an `idp` UI
+backend that lists `events` may name that same URL as `events.path`, and
+no other host.
 
 ---
 
@@ -101,7 +109,9 @@ Last-Event-ID: 1757068800000-3       (a reconnect only)
 - The headers are the session's, `session.headers('GET', url)` of the
   [Universal Session Contract](universal-session/#provider-contract): a
   `Bearer` or `DPoP` scheme on an `idp` UI backend with the proof's `htu` equal
-  to the stream URL without its query, `x-access-token` on a `backend`
+  to the stream URL without its query, the identity provider's stream
+  included, which admits the token carrying `notifications:read` exactly
+  as `/api/notifications` does, `x-access-token` on a `backend`
   UI backend, and on a `cookie` UI backend the session cookie alone, since
   the cookie provider's `headers()` answers `{}` for a GET. A UI backend
   whose `auth.mode` is `none` accepts the request with no headers.
@@ -172,16 +182,29 @@ page in the estate reads the same names.
 
 ### Core topics
 
-| Topic           | Event                | Data                                                             | Snapshot                                                                                                                                                           |
-| --------------- | -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `session`       | `session-terminated` | `{}`                                                             | none; the client ends the session on the bus                                                                                                                       |
-| `notifications` | `unread-count`       | `{ "count": N }`                                                 | none; the client reads `GET /api/notifications/unread-count` on connect                                                                                            |
-| `health`        | `health`             | the `/api/health` shape, `{ "status", "timestamp", "services" }` | none; the client reads `GET /api/health` on connect                                                                                                                |
-| `profile`       | `profile-updated`    | `{}`                                                             | none as an event; the session's `load()` seeds it before the stream opens, `reload()` re-reads it on `profile-updated` and on `reset`, conditionally on the `ETag` |
+| Topic           | Event                    | Data                                                                                      | Snapshot                                                                                                                                                           |
+| --------------- | ------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `session`       | `session-terminated`     | `{}`                                                                                      | none; the client ends the session on the bus                                                                                                                       |
+| `notifications` | `unread-count`           | `{ "count": N }`                                                                          | none; the client reads `GET /api/notifications/unread-count` on connect and on `reset`                                                                             |
+| `notifications` | `notification-created`   | one row as `GET /api/notifications` answers it, sent when a row is written for the person | none; the client reads `GET /api/notifications` on connect and on `reset`                                                                                          |
+| `notifications` | `notification-read`      | `{ "id", "read_at" }`, sent when a row is marked read                                     | none                                                                                                                                                               |
+| `notifications` | `notification-unread`    | `{ "id" }`, sent when a row is put back to unread                                         | none                                                                                                                                                               |
+| `notifications` | `notification-dismissed` | `{ "id" }`, sent when a row is deleted                                                    | none                                                                                                                                                               |
+| `notifications` | `inbox-read-all`         | `{ "read_at" }`, sent when every row is marked read                                       | none                                                                                                                                                               |
+| `notifications` | `inbox-cleared`          | `{}`, sent when every row is deleted                                                      | none                                                                                                                                                               |
+| `health`        | `health`                 | the `/api/health` shape, `{ "status", "timestamp", "services" }`                          | none; the client reads `GET /api/health` on connect                                                                                                                |
+| `profile`       | `profile-updated`        | `{}`                                                                                      | none as an event; the session's `load()` seeds it before the stream opens, `reload()` re-reads it on `profile-updated` and on `reset`, conditionally on the `ETag` |
 
 A UI backend streams `session` when it holds a session it can end from outside
 the tab (a back-channel logout, a revoke sweep), `notifications` when
-it proxies or holds the hub's unread count for the user, `health`
+it holds or proxies the hub's inbox for the user, sending each row event
+and then `unread-count` to that person alone after every write, so a row
+written by any producer reaches every open tab; a UI backend that proxies
+the hub relays the identity provider's `notifications` topic to each
+signed-in person's connections with the token it holds for them, every
+frame unchanged, and lists `notifications` in `events.topics` only while
+it relays, because a listed topic is what tells the UI to stop reading
+on its own; `health`
 whenever it advertises both `health` and `events`, sending the event when
 any service changes state, so the footer's heart on every streaming UI
 backend follows the stream and never a timer, and `profile` when it holds
@@ -411,9 +434,27 @@ written one reloading the profile, and `pageshow` with `persisted`, a
 document restored from the back/forward cache, reloading it. The `ready`
 frame's handler is told whether the connection resumed from a last id,
 so a subscriber reads its snapshot on a fresh connection and on `reset`
-and never on an in-ring reconnect. `events.path` is a same-origin path; a
-value carrying a scheme is ignored, so a status payload can never point
-the session's headers at another host.
+and never on an in-ring reconnect. `events.path` is a same-origin path,
+or on an `idp` UI backend the identity provider's own `/api/events` at
+`status.idp.issuer`, and no other host; any other value is ignored, so a
+status payload can never point the session's headers at another host. An
+`idp` UI backend that lists `notifications` and no `events` connects to
+the identity provider's stream for `notifications` and `session`, the
+same hub the inbox client already calls.
+
+The shell's inbox reader lives beside the stream from boot while a
+person is signed in and the UI backend lists `notifications`: it reads
+`GET /api/notifications/unread-count` once on sign-in, the `ready` of the
+connection that sign-in opens reading nothing more, and again on a later
+fresh `ready` and on `reset` where the stream carries `notifications`, and
+keeps the count by `unread-count`; the avatar badge, the menu row, the
+sidebar's Inbox badge, the Notifications modal and the inbox page read
+that one count. The modal and the inbox page apply the six row events in
+place with no read, a created row first on the first page alone, a read
+or unread row flipped, a dismissed row gone, every row read on
+`inbox-read-all` and none on `inbox-cleared`, the page's total following;
+each reads its rows again on a fresh `ready` and on `reset`, an event
+that lands while a read is under way applied again over its answer.
 
 ### Page hook
 

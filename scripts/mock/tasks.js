@@ -205,10 +205,10 @@ const resume = (host, task) => {
  * names, which releases it when it completes and cancels it when it does
  * not, at once when that task has already ended.
  *
- * @param {Object} options - `host`, `by`, `operation`, `target`, and optionally `metadata`, `after` and `priority`
+ * @param {Object} options - `host`, `by`, `operation`, `target`, and optionally `metadata`, `after`, `priority` and `progressInfo`, the `progress_info` the row opens with
  * @returns {Object} The task row
  */
-export const queue = ({ host, by, operation, target, metadata, after, priority }) => {
+export const queue = ({ host, by, operation, target, metadata, after, priority, progressInfo }) => {
   const task = taskRow({
     machine: target,
     operation,
@@ -219,6 +219,7 @@ export const queue = ({ host, by, operation, target, metadata, after, priority }
       metadata: metadata ?? null,
       depends_on: after ?? null,
       ...(priority ? { priority } : {}),
+      ...(progressInfo ? { progress_info: progressInfo } : {}),
     },
   });
   host.tasks = [task, ...host.tasks];

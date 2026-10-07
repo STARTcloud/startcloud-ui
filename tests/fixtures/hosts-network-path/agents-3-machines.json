@@ -1,0 +1,11 @@
+{
+  "machines": [
+    {
+      "name": "4001--fw-os-n1.home.m4kr.net",
+      "status": "running",
+      "brand": "bhyve",
+      "hypervisor": "bhyve"
+    }
+  ],
+  "total": 1
+}

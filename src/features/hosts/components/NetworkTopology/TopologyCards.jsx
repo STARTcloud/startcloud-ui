@@ -42,7 +42,10 @@ export const carrierDropAllowed = (dragging, carrier) => {
   return true;
 };
 
-const StateDot = ({ up = false, ghost = false }) => {
+/**
+ * A node's state dot, up, down or the hollow dot of a planned one.
+ */
+export const StateDot = ({ up = false, ghost = false }) => {
   let cls = 'hw-topo-dot-down';
   if (ghost) {
     cls = 'hw-topo-dot-ghost';

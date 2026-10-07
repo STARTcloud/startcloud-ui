@@ -44,10 +44,13 @@ service `hyperweaver` holds the person's servers and their deploy target.
   by the identity provider on the person's `hyperweaver` connected
   service, read by every sender from the token's `integrations` claim, so
   a sender makes no second call to decide where a link goes.
-- **Local is the default.** A person who has attached no server, or who
-  chose `local`, is handed to the desktop agent on their own machine
-  through its protocol scheme; a server is the target only when the
-  person named it.
+- **Local is the default.** A person signed out, who has attached no
+  server, or who chose `local`, is handed to the desktop agent on their
+  own machine through its protocol scheme; a server is the target only
+  when the person named it.
+- **The sender asks before it hands off.** A press asks the target's
+  status first, so a person with no agent and no server is told what to
+  install or join instead of a link that opens nothing.
 - **The wire is the seed.** The query keys are the same members the
   create wizard's fields carry, so a receiver seeds its form by name and
   a sender needs no knowledge of the wizard.
@@ -59,16 +62,22 @@ service `hyperweaver` holds the person's servers and their deploy target.
 Every hand-off is one query string, `application/x-www-form-urlencoded`,
 each key at most once, the whole at most 2048 bytes.
 
-| Key                   | Meaning                                                            | Sender       |
-| --------------------- | ------------------------------------------------------------------ | ------------ |
-| `create`              | the intent; `machine` is the one word today                        | every sender |
-| `box`                 | the box as `organization/name`                                     | BoxVault     |
-| `box_version`         | the box version                                                    | BoxVault     |
-| `box_arch`            | the architecture                                                   | BoxVault     |
-| `box_url`             | the origin the box is fetched from                                 | BoxVault     |
-| `provisioner`         | the provisioner family as `organization/name`                      | the catalog  |
-| `provisioner_version` | the family's version                                               | the catalog  |
-| `provisioner_url`     | the URL of the version's package, the archive the receiver imports | the catalog  |
+| Key                   | Meaning                                               | Sender       |
+| --------------------- | ----------------------------------------------------- | ------------ |
+| `create`              | the intent; `machine` is the one word today           | every sender |
+| `box`                 | the box as `organization/name`                        | BoxVault     |
+| `box_version`         | the box version                                       | BoxVault     |
+| `box_arch`            | the architecture                                      | BoxVault     |
+| `box_url`             | the origin the box is fetched from                    | BoxVault     |
+| `provisioner`         | the provisioner family as `organization/name`         | the catalog  |
+| `provisioner_version` | the family's version                                  | the catalog  |
+| `provisioner_url`     | the URL of the version's package                      | the catalog  |
+| `provisioner_catalog` | the URL of the catalog document that lists the family | the catalog  |
+
+`provisioner_catalog` is the document a host takes as a catalog source,
+fetched as given: `<catalog origin>/catalog.json` for the public catalog,
+`<catalog origin>/api/private/<organization uuid>/catalog` for an
+organization's private one.
 
 A sender sends the members it has and no other; a member it does not have
 is left out, never sent empty. A receiver reads `create` first and treats
@@ -90,15 +99,17 @@ the Hyperweaver servers they attached and `settings.deploy_target` one of
 `integrations` scope carries the service on the token's `integrations`
 claim, so a sender reads the target from the claims it already holds.
 
-| The claim says                                               | The link             |
-| ------------------------------------------------------------ | -------------------- |
-| no `hyperweaver` entry, or `deploy_target` absent or `local` | `hwa://open?<query>` |
-| `deploy_target` an origin                                    | `<origin>/?<query>`  |
+| The claim says                                                           | The link                                         |
+| ------------------------------------------------------------------------ | ------------------------------------------------ |
+| signed out, no `hyperweaver` entry, or `deploy_target` absent or `local` | `com.startcloud.hyperweaver-agent:/open?<query>` |
+| `deploy_target` an origin                                                | `<origin>/?<query>`                              |
 
 The desktop agent registers `hwa`, `hyperweaver-agent` and
-`com.startcloud.hyperweaver-agent`; a sender writes `hwa`. A server link
-opens in a new tab; a protocol link opens in place, because the operating
-system hands it to the agent and the page stays.
+`com.startcloud.hyperweaver-agent`; a sender writes
+`com.startcloud.hyperweaver-agent:/open`, the reverse-domain private-use
+form of RFC 8252 section 7.1. A server link opens in a new tab; a
+protocol link opens in place, because the operating system hands it to
+the agent and the page stays.
 
 A person edits the servers and the target on their profile's Preferences
 section and on the service's own page at `/user/integrations/hyperweaver`,
@@ -114,20 +125,37 @@ server attached becomes the default and the target.
 
 A sender draws the Deploy control of the Universal Navbar Contract, the
 bare Hyperweaver glyph and nothing else, on every row and card of a
-collection whose items a machine can be made of, while:
+collection whose items a machine can be made of, signed in or not,
+while:
 
 - the host advertises the `deploy` token;
-- a person is signed in and holds the Hyperweaver entitlement;
 - the item has a deployable version, the newest that is not deprecated.
 
 The control is one link whose `href` is the target rule's link over the
 seed of that item and version. Nothing is read to draw it beyond the
 status, the session and the item.
 
-| Collection           | Seed                                                    |
-| -------------------- | ------------------------------------------------------- |
-| BoxVault boxes       | `box`, `box_version`, `box_arch`, `box_url`             |
-| catalog provisioners | `provisioner`, `provisioner_version`, `provisioner_url` |
+| Collection           | Seed                                                                           |
+| -------------------- | ------------------------------------------------------------------------------ |
+| BoxVault boxes       | `box`, `box_version`, `box_arch`, `box_url`                                    |
+| catalog provisioners | `provisioner`, `provisioner_version`, `provisioner_url`, `provisioner_catalog` |
+
+A press asks `GET /api/status` of the target from the browser before it
+follows the link, and waits on no clock:
+
+- the local target asks the desktop agent at `https://127.0.0.1:9421`;
+  an answer follows the link in this window, and no answer opens one
+  dialog: Install Hyperweaver Agent, the agent's latest release; Join a
+  Hyperweaver server, the identity provider's
+  `/user/integrations/hyperweaver` page, where a person signs in, attaches
+  a server and picks it as the target; and Support, the Help ticket link;
+- a server target opens its tab on the press and asks the server; an
+  answer sends the tab to the link, and no answer closes the tab and
+  raises the notice "Your Hyperweaver server isn't answering", carrying
+  Open on this machine while the desktop agent answers.
+
+A sender reads the target from the `integrations` claim, so its client
+requests the `integrations` scope.
 
 ---
 
@@ -136,7 +164,7 @@ status, the session and the item.
 Two receivers exist, and a person reaches one or the other by the target
 rule alone.
 
-**The desktop agent** receives `hwa://open?<query>`, validates the query
+**The desktop agent** receives `com.startcloud.hyperweaver-agent:/open?<query>`, validates the query
 against the table above, mints its tray token and opens the signed-in UI
 at `/?<query>#tray=…`; the UI claims the fragment, strips it, and the
 hosts feature moves `/?<query>` to the create wizard of the one serving
@@ -149,16 +177,40 @@ stays on the list while no host does.
 
 On either, the host page opens the create wizard over itself while the
 host offers a create, the query's members seeding the wizard: the box
-members land on the Box step as a custom pick; the provisioner member
-picks the family on the Provisioning step once the host's provisioners
-have answered, and `provisioner_version` its version, or the family's
-first, once the family is picked, so the version's manifest is read as a
-person's own pick reads it. A family the host does not hold is left
-unpicked. Closing the wizard takes the query out of the route, so a
-reload opens it again only when asked.
+members land on the Box step as a custom pick; `provisioner` names the
+host's family by the part after its slash, picked on the Provisioning
+step once the host's provisioners have answered, and
+`provisioner_version` its version, or the family's first, once the family
+is picked, so the version's manifest is read as a person's own pick reads
+it. Closing the wizard takes the query out of the route, so a reload opens
+it again only when asked.
 
-The wizard's Create is the one write, `POST machines` with the spec the
-person confirmed; the hand-off itself writes nothing.
+A family the host does not hold puts one card on the Provisioning step,
+while the host's task events reach the page:
+
+- **Install and continue** while one of the host's catalog sources lists
+  the family and the version;
+- **Add source and install** while none does and `provisioner_catalog`
+  names a catalog the host does not hold; the press first adds it through
+  `POST provisioning/catalog/sources` with its `display_name`, its `url`
+  and `auth`, `oidc` for an organization's private catalog and `none`
+  otherwise;
+- **Sign in with SSO to continue** while the host answers the private
+  catalog `401` with the `authentication` problem, the agent's SSO sign-in
+  continuing the same chain;
+- **Couldn't find this provisioner at its catalog**, with Retry, for any
+  failure.
+
+One press installs through `POST provisioning/catalog/install` with the
+source, the family and the version, the agent verifying the package's
+checksum; the card shows the task's progress from `task-updated`, then
+the wizard reads the host's provisioners again and picks the family and
+the version, so the fields fill as a person's own pick fills them. The
+receiver never imports from a URL the query carries.
+
+The wizard's Create is the one machine write, `POST machines` with the
+spec the person confirmed; the hand-off itself writes nothing, and the
+install writes only on the person's press.
 
 ---
 
@@ -166,15 +218,19 @@ person confirmed; the hand-off itself writes nothing.
 
 A sender:
 
-- draws the Deploy glyph behind `deploy`, the session and the entitlement;
+- draws the Deploy glyph behind `deploy` and a deployable version, signed
+  in or not;
 - writes the members of its seed and no other, each at most once;
-- builds the link from the `integrations` claim by the target rule.
+- builds the link from the `integrations` claim by the target rule;
+- asks the target's status before it follows the link.
 
 A receiver:
 
 - reads `create` and refuses or ignores any key outside the table;
 - moves `/?<query>` to the first host that creates, or `self`;
-- opens the wizard seeded, asks, and writes nothing on its own.
+- opens the wizard seeded, asks, and writes nothing on its own;
+- installs a family it does not hold only on the person's press, through
+  its catalog install.
 
 The identity provider:
 

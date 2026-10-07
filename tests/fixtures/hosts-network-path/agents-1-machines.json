@@ -1,0 +1,6 @@
+{
+  "machines": [
+    { "name": "8617--switchboard.m4kr.net", "status": "running", "hypervisor": "virtualbox" }
+  ],
+  "total": 1
+}

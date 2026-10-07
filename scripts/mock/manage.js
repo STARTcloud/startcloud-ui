@@ -974,14 +974,17 @@ const patchStorage = ctx => {
 /**
  * The registries of a host as `GET templates/sources` answers them, read
  * from the `storage` file the config routes patch, the schema's defaults
- * filled: `enabled` true and `default` false while the entry says nothing.
+ * filled: `enabled` true and `default` false while the entry says nothing;
+ * hyperweaver-agent's rows `{ id, name, url, enabled, default }`, the map
+ * key the `id` and the `display_name` the `name`, and a zoneweaver host's
+ * `{ name, url, enabled, default }`, the map key the `name`.
  *
  * @param {Object} host - The host
- * @returns {Array<Object>} The rows, `{ name, url, enabled, default }`
+ * @returns {Array<Object>} The rows
  */
 export const templateSourcesOf = host =>
-  Object.entries(stateOf(host).templateSources).map(([name, entry]) => ({
-    name,
+  Object.entries(stateOf(host).templateSources).map(([key, entry]) => ({
+    ...(isZone(host) ? { name: key } : { id: key, name: entry.display_name || key }),
     url: entry.url,
     enabled: entry.enabled !== false,
     default: entry.default === true,

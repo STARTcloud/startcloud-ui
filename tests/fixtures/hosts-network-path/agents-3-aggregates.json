@@ -1,0 +1,12 @@
+{
+  "aggregates": [
+    {
+      "link": "aggr0",
+      "policy": "L4",
+      "lacp_activity": "active",
+      "over": "ixgbe1,ixgbe2",
+      "state": "up",
+      "mtu": 9000
+    }
+  ]
+}

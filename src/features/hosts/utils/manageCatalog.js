@@ -1,3 +1,5 @@
+import { sourceKeyOf } from './boxCatalog';
+
 const lower = value => String(value ?? '').toLowerCase();
 
 const matcher = membersOf => (row, needle) =>
@@ -793,8 +795,8 @@ export const sourcesPatch = entries => ({ template_sources: { sources: entries }
 const undefaulted = (sources, keptId) =>
   Object.fromEntries(
     sources
-      .filter(source => source.default === true && source.name !== keptId)
-      .map(source => [source.name, { default: false }])
+      .filter(source => source.default === true && sourceKeyOf(source) !== keptId)
+      .map(source => [sourceKeyOf(source), { default: false }])
   );
 
 /**
@@ -832,7 +834,7 @@ export const sourceEntryPatch = (sources, form, editing) => {
  * @returns {Object} The patch
  */
 export const sourceTogglePatch = source =>
-  sourcesPatch({ [source.name]: { enabled: source.enabled === false } });
+  sourcesPatch({ [sourceKeyOf(source)]: { enabled: source.enabled === false } });
 
 /**
  * The patch that makes one registry the default and unsets every other
@@ -843,7 +845,10 @@ export const sourceTogglePatch = source =>
  * @returns {Object} The patch
  */
 export const sourceDefaultPatch = (sources, source) =>
-  sourcesPatch({ ...undefaulted(sources, source.name), [source.name]: { default: true } });
+  sourcesPatch({
+    ...undefaulted(sources, sourceKeyOf(source)),
+    [sourceKeyOf(source)]: { default: true },
+  });
 
 /**
  * The patch that removes one registry, `null` under its id.
@@ -851,7 +856,56 @@ export const sourceDefaultPatch = (sources, source) =>
  * @param {Object} source - The source removed
  * @returns {Object} The patch
  */
-export const sourceRemovePatch = source => sourcesPatch({ [source.name]: null });
+export const sourceRemovePatch = source => sourcesPatch({ [sourceKeyOf(source)]: null });
+
+const SOURCE_FIELDS = {
+  display_name: 'displayName',
+  url: 'url',
+  default: 'isDefault',
+  auth_token: 'auth_token',
+  ca_file: 'ca_file',
+};
+
+const SOURCES_POINTER = '/template_sources/sources/';
+
+/**
+ * The field of the registry form each entry of a refused `PUT config/storage`
+ * names, read from its JSON Pointer: `/template_sources/sources/<id>/<member>`
+ * on the field of that member, a `propertyNames` refusal of the map and an
+ * entry at `/template_sources/sources/<id>` on the id, and a `required`
+ * entry with `params.required` on each member it lists; the first entry a
+ * field is named by is kept.
+ *
+ * @param {Object|null} error - The `ApiError` of the write
+ * @param {string} id - The id the form sent
+ * @returns {Object<string, { rule: string, params: Object }>} The errors by form field
+ */
+export const sourceFieldErrorsOf = (error, id) => {
+  const entries = Array.isArray(error?.fieldErrors) ? error.fieldErrors : [];
+  const fields = {};
+  const keep = (field, entry) => {
+    if (field && !fields[field]) {
+      fields[field] = { rule: entry.rule, params: entry.params || {} };
+    }
+  };
+  entries.forEach(entry => {
+    const pointer = String(entry.pointer || '');
+    if (entry.rule === 'propertyNames' || pointer === `${SOURCES_POINTER}${id}`) {
+      if (entry.rule === 'required' && Array.isArray(entry.params?.required)) {
+        entry.params.required.forEach(member =>
+          keep(SOURCE_FIELDS[member], { rule: 'required', params: {} })
+        );
+        return;
+      }
+      keep('name', entry);
+      return;
+    }
+    if (pointer.startsWith(`${SOURCES_POINTER}${id}/`)) {
+      keep(SOURCE_FIELDS[pointer.slice(`${SOURCES_POINTER}${id}/`.length)], entry);
+    }
+  });
+  return fields;
+};
 
 /**
  * Why a source cannot be saved: an id, a display name and a URL, the id

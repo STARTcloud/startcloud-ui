@@ -132,17 +132,18 @@ const inboxOf = person => {
 
 const unreadOf = person => inboxOf(person).filter(row => !row.read_at).length;
 
-const announce = person =>
-  publish({
-    topic: 'notifications',
-    event: 'unread-count',
-    data: { count: unreadOf(person) },
-    to: person.id,
-  });
+const tell = (person, event, data) =>
+  publish({ topic: 'notifications', event, data, to: person.id });
+
+const announce = (person, event, data) => {
+  tell(person, event, data);
+  tell(person, 'unread-count', { count: unreadOf(person) });
+};
 
 /**
- * One notification put first in a person's inbox, the new unread count
- * pushed to that person alone on the `notifications` topic.
+ * One notification put first in a person's inbox, `notification-created`
+ * with the row and the new unread count pushed to that person alone on
+ * the `notifications` topic.
  *
  * @param {Object} person - The person
  * @param {Object} entry - `title`, `body`, `type`, `severity` and `navigate`
@@ -151,7 +152,7 @@ const announce = person =>
 export const notify = (person, entry) => {
   const row = { ...rowOf({ ...entry, minutes: 0, read: false }), created_at: now() };
   inboxes.set(person.id, [row, ...inboxOf(person)]);
-  announce(person);
+  announce(person, 'notification-created', row);
 };
 
 export const notifyAdmins = entry => {
@@ -177,7 +178,11 @@ const marked = readAt => ctx => {
     return missing('No such notification.');
   }
   row.read_at = readAt();
-  announce(ctx.person);
+  if (row.read_at) {
+    announce(ctx.person, 'notification-read', { id: row.id, read_at: row.read_at });
+  } else {
+    announce(ctx.person, 'notification-unread', { id: row.id });
+  }
   return ok({ id: row.id, read_at: row.read_at });
 };
 
@@ -186,20 +191,20 @@ const markedAll = ctx => {
   inboxOf(ctx.person).forEach(row => {
     row.read_at ||= stamp;
   });
-  announce(ctx.person);
+  announce(ctx.person, 'inbox-read-all', { read_at: stamp });
   return ok({ count: 0 });
 };
 
 const removed = ctx => {
   const kept = inboxOf(ctx.person).filter(row => row.id !== ctx.params.id);
   inboxes.set(ctx.person.id, kept);
-  announce(ctx.person);
+  announce(ctx.person, 'notification-dismissed', { id: ctx.params.id });
   return ok({ id: ctx.params.id });
 };
 
 const cleared = ctx => {
   inboxes.set(ctx.person.id, []);
-  announce(ctx.person);
+  announce(ctx.person, 'inbox-cleared', {});
   return ok({ count: 0 });
 };
 
@@ -230,7 +235,11 @@ const unsubscribed = ctx => {
  * The inbox of the notification hub as a `backend` host proxies it: the
  * paged list, the unread count, read, unread, read all, delete and delete
  * all, the public VAPID key, a real P-256 point made at start, the
- * subscription's two routes and the two tests, each adding one row.
+ * subscription's two routes and the two tests, each adding one row;
+ * every write sends its row event on the `notifications` topic,
+ * `notification-created`, `notification-read`, `notification-unread`,
+ * `notification-dismissed`, `inbox-read-all` or `inbox-cleared`, then
+ * `unread-count`, to the person alone.
  *
  * @param {Object} router - `publicRoute` and `sessionRoute`
  * @returns {void}

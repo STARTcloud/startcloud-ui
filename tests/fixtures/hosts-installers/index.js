@@ -46,6 +46,10 @@ export default {
     file: 'queued-202.json',
   },
   'GET /api/agents/3/provisioning/catalog': { status: 200, file: 'agents-3-catalog.json' },
+  'GET /api/agents/3/provisioning/catalog/health': {
+    status: 200,
+    file: 'agents-3-catalog-health.json',
+  },
   'GET /api/agents/3/provisioning/catalog/sources': {
     status: 200,
     file: 'agents-3-catalog-sources.json',

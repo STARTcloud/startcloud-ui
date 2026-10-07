@@ -61,6 +61,40 @@ export const flattenBoxCatalog = payload => {
   return list.map(rowOf).filter(Boolean);
 };
 
+const carriesId = source => typeof source?.id === 'string' && source.id !== '';
+
+/**
+ * The key of one row of `GET templates/sources`, the member each agent
+ * answers it under: hyperweaver-agent's `id`, the segment of
+ * `templates/remote/{source}` and the value of every `source_name`, and
+ * the `name` of an agent whose rows carry no `id`.
+ *
+ * @param {Object} source - The source row
+ * @returns {string} The key
+ */
+export const sourceKeyOf = source => (carriesId(source) ? source.id : source?.name || '');
+
+/**
+ * The words a source row is drawn with: the `name` of a row that carries
+ * an `id`, its display name, and otherwise its `display_name` or its
+ * `name`.
+ *
+ * @param {Object} source - The source row
+ * @returns {string} The label
+ */
+export const sourceLabelOf = source =>
+  carriesId(source) ? source.name || source.id : source?.display_name || source?.name || '';
+
+/**
+ * The display name a source row seeds the registry form with: the `name`
+ * of a row that carries an `id`, else its `display_name`.
+ *
+ * @param {Object} source - The source row
+ * @returns {string} The display name
+ */
+export const sourceDisplayNameOf = source =>
+  carriesId(source) ? source.name || '' : source?.display_name || '';
+
 /**
  * The registry a box is fetched from when the spec names none: the source
  * of `GET templates/sources` marked `default`, else the first, else null.

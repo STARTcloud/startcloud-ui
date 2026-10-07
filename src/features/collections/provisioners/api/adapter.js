@@ -67,25 +67,38 @@ const providerCoverage = versions => {
   return { counts, total: measured.length };
 };
 
-const toVersion = (entry, health) => ({
-  version: entry.version,
-  createdAt: entry.released_at || null,
-  description: '',
-  releaseNotes: null,
-  deprecated: false,
-  deprecationReason: null,
-  providers: (health.versions?.[entry.version]?.providers || []).map(name => ({
-    name,
-    description: '',
-    architectures: [],
-  })),
-  artifacts: entry.artifacts.map(artifact => ({
-    name: artifactName(artifact.url),
-    checksum: artifact.checksum,
-    checksumType: artifact.checksum_type,
-    downloadUrl: artifact.url,
-  })),
+const objectOf = value => (value && typeof value === 'object' ? value : {});
+
+const versionExtrasOf = measured => ({
+  tier: typeof measured?.tier === 'string' ? measured.tier : '',
+  rules: objectOf(measured?.rules),
+  failedRules: Array.isArray(measured?.failed_rules) ? measured.failed_rules : [],
+  boxes: objectOf(measured?.boxes),
 });
+
+const toVersion = (entry, health) => {
+  const measured = health.versions?.[entry.version];
+  return {
+    version: entry.version,
+    createdAt: entry.released_at || null,
+    description: '',
+    releaseNotes: null,
+    deprecated: false,
+    deprecationReason: null,
+    providers: (measured?.providers || []).map(name => ({
+      name,
+      description: '',
+      architectures: [],
+    })),
+    artifacts: entry.artifacts.map(artifact => ({
+      name: artifactName(artifact.url),
+      checksum: artifact.checksum,
+      checksumType: artifact.checksum_type,
+      downloadUrl: artifact.url,
+    })),
+    extras: versionExtrasOf(measured),
+  };
+};
 
 const toItem = (provisioner, healthEntry, organization, isPrivate) => {
   const health = healthEntry?.health || {};
@@ -114,6 +127,7 @@ const toItem = (provisioner, healthEntry, organization, isPrivate) => {
     extras: {
       repo: provisioner.repo,
       tier: healthEntry?.tier || 'unrated',
+      rules: objectOf(healthEntry?.rules),
       failedRules: healthEntry?.failed_rules || [],
       artifactsOk: health.artifacts_ok !== false,
       sidecarsOk: health.sidecars_ok !== false,
@@ -133,9 +147,16 @@ const itemsFrom = ({ catalog, health }, organizationFor, isPrivate) =>
     )
   );
 
-const publicItems = async () => {
-  const data = await fetchPublic();
-  return itemsFrom(
+/**
+ * The items of one public catalog document and its health document, each
+ * family under the owner of its repository as its organization, the shape
+ * every provisioners listing draws.
+ *
+ * @param {{ catalog: Object|null, health: Object|null }} data - The catalog and its health
+ * @returns {Array<Object>} The items
+ */
+export const publicItemsFrom = data =>
+  itemsFrom(
     data,
     provisioner => {
       const owner = ownerOf(provisioner.repo);
@@ -143,7 +164,8 @@ const publicItems = async () => {
     },
     false
   );
-};
+
+const publicItems = async () => publicItemsFrom(await fetchPublic());
 
 const organizationOf = (org, membership) =>
   membership

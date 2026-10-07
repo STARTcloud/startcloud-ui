@@ -3,9 +3,16 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { messageFor } from '../../../utils/validation';
 import { fetchRemoteTemplates } from '../api/provisioning';
 import { useManageRead } from '../hooks/useHostManage';
-import { flattenBoxCatalog, pickDefaultSource } from '../utils/boxCatalog';
+import {
+  flattenBoxCatalog,
+  pickDefaultSource,
+  sourceDisplayNameOf,
+  sourceKeyOf,
+  sourceLabelOf,
+} from '../utils/boxCatalog';
 import {
   EXPORT_FORM,
   PULL_FORM,
@@ -24,7 +31,27 @@ import {
 import { PathInput } from './PathPicker';
 import ToolFormDialog from './ToolFormDialog';
 
-const TextField = ({ id, labelKey, value, onChange, disabled, placeholder = '' }) => {
+const errorShape = PropTypes.shape({ rule: PropTypes.string.isRequired, params: PropTypes.object });
+
+const FieldError = ({ id, labelKey, error }) => {
+  const { t } = useTranslation();
+  if (!error) {
+    return null;
+  }
+  return (
+    <div id={`${id}-error`} className="invalid-feedback d-block" data-error={id}>
+      {messageFor(error, t(labelKey), t)}
+    </div>
+  );
+};
+
+FieldError.propTypes = {
+  id: PropTypes.string.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  error: errorShape,
+};
+
+const TextField = ({ id, labelKey, value, onChange, disabled, placeholder = '', error = null }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -33,13 +60,16 @@ const TextField = ({ id, labelKey, value, onChange, disabled, placeholder = '' }
       </label>
       <input
         id={id}
-        className="form-control"
+        className={error ? 'form-control is-invalid' : 'form-control'}
         type="text"
         placeholder={placeholder}
         value={value}
         onChange={event => onChange(event.target.value)}
         disabled={disabled}
+        aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
       />
+      <FieldError id={id} labelKey={labelKey} error={error} />
     </>
   );
 };
@@ -51,6 +81,7 @@ TextField.propTypes = {
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool.isRequired,
   placeholder: PropTypes.string,
+  error: errorShape,
 };
 
 const SourceSelect = ({ id, labelKey, sources, value, onChange, disabled }) => {
@@ -73,8 +104,8 @@ const SourceSelect = ({ id, labelKey, sources, value, onChange, disabled }) => {
           <option value="">{t('host.templatesManagement.select')}</option>
         )}
         {sources.map(source => (
-          <option key={source.name} value={source.name}>
-            {source.name}
+          <option key={sourceKeyOf(source)} value={sourceKeyOf(source)}>
+            {sourceLabelOf(source)}
             {source.default ? ` (${t('host.templatesManagement.default').toLowerCase()})` : ''}
           </option>
         ))}
@@ -128,7 +159,8 @@ MachineSelect.propTypes = {
 
 /**
  * The pull dialog, hyperweaver-ui's: the registry, opening on the
- * default one, its catalog read once a registry is picked and again on
+ * default one, picked by its key and drawn by its display name, its
+ * catalog at `templates/remote/{key}` read once a registry is picked and again on
  * a change, the box picked from it filling the organization, the box,
  * the version among its versions and the architecture among its
  * architectures, each typed otherwise; the submit hands the body of
@@ -137,7 +169,7 @@ MachineSelect.propTypes = {
 export const PullModal = ({ id, sources, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [source, setSource] = useState(() => pickDefaultSource(sources)?.name || '');
+  const [source, setSource] = useState(() => sourceKeyOf(pickDefaultSource(sources)));
   const [form, setForm] = useState(PULL_FORM);
   const [pick, setPick] = useState('');
   const [problem, setProblem] = useState('');
@@ -195,7 +227,9 @@ export const PullModal = ({ id, sources, busy, onClose, onSubmit }) => {
         <div className="col-12">
           <label className="form-label" htmlFor="template-pull-catalog">
             {t('host.templatesManagement.availableTemplates', {
-              source: source || t('host.templatesManagement.theRegistry'),
+              source:
+                sourceLabelOf(sources.find(entry => sourceKeyOf(entry) === source)) ||
+                t('host.templatesManagement.theRegistry'),
             })}
           </label>
           <select
@@ -378,7 +412,7 @@ export const PublishModal = ({ machines, sources, busy, onClose, onSubmit }) => 
   const { t } = useTranslation();
   const [form, setForm] = useState(() => ({
     ...TEMPLATE_PUBLISH_FORM,
-    source: pickDefaultSource(sources)?.name || '',
+    source: sourceKeyOf(pickDefaultSource(sources)),
   }));
   const [problem, setProblem] = useState('');
   const patch = changes => setForm(current => ({ ...current, ...changes }));
@@ -532,20 +566,22 @@ MoveModal.propTypes = {
 
 /**
  * The registry dialog, hyperweaver-ui's add and edit of a box registry:
- * the id, the agent's map key, the display name, the URL, the default
+ * the id, the agent's map key, seeded on an edit from the row's key, the
+ * display name, seeded from the row's display name, the URL, the default
  * switch, the API key and the CA file with the browse button, blank
  * credentials keeping the existing ones on an edit; the submit hands the
- * form up.
+ * form up, and `errors`, the refusal's entries by form field, draws each
+ * under the field it names.
  */
-export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) => {
+export const SourceModal = ({ id, server, editing, errors = {}, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [form, setForm] = useState(() =>
     editing
       ? {
           ...SOURCE_FORM,
-          name: editing.name,
-          displayName: editing.display_name || '',
+          name: sourceKeyOf(editing),
+          displayName: sourceDisplayNameOf(editing),
           url: editing.url || '',
           isDefault: Boolean(editing.default),
         }
@@ -565,7 +601,7 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
       dialog="template-source"
       title={
         editing
-          ? t('host.templatesManagement.editRegistry', { name: editing.name })
+          ? t('host.templatesManagement.editRegistry', { name: sourceLabelOf(editing) })
           : t('host.templatesManagement.addBoxRegistry')
       }
       submitKey={editing ? 'host.templatesManagement.save' : 'host.templatesManagement.addRegistry'}
@@ -583,6 +619,7 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
             value={form.name}
             onChange={name => patch({ name })}
             disabled={busy}
+            error={errors.name || null}
           />
         </div>
         <div className="col-12 col-md-8">
@@ -592,6 +629,7 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
             value={form.displayName}
             onChange={displayName => patch({ displayName })}
             disabled={busy}
+            error={errors.displayName || null}
           />
         </div>
         <div className="col-12">
@@ -602,6 +640,7 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
             value={form.url}
             onChange={url => patch({ url })}
             disabled={busy}
+            error={errors.url || null}
           />
         </div>
         <div className="col-12">
@@ -619,6 +658,11 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
               {t('host.templatesManagement.makeDefaultRegistryFeedsWizard')}
             </label>
           </div>
+          <FieldError
+            id="source-default"
+            labelKey="host.templatesManagement.makeDefaultRegistryFeedsWizard"
+            error={errors.isDefault || null}
+          />
         </div>
         <div className="col-12 col-md-6">
           <TextField
@@ -627,6 +671,7 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
             value={form.auth_token}
             onChange={auth_token => patch({ auth_token })}
             disabled={busy}
+            error={errors.auth_token || null}
           />
           <span className="form-text text-muted">
             {t('host.templatesManagement.apiKeyHelp', {
@@ -649,6 +694,11 @@ export const SourceModal = ({ id, server, editing, busy, onClose, onSubmit }) =>
             pickTitle={t('host.templatesManagement.pickCaFile')}
             disabled={busy}
           />
+          <FieldError
+            id="source-cafile"
+            labelKey="host.templatesManagement.caFileLabel"
+            error={errors.ca_file || null}
+          />
         </div>
       </div>
     </ToolFormDialog>
@@ -659,6 +709,7 @@ SourceModal.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   editing: PropTypes.object,
+  errors: PropTypes.objectOf(errorShape),
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,

@@ -12,6 +12,8 @@ const STREAM_HEADERS = {
   'content-type': 'text/event-stream; charset=utf-8',
   'cache-control': 'no-cache, no-transform',
   'x-accel-buffering': 'no',
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'authorization, dpop, accept, last-event-id',
 };
 const requests = new WeakMap();
 
@@ -24,10 +26,18 @@ const recorded = page => {
   return requests.get(page);
 };
 
+const record = (page, request) => {
+  if (request.method() === 'GET') {
+    recorded(page).push({ url: new URL(request.url()), headers: request.headers() });
+  }
+};
+
 const serveStream = (page, answer) =>
   page.route('**/api/events**', route => {
-    const request = route.request();
-    recorded(page).push({ url: new URL(request.url()), headers: request.headers() });
+    record(page, route.request());
+    if (route.request().method() === 'OPTIONS') {
+      return route.fulfill({ status: 204, headers: STREAM_HEADERS });
+    }
     return route.fulfill(answer);
   });
 
@@ -51,10 +61,10 @@ Given('the stream holds the {word} frames', async ({ page }, name) => {
   gates.set(page, gate);
   const body = fs.readFileSync(path.join(STREAM_DIR, `${name}.sse`), 'utf8');
   await page.route('**/api/events**', async route => {
-    recorded(page).push({
-      url: new URL(route.request().url()),
-      headers: route.request().headers(),
-    });
+    record(page, route.request());
+    if (route.request().method() === 'OPTIONS') {
+      return route.fulfill({ status: 204, headers: STREAM_HEADERS });
+    }
     await gate.opened;
     return route.fulfill({ status: 200, headers: STREAM_HEADERS, body });
   });
@@ -67,6 +77,11 @@ When('the stream releases its frames', ({ page }) => {
 Then('the stream was requested at {string}', async ({ page }, pathname) => {
   await expect.poll(() => recorded(page).length).toBeGreaterThan(0);
   expect(recorded(page).every(call => call.url.pathname === pathname)).toBe(true);
+});
+
+Then('the stream was requested on the origin {string}', async ({ page }, origin) => {
+  await expect.poll(() => recorded(page).length).toBeGreaterThan(0);
+  expect(recorded(page).every(call => call.url.origin === origin)).toBe(true);
 });
 
 Then('the stream was requested with {string} as {string}', async ({ page }, name, value) => {

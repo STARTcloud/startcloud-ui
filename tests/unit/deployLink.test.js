@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AGENT_ORIGIN,
   deployHref,
   deployQuery,
   deployTargetOf,
   isLocalTarget,
+  probeOriginOf,
 } from '../../src/features/deploy/utils/deployLink.js';
 
 const boxSeed = {
@@ -18,7 +20,11 @@ const provisionerSeed = {
   provisioner: 'STARTcloud/hcl-domino',
   provisioner_version: '2.0.0',
   provisioner_url: 'https://catalog.example.com/hcl-domino-2.0.0.tar.gz',
+  provisioner_catalog: 'https://catalog.example.com/catalog.json',
 };
+
+const PROVISIONER_QUERY =
+  'create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=https%3A%2F%2Fcatalog.example.com%2Fcatalog.json';
 
 describe('deployQuery', () => {
   it('opens with create=machine and follows with the box members in the agent order', () => {
@@ -27,10 +33,8 @@ describe('deployQuery', () => {
     );
   });
 
-  it('carries the provisioner members in the agent order and leaves the empty ones out', () => {
-    expect(deployQuery({ ...provisionerSeed, box: '' })).toBe(
-      'create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz'
-    );
+  it('carries the provisioner members in the agent order, the catalog last, and leaves the empty ones out', () => {
+    expect(deployQuery({ ...provisionerSeed, box: '' })).toBe(PROVISIONER_QUERY);
   });
 
   it('answers create=machine alone for an empty seed', () => {
@@ -83,23 +87,38 @@ describe('deployTargetOf', () => {
 });
 
 describe('deployHref', () => {
-  it('answers the protocol link for the local target', () => {
+  it('answers the reverse-domain protocol link of RFC 8252 for the local target', () => {
     expect(deployHref('local', boxSeed)).toBe(
-      'hwa://open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
+      'com.startcloud.hyperweaver-agent:/open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
     );
   });
 
   it('answers the origin page for a server target, the origin without a trailing slash', () => {
     expect(deployHref('https://hw.example.com', provisionerSeed)).toBe(
-      'https://hw.example.com/?create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz'
+      `https://hw.example.com/?${PROVISIONER_QUERY}`
     );
     expect(deployHref('https://hw.example.com/', boxSeed)).toMatch(
       /^https:\/\/hw\.example\.com\/\?create=machine&box=/u
     );
   });
 
-  it('keeps the query under the agent limit for the two seeds', () => {
+  it('keeps the query under the agent limit for the two seeds, a private catalog URL included', () => {
     expect(deployHref('local', boxSeed).length).toBeLessThan(2048);
+    expect(
+      deployHref('local', {
+        ...provisionerSeed,
+        provisioner_catalog:
+          'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog',
+      }).length
+    ).toBeLessThan(2048);
+  });
+});
+
+describe('probeOriginOf', () => {
+  it('asks the local agent for the local target and the server itself otherwise', () => {
+    expect(probeOriginOf('local')).toBe(AGENT_ORIGIN);
+    expect(AGENT_ORIGIN).toBe('https://127.0.0.1:9421');
+    expect(probeOriginOf('https://hw.example.com/')).toBe('https://hw.example.com');
   });
 });
 

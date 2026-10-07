@@ -68,11 +68,15 @@ const LINKS = [
   { key: 'notes', Icon: FaScroll, labelKey: 'pages.links.notes' },
 ];
 
-const CardLinks = ({ item }) => {
+/**
+ * The links row of a card, one glyph a link the item carries, and
+ * `children` at its right; nothing while it carries no link and no child.
+ */
+export const CardLinks = ({ item, children = null }) => {
   const { t } = useTranslation();
   const links = item.links || {};
   const present = LINKS.filter(link => links[link.key]);
-  if (present.length === 0) {
+  if (present.length === 0 && !children) {
     return null;
   }
   return (
@@ -90,12 +94,16 @@ const CardLinks = ({ item }) => {
           <Icon />
         </a>
       ))}
+      {children ? (
+        <span className="ms-auto d-inline-flex align-items-center">{children}</span>
+      ) : null}
     </div>
   );
 };
 
 CardLinks.propTypes = {
   item: itemShape.isRequired,
+  children: PropTypes.node,
 };
 
 /**
@@ -178,18 +186,49 @@ const bylineOf = item => {
   return family.startsWith(owner.toLowerCase()) ? '' : owner;
 };
 
+const DefaultByline = ({ item }) => (
+  <>
+    {bylineOf(item) ? <div className="small text-body-secondary">{bylineOf(item)}</div> : null}
+    {item.label && item.label !== item.name ? <code className="checksum">{item.name}</code> : null}
+  </>
+);
+
+DefaultByline.propTypes = {
+  item: itemShape.isRequired,
+};
+
+const DefaultCardBody = ({ collection, item, CardGlyph = null, CardExtras = null, ctx }) => (
+  <>
+    <CardFoot collection={collection} item={item} CardGlyph={CardGlyph} ctx={ctx} />
+    <CardLinks item={item} />
+    {CardExtras ? (
+      <div className="card-above">
+        <CardExtras item={item} ctx={ctx} />
+      </div>
+    ) : null}
+  </>
+);
+
+DefaultCardBody.propTypes = {
+  collection: collectionShape.isRequired,
+  item: itemShape.isRequired,
+  CardGlyph: PropTypes.elementType,
+  CardExtras: PropTypes.elementType,
+  ctx: PropTypes.object.isRequired,
+};
+
 /**
  * One card of the grid: the media, the title (a stretched link over the
  * whole card while the collection routes to an item page, so the card
  * itself is the thing to click), the vendor or organization under it
- * unless the family already names it, the chips a manager sees, the
- * description, then the
- * foot line, the links, the extras and the actions, every control its
- * own target above the card link so a star, a link or a checkbox never
- * opens the item.
+ * unless the family already names it, or the collection's `CardByline`,
+ * the chips a manager sees, the description, then the foot line, the
+ * links and the extras, or in their place the collection's `CardBody`,
+ * and the actions, every control its own target above the card link so a
+ * star, a link or a checkbox never opens the item.
  */
 const ItemCard = ({ collection, item, watches, selection, ctx }) => {
-  const { ItemChips, CardGlyph, CardExtras, RowActions } = collection.slots;
+  const { ItemChips, CardGlyph, CardExtras, CardByline, CardBody, RowActions } = collection.slots;
   const title = item.label || item.name;
   const manage = managesItem(ctx.status, collection, item, ctx.user);
   const chips = manage || Boolean(item.os?.label) || Boolean(ItemChips);
@@ -216,12 +255,7 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
                 title
               )}
             </Card.Title>
-            {bylineOf(item) ? (
-              <div className="small text-body-secondary">{bylineOf(item)}</div>
-            ) : null}
-            {item.label && item.label !== item.name ? (
-              <code className="checksum">{item.name}</code>
-            ) : null}
+            {CardByline ? <CardByline item={item} ctx={ctx} /> : <DefaultByline item={item} />}
           </div>
           {watches ? <WatchStar item={item} watches={watches} /> : null}
         </div>
@@ -237,13 +271,17 @@ const ItemCard = ({ collection, item, watches, selection, ctx }) => {
         ) : null}
         <MarkdownText text={item.description} className="card-desc mb-2" />
         <div className="mt-auto d-flex flex-column gap-2">
-          <CardFoot collection={collection} item={item} CardGlyph={CardGlyph} ctx={ctx} />
-          <CardLinks item={item} />
-          {CardExtras ? (
-            <div className="card-above">
-              <CardExtras item={item} ctx={ctx} />
-            </div>
-          ) : null}
+          {CardBody ? (
+            <CardBody item={item} ctx={ctx} />
+          ) : (
+            <DefaultCardBody
+              collection={collection}
+              item={item}
+              CardGlyph={CardGlyph}
+              CardExtras={CardExtras}
+              ctx={ctx}
+            />
+          )}
           {RowActions ? (
             <div className="card-above">
               <RowActions item={item} ctx={ctx} />

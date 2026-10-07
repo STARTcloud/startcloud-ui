@@ -21,47 +21,25 @@ const countOf = data => Math.max(0, Number(data?.count) || 0);
  * The counts behind the sidebar rows' `badge` names, resolved by the shell
  * and never by an export: `unread` is the notifications feature's one
  * context, the same count the user menu's bell and the inbox page read,
- * read once from the notifications adapter's `unreadCount()` when the
- * stream opens fresh or answers `reset` and kept by the `notifications`
- * topic's `unread-count` event; `blockedCount` read once from
- * `GET /api/admin/brute-force/count` on the same two occasions and kept by
- * the `admin` topic's `blocked-count` event; an in-ring reconnect replays
- * what was missed and reads nothing. On a host without a stream each is
- * read once on mount; no timer runs, and a name no mounted row carries is
- * never resolved.
+ * which the shell's inbox reader keeps from boot; `blockedCount` read once
+ * from `GET /api/admin/brute-force/count` when the stream opens fresh or
+ * answers `reset` and kept by the `admin` topic's `blocked-count` event;
+ * an in-ring reconnect replays what was missed and reads nothing. On a
+ * host without a stream it is read once on mount; no timer runs, and a
+ * name no mounted row carries is never resolved.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
  * @param {Array} options.entries - The mounted features' sidebar groups
- * @param {Object|null} options.notifications - The notifications adapter, or null
  * @returns {Object<string, number>} The counts by badge name
  */
-export const useSidebarBadges = ({ status, entries, notifications }) => {
+export const useSidebarBadges = ({ status, entries }) => {
   const [counts, setCounts] = useState({});
-  const { unread, set: setUnread } = useUnread();
+  const { unread } = useUnread();
   const badges = badgesOf(entries);
   const wanted = badges.join(',');
   const streaming = hasFeature(status, 'events') && Boolean(status.events);
-  const notificationsRef = useRef(notifications);
-
-  useEffect(() => {
-    notificationsRef.current = notifications;
-  });
-
-  const wantsUnread = badges.includes('unread');
   const wantsBlocked = badges.includes('blockedCount');
-
-  const set = (name, value) => setCounts(previous => ({ ...previous, [name]: value }));
-
-  const readUnread = () => {
-    if (!wantsUnread || !notificationsRef.current) {
-      return;
-    }
-    notificationsRef.current
-      .unreadCount()
-      .then(data => setUnread(countOf(data)))
-      .catch(() => null);
-  };
 
   const readBlocked = () => {
     if (!wantsBlocked) {
@@ -69,38 +47,27 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
     }
     client
       .get(BLOCKED_COUNT_PATH)
-      .then(data => set('blockedCount', countOf(data)))
+      .then(data => setCounts(previous => ({ ...previous, blockedCount: countOf(data) })))
       .catch(() => null);
   };
 
-  const readRef = useRef({ readUnread, readBlocked });
+  const readRef = useRef(readBlocked);
 
   useEffect(() => {
-    readRef.current = { readUnread, readBlocked };
+    readRef.current = readBlocked;
   });
-
-  const readAll = () => {
-    readRef.current.readUnread();
-    readRef.current.readBlocked();
-  };
 
   useEventStream('ready', (data, resumed) => {
     if (data && !resumed) {
-      readAll();
+      readRef.current();
     }
   });
 
-  useEventStream('reset', () => readAll());
-
-  useEventStream('unread-count', data => {
-    if (wantsUnread) {
-      setUnread(countOf(data));
-    }
-  });
+  useEventStream('reset', () => readRef.current());
 
   useEventStream('blocked-count', data => {
     if (wantsBlocked) {
-      set('blockedCount', countOf(data));
+      setCounts(previous => ({ ...previous, blockedCount: countOf(data) }));
     }
   });
 
@@ -108,8 +75,7 @@ export const useSidebarBadges = ({ status, entries, notifications }) => {
     if (streaming) {
       return;
     }
-    readRef.current.readUnread();
-    readRef.current.readBlocked();
+    readRef.current();
   }, [streaming, wanted]);
 
   return { ...counts, unread };

@@ -1,0 +1,139 @@
+{
+  "provisioners": {
+    "startcloud": {
+      "tier": "gold",
+      "failed_rules": ["platinum.automated_tests", "diamond.booted_providers"],
+      "rules": {
+        "bronze": {
+          "description": true,
+          "label": true,
+          "semver_versions": true,
+          "latest_alias": true
+        },
+        "silver": {
+          "changelog": true,
+          "readme": true,
+          "release_within_12_months": true,
+          "lint_ci": true
+        },
+        "gold": {
+          "config_fields_documented": true,
+          "roles_documented": true,
+          "example_hosts": true
+        },
+        "platinum": { "automated_tests": false, "multi_provider": true, "release_cadence": true },
+        "diamond": { "booted_providers": false }
+      },
+      "presentation": { "label": "STARTcloud" },
+      "health": {
+        "downloads": 120,
+        "artifacts_ok": true,
+        "sidecars_ok": true,
+        "versions": {
+          "0.1.28": {
+            "providers": ["virtualbox", "bhyve"],
+            "tier": "gold",
+            "rules": {
+              "bronze": {
+                "description": true,
+                "label": true,
+                "semver_versions": true,
+                "latest_alias": true
+              },
+              "silver": {
+                "changelog": true,
+                "readme": true,
+                "release_within_12_months": true,
+                "lint_ci": true
+              },
+              "gold": {
+                "config_fields_documented": true,
+                "roles_documented": true,
+                "example_hosts": true
+              },
+              "platinum": {
+                "automated_tests": false,
+                "multi_provider": true,
+                "release_cadence": true
+              },
+              "diamond": { "booted_providers": false }
+            },
+            "failed_rules": ["platinum.automated_tests", "diamond.booted_providers"],
+            "boxes": {
+              "virtualbox": {
+                "organization": "STARTcloud",
+                "name": "debian13",
+                "version": "13.1.0",
+                "architecture": "amd64",
+                "url": "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
+              }
+            }
+          },
+          "0.1.27": {
+            "providers": ["virtualbox"],
+            "tier": "silver",
+            "rules": {
+              "bronze": {
+                "description": true,
+                "label": true,
+                "semver_versions": true,
+                "latest_alias": true
+              },
+              "silver": {
+                "changelog": true,
+                "readme": true,
+                "release_within_12_months": true,
+                "lint_ci": true
+              },
+              "gold": {
+                "config_fields_documented": false,
+                "roles_documented": true,
+                "example_hosts": false
+              },
+              "platinum": {
+                "automated_tests": false,
+                "multi_provider": false,
+                "release_cadence": true
+              },
+              "diamond": { "booted_providers": false }
+            },
+            "failed_rules": ["gold.config_fields_documented", "gold.example_hosts"],
+            "boxes": {}
+          }
+        }
+      }
+    },
+    "hcl-domino": {
+      "tier": "silver",
+      "failed_rules": ["gold.config_fields_documented"],
+      "rules": {
+        "bronze": {
+          "description": true,
+          "label": true,
+          "semver_versions": true,
+          "latest_alias": true
+        },
+        "silver": {
+          "changelog": true,
+          "readme": true,
+          "release_within_12_months": true,
+          "lint_ci": true
+        },
+        "gold": {
+          "config_fields_documented": false,
+          "roles_documented": true,
+          "example_hosts": false
+        },
+        "platinum": { "automated_tests": false, "multi_provider": false, "release_cadence": false },
+        "diamond": { "booted_providers": false }
+      },
+      "presentation": { "label": "HCL Domino" },
+      "health": {
+        "downloads": 40,
+        "artifacts_ok": false,
+        "sidecars_ok": true,
+        "versions": { "2.0.0": { "providers": ["virtualbox"] } }
+      }
+    }
+  }
+}

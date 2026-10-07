@@ -1,4 +1,12 @@
+import { addressOf, prefixOf } from '../../utils/networking';
+
 const HEADER_LINK = 'LINK';
+
+const KILO = 1000;
+
+const PREFIX_MARK = '/';
+
+const IPV6_MARK = ':';
 
 export const vboxModeForKind = {
   bridged: 'bridged',
@@ -75,18 +83,73 @@ const usageMapOf = (usage, liveLinks) => {
   return { usageByLink, staleUsageLinks };
 };
 
+const versionOf = address => (address.includes(IPV6_MARK) ? 'v6' : 'v4');
+
+const addressRowOf = (address, prefix, version) => ({
+  ip_address: address,
+  prefix_length: Number(prefix) || null,
+  ip_version: version || versionOf(address),
+});
+
 const ipsMapOf = ipAddresses => {
   const ipsByLink = new Map();
   ipAddresses.forEach(row => {
-    if (!row.interface || !row.ip_address) {
+    const address = addressOf(row);
+    if (!row.interface || !address) {
       return;
     }
     if (!ipsByLink.has(row.interface)) {
       ipsByLink.set(row.interface, []);
     }
-    ipsByLink.get(row.interface).push(row);
+    ipsByLink
+      .get(row.interface)
+      .push(addressRowOf(address, prefixOf(row).slice(PREFIX_MARK.length), row.ip_version));
   });
   return ipsByLink;
+};
+
+const rowAddresses = row =>
+  (Array.isArray(row.addresses) ? row.addresses : []).filter(Boolean).map(entry => {
+    const [address, prefix] = String(entry).split(PREFIX_MARK);
+    return addressRowOf(address, prefix, '');
+  });
+
+const knobNicsOf = detail =>
+  new Map(
+    (Array.isArray(detail?.knob_current?.nics) ? detail.knob_current.nics : []).map(nic => [
+      String(nic.adapter),
+      nic,
+    ])
+  );
+
+const deviceNicsOf = detail =>
+  Array.isArray(detail?.knob_current?.devices?.nics) ? detail.knob_current.devices.nics : [];
+
+const speedOf = knob => {
+  const kbps = Number(knob?.speed);
+  return kbps > 0 ? kbps / KILO : 0;
+};
+
+/**
+ * The VirtualBox name of each bridge adapter the machines' details join
+ * to an OS interface, read from the `interface` member of
+ * `knob_current.nics[]` where an adapter carries one.
+ *
+ * @param {Map<string, Object>} machineDetails - Machine name to detail
+ * @returns {Map<string, string>} OS interface name to VirtualBox bridge name
+ */
+export const bridgeNamesOf = machineDetails => {
+  const names = new Map();
+  machineDetails.forEach(detail => {
+    const knobs = knobNicsOf(detail);
+    deviceNicsOf(detail).forEach(nic => {
+      const link = knobs.get(String(nic.adapter))?.interface;
+      if ((nic.mode || '').toLowerCase() === 'bridged' && nic.network && link) {
+        names.set(link, nic.network);
+      }
+    });
+  });
+  return names;
 };
 
 const consumerOf = ({
@@ -99,13 +162,12 @@ const consumerOf = ({
 }) => {
   const status = (row.status || row.state || '').toLowerCase();
   const detail = machineDetails.get(row.name);
-  const nicRows = Array.isArray(detail?.knob_current?.devices?.nics)
-    ? detail.knob_current.devices.nics
-    : [];
+  const knobs = knobNicsOf(detail);
   const adapterUsage = machineUsage.get(row.name) || new Map();
-  const nics = nicRows.map(nic => {
+  const nics = deviceNicsOf(detail).map(nic => {
     const target = vboxNetworkId(nic);
     const net = ensureNetwork(target);
+    const knob = knobs.get(String(nic.adapter)) || null;
     net.live += 1;
     net.members.push({ link: `${row.name}#${nic.adapter}`, zone: row.name });
     const swtch = switches.find(s => s.id === target.carrier);
@@ -120,6 +182,10 @@ const consumerOf = ({
       mode: (nic.mode || '').toLowerCase(),
       mac: nic.mac || null,
       mtu: null,
+      speedMbps: speedOf(knob),
+      cableConnected: knob?.cable_connected ?? null,
+      nicType: knob?.nic_type || null,
+      provisional: Boolean(knob?.provisional),
       networkId: target.id,
       ghost: false,
       usage: adapterUsage.get(String(nic.adapter)) || null,
@@ -144,10 +210,15 @@ const consumerOf = ({
 /**
  * A VirtualBox host's topology graph, hyperweaver-ui's builder: the
  * machines' structured NIC rows, `knob_current.devices.nics` with their
- * `network`, against the host's network spaces, the same shape as
- * `buildHostGraph` so the renderer never branches. A bridged carrier
- * whose VirtualBox network name matches no monitored interface gets a
- * synthesized adapter, state unknown, so its wires still land.
+ * `network`, and each adapter's tuning of `knob_current.nics[]`, its
+ * speed in kilobits, its cable, its type and its OS interface, against
+ * the host's network spaces, the same shape as `buildHostGraph` so the
+ * renderer never branches. A bridged carrier is the VirtualBox name of
+ * its bridge adapter, joined to the interface row whose `description`
+ * names it or whose `link` an adapter's `interface` names, the row's
+ * link, state, MTU, addresses and usage drawn under that name; a
+ * carrier no row joins gets a synthesized adapter, state unknown, so
+ * its wires still land.
  *
  * @param {Object} input - The interfaces, spaces, machines, their details, the usage samples, the per-machine usage and the addresses
  * @returns {Object} The graph
@@ -168,19 +239,25 @@ export const buildVBoxGraph = ({
   const { usageByLink, staleUsageLinks } = usageMapOf(usage, liveLinks);
   const feedPresent = usage.length > 0 || machineUsage.size > 0;
   const ipsByLink = ipsMapOf(ipAddresses);
+  const bridgeNames = bridgeNamesOf(machineDetails);
 
-  const adapters = physRows.map(row => ({
-    id: row.link,
-    name: row.link,
-    kind: 'phys',
-    state: row.state || 'unknown',
-    speedMbps: parseInt(row.speed, 10) || 0,
-    mtu: parseInt(row.mtu, 10) || null,
-    members: [],
-    memberOf: null,
-    ips: ipsByLink.get(row.link) || [],
-    usage: usageByLink.get(row.link) || null,
-  }));
+  const adapters = physRows.map(row => {
+    const id = row.description || bridgeNames.get(row.link) || row.link;
+    const listed = ipsByLink.get(row.link) || [];
+    return {
+      id,
+      name: id,
+      link: row.link,
+      kind: 'phys',
+      state: row.state || 'unknown',
+      speedMbps: parseInt(row.speed, 10) || 0,
+      mtu: parseInt(row.mtu, 10) || null,
+      members: [],
+      memberOf: null,
+      ips: listed.length > 0 ? listed : rowAddresses(row),
+      usage: usageByLink.get(row.link) || null,
+    };
+  });
 
   const networks = new Map();
   const ensureNetwork = ({ id, kind, carrier, detail = null }) => {
@@ -231,6 +308,7 @@ export const buildVBoxGraph = ({
       adapters.push({
         id: net.carrier,
         name: net.carrier,
+        link: null,
         kind: 'phys',
         state: 'unknown',
         speedMbps: 0,
@@ -253,7 +331,8 @@ export const buildVBoxGraph = ({
       { rxMbps: 0, txMbps: 0 }
     );
     if (net.kind === 'bridged') {
-      return { ...net, usage: usageByLink.get(net.carrier) || memberUsage };
+      const carrier = adapters.find(a => a.id === net.carrier);
+      return { ...net, usage: carrier?.usage || memberUsage };
     }
     return { ...net, usage: machineUsage.size > 0 ? memberUsage : null };
   });

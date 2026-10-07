@@ -275,6 +275,7 @@ describe('buildVBoxGraph', () => {
       {
         id: 'en0',
         name: 'en0',
+        link: null,
         kind: 'phys',
         state: 'unknown',
         speedMbps: 0,
@@ -392,10 +393,10 @@ describe('buildNicBody and the planned networks', () => {
 });
 
 describe('machineUsageOf', () => {
-  it('reads the per-machine adapter rates of the usage payload in either shape', () => {
+  it('reads the per-machine adapter rates of the usage payload in either shape, bytes a second as megabits', () => {
     const rates = machineUsageOf({
       usage: [
-        { machine_name: 'dev-1', nics: [{ adapter: 1, rx_bps: 8000000, tx_bps: '2000000' }] },
+        { machine_name: 'dev-1', nics: [{ adapter: 1, rx_bps: 1000000, tx_bps: '250000' }] },
         { name: 'dev-2', network: [{ adapter: 2, rx_bps: 0, tx_bps: 0 }] },
         { machine_name: 'dev-3' },
       ],

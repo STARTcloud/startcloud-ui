@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
 import { fetchTemplateSources } from '../api/templates';
+import { sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
 import {
   PUBLISH_FORM,
   canPublish,
@@ -44,7 +45,7 @@ const TEXT_FIELDS = [
  * no registry.
  *
  * @param {Object} options - The status, the host and whether to ask
- * @returns {{ sources: Array<Object>, failed: string }} The sources, `[{ name, url, enabled, default }]`, and the failure
+ * @returns {{ sources: Array<Object>, failed: string }} The sources as the agent answers them, and the failure
  */
 const useSources = ({ status, id, asked }) => {
   const [read, setRead] = useState(UNREAD);
@@ -91,10 +92,10 @@ const PublishFields = ({ form, sources, busy, onChange }) => {
         >
           <option value="">{t('machine.snapshotTemplateModal.selectOption')}</option>
           {sources.map(source => (
-            <option key={source.name} value={source.name}>
+            <option key={sourceKeyOf(source)} value={sourceKeyOf(source)}>
               {source.default
-                ? `${source.name} ${t('machine.snapshotTemplateModal.defaultSuffix')}`
-                : source.name}
+                ? `${sourceLabelOf(source)} ${t('machine.snapshotTemplateModal.defaultSuffix')}`
+                : sourceLabelOf(source)}
             </option>
           ))}
         </select>

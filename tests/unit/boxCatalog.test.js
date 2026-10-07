@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { flattenBoxCatalog, pickDefaultSource } from '../../src/features/hosts/utils/boxCatalog.js';
+import {
+  flattenBoxCatalog,
+  pickDefaultSource,
+  sourceDisplayNameOf,
+  sourceKeyOf,
+  sourceLabelOf,
+} from '../../src/features/hosts/utils/boxCatalog.js';
 
 const box = {
   name: 'debian13',
@@ -64,5 +70,26 @@ describe('pickDefaultSource', () => {
     expect(pickDefaultSource([{ name: 'a' }, { name: 'b' }])).toEqual({ name: 'a' });
     expect(pickDefaultSource([])).toBeNull();
     expect(pickDefaultSource(undefined)).toBeNull();
+  });
+});
+
+describe('a template source row', () => {
+  const agent = { id: 'boxvault', name: 'BoxVault', url: 'https://b', default: true };
+  const zone = { name: 'boxvault', url: 'https://b', default: true };
+
+  it('is keyed by the id hyperweaver-agent answers and drawn by its name', () => {
+    expect(sourceKeyOf(agent)).toBe('boxvault');
+    expect(sourceLabelOf(agent)).toBe('BoxVault');
+    expect(sourceDisplayNameOf(agent)).toBe('BoxVault');
+    expect(sourceLabelOf({ id: 'bare' })).toBe('bare');
+  });
+
+  it('is keyed by its own name on an agent whose rows carry no id', () => {
+    expect(sourceKeyOf(zone)).toBe('boxvault');
+    expect(sourceLabelOf(zone)).toBe('boxvault');
+    expect(sourceLabelOf({ ...zone, display_name: 'Box Vault' })).toBe('Box Vault');
+    expect(sourceDisplayNameOf(zone)).toBe('');
+    expect(sourceKeyOf(null)).toBe('');
+    expect(sourceKeyOf(pickDefaultSource([]))).toBe('');
   });
 });
