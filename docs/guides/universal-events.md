@@ -258,15 +258,25 @@ The `monitoring` topic carries what an agent's collector took, so a chart
 grows by push and no page asks on a timer. An agent sends each sample
 once, when it took it, under the member its REST route answers the rows
 in, because a read and a pushed sample are then taken with the same code.
-A client keeps of a frame the samples newer than the newest it holds of
-that host and, of a network or a pool sample, of that interface or pool,
-because a read that overlaps the stream and a frame replayed from the
-ring must add nothing twice. The topic has no snapshot event: on connect
-and on `reset` a chart reads its history again, `since` the newest
-sample the browser holds of that host and series, or the start of its
-window while it holds none, and `limit` the samples of its window, so a
-person costs the agent one request a series and the samples already
-held are never asked for twice. A UI backend lists
+A client keeps every sample of a frame as one record of its host, series,
+instant and entity, an interface or a pool its own entity, and a frame
+replayed from the ring writes the same record again, because a read that
+overlaps the stream and a replayed frame must add nothing twice; a pushed
+sample inside the span a history read answered of the series is dropped,
+and so is one older than the newest instant answered. A client reads the
+samples of a window from its own records by
+one range over the series and the two instants, and deletes the records
+older than the widest window before the newest held after each write,
+never on a clock; where two neighbouring samples of one entity lie more
+than two live intervals apart it draws a gap, the live interval the
+status' `live_interval` or its collection interval. The topic has no
+snapshot event: on connect and on `reset` a chart reads its own records
+first and asks the agent only for the spans of its window they lack, the
+span from the window's start to the oldest held sample and the span
+from the newest held sample to now, each `since` and `until` RFC 3339
+and, while the status names a collection interval, `limit` every sample
+of the span at that interval, so the samples already held are never
+asked for twice. A UI backend lists
 `monitoring` in `events.topics` only while an agent behind it lists the
 feature token `monitoring`. An agent that keeps no history and takes a
 sample only when it is asked sends nothing on the topic; its charts draw

@@ -18,18 +18,19 @@ export const fetchReading = (status, id, key) =>
 /**
  * The history of one series of one agent, the path `SERIES` names for
  * `metric`, with `since`, the newest sample the browser holds or the
- * instant the window reaches back to, and `limit`, the samples the
- * window holds at the agent's collection interval, beside the series'
- * own parameters; an agent that keeps no history answers the one sample
- * it took, its `sampling.strategy` reading `realtime`.
+ * instant the window reaches back to, `until`, the present, and, while
+ * the agent's collection interval is known, `limit`, the samples the
+ * window holds at it, beside the series' own parameters; an agent that
+ * keeps no history answers the one sample it took, its
+ * `sampling.strategy` reading `realtime`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} metric - The series' key in `SERIES`, e.g. `cpu`
- * @param {{ since: string, limit: number }} params - The parameters of `historyParams`
+ * @param {{ since: string, until: string, limit?: number }} params - The parameters of `historyParams`
  * @returns {Promise<Object>} The agent's answer, its rows under the series' member
  */
-export const fetchSeries = (status, id, metric, { since, limit }) =>
+export const fetchSeries = (status, id, metric, params) =>
   client.get(agentPath(status, id, SERIES[metric].path), {
-    params: { since, limit, ...SERIES[metric].params },
+    params: { ...params, ...SERIES[metric].params },
   });

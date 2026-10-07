@@ -73,6 +73,10 @@ Then('the address carries no fragment', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('');
 });
 
+Then('the tab stays open', ({ page }) => {
+  expect(page.isClosed()).toBe(false);
+});
+
 Then('the chrome draws the account menu', async ({ page }) => {
   await expect(page.locator('.user-menu').first()).toBeVisible();
 });

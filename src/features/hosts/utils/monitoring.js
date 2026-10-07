@@ -63,7 +63,7 @@ export const NETWORKING_READS = [
  * The series the performance charts draw, each the agent path its
  * history is read from, the member of the answer and of the event that
  * holds its rows, the event of the `monitoring` topic that carries a new
- * sample, the parameters the read sends beside `since` and `limit`, the
+ * sample, the parameters the read sends beside `since` and `until`, the
  * member that tells one entity's rows from another's, an interface or a
  * pool, and the tokens the host's own row must list.
  */
@@ -161,17 +161,15 @@ export const WINDOWS = [
 
 export const DEFAULT_QUERY = { window: '15min' };
 
-export const MAX_POINTS = 180;
-
 /**
  * The minutes of the widest window, the span the browser's ring keeps of
  * every series.
  */
 export const WIDEST_MINUTES = Math.max(...WINDOWS.map(entry => entry.minutes));
 
-const MINUTE_MS = 60 * 1000;
+const SECOND_MS = 1000;
 
-const SECONDS = 60;
+const MINUTE_MS = 60 * SECOND_MS;
 
 const DEFAULT_MINUTES = 15;
 
@@ -186,33 +184,76 @@ export const windowMinutes = window =>
   WINDOWS.find(entry => entry.key === window)?.minutes || DEFAULT_MINUTES;
 
 /**
- * The samples a window holds at an agent's collection interval, at most
- * the 180 a chart draws; the 180 while the interval is unknown.
+ * The milliseconds a window's key reaches back.
  *
- * @param {number} minutes - The window's minutes
- * @param {number} interval - The agent's collection interval in seconds, zero while unknown
- * @returns {number} The sample count
+ * @param {string} window - The window's key, e.g. `1hour`
+ * @returns {number} The span in milliseconds
  */
-export const windowSamples = (minutes, interval) =>
-  interval > 0 ? Math.min(MAX_POINTS, Math.ceil((minutes * SECONDS) / interval)) : MAX_POINTS;
+export const windowMs = window => windowMinutes(window) * MINUTE_MS;
 
 /**
- * The parameters a history read sends: `since`, the newest sample the
- * browser holds of the series or, while it holds none, the instant the
- * window reaches back to from `now`, and `limit`, the samples the window
- * holds at the agent's collection interval.
+ * The samples a span holds at an agent's collection interval, every one
+ * of them and one at least.
  *
- * @param {Object} options - The window, the interval, the newest held sample and the present
- * @param {string} options.window - The window's key
- * @param {number} options.interval - The agent's collection interval in seconds, zero while unknown
- * @param {number} options.newest - The instant of the newest sample held in milliseconds, zero while none is held
- * @param {number} options.now - The present, in milliseconds
- * @returns {{ since: string, limit: number }} The parameters
+ * @param {number} since - The span's start in milliseconds
+ * @param {number} until - The span's end in milliseconds
+ * @param {number} interval - The agent's collection interval in seconds, above zero
+ * @returns {number} The sample count
  */
-export const historyParams = ({ window, interval, newest, now }) => {
-  const minutes = windowMinutes(window);
-  return {
-    since: new Date(newest || now - minutes * MINUTE_MS).toISOString(),
-    limit: windowSamples(minutes, interval),
-  };
+export const spanSamples = (since, until, interval) =>
+  Math.max(1, Math.ceil((until - since) / SECOND_MS / interval));
+
+/**
+ * The occasions a series asks the agent on: `open`, the first read of a
+ * series; `refresh`, a Refresh, a stale series read again and the
+ * stream opening fresh or answering `reset`; `rewindow`, a change of the
+ * window.
+ */
+export const HISTORY_MODES = { open: 'open', refresh: 'refresh', rewindow: 'rewindow' };
+
+/**
+ * The spans a series asks the agent for after the store is read, so the
+ * agent answers only what the store lacks: the whole window from `start`
+ * to `now` while nothing is held, on every occasion; otherwise the span
+ * before the oldest held sample, from `start` to it, on `open` and
+ * `rewindow` while the oldest held is newer than `start`, and the span
+ * after the newest held sample, from it to `now`, on `open` and
+ * `refresh`; none on a `rewindow` the store already reaches back over.
+ *
+ * @param {Object} options - What is held, the window and the occasion
+ * @param {number|null} options.oldest - The instant of the oldest sample held in milliseconds, null while none is held
+ * @param {number|null} options.newest - The instant of the newest sample held in milliseconds, null while none is held
+ * @param {number} options.start - The instant the window reaches back to, in milliseconds
+ * @param {number} options.now - The present, in milliseconds
+ * @param {string} options.mode - One of `HISTORY_MODES`
+ * @returns {Array<{ since: number, until: number }>} The spans, oldest first
+ */
+export const historySpans = ({ oldest, newest, start, now, mode }) => {
+  if (oldest === null || newest === null) {
+    return [{ since: start, until: now }];
+  }
+  const backward = mode !== HISTORY_MODES.refresh && oldest > start;
+  const forward = mode !== HISTORY_MODES.rewindow;
+  return [
+    ...(backward ? [{ since: start, until: oldest }] : []),
+    ...(forward ? [{ since: newest, until: now }] : []),
+  ];
 };
+
+/**
+ * The parameters a history read of one span sends: `since` and `until`,
+ * the span's two instants as RFC 3339, and, while the agent's collection
+ * interval is known, `limit`, the samples the span holds at that
+ * interval; no `limit` while the interval is unknown.
+ *
+ * @param {Object} options - The span and the interval
+ * @param {number} options.since - The span's start in milliseconds
+ * @param {number} options.until - The span's end in milliseconds
+ * @param {number} options.interval - The agent's collection interval in seconds, zero while unknown
+ * @returns {{ since: string, until: string, limit?: number }} The parameters
+ */
+export const historyParams = ({ since, until, interval }) => ({
+  since: new Date(since).toISOString(),
+  until: new Date(until).toISOString(),
+  ...(interval > 0 ? { limit: spanSamples(since, until, interval) } : {}),
+});

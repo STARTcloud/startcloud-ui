@@ -1,10 +1,13 @@
+import { isGap } from '../charts/splice';
+
 import { historyParams } from './monitoring';
-import { latestOf, networkRates, timeOf } from './series';
+import { carriedOf, latestOf, networkRates, timeOf } from './series';
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 const LINK_PREFIX = 'link:';
 const ONE_SAMPLE = 1;
+const RATE_DIGITS = 3;
 
 /**
  * The series the machine page's charts draw, each the agent path it is
@@ -50,10 +53,11 @@ const round = (value, digits) => parseFloat(value.toFixed(digits));
 
 const isNumber = value => value !== null && value !== undefined && Number.isFinite(Number(value));
 
-const pointsOf = (rows, member, { divisor = 1, digits = 2 } = {}) =>
+const lastCarried = (rows, read) =>
   rows
-    .filter(row => isNumber(row[member]))
-    .map(row => [timeOf(row), round(Number(row[member]) / divisor, digits)]);
+    .map(read)
+    .filter(value => value !== null)
+    .at(-1) ?? null;
 
 /**
  * The key one link's series is held under, the link's name after
@@ -85,24 +89,23 @@ export const machineSeriesOf = metric => MACHINE_SERIES[linkOf(metric) ? 'link' 
 /**
  * The parameters a read of a machine's series sends: what is asked for
  * under the series' own parameter, the link of a link's series and the
- * machine of every other, and for a series read over the host's window
- * the `since` and `limit` of `historyParams`, `limit` 1 for the one
+ * machine of every other, and for a series read over a span the
+ * `since`, `until` and `limit` of `historyParams`, `limit` 1 for the one
  * sample a VirtualBox machine's usage answers.
  *
- * @param {Object} options - The series, the machine, the window, the interval, the newest held sample and the present
+ * @param {Object} options - The series, the machine, the span and the interval
  * @param {string} options.metric - The series' key
  * @param {string} options.name - The machine name
- * @param {string} options.window - The host's window key
+ * @param {number} options.since - The span's start in milliseconds
+ * @param {number} options.until - The span's end in milliseconds
  * @param {number} options.interval - The agent's collection interval in seconds, zero while unknown
- * @param {number} options.newest - The instant of the newest sample held in milliseconds, zero while none is held
- * @param {number} options.now - The present, in milliseconds
  * @returns {Object} The parameters
  */
-export const machineSeriesParams = ({ metric, name, window, interval, newest, now }) => {
+export const machineSeriesParams = ({ metric, name, since, until, interval }) => {
   const series = machineSeriesOf(metric);
   return {
     [series.target]: linkOf(metric) || name,
-    ...(series.windowed ? historyParams({ window, interval, newest, now }) : { limit: ONE_SAMPLE }),
+    ...(series.windowed ? historyParams({ since, until, interval }) : { limit: ONE_SAMPLE }),
   };
 };
 
@@ -116,23 +119,25 @@ export const machineSeriesParams = ({ metric, name, window, interval, newest, no
 export const zoneLinks = zone => (zone?.nics || []).map(nic => nic.physical).filter(Boolean);
 
 /**
- * The usage samples of a zone as the lines its charts draw: the share of
- * the host's processors in percent and the resident memory and the swap
- * in gigabytes, each only of the samples that carry the number.
- *
- * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {{ cpu: Array, resident: Array, swap: Array }} The points
+ * The readers of a zone's usage sample its charts' lines draw, each null
+ * for a sample that does not carry the number: the share of the host's
+ * processors in percent and the resident memory and the swap in
+ * gigabytes.
  */
-export const zoneUsageSeries = rows => ({
-  cpu: pointsOf(rows, 'cpu_pct'),
-  resident: pointsOf(rows, 'rss_bytes', { divisor: GIB }),
-  swap: pointsOf(rows, 'swap_bytes', { divisor: GIB }),
-});
+export const zoneValues = {
+  cpu: carriedOf('cpu_pct', { digits: 2 }),
+  resident: carriedOf('rss_bytes', { divisor: GIB, digits: 2 }),
+  swap: carriedOf('swap_bytes', { divisor: GIB, digits: 2 }),
+};
 
 const leafOf = dataset => String(dataset).split('/').pop();
 
-const withPoint = (points, at, bytes) =>
-  isNumber(bytes) ? [...points, [at, round(Number(bytes) / MIB, 3)]] : points;
+const withPoint = (points, at, bytes, gap) => {
+  if (gap) {
+    return [...points, [at, null]];
+  }
+  return isNumber(bytes) ? [...points, [at, round(Number(bytes) / MIB, 3)]] : points;
+};
 
 const withDevice = (devices, row) => {
   const dataset = String(row.dataset);
@@ -146,10 +151,11 @@ const withDevice = (devices, row) => {
     writeIops: null,
   };
   const at = timeOf(row);
+  const gap = isGap(row);
   devices[dataset] = {
     ...held,
-    read: withPoint(held.read, at, row.read_bps),
-    write: withPoint(held.write, at, row.write_bps),
+    read: withPoint(held.read, at, row.read_bps, gap),
+    write: withPoint(held.write, at, row.write_bps, gap),
     readIops: isNumber(row.read_iops) ? Math.round(Number(row.read_iops)) : held.readIops,
     writeIops: isNumber(row.write_iops) ? Math.round(Number(row.write_iops)) : held.writeIops,
   };
@@ -165,9 +171,10 @@ const byPoolThenDevice = (first, second) =>
  * volume's dataset, its pool and its device, the dataset's last part
  * where the row names no device, the megabytes a second read and written
  * as points, each only of the samples that carry the number, the agent
- * answering null for a rate it could not take, and the operations a
- * second of the newest sample that carries them, null while none does,
- * the entries ordered by pool and then by device.
+ * answering null for a rate it could not take, a gap row a null point
+ * of each, and the operations a second of the newest sample that carries
+ * them, null while none does, the entries ordered by pool and then by
+ * device.
  *
  * @param {Array<Object>} rows - The rows held, oldest first per dataset
  * @returns {Array<{ dataset: string, pool: string, device: string, read: Array, write: Array, readIops: number|null, writeIops: number|null }>} The volumes
@@ -176,38 +183,31 @@ export const diskDevices = rows =>
   Object.values(rows.filter(row => row.dataset).reduce(withDevice, {})).sort(byPoolThenDevice);
 
 /**
- * The usage samples of one link as the two lines its chart draws,
- * megabits a second received and sent.
- *
- * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {{ rx: Array, tx: Array }} The points
+ * The readers of one link's usage sample its chart's lines draw, the
+ * megabits a second received and sent, to three decimals, null for a gap
+ * row.
  */
-export const linkSeries = rows => ({
-  rx: rows.map(row => [timeOf(row), round(networkRates(row).rx, 3)]),
-  tx: rows.map(row => [timeOf(row), round(networkRates(row).tx, 3)]),
-});
+export const linkValues = {
+  rx: row => (isGap(row) ? null : round(networkRates(row).rx, RATE_DIGITS)),
+  tx: row => (isGap(row) ? null : round(networkRates(row).tx, RATE_DIGITS)),
+};
 
 /**
- * The usage samples of a VirtualBox machine as the lines its charts
- * draw, each only of the samples that carry the number, a rate being
- * null on the first observation: the guest's and the monitor's share of
- * the processors in percent, the memory used in gigabytes, and the
- * megabytes a second received, sent, read and written.
- *
- * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {{ cpuGuest: Array, cpuVmm: Array, memory: Array, netRx: Array, netTx: Array, diskRead: Array, diskWrite: Array }} The points
+ * The readers of a VirtualBox machine's usage sample its charts' lines
+ * draw, each null for a sample that does not carry the number, a rate
+ * being null on the first observation: the guest's and the monitor's
+ * share of the processors in percent, the memory used in gigabytes, and
+ * the megabytes a second received, sent, read and written.
  */
-export const machineUsageSeries = rows => ({
-  cpuGuest: pointsOf(rows, 'cpu_guest_pct'),
-  cpuVmm: pointsOf(rows, 'cpu_vmm_pct'),
-  memory: pointsOf(rows, 'rss_bytes', { divisor: GIB }),
-  netRx: pointsOf(rows, 'net_rx_bps', { divisor: MIB, digits: 3 }),
-  netTx: pointsOf(rows, 'net_tx_bps', { divisor: MIB, digits: 3 }),
-  diskRead: pointsOf(rows, 'disk_read_bps', { divisor: MIB, digits: 3 }),
-  diskWrite: pointsOf(rows, 'disk_write_bps', { divisor: MIB, digits: 3 }),
-});
-
-const lastValue = points => (points.length > 0 ? points[points.length - 1][1] : null);
+export const machineValues = {
+  cpuGuest: carriedOf('cpu_guest_pct', { digits: 2 }),
+  cpuVmm: carriedOf('cpu_vmm_pct', { digits: 2 }),
+  memory: carriedOf('rss_bytes', { divisor: GIB, digits: 2 }),
+  netRx: carriedOf('net_rx_bps', { divisor: MIB, digits: RATE_DIGITS }),
+  netTx: carriedOf('net_tx_bps', { divisor: MIB, digits: RATE_DIGITS }),
+  diskRead: carriedOf('disk_read_bps', { divisor: MIB, digits: RATE_DIGITS }),
+  diskWrite: carriedOf('disk_write_bps', { divisor: MIB, digits: RATE_DIGITS }),
+};
 
 /**
  * What the badges of a zone's charts read of its newest usage sample:
@@ -217,10 +217,10 @@ const lastValue = points => (points.length > 0 ? points[points.length - 1][1] : 
  * @param {Array<Object>} rows - The rows held, oldest first
  * @returns {{ cpu: number|null, resident: number|null }} The newest values
  */
-export const zoneUsageLatest = rows => {
-  const series = zoneUsageSeries(rows);
-  return { cpu: lastValue(series.cpu), resident: lastValue(series.resident) };
-};
+export const zoneUsageLatest = rows => ({
+  cpu: lastCarried(rows, zoneValues.cpu),
+  resident: lastCarried(rows, zoneValues.resident),
+});
 
 /**
  * What the badges of a VirtualBox machine's charts read of its newest
@@ -234,14 +234,13 @@ export const zoneUsageLatest = rows => {
  */
 export const machineUsageLatest = rows => {
   const row = latestOf(rows);
-  const series = machineUsageSeries(rows);
   return {
     cpu: isNumber(row?.cpu_pct) ? round(Number(row.cpu_pct), 1) : null,
     memoryTotal: isNumber(row?.ram_total_bytes)
       ? round(Number(row.ram_total_bytes) / GIB, 1)
       : null,
-    netRx: lastValue(series.netRx),
-    netTx: lastValue(series.netTx),
+    netRx: lastCarried(rows, machineValues.netRx),
+    netTx: lastCarried(rows, machineValues.netTx),
     additions: row?.guest_additions !== false,
   };
 };

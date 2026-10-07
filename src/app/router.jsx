@@ -12,7 +12,6 @@ import {
   JOIN_INTENT_KEY,
   LOGIN_METHOD_KEY,
   SILENT_SSO_KEY,
-  UPDATE_COMMAND,
 } from '../config/constants';
 import { GuardProvider } from '../contexts/GuardContext';
 import { useStatus } from '../contexts/StatusContext';
@@ -31,7 +30,6 @@ import {
   sidebar as adminSidebar,
   storage,
   suspendUser,
-  updateStatus,
   usersOf,
 } from '../features/admin';
 import { ApplicationsPage, issuerApplications } from '../features/applications';
@@ -457,7 +455,6 @@ const adminAdapterFor = status => {
   return {
     ...(method === 'backend' ? backendAdminMembers : {}),
     ...(hasConfigFiles(status) ? { config: adminConfig } : {}),
-    ...(method === 'cookie' ? {} : { updateStatus }),
     ...(hasFeature(status, 'update') ? { update: appUpdate } : {}),
   };
 };
@@ -917,7 +914,6 @@ const AdminRoute = ({ globalAdmin, user = null, page = 'config' }) => {
         returnTo={returnTo}
         allowed={globalAdmin}
         admin={admin}
-        updateCommand={UPDATE_COMMAND(status.role)}
         page={page}
       />
     </GuardProvider>

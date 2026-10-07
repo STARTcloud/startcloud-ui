@@ -1305,8 +1305,7 @@
       "resume": "Resume",
       "suspend": "Suspend",
       "delete": "Delete",
-      "upload": "Upload",
-      "copy": "Copy"
+      "upload": "Upload"
     },
     "messages": {
       "operationSuccessful": "Operation completed successfully"
@@ -1321,9 +1320,6 @@
       "total": "Total: {{space}}"
     },
     "update": {
-      "title": "Update Available",
-      "message": "A new version (v{{latestVersion}}) is available. You are currently running v{{currentVersion}}.",
-      "instructions": "To update, run the following command on your server:",
       "confirmTitle": "Update {{app}}",
       "confirmMessage": "Update {{app}} from {{currentVersion}} to {{latestVersion}}? The update is downloaded and applied, then {{app}} restarts on the new version."
     }

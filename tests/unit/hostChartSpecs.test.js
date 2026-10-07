@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  CARD_LEGEND,
-  CHART_ORDER,
-  CHART_TEXTS,
-  DEFAULT_VISIBILITY,
-  chartSpec,
-  chartToggles,
-} from '../../src/features/hosts/utils/chartSpecs.js';
+import { CHART_ORDER, chartOf } from '../../src/features/hosts/charts/registry.js';
+import { chartSpec, chartToggles } from '../../src/features/hosts/utils/chartSpecs.js';
 
 const FIRST = '2026-09-27T12:00:00.000Z';
 const GIB = 1024 ** 3;
@@ -16,24 +10,24 @@ const t = key => key;
 
 const at = text => new Date(text).getTime();
 
-const specOf = (metric, rows, visibility = DEFAULT_VISIBILITY[metric]) =>
+const specOf = (metric, rows, visibility = chartOf(metric).groups) =>
   chartSpec(metric, { rows, visibility, t });
 
 describe('the charts', () => {
-  it("draw in hyperweaver-ui's order, each with its own words", () => {
+  it('draw in the host page order, each with its own words', () => {
     expect(CHART_ORDER).toEqual(['pool-io', 'arc', 'network', 'cpu', 'memory']);
-    expect(Object.keys(CHART_TEXTS).sort()).toEqual([...CHART_ORDER].sort());
-    expect(CHART_TEXTS.cpu.emptyKey).toBe('hosts.charts.cpu.empty');
+    expect(CHART_ORDER.every(metric => chartOf(metric).texts.emptyKey)).toBe(true);
+    expect(chartOf('cpu').texts.emptyKey).toBe('hosts.charts.cpu.empty');
   });
 
   it('open with every group shown but the load averages', () => {
-    expect(DEFAULT_VISIBILITY.cpu).toEqual({ overall: true, cores: true, load: false });
-    expect(DEFAULT_VISIBILITY.network).toEqual({ read: true, write: true, total: true });
-    expect(DEFAULT_VISIBILITY.arc).toEqual({});
+    expect(chartOf('cpu').groups).toEqual({ overall: true, cores: true, load: false });
+    expect(chartOf('network').groups).toEqual({ read: true, write: true, total: true });
+    expect(chartOf('arc').groups).toEqual({});
   });
 
   it('draw the legend in every card but the CPU chart', () => {
-    expect(CHART_ORDER.filter(metric => !CARD_LEGEND[metric])).toEqual(['cpu']);
+    expect(CHART_ORDER.filter(metric => !chartOf(metric).cardLegend)).toEqual(['cpu']);
   });
 });
 

@@ -1,7 +1,8 @@
-import { toneAt } from '../../../utils/chart';
 import { compareText } from '../../../utils/sort';
+import { chartOf } from '../charts/registry';
 
 import { hostHasFeature } from './capabilities';
+import { entitySpec, summarySpec as summaryOf } from './chartSpecs';
 import { latestPer } from './resources';
 import { networkRates } from './series';
 
@@ -345,17 +346,6 @@ export const INTERFACE_FILTERS = [
 ];
 
 /**
- * The three charts that draw every interface together, hyperweaver-ui's
- * summary charts in its order, each the member of an interface's points
- * it draws and the key of its title.
- */
-export const SUMMARY_CHARTS = [
-  { key: 'rx', member: 'first', titleKey: 'host.bandwidthCharts.rxBandwidth' },
-  { key: 'tx', member: 'second', titleKey: 'host.bandwidthCharts.txBandwidth' },
-  { key: 'total', member: 'total', titleKey: 'host.bandwidthCharts.totalBandwidth' },
-];
-
-/**
  * The orders the charts of the interfaces draw in, hyperweaver-ui's four,
  * each the member of an interface's points it orders by, none for the
  * order by name.
@@ -369,55 +359,31 @@ export const CHART_SORTS = [
 
 export const DEFAULT_CHART_SORT = 'bandwidth';
 
-const INTERFACE_LINES = [
-  { member: 'first', nameKey: 'hosts.charts.network.rx', tone: 'blue', width: 2 },
-  { member: 'second', nameKey: 'hosts.charts.network.tx', tone: 'orange', width: 2 },
-  { member: 'total', nameKey: 'hosts.charts.network.total', tone: 'green', width: 3 },
-];
-
-const axesOf = t => [{ name: t('hosts.charts.network.axis'), min: 0, unit: ' Mbps' }];
+const NO_GROUPS = {};
 
 /**
- * What one summary chart draws, a line an interface in a tone of its
- * own, the interfaces that hold no point left out, megabits a second on
- * the one axis.
+ * What one summary chart of the Bandwidth page draws, the
+ * `network-summary` entry of the registry: a line an interface of one
+ * member of its points.
  *
  * @param {string} member - The member of an interface's points, `first`, `second` or `total`
  * @param {Object<string, Object>} entities - The points per interface of `networkSeries`
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const summarySpec = (member, entities, t) => ({
-  axes: axesOf(t),
-  series: Object.entries(entities)
-    .map(([name, points], index) => ({
-      key: name,
-      name,
-      points: points[member],
-      tone: toneAt(index),
-      width: 2,
-    }))
-    .filter(line => line.points.length > 0),
-});
+export const summarySpec = (member, entities, t) =>
+  summaryOf(chartOf('network-summary'), member, entities, t);
 
 /**
- * What the chart of one interface draws, three lines, received, sent and
- * both, the total heavy, megabits a second on the one axis.
+ * What the chart of one interface draws, the `interface` entry of the
+ * registry over the interface's points.
  *
  * @param {{ first: Array, second: Array, total: Array }} points - The interface's points
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const interfaceSpec = (points, t) => ({
-  axes: axesOf(t),
-  series: INTERFACE_LINES.map(({ member, nameKey, tone, width }) => ({
-    key: member,
-    name: t(nameKey),
-    points: points[member],
-    tone,
-    width,
-  })),
-});
+export const interfaceSpec = (points, t) =>
+  entitySpec(chartOf('interface'), { points, visibility: NO_GROUPS, t });
 
 const lastOf = points => (points.length > 0 ? points[points.length - 1][1] : 0);
 

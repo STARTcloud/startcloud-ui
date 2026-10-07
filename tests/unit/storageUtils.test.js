@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  SUMMARY_CHARTS,
-  ioSpec,
-  summarySpec,
-} from '../../src/features/hosts/utils/chartDefaults.js';
+import { chartOf } from '../../src/features/hosts/charts/registry.js';
+import { ioSpec, summarySpec } from '../../src/features/hosts/utils/chartDefaults.js';
 import {
   DATASET_FILTERS,
   DEFAULT_STORAGE_CHART_SORT,
@@ -299,7 +296,8 @@ describe('the charts', () => {
   });
 
   it('lists the three summary charts and the four orders', () => {
-    expect(SUMMARY_CHARTS.map(chart => [chart.key, chart.member])).toEqual([
+    const { charts } = chartOf('storage-summary');
+    expect(charts.map(chart => [chart.key, chart.member])).toEqual([
       ['read', 'first'],
       ['write', 'second'],
       ['total', 'total'],

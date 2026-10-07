@@ -317,6 +317,21 @@ Feature: hosts
     And the host was sent PUT to "/api/agents/1/config/machines" carrying nothing at "/machines/default_memory_mb"
     And the host was sent GET to "/api/agents/1/config/machines" 2 times
 
+  Scenario: Configuration page: Restart sits in the heading with no pending list, and confirming it sends the agent's restart and reads the restart status again
+    Given the host answers the hosts fixture
+    And the host answers the hosts-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/config/machines"
+    Then I see "Schema version 1"
+    And I do not see "Restart required."
+    And the host was sent GET to "/api/agents/1/config/restart-status" 1 times
+    When I click "Restart"
+    And I fill the field placeholdered "Type 'restart' to confirm" with "restart"
+    And I confirm the dialog with "Restart"
+    Then I see "Restarting."
+    And the host was sent POST to "/api/agents/1/config/restart" 1 times
+    And the host was sent GET to "/api/agents/1/config/restart-status" 2 times
+
   Scenario: Registry: the hosts page draws the registry's columns and Add host for a super-admin, Test connection and Add send the registry's writes
     Given the host answers the hosts fixture
     And the host answers the hosts-config fixture
@@ -657,14 +672,13 @@ Feature: hosts
     And the host was sent GET to "/api/agents/3/monitoring/storage/arc" 2 times
     And the host was sent GET to "/api/agents/3/monitoring/status" 2 times
 
-  Scenario: Host overview: the charts read their history over the window, the samples of the window at most 180, a change of the window reading it again once
+  Scenario: Host overview: the charts read their history over the window, every sample of it, a change of the window reading the browser's store and asking the agent once for the span it lacks
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
     When I open "/hosts/3"
     Then the host page draws the "cpu" chart
-    And the host was asked "/api/agents/3/monitoring/system/cpu" with "limit" as "180"
     And the host was asked "/api/agents/3/monitoring/system/cpu" with "include_cores" as "true"
     And the host was asked "/api/agents/3/monitoring/network/usage" with "per_interface" as "true"
     And the host page draws no chart resolution select

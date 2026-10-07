@@ -36,7 +36,7 @@ Feature: config contract
     Then I see "Configuration updated successfully."
     And the host was sent GET to "/api/config/restart-status" 2 times
     And I see "Restart required."
-    When I click "Restart"
+    When I click the last "Restart"
     And I fill the field placeholdered "Type 'restart' to confirm" with "restart"
     And I confirm the dialog with "Restart"
     Then I see "Restarting."

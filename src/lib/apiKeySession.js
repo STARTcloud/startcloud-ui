@@ -6,6 +6,8 @@ const TRAY_CLAIM_PATH = '/api/auth/tray-claim';
 const SILENT_START_PATH = '/api/auth/oidc/silent-start';
 const CODE_START_PATH = '/api/auth/oidc/code-start';
 const AUTH_CHANNEL = 'hw-auth';
+const AUTH_PING = 'auth-ping';
+const AUTH_PONG = 'auth-pong';
 const AUTH_UPDATED = 'auth-updated';
 const TRAY_TOKEN = /[#&]tray=(?<token>[A-Za-z0-9_-]+)/u;
 const DEAD_STATUSES = [401, 403];
@@ -170,12 +172,15 @@ export const userOfAccount = (profile, account) => ({
  * claim first on any route, the tray landing the browser on `/` and not
  * on the sign-in page. A sign-in the provider completed is answered once
  * by the next `load()` without a second read, the profile the sign-in
- * just proved standing for it. A handoff tells the other tabs over the
- * `BroadcastChannel` `hw-auth`, `auth-updated` naming the storage key
- * that changed, the `storage` event the fallback, and a tab that hears it
- * while signed out or holding another key reloads; no ping, no pong and
- * no self-close, hyperweaver-ui's two timers, the handoff tab staying
- * open. Once the key is proved, `GET /api/user` is read with the same
+ * just proved standing for it. A handoff tells the other tabs of the
+ * origin over the `BroadcastChannel` `hw-auth`: `auth-ping`, which every
+ * open tab answers with `auth-pong`, then `auth-updated` naming the
+ * storage key that changed, the `storage` event the fallback, a tab that
+ * hears it while signed out or holding another key reloading into the
+ * session; the tab the tray or the hand-off opened closes itself the
+ * moment a pong arrives and stays open while none does, so a tab a
+ * person opened is never closed and nothing waits on a clock, the
+ * answer itself being the signal. Once the key is proved, `GET /api/user` is read with the same
  * bearer and held in memory, the person's record in the identity
  * provider's shape without its `preferred_*` members, because the agent
  * keeps no user preferences: the mode, the theme, the motion switch and
@@ -288,23 +293,36 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
   };
 
   const channel = channelOf();
+  let handingOff = false;
 
   const stale = () => {
     const stored = current()?.key || '';
     return Boolean(stored) && stored !== held;
   };
 
+  const post = type => channel?.postMessage({ type, key: storageKey, senderId: TAB_ID });
+
   const announce = () => {
-    channel?.postMessage({ type: AUTH_UPDATED, key: storageKey, senderId: TAB_ID });
+    handingOff = true;
+    post(AUTH_PING);
+    post(AUTH_UPDATED);
+  };
+
+  const hear = ({ type, key, senderId }) => {
+    if (key !== storageKey || senderId === TAB_ID) {
+      return;
+    }
+    if (type === AUTH_PING) {
+      post(AUTH_PONG);
+    } else if (type === AUTH_PONG && handingOff) {
+      window.close();
+    } else if (type === AUTH_UPDATED && stale()) {
+      window.location.reload();
+    }
   };
 
   if (channel) {
-    channel.onmessage = event => {
-      const { type, key, senderId } = event.data || {};
-      if (type === AUTH_UPDATED && key === storageKey && senderId !== TAB_ID && stale()) {
-        window.location.reload();
-      }
-    };
+    channel.onmessage = event => hear(event.data || {});
   }
 
   window.addEventListener('storage', event => {

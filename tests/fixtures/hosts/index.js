@@ -16,6 +16,7 @@ export default {
   'GET /api/agents/1/config/storage/schema': { status: 200, file: 'config-storage-schema.json' },
   'PUT /api/agents/1/config/machines': { status: 200, file: 'config-put-200.json' },
   'GET /api/agents/1/config/restart-status': { status: 200, file: 'config-restart-status.json' },
+  'POST /api/agents/1/config/restart': { status: 202, file: 'config-restart-202.json' },
   'POST /api/agents/1/machines/dev-2/start': { status: 200, file: 'action-200.json' },
   'POST /api/agents/1/machines/dev-1/stop': { status: 200, file: 'action-200.json' },
   'POST /api/agents/1/machines/dev-1/restart': { status: 200, file: 'action-200.json' },

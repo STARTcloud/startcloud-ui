@@ -1218,10 +1218,8 @@ joinIntentKey })` lists the organizations open to discovery with their
   `orgConsole.*` and `discovery.*` in `shared.json`; the catalog carries
   both unrouted.
 - **AdminPage**: the admin page of an app with accounts and configuration
-  of its own, `AdminPage({ session, returnTo, allowed, admin,
-updateCommand, page })`: the update notice (`UpdateNotice`, the
-  app's own `updateCommand` with a copy button) while the adapter carries
-  `updateStatus` and it reports one, then the page the route names, the
+  of its own, `AdminPage({ session, returnTo, allowed, admin, page })`:
+  the page the route names, the
   Users and All organizations pages of a host with accounts of its own
   being the identity feature's own `UsersPage` and `OrganizationsPage`,
   drawn by the router at `/admin/users` and `/admin/organizations` over
@@ -1231,7 +1229,9 @@ updateCommand, page })`: the update notice (`UpdateNotice`, the
   route, `/admin/config/<name>` the file of that name in `status.config`
   and `/admin/config` the first, drawn under the page heading with no
   tab strip, the configuration page's heading being the file's root
-  `title` in the `PageHeader` shape with Update as its action and the
+  `title` in the `PageHeader` shape with Restart and Update as its
+  actions, Restart offered at all times behind the typed confirmation
+  over `POST /api/config/restart`, and the
   shared admin page's own heading not drawn above it, because the crumb
   names the place, the file's `schemaVersion` a muted line under that
   heading and never a section (config contract), the sidebar's Configuration entry a tree over the list with
@@ -1243,7 +1243,7 @@ updateCommand, page })`: the update notice (`UpdateNotice`, the
   mail) and System (`AdminStorage`, one bar per
   storage path); `admin` is `{ users: { list, suspend, resume, remove },
 organizations: { list, update, remove, suspend, resume }, config: { get,
-schema, update, restartStatus, restart, action }, storage, updateStatus,
+schema, update, restartStatus, restart, action }, storage,
 update: { check, apply } }`,
   each member present only where the host answers it, `allowed` the
   app's global-admin flag; a visitor is sent to sign in and a non-admin

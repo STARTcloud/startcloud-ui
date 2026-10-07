@@ -1,21 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  arcSeries,
-  cpuSeries,
+  KEPT_MS,
+  arcValues,
+  coreSeries,
+  cpuValues,
   drawnRows,
   latestOf,
-  memorySeries,
+  memoryValues,
   mergeRows,
   networkRates,
   networkSeries,
   poolSeries,
-  ringRows,
   rowsOf,
   samplesIn,
   timeOf,
   windowOf,
 } from '../../src/features/hosts/utils/series.js';
+
+const GAP = { scan_timestamp: '2026-09-27T12:00:02.500Z', gap: true };
 
 const FIRST = '2026-09-27T12:00:00.000Z';
 const SECOND = '2026-09-27T12:00:05.000Z';
@@ -71,18 +74,11 @@ describe('mergeRows', () => {
       ['eth0', SECOND],
     ]);
   });
-
-  it('keeps the newest rows of each entity up to the limit', () => {
-    const rows = [sample(FIRST), sample(SECOND), sample(THIRD)];
-    const merged = mergeRows([], rows, { limit: 2 });
-    expect(merged.map(row => row.scan_timestamp)).toEqual([SECOND, THIRD]);
-  });
 });
 
-describe('windowOf, ringRows and drawnRows', () => {
+describe('windowOf, KEPT_MS and drawnRows', () => {
   const EARLY = '2026-09-27T11:44:59.000Z';
   const EDGE = '2026-09-27T11:45:05.000Z';
-  const YESTERDAY = '2026-09-26T11:59:59.000Z';
 
   it('keeps the window before the newest sample held', () => {
     const rows = [EARLY, EDGE, FIRST, SECOND].map(stamp => sample(stamp));
@@ -110,37 +106,44 @@ describe('windowOf, ringRows and drawnRows', () => {
     ]);
   });
 
-  it('keeps the widest window in the ring and drops the day before it', () => {
-    const rows = [sample(YESTERDAY), sample(EARLY), sample(SECOND)];
-    expect(ringRows(rows).map(row => row.scan_timestamp)).toEqual([EARLY, SECOND]);
-    expect(ringRows([])).toEqual([]);
+  it('keeps the widest window, a day, in the store', () => {
+    expect(KEPT_MS).toBe(24 * 60 * 60 * 1000);
   });
 
-  it('draws the window before the newest sample, the 180 newest of it', () => {
+  it('draws every sample of the window before the newest one', () => {
     const start = at(FIRST);
     const rows = [...Array(300).keys()].map(index =>
       sample(new Date(start + index * 1000).toISOString())
     );
     const drawn = drawnRows(rows, { minutes: 15 });
-    expect(drawn).toHaveLength(180);
+    expect(drawn).toHaveLength(300);
     expect(drawn[drawn.length - 1]).toEqual(rows[299]);
     expect(drawnRows(rows, { minutes: 1 })).toHaveLength(61);
     expect(drawnRows([], { minutes: 15 })).toEqual([]);
   });
+
+  it('draws a gap row where two neighbours lie over two live intervals apart', () => {
+    const rows = [sample(FIRST), sample(SECOND), sample('2026-09-27T12:00:30.000Z')];
+    const drawn = drawnRows(rows, { minutes: 15, liveMs: 5000 });
+    expect(drawn.map(row => row.gap === true)).toEqual([false, false, true, false]);
+    expect(drawn[2].scan_timestamp).toBe('2026-09-27T12:00:17.500Z');
+    expect(drawnRows(rows, { minutes: 15 })).toEqual(rows);
+  });
 });
 
 describe('latestOf and samplesIn', () => {
-  it('answer the newest sample and the count of instants', () => {
+  it('answer the newest sample and the count of instants, a gap row not counted', () => {
     const rows = [sample(FIRST), sample(THIRD), sample(SECOND)];
     const pair = [sample(FIRST, { link: 'eth0' }), sample(FIRST, { link: 'wlan0' })];
     expect(latestOf(rows)).toEqual(sample(THIRD));
     expect(latestOf([])).toBeNull();
     expect(samplesIn(rows)).toBe(3);
     expect(samplesIn(pair)).toBe(1);
+    expect(samplesIn([sample(FIRST), GAP, sample(SECOND)])).toBe(2);
   });
 });
 
-describe('cpuSeries', () => {
+describe('cpuValues and coreSeries', () => {
   const rows = [
     sample(FIRST, {
       cpu_utilization_pct: '12.5',
@@ -156,29 +159,30 @@ describe('cpuSeries', () => {
     }),
   ];
 
-  it('draws the overall use, the load and the IO delay of the samples that carry one', () => {
-    const points = cpuSeries(rows);
-    expect(points.overall).toEqual([
-      [at(FIRST), 12.5],
-      [at(SECOND), 20],
-    ]);
-    expect(points.ioDelay).toEqual([[at(FIRST), 1.5]]);
-    expect(points.load1).toEqual([
-      [at(FIRST), 0.4],
-      [at(SECOND), 0],
-    ]);
+  it('read the overall use, the load and the IO delay of the samples that carry one', () => {
+    expect(rows.map(cpuValues.overall)).toEqual([12.5, 20]);
+    expect(rows.map(cpuValues.ioDelay)).toEqual([1.5, null]);
+    expect(rows.map(cpuValues.load1)).toEqual([0.4, 0]);
+  });
+
+  it('answer null for a gap row', () => {
+    expect(cpuValues.overall(GAP)).toBeNull();
+    expect(cpuValues.ioDelay(GAP)).toBeNull();
+    expect(arcValues.hitRatio(GAP)).toBeNull();
+    expect(arcValues.compressionRatio(GAP)).toBeNull();
+    expect(coreSeries([GAP])).toEqual({});
   });
 
   it('names a core by its cpu_id, or cpu and the number of the core', () => {
-    expect(cpuSeries(rows).cores).toEqual({
+    expect(coreSeries(rows)).toEqual({
       cpu0: [[at(FIRST), 10]],
       cpu1: [[at(SECOND), 30]],
     });
   });
 });
 
-describe('memorySeries', () => {
-  it('answers gigabytes and the cached line only of the samples that carry it', () => {
+describe('memoryValues', () => {
+  it('answers gigabytes and the cached value only of the samples that carry it', () => {
     const rows = [
       sample(FIRST, {
         total_memory_bytes: 8 * GIB,
@@ -193,16 +197,9 @@ describe('memorySeries', () => {
         cached_bytes: GIB,
       }),
     ];
-    const points = memorySeries(rows);
-    expect(points.used).toEqual([
-      [at(FIRST), 6],
-      [at(SECOND), 4],
-    ]);
-    expect(points.free).toEqual([
-      [at(FIRST), 2],
-      [at(SECOND), 4],
-    ]);
-    expect(points.cached).toEqual([[at(SECOND), 1]]);
+    expect(rows.map(memoryValues.used)).toEqual([6, 4]);
+    expect(rows.map(memoryValues.free)).toEqual([2, 4]);
+    expect(rows.map(memoryValues.cached)).toEqual([null, 1]);
   });
 });
 
@@ -251,6 +248,27 @@ describe('networkSeries and poolSeries', () => {
     });
   });
 
+  it('draw a null point of each line for a gap row', () => {
+    const rows = [
+      sample(FIRST, { link: 'eth0', rx_mbps: 1, tx_mbps: 2 }),
+      { ...GAP, link: 'eth0' },
+    ];
+    expect(networkSeries(rows).eth0).toEqual({
+      first: [
+        [at(FIRST), 1],
+        [at(GAP.scan_timestamp), null],
+      ],
+      second: [
+        [at(FIRST), 2],
+        [at(GAP.scan_timestamp), null],
+      ],
+      total: [
+        [at(FIRST), 3],
+        [at(GAP.scan_timestamp), null],
+      ],
+    });
+  });
+
   it('draw three lines a pool in megabytes a second', () => {
     const rows = [
       sample(FIRST, {
@@ -269,37 +287,33 @@ describe('networkSeries and poolSeries', () => {
   });
 });
 
-describe('arcSeries', () => {
+describe('arcValues', () => {
   it('answers the sizes in gigabytes and the hit ratio the agent answers', () => {
-    const rows = [
-      sample(FIRST, {
-        arc_size: String(2 * GIB),
-        arc_target_size: String(4 * GIB),
-        mru_size: GIB,
-        mfu_size: GIB,
-        hit_ratio: '95.5',
-        data_demand_efficiency: 99,
-        data_prefetch_efficiency: 50,
-      }),
-    ];
-    const points = arcSeries(rows);
-    expect(points.size).toEqual([[at(FIRST), 2]]);
-    expect(points.target).toEqual([[at(FIRST), 4]]);
-    expect(points.mru).toEqual([[at(FIRST), 1]]);
-    expect(points.hitRatio).toEqual([[at(FIRST), 95.5]]);
-    expect(points.demandEfficiency).toEqual([[at(FIRST), 99]]);
-    expect(points.prefetchEfficiency).toEqual([[at(FIRST), 50]]);
-    expect(points.compressionRatio).toEqual([[at(FIRST), 1]]);
+    const row = sample(FIRST, {
+      arc_size: String(2 * GIB),
+      arc_target_size: String(4 * GIB),
+      mru_size: GIB,
+      mfu_size: GIB,
+      hit_ratio: '95.5',
+      data_demand_efficiency: 99,
+      data_prefetch_efficiency: 50,
+    });
+    expect(arcValues.size(row)).toBe(2);
+    expect(arcValues.target(row)).toBe(4);
+    expect(arcValues.mru(row)).toBe(1);
+    expect(arcValues.hitRatio(row)).toBe(95.5);
+    expect(arcValues.demandEfficiency(row)).toBe(99);
+    expect(arcValues.prefetchEfficiency(row)).toBe(50);
+    expect(arcValues.compressionRatio(row)).toBe(1);
   });
 
   it('takes the hit ratio from the hits and the misses where the agent answers none', () => {
-    const rows = [sample(FIRST, { hit_ratio: 0, hits: '90', misses: '10' })];
-    expect(arcSeries(rows).hitRatio).toEqual([[at(FIRST), 90]]);
-    expect(arcSeries([sample(FIRST)]).hitRatio).toEqual([[at(FIRST), 0]]);
+    expect(arcValues.hitRatio(sample(FIRST, { hit_ratio: 0, hits: '90', misses: '10' }))).toBe(90);
+    expect(arcValues.hitRatio(sample(FIRST))).toBe(0);
   });
 
   it('takes the compression ratio from the two sizes where a sample carries them', () => {
-    const rows = [sample(FIRST, { compressed_size: GIB, uncompressed_size: 2 * GIB })];
-    expect(arcSeries(rows).compressionRatio).toEqual([[at(FIRST), 2]]);
+    const row = sample(FIRST, { compressed_size: GIB, uncompressed_size: 2 * GIB });
+    expect(arcValues.compressionRatio(row)).toBe(2);
   });
 });

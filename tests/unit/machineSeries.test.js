@@ -15,14 +15,14 @@ import {
   diskDevices,
   linkMetric,
   linkOf,
-  linkSeries,
+  linkValues,
   machineSeriesOf,
   machineSeriesParams,
   machineUsageLatest,
-  machineUsageSeries,
+  machineValues,
   zoneLinks,
   zoneUsageLatest,
-  zoneUsageSeries,
+  zoneValues,
 } from '../../src/features/hosts/utils/machineSeries.js';
 
 const FIRST = '2026-09-27T12:00:00.000Z';
@@ -45,30 +45,40 @@ describe('the series of a machine', () => {
     expect(machineSeriesOf('zone-diskio')).toBe(MACHINE_SERIES['zone-diskio']);
   });
 
-  it("asks for the host's window of a zone by its name, since the newest held sample", () => {
-    const query = { window: '15min', interval: 5, newest: 0, now: NOW };
-    expect(machineSeriesParams({ metric: 'zone-usage', name: 'web-1', ...query })).toEqual({
+  it('asks for a span of a zone by its name, the samples the span holds', () => {
+    const span = { since: at(FIRST), until: NOW, interval: 5 };
+    expect(machineSeriesParams({ metric: 'zone-usage', name: 'web-1', ...span })).toEqual({
       zone: 'web-1',
       since: FIRST,
+      until: '2026-09-27T12:15:00.000Z',
       limit: 180,
     });
     expect(
-      machineSeriesParams({ metric: 'zone-diskio', name: 'web-1', ...query, newest: HELD })
+      machineSeriesParams({ metric: 'zone-diskio', name: 'web-1', ...span, since: HELD })
     ).toEqual({
       zone: 'web-1',
       since: '2026-09-27T12:10:00.000Z',
-      limit: 180,
+      until: '2026-09-27T12:15:00.000Z',
+      limit: 60,
+    });
+    expect(
+      machineSeriesParams({ metric: 'zone-usage', name: 'web-1', ...span, interval: 0 })
+    ).toEqual({
+      zone: 'web-1',
+      since: FIRST,
+      until: '2026-09-27T12:15:00.000Z',
     });
   });
 
   it('asks for a link by the link and for a VirtualBox machine its one sample', () => {
-    const query = { window: '1hour', interval: 60, newest: 0, now: NOW };
-    expect(machineSeriesParams({ metric: 'link:vnic0', name: 'web-1', ...query })).toEqual({
+    const span = { since: NOW - 60 * 60 * 1000, until: NOW, interval: 60 };
+    expect(machineSeriesParams({ metric: 'link:vnic0', name: 'web-1', ...span })).toEqual({
       link: 'vnic0',
       since: '2026-09-27T11:15:00.000Z',
+      until: '2026-09-27T12:15:00.000Z',
       limit: 60,
     });
-    expect(machineSeriesParams({ metric: 'machine-usage', name: 'dev-1', ...query })).toEqual({
+    expect(machineSeriesParams({ metric: 'machine-usage', name: 'dev-1', ...span })).toEqual({
       machine_name: 'dev-1',
       limit: 1,
     });
@@ -82,21 +92,16 @@ describe('the series of a machine', () => {
   });
 });
 
-describe('zoneUsageSeries', () => {
+describe('zoneValues', () => {
   const rows = [
     { scan_timestamp: FIRST, cpu_pct: 1.5, rss_bytes: 2 * GIB, swap_bytes: GIB },
     { scan_timestamp: SECOND, cpu_pct: 2.25, rss_bytes: null, swap_bytes: null },
   ];
 
-  it('draws the share of the processors and the memory of the samples that carry it', () => {
-    expect(zoneUsageSeries(rows)).toEqual({
-      cpu: [
-        [at(FIRST), 1.5],
-        [at(SECOND), 2.25],
-      ],
-      resident: [[at(FIRST), 2]],
-      swap: [[at(FIRST), 1]],
-    });
+  it('reads the share of the processors and the memory of the samples that carry it', () => {
+    expect(rows.map(zoneValues.cpu)).toEqual([1.5, 2.25]);
+    expect(rows.map(zoneValues.resident)).toEqual([2, null]);
+    expect(rows.map(zoneValues.swap)).toEqual([1, null]);
   });
 
   it('reads the newest values for the badges', () => {
@@ -162,6 +167,21 @@ describe('diskDevices', () => {
     });
   });
 
+  it('draws a null point of each rate for a gap row', () => {
+    const gap = { scan_timestamp: SECOND, gap: true, dataset: 'tank/zones/web-1/data' };
+    const [data] = diskDevices([rows[0], gap]);
+    expect(data.read).toEqual([
+      [at(FIRST), 1],
+      [at(SECOND), null],
+    ]);
+    expect(data.write).toEqual([
+      [at(FIRST), 2],
+      [at(SECOND), null],
+    ]);
+    expect([data.readIops, data.writeIops]).toEqual([10, 21]);
+    expect(linkValues.rx({ scan_timestamp: SECOND, gap: true })).toBeNull();
+  });
+
   it('carries the operations a second of the newest sample that names them', () => {
     const [boot, data] = diskDevices(rows);
     expect([boot.readIops, boot.writeIops]).toEqual([0, 3]);
@@ -182,10 +202,10 @@ describe('diskDevices', () => {
   });
 });
 
-describe('linkSeries', () => {
+describe('linkValues', () => {
   it('reads the megabits a second the agent answers as decimal text', () => {
     const rows = [{ scan_timestamp: FIRST, link: 'vnic0', rx_mbps: '8.39', tx_mbps: '4.19' }];
-    expect(linkSeries(rows)).toEqual({ rx: [[at(FIRST), 8.39]], tx: [[at(FIRST), 4.19]] });
+    expect([linkValues.rx(rows[0]), linkValues.tx(rows[0])]).toEqual([8.39, 4.19]);
     const spec = linkSpec({ rows, t });
     expect(spec.axes[0].unit).toBe(' Mbps');
     expect(spec.series.map(line => line.key)).toEqual(['rx', 'tx']);
@@ -210,7 +230,7 @@ describe('the usage of a zone as charts', () => {
   });
 });
 
-describe('machineUsageSeries', () => {
+describe('machineValues', () => {
   const first = {
     scan_timestamp: FIRST,
     cpu_guest_pct: 3.5,
@@ -233,17 +253,14 @@ describe('machineUsageSeries', () => {
     disk_write_bps: 0,
   };
 
-  it('draws a rate only of the samples that carry it, none on the first observation', () => {
-    const series = machineUsageSeries([first, second]);
-    expect(series.cpuGuest).toHaveLength(2);
-    expect(series.netRx).toEqual([[at(SECOND), 1]]);
-    expect(series.netTx).toEqual([[at(SECOND), 2]]);
-    expect(series.diskRead).toEqual([[at(SECOND), 0.5]]);
-    expect(series.diskWrite).toEqual([[at(SECOND), 0]]);
-    expect(series.memory).toEqual([
-      [at(FIRST), 2],
-      [at(SECOND), 2],
-    ]);
+  it('reads a rate only of the samples that carry it, none on the first observation', () => {
+    const rows = [first, second];
+    expect(rows.map(machineValues.cpuGuest)).toEqual([3.5, 3.5]);
+    expect(rows.map(machineValues.netRx)).toEqual([null, 1]);
+    expect(rows.map(machineValues.netTx)).toEqual([null, 2]);
+    expect(rows.map(machineValues.diskRead)).toEqual([null, 0.5]);
+    expect(rows.map(machineValues.diskWrite)).toEqual([null, 0]);
+    expect(rows.map(machineValues.memory)).toEqual([2, 2]);
   });
 
   it('reads the newest values for the badges', () => {

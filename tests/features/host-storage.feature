@@ -193,14 +193,13 @@ Feature: host storage
     Then the first device chart is "c0t5000C500B2C3D4E6d0"
     And the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 1 times
 
-  Scenario: Storage: the window in each page's heading, the samples of the window at most 180, a change of it reads that page's series again once
+  Scenario: Storage: the window in each page's heading, every sample of the window, a change of it reads the browser's store and asks the agent once for the span it lacks
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
     When I open "/hosts/3/storage/disks"
     Then the host page draws the "storage-total" chart
-    And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "limit" as "180"
     And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "per_device" as "true"
     When I pick the storage chart window "1hour"
     Then the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 2 times

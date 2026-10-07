@@ -5,17 +5,24 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
 import { fetchSeries } from '../api/monitoring';
+import { add, addMany, newest, oldest, range, trim } from '../charts/store';
 import { HostSeriesContext } from '../hooks/useHostSeries';
 import { agentIdOf } from '../utils/hosts';
-import { DEFAULT_QUERY, SERIES, historyParams } from '../utils/monitoring';
-import { loadRing, ringKey, saveRing } from '../utils/ring';
-import { latestOf, mergeRows, ringRows, rowsOf, timeOf } from '../utils/series';
+import {
+  DEFAULT_QUERY,
+  HISTORY_MODES,
+  SERIES,
+  historyParams,
+  historySpans,
+  windowMinutes,
+  windowMs,
+} from '../utils/monitoring';
+import { ringKey } from '../utils/ring';
+import { KEPT_MS, mergeRows, rowsOf, windowOf } from '../utils/series';
 
 const NO_METRICS = {};
 
 const NO_ROWS = [];
-
-const UNCAPPED = Infinity;
 
 const emptyFor = (signedIn, epoch) => ({ epoch, signedIn, hosts: {} });
 
@@ -33,30 +40,30 @@ const withMetric = ({ state, id, metric, entry }) => {
 };
 
 const hydrated =
-  ({ epoch, id, metric, rows }) =>
+  ({ epoch, id, metric, rows, window }) =>
   state => {
     if (state.epoch !== epoch) {
       return state;
     }
     const held = hostOf(state, id).metrics[metric];
     const entry = held
-      ? { ...held, rows }
-      : { rows, strategy: '', loaded: false, failed: false, stale: false };
+      ? { ...held, rows, window }
+      : { rows, strategy: '', loaded: false, failed: false, stale: false, window };
     return withMetric({ state, id, metric, entry });
   };
 
 const answered =
-  ({ epoch, id, metric, rows, strategy }) =>
+  ({ epoch, id, metric, rows, strategy, window }) =>
   state => {
     if (state.epoch !== epoch) {
       return state;
     }
-    const entry = { rows, strategy, loaded: true, failed: false, stale: false };
+    const entry = { rows, strategy, loaded: true, failed: false, stale: false, window };
     return withMetric({ state, id, metric, entry });
   };
 
 const refused =
-  ({ epoch, id, metric }) =>
+  ({ epoch, id, metric, window }) =>
   state => {
     if (state.epoch !== epoch) {
       return state;
@@ -68,15 +75,30 @@ const refused =
       loaded: true,
       failed: true,
       stale: false,
+      window,
     };
     return withMetric({ state, id, metric, entry });
   };
 
-const pushed =
-  ({ id, metric, rows }) =>
+const windowed =
+  ({ epoch, id, metric, rows, window }) =>
   state => {
     const held = hostOf(state, id).metrics[metric];
-    return held ? withMetric({ state, id, metric, entry: { ...held, rows } }) : state;
+    return state.epoch === epoch && held
+      ? withMetric({ state, id, metric, entry: { ...held, rows, window } })
+      : state;
+  };
+
+const pushed =
+  ({ id, metric, rows, entity }) =>
+  state => {
+    const held = hostOf(state, id).metrics[metric];
+    if (!held) {
+      return state;
+    }
+    const minutes = windowMinutes(held.window);
+    const kept = windowOf(mergeRows(held.rows, rows, { entity }), { entity, minutes });
+    return withMetric({ state, id, metric, entry: { ...held, rows: kept } });
   };
 
 const staleMetrics = metrics =>
@@ -84,100 +106,97 @@ const staleMetrics = metrics =>
     Object.entries(metrics).map(([metric, entry]) => [metric, { ...entry, stale: true }])
   );
 
-const staleHost = host => ({ ...host, metrics: staleMetrics(host.metrics) });
-
 const staled = state => {
-  const hosts = Object.entries(state.hosts).map(([id, host]) => [id, staleHost(host)]);
+  const hosts = Object.entries(state.hosts).map(([id, host]) => [
+    id,
+    { ...host, metrics: staleMetrics(host.metrics) },
+  ]);
   return { ...state, hosts: Object.fromEntries(hosts) };
 };
 
 const queried = (id, patch) => state => {
-  const host = staleHost(hostOf(state, id));
+  const host = hostOf(state, id);
   const query = { ...host.query, ...patch };
   return { ...state, hosts: { ...state.hosts, [id]: { ...host, query } } };
 };
 
-const flying = (flights, key) => [...flights.keys()].some(flight => flight.startsWith(`${key}|`));
+const opened = async (key, window) => {
+  const [first, last] = await Promise.all([oldest(key), newest(key)]);
+  const now = Date.now();
+  const end = last ?? now;
+  const start = end - windowMs(window);
+  const rows = last === null ? NO_ROWS : await range(key, start, end);
+  return { rows, oldest: first, newest: last, start, now };
+};
 
-const forget = (copies, id) =>
-  [...copies]
-    .filter(flight => flight.split('|')[1] === String(id))
-    .forEach(flight => copies.delete(flight));
+const filled = async ({ key, entity, member, answers, window }) => {
+  await Promise.all(answers.map(answer => addMany(key, rowsOf(answer, member), entity)));
+  await trim(key, KEPT_MS);
+  return opened(key, window);
+};
 
-const merged = ({ held, rows, entity }) =>
-  ringRows(mergeRows(held, rows, { entity, limit: UNCAPPED }), entity);
+const strategyOf = answers => answers.at(-1)?.sampling?.strategy || '';
 
 /**
  * The series the performance charts draw of every host a caller has
- * drawn, behind `useHostSeries`, each held in the browser's ring: the
- * samples of a series are kept in IndexedDB under the origin, keyed by
- * host and series, every pushed sample appended as it lands and every
- * sample older than the widest window dropped as a sample is written or
- * read, never on a clock. A series opens from the ring's samples at
- * once, then its history is read, `since` the newest sample the ring
- * holds or the start of the host's window while it holds none and
- * `limit` the samples the window holds at the agent's collection
- * interval, when the first caller asks, a second caller while it is in
- * flight joining it, and the answer is merged into what is held; `ask`
- * is the read of a caller that draws, which answers at once while the
- * answer is held, so a caller whose render crosses the answer asks for
- * nothing twice, and `read` the one a Refresh makes, which renews it; an
- * agent that keeps no history answers the one sample it took,
- * `realtime`, and that sample is merged the same way. Between reads the
- * series grows by push: the `monitoring` topic's `cpu-sample`,
- * `memory-sample`, `network-sample`, `pool-io-sample`, `arc-sample` and
- * `disk-io-sample` events each carry the rows of one collection under
- * the member the REST route answers them in, and the rows of every host
- * are appended to its ring, the rows not yet held; a sample pushed while a
- * read of its series is in flight is kept aside and merged after the
- * answer, so none is lost between the agent's answer and its arrival.
- * When the event stream opens fresh or answers `reset`, and when a
- * person changes the host's window, the held series are marked stale
- * and kept on screen, and only the callers that draw one read it again,
- * `refreshHost` reading every series drawn of a host again on Refresh.
- * Nothing reads on a clock. What is held in memory belongs to the
- * session: when `signedIn` changes it is dropped and read from the ring
- * again, the ring itself this browser's and kept.
+ * drawn, behind `useHostSeries`, each held in the browser's store of
+ * samples: one record a sample in IndexedDB under the origin, keyed by
+ * host, series, instant and entity, every pushed sample appended as it
+ * lands and every sample older than the widest window deleted after
+ * each write, measured from the newest sample held and never from a
+ * clock. A series opens from the store's samples over the host's
+ * window at once, then the agent is asked for the spans the store
+ * lacks and no other, by `historySpans` and the read's `mode`: the whole
+ * window while it holds nothing; on `open`, the span from the window's
+ * start to the oldest held sample while that sample is newer than the
+ * start, and the span from the newest held sample to now; on `refresh`,
+ * the span from the newest held to now alone, a new measurement right
+ * then; each `since` and `until` as RFC 3339 and, while the agent's
+ * collection interval is known, `limit` the samples the span holds at
+ * it, when the first caller asks, a second caller while it is in flight
+ * joining it; each answer is written in one transaction, a duplicate
+ * instant one record and every pushed sample inside the span answered
+ * dropped, and the window is read from the store again. `ask` is the read of a
+ * caller that draws, which answers at once while the answer is held, so
+ * a caller whose render crosses the answer asks for nothing twice, and
+ * `read` the one a Refresh makes, which renews it; an agent that keeps
+ * no history answers the one sample it took, `realtime`, and that
+ * sample is written the same way. Between reads the series grows by
+ * push: the `monitoring` topic's `cpu-sample`, `memory-sample`,
+ * `network-sample`, `pool-io-sample`, `arc-sample` and `disk-io-sample`
+ * events each carry the rows of one collection under the member the
+ * REST route answers them in, and every row of every host is appended
+ * to the store, one record each, the rows kept joining the held series
+ * inside its window. When the event stream opens fresh or answers
+ * `reset` the held series are marked stale and kept on screen, and only
+ * the callers that draw one read it again, `refreshHost` reading every
+ * series drawn of a host again on Refresh; when a person changes the
+ * host's window, `rewindow` reads the store over the new window first
+ * and asks the agent only for the span before the oldest held sample
+ * that the window reaches and the store lacks, every caller that draws
+ * the series joining the one read in flight. Nothing reads on a
+ * clock. What is held in
+ * memory belongs to the session: when `signedIn` changes it is dropped
+ * and read from the store again, the store itself this browser's and
+ * kept.
  */
 const HostSeriesProvider = ({ signedIn, children }) => {
   const status = useStatus();
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
-  const rings = useRef(new Map());
-  const hydrations = useRef(new Map());
   const flights = useRef(new Map());
+  const rewindows = useRef(new Map());
   const copies = useRef(new Set());
-  const early = useRef(new Map());
   const intervals = useRef(new Map());
 
   if (state.signedIn !== signedIn) {
     setState(emptyFor(signedIn, state.epoch + 1));
   }
 
-  const hydrate = useCallback((key, entity) => {
-    if (!hydrations.current.has(key)) {
-      hydrations.current.set(
-        key,
-        loadRing(key, entity).then(rows => {
-          rings.current.set(key, rows);
-          return rows;
-        })
-      );
-    }
-    return hydrations.current.get(key);
-  }, []);
-
-  const append = useCallback((key, entity, rows) => {
-    const kept = merged({ held: rings.current.get(key) || NO_ROWS, rows, entity });
-    rings.current.set(key, kept);
-    saveRing(key, kept, entity);
-    return kept;
-  }, []);
-
   const read = useCallback(
-    ({ epoch, id, metric, query, interval }) => {
+    ({ epoch, id, metric, query, interval, mode = HISTORY_MODES.refresh }) => {
       const { member, entity } = SERIES[metric];
       const key = ringKey(id, metric);
-      const series = seriesKey({ epoch, id, metric });
+      const { window } = query;
       const flight = flightKey({ epoch, id, metric, query });
       intervals.current.set(id, interval);
       const held = flights.current.get(flight);
@@ -185,49 +204,33 @@ const HostSeriesProvider = ({ signedIn, children }) => {
         return held;
       }
       copies.current.delete(flight);
-      let base = NO_ROWS;
-      const request = hydrate(key, entity)
-        .then(() => {
-          base = rings.current.get(key) || NO_ROWS;
-          setState(hydrated({ epoch, id, metric, rows: base }));
-          const newest = latestOf(base);
-          return fetchSeries(
-            status,
-            id,
-            metric,
-            historyParams({
-              window: query.window,
-              interval,
-              newest: newest ? timeOf(newest) : 0,
-              now: Date.now(),
-            })
-          );
+      const fetchSpan = span =>
+        fetchSeries(status, id, metric, historyParams({ ...span, interval }));
+      const request = opened(key, window)
+        .then(base => {
+          setState(hydrated({ epoch, id, metric, rows: base.rows, window }));
+          return Promise.all(historySpans({ ...base, mode }).map(fetchSpan));
         })
-        .then(answer => {
-          const parked = early.current.get(series) || NO_ROWS;
-          const answeredRows = merged({ held: base, rows: rowsOf(answer, member), entity });
-          const kept = merged({ held: answeredRows, rows: parked, entity });
-          rings.current.set(key, kept);
-          saveRing(key, kept, entity);
-          const strategy = answer?.sampling?.strategy || '';
-          copies.current.add(flight);
-          setState(answered({ epoch, id, metric, rows: kept, strategy }));
-          return answer;
-        })
+        .then(answers =>
+          filled({ key, entity, member, answers, window }).then(({ rows }) => {
+            copies.current.add(flight);
+            setState(answered({ epoch, id, metric, rows, strategy: strategyOf(answers), window }));
+            return answers.at(-1);
+          })
+        )
         .catch(error => {
           log.api.error('Error fetching host series', { id, metric, error: error.message });
           copies.current.add(flight);
-          setState(refused({ epoch, id, metric }));
+          setState(refused({ epoch, id, metric, window }));
           return null;
         })
         .finally(() => {
           flights.current.delete(flight);
-          early.current.delete(series);
         });
       flights.current.set(flight, request);
       return request;
     },
-    [status, hydrate]
+    [status]
   );
 
   const ask = useCallback(
@@ -243,8 +246,46 @@ const HostSeriesProvider = ({ signedIn, children }) => {
     [read]
   );
 
+  const rewindow = useCallback(
+    ({ epoch, id, metric, query }) => {
+      const { member, entity } = SERIES[metric];
+      const key = ringKey(id, metric);
+      const { window } = query;
+      const flight = flightKey({ epoch, id, metric, query });
+      const held = rewindows.current.get(flight);
+      if (held) {
+        return held;
+      }
+      const interval = intervals.current.get(id) || 0;
+      const fetchSpan = span =>
+        fetchSeries(status, id, metric, historyParams({ ...span, interval }));
+      const request = opened(key, window)
+        .then(base => {
+          setState(windowed({ epoch, id, metric, rows: base.rows, window }));
+          const spans = historySpans({ ...base, mode: HISTORY_MODES.rewindow });
+          if (spans.length === 0) {
+            return base;
+          }
+          return Promise.all(spans.map(fetchSpan)).then(answers =>
+            filled({ key, entity, member, answers, window })
+          );
+        })
+        .then(({ rows }) => {
+          setState(windowed({ epoch, id, metric, rows, window }));
+        })
+        .catch(error => {
+          log.api.error('Error filling host series', { id, metric, error: error.message });
+        })
+        .finally(() => {
+          rewindows.current.delete(flight);
+        });
+      rewindows.current.set(flight, request);
+      return request;
+    },
+    [status]
+  );
+
   const setQuery = useCallback((id, patch) => {
-    forget(copies.current, id);
     setState(queried(id, patch));
   }, []);
 
@@ -271,14 +312,13 @@ const HostSeriesProvider = ({ signedIn, children }) => {
     if (rows.length === 0) {
       return;
     }
-    const series = seriesKey({ epoch: state.epoch, id, metric });
-    if (flying(flights.current, series)) {
-      early.current.set(series, [...(early.current.get(series) || NO_ROWS), ...rows]);
-    }
     const key = ringKey(id, metric);
-    hydrate(key, entity).then(() => {
-      const kept = append(key, entity, rows);
-      setState(pushed({ id, metric, rows: kept }));
+    Promise.all(rows.map(row => add(key, row, entity))).then(kept => {
+      const added = kept.flatMap((wasKept, index) => (wasKept ? [rows[index]] : []));
+      if (added.length > 0) {
+        trim(key, KEPT_MS);
+        setState(pushed({ id, metric, rows: added, entity }));
+      }
     });
   };
 
@@ -303,8 +343,16 @@ const HostSeriesProvider = ({ signedIn, children }) => {
   useEventStream(SERIES['disk-io'].event, data => take('disk-io', data));
 
   const value = useMemo(
-    () => ({ epoch: state.epoch, hosts: state.hosts, read, ask, setQuery, refreshHost }),
-    [state.epoch, state.hosts, read, ask, setQuery, refreshHost]
+    () => ({
+      epoch: state.epoch,
+      hosts: state.hosts,
+      read,
+      ask,
+      rewindow,
+      setQuery,
+      refreshHost,
+    }),
+    [state.epoch, state.hosts, read, ask, rewindow, setQuery, refreshHost]
   );
 
   return <HostSeriesContext.Provider value={value}>{children}</HostSeriesContext.Provider>;

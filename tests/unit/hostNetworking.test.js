@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { chartOf } from '../../src/features/hosts/charts/registry.js';
 import { READS } from '../../src/features/hosts/utils/monitoring.js';
 import {
   ADDRESS_FILTERS,
@@ -8,7 +9,6 @@ import {
   INTERFACE_FILTERS,
   NETWORKING_TOKENS,
   ROUTE_FILTERS,
-  SUMMARY_CHARTS,
   addressKey,
   addressOf,
   addressRows,
@@ -331,7 +331,8 @@ describe('the charts', () => {
   const entities = networkSeries(SAMPLES);
 
   it('lists the three summary charts and the four orders', () => {
-    expect(SUMMARY_CHARTS.map(chart => [chart.key, chart.member])).toEqual([
+    const { charts } = chartOf('network-summary');
+    expect(charts.map(chart => [chart.key, chart.member])).toEqual([
       ['rx', 'first'],
       ['tx', 'second'],
       ['total', 'total'],

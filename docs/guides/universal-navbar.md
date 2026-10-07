@@ -821,21 +821,34 @@ server role, `/api/…` on an agent role).
   and 24 hours, 15 minutes by default, the one choice every chart of
   every host follows, kept with the person's other chart choices, so a
   window picked on one page stands on every other. The window fixes
-  what a read sends: `since`, the instant the window reaches back to or
-  the newest sample the browser holds, and `limit`, the samples the
-  window holds at the agent's collection interval, at most the 180
-  samples a chart draws, the same count for every chart; there is no
-  resolution select, because the samples arrive on the stream once the
-  history is read and a person's only cost is that one read.
+  what a read sends: the browser's store is read first, and the agent is
+  asked only for the spans of the window the store lacks, the span
+  before the oldest held sample and the span after the newest, each
+  `since` and `until` RFC 3339 and, while the agent's status names a
+  collection interval, `limit`, every sample the span holds at that
+  interval; a change of the window reads the store over the new window
+  and asks the agent only for the span before the oldest held that the
+  store lacks; there is no resolution select, because the samples arrive
+  on the stream once the history is read and a person's only cost is
+  the spans the store lacks.
 - **The browser's ring.** The samples of each series of each host are
   kept in the browser, in IndexedDB under the origin as the DPoP key is,
-  keyed by host and series, every pushed sample appended as it lands and
-  every sample older than the widest window dropped as a sample is
-  written or read, never on a clock; a chart opens from the held samples
-  at once, asks the agent only for what came after the newest held, and
-  grows by the stream, so the line accrues smoothly and the history
-  survives a reload, a sign-out and a day away; the ring is this
-  browser's alone and a second device starts from the agent's answer.
+  one record a sample keyed by host, series, instant and entity, the
+  rows of two interfaces taken at one instant two records; every pushed
+  sample is appended as it lands, one record, and a history answer is
+  written in one transaction, a duplicate instant one record and every
+  pushed sample inside the span the answer covers dropped, because the
+  agent's account of a span stands over the stream's; after each write
+  every sample older than the widest window before the newest held is
+  deleted by one key range, never on a clock; a chart opens from the
+  held samples over its window by one range read, asks the agent only
+  for the spans of the window the store lacks, before the oldest held
+  and after the newest, and grows by the stream, with a
+  gap row where two neighbouring samples of one entity lie more than
+  two live intervals apart, the live interval the status'
+  `live_interval` or its collection interval; the history survives a
+  reload, a sign-out and a day away; the ring is this browser's alone
+  and a second device starts from the agent's answer.
 - **The heading row.** The host page is headed by the pages contract's
   heading row: the host's label as the title, the health word, the
   uptime and the machines running of all as muted text after it, the
@@ -1302,7 +1315,8 @@ agent role).
   of the Host overview section before Refresh, while the host's own row
   offers the network series; the choice is the person's one window, so a
   choice made on one page stands on every other, and a change of it
-  reads the usage again once.
+  reads the usage from the browser's store over the new window and asks
+  the agent only for the span the store lacks.
 - **The summary.** The network summary is the
   first section of the Interfaces page: its glyph and title, its chevron and its
   five counts, each a pair of badges, the interfaces in all, the
@@ -2130,7 +2144,9 @@ Each test answers through an in-app notice card, "Test sent." or
   `Cache-Control: no-cache` on that one file), the push subscription and
   the update sharing that one registration; its `install` precaches only
   the manifest and the marks and `skipWaiting`s, its `activate` drops the
-  previous version's cache and claims the clients, and it carries no
+  previous version's cache and claims the clients, a notification click
+  focuses an open tab of the app and moves it to the notice's `navigate`,
+  opening a window only while no tab is open, and it carries no
   `fetch` handler for the app's own files, because the build's files are
   unhashed and served `no-cache` and a worker that answered them from a
   cache would pin one deploy's chunk against another's. When a new worker

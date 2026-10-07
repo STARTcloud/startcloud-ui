@@ -7,15 +7,16 @@ import Chart from '../../../components/common/Chart';
 import ChartDialog from '../../../components/common/ChartDialog';
 import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
 import SeriesToggles from '../../../components/common/SeriesToggles';
+import { chartOf } from '../charts/registry';
 import { useHostSeries } from '../hooks/useHostSeries';
-import { CARD_LEGEND, CHART_TEXTS, chartSpec, chartToggles } from '../utils/chartSpecs';
+import { chartSpec, chartToggles } from '../utils/chartSpecs';
 import { samplesIn } from '../utils/series';
 
-const emptyKeyOf = ({ loaded, failed, metric }) => {
+const emptyKeyOf = ({ loaded, failed, texts }) => {
   if (!loaded) {
     return 'pages.loading';
   }
-  return failed ? 'hosts.charts.loadError' : CHART_TEXTS[metric].emptyKey;
+  return failed ? 'hosts.charts.loadError' : texts.emptyKey;
 };
 
 /**
@@ -34,13 +35,13 @@ const PerformanceCard = ({ id, metric, host, folds, visibility, onToggle }) => {
   const { t } = useTranslation();
   const { rows, loaded, failed } = useHostSeries(id, metric);
   const [expanded, setExpanded] = useState(false);
-  const texts = CHART_TEXTS[metric];
+  const { texts, cardLegend } = chartOf(metric);
   const toggles = useMemo(() => chartToggles(metric, t), [metric, t]);
   const spec = useMemo(
     () => chartSpec(metric, { rows, visibility, t }),
     [metric, rows, visibility, t]
   );
-  const emptyText = t(emptyKeyOf({ loaded, failed, metric }));
+  const emptyText = t(emptyKeyOf({ loaded, failed, texts }));
   const fold = `chart-${metric}`;
 
   const actions = (
@@ -75,7 +76,7 @@ const PerformanceCard = ({ id, metric, host, folds, visibility, onToggle }) => {
           series={spec.series}
           axes={spec.axes}
           emptyText={emptyText}
-          legend={CARD_LEGEND[metric]}
+          legend={cardLegend}
         />
         {samplesIn(rows) === 1 ? (
           <p className="small text-muted mt-2 mb-0" data-note="one-sample">

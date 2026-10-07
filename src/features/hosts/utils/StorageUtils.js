@@ -1,3 +1,5 @@
+import { isGap } from '../charts/splice';
+
 import { hostHasFeature } from './capabilities';
 import { latestPer } from './resources';
 import { timeOf } from './series';
@@ -187,10 +189,20 @@ export const deduplicateDisksByIdentity = disks =>
     return timeOf(disk) > timeOf(kept[index]) ? kept.with(index, disk) : kept;
   }, []);
 
+const ioPoints = row => {
+  if (isGap(row)) {
+    return [null, null, null];
+  }
+  const read = numberOf(row.read_bandwidth_bytes) / MIB;
+  const write = numberOf(row.write_bandwidth_bytes) / MIB;
+  return [round(read, 3), round(write, 3), round(read + write, 3)];
+};
+
 /**
  * The I/O samples as three lines an entity, hyperweaver-ui's chart data:
  * the megabytes a second read as `first`, written as `second`, and both
- * together, each entity's points oldest first.
+ * together, each entity's points oldest first, a gap row a null point of
+ * each.
  *
  * @param {Array<Object>} rows - The samples held
  * @param {Function} entityOf - Answers the entity of one sample
@@ -203,13 +215,12 @@ export const ioSeries = (rows, entityOf) =>
     .reduce((entities, row) => {
       const name = String(entityOf(row));
       const held = entities[name] || { first: [], second: [], total: [] };
-      const read = numberOf(row.read_bandwidth_bytes) / MIB;
-      const write = numberOf(row.write_bandwidth_bytes) / MIB;
+      const [read, write, total] = ioPoints(row);
       const at = timeOf(row);
       entities[name] = {
-        first: [...held.first, [at, round(read, 3)]],
-        second: [...held.second, [at, round(write, 3)]],
-        total: [...held.total, [at, round(read + write, 3)]],
+        first: [...held.first, [at, read]],
+        second: [...held.second, [at, write]],
+        total: [...held.total, [at, total]],
       };
       return entities;
     }, {});

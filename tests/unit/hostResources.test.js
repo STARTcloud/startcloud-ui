@@ -247,13 +247,19 @@ describe('summaryRows', () => {
 });
 
 describe('collectionOf', () => {
-  it('reads the interval and the retention where the status answers one number each', () => {
+  it('reads the interval, the retention and the live interval where the status answers one number each', () => {
     const status = { config: { collection_interval: 5, retention_days: 7 } };
-    expect(collectionOf(status)).toEqual({ interval: 5, retention: 7 });
+    expect(collectionOf(status)).toEqual({ interval: 5, retention: 7, live: 5 });
+    expect(collectionOf({ config: { ...status.config, live_interval: 2 } })).toEqual({
+      interval: 5,
+      retention: 7,
+      live: 2,
+    });
     expect(collectionOf({ config: { intervals: { storage: 300 } } })).toEqual({
       interval: 0,
       retention: 0,
+      live: 0,
     });
-    expect(collectionOf(null)).toEqual({ interval: 0, retention: 0 });
+    expect(collectionOf(null)).toEqual({ interval: 0, retention: 0, live: 0 });
   });
 });

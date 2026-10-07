@@ -322,7 +322,7 @@ Feature: networking
     Then the first interface chart is "igb0"
     And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
-  Scenario: Bandwidth: the window of the host's series in the page's heading, the samples of the window at most 180, a change of the window reads the usage again once
+  Scenario: Bandwidth: the window of the host's series in the page's heading, every sample of the window, a change of the window reads the browser's store and asks the agent once for the span it lacks
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -330,7 +330,6 @@ Feature: networking
     And the browser records its requests
     When I open "/hosts/3/network/bandwidth"
     Then the host page draws the "network-total" chart
-    And the host was asked "/api/agents/3/monitoring/network/usage" with "limit" as "180"
     And the host was asked "/api/agents/3/monitoring/network/usage" with "per_interface" as "true"
     When I pick the networking chart window "1hour"
     Then the host was sent GET to "/api/agents/3/monitoring/network/usage" 2 times

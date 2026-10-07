@@ -5,26 +5,28 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { chartOf } from '../charts/registry';
 import { useHostSeries } from '../hooks/useHostSeries';
 import {
   CHART_SORTS,
   DEFAULT_CHART_SORT,
-  SUMMARY_CHARTS,
   interfaceSpec,
   sortedInterfaces,
   summarySpec,
 } from '../utils/networking';
-import { networkSeries, samplesIn } from '../utils/series';
+import { samplesIn } from '../utils/series';
 
 import NetworkingChartCard from './NetworkingChartCard';
 
 const FOLD = 'charts';
 
+const SUMMARY = chartOf('network-summary');
+
 const emptyKeyOf = ({ loaded, failed }) => {
   if (!loaded) {
     return 'pages.loading';
   }
-  return failed ? 'hosts.charts.loadError' : 'host.bandwidthCharts.noData';
+  return failed ? 'hosts.charts.loadError' : SUMMARY.texts.emptyKey;
 };
 
 const SortSelect = ({ order, onChange }) => {
@@ -74,7 +76,7 @@ const NetworkingCharts = ({ id, host, folds }) => {
   const { t } = useTranslation();
   const { rows, loaded, failed, offered } = useHostSeries(id, 'network');
   const [order, setOrder] = useState(DEFAULT_CHART_SORT);
-  const entities = useMemo(() => networkSeries(rows), [rows]);
+  const entities = useMemo(() => SUMMARY.series(rows), [rows]);
   const names = useMemo(() => sortedInterfaces(entities, order), [entities, order]);
 
   if (!offered) {
@@ -99,7 +101,7 @@ const NetworkingCharts = ({ id, host, folds }) => {
           <div data-panel="networking-summary-charts">
             <SectionHeading title={t('host.bandwidthCharts.allInterfacesSummary')} />
             <div className="row g-3 mb-3">
-              {SUMMARY_CHARTS.map(chart => (
+              {SUMMARY.charts.map(chart => (
                 <div key={chart.key} className="col-12 col-lg-6 col-xxl-4">
                   <NetworkingChartCard
                     chart={`network-${chart.key}`}

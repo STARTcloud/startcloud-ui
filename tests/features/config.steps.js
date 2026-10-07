@@ -41,6 +41,10 @@ When('I fill the field placeholdered {string} with {string}', async ({ page }, t
   await page.getByPlaceholder(text).fill(value);
 });
 
+When('I click the last {string}', async ({ page }, name) => {
+  await page.getByRole('button', { name }).last().click();
+});
+
 When('I confirm the dialog with {string}', async ({ page }, name) => {
   await page.getByRole('dialog').getByRole('button', { name }).click();
 });

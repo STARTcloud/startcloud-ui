@@ -2,19 +2,23 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_QUERY,
-  MAX_POINTS,
   READS,
   SERIES,
   WIDEST_MINUTES,
   WINDOWS,
+  HISTORY_MODES,
   historyParams,
+  historySpans,
   hostOffers,
+  spanSamples,
   windowMinutes,
-  windowSamples,
+  windowMs,
 } from '../../src/features/hosts/utils/monitoring.js';
 
 const NOON = Date.UTC(2026, 8, 27, 12, 0, 0);
 const HELD = Date.UTC(2026, 8, 27, 11, 58, 30);
+const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
 
 const agent = { capabilities: { features: ['machines', 'tasks', 'monitoring', 'swap'] } };
 const zones = { capabilities: { features: ['machines', 'monitoring', 'zfs'] } };
@@ -81,45 +85,93 @@ describe('WINDOWS', () => {
     const minutes = WINDOWS.map(entry => entry.minutes);
     expect(minutes).toEqual([1, 5, 10, 15, 30, 60, 180, 360, 720, 1440]);
     expect(DEFAULT_QUERY).toEqual({ window: '15min' });
-    expect(MAX_POINTS).toBe(180);
     expect(WIDEST_MINUTES).toBe(1440);
     expect(windowMinutes('1hour')).toBe(60);
     expect(windowMinutes('week')).toBe(15);
+    expect(windowMs('1hour')).toBe(3600000);
+    expect(windowMs('week')).toBe(900000);
   });
 });
 
-describe('windowSamples', () => {
-  it('answers the samples the window holds at the interval, 180 at most', () => {
-    expect(windowSamples(15, 60)).toBe(15);
-    expect(windowSamples(15, 7)).toBe(129);
-    expect(windowSamples(1440, 60)).toBe(180);
-    expect(windowSamples(15, 0)).toBe(180);
+describe('spanSamples', () => {
+  it('answers every sample the span holds at the interval, one at least', () => {
+    expect(spanSamples(NOON - 15 * MINUTE, NOON, 60)).toBe(15);
+    expect(spanSamples(NOON - 15 * MINUTE, NOON, 7)).toBe(129);
+    expect(spanSamples(NOON - DAY, NOON, 60)).toBe(1440);
+    expect(spanSamples(NOON - DAY, NOON, 5)).toBe(17280);
+    expect(spanSamples(NOON, NOON, 5)).toBe(1);
+  });
+});
+
+describe('historySpans', () => {
+  const start = NOON - 15 * MINUTE;
+  const { open, refresh, rewindow } = HISTORY_MODES;
+  const short = { oldest: start + MINUTE, newest: HELD, start, now: NOON };
+  const covered = { oldest: start - MINUTE, newest: HELD, start, now: NOON };
+
+  it('asks for the whole window while nothing is held, on every occasion', () => {
+    const none = { oldest: null, newest: null, start, now: NOON };
+    [open, refresh, rewindow].forEach(mode => {
+      expect(historySpans({ ...none, mode })).toEqual([{ since: start, until: NOON }]);
+    });
+  });
+
+  it('asks both ways on open when the store does not reach the window start', () => {
+    expect(historySpans({ ...short, mode: open })).toEqual([
+      { since: start, until: start + MINUTE },
+      { since: HELD, until: NOON },
+    ]);
+  });
+
+  it('asks forward alone on open when the store reaches the window start', () => {
+    expect(historySpans({ ...covered, mode: open })).toEqual([{ since: HELD, until: NOON }]);
+    expect(historySpans({ ...covered, oldest: start, mode: open })).toEqual([
+      { since: HELD, until: NOON },
+    ]);
+  });
+
+  it('asks forward alone on refresh, whatever the store reaches', () => {
+    expect(historySpans({ ...short, mode: refresh })).toEqual([{ since: HELD, until: NOON }]);
+    expect(historySpans({ ...covered, mode: refresh })).toEqual([{ since: HELD, until: NOON }]);
+  });
+
+  it('asks backward alone on rewindow when the store does not reach the window start', () => {
+    expect(historySpans({ ...short, mode: rewindow })).toEqual([
+      { since: start, until: start + MINUTE },
+    ]);
+  });
+
+  it('asks for nothing on rewindow when the store reaches the window start', () => {
+    expect(historySpans({ ...covered, mode: rewindow })).toEqual([]);
+    expect(historySpans({ ...covered, oldest: start, mode: rewindow })).toEqual([]);
   });
 });
 
 describe('historyParams', () => {
-  it('reaches back the window from now while nothing is held', () => {
-    expect(historyParams({ window: '15min', interval: 60, newest: 0, now: NOON })).toEqual({
+  const UNTIL = '2026-09-27T12:00:00.000Z';
+
+  it('sends the span as RFC 3339 with the samples it holds at the interval', () => {
+    expect(historyParams({ since: NOON - 15 * MINUTE, until: NOON, interval: 60 })).toEqual({
       since: '2026-09-27T11:45:00.000Z',
+      until: UNTIL,
       limit: 15,
     });
-    expect(historyParams({ window: '24hour', interval: 0, newest: 0, now: NOON })).toEqual({
+    expect(historyParams({ since: NOON - DAY, until: NOON, interval: 60 })).toEqual({
       since: '2026-09-26T12:00:00.000Z',
-      limit: 180,
+      until: UNTIL,
+      limit: 1440,
     });
-  });
-
-  it('asks since the newest sample held', () => {
-    expect(historyParams({ window: '1hour', interval: 30, newest: HELD, now: NOON })).toEqual({
+    expect(historyParams({ since: HELD, until: NOON, interval: 30 })).toEqual({
       since: '2026-09-27T11:58:30.000Z',
-      limit: 120,
+      until: UNTIL,
+      limit: 3,
     });
   });
 
-  it('reads fifteen minutes for a window it does not know', () => {
-    expect(historyParams({ window: 'week', interval: 0, newest: 0, now: NOON })).toEqual({
-      since: '2026-09-27T11:45:00.000Z',
-      limit: 180,
+  it('sends no limit while the interval is unknown', () => {
+    expect(historyParams({ since: NOON - DAY, until: NOON, interval: 0 })).toEqual({
+      since: '2026-09-26T12:00:00.000Z',
+      until: UNTIL,
     });
   });
 });

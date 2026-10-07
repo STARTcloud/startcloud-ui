@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
+import { chartOf } from '../charts/registry';
 import { useHostRow } from '../hooks/useHostRow';
 import { useMachineSeries } from '../hooks/useMachineSeries';
 import {
@@ -30,9 +31,21 @@ import MachineChartCard from './MachineChartCard';
 
 const ADDITIONS_FOLD = 'machine-chart-memory';
 
-const ZONE_WAIT = 'machine.machineResourceCharts.waitingForSamples';
+const ZONE_CPU = chartOf('zone-cpu').texts;
 
-const MACHINE_WAIT = 'machine.vboxResourceCharts.waitingForSample';
+const ZONE_MEMORY = chartOf('zone-memory').texts;
+
+const ZONE_DISK = chartOf('zone-disk').texts;
+
+const ZONE_LINK = chartOf('zone-link').texts;
+
+const MACHINE_CPU = chartOf('machine-cpu').texts;
+
+const MACHINE_MEMORY = chartOf('machine-memory').texts;
+
+const MACHINE_NETWORK = chartOf('machine-network').texts;
+
+const MACHINE_DISK = chartOf('machine-disk').texts;
 
 const stateOf = series => ({
   samples: samplesIn(series.rows),
@@ -98,11 +111,11 @@ const LinkChart = ({ id, name, link, host, folds }) => {
   return (
     <MachineChartCard
       chart={linkMetric(link)}
-      title={t('machine.machineResourceCharts.networkTitle', { link })}
+      title={t(ZONE_LINK.titleKey, { link })}
       spec={spec}
       state={stateOf(series)}
-      waitKey={ZONE_WAIT}
-      failKey="machine.machineResourceCharts.networkFailed"
+      waitKey={ZONE_LINK.emptyKey}
+      failKey={ZONE_LINK.failKey}
       host={host}
       folds={folds}
       onRefresh={series.refresh}
@@ -126,10 +139,10 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
   const memory = useMemo(() => zoneMemorySpec({ rows: usage.rows, t }), [usage.rows, t]);
   const devices = useMemo(() => diskDevices(disk.rows), [disk.rows]);
   const latest = zoneUsageLatest(usage.rows);
-  const shared = { host, folds, waitKey: ZONE_WAIT };
+  const shared = { host, folds, waitKey: ZONE_CPU.emptyKey };
   const used = {
     state: stateOf(usage),
-    failKey: 'machine.machineResourceCharts.cpuMemoryFailed',
+    failKey: ZONE_CPU.failKey,
     onRefresh: usage.refresh,
   };
 
@@ -152,7 +165,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
     <>
       <MachineChartCard
         chart="cpu"
-        title={t('machine.machineResourceCharts.cpuTitle')}
+        title={t(ZONE_CPU.titleKey)}
         badges={cpuBadge}
         spec={cpu}
         {...used}
@@ -160,7 +173,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
       />
       <MachineChartCard
         chart="memory"
-        title={t('machine.machineResourceCharts.memoryTitle')}
+        title={t(ZONE_MEMORY.titleKey)}
         badges={memoryBadge}
         spec={memory}
         {...used}
@@ -169,7 +182,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
       {disk.failed && devices.length === 0 ? (
         <div className="col-12" data-note="disk-failed">
           <div className="alert alert-danger mb-0" role="alert">
-            {t('machine.machineResourceCharts.diskIoFailed', { message: disk.message })}
+            {t(ZONE_DISK.failKey, { message: disk.message })}
           </div>
         </div>
       ) : null}
@@ -177,12 +190,12 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
         <MachineChartCard
           key={device.dataset}
           chart={`disk:${device.dataset}`}
-          title={t('machine.machineResourceCharts.diskTitle', { device: device.device })}
+          title={t(ZONE_DISK.titleKey, { device: device.device })}
           subtitle={device.dataset}
           badges={<DeviceBadges device={device} />}
           spec={diskSpec({ device, t })}
           state={stateOf(disk)}
-          failKey="machine.machineResourceCharts.diskIoFailed"
+          failKey={ZONE_DISK.failKey}
           onRefresh={disk.refresh}
           {...shared}
         />
@@ -207,13 +220,13 @@ const AdditionsNote = ({ folds }) => {
   return (
     <div className="col-12 col-lg-6 col-xxl-4" data-chart="memory">
       <SectionCard
-        title={t('machine.vboxResourceCharts.memoryTitle')}
+        title={t(MACHINE_MEMORY.titleKey)}
         className="mb-0 h-100"
         folded={folds.folded(ADDITIONS_FOLD)}
         onFold={() => folds.toggle(ADDITIONS_FOLD)}
       >
         <div className="alert alert-info mb-0" role="status" data-note="guest-additions">
-          {t('machine.vboxResourceCharts.additionsRequiredNote')}
+          {t(MACHINE_MEMORY.additionsKey)}
         </div>
       </SectionCard>
     </div>
@@ -239,8 +252,8 @@ const UsageCharts = ({ id, name, host, folds }) => {
   const latest = machineUsageLatest(usage.rows);
   const shared = {
     state: stateOf(usage),
-    waitKey: MACHINE_WAIT,
-    failKey: 'machine.vboxResourceCharts.metricsFailed',
+    waitKey: MACHINE_CPU.emptyKey,
+    failKey: MACHINE_CPU.failKey,
     host,
     folds,
     onRefresh: usage.refresh,
@@ -275,7 +288,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
     <>
       <MachineChartCard
         chart="cpu"
-        title={t('machine.vboxResourceCharts.cpuTitle')}
+        title={t(MACHINE_CPU.titleKey)}
         badges={cpuBadge}
         spec={specs.cpu}
         {...shared}
@@ -283,7 +296,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
       {latest.additions ? (
         <MachineChartCard
           chart="memory"
-          title={t('machine.vboxResourceCharts.memoryTitle')}
+          title={t(MACHINE_MEMORY.titleKey)}
           badges={memoryBadge}
           spec={specs.memory}
           {...shared}
@@ -293,14 +306,14 @@ const UsageCharts = ({ id, name, host, folds }) => {
       )}
       <MachineChartCard
         chart="network"
-        title={t('machine.vboxResourceCharts.networkTitle')}
+        title={t(MACHINE_NETWORK.titleKey)}
         badges={networkBadge}
         spec={specs.network}
         {...shared}
       />
       <MachineChartCard
         chart="disk"
-        title={t('machine.vboxResourceCharts.diskTitle')}
+        title={t(MACHINE_DISK.titleKey)}
         spec={specs.disk}
         {...shared}
       />

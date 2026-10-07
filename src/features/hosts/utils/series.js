@@ -1,4 +1,6 @@
-import { MAX_POINTS, WIDEST_MINUTES } from './monitoring';
+import { isGap, withGaps } from '../charts/splice';
+
+import { WIDEST_MINUTES } from './monitoring';
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
@@ -35,35 +37,18 @@ export const timeOf = row => new Date(row?.scan_timestamp).getTime();
  */
 export const rowsOf = (answer, member) => (Array.isArray(answer?.[member]) ? answer[member] : []);
 
-const capped = (rows, keyOf, limit) => {
-  const counts = new Map();
-  return rows
-    .reduceRight((kept, row) => {
-      const key = keyOf(row);
-      const count = counts.get(key) || 0;
-      if (count < limit) {
-        counts.set(key, count + 1);
-        kept.push(row);
-      }
-      return kept;
-    }, [])
-    .reverse();
-};
-
 /**
  * New samples merged into the ones held: a row is added when no row of
  * its entity is held at its instant, so a read that overlaps what is
  * held, a history read older than a pushed sample and a sample pushed
- * twice add only what is new; the rows come out oldest first and the
- * `limit` newest of each entity are kept, the 180 points hyperweaver-ui
- * kept.
+ * twice add only what is new; the rows come out oldest first.
  *
  * @param {Array<Object>} held - The rows held, oldest first per entity
  * @param {Array<Object>} rows - The rows read or pushed, in any order
- * @param {Object} [options] - `entity`, the member that tells one entity's rows from another's, and `limit`
+ * @param {Object} [options] - `entity`, the member that tells one entity's rows from another's
  * @returns {Array<Object>} The merged rows
  */
-export const mergeRows = (held, rows, { entity = '', limit = MAX_POINTS } = {}) => {
+export const mergeRows = (held, rows, { entity = '' } = {}) => {
   const keyOf = row => (entity ? String(row[entity]) : '');
   const instantOf = row => `${keyOf(row)}|${timeOf(row)}`;
   const seen = new Set(held.map(instantOf));
@@ -74,11 +59,7 @@ export const mergeRows = (held, rows, { entity = '', limit = MAX_POINTS } = {}) 
     seen.add(instantOf(row));
     return true;
   });
-  return capped(
-    [...held, ...added].sort((first, second) => timeOf(first) - timeOf(second)),
-    keyOf,
-    limit
-  );
+  return [...held, ...added].sort((first, second) => timeOf(first) - timeOf(second));
 };
 
 /**
@@ -110,35 +91,63 @@ export const windowOf = (rows, { entity = '', minutes }) => {
 };
 
 /**
- * The rows the browser's ring keeps of a series: the ones inside the
- * widest window before the newest row held of each entity.
- *
- * @param {Array<Object>} rows - The rows held, oldest first per entity
- * @param {string} [entity] - The member that tells one entity's rows from another's
- * @returns {Array<Object>} The rows kept
+ * The span the browser's store keeps of every series, the widest window
+ * in milliseconds.
  */
-export const ringRows = (rows, entity = '') => windowOf(rows, { entity, minutes: WIDEST_MINUTES });
+export const KEPT_MS = WIDEST_MINUTES * MINUTE_MS;
 
 /**
  * The rows a chart draws of a series: the ones inside the window before
- * the newest row held of each entity, the 180 newest of each.
+ * the newest row held of each entity, every one of them, with a gap row
+ * between two neighbours of one entity farther apart than two live
+ * intervals while the live interval is known.
  *
  * @param {Array<Object>} rows - The rows held, oldest first per entity
- * @param {Object} options - `entity`, the member that tells one entity's rows from another's, and `minutes`, the window
+ * @param {Object} options - `entity`, the member that tells one entity's rows from another's, `minutes`, the window, and `liveMs`, the agent's live interval in milliseconds, zero while unknown
  * @returns {Array<Object>} The rows drawn
  */
-export const drawnRows = (rows, { entity = '', minutes }) =>
-  mergeRows([], windowOf(rows, { entity, minutes }), { entity });
+export const drawnRows = (rows, { entity = '', minutes, liveMs = 0 }) =>
+  withGaps(windowOf(rows, { entity, minutes }), liveMs, entity);
 
 /**
  * How many instants a series holds, the rows of several entities taken
- * at one instant counted once: one instant is one sample, which a chart
- * draws as points and says so.
+ * at one instant counted once and a gap row not at all: one instant is
+ * one sample, which a chart draws as points and says so.
  *
  * @param {Array<Object>} rows - The rows held
  * @returns {number} The count of distinct instants
  */
-export const samplesIn = rows => new Set(rows.map(timeOf)).size;
+export const samplesIn = rows => new Set(rows.filter(row => !isGap(row)).map(timeOf)).size;
+
+const scaled = (number, divisor, digits) =>
+  digits === null ? number / divisor : round(number / divisor, digits);
+
+const unlessGap = read => row => (isGap(row) ? null : read(row));
+
+/**
+ * A reader of one member of a sample as a number, zero for a member the
+ * sample does not carry, divided by `divisor` and held to `digits`
+ * decimals where given; null for a gap row.
+ *
+ * @param {string} member - The member, e.g. `cpu_utilization_pct`
+ * @param {Object} [options] - `divisor` and `digits`
+ * @returns {Function} `row => number|null`
+ */
+export const valueOf = (member, { divisor = 1, digits = null } = {}) =>
+  unlessGap(row => scaled(numberOf(row[member]), divisor, digits));
+
+/**
+ * A reader of one member of a sample as a number, null for a member the
+ * sample does not carry as one and for a gap row, so a line draws a
+ * point only of the samples that carry it, divided by `divisor` and held
+ * to `digits` decimals where given.
+ *
+ * @param {string} member - The member, e.g. `cached_bytes`
+ * @param {Object} [options] - `divisor` and `digits`
+ * @returns {Function} `row => number|null`
+ */
+export const carriedOf = (member, { divisor = 1, digits = null } = {}) =>
+  unlessGap(row => (isNumber(row[member]) ? scaled(Number(row[member]), divisor, digits) : null));
 
 const coreLabel = core => core.cpu_id ?? `cpu${core.core}`;
 
@@ -151,43 +160,36 @@ const withCores = (cores, row) => {
 };
 
 /**
- * The CPU samples as the lines the chart draws: the overall use, the IO
- * delay where a sample carries one, a line per core named by the agent's
+ * The CPU samples as one line of points per core, named by the agent's
  * own `cpu_id` or, where it answers the core's number alone, `cpu` and
- * that number, and the three load averages.
+ * that number.
  *
  * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {{ overall: Array, ioDelay: Array, cores: Object, load1: Array, load5: Array, load15: Array }} The points
+ * @returns {Object<string, Array>} The points per core
  */
-export const cpuSeries = rows => ({
-  overall: rows.map(row => [timeOf(row), numberOf(row.cpu_utilization_pct)]),
-  ioDelay: rows
-    .filter(row => isNumber(row.io_delay_pct))
-    .map(row => [timeOf(row), numberOf(row.io_delay_pct)]),
-  cores: rows.reduce(withCores, {}),
-  load1: rows.map(row => [timeOf(row), numberOf(row.load_avg_1min)]),
-  load5: rows.map(row => [timeOf(row), numberOf(row.load_avg_5min)]),
-  load15: rows.map(row => [timeOf(row), numberOf(row.load_avg_15min)]),
-});
-
-const gigabytes = (rows, member) =>
-  rows
-    .filter(row => isNumber(row[member]))
-    .map(row => [timeOf(row), round(Number(row[member]) / GIB, 2)]);
+export const coreSeries = rows => rows.reduce(withCores, {});
 
 /**
- * The memory samples as the lines the chart draws, in gigabytes: used,
- * free, total and, only of the samples that carry the number, cached.
- *
- * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {{ used: Array, free: Array, cached: Array, total: Array }} The points
+ * The readers of a CPU sample the chart's lines draw: the overall use,
+ * the IO delay where a sample carries one, and the three load averages.
  */
-export const memorySeries = rows => ({
-  used: gigabytes(rows, 'used_memory_bytes'),
-  free: gigabytes(rows, 'free_memory_bytes'),
-  cached: gigabytes(rows, 'cached_bytes'),
-  total: gigabytes(rows, 'total_memory_bytes'),
-});
+export const cpuValues = {
+  overall: valueOf('cpu_utilization_pct'),
+  ioDelay: carriedOf('io_delay_pct'),
+  load1: valueOf('load_avg_1min'),
+  load5: valueOf('load_avg_5min'),
+  load15: valueOf('load_avg_15min'),
+};
+
+/**
+ * The readers of a memory sample the chart's lines draw, in gigabytes,
+ * each only of the samples that carry the number: used, free and cached.
+ */
+export const memoryValues = {
+  used: carriedOf('used_memory_bytes', { divisor: GIB, digits: 2 }),
+  free: carriedOf('free_memory_bytes', { divisor: GIB, digits: 2 }),
+  cached: carriedOf('cached_bytes', { divisor: GIB, digits: 2 }),
+};
 
 const megabitsFrom = (bytes, seconds) =>
   seconds > 0 ? Math.max(0, (numberOf(bytes) / seconds) * BITS) / MEGA : 0;
@@ -211,8 +213,16 @@ export const networkRates = row => {
 const withEntity = (entityOf, pointsOf) => (entities, row) => {
   const name = String(entityOf(row));
   const held = entities[name] || { first: [], second: [], total: [] };
-  const [first, second] = pointsOf(row);
   const at = timeOf(row);
+  if (isGap(row)) {
+    entities[name] = {
+      first: [...held.first, [at, null]],
+      second: [...held.second, [at, null]],
+      total: [...held.total, [at, null]],
+    };
+    return entities;
+  }
+  const [first, second] = pointsOf(row);
   entities[name] = {
     first: [...held.first, [at, round(first, 3)]],
     second: [...held.second, [at, round(second, 3)]],
@@ -233,7 +243,8 @@ const poolPoints = row => [
 
 /**
  * The network samples as three lines an interface, megabits a second
- * received as `first`, sent as `second`, and both together.
+ * received as `first`, sent as `second`, and both together, a gap row a
+ * null point of each.
  *
  * @param {Array<Object>} rows - The rows held, oldest first per interface
  * @returns {Object<string, { first: Array, second: Array, total: Array }>} The points per interface
@@ -246,7 +257,8 @@ export const networkSeries = rows =>
 
 /**
  * The pool I/O samples as three lines a pool, megabytes a second read as
- * `first`, written as `second`, and both together.
+ * `first`, written as `second`, and both together, a gap row a null
+ * point of each.
  *
  * @param {Array<Object>} rows - The rows held, oldest first per pool
  * @returns {Object<string, { first: Array, second: Array, total: Array }>} The points per pool
@@ -273,26 +285,20 @@ const compressionOf = row => {
     : 1;
 };
 
-const pointsBy = (rows, valueOf, digits) =>
-  rows.map(row => [timeOf(row), round(valueOf(row), digits)]);
-
 /**
- * The ARC samples as the lines the charts draw: the size, the target,
- * the MRU and the MFU share in gigabytes, the hit ratio, the agent's own
- * or the hits over the hits and misses, the demand and the prefetch
- * efficiency in percent, and the compression ratio, one where the sample
- * carries no sizes to take it from.
- *
- * @param {Array<Object>} rows - The rows held, oldest first
- * @returns {Object<string, Array>} The points of `size`, `target`, `mru`, `mfu`, `hitRatio`, `demandEfficiency`, `prefetchEfficiency` and `compressionRatio`
+ * The readers of an ARC sample the charts' lines draw: the size, the
+ * target, the MRU and the MFU share in gigabytes, the hit ratio, the
+ * agent's own or the hits over the hits and misses, the demand and the
+ * prefetch efficiency in percent, and the compression ratio, one where
+ * the sample carries no sizes to take it from; each null for a gap row.
  */
-export const arcSeries = rows => ({
-  size: pointsBy(rows, row => numberOf(row.arc_size) / GIB, 2),
-  target: pointsBy(rows, row => numberOf(row.arc_target_size) / GIB, 2),
-  mru: pointsBy(rows, row => numberOf(row.mru_size) / GIB, 2),
-  mfu: pointsBy(rows, row => numberOf(row.mfu_size) / GIB, 2),
-  hitRatio: pointsBy(rows, hitRatioOf, 1),
-  demandEfficiency: pointsBy(rows, row => numberOf(row.data_demand_efficiency), 2),
-  prefetchEfficiency: pointsBy(rows, row => numberOf(row.data_prefetch_efficiency), 2),
-  compressionRatio: pointsBy(rows, compressionOf, 2),
-});
+export const arcValues = {
+  size: valueOf('arc_size', { divisor: GIB, digits: 2 }),
+  target: valueOf('arc_target_size', { divisor: GIB, digits: 2 }),
+  mru: valueOf('mru_size', { divisor: GIB, digits: 2 }),
+  mfu: valueOf('mfu_size', { divisor: GIB, digits: 2 }),
+  hitRatio: unlessGap(row => round(hitRatioOf(row), 1)),
+  demandEfficiency: valueOf('data_demand_efficiency', { digits: 2 }),
+  prefetchEfficiency: valueOf('data_prefetch_efficiency', { digits: 2 }),
+  compressionRatio: unlessGap(row => round(compressionOf(row), 2)),
+};

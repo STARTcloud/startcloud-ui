@@ -321,8 +321,6 @@ Feature: machines
     And the host was sent GET to "/api/monitoring/zones/diskio" 1 times
     And the host was sent GET to "/api/monitoring/network/usage" 2 times
     And the host was asked "/api/monitoring/zones/usage" with "zone" as "web-1"
-    And the host was asked "/api/monitoring/zones/usage" with "limit" as "180"
-    And the host was asked "/api/monitoring/zones/diskio" with "limit" as "180"
     And the host was asked "/api/monitoring/network/usage" with "link" as "vnice3_1234_0"
     And the host was not sent GET to "/api/monitoring/machines/usage"
     And the host was not sent GET to "/api/agents/self/monitoring/zones/usage"

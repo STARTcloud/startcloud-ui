@@ -13,9 +13,12 @@ import { patchOf, schemaSections, setValueAt, valueAt } from '../../utils/schema
 
 import { ConfigArrivalContext } from './ConfigMap';
 import ConfigSections, { countFields, filterSections } from './ConfigSections';
+import ConfirmModal from './ConfirmModal';
 import FormErrorSummary from './FormErrorSummary';
 import PageHeader from './PageHeader';
 import RestartCard from './RestartCard';
+
+const STEP_UP_REQUIRED = 'step_up_required';
 
 const EMPTY_CONFIG = {};
 const EMPTY_SCHEMA = { properties: {} };
@@ -38,17 +41,27 @@ const versionOf = (config, schema) => {
   return value === undefined ? schema.schemaVersion : value;
 };
 
-const ConfigHeading = ({ name, schema, config, ready, onUpdate }) => {
+const ConfigHeading = ({ name, schema, config, ready, onUpdate, onRestart }) => {
   const { t } = useTranslation();
   const subtitle = ready
     ? t('configManager.schemaVersion', { version: versionOf(config, schema) })
     : undefined;
-  const update = (
-    <button type="button" className="btn btn-sm btn-primary" onClick={onUpdate}>
-      {t('configManager.buttons.update')}
-    </button>
+  const actions = (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-warning"
+        data-action="config-restart"
+        onClick={onRestart}
+      >
+        {t('configManager.restart.button')}
+      </button>
+      <button type="button" className="btn btn-sm btn-primary" onClick={onUpdate}>
+        {t('configManager.buttons.update')}
+      </button>
+    </>
   );
-  return <PageHeader title={schema?.title || name} subtitle={subtitle} actions={update} />;
+  return <PageHeader title={schema?.title || name} subtitle={subtitle} actions={actions} />;
 };
 
 ConfigHeading.propTypes = {
@@ -57,6 +70,7 @@ ConfigHeading.propTypes = {
   config: PropTypes.object.isRequired,
   ready: PropTypes.bool.isRequired,
   onUpdate: PropTypes.func.isRequired,
+  onRestart: PropTypes.func.isRequired,
 };
 
 /**
@@ -68,15 +82,16 @@ ConfigHeading.propTypes = {
  * `status.config` when absent; and `name`, the file drawn, the route's
  * `name` segment when absent, the first of `names` when neither names a
  * listed file. It draws the file's schema root `title` as the page
- * heading with Update as its action and the file's `schemaVersion` as the
- * muted line under it, the `RestartCard` fed by `restartStatus`, the
- * sections through `ConfigSections` with their folds under
- * `table_prefs_admin_config`, searched from the navbar; every value is
- * validated through the schema on blur and on Update, the `PUT` sends
+ * heading with Restart and Update as its actions and the file's
+ * `schemaVersion` as the muted line under it, the `RestartCard` fed by
+ * `restartStatus`, the sections through `ConfigSections` with their folds
+ * under `table_prefs_admin_config`, searched from the navbar; every value
+ * is validated through the schema on blur and on Update, the `PUT` sends
  * `patchOf(before, after)`, a refused write is painted by pointer, the
- * URL's hash opens the map item it names, and the restart and every
- * schema action run through the shell's `useGuard`, so a
- * `403 step_up_required` opens the step-up dialog and retries.
+ * URL's hash opens the map item it names, Restart is offered at all times
+ * behind the typed confirmation, the card naming what is pending, and the
+ * restart and every schema action run through the shell's `useGuard`, so
+ * a `403 step_up_required` opens the step-up dialog and retries.
  *
  * Caveat: with no adapter or no file it draws the `configManager.noFiles`
  * notice alone, no Update and no Restart.
@@ -107,6 +122,7 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
   const [schemas, setSchemas] = useState({});
   const [loaded, setLoaded] = useState({ name: '', original: null, config: null });
   const [refresh, setRefresh] = useState(0);
+  const [restarting, setRestarting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const schema = schemas[selectedConfig] || null;
   const ready = Boolean(configApi && schema && loaded.name === selectedConfig && loaded.config);
@@ -192,6 +208,20 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
     );
   };
 
+  const restartApp = () => {
+    setRestarting(false);
+    guard(configApi.restart)
+      .then(() => {
+        notify('success', t('configManager.restarting'));
+        setRefresh(current => current + 1);
+      })
+      .catch(error => {
+        if (error?.code !== STEP_UP_REQUIRED) {
+          notify('danger', t(error?.messageKey || 'errors.request'));
+        }
+      });
+  };
+
   const visibleSections = filterSections(sections, searchTerm.toLowerCase());
 
   useNavbarSearchBinding({
@@ -222,6 +252,13 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
         config={config}
         ready={ready}
         onUpdate={updateConfig}
+        onRestart={() => setRestarting(true)}
+      />
+      <ConfirmModal
+        show={restarting}
+        handleClose={() => setRestarting(false)}
+        handleConfirm={restartApp}
+        variant="restart"
       />
       <div className="config-container">
         <RestartCard

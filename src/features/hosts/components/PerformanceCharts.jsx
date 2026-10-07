@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { CHART_ORDER, chartOf } from '../charts/registry';
 import { useHostRow } from '../hooks/useHostRow';
-import { CHART_ORDER, DEFAULT_VISIBILITY } from '../utils/chartSpecs';
-import { SERIES, hostOffers } from '../utils/monitoring';
+import { hostOffers } from '../utils/monitoring';
 
 import PerformanceCard from './PerformanceCard';
+
+const DEFAULT_VISIBILITY = Object.fromEntries(
+  CHART_ORDER.map(metric => [metric, chartOf(metric).groups])
+);
 
 const toggled = (visibility, metric, key) => ({
   ...visibility,
@@ -32,11 +36,11 @@ const PerformanceCharts = ({ id, host, folds }) => {
   const server = useHostRow(id);
   const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
 
-  if (!hostOffers(server, SERIES.cpu.tokens)) {
+  if (!hostOffers(server, chartOf('cpu').tokens)) {
     return null;
   }
 
-  const metrics = CHART_ORDER.filter(metric => hostOffers(server, SERIES[metric].tokens));
+  const metrics = CHART_ORDER.filter(metric => hostOffers(server, chartOf(metric).tokens));
 
   return (
     <div data-panel="performance">

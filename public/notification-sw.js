@@ -61,7 +61,18 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  event.waitUntil(self.clients.openWindow(event.notification.data?.navigate || '/'));
+  const target = event.notification.data?.navigate || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      const open = clients.find(client => 'focus' in client);
+      if (!open) {
+        return self.clients.openWindow(target);
+      }
+      return open
+        .focus()
+        .then(focused => (focused && 'navigate' in focused ? focused.navigate(target) : focused));
+    })
+  );
 });
 
 self.addEventListener('pushsubscriptionchange', event => {

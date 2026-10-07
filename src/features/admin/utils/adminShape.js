@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types';
 
 /**
- * The app's side of the shared admin pages: the update check on a host
- * that answers one (`updateStatus` present, absent on a `cookie` host); the
+ * The app's side of the shared admin pages: the
  * configuration files with their schemas, the merge-patch write,
  * the restart status, the restart and the one `action(route, method, body)`
  * on a host whose `status.config` names a file (`config` present, absent
@@ -36,7 +35,6 @@ export const adminShape = PropTypes.shape({
     action: PropTypes.func.isRequired,
   }),
   storage: PropTypes.func,
-  updateStatus: PropTypes.func,
   update: PropTypes.shape({
     check: PropTypes.func.isRequired,
     apply: PropTypes.func.isRequired,

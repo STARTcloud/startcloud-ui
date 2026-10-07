@@ -91,6 +91,8 @@ const location = { hash: '', pathname: '/', search: '', assign: vi.fn(), reload:
 
 const history = { replaceState: vi.fn() };
 
+const close = vi.fn();
+
 const installGlobals = () => {
   vi.stubGlobal('localStorage', {
     getItem: key => (storage.has(key) ? storage.get(key) : null),
@@ -100,6 +102,7 @@ const installGlobals = () => {
   vi.stubGlobal('window', {
     location,
     history,
+    close,
     addEventListener: (name, handler) => {
       listeners[name] = handler;
     },
@@ -146,6 +149,7 @@ beforeEach(() => {
   location.search = '';
   location.assign.mockClear();
   location.reload.mockClear();
+  close.mockClear();
   history.replaceState.mockClear();
   events.emit.mockClear();
   events.endSession.mockClear();
@@ -380,7 +384,7 @@ describe('createApiKeySession', () => {
     expect(events.emit).not.toHaveBeenCalled();
   });
 
-  it('claims the tray token once per page load with the fragment stripped first and tells the other tabs', async () => {
+  it('claims the tray token once per page load with the fragment stripped first, asks the other tabs and tells them', async () => {
     location.hash = '#tray=tok_1';
     answers.set('POST /api/auth/tray-claim', { status: 200, data: { api_key: 'hw_new' } });
     const session = await freshProvider();
@@ -392,8 +396,10 @@ describe('createApiKeySession', () => {
     expect(sent('GET', '/api/api-keys/info')[0].headers.Authorization).toBe('Bearer hw_new');
     expect(stored().key).toBe('hw_new');
     expect(channels[0].posted).toEqual([
+      expect.objectContaining({ type: 'auth-ping', key: 'apikey' }),
       expect.objectContaining({ type: 'auth-updated', key: 'apikey' }),
     ]);
+    expect(close).not.toHaveBeenCalled();
     expect(await session.complete()).toBeNull();
     expect((await session.load()).user.username).toBe('Mark');
     expect(sent('POST', '/api/auth/tray-claim')).toHaveLength(1);
@@ -468,7 +474,35 @@ describe('createApiKeySession', () => {
     expect(history.replaceState).toHaveBeenCalledWith(null, '', '/');
     expect(sent('POST', '/api/auth/tray-claim')).toHaveLength(0);
     expect(stored().key).toBe('hw_good');
-    expect(channels[0].posted).toHaveLength(1);
+    expect(channels[0].posted.map(message => message.type)).toEqual(['auth-ping', 'auth-updated']);
+  });
+
+  it('closes the hand-off tab the moment another tab answers the ping, and never a tab that handed nothing off', async () => {
+    location.hash = '#tray=tok_6';
+    answers.set('POST /api/auth/tray-claim', { status: 200, data: { api_key: 'hw_new' } });
+    const session = await freshProvider();
+    const [channel] = channels;
+    channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'other' } });
+    expect(close).not.toHaveBeenCalled();
+    await session.load();
+    const own = channel.posted[0].senderId;
+    channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: own } });
+    expect(close).not.toHaveBeenCalled();
+    channel.onmessage({ data: { type: 'auth-pong', key: 'other-key', senderId: 'other' } });
+    expect(close).not.toHaveBeenCalled();
+    channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'other' } });
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers another tab's ping with a pong and ignores its own", async () => {
+    await freshProvider();
+    const [channel] = channels;
+    channel.onmessage({ data: { type: 'auth-ping', key: 'apikey', senderId: 'other' } });
+    expect(channel.posted).toEqual([expect.objectContaining({ type: 'auth-pong', key: 'apikey' })]);
+    const own = channel.posted[0].senderId;
+    channel.onmessage({ data: { type: 'auth-ping', key: 'apikey', senderId: own } });
+    expect(channel.posted).toHaveLength(1);
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('claims when the stored key is dead, and answers null when the claim is refused', async () => {

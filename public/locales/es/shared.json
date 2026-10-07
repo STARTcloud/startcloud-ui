@@ -1305,8 +1305,7 @@
       "resume": "Reanudar",
       "suspend": "Suspender",
       "delete": "Eliminar",
-      "upload": "Subir",
-      "copy": "Copiar"
+      "upload": "Subir"
     },
     "messages": {
       "operationSuccessful": "Operación completada exitosamente"
@@ -1321,9 +1320,6 @@
       "total": "Total: {{space}}"
     },
     "update": {
-      "title": "Actualización Disponible",
-      "message": "Una nueva versión (v{{latestVersion}}) está disponible. Actualmente estás ejecutando v{{currentVersion}}.",
-      "instructions": "Para actualizar, ejecuta el siguiente comando en tu servidor:",
       "confirmTitle": "Actualizar {{app}}",
       "confirmMessage": "¿Actualizar {{app}} de {{currentVersion}} a {{latestVersion}}? La actualización se descarga y se aplica, luego {{app}} se reinicia con la nueva versión."
     }

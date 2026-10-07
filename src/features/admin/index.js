@@ -8,7 +8,6 @@ export {
   setUserRoles,
   storage,
   suspendUser,
-  updateStatus,
 } from './api/admin';
 export { searchKinds, sidebar } from './sidebar';
 export { organizationBodyOf, organizationRowOf, pageOf, usersOf } from './utils/accounts';

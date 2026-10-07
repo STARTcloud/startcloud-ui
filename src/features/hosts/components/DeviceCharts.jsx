@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { chartOf } from '../charts/registry';
 import { ioSpec } from '../utils/chartDefaults';
 
 import NetworkingChartCard from './NetworkingChartCard';
+
+const TITLE_KEY = chartOf('disk-io').texts.titleKey;
 
 /**
  * One chart a device, hyperweaver-ui's individual device charts, titled
@@ -27,7 +30,7 @@ const DeviceCharts = ({ devices, names, order, visibility, host, emptyText, sing
           <div key={name} className="col-12 col-lg-6 col-xxl-4">
             <NetworkingChartCard
               chart={`device:${name}`}
-              title={t('host.expandedChartOptions.individualTitle', { id: name })}
+              title={t(TITLE_KEY, { id: name })}
               chartTitle={name}
               host={host}
               spec={ioSpec(devices[name], visibility, t)}

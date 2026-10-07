@@ -1,0 +1,1712 @@
+{
+  "CHART_ORDER": ["pool-io", "arc", "network", "cpu", "memory"],
+  "CHART_TEXTS": {
+    "pool-io": {
+      "titleKey": "hosts.charts.poolIo.title",
+      "chartTitleKey": "hosts.charts.poolIo.chartTitle",
+      "expandedKey": "hosts.charts.poolIo.expanded",
+      "emptyKey": "hosts.charts.poolIo.empty"
+    },
+    "arc": {
+      "titleKey": "hosts.charts.arc.title",
+      "chartTitleKey": "hosts.charts.arc.chartTitle",
+      "expandedKey": "hosts.charts.arc.expanded",
+      "emptyKey": "hosts.charts.arc.empty"
+    },
+    "network": {
+      "titleKey": "hosts.charts.network.title",
+      "chartTitleKey": "hosts.charts.network.chartTitle",
+      "expandedKey": "hosts.charts.network.expanded",
+      "emptyKey": "hosts.charts.network.empty"
+    },
+    "cpu": {
+      "titleKey": "hosts.charts.cpu.title",
+      "chartTitleKey": "hosts.charts.cpu.chartTitle",
+      "expandedKey": "hosts.charts.cpu.expanded",
+      "emptyKey": "hosts.charts.cpu.empty"
+    },
+    "memory": {
+      "titleKey": "hosts.charts.memory.title",
+      "chartTitleKey": "hosts.charts.memory.chartTitle",
+      "expandedKey": "hosts.charts.memory.expanded",
+      "emptyKey": "hosts.charts.memory.empty"
+    }
+  },
+  "DEFAULT_VISIBILITY": {
+    "pool-io": {
+      "read": true,
+      "write": true,
+      "total": true
+    },
+    "arc": {},
+    "network": {
+      "read": true,
+      "write": true,
+      "total": true
+    },
+    "cpu": {
+      "overall": true,
+      "cores": true,
+      "load": false
+    },
+    "memory": {
+      "used": true,
+      "free": true,
+      "cached": true
+    }
+  },
+  "CARD_LEGEND": {
+    "pool-io": true,
+    "arc": true,
+    "network": true,
+    "cpu": false,
+    "memory": true
+  },
+  "host": {
+    "pool-io": {
+      "shown": {
+        "axes": [
+          {
+            "name": "hosts.charts.poolIo.axis",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "tank:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": false
+          },
+          {
+            "key": "tank:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "points": [[1790510400000, 3]],
+            "tone": "blue",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "tank:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "points": [[1790510400000, 4]],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "rpool:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": false
+          },
+          {
+            "key": "rpool:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "rpool:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": false
+          }
+        ]
+      },
+      "toggled": {
+        "axes": [
+          {
+            "name": "hosts.charts.poolIo.axis",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "tank:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": true
+          },
+          {
+            "key": "tank:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "points": [[1790510400000, 3]],
+            "tone": "blue",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "tank:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "points": [[1790510400000, 4]],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "rpool:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": true
+          },
+          {
+            "key": "rpool:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "rpool:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": true
+          }
+        ]
+      },
+      "toggles": [
+        {
+          "key": "read",
+          "label": "hosts.charts.poolIo.read",
+          "title": "hosts.charts.poolIo.toggleRead",
+          "tone": "info"
+        },
+        {
+          "key": "write",
+          "label": "hosts.charts.poolIo.write",
+          "title": "hosts.charts.poolIo.toggleWrite",
+          "tone": "warning"
+        },
+        {
+          "key": "total",
+          "label": "hosts.charts.poolIo.total",
+          "title": "hosts.charts.poolIo.toggleTotal",
+          "tone": "success"
+        }
+      ]
+    },
+    "arc": {
+      "shown": {
+        "axes": [
+          {
+            "name": "hosts.charts.arc.sizeAxis",
+            "min": 0,
+            "unit": " GB"
+          },
+          {
+            "name": "hosts.charts.arc.hitAxis",
+            "min": 0,
+            "max": 100,
+            "unit": "%"
+          }
+        ],
+        "series": [
+          {
+            "key": "size",
+            "name": "hosts.charts.arc.size",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 1]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "target",
+            "name": "hosts.charts.arc.target",
+            "points": [
+              [1790510400000, 4],
+              [1790510405000, 0]
+            ],
+            "tone": "red",
+            "dash": "dash",
+            "width": 2
+          },
+          {
+            "key": "hitRate",
+            "name": "hosts.charts.arc.hitRate",
+            "points": [
+              [1790510400000, 95.5],
+              [1790510405000, 90]
+            ],
+            "tone": "green",
+            "width": 3,
+            "axis": 1,
+            "digits": 1
+          }
+        ]
+      },
+      "toggled": {
+        "axes": [
+          {
+            "name": "hosts.charts.arc.sizeAxis",
+            "min": 0,
+            "unit": " GB"
+          },
+          {
+            "name": "hosts.charts.arc.hitAxis",
+            "min": 0,
+            "max": 100,
+            "unit": "%"
+          }
+        ],
+        "series": [
+          {
+            "key": "size",
+            "name": "hosts.charts.arc.size",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 1]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "target",
+            "name": "hosts.charts.arc.target",
+            "points": [
+              [1790510400000, 4],
+              [1790510405000, 0]
+            ],
+            "tone": "red",
+            "dash": "dash",
+            "width": 2
+          },
+          {
+            "key": "hitRate",
+            "name": "hosts.charts.arc.hitRate",
+            "points": [
+              [1790510400000, 95.5],
+              [1790510405000, 90]
+            ],
+            "tone": "green",
+            "width": 3,
+            "axis": 1,
+            "digits": 1
+          }
+        ]
+      },
+      "toggles": []
+    },
+    "network": {
+      "shown": {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "eth0:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.rx\"}",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": false
+          },
+          {
+            "key": "eth0:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.tx\"}",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 0.5]
+            ],
+            "tone": "blue",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "eth0:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.total\"}",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 3.5]
+            ],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "wlan0:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.rx\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": false
+          },
+          {
+            "key": "wlan0:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.tx\"}",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": false
+          },
+          {
+            "key": "wlan0:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.total\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": false
+          }
+        ]
+      },
+      "toggled": {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "eth0:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.rx\"}",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": true
+          },
+          {
+            "key": "eth0:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.tx\"}",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 0.5]
+            ],
+            "tone": "blue",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "eth0:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.total\"}",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 3.5]
+            ],
+            "tone": "blue",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "wlan0:first",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.rx\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 2,
+            "opacity": 0.55,
+            "hidden": true
+          },
+          {
+            "key": "wlan0:second",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.tx\"}",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "dash": "dash",
+            "width": 2,
+            "opacity": 1,
+            "hidden": true
+          },
+          {
+            "key": "wlan0:total",
+            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.total\"}",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "dash": "solid",
+            "width": 3,
+            "opacity": 1,
+            "hidden": true
+          }
+        ]
+      },
+      "toggles": [
+        {
+          "key": "read",
+          "label": "hosts.charts.network.rx",
+          "title": "hosts.charts.network.toggleRx",
+          "tone": "info"
+        },
+        {
+          "key": "write",
+          "label": "hosts.charts.network.tx",
+          "title": "hosts.charts.network.toggleTx",
+          "tone": "warning"
+        },
+        {
+          "key": "total",
+          "label": "hosts.charts.network.total",
+          "title": "hosts.charts.network.toggleTotal",
+          "tone": "success"
+        }
+      ]
+    },
+    "cpu": {
+      "shown": {
+        "axes": [
+          {
+            "name": "hosts.charts.cpu.usageAxis",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "name": "hosts.charts.cpu.loadAxis"
+          }
+        ],
+        "series": [
+          {
+            "key": "overall",
+            "name": "hosts.charts.cpu.overall",
+            "points": [
+              [1790510400000, 12.5],
+              [1790510405000, 20]
+            ],
+            "tone": "blue",
+            "width": 3,
+            "hidden": false
+          },
+          {
+            "key": "ioDelay",
+            "name": "hosts.charts.cpu.ioDelay",
+            "points": [[1790510400000, 1.5]],
+            "tone": "yellow",
+            "dash": "short-dash",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "core:cpu0",
+            "name": "cpu0",
+            "points": [[1790510400000, 10]],
+            "tone": "blue",
+            "width": 1,
+            "opacity": 0.5,
+            "hidden": false
+          },
+          {
+            "key": "core:cpu1",
+            "name": "cpu1",
+            "points": [[1790510405000, 30]],
+            "tone": "blue",
+            "width": 1,
+            "opacity": 0.5,
+            "hidden": false
+          },
+          {
+            "key": "load1",
+            "name": "hosts.charts.cpu.load1",
+            "points": [
+              [1790510400000, 0.4],
+              [1790510405000, 0]
+            ],
+            "tone": "orange",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          },
+          {
+            "key": "load5",
+            "name": "hosts.charts.cpu.load5",
+            "points": [
+              [1790510400000, 0.3],
+              [1790510405000, 0]
+            ],
+            "tone": "green",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          },
+          {
+            "key": "load15",
+            "name": "hosts.charts.cpu.load15",
+            "points": [
+              [1790510400000, 0.2],
+              [1790510405000, 0]
+            ],
+            "tone": "pink",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          }
+        ]
+      },
+      "toggled": {
+        "axes": [
+          {
+            "name": "hosts.charts.cpu.usageAxis",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "name": "hosts.charts.cpu.loadAxis"
+          }
+        ],
+        "series": [
+          {
+            "key": "overall",
+            "name": "hosts.charts.cpu.overall",
+            "points": [
+              [1790510400000, 12.5],
+              [1790510405000, 20]
+            ],
+            "tone": "blue",
+            "width": 3,
+            "hidden": true
+          },
+          {
+            "key": "ioDelay",
+            "name": "hosts.charts.cpu.ioDelay",
+            "points": [[1790510400000, 1.5]],
+            "tone": "yellow",
+            "dash": "short-dash",
+            "width": 2,
+            "hidden": true
+          },
+          {
+            "key": "core:cpu0",
+            "name": "cpu0",
+            "points": [[1790510400000, 10]],
+            "tone": "blue",
+            "width": 1,
+            "opacity": 0.5,
+            "hidden": false
+          },
+          {
+            "key": "core:cpu1",
+            "name": "cpu1",
+            "points": [[1790510405000, 30]],
+            "tone": "blue",
+            "width": 1,
+            "opacity": 0.5,
+            "hidden": false
+          },
+          {
+            "key": "load1",
+            "name": "hosts.charts.cpu.load1",
+            "points": [
+              [1790510400000, 0.4],
+              [1790510405000, 0]
+            ],
+            "tone": "orange",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          },
+          {
+            "key": "load5",
+            "name": "hosts.charts.cpu.load5",
+            "points": [
+              [1790510400000, 0.3],
+              [1790510405000, 0]
+            ],
+            "tone": "green",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          },
+          {
+            "key": "load15",
+            "name": "hosts.charts.cpu.load15",
+            "points": [
+              [1790510400000, 0.2],
+              [1790510405000, 0]
+            ],
+            "tone": "pink",
+            "dash": "short-dot",
+            "axis": 1,
+            "hidden": true
+          }
+        ]
+      },
+      "toggles": [
+        {
+          "key": "overall",
+          "label": "hosts.charts.cpu.avg",
+          "title": "hosts.charts.cpu.toggleAvg",
+          "tone": "info"
+        },
+        {
+          "key": "cores",
+          "label": "hosts.charts.cpu.cores",
+          "title": "hosts.charts.cpu.toggleCores",
+          "tone": "info"
+        },
+        {
+          "key": "load",
+          "label": "hosts.charts.cpu.load",
+          "title": "hosts.charts.cpu.toggleLoad",
+          "tone": "info"
+        }
+      ]
+    },
+    "memory": {
+      "shown": {
+        "axes": [
+          {
+            "name": "hosts.charts.memory.axis",
+            "min": 0,
+            "unit": " GB"
+          }
+        ],
+        "series": [
+          {
+            "key": "used",
+            "name": "hosts.charts.memory.used",
+            "points": [
+              [1790510400000, 6],
+              [1790510405000, 4]
+            ],
+            "tone": "orange",
+            "hidden": false
+          },
+          {
+            "key": "free",
+            "name": "hosts.charts.memory.free",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 4]
+            ],
+            "tone": "green",
+            "hidden": false
+          },
+          {
+            "key": "cached",
+            "name": "hosts.charts.memory.cached",
+            "points": [[1790510405000, 1]],
+            "tone": "blue",
+            "hidden": false
+          }
+        ]
+      },
+      "toggled": {
+        "axes": [
+          {
+            "name": "hosts.charts.memory.axis",
+            "min": 0,
+            "unit": " GB"
+          }
+        ],
+        "series": [
+          {
+            "key": "used",
+            "name": "hosts.charts.memory.used",
+            "points": [
+              [1790510400000, 6],
+              [1790510405000, 4]
+            ],
+            "tone": "orange",
+            "hidden": true
+          },
+          {
+            "key": "free",
+            "name": "hosts.charts.memory.free",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 4]
+            ],
+            "tone": "green",
+            "hidden": true
+          },
+          {
+            "key": "cached",
+            "name": "hosts.charts.memory.cached",
+            "points": [[1790510405000, 1]],
+            "tone": "blue",
+            "hidden": true
+          }
+        ]
+      },
+      "toggles": [
+        {
+          "key": "used",
+          "label": "hosts.charts.memory.used",
+          "title": "hosts.charts.memory.toggleUsed",
+          "tone": "info"
+        },
+        {
+          "key": "free",
+          "label": "hosts.charts.memory.free",
+          "title": "hosts.charts.memory.toggleFree",
+          "tone": "success"
+        },
+        {
+          "key": "cached",
+          "label": "hosts.charts.memory.cached",
+          "title": "hosts.charts.memory.toggleCached",
+          "tone": "warning"
+        }
+      ]
+    },
+    "cpuPlain": {
+      "axes": [
+        {
+          "name": "hosts.charts.cpu.usageAxis",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "name": "hosts.charts.cpu.loadAxis"
+        }
+      ],
+      "series": [
+        {
+          "key": "overall",
+          "name": "hosts.charts.cpu.overall",
+          "points": [[1790510400000, 12]],
+          "tone": "blue",
+          "width": 3,
+          "hidden": false
+        },
+        {
+          "key": "load1",
+          "name": "hosts.charts.cpu.load1",
+          "points": [[1790510400000, 0]],
+          "tone": "orange",
+          "dash": "short-dot",
+          "axis": 1,
+          "hidden": true
+        },
+        {
+          "key": "load5",
+          "name": "hosts.charts.cpu.load5",
+          "points": [[1790510400000, 0]],
+          "tone": "green",
+          "dash": "short-dot",
+          "axis": 1,
+          "hidden": true
+        },
+        {
+          "key": "load15",
+          "name": "hosts.charts.cpu.load15",
+          "points": [[1790510400000, 0]],
+          "tone": "pink",
+          "dash": "short-dot",
+          "axis": 1,
+          "hidden": true
+        }
+      ]
+    },
+    "memoryPlain": {
+      "axes": [
+        {
+          "name": "hosts.charts.memory.axis",
+          "min": 0,
+          "unit": " GB"
+        }
+      ],
+      "series": [
+        {
+          "key": "used",
+          "name": "hosts.charts.memory.used",
+          "points": [[1790510400000, 1]],
+          "tone": "orange",
+          "hidden": false
+        },
+        {
+          "key": "free",
+          "name": "hosts.charts.memory.free",
+          "points": [[1790510400000, 1]],
+          "tone": "green",
+          "hidden": false
+        }
+      ]
+    }
+  },
+  "machine": {
+    "zoneCpu": {
+      "axes": [
+        {
+          "name": "%",
+          "min": 0,
+          "unit": "%"
+        }
+      ],
+      "series": [
+        {
+          "key": "cpu",
+          "name": "machine.machineResourceCharts.cpuSeries",
+          "points": [
+            [1790510400000, 1.5],
+            [1790510405000, 2.25]
+          ],
+          "tone": "green",
+          "width": 2
+        }
+      ]
+    },
+    "zoneMemory": {
+      "axes": [
+        {
+          "name": "GB",
+          "min": 0,
+          "unit": " GB"
+        }
+      ],
+      "series": [
+        {
+          "key": "resident",
+          "name": "machine.machineResourceCharts.residentSeries",
+          "points": [[1790510400000, 2]],
+          "tone": "blue",
+          "width": 2
+        },
+        {
+          "key": "swap",
+          "name": "machine.machineResourceCharts.swapSeries",
+          "points": [[1790510400000, 1]],
+          "tone": "orange",
+          "width": 2
+        }
+      ]
+    },
+    "disks": [
+      {
+        "axes": [
+          {
+            "name": "MB/s",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "read",
+            "name": "machine.machineResourceCharts.readSeries",
+            "points": [[1790510400000, 0]],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "write",
+            "name": "machine.machineResourceCharts.writeSeries",
+            "points": [[1790510400000, 0.5]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "MB/s",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "read",
+            "name": "machine.machineResourceCharts.readSeries",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "write",
+            "name": "machine.machineResourceCharts.writeSeries",
+            "points": [[1790510400000, 2]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      }
+    ],
+    "link": {
+      "axes": [
+        {
+          "name": "Mbps",
+          "min": 0,
+          "unit": " Mbps"
+        }
+      ],
+      "series": [
+        {
+          "key": "rx",
+          "name": "machine.machineResourceCharts.rxSeries",
+          "points": [[1790510400000, 8.39]],
+          "tone": "blue",
+          "width": 2
+        },
+        {
+          "key": "tx",
+          "name": "machine.machineResourceCharts.txSeries",
+          "points": [[1790510400000, 4.19]],
+          "tone": "orange",
+          "width": 2
+        }
+      ]
+    },
+    "cpu": {
+      "axes": [
+        {
+          "name": "%",
+          "min": 0,
+          "unit": "%"
+        }
+      ],
+      "series": [
+        {
+          "key": "guest",
+          "name": "machine.vboxResourceCharts.guestSeries",
+          "points": [
+            [1790510400000, 3.5],
+            [1790510405000, 3.5]
+          ],
+          "tone": "green",
+          "width": 2
+        },
+        {
+          "key": "vmm",
+          "name": "machine.vboxResourceCharts.vmmSeries",
+          "points": [
+            [1790510400000, 0.5],
+            [1790510405000, 0.5]
+          ],
+          "tone": "purple",
+          "width": 2
+        }
+      ]
+    },
+    "memory": {
+      "axes": [
+        {
+          "name": "GB",
+          "min": 0,
+          "unit": " GB"
+        }
+      ],
+      "series": [
+        {
+          "key": "used",
+          "name": "machine.vboxResourceCharts.usedSeries",
+          "points": [
+            [1790510400000, 2],
+            [1790510405000, 2]
+          ],
+          "tone": "blue",
+          "width": 2
+        }
+      ]
+    },
+    "network": {
+      "axes": [
+        {
+          "name": "MB/s",
+          "min": 0,
+          "unit": " MB/s"
+        }
+      ],
+      "series": [
+        {
+          "key": "rx",
+          "name": "machine.vboxResourceCharts.rxSeries",
+          "points": [[1790510405000, 1]],
+          "tone": "blue",
+          "width": 2
+        },
+        {
+          "key": "tx",
+          "name": "machine.vboxResourceCharts.txSeries",
+          "points": [[1790510405000, 2]],
+          "tone": "orange",
+          "width": 2
+        }
+      ]
+    },
+    "disk": {
+      "axes": [
+        {
+          "name": "MB/s",
+          "min": 0,
+          "unit": " MB/s"
+        }
+      ],
+      "series": [
+        {
+          "key": "read",
+          "name": "machine.vboxResourceCharts.readSeries",
+          "points": [[1790510405000, 0.5]],
+          "tone": "blue",
+          "width": 2
+        },
+        {
+          "key": "write",
+          "name": "machine.vboxResourceCharts.writeSeries",
+          "points": [[1790510405000, 0]],
+          "tone": "orange",
+          "width": 2
+        }
+      ]
+    }
+  },
+  "networking": {
+    "SUMMARY_CHARTS": [
+      {
+        "key": "rx",
+        "member": "first",
+        "titleKey": "host.bandwidthCharts.rxBandwidth"
+      },
+      {
+        "key": "tx",
+        "member": "second",
+        "titleKey": "host.bandwidthCharts.txBandwidth"
+      },
+      {
+        "key": "total",
+        "member": "total",
+        "titleKey": "host.bandwidthCharts.totalBandwidth"
+      }
+    ],
+    "summary": [
+      {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "eth0",
+            "name": "eth0",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "wlan0",
+            "name": "wlan0",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "eth0",
+            "name": "eth0",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 0.5]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "wlan0",
+            "name": "wlan0",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "eth0",
+            "name": "eth0",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 3.5]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "wlan0",
+            "name": "wlan0",
+            "points": [[1790510400000, 1]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      }
+    ],
+    "interfaces": [
+      {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "hosts.charts.network.rx",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "second",
+            "name": "hosts.charts.network.tx",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 0.5]
+            ],
+            "tone": "orange",
+            "width": 2
+          },
+          {
+            "key": "total",
+            "name": "hosts.charts.network.total",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 3.5]
+            ],
+            "tone": "green",
+            "width": 3
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "hosts.charts.network.axis",
+            "min": 0,
+            "unit": " Mbps"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "hosts.charts.network.rx",
+            "points": [[1790510400000, 1]],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "second",
+            "name": "hosts.charts.network.tx",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "width": 2
+          },
+          {
+            "key": "total",
+            "name": "hosts.charts.network.total",
+            "points": [[1790510400000, 1]],
+            "tone": "green",
+            "width": 3
+          }
+        ]
+      }
+    ]
+  },
+  "storage": {
+    "SUMMARY_CHARTS": [
+      {
+        "key": "read",
+        "member": "first",
+        "titleKey": "hostCharts.summaryCharts.readBandwidthTitle",
+        "expandedKey": "host.expandedChartOptions.summaryRead"
+      },
+      {
+        "key": "write",
+        "member": "second",
+        "titleKey": "hostCharts.summaryCharts.writeBandwidthTitle",
+        "expandedKey": "host.expandedChartOptions.summaryWrite"
+      },
+      {
+        "key": "total",
+        "member": "total",
+        "titleKey": "hostCharts.summaryCharts.totalBandwidthTitle",
+        "expandedKey": "host.expandedChartOptions.summaryTotal"
+      }
+    ],
+    "ARC_CHARTS": [
+      {
+        "key": "arc-memory",
+        "titleKey": "hostCharts.arcCharts.memoryAllocationTitle",
+        "expandedKey": "host.expandedChartOptions.arcMemoryTitle"
+      },
+      {
+        "key": "arc-efficiency",
+        "titleKey": "hostCharts.arcCharts.cacheEfficiencyTitle",
+        "expandedKey": "host.expandedChartOptions.arcEfficiencyTitle"
+      },
+      {
+        "key": "arc-compression",
+        "titleKey": "hostCharts.arcCharts.compressionEffectivenessTitle",
+        "expandedKey": "host.expandedChartOptions.arcCompressionTitle"
+      }
+    ],
+    "toggles": [
+      {
+        "key": "read",
+        "label": "host.storageCharts.read",
+        "title": "host.storageCharts.toggleRead",
+        "tone": "info"
+      },
+      {
+        "key": "write",
+        "label": "host.storageCharts.write",
+        "title": "host.storageCharts.toggleWrite",
+        "tone": "warning"
+      },
+      {
+        "key": "total",
+        "label": "host.storageCharts.total",
+        "title": "host.storageCharts.toggleTotal",
+        "tone": "success"
+      }
+    ],
+    "summary": [
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "c0d0",
+            "name": "c0d0",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "c0d2",
+            "name": "c0d2",
+            "points": [[1790510405000, 0]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "c0d0",
+            "name": "c0d0",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 4]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "c0d2",
+            "name": "c0d2",
+            "points": [[1790510405000, 0]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "c0d0",
+            "name": "c0d0",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 7]
+            ],
+            "tone": "blue",
+            "width": 2
+          },
+          {
+            "key": "c0d2",
+            "name": "c0d2",
+            "points": [[1790510405000, 0]],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      }
+    ],
+    "devices": [
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "host.expandedChartOptions.seriesRead",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 3]
+            ],
+            "tone": "blue",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "second",
+            "name": "host.expandedChartOptions.seriesWrite",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 4]
+            ],
+            "tone": "orange",
+            "width": 2,
+            "hidden": true
+          },
+          {
+            "key": "total",
+            "name": "host.expandedChartOptions.seriesTotal",
+            "points": [
+              [1790510400000, 3],
+              [1790510405000, 7]
+            ],
+            "tone": "green",
+            "width": 3,
+            "hidden": false
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "host.expandedChartOptions.seriesRead",
+            "points": [[1790510405000, 0]],
+            "tone": "blue",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "second",
+            "name": "host.expandedChartOptions.seriesWrite",
+            "points": [[1790510405000, 0]],
+            "tone": "orange",
+            "width": 2,
+            "hidden": true
+          },
+          {
+            "key": "total",
+            "name": "host.expandedChartOptions.seriesTotal",
+            "points": [[1790510405000, 0]],
+            "tone": "green",
+            "width": 3,
+            "hidden": false
+          }
+        ]
+      }
+    ],
+    "pools": [
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "host.expandedChartOptions.seriesRead",
+            "points": [[1790510400000, 1]],
+            "tone": "blue",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "second",
+            "name": "host.expandedChartOptions.seriesWrite",
+            "points": [[1790510400000, 3]],
+            "tone": "orange",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "total",
+            "name": "host.expandedChartOptions.seriesTotal",
+            "points": [[1790510400000, 4]],
+            "tone": "green",
+            "width": 3,
+            "hidden": false
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "host.expandedChartOptions.axisBandwidthMBs",
+            "min": 0,
+            "unit": " MB/s"
+          }
+        ],
+        "series": [
+          {
+            "key": "first",
+            "name": "host.expandedChartOptions.seriesRead",
+            "points": [[1790510400000, 1]],
+            "tone": "blue",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "second",
+            "name": "host.expandedChartOptions.seriesWrite",
+            "points": [[1790510400000, 0]],
+            "tone": "orange",
+            "width": 2,
+            "hidden": false
+          },
+          {
+            "key": "total",
+            "name": "host.expandedChartOptions.seriesTotal",
+            "points": [[1790510400000, 1]],
+            "tone": "green",
+            "width": 3,
+            "hidden": false
+          }
+        ]
+      }
+    ],
+    "arc": [
+      {
+        "axes": [
+          {
+            "name": "hostCharts.arcCharts.memoryGbAxisLabel",
+            "min": 0,
+            "unit": " GB"
+          }
+        ],
+        "series": [
+          {
+            "key": "size",
+            "name": "hostCharts.arcCharts.arcSizeSeriesName",
+            "points": [
+              [1790510400000, 2],
+              [1790510405000, 1]
+            ],
+            "tone": "blue",
+            "width": 3
+          },
+          {
+            "key": "target",
+            "name": "hostCharts.arcCharts.targetSizeSeriesName",
+            "points": [
+              [1790510400000, 4],
+              [1790510405000, 0]
+            ],
+            "tone": "purple",
+            "dash": "dash",
+            "width": 2
+          },
+          {
+            "key": "mru",
+            "name": "hostCharts.arcCharts.mruSizeSeriesName",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 0]
+            ],
+            "tone": "green",
+            "width": 2
+          },
+          {
+            "key": "mfu",
+            "name": "hostCharts.arcCharts.mfuSizeSeriesName",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 0]
+            ],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "hostCharts.arcCharts.efficiencyAxisLabel",
+            "min": 0,
+            "max": 100,
+            "unit": "%"
+          }
+        ],
+        "series": [
+          {
+            "key": "hitRatio",
+            "name": "hostCharts.arcCharts.hitRatioSeriesName",
+            "points": [
+              [1790510400000, 95.5],
+              [1790510405000, 90]
+            ],
+            "tone": "green",
+            "width": 3,
+            "digits": 1
+          },
+          {
+            "key": "demand",
+            "name": "hostCharts.arcCharts.demandEfficiencySeriesName",
+            "points": [
+              [1790510400000, 99],
+              [1790510405000, 0]
+            ],
+            "tone": "red",
+            "width": 2
+          },
+          {
+            "key": "prefetch",
+            "name": "hostCharts.arcCharts.prefetchEfficiencySeriesName",
+            "points": [
+              [1790510400000, 50],
+              [1790510405000, 0]
+            ],
+            "tone": "orange",
+            "width": 2
+          }
+        ]
+      },
+      {
+        "axes": [
+          {
+            "name": "hostCharts.arcCharts.compressionRatioAxisLabel",
+            "min": 1,
+            "unit": "x"
+          }
+        ],
+        "series": [
+          {
+            "key": "compression",
+            "name": "hostCharts.arcCharts.compressionRatioSeriesName",
+            "points": [
+              [1790510400000, 1],
+              [1790510405000, 2]
+            ],
+            "tone": "purple",
+            "width": 3
+          }
+        ]
+      }
+    ]
+  }
+}

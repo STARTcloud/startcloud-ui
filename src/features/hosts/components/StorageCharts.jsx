@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import SeriesToggles from '../../../components/common/SeriesToggles';
+import { chartOf } from '../charts/registry';
 import { useStorageCharts } from '../hooks/useStorageCharts';
-import { ioToggles } from '../utils/chartDefaults';
+import { chartToggles } from '../utils/chartSpecs';
 import { samplesIn } from '../utils/series';
 import { STORAGE_CHART_SORTS } from '../utils/StorageUtils';
 
@@ -19,11 +20,13 @@ const FOLD = 'charts';
 
 const ALL_CHARTS = ['summary', 'devices', 'pools', 'arc'];
 
+const EMPTY_KEY = chartOf('disk-io').texts.emptyKey;
+
 const emptyKeyOf = ({ loaded, failed }) => {
   if (!loaded) {
     return 'pages.loading';
   }
-  return failed ? 'hosts.charts.loadError' : 'host.storageCharts.noData';
+  return failed ? 'hosts.charts.loadError' : EMPTY_KEY;
 };
 
 const SortSelect = ({ order, onChange }) => {
@@ -73,7 +76,7 @@ const ChartActions = ({ shown, charts }) => {
       {shown.devices ? <SortSelect order={charts.order} onChange={charts.setOrder} /> : null}
       {shown.devices || shown.pools ? (
         <SeriesToggles
-          toggles={ioToggles(t)}
+          toggles={chartToggles('disk-io', t)}
           visibility={charts.visibility}
           onToggle={charts.toggle}
         />
@@ -130,7 +133,7 @@ const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
       ) : null}
       {nothingOf({ shown, diskIo, poolIo, arc }) ? (
         <p className="text-muted" data-note="storage-charts-empty">
-          {t('host.storageCharts.noData')}
+          {t(EMPTY_KEY)}
         </p>
       ) : null}
     </>

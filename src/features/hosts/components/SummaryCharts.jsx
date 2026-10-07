@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
-import { SUMMARY_CHARTS, summarySpec } from '../utils/chartDefaults';
+import { chartOf } from '../charts/registry';
+import { summarySpec } from '../utils/chartDefaults';
 
 import NetworkingChartCard from './NetworkingChartCard';
+
+const SUMMARY_CHARTS = chartOf('storage-summary').charts;
 
 /**
  * The three charts that draw every device together, hyperweaver-ui's

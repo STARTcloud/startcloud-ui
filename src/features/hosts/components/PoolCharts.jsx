@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
-import { ioSpec } from '../utils/chartDefaults';
+import { chartOf } from '../charts/registry';
+import { poolSpec } from '../utils/chartDefaults';
 
 import NetworkingChartCard from './NetworkingChartCard';
+
+const TITLE_KEY = chartOf('pool').texts.titleKey;
 
 const typeOf = (latest, name) => latest.find(row => row.pool === name)?.pool_type || '';
 
@@ -31,10 +34,10 @@ const PoolCharts = ({ pools, latest, visibility, host, emptyText, single, folds 
           <div key={name} className="col-12 col-lg-6 col-xxl-4">
             <NetworkingChartCard
               chart={`pool:${name}`}
-              title={t('host.expandedChartOptions.poolTitle', { id: name })}
+              title={t(TITLE_KEY, { id: name })}
               chartTitle={typeOf(latest, name) ? `${name} (${typeOf(latest, name)})` : name}
               host={host}
-              spec={ioSpec(pools[name], visibility, t)}
+              spec={poolSpec(pools[name], visibility, t)}
               emptyText={emptyText}
               single={single}
               folds={folds}

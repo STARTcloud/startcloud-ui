@@ -359,14 +359,6 @@ const storage = () =>
     isos: usage('/var/lib/hyperweaver-server/artifacts', 2000 * GIB, 1830 * GIB),
   });
 
-const updateCheck = () =>
-  ok({
-    is_apt_managed: true,
-    update_available: true,
-    current_version: STATUS.version,
-    latest_version: '0.9.7',
-  });
-
 const hyperweaverRole = (person, admin) => {
   if (!admin) {
     return 'user';
@@ -403,8 +395,8 @@ const suspended = flag => ctx => {
  * The routes every page asks beside its own: the status, the health, the
  * ticket system, the rules, the Gravatar proxy, the client's error
  * report, the search over this role's kinds, and the admin's roles,
- * suspension, storage and update check; the health takes the next of its
- * four states each time a task ends and is sent on the `health` topic.
+ * suspension and storage; the health takes the next of its four states
+ * each time a task ends and is sent on the `health` topic.
  *
  * @param {Object} router - `publicRoute`, `sessionRoute` and `adminRoute`
  * @returns {void}
@@ -423,5 +415,4 @@ export const mountSite = ({ publicRoute, sessionRoute, adminRoute }) => {
   adminRoute('PUT', '/api/users/:id/suspend', suspended(true));
   adminRoute('PUT', '/api/users/:id/resume', suspended(false));
   adminRoute('GET', '/api/system/storage', storage);
-  adminRoute('GET', '/api/system/update-check', updateCheck);
 };

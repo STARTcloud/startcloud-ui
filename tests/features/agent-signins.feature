@@ -62,6 +62,7 @@ Feature: agent-signins
     And the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_tray_claimed_key"
     And the path is "/"
     And the address carries no fragment
+    And the tab stays open
     And the host was sent POST to "/api/auth/tray-claim" 1 times
     And the host was sent GET to "/api/api-keys/info" 1 times
     And the host was not sent POST to "/api/auth/oidc/silent-start"
@@ -73,6 +74,7 @@ Feature: agent-signins
     Then the host was sent GET to "/api/api-keys/info" carrying the header "authorization" as "Bearer hw_seed_0001_initial"
     And the chrome draws the account menu
     And the address carries no fragment
+    And the tab stays open
     And the host was not sent POST to "/api/auth/tray-claim"
 
   Scenario: Agent sign-ins: the ?sso=unavailable bounce draws the chooser with its quiet line and starts no silent probe

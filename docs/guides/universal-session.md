@@ -329,7 +329,13 @@ to no person; `complete()` the `#tray=`
 claim of a tray Open or an `hwa://open`, once per page load with the
 fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
 key that still validates outranking it, the claimed session answered once
-and never after the record was forgotten, `claims()` null; once the key
+and never after the record was forgotten, the hand-off told to the other
+tabs of the origin over the `BroadcastChannel` `hw-auth`, `auth-ping`
+which every open tab answers with `auth-pong` and `auth-updated` on which
+a tab signed out or holding another key reloads into the session, the tab
+the tray or the hand-off opened closing itself the moment a pong arrives
+and staying open while none does, so a tab a person opened is never closed
+and nothing waits on a clock, `claims()` null; once the key
 is proved, `GET /api/user` read with the same bearer and held in memory,
 the person's record in the identity provider's shape without its
 `preferred_*` members, because the agent keeps no user preferences: the

@@ -298,16 +298,21 @@ export const summaryRows = summary =>
     }));
 
 /**
- * What the monitoring service keeps, read from its status in either
- * agent's words: the collection interval in seconds, the Go agent's
- * `collection_interval`, and the days its samples are kept, the Go
- * agent's `retention_days`; zero for a member the agent does not answer
- * as one number.
+ * What the monitoring service keeps, read from its status: the
+ * collection interval in seconds, `config.collection_interval`, the days
+ * its samples are kept, `config.retention_days`, and the live interval in
+ * seconds, `config.live_interval` or the collection interval while the
+ * status names no live interval; zero for a member the agent does not
+ * answer as one number.
  *
  * @param {Object|null} status - The answer of `monitoring/status`
- * @returns {{ interval: number, retention: number }} The two numbers
+ * @returns {{ interval: number, retention: number, live: number }} The three numbers
  */
-export const collectionOf = status => ({
-  interval: Number(status?.config?.collection_interval) || 0,
-  retention: Number(status?.config?.retention_days) || 0,
-});
+export const collectionOf = status => {
+  const interval = Number(status?.config?.collection_interval) || 0;
+  return {
+    interval,
+    retention: Number(status?.config?.retention_days) || 0,
+    live: Number(status?.config?.live_interval) || interval,
+  };
+};
