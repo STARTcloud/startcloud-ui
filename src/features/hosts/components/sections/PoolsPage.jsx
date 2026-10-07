@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
+import { chartOf } from '../../charts/registry';
+import { ChartControlsContext, useChartControlsState } from '../../hooks/useChartControls';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeries, useHostSeriesQuery, useHostSeriesRefresh } from '../../hooks/useHostSeries';
@@ -21,12 +23,12 @@ import {
   poolIoRows,
   poolRows,
 } from '../../utils/StorageUtils';
+import ChartControls from '../ChartControls';
 import DatasetsTable, { DATASET_COLUMNS } from '../DatasetsTable';
-import PoolIOTable, { POOL_IO_COLUMNS } from '../PoolIOTable';
-import PoolsTable, { POOL_COLUMNS } from '../PoolsTable';
+import PoolIOTable, { poolIoColumnsFor } from '../PoolIOTable';
+import PoolsTable, { poolColumnsFor } from '../PoolsTable';
 import SectionPane from '../SectionPane';
 import StorageCharts from '../StorageCharts';
-import StorageHeader from '../StorageHeader';
 import StorageSummary from '../StorageSummary';
 import TaskDialog from '../TaskDialog';
 import ZfsDatasetsPanel from '../ZfsDatasetsPanel';
@@ -42,6 +44,8 @@ const NO_SERIES = { rows: NO_ROWS, loaded: true, failed: false, offered: false }
 
 const POOL_CHARTS = ['pools'];
 
+const POOLS = chartOf('pool');
+
 const FOLD_TITLES = {
   pools: ['host.poolsTable.expandSection', 'host.poolsTable.collapseSection'],
   datasets: ['host.datasetsTable.expand', 'host.datasetsTable.collapse'],
@@ -56,11 +60,12 @@ const foldOf = ({ folds, key, t }) => {
 
 /**
  * The Pools and datasets page of a host, behind `zfs`: the heading
- * counting the pools, the time window and Refresh in its pane, and
+ * counting the pools, the time window, Refresh and Pause in its pane, and
  * under it the storage summary, the pools, datasets and
  * pool I/O tables, each one table narrowed by the page's search under a
- * folding heading, the pool charts, the ZFS pool manager's cards and the
- * dataset tree, every write a queued task through `useZfsTools`; the
+ * folding heading, the pool charts, the points per pool computed once
+ * for the charts and the pools and pool I/O tables' trend columns, the
+ * ZFS pool manager's cards and the dataset tree, every write a queued task through `useZfsTools`; the
  * folds kept under `table_prefs_pools`.
  */
 const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
@@ -69,6 +74,7 @@ const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
   const { query, setQuery } = useHostSeriesQuery(id);
+  const controls = useChartControlsState(query.window);
   const folds = useFolds(`${context.prefsPrefix}_${section}`);
   const pools = useHostReading(id, 'pools');
   const datasets = useHostReading(id, 'datasets');
@@ -81,6 +87,9 @@ const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
   const datasetList = useMemo(() => datasetRows(datasets.data), [datasets.data]);
   const diskList = useMemo(() => diskRows(disks.data), [disks.data]);
   const poolIoList = useMemo(() => poolIoRows(poolIo.rows), [poolIo.rows]);
+  const pointsPerPool = useMemo(() => POOLS.series(poolIo.rows), [poolIo.rows]);
+  const poolColumns = useMemo(() => poolColumnsFor({ pools: pointsPerPool }), [pointsPerPool]);
+  const poolIoColumns = useMemo(() => poolIoColumnsFor({ pools: pointsPerPool }), [pointsPerPool]);
   const ctx = { ...context, t, language: i18n.language };
   const search = useHostManageSearch({
     section,
@@ -89,7 +98,7 @@ const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
         key: 'pools',
         labelKey: 'host.storageSummary.totalPools',
         rows: poolList,
-        columns: POOL_COLUMNS,
+        columns: poolColumns,
         matches: matchesPool,
         filterGroups: POOL_FILTERS,
         defaultSort: POOL_SORT,
@@ -109,7 +118,7 @@ const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
         key: 'pool-io',
         labelKey: 'hosts.storage.tables.poolIo',
         rows: poolIoList,
-        columns: POOL_IO_COLUMNS,
+        columns: poolIoColumns,
         matches: matchesPoolIo,
         filterGroups: POOL_IO_FILTERS,
         defaultSort: POOL_SORT,
@@ -129,71 +138,83 @@ const PoolsPage = ({ id, server, context, section, host, onRefresh }) => {
   };
 
   const actions = (
-    <StorageHeader query={query} onQuery={setQuery} series={poolIo.offered} onRefresh={refresh} />
+    <ChartControls
+      query={query}
+      onQuery={setQuery}
+      scope="storageHeader"
+      series={poolIo.offered}
+      controls={controls}
+      onRefresh={refresh}
+    />
   );
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={pools.offered && pools.loaded ? poolList.length : null}
-      actions={actions}
-    >
-      <StorageSummary
-        pools={poolList.length}
-        datasets={datasetList.length}
-        disks={diskList.length}
-        folds={folds}
-      />
-      {pools.offered ? (
-        <PoolsTable
-          table={search.tables.pools}
-          reading={{ ...pools, rows: poolList }}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'pools', t })}
-          ctx={ctx}
+    <ChartControlsContext.Provider value={controls}>
+      <SectionPane
+        section={section}
+        server={server}
+        count={pools.offered && pools.loaded ? poolList.length : null}
+        actions={actions}
+      >
+        <StorageSummary
+          pools={poolList.length}
+          datasets={datasetList.length}
+          disks={diskList.length}
+          folds={folds}
         />
-      ) : null}
-      {datasets.offered ? (
-        <DatasetsTable
-          table={search.tables.datasets}
-          reading={{ ...datasets, rows: datasetList }}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'datasets', t })}
-          ctx={ctx}
-        />
-      ) : null}
-      {poolIo.offered ? (
-        <PoolIOTable
-          table={search.tables['pool-io']}
-          reading={{ rows: poolIoList, loaded: poolIo.loaded, failed: poolIo.failed }}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'poolIo', t })}
-          ctx={ctx}
-        />
-      ) : null}
-      <StorageCharts
-        diskIo={NO_SERIES}
-        poolIo={{ ...poolIo, latest: poolIoList }}
-        arc={NO_SERIES}
-        host={host.label}
-        folds={folds}
-        charts={POOL_CHARTS}
-      />
-      <div data-panel="storage-management">
-        <ZfsPoolsPanel
-          id={id}
-          turn={turn}
-          disks={{ ...disks, rows: diskList }}
-          tools={tools}
-          view="pools"
-        />
-        <ZfsDatasetsPanel id={id} turn={turn} tools={tools} />
-        {tools.task ? (
-          <TaskDialog status={status} id={id} task={tools.task} onHide={tools.closeTask} />
+        {pools.offered ? (
+          <PoolsTable
+            columns={poolColumns}
+            table={search.tables.pools}
+            reading={{ ...pools, rows: poolList }}
+            filtering={search.filtering}
+            fold={foldOf({ folds, key: 'pools', t })}
+            ctx={ctx}
+          />
         ) : null}
-      </div>
-    </SectionPane>
+        {datasets.offered ? (
+          <DatasetsTable
+            table={search.tables.datasets}
+            reading={{ ...datasets, rows: datasetList }}
+            filtering={search.filtering}
+            fold={foldOf({ folds, key: 'datasets', t })}
+            ctx={ctx}
+          />
+        ) : null}
+        {poolIo.offered ? (
+          <PoolIOTable
+            columns={poolIoColumns}
+            table={search.tables['pool-io']}
+            reading={{ rows: poolIoList, loaded: poolIo.loaded, failed: poolIo.failed }}
+            filtering={search.filtering}
+            fold={foldOf({ folds, key: 'poolIo', t })}
+            ctx={ctx}
+          />
+        ) : null}
+        <StorageCharts
+          diskIo={NO_SERIES}
+          poolIo={{ ...poolIo, latest: poolIoList }}
+          arc={NO_SERIES}
+          pools={pointsPerPool}
+          host={host.label}
+          folds={folds}
+          charts={POOL_CHARTS}
+        />
+        <div data-panel="storage-management">
+          <ZfsPoolsPanel
+            id={id}
+            turn={turn}
+            disks={{ ...disks, rows: diskList }}
+            tools={tools}
+            view="pools"
+          />
+          <ZfsDatasetsPanel id={id} turn={turn} tools={tools} />
+          {tools.task ? (
+            <TaskDialog status={status} id={id} task={tools.task} onHide={tools.closeTask} />
+          ) : null}
+        </div>
+      </SectionPane>
+    </ChartControlsContext.Provider>
   );
 };
 

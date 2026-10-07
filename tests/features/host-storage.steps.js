@@ -150,6 +150,14 @@ Then(
 );
 
 Then(
+  'the {string} table of the storage page draws {int} trend lines',
+  async ({ page }, name, count) => {
+    await expect(tableOf(page, name).locator('tbody tr').first()).toBeVisible();
+    await expect(tableOf(page, name).locator('tbody td.col-trend canvas')).toHaveCount(count);
+  }
+);
+
+Then(
   'the {string} table of the storage page draws {string} in its {string} column',
   async ({ page }, name, text, column) => {
     const cells = tableOf(page, name).locator(`tbody td.col-${column}`);

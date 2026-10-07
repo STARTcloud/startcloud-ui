@@ -166,6 +166,10 @@ Feature: host storage
     Then the host page draws the "pool:tank" chart
     And the storage page draws 2 pool charts
     And the storage page draws 0 device charts
+    And the "pools" table of the storage page draws the "trend" column
+    And the "pools" table of the storage page draws 2 trend lines
+    And the "pool-io" table of the storage page draws the "trend" column
+    And the "pool-io" table of the storage page draws 2 trend lines
     When I open "/hosts/3/storage/disks"
     Then the host page draws the "storage-read" chart
     And the host page draws the "storage-write" chart
@@ -173,6 +177,10 @@ Feature: host storage
     And the host page draws the "device:c0t5000C500B2C3D4E6d0" chart
     And the storage page draws 6 device charts
     And the storage page draws 0 pool charts
+    And the "disks" table of the storage page draws the "trend" column
+    And the "disks" table of the storage page draws 6 trend lines
+    And the "disk-io" table of the storage page draws the "trend" column
+    And the "disk-io" table of the storage page draws 6 trend lines
     And the "storage-read" chart says nothing of one sample
     And the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 1 times
     When I open "/hosts/3/storage/arc"
@@ -180,6 +188,9 @@ Feature: host storage
     And the host page draws the "arc-efficiency" chart
     And the host page draws the "arc-compression" chart
     And the storage page draws 0 device charts
+    And the "arc-memory" chart carries the pills "size, target, mru, mfu"
+    And the "arc-efficiency" chart carries the pills "hitRatio, demand, prefetch"
+    And the "arc-compression" chart carries the pills "compression"
 
   Scenario: Storage: the order of the device charts, the busiest first until a person picks another, and nothing is read for it
     Given the host answers the hosts fixture
@@ -201,6 +212,7 @@ Feature: host storage
     When I open "/hosts/3/storage/disks"
     Then the host page draws the "storage-total" chart
     And the host was asked "/api/agents/3/monitoring/storage/disk-io" with "per_device" as "true"
+    And the heading row carries the window select, Refresh and Pause as glyphs
     When I pick the storage chart window "1hour"
     Then the host was sent GET to "/api/agents/3/monitoring/storage/disk-io" 2 times
     When I open "/hosts/3/storage/pools"
@@ -214,16 +226,23 @@ Feature: host storage
     When I pick the storage chart window "6hour"
     Then the host was sent GET to "/api/agents/3/monitoring/storage/arc" 2 times
 
-  Scenario: Storage: the expand button opens a chart in the expanded dialog
+  Scenario: Storage: the expand glyph opens a chart in the expanded dialog, the pills one set over every pool chart and Export offered
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/pools"
     Then the host page draws the "pool:rpool" chart
+    And the "pool:rpool" chart carries the pills "read, write, total"
+    When I toggle the "read" series of the "pool:rpool" chart
+    Then the "read" series of the "pool:tank" chart is hidden
     When I expand the "pool:rpool" chart
     Then the expanded chart draws
+    And the "read" series of the expanded chart is hidden
+    And the expanded chart offers CSV and PNG export
+    When I click the chart dialog's backdrop
+    Then no chart dialog is open
 
-  Scenario: Storage: every section of a page folds and the fold is kept over a reload
+  Scenario: Storage: every section of Pools and datasets folds and the fold is kept over a reload
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -246,6 +265,11 @@ Feature: host storage
     And the "summary" section of the storage page is folded
     When I fold the "pools" section of the storage page
     Then the "pools" table of the storage page lists 2 rows
+
+  Scenario: Storage: every section of Disks folds and the fold is kept over a reload
+    Given the host answers the hosts fixture
+    And the host answers the hosts-storage fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/disks"
     Then the "disks" table of the storage page lists 9 rows
     When I fold the "disks" section of the storage page
@@ -256,6 +280,11 @@ Feature: host storage
     And the "charts" section of the storage page is folded
     When I load the page again
     Then the "disks" section of the storage page is folded
+
+  Scenario: Storage: every section of ARC folds
+    Given the host answers the hosts fixture
+    And the host answers the hosts-storage fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/arc"
     Then the storage page draws the "arc" section
     When I fold the "arc" section of the storage page

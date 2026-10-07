@@ -172,7 +172,10 @@ Feature: networking
     And the "interfaces" table of the networking page draws the "zone" column
     And the "interfaces" table of the networking page draws no "macaddress" column
     And the "interfaces" table of the networking page draws no "vid" column
+    And the "interfaces" table of the networking page draws the "trend" column
+    And the "interfaces" table of the networking page draws 2 trend lines
     And the zone "web-1" of an interface opens "/hosts/3/machines/web-1"
+    And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
   Scenario: Interfaces: the zone of an interface is plain text on a host whose row lists no `machines`
     Given the host answers the hosts fixture
@@ -305,6 +308,10 @@ Feature: networking
     And the host page draws the "interface:vnic0" chart
     And the networking page draws 2 interface charts
     And the "network-rx" chart says nothing of one sample
+    And the "interface:igb0" chart carries the pills "read, write, total"
+    And the "network-rx" chart carries the pills ""
+    And the "bandwidth" table of the networking page draws the "trend" column
+    And the "bandwidth" table of the networking page draws a trend line in every row
     And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
   Scenario: Bandwidth: the order of the interface charts, the busiest first until a person picks another, and nothing is read for it
@@ -331,18 +338,24 @@ Feature: networking
     When I open "/hosts/3/network/bandwidth"
     Then the host page draws the "network-total" chart
     And the host was asked "/api/agents/3/monitoring/network/usage" with "per_interface" as "true"
+    And the heading row carries the window select, Refresh and Pause as glyphs
     When I pick the networking chart window "1hour"
     Then the host was sent GET to "/api/agents/3/monitoring/network/usage" 2 times
 
-  Scenario: Bandwidth: the expand button opens a chart in the expanded dialog
+  Scenario: Bandwidth: the expand glyph opens a chart in the expanded dialog with its pills and Export
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/bandwidth"
     Then the host page draws the "interface:igb0" chart
-    When I expand the "interface:igb0" chart
+    When I toggle the "write" series of the "interface:igb0" chart
+    And I expand the "interface:igb0" chart
     Then the expanded chart draws
+    And the "write" series of the expanded chart is hidden
+    And the expanded chart offers CSV and PNG export
+    When I click the chart dialog's backdrop
+    Then no chart dialog is open
 
   Scenario: Bandwidth: an agent that keeps no history draws the one sample it read and says so
     Given the host answers the hosts fixture

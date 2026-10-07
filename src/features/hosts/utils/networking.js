@@ -359,8 +359,6 @@ export const CHART_SORTS = [
 
 export const DEFAULT_CHART_SORT = 'bandwidth';
 
-const NO_GROUPS = {};
-
 /**
  * What one summary chart of the Bandwidth page draws, the
  * `network-summary` entry of the registry: a line an interface of one
@@ -382,8 +380,7 @@ export const summarySpec = (member, entities, t) =>
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const interfaceSpec = (points, t) =>
-  entitySpec(chartOf('interface'), { points, visibility: NO_GROUPS, t });
+export const interfaceSpec = (points, t) => entitySpec(chartOf('interface'), { points, t });
 
 const lastOf = points => (points.length > 0 ? points[points.length - 1][1] : 0);
 

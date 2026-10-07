@@ -8,6 +8,9 @@ const frameOf = page => page.locator('[data-page="dashboard"]');
 
 const widgetOf = (page, id) => frameOf(page).locator(`[data-widget="${id}"]`);
 
+const chartTileOf = (page, metric, host) =>
+  widgetOf(page, 'charts').locator(`[data-widget-chart="${host}:${metric}"]`);
+
 When('I press the dashboard action {string}', async ({ page }, action) => {
   await frameOf(page).locator(`[data-action="${action}"]`).first().click();
 });
@@ -42,6 +45,17 @@ Then('the dashboard draws the host card {string} as {string}', async ({ page }, 
     health
   );
 });
+
+Then('the dashboard draws the {string} chart of {string}', async ({ page }, metric, host) => {
+  await expect(chartTileOf(page, metric, host).locator('canvas')).toBeVisible();
+});
+
+Then(
+  "the dashboard's {string} chart of {string} reads {string}",
+  async ({ page }, metric, host, text) => {
+    await expect(chartTileOf(page, metric, host).locator('[data-widget-value]')).toHaveText(text);
+  }
+);
 
 Then('the dashboard offers {string}', async ({ page }, action) => {
   await expect(frameOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();

@@ -192,6 +192,25 @@ Then(
   }
 );
 
+Then(
+  'the {string} table of the networking page draws a trend line in every row',
+  async ({ page }, name) => {
+    const rows = tableOf(page, name).locator('tbody tr');
+    await expect(rows.first()).toBeVisible();
+    await expect(tableOf(page, name).locator('tbody td.col-trend canvas')).toHaveCount(
+      await rows.count()
+    );
+  }
+);
+
+Then(
+  'the {string} table of the networking page draws {int} trend lines',
+  async ({ page }, name, count) => {
+    await expect(tableOf(page, name).locator('tbody tr').first()).toBeVisible();
+    await expect(tableOf(page, name).locator('tbody td.col-trend canvas')).toHaveCount(count);
+  }
+);
+
 Then('the {string} table of the networking page says {string}', async ({ page }, name, state) => {
   await expect(tableOf(page, name)).toHaveAttribute('data-state', state);
   await expect(tableOf(page, name).locator('.empty-state')).toBeVisible();

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { chartOf } from '../../src/features/hosts/charts/registry.js';
+import {
+  bandwidthColumnsFor,
+  interfaceColumnsFor,
+} from '../../src/features/hosts/components/NetworkingColumns.jsx';
 import { READS } from '../../src/features/hosts/utils/monitoring.js';
 import {
   ADDRESS_FILTERS,
@@ -365,6 +369,38 @@ describe('the charts', () => {
       ['total', 'hosts.charts.network.total', 'green', 3],
     ]);
     expect(spec.series[2].points[1]).toEqual([new Date(LATE).getTime(), 5]);
+  });
+
+  it('draws the trend of each interface after its total, the total line in its summary tone', () => {
+    const columns = bandwidthColumnsFor({ entities });
+    expect(columns.map(column => column.key).slice(0, 3)).toEqual(['link', 'total', 'trend']);
+    const trend = columns.find(column => column.key === 'trend');
+    expect(trend.kind).toBe('spark');
+    expect(trend.labelKey).toBe('hosts.charts.trend');
+    expect(trend.value({ link: 'vnic0' })).toBe(8.5);
+    expect(trend.value({ link: 'gone' })).toBe(0);
+    const cell = trend.render({ link: 'vnic0' });
+    expect(cell.props.name).toBe('vnic0');
+    expect(cell.props.points).toBe(entities.vnic0.total);
+    expect(cell.props.tone).toBe(summarySpec('total', entities, t).series[1].tone);
+    expect(trend.render({ link: 'gone' }).props.points).toEqual([]);
+  });
+
+  it('draws the trend of each interface after its state in the interfaces table, the tone the bandwidth gives it', () => {
+    const columns = interfaceColumnsFor({ id: '3', machines: true, entities });
+    expect(columns.map(column => column.key).slice(0, 4)).toEqual([
+      'link',
+      'class',
+      'state',
+      'trend',
+    ]);
+    const trend = columns.find(column => column.key === 'trend');
+    const fromBandwidth = bandwidthColumnsFor({ entities }).find(column => column.key === 'trend');
+    expect(trend.render({ link: 'igb0' }).props.points).toBe(entities.igb0.total);
+    expect(trend.render({ link: 'igb0' }).props.tone).toBe(
+      fromBandwidth.render({ link: 'igb0' }).props.tone
+    );
+    expect(trend.render({ link: 'igb1' }).props.points).toEqual([]);
   });
 
   it('orders the interfaces by the newest rate, the busiest first, or by name', () => {

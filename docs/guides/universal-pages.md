@@ -430,6 +430,7 @@ the priority it starts with from that kind alone (`columnKinds`): `name`
 status badge, 2), `count` (a right-aligned integer with a wider right
 gutter, 2), `size` (formatted bytes, 2), `date` (a locale date, 3),
 `relative` (a relative time, 3), `badges` (a list of small badges, 4),
+`spark` (the sparkline of the row's entity over the drawn range, 4),
 `text` (a plain string, 5), `word` (a closed-list word, 5) and
 `checksum` (the `ChecksumCell`, 6); a column may name its own
 `priority` over the kind's, and 1 never folds. Columns have a priority,
@@ -869,15 +870,26 @@ adds its own foldable section to an item page (the catalog's Quality).
   upward near the bottom of the scroll region, because a menu pinned to
   the viewport loses its row when the page scrolls inside its own region.
 - **Chart**: the estate's one chart, `Chart`, the component every feature draws a
-  series over time with: a smoothed line per series over a time axis, one
-  or two value axes, a shared tooltip whose every value carries its unit,
-  the legend under the plot and the zoom where asked for. A feature hands
-  it `series`,
-  `[{ key, name, points, tone?, dash?, width?, opacity?, axis?, unit?, digits?, hidden? }]`
-  with `points` as `[[ms, value]]`, and `axes`,
+  series over time with: a smoothed line per series over a time axis,
+  filled under it from its tone to clear and dotted at its newest point,
+  broken at every null point, one or two value axes, a shared tooltip
+  naming every line with its value and its unit, the legend under the
+  plot only for a chart whose series name an `entity`, one entry an
+  entity, a click on an entry drawing that entity alone and a second
+  click every entity again, a drag panning and the wheel zooming the
+  time axis over `range`, the drawn range, the zoom slider too while
+  `slider`, every line thinned by Largest-Triangle-Three-Buckets to the
+  pixels across the box, so the drawn points never outnumber the pixels
+  while the store keeps every sample, and its tooltip shared with every
+  chart of its `group`, so every chart of a page reads one instant under
+  the pointer. A feature hands it `series`,
+  `[{ key, name, entity?, group?, points, tone?, dash?, width?, opacity?, axis?, unit?, digits?, hidden? }]`
+  with `points` as `[[ms, value|null]]`, and `axes`,
   `[{ name?, min?, max?, unit? }]`, and never an option of the library,
   because the library is the component's own and a feature that wrote
-  its options would be rewritten with it. Apache ECharts draws it, its
+  its options would be rewritten with it; a pan or a zoom hands the range
+  it reached to `onRange` with whether it reached the newest point, and
+  a legend click hands its entity to `onIsolate`. Apache ECharts draws it, its
   core with the line chart, the grid, the tooltip, the legend, the zoom,
   the `aria` component and the canvas renderer and nothing else of it, in
   `ChartCanvas.jsx`, which `Chart` imports lazily the first time a chart
@@ -891,18 +903,30 @@ adds its own foldable section to an item page (the catalog's Quality).
   `MutationObserver` and never asked for on a clock, because a canvas is
   the one surface the stylesheet cannot repaint; no chart carries a
   colour of its own. The box is sized by a class, `sm` the 200px of a
-  panel and `lg` the expanded dialog's `calc(90vh - 200px)`, and the
-  chart follows its box through a
-  `ResizeObserver`. The `aria` option describes the chart in words,
-  opened by the chart's `title`, with decal patterns, so two series are
-  told apart without colour, and the chart does not animate while the
-  person reduced motion. A chart without a point draws its `emptyText`
-  in the same box and loads nothing. `SeriesToggles` are the buttons
-  that show and hide the groups of a chart's series, pressed and in
-  their tone while the group shows, and `ChartDialog` is the expanded
-  chart dialog, the same series and the same toggles at size with the
-  legend and the zoom; it takes the form dialog's metric, `form-modal`,
-  because a chart needs the width a form does.
+  panel, `lg` the expanded dialog's `calc(90vh - 200px)`, `xs` the 130px
+  of a dashboard widget and `spark` the 140 by 34px of a table cell, and
+  the chart follows its box through a
+  `ResizeObserver`, the lines thinned again to its width. The `aria`
+  option describes the chart in words, opened by the chart's `title`,
+  and the chart does not animate while the person reduced motion. A
+  chart without a point draws its `emptyText` in the same box and loads
+  nothing. A `compact` chart, a dashboard widget's, keeps its lines, its
+  fill, its dot, its breaks and its shared tooltip and draws no legend,
+  no zoom, no axis names and no time labels, its time axis fixed to the
+  drawn range. A chart in the `spark` box is a sparkline, a table cell's
+  `spark` kind: the first series that is not hidden as one filled line
+  in its tone, dotted at its newest point, broken at every null and
+  thinned to the pixels across the cell, over the drawn range, with no
+  axis, no tooltip and no legend. `LinePills` are the pills of a chart's header that show and
+  hide the groups of its series, filled in the group's tone while the
+  group shows and outlined while it is hidden, `aria-pressed` saying
+  which, and `ChartDialog` is the expanded chart dialog, the same
+  series, pills and isolation at size with the zoom slider and Export in
+  its header as two glyphs, a CSV of the drawn range, RFC 4180 with a
+  header row, RFC 3339 instants and one column a line, and a PNG of the
+  canvas, closed by a click on the backdrop or Escape; it takes the form
+  dialog's metric, `form-modal`, because a chart needs the width a form
+  does.
 - **HomePage**: `Listing` over every collection, grouped by organization,
   the toggle on the first collection's heading row.
 - **OrgPage**: the org header (logo, display name, slug and description)

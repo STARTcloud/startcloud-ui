@@ -17,6 +17,8 @@ import {
   zoneOf,
 } from '../utils/networking';
 
+import { trendColumn } from './TrendCell';
+
 const INTERVAL_DIGITS = 1;
 
 const SECONDS_UNIT = 's';
@@ -207,14 +209,18 @@ const zoneCell = ({ row, ctx, id, machines }) => {
  * only while a row carries its value, because each backend answers the
  * row its platform has. The zone of an interface is hyperweaver-ui's
  * button to the machine of that name on a host whose own row lists
- * `machines`, and plain text on a host that does not.
+ * `machines`, and plain text on a host that does not. After the state the
+ * trend, the sparkline of the interface's total over the host's window in
+ * the tone the bandwidth charts give the interface, a dash for an
+ * interface with no usage sample.
  *
  * @param {Object} options - The host's side
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {boolean} options.machines - Whether the host's own row lists `machines`
+ * @param {Object<string, Object>} options.entities - The points per interface of `networkSeries`
  * @returns {Array<Object>} The columns
  */
-export const interfaceColumnsFor = ({ id, machines }) => [
+export const interfaceColumnsFor = ({ id, machines, entities }) => [
   {
     key: 'link',
     kind: 'name',
@@ -240,6 +246,7 @@ export const interfaceColumnsFor = ({ id, machines }) => [
     value: stateWord,
     render: (row, ctx) => badge(row.state === 'up' ? 'success' : 'danger', stateWord(row, ctx)),
   },
+  trendColumn({ entities, nameOf: row => row.link }),
   {
     key: 'speed',
     kind: 'text',
@@ -310,12 +317,17 @@ const packets = (row, member, ctx) => packetsOf(row, member).toLocaleString(ctx.
 
 /**
  * The columns of the bandwidth table, hyperweaver-ui's: the interface,
- * the rate both ways in the tone of its size, the rate received and the
- * rate sent, the seconds the sample spans and the packets received and
- * sent in them, the packets drawn only while a sample carries the
- * deltas.
+ * the rate both ways in the tone of its size, the trend, the sparkline
+ * of the interface's total over the drawn range in the tone the summary
+ * charts give the interface, the rate received and the rate sent, the
+ * seconds the sample spans and the packets received and sent in them,
+ * the packets drawn only while a sample carries the deltas.
+ *
+ * @param {Object} options - The page's side
+ * @param {Object<string, Object>} options.entities - The points per interface of `networkSeries`
+ * @returns {Array<Object>} The columns
  */
-export const BANDWIDTH_COLUMNS = [
+export const bandwidthColumnsFor = ({ entities }) => [
   {
     key: 'link',
     kind: 'name',
@@ -335,6 +347,7 @@ export const BANDWIDTH_COLUMNS = [
       return badge(bandwidthTone(total), formatBandwidth(total));
     },
   },
+  trendColumn({ entities, nameOf: row => row.link }),
   {
     key: 'rx',
     kind: 'badge',

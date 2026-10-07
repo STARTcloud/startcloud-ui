@@ -5,6 +5,7 @@ import { formatIoRate, ioRates, ioTone } from '../utils/StorageUtils';
 
 import NetworkingTable from './NetworkingTable';
 import { storageFoldShape, storageReadingShape, storageTableShape } from './PoolsTable';
+import { trendColumn } from './TrendCell';
 
 const badge = (tone, content) => <span className={`badge text-bg-${tone}`}>{content}</span>;
 
@@ -14,9 +15,15 @@ const timeWord = (row, ctx) =>
 /**
  * The columns of the disk I/O table, hyperweaver-ui's: the device, its
  * pool, the read and the write operations, the read and the write rate,
- * the total rate in the tone of its size and the instant of the sample.
+ * the total rate in the tone of its size, the trend, the sparkline of the
+ * device's total over the drawn range in the tone the summary charts give
+ * the device, and the instant of the sample.
+ *
+ * @param {Object} options - The page's side
+ * @param {Object<string, Object>} options.devices - The points per device of the `disk-io` chart's `series`
+ * @returns {Array<Object>} The columns
  */
-export const DISK_IO_COLUMNS = [
+export const diskIoColumnsFor = ({ devices }) => [
   {
     key: 'device',
     kind: 'name',
@@ -72,6 +79,7 @@ export const DISK_IO_COLUMNS = [
       return badge(ioTone(total), formatIoRate(total));
     },
   },
+  trendColumn({ entities: devices, nameOf: row => row.device_name }),
   {
     key: 'updated',
     kind: 'date',
@@ -85,17 +93,17 @@ export const DISK_IO_COLUMNS = [
 /**
  * The disk I/O table of the storage page, hyperweaver-ui's card: the
  * heading counting the devices, its button dropping the sort a person
- * chose, the chevron that folds it, and the one `SubTable` over the
- * newest sample of each device the page's one search binding left, the
- * busiest device first until a header sorts it.
+ * chose, the chevron that folds it, and the one `SubTable` of `columns`
+ * over the newest sample of each device the page's one search binding
+ * left, the busiest device first until a header sorts it.
  */
-const DiskIOTable = ({ table, reading, filtering, fold, ctx }) => {
+const DiskIOTable = ({ columns, table, reading, filtering, fold, ctx }) => {
   const { t } = useTranslation();
   return (
     <NetworkingTable
       panel="storage-disk-io"
       title={t('host.diskIOTable.titleWithCount', { count: reading.rows.length })}
-      columns={DISK_IO_COLUMNS}
+      columns={columns}
       table={table}
       rowKey={row => String(row.device_name)}
       ctx={ctx}
@@ -109,6 +117,7 @@ const DiskIOTable = ({ table, reading, filtering, fold, ctx }) => {
 };
 
 DiskIOTable.propTypes = {
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   table: storageTableShape.isRequired,
   reading: storageReadingShape.isRequired,
   filtering: PropTypes.bool.isRequired,

@@ -2,9 +2,7 @@ import { chartOf } from '../charts/registry';
 
 import { entitySpec, lineSpec } from './chartSpecs';
 
-const NO_GROUPS = {};
-
-const specOf = (key, { rows, t }) => lineSpec(chartOf(key), { rows, visibility: NO_GROUPS, t });
+const specOf = (key, { rows, t }) => lineSpec(chartOf(key), { rows, t });
 
 /**
  * What the processors chart of a zone draws, the `zone-cpu` entry of the
@@ -37,8 +35,7 @@ export const zoneMemorySpec = chart => specOf('zone-memory', chart);
  * @param {Function} chart.t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const diskSpec = ({ device, t }) =>
-  entitySpec(chartOf('zone-disk'), { points: device, visibility: NO_GROUPS, t });
+export const diskSpec = ({ device, t }) => entitySpec(chartOf('zone-disk'), { points: device, t });
 
 /**
  * What the network chart of one link of a zone draws, the `zone-link`

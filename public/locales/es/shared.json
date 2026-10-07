@@ -2413,7 +2413,8 @@
         "cached": "En caché",
         "toggleUsed": "Mostrar u ocultar la memoria usada",
         "toggleFree": "Mostrar u ocultar la memoria libre",
-        "toggleCached": "Mostrar u ocultar la memoria en caché"
+        "toggleCached": "Mostrar u ocultar la memoria en caché",
+        "swap": "Swap"
       },
       "arc": {
         "title": "ZFS ARC",
@@ -2451,7 +2452,15 @@
         "toggleRead": "Mostrar u ocultar el ancho de banda de lectura",
         "toggleWrite": "Mostrar u ocultar el ancho de banda de escritura",
         "toggleTotal": "Mostrar u ocultar el ancho de banda total"
-      }
+      },
+      "hideLine": "Ocultar {{label}}",
+      "showLine": "Mostrar {{label}}",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "exportCsv": "Exportar CSV",
+      "exportPng": "Exportar PNG",
+      "trend": "Tendencia",
+      "trendTitle": "Total de {{name}} en la ventana dibujada"
     },
     "api": {
       "server": "API del servidor",
@@ -5491,7 +5500,8 @@
       "topology": "Topología del centro de datos",
       "collapse": "Contraer",
       "expand": "Expandir",
-      "hide": "Ocultar widget"
+      "hide": "Ocultar widget",
+      "charts": "Gráficos"
     },
     "search": "Buscar hosts"
   },

@@ -111,6 +111,7 @@ const LinkChart = ({ id, name, link, host, folds }) => {
   return (
     <MachineChartCard
       chart={linkMetric(link)}
+      metric="zone-link"
       title={t(ZONE_LINK.titleKey, { link })}
       spec={spec}
       state={stateOf(series)}
@@ -165,6 +166,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
     <>
       <MachineChartCard
         chart="cpu"
+        metric="zone-cpu"
         title={t(ZONE_CPU.titleKey)}
         badges={cpuBadge}
         spec={cpu}
@@ -173,6 +175,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
       />
       <MachineChartCard
         chart="memory"
+        metric="zone-memory"
         title={t(ZONE_MEMORY.titleKey)}
         badges={memoryBadge}
         spec={memory}
@@ -190,6 +193,7 @@ const ZoneCharts = ({ id, name, host, detail, folds }) => {
         <MachineChartCard
           key={device.dataset}
           chart={`disk:${device.dataset}`}
+          metric="zone-disk"
           title={t(ZONE_DISK.titleKey, { device: device.device })}
           subtitle={device.dataset}
           badges={<DeviceBadges device={device} />}
@@ -288,6 +292,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
     <>
       <MachineChartCard
         chart="cpu"
+        metric="machine-cpu"
         title={t(MACHINE_CPU.titleKey)}
         badges={cpuBadge}
         spec={specs.cpu}
@@ -296,6 +301,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
       {latest.additions ? (
         <MachineChartCard
           chart="memory"
+          metric="machine-memory"
           title={t(MACHINE_MEMORY.titleKey)}
           badges={memoryBadge}
           spec={specs.memory}
@@ -306,6 +312,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
       )}
       <MachineChartCard
         chart="network"
+        metric="machine-network"
         title={t(MACHINE_NETWORK.titleKey)}
         badges={networkBadge}
         spec={specs.network}
@@ -313,6 +320,7 @@ const UsageCharts = ({ id, name, host, folds }) => {
       />
       <MachineChartCard
         chart="disk"
+        metric="machine-disk"
         title={t(MACHINE_DISK.titleKey)}
         spec={specs.disk}
         {...shared}

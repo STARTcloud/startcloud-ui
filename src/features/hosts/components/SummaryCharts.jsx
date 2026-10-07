@@ -6,15 +6,15 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { chartOf } from '../charts/registry';
 import { summarySpec } from '../utils/chartDefaults';
 
-import NetworkingChartCard from './NetworkingChartCard';
+import ChartCard from './ChartCard';
+import OneSampleNote from './OneSampleNote';
 
 const SUMMARY_CHARTS = chartOf('storage-summary').charts;
 
 /**
- * The three charts that draw every device together, hyperweaver-ui's
- * summary charts: the megabytes a second read, written and both, a line
- * a device, each over the one series of the disk I/O the host's context
- * holds.
+ * The three charts that draw every device together: the megabytes a
+ * second read, written and both, a line a device, each a `ChartCard`
+ * over the one series of the disk I/O the host's context holds.
  */
 const SummaryCharts = ({ devices, host, emptyText, single, folds }) => {
   const { t } = useTranslation();
@@ -24,16 +24,20 @@ const SummaryCharts = ({ devices, host, emptyText, single, folds }) => {
       <div className="row g-3 mb-3">
         {SUMMARY_CHARTS.map(chart => (
           <div key={chart.key} className="col-12 col-lg-6 col-xxl-4">
-            <NetworkingChartCard
+            <ChartCard
               chart={`storage-${chart.key}`}
+              metric="storage-summary"
               title={t(chart.expandedKey)}
               chartTitle={t(chart.titleKey)}
-              host={host}
+              expandedTitle={t(chart.expandedKey)}
               spec={summarySpec(chart.member, devices, t)}
               emptyText={emptyText}
-              single={single}
+              host={host}
               folds={folds}
-            />
+              fold={`chart-storage-${chart.key}`}
+            >
+              <OneSampleNote single={single} />
+            </ChartCard>
           </div>
         ))}
       </div>

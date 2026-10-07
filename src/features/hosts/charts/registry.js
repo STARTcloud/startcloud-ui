@@ -35,6 +35,24 @@ const hostEntityLines = labels => [
   { member: 'total', group: 'total', labelKey: labels.total, dash: 'solid', width: 3, opacity: 1 },
 ];
 
+const groupPills = labels => [
+  { key: 'read', labelKey: labels.read },
+  { key: 'write', labelKey: labels.write },
+  { key: 'total', labelKey: labels.total },
+];
+
+const NETWORK_LABELS = {
+  read: 'hosts.charts.network.rx',
+  write: 'hosts.charts.network.tx',
+  total: 'hosts.charts.network.total',
+};
+
+const POOL_IO_LABELS = {
+  read: 'hosts.charts.poolIo.read',
+  write: 'hosts.charts.poolIo.write',
+  total: 'hosts.charts.poolIo.total',
+};
+
 const IO_LINES = [
   {
     member: 'first',
@@ -59,26 +77,11 @@ const IO_LINES = [
   },
 ];
 
-const IO_TOGGLES = [
-  {
-    key: 'read',
-    labelKey: 'host.storageCharts.read',
-    titleKey: 'host.storageCharts.toggleRead',
-    tone: 'info',
-  },
-  {
-    key: 'write',
-    labelKey: 'host.storageCharts.write',
-    titleKey: 'host.storageCharts.toggleWrite',
-    tone: 'warning',
-  },
-  {
-    key: 'total',
-    labelKey: 'host.storageCharts.total',
-    titleKey: 'host.storageCharts.toggleTotal',
-    tone: 'success',
-  },
-];
+const IO_PILLS = groupPills({
+  read: 'host.storageCharts.read',
+  write: 'host.storageCharts.write',
+  total: 'host.storageCharts.total',
+});
 
 const BANDWIDTH_AXES = [
   { nameKey: 'host.expandedChartOptions.axisBandwidthMBs', min: 0, unit: ' MB/s' },
@@ -116,14 +119,15 @@ export const ARC_CHARTS = ['arc-memory', 'arc-efficiency', 'arc-compression'];
  * literal `name`, `min`, `max` and `unit` where it has them; `lines`,
  * the lines drawn of every sample, each `key`, `labelKey` or `label`,
  * `value(row)`, its `axis`, `tone`, `dash`, `width`, `opacity`,
- * `digits`, the `group` its toggle shows and hides, `optional` for a line
- * left out while no sample carries it, and `expand(rows)` for a line
- * drawn once per core; `series(rows)`, the builder that groups the
- * samples by entity, with `entityLines`, the lines drawn of each entity
- * by the member of its points, or `charts`, the summary charts drawn one
- * line an entity of one member; `groups`, the groups shown as the chart
- * opens; `toggles`, the buttons of the groups; `cardLegend`, whether the
- * card draws the legend; and `texts`, the keys of the chart's words.
+ * `digits`, `optional` for a line left out while no sample carries it,
+ * and `expand(rows)` for a line drawn once per core, each line one pill
+ * of the card's header in its tone; `series(rows)`, the builder that
+ * groups the samples by entity, with `entityLines`, the lines drawn of
+ * each entity by the member of its points, each in the `group` its pill
+ * names, and `pills`, the groups' pills, each `key` and `labelKey`, or
+ * `charts`, the summary charts drawn one line an entity of one member;
+ * `groups`, the pills pressed as the chart opens, a pill not named
+ * pressed; and `texts`, the keys of the chart's words.
  */
 export const CHARTS = {
   cpu: {
@@ -131,7 +135,7 @@ export const CHARTS = {
     feed: SERIES.cpu,
     tokens: SERIES.cpu.tokens,
     axes: [
-      { nameKey: 'hosts.charts.cpu.usageAxis', min: 0, max: PERCENT },
+      { nameKey: 'hosts.charts.cpu.usageAxis', min: 0, max: PERCENT, unit: '%' },
       { nameKey: 'hosts.charts.cpu.loadAxis' },
     ],
     lines: [
@@ -141,7 +145,6 @@ export const CHARTS = {
         value: cpuValues.overall,
         tone: 'blue',
         width: 3,
-        group: 'overall',
       },
       {
         key: 'ioDelay',
@@ -150,10 +153,16 @@ export const CHARTS = {
         tone: 'yellow',
         dash: 'short-dash',
         width: 2,
-        group: 'overall',
         optional: true,
       },
-      { key: 'core', expand: coreSeries, tone: 'blue', width: 1, opacity: 0.5, group: 'cores' },
+      {
+        key: 'core',
+        labelKey: 'hosts.charts.cpu.cores',
+        expand: coreSeries,
+        tone: 'teal',
+        width: 1,
+        opacity: 0.5,
+      },
       {
         key: 'load1',
         labelKey: 'hosts.charts.cpu.load1',
@@ -161,7 +170,6 @@ export const CHARTS = {
         tone: 'orange',
         dash: 'short-dot',
         axis: 1,
-        group: 'load',
       },
       {
         key: 'load5',
@@ -170,7 +178,6 @@ export const CHARTS = {
         tone: 'green',
         dash: 'short-dot',
         axis: 1,
-        group: 'load',
       },
       {
         key: 'load15',
@@ -179,31 +186,9 @@ export const CHARTS = {
         tone: 'pink',
         dash: 'short-dot',
         axis: 1,
-        group: 'load',
       },
     ],
-    groups: { overall: true, cores: true, load: false },
-    toggles: [
-      {
-        key: 'overall',
-        labelKey: 'hosts.charts.cpu.avg',
-        titleKey: 'hosts.charts.cpu.toggleAvg',
-        tone: 'info',
-      },
-      {
-        key: 'cores',
-        labelKey: 'hosts.charts.cpu.cores',
-        titleKey: 'hosts.charts.cpu.toggleCores',
-        tone: 'info',
-      },
-      {
-        key: 'load',
-        labelKey: 'hosts.charts.cpu.load',
-        titleKey: 'hosts.charts.cpu.toggleLoad',
-        tone: 'info',
-      },
-    ],
-    cardLegend: false,
+    groups: { overall: true, ioDelay: true, core: true, load1: false, load5: false, load15: false },
     texts: hostTexts('cpu'),
   },
   memory: {
@@ -217,7 +202,6 @@ export const CHARTS = {
         labelKey: 'hosts.charts.memory.used',
         value: memoryValues.used,
         tone: 'orange',
-        group: 'used',
         optional: true,
       },
       {
@@ -225,7 +209,6 @@ export const CHARTS = {
         labelKey: 'hosts.charts.memory.free',
         value: memoryValues.free,
         tone: 'green',
-        group: 'free',
         optional: true,
       },
       {
@@ -233,32 +216,18 @@ export const CHARTS = {
         labelKey: 'hosts.charts.memory.cached',
         value: memoryValues.cached,
         tone: 'blue',
-        group: 'cached',
+        optional: true,
+      },
+      {
+        key: 'swap',
+        labelKey: 'hosts.charts.memory.swap',
+        value: memoryValues.swap,
+        tone: 'purple',
+        dash: 'dash',
         optional: true,
       },
     ],
-    groups: { used: true, free: true, cached: true },
-    toggles: [
-      {
-        key: 'used',
-        labelKey: 'hosts.charts.memory.used',
-        titleKey: 'hosts.charts.memory.toggleUsed',
-        tone: 'info',
-      },
-      {
-        key: 'free',
-        labelKey: 'hosts.charts.memory.free',
-        titleKey: 'hosts.charts.memory.toggleFree',
-        tone: 'success',
-      },
-      {
-        key: 'cached',
-        labelKey: 'hosts.charts.memory.cached',
-        titleKey: 'hosts.charts.memory.toggleCached',
-        tone: 'warning',
-      },
-    ],
-    cardLegend: true,
+    groups: { used: true, free: true, cached: true, swap: true },
     texts: hostTexts('memory'),
   },
   network: {
@@ -268,33 +237,9 @@ export const CHARTS = {
     axes: MEGABIT_AXES,
     lines: NO_LINES,
     series: networkSeries,
-    entityLines: hostEntityLines({
-      read: 'hosts.charts.network.rx',
-      write: 'hosts.charts.network.tx',
-      total: 'hosts.charts.network.total',
-    }),
+    entityLines: hostEntityLines(NETWORK_LABELS),
+    pills: groupPills(NETWORK_LABELS),
     groups: ALL_IO_GROUPS,
-    toggles: [
-      {
-        key: 'read',
-        labelKey: 'hosts.charts.network.rx',
-        titleKey: 'hosts.charts.network.toggleRx',
-        tone: 'info',
-      },
-      {
-        key: 'write',
-        labelKey: 'hosts.charts.network.tx',
-        titleKey: 'hosts.charts.network.toggleTx',
-        tone: 'warning',
-      },
-      {
-        key: 'total',
-        labelKey: 'hosts.charts.network.total',
-        titleKey: 'hosts.charts.network.toggleTotal',
-        tone: 'success',
-      },
-    ],
-    cardLegend: true,
     texts: { ...hostTexts('network'), entityKey: ENTITY_SERIES_KEY },
   },
   'pool-io': {
@@ -304,33 +249,9 @@ export const CHARTS = {
     axes: [{ nameKey: 'hosts.charts.poolIo.axis', min: 0, unit: ' MB/s' }],
     lines: NO_LINES,
     series: poolSeries,
-    entityLines: hostEntityLines({
-      read: 'hosts.charts.poolIo.read',
-      write: 'hosts.charts.poolIo.write',
-      total: 'hosts.charts.poolIo.total',
-    }),
+    entityLines: hostEntityLines(POOL_IO_LABELS),
+    pills: groupPills(POOL_IO_LABELS),
     groups: ALL_IO_GROUPS,
-    toggles: [
-      {
-        key: 'read',
-        labelKey: 'hosts.charts.poolIo.read',
-        titleKey: 'hosts.charts.poolIo.toggleRead',
-        tone: 'info',
-      },
-      {
-        key: 'write',
-        labelKey: 'hosts.charts.poolIo.write',
-        titleKey: 'hosts.charts.poolIo.toggleWrite',
-        tone: 'warning',
-      },
-      {
-        key: 'total',
-        labelKey: 'hosts.charts.poolIo.total',
-        titleKey: 'hosts.charts.poolIo.toggleTotal',
-        tone: 'success',
-      },
-    ],
-    cardLegend: true,
     texts: { ...hostTexts('poolIo'), entityKey: ENTITY_SERIES_KEY },
   },
   arc: {
@@ -367,9 +288,7 @@ export const CHARTS = {
         digits: 1,
       },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    groups: { size: true, target: true, hitRate: true },
     texts: hostTexts('arc'),
   },
   'disk-io': {
@@ -380,9 +299,8 @@ export const CHARTS = {
     lines: NO_LINES,
     series: deviceSeries,
     entityLines: IO_LINES,
+    pills: IO_PILLS,
     groups: ALL_IO_GROUPS,
-    toggles: IO_TOGGLES,
-    cardLegend: true,
     texts: { titleKey: 'host.expandedChartOptions.individualTitle', emptyKey: STORAGE_EMPTY },
   },
   pool: {
@@ -393,9 +311,8 @@ export const CHARTS = {
     lines: NO_LINES,
     series: poolSeries,
     entityLines: IO_LINES,
+    pills: IO_PILLS,
     groups: ALL_IO_GROUPS,
-    toggles: IO_TOGGLES,
-    cardLegend: true,
     texts: { titleKey: 'host.expandedChartOptions.poolTitle', emptyKey: STORAGE_EMPTY },
   },
   'storage-summary': {
@@ -426,8 +343,6 @@ export const CHARTS = {
       },
     ],
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: { emptyKey: STORAGE_EMPTY },
   },
   'arc-memory': {
@@ -466,9 +381,7 @@ export const CHARTS = {
         width: 2,
       },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    groups: { size: true, target: true, mru: true, mfu: true },
     texts: {
       titleKey: 'hostCharts.arcCharts.memoryAllocationTitle',
       expandedKey: 'host.expandedChartOptions.arcMemoryTitle',
@@ -506,9 +419,7 @@ export const CHARTS = {
         width: 2,
       },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    groups: { hitRatio: true, demand: true, prefetch: true },
     texts: {
       titleKey: 'hostCharts.arcCharts.cacheEfficiencyTitle',
       expandedKey: 'host.expandedChartOptions.arcEfficiencyTitle',
@@ -529,9 +440,7 @@ export const CHARTS = {
         width: 3,
       },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    groups: { compression: true },
     texts: {
       titleKey: 'hostCharts.arcCharts.compressionEffectivenessTitle',
       expandedKey: 'host.expandedChartOptions.arcCompressionTitle',
@@ -551,8 +460,6 @@ export const CHARTS = {
       { key: 'total', member: 'total', titleKey: 'host.bandwidthCharts.totalBandwidth' },
     ],
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: { emptyKey: BANDWIDTH_EMPTY },
   },
   interface: {
@@ -563,13 +470,18 @@ export const CHARTS = {
     lines: NO_LINES,
     series: networkSeries,
     entityLines: [
-      { member: 'first', labelKey: 'hosts.charts.network.rx', tone: 'blue', width: 2 },
-      { member: 'second', labelKey: 'hosts.charts.network.tx', tone: 'orange', width: 2 },
-      { member: 'total', labelKey: 'hosts.charts.network.total', tone: 'green', width: 3 },
+      { member: 'first', group: 'read', labelKey: NETWORK_LABELS.read, tone: 'blue', width: 2 },
+      {
+        member: 'second',
+        group: 'write',
+        labelKey: NETWORK_LABELS.write,
+        tone: 'orange',
+        width: 2,
+      },
+      { member: 'total', group: 'total', labelKey: NETWORK_LABELS.total, tone: 'green', width: 3 },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    pills: groupPills(NETWORK_LABELS),
+    groups: ALL_IO_GROUPS,
     texts: { emptyKey: BANDWIDTH_EMPTY },
   },
   'zone-cpu': {
@@ -581,8 +493,6 @@ export const CHARTS = {
       { key: 'cpu', labelKey: `${ZONE}.cpuSeries`, value: zoneValues.cpu, tone: 'green', width: 2 },
     ],
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${ZONE}.cpuTitle`,
       emptyKey: `${ZONE}.waitingForSamples`,
@@ -600,8 +510,6 @@ export const CHARTS = {
       values: [zoneValues.resident, zoneValues.swap],
     }),
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${ZONE}.memoryTitle`,
       emptyKey: `${ZONE}.waitingForSamples`,
@@ -616,12 +524,20 @@ export const CHARTS = {
     lines: NO_LINES,
     series: diskDevices,
     entityLines: [
-      { member: 'read', labelKey: `${ZONE}.readSeries`, tone: 'blue', width: 2 },
-      { member: 'write', labelKey: `${ZONE}.writeSeries`, tone: 'orange', width: 2 },
+      { member: 'read', group: 'read', labelKey: `${ZONE}.readSeries`, tone: 'blue', width: 2 },
+      {
+        member: 'write',
+        group: 'write',
+        labelKey: `${ZONE}.writeSeries`,
+        tone: 'orange',
+        width: 2,
+      },
     ],
-    groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
+    pills: [
+      { key: 'read', labelKey: `${ZONE}.readSeries` },
+      { key: 'write', labelKey: `${ZONE}.writeSeries` },
+    ],
+    groups: { read: true, write: true },
     texts: {
       titleKey: `${ZONE}.diskTitle`,
       emptyKey: `${ZONE}.waitingForSamples`,
@@ -639,8 +555,6 @@ export const CHARTS = {
       values: [linkValues.rx, linkValues.tx],
     }),
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${ZONE}.networkTitle`,
       emptyKey: `${ZONE}.waitingForSamples`,
@@ -669,8 +583,6 @@ export const CHARTS = {
       },
     ],
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${MACHINE}.cpuTitle`,
       emptyKey: `${MACHINE}.waitingForSample`,
@@ -692,8 +604,6 @@ export const CHARTS = {
       },
     ],
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${MACHINE}.memoryTitle`,
       emptyKey: `${MACHINE}.waitingForSample`,
@@ -712,8 +622,6 @@ export const CHARTS = {
       values: [machineValues.netRx, machineValues.netTx],
     }),
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${MACHINE}.networkTitle`,
       emptyKey: `${MACHINE}.waitingForSample`,
@@ -731,8 +639,6 @@ export const CHARTS = {
       values: [machineValues.diskRead, machineValues.diskWrite],
     }),
     groups: NO_GROUPS,
-    toggles: [],
-    cardLegend: true,
     texts: {
       titleKey: `${MACHINE}.diskTitle`,
       emptyKey: `${MACHINE}.waitingForSample`,
@@ -748,3 +654,23 @@ export const CHARTS = {
  * @returns {Object} The entry
  */
 export const chartOf = key => CHARTS[key];
+
+/**
+ * The key in `SERIES` of the host series one chart is drawn over, empty
+ * for a chart drawn over a machine's series.
+ *
+ * @param {string} key - The chart's key, e.g. `cpu` or `arc-memory`
+ * @returns {string} The series' key, e.g. `cpu` or `arc`
+ */
+export const hostSeriesOf = key =>
+  Object.keys(SERIES).find(name => SERIES[name] === chartOf(key).feed) || '';
+
+/**
+ * The charts the dashboard's Charts widget draws of every host that
+ * offers them, each the chart's key and the groups of its lines it shows:
+ * the overall CPU use and the total throughput of every interface.
+ */
+export const DASHBOARD_CHARTS = [
+  { key: 'cpu', groups: ['overall'] },
+  { key: 'network', groups: ['total'] },
+];

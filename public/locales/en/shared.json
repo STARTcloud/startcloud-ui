@@ -2413,7 +2413,8 @@
         "cached": "Cached",
         "toggleUsed": "Toggle Used visibility",
         "toggleFree": "Toggle Free visibility",
-        "toggleCached": "Toggle Cached visibility"
+        "toggleCached": "Toggle Cached visibility",
+        "swap": "Swap"
       },
       "arc": {
         "title": "ZFS ARC",
@@ -2451,7 +2452,15 @@
         "toggleRead": "Toggle Read bandwidth visibility",
         "toggleWrite": "Toggle Write bandwidth visibility",
         "toggleTotal": "Toggle Total bandwidth visibility"
-      }
+      },
+      "hideLine": "Hide {{label}}",
+      "showLine": "Show {{label}}",
+      "pause": "Pause",
+      "resume": "Resume",
+      "exportCsv": "Export CSV",
+      "exportPng": "Export PNG",
+      "trend": "Trend",
+      "trendTitle": "Total of {{name}} over the drawn window"
     },
     "api": {
       "server": "Server API",
@@ -5491,7 +5500,8 @@
       "topology": "Datacenter topology",
       "collapse": "Collapse",
       "expand": "Expand",
-      "hide": "Hide widget"
+      "hide": "Hide widget",
+      "charts": "Charts"
     },
     "search": "Search hosts"
   },

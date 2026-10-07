@@ -11,10 +11,12 @@ import { useEventStream } from '../../../hooks/useEventStream';
 import { useFolds } from '../../../hooks/useFolds';
 import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
+import { ChartControlsContext, useChartControlsState } from '../hooks/useChartControls';
 import { useHostActions } from '../hooks/useHostActions';
 import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostReadingsRefresh } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
+import { useHostSeriesQuery } from '../hooks/useHostSeries';
 import { useHostStats } from '../hooks/useHostStats';
 import { useMachineDetail } from '../hooks/useMachineDetail';
 import { useMachineSeriesRefresh } from '../hooks/useMachineSeries';
@@ -151,7 +153,8 @@ ConsoleDoor.propTypes = {
  * and `PowerButtons`, `ConsoleDoor` and Refresh in its pane; under it
  * the page `page` names. The Overview draws the machine information, the
  * console, the tags and notes, the hardware, the guest agent, the guest
- * information, the topology slice and the charts, each a card folding
+ * information, the topology slice and the charts under the page's chart
+ * controls, each a card folding
  * under `table_prefs_machine`; Settings, Snapshots and Provisioning draw
  * `MachineSettingsView`, `MachineSnapshotsView` and
  * `MachineProvisioningView`. A surface draws only while the host's row
@@ -171,6 +174,8 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useMachineSeriesRefresh();
   const refreshSnapshots = useMachineSnapshotsRefresh();
+  const { query } = useHostSeriesQuery(id);
+  const controls = useChartControlsState(query.window);
   const folds = useFolds(`${context.prefsPrefix}_machine`);
   const [turn, setTurn] = useState(0);
   const server = useHostRow(id);
@@ -341,14 +346,16 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
                   folded={folds.folded(TOPOLOGY_FOLD)}
                   onFold={() => folds.toggle(TOPOLOGY_FOLD)}
                 />
-                <MachineCharts
-                  id={id}
-                  name={name}
-                  host={host}
-                  detail={detail}
-                  running={running}
-                  folds={folds}
-                />
+                <ChartControlsContext.Provider value={controls}>
+                  <MachineCharts
+                    id={id}
+                    name={name}
+                    host={host}
+                    detail={detail}
+                    running={running}
+                    folds={folds}
+                  />
+                </ChartControlsContext.Provider>
               </>
             ) : null}
           </div>

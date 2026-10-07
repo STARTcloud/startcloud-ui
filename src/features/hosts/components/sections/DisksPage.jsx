@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
+import { chartOf } from '../../charts/registry';
+import { ChartControlsContext, useChartControlsState } from '../../hooks/useChartControls';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeries, useHostSeriesQuery, useHostSeriesRefresh } from '../../hooks/useHostSeries';
@@ -18,11 +20,11 @@ import {
   matchesDisk,
   matchesDiskIo,
 } from '../../utils/StorageUtils';
-import DiskIOTable, { DISK_IO_COLUMNS } from '../DiskIOTable';
-import DisksTable, { DISK_COLUMNS } from '../DisksTable';
+import ChartControls from '../ChartControls';
+import DiskIOTable, { diskIoColumnsFor } from '../DiskIOTable';
+import DisksTable, { diskColumnsFor } from '../DisksTable';
 import SectionPane from '../SectionPane';
 import StorageCharts from '../StorageCharts';
-import StorageHeader from '../StorageHeader';
 import TaskDialog from '../TaskDialog';
 import ZfsPoolsPanel from '../ZfsPoolsPanel';
 
@@ -35,6 +37,8 @@ const NO_ROWS = [];
 const NO_SERIES = { rows: NO_ROWS, loaded: true, failed: false, offered: false, latest: NO_ROWS };
 
 const DISK_CHARTS = ['summary', 'devices'];
+
+const DEVICES = chartOf('disk-io');
 
 const FOLD_TITLES = {
   disks: ['host.disksTable.expand', 'host.disksTable.collapse'],
@@ -49,10 +53,11 @@ const foldOf = ({ folds, key, t }) => {
 
 /**
  * The Disks page of a host: the heading counting the disks, the time
- * window and Refresh in its pane, and under it the disks and disk I/O
+ * window, Refresh and Pause in its pane, and under it the disks and disk I/O
  * tables, each one table narrowed by the page's search
- * under a folding heading, the summary and device charts, and on a host
- * that lists `zfs` the ZFS pool manager's chassis with Rescan and each
+ * under a folding heading, the summary and device charts, the points per
+ * device computed once for the charts and both tables' trend columns, and
+ * on a host that lists `zfs` the ZFS pool manager's chassis with Rescan and each
  * pool member's disk dialog, every write a queued task through
  * `useZfsTools`; the folds kept under `table_prefs_disks`.
  */
@@ -62,6 +67,7 @@ const DisksPage = ({ id, server, context, section, host, onRefresh }) => {
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
   const { query, setQuery } = useHostSeriesQuery(id);
+  const controls = useChartControlsState(query.window);
   const folds = useFolds(`${context.prefsPrefix}_${section}`);
   const disks = useHostReading(id, 'disks');
   const diskIo = useHostSeries(id, 'disk-io');
@@ -70,6 +76,9 @@ const DisksPage = ({ id, server, context, section, host, onRefresh }) => {
   const tools = useZfsTools({ id, onSettled: bump });
   const diskList = useMemo(() => diskRows(disks.data), [disks.data]);
   const diskIoList = useMemo(() => diskIoRows(diskIo.rows), [diskIo.rows]);
+  const devices = useMemo(() => DEVICES.series(diskIo.rows), [diskIo.rows]);
+  const diskColumns = useMemo(() => diskColumnsFor({ devices }), [devices]);
+  const diskIoColumns = useMemo(() => diskIoColumnsFor({ devices }), [devices]);
   const ctx = { ...context, t, language: i18n.language };
   const search = useHostManageSearch({
     section,
@@ -78,7 +87,7 @@ const DisksPage = ({ id, server, context, section, host, onRefresh }) => {
         key: 'disks',
         labelKey: 'host.storageSummary.physicalDisks',
         rows: diskList,
-        columns: DISK_COLUMNS,
+        columns: diskColumns,
         matches: matchesDisk,
         filterGroups: DISK_FILTERS,
         defaultSort: DEVICE_SORT,
@@ -88,7 +97,7 @@ const DisksPage = ({ id, server, context, section, host, onRefresh }) => {
         key: 'disk-io',
         labelKey: 'hosts.storage.tables.diskIo',
         rows: diskIoList,
-        columns: DISK_IO_COLUMNS,
+        columns: diskIoColumns,
         matches: matchesDiskIo,
         filterGroups: DISK_IO_FILTERS,
         defaultSort: TOTAL_SORT,
@@ -108,57 +117,69 @@ const DisksPage = ({ id, server, context, section, host, onRefresh }) => {
   };
 
   const actions = (
-    <StorageHeader query={query} onQuery={setQuery} series={diskIo.offered} onRefresh={refresh} />
+    <ChartControls
+      query={query}
+      onQuery={setQuery}
+      scope="storageHeader"
+      series={diskIo.offered}
+      controls={controls}
+      onRefresh={refresh}
+    />
   );
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={disks.offered && disks.loaded ? diskList.length : null}
-      actions={actions}
-    >
-      {disks.offered ? (
-        <DisksTable
-          table={search.tables.disks}
-          reading={{ ...disks, rows: diskList }}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'disks', t })}
-          ctx={ctx}
-        />
-      ) : null}
-      {diskIo.offered ? (
-        <DiskIOTable
-          table={search.tables['disk-io']}
-          reading={{ rows: diskIoList, loaded: diskIo.loaded, failed: diskIo.failed }}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'diskIo', t })}
-          ctx={ctx}
-        />
-      ) : null}
-      <StorageCharts
-        diskIo={diskIo}
-        poolIo={NO_SERIES}
-        arc={NO_SERIES}
-        host={host.label}
-        folds={folds}
-        charts={DISK_CHARTS}
-      />
-      {hostHasStorage(server) ? (
-        <div data-panel="storage-management">
-          <ZfsPoolsPanel
-            id={id}
-            turn={turn}
-            disks={{ ...disks, rows: diskList }}
-            tools={tools}
-            view="disks"
+    <ChartControlsContext.Provider value={controls}>
+      <SectionPane
+        section={section}
+        server={server}
+        count={disks.offered && disks.loaded ? diskList.length : null}
+        actions={actions}
+      >
+        {disks.offered ? (
+          <DisksTable
+            columns={diskColumns}
+            table={search.tables.disks}
+            reading={{ ...disks, rows: diskList }}
+            filtering={search.filtering}
+            fold={foldOf({ folds, key: 'disks', t })}
+            ctx={ctx}
           />
-          {tools.task ? (
-            <TaskDialog status={status} id={id} task={tools.task} onHide={tools.closeTask} />
-          ) : null}
-        </div>
-      ) : null}
-    </SectionPane>
+        ) : null}
+        {diskIo.offered ? (
+          <DiskIOTable
+            columns={diskIoColumns}
+            table={search.tables['disk-io']}
+            reading={{ rows: diskIoList, loaded: diskIo.loaded, failed: diskIo.failed }}
+            filtering={search.filtering}
+            fold={foldOf({ folds, key: 'diskIo', t })}
+            ctx={ctx}
+          />
+        ) : null}
+        <StorageCharts
+          diskIo={diskIo}
+          poolIo={NO_SERIES}
+          arc={NO_SERIES}
+          devices={devices}
+          host={host.label}
+          folds={folds}
+          charts={DISK_CHARTS}
+        />
+        {hostHasStorage(server) ? (
+          <div data-panel="storage-management">
+            <ZfsPoolsPanel
+              id={id}
+              turn={turn}
+              disks={{ ...disks, rows: diskList }}
+              tools={tools}
+              view="disks"
+            />
+            {tools.task ? (
+              <TaskDialog status={status} id={id} task={tools.task} onHide={tools.closeTask} />
+            ) : null}
+          </div>
+        ) : null}
+      </SectionPane>
+    </ChartControlsContext.Provider>
   );
 };
 

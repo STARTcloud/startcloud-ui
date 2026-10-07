@@ -272,6 +272,7 @@ Feature: machines
     And the machine page draws the "disk" chart
     And the machine page draws 4 charts
     And the "cpu" chart says it draws one sample
+    And the "cpu" chart carries the pills "guest, vmm"
     And the host was sent GET to "/api/agents/1/monitoring/machines/usage" 1 times
     And the host was asked "/api/agents/1/monitoring/machines/usage" with "machine_name" as "dev-1"
     And the host was asked "/api/agents/1/monitoring/machines/usage" with "limit" as "1"

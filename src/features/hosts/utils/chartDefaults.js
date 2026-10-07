@@ -2,8 +2,6 @@ import { chartOf } from '../charts/registry';
 
 import { entitySpec, lineSpec, summarySpec as summaryOf } from './chartSpecs';
 
-const NO_GROUPS = {};
-
 /**
  * What one summary chart of the storage pages draws, the
  * `storage-summary` entry of the registry: a line a device of one member
@@ -19,29 +17,23 @@ export const summarySpec = (member, entities, t) =>
 
 /**
  * What the chart of one device draws, the `disk-io` entry of the
- * registry over the device's points, a group the person hid kept in the
- * answer as `hidden`.
+ * registry over the device's points.
  *
  * @param {{ first: Array, second: Array, total: Array }} points - The device's points
- * @param {Object<string, boolean>} visibility - The groups shown, `read`, `write` and `total`
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const ioSpec = (points, visibility, t) =>
-  entitySpec(chartOf('disk-io'), { points, visibility, t });
+export const ioSpec = (points, t) => entitySpec(chartOf('disk-io'), { points, t });
 
 /**
  * What the chart of one pool draws, the `pool` entry of the registry
- * over the pool's points, a group the person hid kept in the answer as
- * `hidden`.
+ * over the pool's points.
  *
  * @param {{ first: Array, second: Array, total: Array }} points - The pool's points
- * @param {Object<string, boolean>} visibility - The groups shown, `read`, `write` and `total`
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const poolSpec = (points, visibility, t) =>
-  entitySpec(chartOf('pool'), { points, visibility, t });
+export const poolSpec = (points, t) => entitySpec(chartOf('pool'), { points, t });
 
 /**
  * What one ARC chart draws, its entry of the registry over the ARC
@@ -52,5 +44,4 @@ export const poolSpec = (points, visibility, t) =>
  * @param {Function} t - The translator
  * @returns {{ axes: Array<Object>, series: Array<Object> }} The axes and the series of the shared chart
  */
-export const arcChartSpec = (key, rows, t) =>
-  lineSpec(chartOf(key), { rows, visibility: NO_GROUPS, t });
+export const arcChartSpec = (key, rows, t) => lineSpec(chartOf(key), { rows, t });

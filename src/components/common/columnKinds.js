@@ -6,7 +6,8 @@
  * date), `relative` (a relative time), `count` (a right-aligned integer),
  * `size` (formatted bytes), `checksum` (the `ChecksumCell`, the one cell
  * that keeps an ellipsis), `link` (a link cell, the version and release
- * names and a search hit's title) and `word` (a closed-list word). A
+ * names and a search hit's title), `spark` (the sparkline of the row's
+ * entity over the drawn range) and `word` (a closed-list word). A
  * priority of 1 never folds; a table short of room folds the highest
  * number first, and a column may name its own `priority` over the kind's.
  * Every `th` and `td` carries `.col-k-<kind>`, the class the stylesheet
@@ -21,6 +22,7 @@ export const KINDS = {
   date: { priority: 3 },
   relative: { priority: 3 },
   badges: { priority: 4 },
+  spark: { priority: 4 },
   text: { priority: 5 },
   word: { priority: 5 },
   checksum: { priority: 6 },

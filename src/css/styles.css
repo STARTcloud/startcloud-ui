@@ -1200,6 +1200,8 @@ button::-moz-focus-inner {
 
 .section-card-head {
   cursor: pointer;
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
 }
 
 .section-card-head:has(+ .collapse:not(.show)) {
@@ -3623,6 +3625,21 @@ a.stat-card:focus-visible {
   height: calc(90vh - 200px);
 }
 
+.chart-box-xs {
+  height: 130px;
+}
+
+.chart-spark {
+  width: 140px;
+  height: 34px;
+}
+
+@media (max-width: 575.98px) {
+  .chart-spark {
+    width: 90px;
+  }
+}
+
 .chart-empty {
   display: flex;
   align-items: center;
@@ -3714,6 +3731,76 @@ a.stat-card:focus-visible {
 
 .chart-tone-cyan {
   color: var(--bs-cyan);
+}
+
+.btn-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 1.95rem;
+  padding: 0;
+}
+
+.line-pill {
+  --pill-color: var(--bs-secondary);
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border-radius: 999px;
+  border: 1px solid var(--bs-border-color);
+  background: transparent;
+  color: var(--bs-secondary-color);
+}
+
+.line-pill[aria-pressed='true'] {
+  border-color: var(--pill-color);
+  background: var(--pill-color);
+  color: #fff;
+}
+
+.line-pill:hover {
+  border-color: var(--pill-color);
+}
+
+.line-pill-blue {
+  --pill-color: var(--bs-blue);
+}
+
+.line-pill-orange {
+  --pill-color: var(--bs-orange);
+}
+
+.line-pill-green {
+  --pill-color: var(--bs-green);
+}
+
+.line-pill-purple {
+  --pill-color: var(--bs-purple);
+}
+
+.line-pill-red {
+  --pill-color: var(--bs-red);
+}
+
+.line-pill-teal {
+  --pill-color: var(--bs-teal);
+}
+
+.line-pill-pink {
+  --pill-color: var(--bs-pink);
+}
+
+.line-pill-yellow {
+  --pill-color: var(--bs-yellow);
+}
+
+.line-pill-indigo {
+  --pill-color: var(--bs-indigo);
+}
+
+.line-pill-cyan {
+  --pill-color: var(--bs-cyan);
 }
 
 .device-tree {

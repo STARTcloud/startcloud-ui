@@ -2,7 +2,13 @@ import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'hyperweaver_dashboard_layout';
 
-export const DASHBOARD_WIDGET_IDS = ['summary', 'quickActions', 'serverCards', 'topology'];
+export const DASHBOARD_WIDGET_IDS = [
+  'summary',
+  'charts',
+  'quickActions',
+  'serverCards',
+  'topology',
+];
 
 const defaultLayout = () =>
   DASHBOARD_WIDGET_IDS.map(id => ({ id, hidden: false, collapsed: false }));

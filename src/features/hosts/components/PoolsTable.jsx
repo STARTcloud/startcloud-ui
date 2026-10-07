@@ -5,6 +5,7 @@ import { sortShape } from '../../../utils/itemShape';
 import { formatBytes, healthTone, poolName, poolUsage, usageTone } from '../utils/StorageUtils';
 
 import NetworkingTable from './NetworkingTable';
+import { trendColumn } from './TrendCell';
 
 const DEFAULT_DEDUP = '1.00x';
 
@@ -18,10 +19,15 @@ const healthWord = (row, ctx) => row.health || row.status || ctx.t('host.poolsTa
  * The columns of the pools table, hyperweaver-ui's: the pool, its health
  * in its tone, the size, the used and the available space, the sum and
  * the parts of the allocated and the free space the row carries, the
- * percent used in the tone of its fullness, the dedup ratio and the
- * fragmentation.
+ * percent used in the tone of its fullness, the trend, the sparkline of
+ * the pool's total I/O over the drawn range in the tone the host page's
+ * pool chart gives the pool, the dedup ratio and the fragmentation.
+ *
+ * @param {Object} options - The page's side
+ * @param {Object<string, Object>} options.pools - The points per pool of the `pool` chart's `series`
+ * @returns {Array<Object>} The columns
  */
-export const POOL_COLUMNS = [
+export const poolColumnsFor = ({ pools }) => [
   {
     key: 'pool',
     kind: 'name',
@@ -72,6 +78,7 @@ export const POOL_COLUMNS = [
       return badge(usageTone(percent), `${percent}%`);
     },
   },
+  trendColumn({ entities: pools, nameOf: poolName }),
   {
     key: 'dedup',
     kind: 'text',
@@ -92,15 +99,15 @@ export const POOL_COLUMNS = [
  * The pools table of the storage page, hyperweaver-ui's ZFS storage
  * pools card: the heading counting the pools, its button dropping the
  * sort a person chose, the chevron that folds it, and the one `SubTable`
- * over the pools the page's one search binding left.
+ * of `columns` over the pools the page's one search binding left.
  */
-const PoolsTable = ({ table, reading, filtering, fold, ctx }) => {
+const PoolsTable = ({ columns, table, reading, filtering, fold, ctx }) => {
   const { t } = useTranslation();
   return (
     <NetworkingTable
       panel="storage-pools"
       title={t('host.poolsTable.zfsStoragePoolsCount', { count: reading.rows.length })}
-      columns={POOL_COLUMNS}
+      columns={columns}
       table={table}
       rowKey={poolName}
       ctx={ctx}
@@ -136,6 +143,7 @@ export const storageFoldShape = PropTypes.shape({
 });
 
 PoolsTable.propTypes = {
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   table: storageTableShape.isRequired,
   reading: storageReadingShape.isRequired,
   filtering: PropTypes.bool.isRequired,

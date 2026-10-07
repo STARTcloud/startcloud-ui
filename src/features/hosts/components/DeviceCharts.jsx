@@ -6,18 +6,29 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { chartOf } from '../charts/registry';
 import { ioSpec } from '../utils/chartDefaults';
 
-import NetworkingChartCard from './NetworkingChartCard';
+import ChartCard from './ChartCard';
+import OneSampleNote from './OneSampleNote';
 
 const TITLE_KEY = chartOf('disk-io').texts.titleKey;
 
 /**
- * One chart a device, hyperweaver-ui's individual device charts, titled
- * by the device's own name, its three lines read, written and both in
- * the order the page's select names, the lines a person hid hidden in
- * every chart; the line under them counts the devices and names the
- * order.
+ * One chart a device, titled by the device's own name, its three lines
+ * read, written and both in the order the page's select names, each a
+ * `ChartCard` whose pills are the page's, so a line hidden in one is
+ * hidden in every chart; the line under them counts the devices and
+ * names the order.
  */
-const DeviceCharts = ({ devices, names, order, visibility, host, emptyText, single, folds }) => {
+const DeviceCharts = ({
+  devices,
+  names,
+  order,
+  visibility,
+  onToggle,
+  host,
+  emptyText,
+  single,
+  folds,
+}) => {
   const { t } = useTranslation();
   if (names.length === 0) {
     return null;
@@ -28,16 +39,22 @@ const DeviceCharts = ({ devices, names, order, visibility, host, emptyText, sing
       <div className="row g-3 mb-2">
         {names.map(name => (
           <div key={name} className="col-12 col-lg-6 col-xxl-4">
-            <NetworkingChartCard
+            <ChartCard
               chart={`device:${name}`}
+              metric="disk-io"
               title={t(TITLE_KEY, { id: name })}
               chartTitle={name}
-              host={host}
-              spec={ioSpec(devices[name], visibility, t)}
+              expandedTitle={t(TITLE_KEY, { id: name })}
+              spec={ioSpec(devices[name], t)}
+              visibility={visibility}
+              onToggle={onToggle}
               emptyText={emptyText}
-              single={single}
+              host={host}
               folds={folds}
-            />
+              fold={`chart-device:${name}`}
+            >
+              <OneSampleNote single={single} />
+            </ChartCard>
           </div>
         ))}
       </div>
@@ -53,6 +70,7 @@ DeviceCharts.propTypes = {
   names: PropTypes.arrayOf(PropTypes.string).isRequired,
   order: PropTypes.string.isRequired,
   visibility: PropTypes.objectOf(PropTypes.bool).isRequired,
+  onToggle: PropTypes.func.isRequired,
   host: PropTypes.string.isRequired,
   emptyText: PropTypes.string.isRequired,
   single: PropTypes.bool.isRequired,

@@ -6,7 +6,9 @@ import {
   ARC_CHARTS,
   CHARTS,
   CHART_ORDER,
+  DASHBOARD_CHARTS,
   chartOf,
+  hostSeriesOf,
 } from '../../src/features/hosts/charts/registry.js';
 import {
   arcChartSpec,
@@ -14,7 +16,7 @@ import {
   poolSpec,
   summarySpec as storageSummarySpec,
 } from '../../src/features/hosts/utils/chartDefaults.js';
-import { chartSpec, chartToggles } from '../../src/features/hosts/utils/chartSpecs.js';
+import { chartPills, chartSpec } from '../../src/features/hosts/utils/chartSpecs.js';
 import {
   diskSpec,
   linkSpec,
@@ -69,8 +71,8 @@ const entries = KEYS.map(key => chartOf(key));
 
 const linesOf = entry => [...entry.lines, ...(entry.entityLines || [])];
 
-const toggledOf = groups =>
-  Object.fromEntries(Object.keys(groups).map(key => [key, key === 'cores']));
+const pillKeysOf = entry =>
+  entry.pills ? entry.pills.map(pill => pill.key) : entry.lines.map(line => line.key);
 
 describe('CHARTS', () => {
   it('holds one entry a chart under its own key and nothing else', () => {
@@ -81,7 +83,7 @@ describe('CHARTS', () => {
     });
   });
 
-  it('gives every entry a feed, tokens, axes, lines, groups, toggles and texts', () => {
+  it('gives every entry a feed, tokens, axes, lines, groups and texts', () => {
     entries.forEach(entry => {
       expect(typeof entry.feed.path).toBe('string');
       expect(typeof entry.feed.member).toBe('string');
@@ -90,8 +92,6 @@ describe('CHARTS', () => {
       expect(entry.axes.length).toBeGreaterThan(0);
       expect(Array.isArray(entry.lines)).toBe(true);
       expect(typeof entry.groups).toBe('object');
-      expect(Array.isArray(entry.toggles)).toBe(true);
-      expect(typeof entry.cardLegend).toBe('boolean');
       expect(typeof entry.texts.emptyKey).toBe('string');
     });
   });
@@ -113,9 +113,6 @@ describe('CHARTS', () => {
       (entry.entityLines || []).forEach(line =>
         expect(line.tone === undefined || CHART_TONES.includes(line.tone)).toBe(true)
       );
-      entry.toggles.forEach(toggle =>
-        expect(['info', 'warning', 'success']).toContain(toggle.tone)
-      );
     });
   });
 
@@ -126,24 +123,26 @@ describe('CHARTS', () => {
     });
   });
 
-  it('gives every line a value, an expansion or a member, and a label where it is named', () => {
+  it('gives every line a value, an expansion or a member, and a label', () => {
     entries.forEach(entry => {
       entry.lines.forEach(line => {
         expect(typeof line.value === 'function' || typeof line.expand === 'function').toBe(true);
-        expect(Boolean(line.labelKey) || Boolean(line.expand)).toBe(true);
+        expect(typeof line.labelKey).toBe('string');
       });
       (entry.entityLines || []).forEach(line => {
         expect(MEMBERS.includes(line.member) || ['read', 'write'].includes(line.member)).toBe(true);
         expect(typeof line.labelKey).toBe('string');
+        expect(typeof line.group).toBe('string');
       });
     });
   });
 
-  it('names a toggle for every group and a group for every toggle', () => {
+  it('names a pill for every entity line group and a group only among the pills', () => {
     entries.forEach(entry => {
-      expect(entry.toggles.map(toggle => toggle.key).sort()).toEqual(
-        Object.keys(entry.groups).sort()
-      );
+      const pills = pillKeysOf(entry);
+      Object.keys(entry.groups).forEach(group => expect(pills).toContain(group));
+      (entry.entityLines || []).forEach(line => expect(pills).toContain(line.group));
+      expect(Boolean(entry.pills)).toBe(Boolean(entry.entityLines));
     });
   });
 
@@ -158,40 +157,50 @@ describe('CHARTS', () => {
   });
 });
 
+describe('hostSeriesOf and DASHBOARD_CHARTS', () => {
+  it('name the host series a chart is drawn over and none for a machine chart', () => {
+    expect(hostSeriesOf('cpu')).toBe('cpu');
+    expect(hostSeriesOf('pool-io')).toBe('pool-io');
+    expect(hostSeriesOf('arc-memory')).toBe('arc');
+    expect(hostSeriesOf('interface')).toBe('network');
+    expect(hostSeriesOf('storage-summary')).toBe('disk-io');
+    expect(hostSeriesOf('zone-cpu')).toBe('');
+  });
+
+  it('draw the overall CPU use and the total of every interface, each a group of its pills', () => {
+    expect(DASHBOARD_CHARTS.map(chart => [chart.key, chart.groups])).toEqual([
+      ['cpu', ['overall']],
+      ['network', ['total']],
+    ]);
+    DASHBOARD_CHARTS.forEach(chart => {
+      expect(hostSeriesOf(chart.key)).not.toBe('');
+      chart.groups.forEach(group => expect(pillKeysOf(chartOf(chart.key))).toContain(group));
+    });
+  });
+});
+
 describe('the host charts', () => {
-  it('carry the words, the groups and the legend of each chart', () => {
+  it('carry the words and the groups of each chart', () => {
     CHART_ORDER.forEach(metric => {
       expect(chartOf(metric).texts).toMatchObject(SNAPSHOT.CHART_TEXTS[metric]);
       expect(chartOf(metric).groups).toEqual(SNAPSHOT.DEFAULT_VISIBILITY[metric]);
-      expect(chartOf(metric).cardLegend).toBe(SNAPSHOT.CARD_LEGEND[metric]);
     });
   });
 
-  it('draw the same lines, axes and toggles over the same samples', () => {
+  it('draw the same lines, axes and pills over the same samples', () => {
     CHART_ORDER.forEach(metric => {
       const rows = FIXTURES.host[metric];
-      const { groups } = chartOf(metric);
-      expect(chartSpec(metric, { rows, visibility: groups, t })).toEqual(
-        SNAPSHOT.host[metric].shown
-      );
-      expect(chartSpec(metric, { rows, visibility: toggledOf(groups), t })).toEqual(
-        SNAPSHOT.host[metric].toggled
-      );
-      expect(chartToggles(metric, t)).toEqual(SNAPSHOT.host[metric].toggles);
+      const spec = chartSpec(metric, { rows, t });
+      expect(spec).toEqual(SNAPSHOT.host[metric].spec);
+      expect(chartPills(metric, spec.series, t)).toEqual(SNAPSHOT.host[metric].pills);
     });
   });
 
   it('leave out the IO delay and the cached line while no sample carries them', () => {
-    expect(
-      chartSpec('cpu', { rows: FIXTURES.host.cpuPlain, visibility: chartOf('cpu').groups, t })
-    ).toEqual(SNAPSHOT.host.cpuPlain);
-    expect(
-      chartSpec('memory', {
-        rows: FIXTURES.host.memoryPlain,
-        visibility: chartOf('memory').groups,
-        t,
-      })
-    ).toEqual(SNAPSHOT.host.memoryPlain);
+    expect(chartSpec('cpu', { rows: FIXTURES.host.cpuPlain, t })).toEqual(SNAPSHOT.host.cpuPlain);
+    expect(chartSpec('memory', { rows: FIXTURES.host.memoryPlain, t })).toEqual(
+      SNAPSHOT.host.memoryPlain
+    );
   });
 });
 
@@ -226,6 +235,7 @@ describe('the bandwidth charts', () => {
     expect(Object.keys(interfaces).map(name => interfaceSpec(interfaces[name], t))).toEqual(
       SNAPSHOT.networking.interfaces
     );
+    expect(chartPills('interface', [], t)).toEqual(SNAPSHOT.networking.pills);
   });
 });
 
@@ -234,10 +244,10 @@ describe('the storage charts', () => {
   const devices = summary.series(FIXTURES.storage.diskIo);
   const pools = chartOf('pool').series(FIXTURES.host['pool-io']);
 
-  it('list the three summary charts and the three toggles', () => {
+  it('list the three summary charts and the three pills', () => {
     expect(summary.charts).toEqual(SNAPSHOT.storage.SUMMARY_CHARTS);
-    expect(chartToggles('disk-io', t)).toEqual(SNAPSHOT.storage.toggles);
-    expect(chartOf('pool').toggles).toBe(chartOf('disk-io').toggles);
+    expect(chartPills('disk-io', [], t)).toEqual(SNAPSHOT.storage.pills);
+    expect(chartOf('pool').pills).toBe(chartOf('disk-io').pills);
     expect(chartOf('pool').groups).toBe(chartOf('disk-io').groups);
   });
 
@@ -245,16 +255,12 @@ describe('the storage charts', () => {
     expect(MEMBERS.map(member => storageSummarySpec(member, devices, t))).toEqual(
       SNAPSHOT.storage.summary
     );
-    expect(
-      Object.keys(devices).map(name =>
-        ioSpec(devices[name], { read: true, write: false, total: true }, t)
-      )
-    ).toEqual(SNAPSHOT.storage.devices);
-    expect(
-      Object.keys(pools).map(name =>
-        poolSpec(pools[name], { read: true, write: true, total: true }, t)
-      )
-    ).toEqual(SNAPSHOT.storage.pools);
+    expect(Object.keys(devices).map(name => ioSpec(devices[name], t))).toEqual(
+      SNAPSHOT.storage.devices
+    );
+    expect(Object.keys(pools).map(name => poolSpec(pools[name], t))).toEqual(
+      SNAPSHOT.storage.pools
+    );
     expect(ARC_CHARTS.map(key => arcChartSpec(key, FIXTURES.host.arc, t))).toEqual(
       SNAPSHOT.storage.arc
     );

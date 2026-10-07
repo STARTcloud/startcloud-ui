@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { dashboardTiles } from '../../src/features/hosts/components/Dashboard/DashboardCharts.jsx';
 import {
   bytesToSize,
   calculateInfrastructureSummary,
@@ -136,9 +137,22 @@ describe('normalizeLayout', () => {
     ).toEqual([
       { id: 'serverCards', hidden: true, collapsed: false },
       { id: 'summary', hidden: false, collapsed: true },
+      { id: 'charts', hidden: false, collapsed: false },
       { id: 'quickActions', hidden: false, collapsed: false },
       { id: 'topology', hidden: false, collapsed: false },
     ]);
+  });
+});
+
+describe('dashboardTiles', () => {
+  it('answers one tile a host and dashboard chart whose tokens the host lists, none of a host without them', () => {
+    const watched = { id: 'self', capabilities: { features: ['hosts', 'monitoring'] } };
+    const bare = { id: 2, capabilities: { features: ['hosts'] } };
+    expect(dashboardTiles([watched, bare]).map(tile => [tile.server.id, tile.chart.key])).toEqual([
+      ['self', 'cpu'],
+      ['self', 'network'],
+    ]);
+    expect(dashboardTiles([bare])).toEqual([]);
   });
 });
 
@@ -148,10 +162,12 @@ describe('movedLayout', () => {
     expect(movedLayout(layout, 'topology', 'summary').map(row => row.id)).toEqual([
       'topology',
       'summary',
+      'charts',
       'quickActions',
       'serverCards',
     ]);
     expect(movedLayout(layout, 'summary', 'serverCards').map(row => row.id)).toEqual([
+      'charts',
       'quickActions',
       'summary',
       'serverCards',

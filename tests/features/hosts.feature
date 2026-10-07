@@ -667,6 +667,7 @@ Feature: hosts
     And the host was sent GET to "/api/agents/3/monitoring/system/memory" 1 times
     And the host was sent GET to "/api/agents/3/monitoring/storage/arc" 1 times
     And the host was sent GET to "/api/agents/3/monitoring/status" 1 times
+    And the heading row carries the window select, Refresh and Pause as glyphs
     When I click "Refresh"
     Then the host was sent GET to "/api/agents/3/monitoring/system/cpu" 2 times
     And the host was sent GET to "/api/agents/3/monitoring/storage/arc" 2 times
@@ -707,28 +708,68 @@ Feature: hosts
     And the "cpu" chart says nothing of one sample
     And the stream was requested with "topics" as "tasks,hosts,monitoring"
 
-  Scenario: Host overview: a card's buttons show and hide the groups of its series, the load averages hidden until asked for
+  Scenario: Host overview: a card's header carries one pill a line, a pill hides its line, the load averages hidden until asked for
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3"
     Then the host page draws the "cpu" chart
+    And the "cpu" chart carries the pills "overall, ioDelay, core, load1, load5, load15"
+    And the "network" chart carries the pills "read, write, total"
+    And the "arc" chart carries the pills "size, target, hitRate"
     And the "overall" series of the "cpu" chart is shown
-    And the "load" series of the "cpu" chart is hidden
-    When I toggle the "load" series of the "cpu" chart
-    Then the "load" series of the "cpu" chart is shown
+    And the "load1" series of the "cpu" chart is hidden
+    When I toggle the "load1" series of the "cpu" chart
+    Then the "load1" series of the "cpu" chart is shown
+    When I toggle the "overall" series of the "cpu" chart
+    Then the "overall" series of the "cpu" chart is hidden
 
-  Scenario: Host overview: the expand button opens the chart in the expanded dialog, the groups hidden in one hidden in the other
+  Scenario: Host overview: the legend of a chart of several entities isolates the entity clicked and a second click shows all again
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3"
+    Then the host page draws the "network" chart
+    And the "network" chart isolates no entity
+    When I click the legend of the "network" chart
+    Then the "network" chart isolates one entity
+    When I click the legend of the "network" chart
+    Then the "network" chart isolates no entity
+
+  Scenario: Host overview: Pause holds the drawn range of every chart while a pushed sample lands in the store, Resume follows live again
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-overview-events fixture
+    And the stream holds the monitoring frames
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    Then the host page draws the "cpu" chart
+    And the "cpu" chart says it draws one sample
+    And the chart controls are live
+    And the "cpu" chart draws up to "2026-09-27T12:00:00.000Z"
+    When I pause the charts
+    Then the chart controls are paused
+    When the stream releases its frames
+    Then the "cpu" chart says nothing of one sample
+    And the "cpu" chart draws up to "2026-09-27T12:00:00.000Z"
+    When I resume the charts
+    Then the chart controls are live
+    And the "cpu" chart draws up to "2026-09-27T12:00:05.000Z"
+
+  Scenario: Host overview: the expand glyph opens the chart in the expanded dialog with the same pills and Export, a backdrop click closing it
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3"
     Then the host page draws the "cpu" chart
-    When I toggle the "cores" series of the "cpu" chart
+    When I toggle the "core" series of the "cpu" chart
     And I expand the "cpu" chart
     Then the expanded chart draws
-    And the "cores" series of the expanded chart is hidden
+    And the "core" series of the expanded chart is hidden
     And the "overall" series of the expanded chart is shown
+    And the expanded chart offers CSV and PNG export
+    When I click the chart dialog's backdrop
+    Then no chart dialog is open
 
   Scenario: Error page: a failed browser navigation the backend answered with index.html and the stamped fault draws the error page on a backend host
     Given the host answers the hosts fixture

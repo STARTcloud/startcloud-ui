@@ -5,7 +5,8 @@
       "titleKey": "hosts.charts.poolIo.title",
       "chartTitleKey": "hosts.charts.poolIo.chartTitle",
       "expandedKey": "hosts.charts.poolIo.expanded",
-      "emptyKey": "hosts.charts.poolIo.empty"
+      "emptyKey": "hosts.charts.poolIo.empty",
+      "entityKey": "hosts.charts.entitySeries"
     },
     "arc": {
       "titleKey": "hosts.charts.arc.title",
@@ -17,7 +18,8 @@
       "titleKey": "hosts.charts.network.title",
       "chartTitleKey": "hosts.charts.network.chartTitle",
       "expandedKey": "hosts.charts.network.expanded",
-      "emptyKey": "hosts.charts.network.empty"
+      "emptyKey": "hosts.charts.network.empty",
+      "entityKey": "hosts.charts.entitySeries"
     },
     "cpu": {
       "titleKey": "hosts.charts.cpu.title",
@@ -38,7 +40,7 @@
       "write": true,
       "total": true
     },
-    "arc": {},
+    "arc": { "size": true, "target": true, "hitRate": true },
     "network": {
       "read": true,
       "write": true,
@@ -46,25 +48,22 @@
     },
     "cpu": {
       "overall": true,
-      "cores": true,
-      "load": false
+      "ioDelay": true,
+      "core": true,
+      "load1": false,
+      "load5": false,
+      "load15": false
     },
     "memory": {
       "used": true,
       "free": true,
-      "cached": true
+      "cached": true,
+      "swap": true
     }
-  },
-  "CARD_LEGEND": {
-    "pool-io": true,
-    "arc": true,
-    "network": true,
-    "cpu": false,
-    "memory": true
   },
   "host": {
     "pool-io": {
-      "shown": {
+      "spec": {
         "axes": [
           {
             "name": "hosts.charts.poolIo.axis",
@@ -76,159 +75,91 @@
           {
             "key": "tank:first",
             "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "entity": "tank",
+            "group": "read",
             "points": [[1790510400000, 1]],
-            "tone": "blue",
             "dash": "solid",
             "width": 2,
             "opacity": 0.55,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "tank:second",
             "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "entity": "tank",
+            "group": "write",
             "points": [[1790510400000, 3]],
-            "tone": "blue",
             "dash": "dash",
             "width": 2,
             "opacity": 1,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "tank:total",
             "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "entity": "tank",
+            "group": "total",
             "points": [[1790510400000, 4]],
-            "tone": "blue",
             "dash": "solid",
             "width": 3,
             "opacity": 1,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "rpool:first",
             "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.read\"}",
+            "entity": "rpool",
+            "group": "read",
             "points": [[1790510400000, 1]],
-            "tone": "orange",
             "dash": "solid",
             "width": 2,
             "opacity": 0.55,
-            "hidden": false
+            "tone": "orange"
           },
           {
             "key": "rpool:second",
             "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.write\"}",
+            "entity": "rpool",
+            "group": "write",
             "points": [[1790510400000, 0]],
-            "tone": "orange",
             "dash": "dash",
             "width": 2,
             "opacity": 1,
-            "hidden": false
+            "tone": "orange"
           },
           {
             "key": "rpool:total",
             "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.total\"}",
+            "entity": "rpool",
+            "group": "total",
             "points": [[1790510400000, 1]],
-            "tone": "orange",
             "dash": "solid",
             "width": 3,
             "opacity": 1,
-            "hidden": false
+            "tone": "orange"
           }
         ]
       },
-      "toggled": {
-        "axes": [
-          {
-            "name": "hosts.charts.poolIo.axis",
-            "min": 0,
-            "unit": " MB/s"
-          }
-        ],
-        "series": [
-          {
-            "key": "tank:first",
-            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.read\"}",
-            "points": [[1790510400000, 1]],
-            "tone": "blue",
-            "dash": "solid",
-            "width": 2,
-            "opacity": 0.55,
-            "hidden": true
-          },
-          {
-            "key": "tank:second",
-            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.write\"}",
-            "points": [[1790510400000, 3]],
-            "tone": "blue",
-            "dash": "dash",
-            "width": 2,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "tank:total",
-            "name": "hosts.charts.entitySeries:{\"name\":\"tank\",\"series\":\"hosts.charts.poolIo.total\"}",
-            "points": [[1790510400000, 4]],
-            "tone": "blue",
-            "dash": "solid",
-            "width": 3,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "rpool:first",
-            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.read\"}",
-            "points": [[1790510400000, 1]],
-            "tone": "orange",
-            "dash": "solid",
-            "width": 2,
-            "opacity": 0.55,
-            "hidden": true
-          },
-          {
-            "key": "rpool:second",
-            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.write\"}",
-            "points": [[1790510400000, 0]],
-            "tone": "orange",
-            "dash": "dash",
-            "width": 2,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "rpool:total",
-            "name": "hosts.charts.entitySeries:{\"name\":\"rpool\",\"series\":\"hosts.charts.poolIo.total\"}",
-            "points": [[1790510400000, 1]],
-            "tone": "orange",
-            "dash": "solid",
-            "width": 3,
-            "opacity": 1,
-            "hidden": true
-          }
-        ]
-      },
-      "toggles": [
+      "pills": [
         {
           "key": "read",
           "label": "hosts.charts.poolIo.read",
-          "title": "hosts.charts.poolIo.toggleRead",
-          "tone": "info"
+          "tone": ""
         },
         {
           "key": "write",
           "label": "hosts.charts.poolIo.write",
-          "title": "hosts.charts.poolIo.toggleWrite",
-          "tone": "warning"
+          "tone": ""
         },
         {
           "key": "total",
           "label": "hosts.charts.poolIo.total",
-          "title": "hosts.charts.poolIo.toggleTotal",
-          "tone": "success"
+          "tone": ""
         }
       ]
     },
     "arc": {
-      "shown": {
+      "spec": {
         "axes": [
           {
             "name": "hosts.charts.arc.sizeAxis",
@@ -246,6 +177,7 @@
           {
             "key": "size",
             "name": "hosts.charts.arc.size",
+            "group": "size",
             "points": [
               [1790510400000, 2],
               [1790510405000, 1]
@@ -256,6 +188,7 @@
           {
             "key": "target",
             "name": "hosts.charts.arc.target",
+            "group": "target",
             "points": [
               [1790510400000, 4],
               [1790510405000, 0]
@@ -267,6 +200,7 @@
           {
             "key": "hitRate",
             "name": "hosts.charts.arc.hitRate",
+            "group": "hitRate",
             "points": [
               [1790510400000, 95.5],
               [1790510405000, 90]
@@ -278,60 +212,26 @@
           }
         ]
       },
-      "toggled": {
-        "axes": [
-          {
-            "name": "hosts.charts.arc.sizeAxis",
-            "min": 0,
-            "unit": " GB"
-          },
-          {
-            "name": "hosts.charts.arc.hitAxis",
-            "min": 0,
-            "max": 100,
-            "unit": "%"
-          }
-        ],
-        "series": [
-          {
-            "key": "size",
-            "name": "hosts.charts.arc.size",
-            "points": [
-              [1790510400000, 2],
-              [1790510405000, 1]
-            ],
-            "tone": "blue",
-            "width": 2
-          },
-          {
-            "key": "target",
-            "name": "hosts.charts.arc.target",
-            "points": [
-              [1790510400000, 4],
-              [1790510405000, 0]
-            ],
-            "tone": "red",
-            "dash": "dash",
-            "width": 2
-          },
-          {
-            "key": "hitRate",
-            "name": "hosts.charts.arc.hitRate",
-            "points": [
-              [1790510400000, 95.5],
-              [1790510405000, 90]
-            ],
-            "tone": "green",
-            "width": 3,
-            "axis": 1,
-            "digits": 1
-          }
-        ]
-      },
-      "toggles": []
+      "pills": [
+        {
+          "key": "size",
+          "label": "hosts.charts.arc.size",
+          "tone": "blue"
+        },
+        {
+          "key": "target",
+          "label": "hosts.charts.arc.target",
+          "tone": "red"
+        },
+        {
+          "key": "hitRate",
+          "label": "hosts.charts.arc.hitRate",
+          "tone": "green"
+        }
+      ]
     },
     "network": {
-      "shown": {
+      "spec": {
         "axes": [
           {
             "name": "hosts.charts.network.axis",
@@ -343,182 +243,106 @@
           {
             "key": "eth0:first",
             "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.rx\"}",
+            "entity": "eth0",
+            "group": "read",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
             ],
-            "tone": "blue",
             "dash": "solid",
             "width": 2,
             "opacity": 0.55,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "eth0:second",
             "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.tx\"}",
+            "entity": "eth0",
+            "group": "write",
             "points": [
               [1790510400000, 2],
               [1790510405000, 0.5]
             ],
-            "tone": "blue",
             "dash": "dash",
             "width": 2,
             "opacity": 1,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "eth0:total",
             "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.total\"}",
+            "entity": "eth0",
+            "group": "total",
             "points": [
               [1790510400000, 3],
               [1790510405000, 3.5]
             ],
-            "tone": "blue",
             "dash": "solid",
             "width": 3,
             "opacity": 1,
-            "hidden": false
+            "tone": "blue"
           },
           {
             "key": "wlan0:first",
             "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.rx\"}",
+            "entity": "wlan0",
+            "group": "read",
             "points": [[1790510400000, 1]],
-            "tone": "orange",
             "dash": "solid",
             "width": 2,
             "opacity": 0.55,
-            "hidden": false
+            "tone": "orange"
           },
           {
             "key": "wlan0:second",
             "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.tx\"}",
+            "entity": "wlan0",
+            "group": "write",
             "points": [[1790510400000, 0]],
-            "tone": "orange",
             "dash": "dash",
             "width": 2,
             "opacity": 1,
-            "hidden": false
+            "tone": "orange"
           },
           {
             "key": "wlan0:total",
             "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.total\"}",
+            "entity": "wlan0",
+            "group": "total",
             "points": [[1790510400000, 1]],
-            "tone": "orange",
             "dash": "solid",
             "width": 3,
             "opacity": 1,
-            "hidden": false
+            "tone": "orange"
           }
         ]
       },
-      "toggled": {
-        "axes": [
-          {
-            "name": "hosts.charts.network.axis",
-            "min": 0,
-            "unit": " Mbps"
-          }
-        ],
-        "series": [
-          {
-            "key": "eth0:first",
-            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.rx\"}",
-            "points": [
-              [1790510400000, 1],
-              [1790510405000, 3]
-            ],
-            "tone": "blue",
-            "dash": "solid",
-            "width": 2,
-            "opacity": 0.55,
-            "hidden": true
-          },
-          {
-            "key": "eth0:second",
-            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.tx\"}",
-            "points": [
-              [1790510400000, 2],
-              [1790510405000, 0.5]
-            ],
-            "tone": "blue",
-            "dash": "dash",
-            "width": 2,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "eth0:total",
-            "name": "hosts.charts.entitySeries:{\"name\":\"eth0\",\"series\":\"hosts.charts.network.total\"}",
-            "points": [
-              [1790510400000, 3],
-              [1790510405000, 3.5]
-            ],
-            "tone": "blue",
-            "dash": "solid",
-            "width": 3,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "wlan0:first",
-            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.rx\"}",
-            "points": [[1790510400000, 1]],
-            "tone": "orange",
-            "dash": "solid",
-            "width": 2,
-            "opacity": 0.55,
-            "hidden": true
-          },
-          {
-            "key": "wlan0:second",
-            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.tx\"}",
-            "points": [[1790510400000, 0]],
-            "tone": "orange",
-            "dash": "dash",
-            "width": 2,
-            "opacity": 1,
-            "hidden": true
-          },
-          {
-            "key": "wlan0:total",
-            "name": "hosts.charts.entitySeries:{\"name\":\"wlan0\",\"series\":\"hosts.charts.network.total\"}",
-            "points": [[1790510400000, 1]],
-            "tone": "orange",
-            "dash": "solid",
-            "width": 3,
-            "opacity": 1,
-            "hidden": true
-          }
-        ]
-      },
-      "toggles": [
+      "pills": [
         {
           "key": "read",
           "label": "hosts.charts.network.rx",
-          "title": "hosts.charts.network.toggleRx",
-          "tone": "info"
+          "tone": ""
         },
         {
           "key": "write",
           "label": "hosts.charts.network.tx",
-          "title": "hosts.charts.network.toggleTx",
-          "tone": "warning"
+          "tone": ""
         },
         {
           "key": "total",
           "label": "hosts.charts.network.total",
-          "title": "hosts.charts.network.toggleTotal",
-          "tone": "success"
+          "tone": ""
         }
       ]
     },
     "cpu": {
-      "shown": {
+      "spec": {
         "axes": [
           {
             "name": "hosts.charts.cpu.usageAxis",
             "min": 0,
-            "max": 100
+            "max": 100,
+            "unit": "%"
           },
           {
             "name": "hosts.charts.cpu.loadAxis"
@@ -528,190 +352,114 @@
           {
             "key": "overall",
             "name": "hosts.charts.cpu.overall",
+            "group": "overall",
             "points": [
               [1790510400000, 12.5],
               [1790510405000, 20]
             ],
             "tone": "blue",
-            "width": 3,
-            "hidden": false
+            "width": 3
           },
           {
             "key": "ioDelay",
             "name": "hosts.charts.cpu.ioDelay",
+            "group": "ioDelay",
             "points": [[1790510400000, 1.5]],
             "tone": "yellow",
             "dash": "short-dash",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "core:cpu0",
             "name": "cpu0",
+            "group": "core",
             "points": [[1790510400000, 10]],
-            "tone": "blue",
+            "tone": "teal",
             "width": 1,
-            "opacity": 0.5,
-            "hidden": false
+            "opacity": 0.5
           },
           {
             "key": "core:cpu1",
             "name": "cpu1",
+            "group": "core",
             "points": [[1790510405000, 30]],
-            "tone": "blue",
+            "tone": "teal",
             "width": 1,
-            "opacity": 0.5,
-            "hidden": false
+            "opacity": 0.5
           },
           {
             "key": "load1",
             "name": "hosts.charts.cpu.load1",
+            "group": "load1",
             "points": [
               [1790510400000, 0.4],
               [1790510405000, 0]
             ],
             "tone": "orange",
             "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
+            "axis": 1
           },
           {
             "key": "load5",
             "name": "hosts.charts.cpu.load5",
+            "group": "load5",
             "points": [
               [1790510400000, 0.3],
               [1790510405000, 0]
             ],
             "tone": "green",
             "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
+            "axis": 1
           },
           {
             "key": "load15",
             "name": "hosts.charts.cpu.load15",
+            "group": "load15",
             "points": [
               [1790510400000, 0.2],
               [1790510405000, 0]
             ],
             "tone": "pink",
             "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
+            "axis": 1
           }
         ]
       },
-      "toggled": {
-        "axes": [
-          {
-            "name": "hosts.charts.cpu.usageAxis",
-            "min": 0,
-            "max": 100
-          },
-          {
-            "name": "hosts.charts.cpu.loadAxis"
-          }
-        ],
-        "series": [
-          {
-            "key": "overall",
-            "name": "hosts.charts.cpu.overall",
-            "points": [
-              [1790510400000, 12.5],
-              [1790510405000, 20]
-            ],
-            "tone": "blue",
-            "width": 3,
-            "hidden": true
-          },
-          {
-            "key": "ioDelay",
-            "name": "hosts.charts.cpu.ioDelay",
-            "points": [[1790510400000, 1.5]],
-            "tone": "yellow",
-            "dash": "short-dash",
-            "width": 2,
-            "hidden": true
-          },
-          {
-            "key": "core:cpu0",
-            "name": "cpu0",
-            "points": [[1790510400000, 10]],
-            "tone": "blue",
-            "width": 1,
-            "opacity": 0.5,
-            "hidden": false
-          },
-          {
-            "key": "core:cpu1",
-            "name": "cpu1",
-            "points": [[1790510405000, 30]],
-            "tone": "blue",
-            "width": 1,
-            "opacity": 0.5,
-            "hidden": false
-          },
-          {
-            "key": "load1",
-            "name": "hosts.charts.cpu.load1",
-            "points": [
-              [1790510400000, 0.4],
-              [1790510405000, 0]
-            ],
-            "tone": "orange",
-            "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
-          },
-          {
-            "key": "load5",
-            "name": "hosts.charts.cpu.load5",
-            "points": [
-              [1790510400000, 0.3],
-              [1790510405000, 0]
-            ],
-            "tone": "green",
-            "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
-          },
-          {
-            "key": "load15",
-            "name": "hosts.charts.cpu.load15",
-            "points": [
-              [1790510400000, 0.2],
-              [1790510405000, 0]
-            ],
-            "tone": "pink",
-            "dash": "short-dot",
-            "axis": 1,
-            "hidden": true
-          }
-        ]
-      },
-      "toggles": [
+      "pills": [
         {
           "key": "overall",
-          "label": "hosts.charts.cpu.avg",
-          "title": "hosts.charts.cpu.toggleAvg",
-          "tone": "info"
+          "label": "hosts.charts.cpu.overall",
+          "tone": "blue"
         },
         {
-          "key": "cores",
+          "key": "ioDelay",
+          "label": "hosts.charts.cpu.ioDelay",
+          "tone": "yellow"
+        },
+        {
+          "key": "core",
           "label": "hosts.charts.cpu.cores",
-          "title": "hosts.charts.cpu.toggleCores",
-          "tone": "info"
+          "tone": "teal"
         },
         {
-          "key": "load",
-          "label": "hosts.charts.cpu.load",
-          "title": "hosts.charts.cpu.toggleLoad",
-          "tone": "info"
+          "key": "load1",
+          "label": "hosts.charts.cpu.load1",
+          "tone": "orange"
+        },
+        {
+          "key": "load5",
+          "label": "hosts.charts.cpu.load5",
+          "tone": "green"
+        },
+        {
+          "key": "load15",
+          "label": "hosts.charts.cpu.load15",
+          "tone": "pink"
         }
       ]
     },
     "memory": {
-      "shown": {
+      "spec": {
         "axes": [
           {
             "name": "hosts.charts.memory.axis",
@@ -723,88 +471,47 @@
           {
             "key": "used",
             "name": "hosts.charts.memory.used",
+            "group": "used",
             "points": [
               [1790510400000, 6],
               [1790510405000, 4]
             ],
-            "tone": "orange",
-            "hidden": false
+            "tone": "orange"
           },
           {
             "key": "free",
             "name": "hosts.charts.memory.free",
+            "group": "free",
             "points": [
               [1790510400000, 2],
               [1790510405000, 4]
             ],
-            "tone": "green",
-            "hidden": false
+            "tone": "green"
           },
           {
             "key": "cached",
             "name": "hosts.charts.memory.cached",
+            "group": "cached",
             "points": [[1790510405000, 1]],
-            "tone": "blue",
-            "hidden": false
+            "tone": "blue"
           }
         ]
       },
-      "toggled": {
-        "axes": [
-          {
-            "name": "hosts.charts.memory.axis",
-            "min": 0,
-            "unit": " GB"
-          }
-        ],
-        "series": [
-          {
-            "key": "used",
-            "name": "hosts.charts.memory.used",
-            "points": [
-              [1790510400000, 6],
-              [1790510405000, 4]
-            ],
-            "tone": "orange",
-            "hidden": true
-          },
-          {
-            "key": "free",
-            "name": "hosts.charts.memory.free",
-            "points": [
-              [1790510400000, 2],
-              [1790510405000, 4]
-            ],
-            "tone": "green",
-            "hidden": true
-          },
-          {
-            "key": "cached",
-            "name": "hosts.charts.memory.cached",
-            "points": [[1790510405000, 1]],
-            "tone": "blue",
-            "hidden": true
-          }
-        ]
-      },
-      "toggles": [
+      "pills": [
         {
           "key": "used",
           "label": "hosts.charts.memory.used",
-          "title": "hosts.charts.memory.toggleUsed",
-          "tone": "info"
+          "tone": "orange"
         },
         {
           "key": "free",
           "label": "hosts.charts.memory.free",
-          "title": "hosts.charts.memory.toggleFree",
-          "tone": "success"
+          "tone": "green"
         },
         {
           "key": "cached",
           "label": "hosts.charts.memory.cached",
-          "title": "hosts.charts.memory.toggleCached",
-          "tone": "warning"
+          "tone": "blue"
         }
       ]
     },
@@ -813,7 +520,8 @@
         {
           "name": "hosts.charts.cpu.usageAxis",
           "min": 0,
-          "max": 100
+          "max": 100,
+          "unit": "%"
         },
         {
           "name": "hosts.charts.cpu.loadAxis"
@@ -823,37 +531,37 @@
         {
           "key": "overall",
           "name": "hosts.charts.cpu.overall",
+          "group": "overall",
           "points": [[1790510400000, 12]],
           "tone": "blue",
-          "width": 3,
-          "hidden": false
+          "width": 3
         },
         {
           "key": "load1",
           "name": "hosts.charts.cpu.load1",
+          "group": "load1",
           "points": [[1790510400000, 0]],
           "tone": "orange",
           "dash": "short-dot",
-          "axis": 1,
-          "hidden": true
+          "axis": 1
         },
         {
           "key": "load5",
           "name": "hosts.charts.cpu.load5",
+          "group": "load5",
           "points": [[1790510400000, 0]],
           "tone": "green",
           "dash": "short-dot",
-          "axis": 1,
-          "hidden": true
+          "axis": 1
         },
         {
           "key": "load15",
           "name": "hosts.charts.cpu.load15",
+          "group": "load15",
           "points": [[1790510400000, 0]],
           "tone": "pink",
           "dash": "short-dot",
-          "axis": 1,
-          "hidden": true
+          "axis": 1
         }
       ]
     },
@@ -869,16 +577,16 @@
         {
           "key": "used",
           "name": "hosts.charts.memory.used",
+          "group": "used",
           "points": [[1790510400000, 1]],
-          "tone": "orange",
-          "hidden": false
+          "tone": "orange"
         },
         {
           "key": "free",
           "name": "hosts.charts.memory.free",
+          "group": "free",
           "points": [[1790510400000, 1]],
-          "tone": "green",
-          "hidden": false
+          "tone": "green"
         }
       ]
     }
@@ -896,6 +604,7 @@
         {
           "key": "cpu",
           "name": "machine.machineResourceCharts.cpuSeries",
+          "group": "cpu",
           "points": [
             [1790510400000, 1.5],
             [1790510405000, 2.25]
@@ -917,6 +626,7 @@
         {
           "key": "resident",
           "name": "machine.machineResourceCharts.residentSeries",
+          "group": "resident",
           "points": [[1790510400000, 2]],
           "tone": "blue",
           "width": 2
@@ -924,6 +634,7 @@
         {
           "key": "swap",
           "name": "machine.machineResourceCharts.swapSeries",
+          "group": "swap",
           "points": [[1790510400000, 1]],
           "tone": "orange",
           "width": 2
@@ -943,6 +654,7 @@
           {
             "key": "read",
             "name": "machine.machineResourceCharts.readSeries",
+            "group": "read",
             "points": [[1790510400000, 0]],
             "tone": "blue",
             "width": 2
@@ -950,6 +662,7 @@
           {
             "key": "write",
             "name": "machine.machineResourceCharts.writeSeries",
+            "group": "write",
             "points": [[1790510400000, 0.5]],
             "tone": "orange",
             "width": 2
@@ -968,6 +681,7 @@
           {
             "key": "read",
             "name": "machine.machineResourceCharts.readSeries",
+            "group": "read",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
@@ -978,6 +692,7 @@
           {
             "key": "write",
             "name": "machine.machineResourceCharts.writeSeries",
+            "group": "write",
             "points": [[1790510400000, 2]],
             "tone": "orange",
             "width": 2
@@ -997,6 +712,7 @@
         {
           "key": "rx",
           "name": "machine.machineResourceCharts.rxSeries",
+          "group": "rx",
           "points": [[1790510400000, 8.39]],
           "tone": "blue",
           "width": 2
@@ -1004,6 +720,7 @@
         {
           "key": "tx",
           "name": "machine.machineResourceCharts.txSeries",
+          "group": "tx",
           "points": [[1790510400000, 4.19]],
           "tone": "orange",
           "width": 2
@@ -1022,6 +739,7 @@
         {
           "key": "guest",
           "name": "machine.vboxResourceCharts.guestSeries",
+          "group": "guest",
           "points": [
             [1790510400000, 3.5],
             [1790510405000, 3.5]
@@ -1032,6 +750,7 @@
         {
           "key": "vmm",
           "name": "machine.vboxResourceCharts.vmmSeries",
+          "group": "vmm",
           "points": [
             [1790510400000, 0.5],
             [1790510405000, 0.5]
@@ -1053,6 +772,7 @@
         {
           "key": "used",
           "name": "machine.vboxResourceCharts.usedSeries",
+          "group": "used",
           "points": [
             [1790510400000, 2],
             [1790510405000, 2]
@@ -1074,6 +794,7 @@
         {
           "key": "rx",
           "name": "machine.vboxResourceCharts.rxSeries",
+          "group": "rx",
           "points": [[1790510405000, 1]],
           "tone": "blue",
           "width": 2
@@ -1081,6 +802,7 @@
         {
           "key": "tx",
           "name": "machine.vboxResourceCharts.txSeries",
+          "group": "tx",
           "points": [[1790510405000, 2]],
           "tone": "orange",
           "width": 2
@@ -1099,6 +821,7 @@
         {
           "key": "read",
           "name": "machine.vboxResourceCharts.readSeries",
+          "group": "read",
           "points": [[1790510405000, 0.5]],
           "tone": "blue",
           "width": 2
@@ -1106,6 +829,7 @@
         {
           "key": "write",
           "name": "machine.vboxResourceCharts.writeSeries",
+          "group": "write",
           "points": [[1790510405000, 0]],
           "tone": "orange",
           "width": 2
@@ -1131,6 +855,23 @@
         "titleKey": "host.bandwidthCharts.totalBandwidth"
       }
     ],
+    "pills": [
+      {
+        "key": "read",
+        "label": "hosts.charts.network.rx",
+        "tone": ""
+      },
+      {
+        "key": "write",
+        "label": "hosts.charts.network.tx",
+        "tone": ""
+      },
+      {
+        "key": "total",
+        "label": "hosts.charts.network.total",
+        "tone": ""
+      }
+    ],
     "summary": [
       {
         "axes": [
@@ -1144,6 +885,7 @@
           {
             "key": "eth0",
             "name": "eth0",
+            "entity": "eth0",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
@@ -1154,6 +896,7 @@
           {
             "key": "wlan0",
             "name": "wlan0",
+            "entity": "wlan0",
             "points": [[1790510400000, 1]],
             "tone": "orange",
             "width": 2
@@ -1172,6 +915,7 @@
           {
             "key": "eth0",
             "name": "eth0",
+            "entity": "eth0",
             "points": [
               [1790510400000, 2],
               [1790510405000, 0.5]
@@ -1182,6 +926,7 @@
           {
             "key": "wlan0",
             "name": "wlan0",
+            "entity": "wlan0",
             "points": [[1790510400000, 0]],
             "tone": "orange",
             "width": 2
@@ -1200,6 +945,7 @@
           {
             "key": "eth0",
             "name": "eth0",
+            "entity": "eth0",
             "points": [
               [1790510400000, 3],
               [1790510405000, 3.5]
@@ -1210,6 +956,7 @@
           {
             "key": "wlan0",
             "name": "wlan0",
+            "entity": "wlan0",
             "points": [[1790510400000, 1]],
             "tone": "orange",
             "width": 2
@@ -1230,6 +977,7 @@
           {
             "key": "first",
             "name": "hosts.charts.network.rx",
+            "group": "read",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
@@ -1240,6 +988,7 @@
           {
             "key": "second",
             "name": "hosts.charts.network.tx",
+            "group": "write",
             "points": [
               [1790510400000, 2],
               [1790510405000, 0.5]
@@ -1250,6 +999,7 @@
           {
             "key": "total",
             "name": "hosts.charts.network.total",
+            "group": "total",
             "points": [
               [1790510400000, 3],
               [1790510405000, 3.5]
@@ -1271,6 +1021,7 @@
           {
             "key": "first",
             "name": "hosts.charts.network.rx",
+            "group": "read",
             "points": [[1790510400000, 1]],
             "tone": "blue",
             "width": 2
@@ -1278,6 +1029,7 @@
           {
             "key": "second",
             "name": "hosts.charts.network.tx",
+            "group": "write",
             "points": [[1790510400000, 0]],
             "tone": "orange",
             "width": 2
@@ -1285,6 +1037,7 @@
           {
             "key": "total",
             "name": "hosts.charts.network.total",
+            "group": "total",
             "points": [[1790510400000, 1]],
             "tone": "green",
             "width": 3
@@ -1331,24 +1084,21 @@
         "expandedKey": "host.expandedChartOptions.arcCompressionTitle"
       }
     ],
-    "toggles": [
+    "pills": [
       {
         "key": "read",
         "label": "host.storageCharts.read",
-        "title": "host.storageCharts.toggleRead",
-        "tone": "info"
+        "tone": ""
       },
       {
         "key": "write",
         "label": "host.storageCharts.write",
-        "title": "host.storageCharts.toggleWrite",
-        "tone": "warning"
+        "tone": ""
       },
       {
         "key": "total",
         "label": "host.storageCharts.total",
-        "title": "host.storageCharts.toggleTotal",
-        "tone": "success"
+        "tone": ""
       }
     ],
     "summary": [
@@ -1364,6 +1114,7 @@
           {
             "key": "c0d0",
             "name": "c0d0",
+            "entity": "c0d0",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
@@ -1374,6 +1125,7 @@
           {
             "key": "c0d2",
             "name": "c0d2",
+            "entity": "c0d2",
             "points": [[1790510405000, 0]],
             "tone": "orange",
             "width": 2
@@ -1392,6 +1144,7 @@
           {
             "key": "c0d0",
             "name": "c0d0",
+            "entity": "c0d0",
             "points": [
               [1790510400000, 2],
               [1790510405000, 4]
@@ -1402,6 +1155,7 @@
           {
             "key": "c0d2",
             "name": "c0d2",
+            "entity": "c0d2",
             "points": [[1790510405000, 0]],
             "tone": "orange",
             "width": 2
@@ -1420,6 +1174,7 @@
           {
             "key": "c0d0",
             "name": "c0d0",
+            "entity": "c0d0",
             "points": [
               [1790510400000, 3],
               [1790510405000, 7]
@@ -1430,6 +1185,7 @@
           {
             "key": "c0d2",
             "name": "c0d2",
+            "entity": "c0d2",
             "points": [[1790510405000, 0]],
             "tone": "orange",
             "width": 2
@@ -1450,35 +1206,35 @@
           {
             "key": "first",
             "name": "host.expandedChartOptions.seriesRead",
+            "group": "read",
             "points": [
               [1790510400000, 1],
               [1790510405000, 3]
             ],
             "tone": "blue",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "second",
             "name": "host.expandedChartOptions.seriesWrite",
+            "group": "write",
             "points": [
               [1790510400000, 2],
               [1790510405000, 4]
             ],
             "tone": "orange",
-            "width": 2,
-            "hidden": true
+            "width": 2
           },
           {
             "key": "total",
             "name": "host.expandedChartOptions.seriesTotal",
+            "group": "total",
             "points": [
               [1790510400000, 3],
               [1790510405000, 7]
             ],
             "tone": "green",
-            "width": 3,
-            "hidden": false
+            "width": 3
           }
         ]
       },
@@ -1494,26 +1250,26 @@
           {
             "key": "first",
             "name": "host.expandedChartOptions.seriesRead",
+            "group": "read",
             "points": [[1790510405000, 0]],
             "tone": "blue",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "second",
             "name": "host.expandedChartOptions.seriesWrite",
+            "group": "write",
             "points": [[1790510405000, 0]],
             "tone": "orange",
-            "width": 2,
-            "hidden": true
+            "width": 2
           },
           {
             "key": "total",
             "name": "host.expandedChartOptions.seriesTotal",
+            "group": "total",
             "points": [[1790510405000, 0]],
             "tone": "green",
-            "width": 3,
-            "hidden": false
+            "width": 3
           }
         ]
       }
@@ -1531,26 +1287,26 @@
           {
             "key": "first",
             "name": "host.expandedChartOptions.seriesRead",
+            "group": "read",
             "points": [[1790510400000, 1]],
             "tone": "blue",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "second",
             "name": "host.expandedChartOptions.seriesWrite",
+            "group": "write",
             "points": [[1790510400000, 3]],
             "tone": "orange",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "total",
             "name": "host.expandedChartOptions.seriesTotal",
+            "group": "total",
             "points": [[1790510400000, 4]],
             "tone": "green",
-            "width": 3,
-            "hidden": false
+            "width": 3
           }
         ]
       },
@@ -1566,26 +1322,26 @@
           {
             "key": "first",
             "name": "host.expandedChartOptions.seriesRead",
+            "group": "read",
             "points": [[1790510400000, 1]],
             "tone": "blue",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "second",
             "name": "host.expandedChartOptions.seriesWrite",
+            "group": "write",
             "points": [[1790510400000, 0]],
             "tone": "orange",
-            "width": 2,
-            "hidden": false
+            "width": 2
           },
           {
             "key": "total",
             "name": "host.expandedChartOptions.seriesTotal",
+            "group": "total",
             "points": [[1790510400000, 1]],
             "tone": "green",
-            "width": 3,
-            "hidden": false
+            "width": 3
           }
         ]
       }
@@ -1603,6 +1359,7 @@
           {
             "key": "size",
             "name": "hostCharts.arcCharts.arcSizeSeriesName",
+            "group": "size",
             "points": [
               [1790510400000, 2],
               [1790510405000, 1]
@@ -1613,6 +1370,7 @@
           {
             "key": "target",
             "name": "hostCharts.arcCharts.targetSizeSeriesName",
+            "group": "target",
             "points": [
               [1790510400000, 4],
               [1790510405000, 0]
@@ -1624,6 +1382,7 @@
           {
             "key": "mru",
             "name": "hostCharts.arcCharts.mruSizeSeriesName",
+            "group": "mru",
             "points": [
               [1790510400000, 1],
               [1790510405000, 0]
@@ -1634,6 +1393,7 @@
           {
             "key": "mfu",
             "name": "hostCharts.arcCharts.mfuSizeSeriesName",
+            "group": "mfu",
             "points": [
               [1790510400000, 1],
               [1790510405000, 0]
@@ -1656,6 +1416,7 @@
           {
             "key": "hitRatio",
             "name": "hostCharts.arcCharts.hitRatioSeriesName",
+            "group": "hitRatio",
             "points": [
               [1790510400000, 95.5],
               [1790510405000, 90]
@@ -1667,6 +1428,7 @@
           {
             "key": "demand",
             "name": "hostCharts.arcCharts.demandEfficiencySeriesName",
+            "group": "demand",
             "points": [
               [1790510400000, 99],
               [1790510405000, 0]
@@ -1677,6 +1439,7 @@
           {
             "key": "prefetch",
             "name": "hostCharts.arcCharts.prefetchEfficiencySeriesName",
+            "group": "prefetch",
             "points": [
               [1790510400000, 50],
               [1790510405000, 0]
@@ -1698,6 +1461,7 @@
           {
             "key": "compression",
             "name": "hostCharts.arcCharts.compressionRatioSeriesName",
+            "group": "compression",
             "points": [
               [1790510400000, 1],
               [1790510405000, 2]

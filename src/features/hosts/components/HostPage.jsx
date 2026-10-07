@@ -11,6 +11,7 @@ import { useFolds } from '../../../hooks/useFolds';
 import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
 import { getTask } from '../api/tasks';
+import { ChartControlsContext, useChartControlsState } from '../hooks/useChartControls';
 import { useHostReading, useHostReadingsRefresh } from '../hooks/useHostReadings';
 import { useHostRow } from '../hooks/useHostRow';
 import { useHostSeriesQuery, useHostSeriesRefresh } from '../hooks/useHostSeries';
@@ -22,14 +23,13 @@ import { createSeedOf, hostCreates, withoutCreateSeed } from '../utils/machineCr
 import { SERIES, hostOffers } from '../utils/monitoring';
 import { uptimeParts } from '../utils/resources';
 
+import ChartControls from './ChartControls';
 import HostNav from './HostNav';
 import HostOverview from './HostOverview';
 import MachineCreateModal from './MachineCreateModal';
 import MonitoringDatabase from './MonitoringDatabase';
 import NetworkStorageSummary from './NetworkStorageSummary';
 import PerformanceCharts from './PerformanceCharts';
-import QuerySelects from './QuerySelects';
-import RefreshButton from './RefreshButton';
 import TaskDialog from './TaskDialog';
 
 const SEPARATOR = ' · ';
@@ -150,11 +150,12 @@ const withoutTask = params => {
 
 /**
  * One host at `/hosts/{id}` inside its column: the heading with the
- * health, uptime and running machines, the window select and Refresh in
- * its pane, the overview card, the machines table, the network and
- * storage summary, the performance charts and the monitoring database;
- * the route's `create=machine` query opens the create wizard and its
- * `task` query opens that task's dialog.
+ * health, uptime and running machines, the window select, Refresh and
+ * Pause in its pane, the overview card, the machines table, the network
+ * and storage summary, the performance charts under the page's chart
+ * controls and the monitoring database; the route's `create=machine`
+ * query opens the create wizard and its `task` query opens that task's
+ * dialog.
  */
 const HostPage = ({ id, context }) => {
   const { t, i18n } = useTranslation();
@@ -164,6 +165,7 @@ const HostPage = ({ id, context }) => {
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
   const { query, setQuery } = useHostSeriesQuery(id);
+  const controls = useChartControlsState(query.window);
   const health = useHostReading(id, 'monitoring-health');
   const folds = useFolds(`${context.prefsPrefix}_host`);
   const server = useHostRow(id);
@@ -210,77 +212,83 @@ const HostPage = ({ id, context }) => {
   };
 
   const actions = (
-    <>
-      {charted ? <QuerySelects query={query} onChange={setQuery} scope="hostHeader" /> : null}
-      <RefreshButton onRefresh={refresh} />
-    </>
+    <ChartControls
+      query={query}
+      onQuery={setQuery}
+      scope="hostHeader"
+      series={charted}
+      controls={controls}
+      onRefresh={refresh}
+    />
   );
 
   return (
     <HostNav id={id}>
-      <div className="list row">
-        <SectionHeading
-          title={label}
-          count={stateTextOf({ health: health.data, stats, running, total: machines.length, t })}
-          actions={actions}
-        />
-        {failed ? (
-          <div className="alert alert-danger" role="alert">
-            {t('hosts.host.loadError')}
-          </div>
-        ) : null}
-        {stats ? <HostOverview id={id} stats={stats} folds={folds} /> : null}
-        {stats ? (
+      <ChartControlsContext.Provider value={controls}>
+        <div className="list row">
           <SectionHeading
-            title={t('hosts.page.machines')}
-            count={t('hosts.host.machines', { running, total: machines.length })}
-            actions={
-              listed ? (
-                <Link
-                  to={`/hosts/${id}/machines`}
-                  className="btn btn-sm btn-outline-secondary"
-                  data-link="machines"
-                >
-                  {t('hosts.machines.viewAll')}
-                </Link>
-              ) : null
-            }
+            title={label}
+            count={stateTextOf({ health: health.data, stats, running, total: machines.length, t })}
+            actions={actions}
           />
-        ) : null}
-        {stats ? (
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={machine => machine.name}
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            widths={search.widths}
-            onResize={search.setColumnWidth}
-            ctx={ctx}
-            emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
-          />
-        ) : null}
-        <NetworkStorageSummary id={id} />
-        <PerformanceCharts id={id} host={label} folds={folds} />
-        <MonitoringDatabase id={id} />
-        <MachineCreateModal
-          status={status}
-          id={id}
-          open={Boolean(seed) && hostCreates(server, context.user?.role)}
-          user={context.user}
-          seed={seed}
-          onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
-        />
-        {arrivedTask ? (
-          <TaskDialog
+          {failed ? (
+            <div className="alert alert-danger" role="alert">
+              {t('hosts.host.loadError')}
+            </div>
+          ) : null}
+          {stats ? <HostOverview id={id} stats={stats} folds={folds} /> : null}
+          {stats ? (
+            <SectionHeading
+              title={t('hosts.page.machines')}
+              count={t('hosts.host.machines', { running, total: machines.length })}
+              actions={
+                listed ? (
+                  <Link
+                    to={`/hosts/${id}/machines`}
+                    className="btn btn-sm btn-outline-secondary"
+                    data-link="machines"
+                  >
+                    {t('hosts.machines.viewAll')}
+                  </Link>
+                ) : null
+              }
+            />
+          ) : null}
+          {stats ? (
+            <SubTable
+              columns={columns}
+              rows={search.rows}
+              rowKey={machine => machine.name}
+              sort={search.sort}
+              onSort={search.setSort}
+              hiddenColumns={search.hiddenColumns}
+              widths={search.widths}
+              onResize={search.setColumnWidth}
+              ctx={ctx}
+              emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
+            />
+          ) : null}
+          <NetworkStorageSummary id={id} />
+          <PerformanceCharts id={id} host={label} folds={folds} />
+          <MonitoringDatabase id={id} />
+          <MachineCreateModal
             status={status}
             id={id}
-            task={arrivedTask}
-            onHide={() => setSearchParams(withoutTask(searchParams), { replace: true })}
+            open={Boolean(seed) && hostCreates(server, context.user?.role)}
+            user={context.user}
+            seed={seed}
+            onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
           />
-        ) : null}
-      </div>
+          {arrivedTask ? (
+            <TaskDialog
+              status={status}
+              id={id}
+              task={arrivedTask}
+              onHide={() => setSearchParams(withoutTask(searchParams), { replace: true })}
+            />
+          ) : null}
+        </div>
+      </ChartControlsContext.Provider>
     </HostNav>
   );
 };

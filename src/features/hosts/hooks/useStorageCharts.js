@@ -5,26 +5,22 @@ import { DEFAULT_STORAGE_CHART_SORT, sortedChartEntries } from '../utils/Storage
 
 const DEVICES = chartOf('disk-io');
 
-const POOLS = chartOf('pool');
-
 /**
- * The state of the storage charts: the points per device of the disk I/O
- * samples and per pool of the pool I/O samples, grouped by the `series`
- * of the `disk-io` and `pool` entries of the registry, the order the
- * device charts draw in, the busiest first until a person picks another,
- * and the groups of lines shown, the entries' `groups` as the page opens,
- * each toggled by its button; the order and the groups are the page's
- * own and are kept while the page is drawn.
+ * The state of the storage charts over the points per device and per
+ * pool the page computes once for its tables and its charts: the device
+ * names in the order the device charts draw, the busiest first until a
+ * person picks another, and the pills pressed, the `disk-io` entry's
+ * `groups` as the page opens, one set for every device and pool chart,
+ * each toggled by its pill; the order and the pills are the page's own
+ * and are kept while the page is drawn.
  *
- * @param {Object} rows - `diskIo` and `poolIo`, the samples held of each
+ * @param {Object} entities - `devices` and `pools`, the points per entity of the `disk-io` and `pool` entries' `series`
  * @returns {Object} The entities, the device names in order, the order and its setter, the visibility and its toggle
  */
-export const useStorageCharts = ({ diskIo, poolIo }) => {
+export const useStorageCharts = ({ devices, pools }) => {
   const [order, setOrder] = useState(DEFAULT_STORAGE_CHART_SORT);
   const [visibility, setVisibility] = useState(DEVICES.groups);
-  const devices = useMemo(() => DEVICES.series(diskIo), [diskIo]);
-  const pools = useMemo(() => POOLS.series(poolIo), [poolIo]);
   const names = useMemo(() => sortedChartEntries(devices, order), [devices, order]);
-  const toggle = key => setVisibility(current => ({ ...current, [key]: !current[key] }));
+  const toggle = key => setVisibility(current => ({ ...current, [key]: current[key] === false }));
   return { devices, pools, names, order, setOrder, visibility, toggle };
 };

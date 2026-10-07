@@ -11,6 +11,7 @@ import { useDetailSearch } from '../../../../hooks/useDetailSearch';
 import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
+import { useHostSeriesRefresh } from '../../hooks/useHostSeries';
 import { useHostStats, useHostStatsRefresh } from '../../hooks/useHostStats';
 import { useServers } from '../../hooks/useServers';
 import { hostHasFeature } from '../../utils/capabilities';
@@ -22,6 +23,7 @@ import TopologyPanel from '../NetworkTopology/TopologyPanel';
 import { useTopologyHostGraph } from '../NetworkTopology/useTopologyFeed';
 import RefreshButton from '../RefreshButton';
 
+import DashboardCharts, { dashboardTiles } from './DashboardCharts';
 import DashboardHealthModal from './DashboardHealthModal';
 import DashboardQuickActions from './DashboardQuickActions';
 import DashboardServerCards from './DashboardServerCards';
@@ -161,8 +163,9 @@ const useHeld = () => {
  * The dashboard, hyperweaver-ui's infrastructure overview, the home of
  * an agent role at `/`: the heading with how many hosts and machines it
  * manages, the widget menu and Refresh; then the widgets in the saved
- * order, each folding and hiding, the summary tiles, the quick actions,
- * one card a host and, on the server role alone, the network topology.
+ * order, each folding and hiding, the summary tiles, the charts of every
+ * host that offers them, the quick actions, one card a host and, on the
+ * server role alone, the network topology.
  * The navbar search is bound over the hosts' names, the Health `toggle`
  * group narrowing the host cards client-side under
  * `<prefix>_dashboard_hosts` through `useDetailSearch`, the summary
@@ -171,7 +174,7 @@ const useHeld = () => {
  * context holds, read once as the page draws, again when the stream
  * opens fresh or answers `reset`, renewed by the `hosts` topic between
  * reads and on Refresh, which reads the list of servers, every host's
- * stats and its held reads again; hyperweaver-ui's thirty-second timer
+ * stats, its held reads and the series its charts draw again; hyperweaver-ui's thirty-second timer
  * is not carried over. View details opens the host's page, New machine
  * the create wizard of the first host that offers it, Manage machines
  * the machines of the first host that lists them, Add host the hosts
@@ -193,6 +196,7 @@ const Dashboard = ({ context }) => {
   const { servers, loaded, failed, refresh: refreshServers } = useServers();
   const refreshStats = useHostStatsRefresh();
   const refreshReadings = useHostReadingsRefresh();
+  const refreshSeries = useHostSeriesRefresh();
   const folds = useFolds(`${context.prefsPrefix}_dashboard`);
   const { layout, draggingId, setDraggingId, moveWidget, toggleCollapsed, toggleHidden } =
     useDashboardLayout();
@@ -234,11 +238,17 @@ const Dashboard = ({ context }) => {
     servers.forEach(server => {
       refreshStats(String(server.id));
       refreshReadings(String(server.id));
+      refreshSeries(String(server.id));
     });
     setStamp(current => ({ ...current, at: new Date() }));
   };
 
-  const widgetAvailable = id => (id === 'topology' ? serverRole && servers.length > 0 : true);
+  const widgetAvailable = id => {
+    if (id === 'topology') {
+      return serverRole && servers.length > 0;
+    }
+    return id === 'charts' ? dashboardTiles(servers).length > 0 : true;
+  };
 
   const openSettings = () =>
     navigate(serverRole ? SERVER_SETTINGS : `/hosts/${servers[0].id}/agent/api-keys`);
@@ -305,6 +315,9 @@ const Dashboard = ({ context }) => {
           onShowHealthModal={() => setHealthOpen(true)}
         />
       );
+    }
+    if (id === 'charts') {
+      return <DashboardCharts servers={servers} />;
     }
     if (id === 'quickActions') {
       return (

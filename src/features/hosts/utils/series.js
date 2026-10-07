@@ -152,6 +152,12 @@ export const carriedOf = (member, { divisor = 1, digits = null } = {}) =>
 const coreLabel = core => core.cpu_id ?? `cpu${core.core}`;
 
 const withCores = (cores, row) => {
+  if (isGap(row)) {
+    Object.keys(cores).forEach(label => {
+      cores[label] = [...cores[label], [timeOf(row), null]];
+    });
+    return cores;
+  }
   (Array.isArray(row.per_core_parsed) ? row.per_core_parsed : []).forEach(core => {
     const label = coreLabel(core);
     cores[label] = [...(cores[label] || []), [timeOf(row), numberOf(core.utilization_pct)]];
@@ -162,7 +168,7 @@ const withCores = (cores, row) => {
 /**
  * The CPU samples as one line of points per core, named by the agent's
  * own `cpu_id` or, where it answers the core's number alone, `cpu` and
- * that number.
+ * that number, a gap row a null point of every core seen before it.
  *
  * @param {Array<Object>} rows - The rows held, oldest first
  * @returns {Object<string, Array>} The points per core
@@ -183,12 +189,14 @@ export const cpuValues = {
 
 /**
  * The readers of a memory sample the chart's lines draw, in gigabytes,
- * each only of the samples that carry the number: used, free and cached.
+ * each only of the samples that carry the number: used, free, cached and
+ * the swap used.
  */
 export const memoryValues = {
   used: carriedOf('used_memory_bytes', { divisor: GIB, digits: 2 }),
   free: carriedOf('free_memory_bytes', { divisor: GIB, digits: 2 }),
   cached: carriedOf('cached_bytes', { divisor: GIB, digits: 2 }),
+  swap: carriedOf('swap_used_bytes', { divisor: GIB, digits: 2 }),
 };
 
 const megabitsFrom = (bytes, seconds) =>

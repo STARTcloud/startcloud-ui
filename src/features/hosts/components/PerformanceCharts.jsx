@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
@@ -10,31 +9,18 @@ import { hostOffers } from '../utils/monitoring';
 
 import PerformanceCard from './PerformanceCard';
 
-const DEFAULT_VISIBILITY = Object.fromEntries(
-  CHART_ORDER.map(metric => [metric, chartOf(metric).groups])
-);
-
-const toggled = (visibility, metric, key) => ({
-  ...visibility,
-  [metric]: { ...visibility[metric], [key]: !visibility[metric][key] },
-});
-
 /**
  * The performance charts of the host page, behind `monitoring`: the
- * heading and under it one card a chart in hyperweaver-ui's order, the
- * storage I/O and the ZFS ARC only on a host whose own row lists `zfs`
- * too, then the network, the CPU and the memory, every chart drawn from
- * the browser's ring and read over the time window the page's heading
- * row holds. The groups of series a person hid are the page's own and
- * are kept while the page is drawn. hyperweaver-ui's refresh interval and its
- * Auto and Manual switch are not carried over, because the series grow
- * by the samples the `monitoring` topic pushes and nothing reads on a
- * clock.
+ * heading and under it one card a chart in `CHART_ORDER`, the storage
+ * I/O and the ZFS ARC only on a host whose own row lists `zfs` too,
+ * then the network, the CPU and the memory, every chart drawn from the
+ * browser's store over the window the page's heading row holds and
+ * under the controls it provides. The series grow by the samples the
+ * `monitoring` topic pushes and nothing reads on a clock.
  */
 const PerformanceCharts = ({ id, host, folds }) => {
   const { t } = useTranslation();
   const server = useHostRow(id);
-  const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
 
   if (!hostOffers(server, chartOf('cpu').tokens)) {
     return null;
@@ -48,14 +34,7 @@ const PerformanceCharts = ({ id, host, folds }) => {
       <div className="row g-3 mb-3">
         {metrics.map(metric => (
           <div key={metric} className="col-12 col-lg-6 col-xxl-4">
-            <PerformanceCard
-              id={id}
-              metric={metric}
-              host={host}
-              folds={folds}
-              visibility={visibility[metric]}
-              onToggle={key => setVisibility(current => toggled(current, metric, key))}
-            />
+            <PerformanceCard id={id} metric={metric} host={host} folds={folds} />
           </div>
         ))}
       </div>

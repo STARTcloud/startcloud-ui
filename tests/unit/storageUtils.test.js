@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { chartOf } from '../../src/features/hosts/charts/registry.js';
+import { diskIoColumnsFor } from '../../src/features/hosts/components/DiskIOTable.jsx';
+import { diskColumnsFor } from '../../src/features/hosts/components/DisksTable.jsx';
+import { poolIoColumnsFor } from '../../src/features/hosts/components/PoolIOTable.jsx';
+import { poolColumnsFor } from '../../src/features/hosts/components/PoolsTable.jsx';
 import { ioSpec, summarySpec } from '../../src/features/hosts/utils/chartDefaults.js';
 import {
   DATASET_FILTERS,
@@ -319,7 +323,7 @@ describe('the charts', () => {
     expect(sortedChartEntries({}, 'bandwidth')).toEqual([]);
   });
 
-  it('draws a line a device in a summary chart and the three lines of one device with the hidden groups marked', () => {
+  it('draws a line a device in a summary chart and the three lines of one device in their groups', () => {
     const summary = summarySpec('first', entities, t);
     expect(summary.axes).toEqual([
       { name: 'host.expandedChartOptions.axisBandwidthMBs', min: 0, unit: ' MB/s' },
@@ -329,12 +333,80 @@ describe('the charts', () => {
       ['c0d1', 2],
       ['c0d2', 1],
     ]);
-    const one = ioSpec(entities.c0d1, { read: true, write: false, total: true }, t);
-    expect(one.series.map(line => [line.key, line.tone, line.width, line.hidden])).toEqual([
-      ['first', 'blue', 2, false],
-      ['second', 'orange', 2, true],
-      ['total', 'green', 3, false],
+    const one = ioSpec(entities.c0d1, t);
+    expect(one.series.map(line => [line.key, line.tone, line.width, line.group])).toEqual([
+      ['first', 'blue', 2, 'read'],
+      ['second', 'orange', 2, 'write'],
+      ['total', 'green', 3, 'total'],
     ]);
+  });
+});
+
+describe('the trend columns of the four tables', () => {
+  const devices = chartOf('disk-io').series(SAMPLES);
+  const poolSample = (pool, read, write, at) => ({
+    pool,
+    read_bandwidth_bytes: String(read * MIB),
+    write_bandwidth_bytes: String(write * MIB),
+    scan_timestamp: at,
+  });
+  const pools = chartOf('pool').series([
+    poolSample('rpool', 1, 0, EARLY),
+    poolSample('rpool', 2, 1, LATE),
+    poolSample('tank', 4, 0, LATE),
+  ]);
+  const deviceTones = summarySpec('total', devices, t).series.map(line => line.tone);
+
+  const trendOf = columns => columns.find(column => column.key === 'trend');
+
+  it('draws the trend of each device after its total in the disk I/O table, in its summary tone', () => {
+    const columns = diskIoColumnsFor({ devices });
+    expect(columns.map(column => column.key)).toEqual([
+      'device',
+      'pool',
+      'readOps',
+      'writeOps',
+      'read',
+      'write',
+      'total',
+      'trend',
+      'updated',
+    ]);
+    const trend = trendOf(columns);
+    expect(trend.kind).toBe('spark');
+    expect(trend.labelKey).toBe('hosts.charts.trend');
+    expect(trend.value({ device_name: 'c0d1' })).toBe(40);
+    const cell = trend.render({ device_name: 'c0d1' });
+    expect(cell.props.name).toBe('c0d1');
+    expect(cell.props.points).toBe(devices.c0d1.total);
+    expect(cell.props.tone).toBe(deviceTones[1]);
+  });
+
+  it('draws the trend of each disk last in the disks table, the same points and tone as its device, none for a disk with no sample', () => {
+    const columns = diskColumnsFor({ devices });
+    expect(columns.at(-1).key).toBe('trend');
+    const trend = trendOf(columns);
+    const cell = trend.render({ device_name: 'c0d2', serial_number: 'S2' });
+    expect(cell.props.points).toBe(devices.c0d2.total);
+    expect(cell.props.tone).toBe(deviceTones[2]);
+    expect(trend.render({ device_name: 'c9d9' }).props.points).toEqual([]);
+    expect(trend.value({ device_name: 'c9d9' })).toBe(0);
+  });
+
+  it('draws the trend of each pool in the pools and the pool I/O tables, one tone a pool for both', () => {
+    const poolColumns = poolColumnsFor({ pools });
+    const ioColumns = poolIoColumnsFor({ pools });
+    expect(poolColumns.map(column => column.key).slice(5, 7)).toEqual(['usage', 'trend']);
+    const ioKeys = ioColumns.map(column => column.key);
+    expect(ioKeys.slice(7, 10)).toEqual(['write', 'trend', 'totalWait']);
+    const fromPools = trendOf(poolColumns).render({ name: 'tank' });
+    const fromIo = trendOf(ioColumns).render({ pool: 'tank' });
+    expect(fromPools.props.points).toBe(pools.tank.total);
+    expect(fromIo.props.points).toBe(pools.tank.total);
+    expect(fromPools.props.tone).toBe(fromIo.props.tone);
+    const rpool = trendOf(poolColumns).render({ pool: 'rpool' });
+    expect(rpool.props.tone).not.toBe(fromPools.props.tone);
+    expect(trendOf(ioColumns).value({ pool: 'rpool' })).toBe(3);
   });
 });
 

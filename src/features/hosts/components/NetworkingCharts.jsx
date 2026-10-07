@@ -16,7 +16,8 @@ import {
 } from '../utils/networking';
 import { samplesIn } from '../utils/series';
 
-import NetworkingChartCard from './NetworkingChartCard';
+import ChartCard from './ChartCard';
+import OneSampleNote from './OneSampleNote';
 
 const FOLD = 'charts';
 
@@ -58,25 +59,22 @@ SortSelect.propTypes = {
 /**
  * The bandwidth charts of the networking page, behind `monitoring`, over
  * the one series `useHostSeries` holds of the host's network usage, the
- * copy the host page's network chart and the bandwidth table share,
- * hyperweaver-ui's section: one heading with its title, the
- * select that orders the charts of the interfaces, the busiest first, by
- * name, or by the rate received or sent, and the chevron that folds the
- * whole section, the fold kept in the page's preferences; under it the
- * three charts that draw every interface together, the megabits a second
- * received, sent and both, a line an interface, and then one chart an
- * interface, titled by the interface's own name as hyperweaver-ui's
- * were, its three lines received, sent and both, in the order the
- * select names. The order is the page's own and is kept while the page
- * is drawn. hyperweaver-ui's refresh interval and its Auto and Manual
- * switch are not carried over, because the series grows by the samples
- * the `monitoring` topic pushes and nothing reads on a clock.
+ * copy the host page's network chart and the bandwidth table share: one
+ * heading with its title, the select that orders the charts of the
+ * interfaces, the busiest first, by name, or by the rate received or
+ * sent, and the chevron that folds the whole section, the fold kept in
+ * the page's preferences; under it the three charts that draw every
+ * interface together, the megabits a second received, sent and both, a
+ * line an interface, and then one chart an interface, titled by the
+ * interface's own name, its three lines received, sent and both, in the
+ * order the select names, each a `ChartCard`, all over `entities`, the
+ * points per interface the page drew of the series. The order is the
+ * page's own and is kept while the page is drawn.
  */
-const NetworkingCharts = ({ id, host, folds }) => {
+const NetworkingCharts = ({ id, host, entities, folds }) => {
   const { t } = useTranslation();
   const { rows, loaded, failed, offered } = useHostSeries(id, 'network');
   const [order, setOrder] = useState(DEFAULT_CHART_SORT);
-  const entities = useMemo(() => SUMMARY.series(rows), [rows]);
   const names = useMemo(() => sortedInterfaces(entities, order), [entities, order]);
 
   if (!offered) {
@@ -103,16 +101,20 @@ const NetworkingCharts = ({ id, host, folds }) => {
             <div className="row g-3 mb-3">
               {SUMMARY.charts.map(chart => (
                 <div key={chart.key} className="col-12 col-lg-6 col-xxl-4">
-                  <NetworkingChartCard
+                  <ChartCard
                     chart={`network-${chart.key}`}
+                    metric="network-summary"
                     title={t(chart.titleKey)}
                     chartTitle={t(chart.titleKey)}
-                    host={host}
+                    expandedTitle={t(chart.titleKey)}
                     spec={summarySpec(chart.member, entities, t)}
                     emptyText={emptyText}
-                    single={single}
+                    host={host}
                     folds={folds}
-                  />
+                    fold={`chart-network-${chart.key}`}
+                  >
+                    <OneSampleNote single={single} />
+                  </ChartCard>
                 </div>
               ))}
             </div>
@@ -123,16 +125,20 @@ const NetworkingCharts = ({ id, host, folds }) => {
               <div className="row g-3 mb-3">
                 {names.map(name => (
                   <div key={name} className="col-12 col-lg-6 col-xxl-4">
-                    <NetworkingChartCard
+                    <ChartCard
                       chart={`interface:${name}`}
+                      metric="interface"
                       title={name}
                       chartTitle={name}
-                      host={host}
+                      expandedTitle={name}
                       spec={interfaceSpec(entities[name], t)}
                       emptyText={emptyText}
-                      single={single}
+                      host={host}
                       folds={folds}
-                    />
+                      fold={`chart-interface:${name}`}
+                    >
+                      <OneSampleNote single={single} />
+                    </ChartCard>
                   </div>
                 ))}
               </div>
@@ -147,6 +153,7 @@ const NetworkingCharts = ({ id, host, folds }) => {
 NetworkingCharts.propTypes = {
   id: PropTypes.string.isRequired,
   host: PropTypes.string.isRequired,
+  entities: PropTypes.object.isRequired,
   folds: foldsShape.isRequired,
 };
 

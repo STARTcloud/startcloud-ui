@@ -4,10 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
-import SeriesToggles from '../../../components/common/SeriesToggles';
 import { chartOf } from '../charts/registry';
 import { useStorageCharts } from '../hooks/useStorageCharts';
-import { chartToggles } from '../utils/chartSpecs';
 import { samplesIn } from '../utils/series';
 import { STORAGE_CHART_SORTS } from '../utils/StorageUtils';
 
@@ -19,6 +17,8 @@ import SummaryCharts from './SummaryCharts';
 const FOLD = 'charts';
 
 const ALL_CHARTS = ['summary', 'devices', 'pools', 'arc'];
+
+const NO_ENTITIES = {};
 
 const EMPTY_KEY = chartOf('disk-io').texts.emptyKey;
 
@@ -69,22 +69,6 @@ const nothingOf = ({ shown, diskIo, poolIo, arc }) =>
   (!shown.pools || empty(poolIo)) &&
   (!shown.arc || empty(arc));
 
-const ChartActions = ({ shown, charts }) => {
-  const { t } = useTranslation();
-  return (
-    <>
-      {shown.devices ? <SortSelect order={charts.order} onChange={charts.setOrder} /> : null}
-      {shown.devices || shown.pools ? (
-        <SeriesToggles
-          toggles={chartToggles('disk-io', t)}
-          visibility={charts.visibility}
-          onToggle={charts.toggle}
-        />
-      ) : null}
-    </>
-  );
-};
-
 const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
   const { t } = useTranslation();
   const ioText = t(emptyKeyOf(diskIo));
@@ -105,6 +89,7 @@ const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
           names={charts.names}
           order={charts.order}
           visibility={charts.visibility}
+          onToggle={charts.toggle}
           host={host}
           emptyText={ioText}
           single={samplesIn(diskIo.rows) === 1}
@@ -116,6 +101,7 @@ const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
           pools={charts.pools}
           latest={poolIo.latest}
           visibility={charts.visibility}
+          onToggle={charts.toggle}
           host={host}
           emptyText={t(emptyKeyOf(poolIo))}
           single={samplesIn(poolIo.rows) === 1}
@@ -141,25 +127,35 @@ const ChartBodies = ({ shown, charts, diskIo, poolIo, arc, host, folds }) => {
 };
 
 /**
- * The storage charts of the storage page, hyperweaver-ui's section over
- * the series the host's context holds: one heading with its title, the
- * select that orders the device charts, the busiest first,
- * by name, or by the rate read or written, the buttons that show and
- * hide the read, the write and the total lines of the device and pool
- * charts, and the chevron that folds the whole section, the fold kept in
+ * The storage charts of the storage pages over the series the host's
+ * context holds: one heading with its title, the select that orders the
+ * device charts, the busiest first, by name, or by the rate read or
+ * written, and the chevron that folds the whole section, the fold kept in
  * the page's preferences; under it the summary charts, one chart a
  * device, one chart a pool and the three ARC charts, and the line saying
  * there is nothing to draw while no device and no ARC sample is held.
- * Nothing draws while the host offers none of the three series. The
- * `charts` list names the groups one page draws, `summary`, `devices`,
- * `pools` and `arc`, all four by default: the Pools page asks for the
- * pool charts alone, the ARC page for the ARC charts, the Disks page
- * for the summary and the device charts; the sort select draws with the
- * device charts, the toggles with the device or the pool charts.
+ * The pills of the device and pool charts are one set, so a line hidden
+ * in one is hidden in every chart. Nothing draws while the host offers
+ * none of the three series. The `charts` list names the groups one page
+ * draws, `summary`, `devices`, `pools` and `arc`, all four by default:
+ * the Pools page asks for the pool charts alone, the ARC page for the
+ * ARC charts, the Disks page for the summary and the device charts; the
+ * sort select draws with the device charts. `devices` and `pools` are
+ * the points per device and per pool the page computes once and its
+ * tables' trend columns draw too.
  */
-const StorageCharts = ({ diskIo, poolIo, arc, host, folds, charts: wanted = ALL_CHARTS }) => {
+const StorageCharts = ({
+  diskIo,
+  poolIo,
+  arc,
+  devices = NO_ENTITIES,
+  pools = NO_ENTITIES,
+  host,
+  folds,
+  charts: wanted = ALL_CHARTS,
+}) => {
   const { t } = useTranslation();
-  const charts = useStorageCharts({ diskIo: diskIo.rows, poolIo: poolIo.rows });
+  const charts = useStorageCharts({ devices, pools });
   const shown = shownOf({ wanted, diskIo, poolIo, arc });
   if (!shown.summary && !shown.devices && !shown.pools && !shown.arc) {
     return null;
@@ -169,7 +165,9 @@ const StorageCharts = ({ diskIo, poolIo, arc, host, folds, charts: wanted = ALL_
     <div data-panel="storage-charts" data-folded={folded}>
       <SectionHeading
         title={t('host.storageCharts.title')}
-        actions={<ChartActions shown={shown} charts={charts} />}
+        actions={
+          shown.devices ? <SortSelect order={charts.order} onChange={charts.setOrder} /> : null
+        }
         folded={folded}
         onFold={() => folds.toggle(FOLD)}
         foldTitle={t(folded ? 'host.storageCharts.expand' : 'host.storageCharts.collapse')}
@@ -211,11 +209,6 @@ const shownShape = PropTypes.shape({
   arc: PropTypes.bool.isRequired,
 });
 
-ChartActions.propTypes = {
-  shown: shownShape.isRequired,
-  charts: PropTypes.object.isRequired,
-};
-
 ChartBodies.propTypes = {
   shown: shownShape.isRequired,
   charts: PropTypes.object.isRequired,
@@ -230,6 +223,8 @@ StorageCharts.propTypes = {
   diskIo: seriesShape.isRequired,
   poolIo: poolSeriesShape.isRequired,
   arc: seriesShape.isRequired,
+  devices: PropTypes.objectOf(PropTypes.object),
+  pools: PropTypes.objectOf(PropTypes.object),
   host: PropTypes.string.isRequired,
   folds: foldsShape.isRequired,
   charts: PropTypes.arrayOf(PropTypes.oneOf(ALL_CHARTS)),

@@ -5,7 +5,7 @@ import { createBdd } from 'playwright-bdd';
 
 import { expect, test } from './support/fixtures.js';
 
-const { Given, Then } = createBdd(test);
+const { Given, When, Then } = createBdd(test);
 
 const STREAM_DIR = path.resolve('tests/fixtures/events');
 const STREAM_HEADERS = {
@@ -14,6 +14,8 @@ const STREAM_HEADERS = {
   'x-accel-buffering': 'no',
 };
 const requests = new WeakMap();
+
+const gates = new WeakMap();
 
 const recorded = page => {
   if (!requests.has(page)) {
@@ -39,6 +41,27 @@ Given('the stream answers the {word} frames', async ({ page }, name) => {
 
 Given('the stream answers {int}', async ({ page }, status) => {
   await serveStream(page, { status, body: '' });
+});
+
+Given('the stream holds the {word} frames', async ({ page }, name) => {
+  const gate = {};
+  gate.opened = new Promise(resolve => {
+    gate.release = resolve;
+  });
+  gates.set(page, gate);
+  const body = fs.readFileSync(path.join(STREAM_DIR, `${name}.sse`), 'utf8');
+  await page.route('**/api/events**', async route => {
+    recorded(page).push({
+      url: new URL(route.request().url()),
+      headers: route.request().headers(),
+    });
+    await gate.opened;
+    return route.fulfill({ status: 200, headers: STREAM_HEADERS, body });
+  });
+});
+
+When('the stream releases its frames', ({ page }) => {
+  gates.get(page).release();
 });
 
 Then('the stream was requested at {string}', async ({ page }, pathname) => {

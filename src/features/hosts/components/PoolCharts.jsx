@@ -6,19 +6,20 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { chartOf } from '../charts/registry';
 import { poolSpec } from '../utils/chartDefaults';
 
-import NetworkingChartCard from './NetworkingChartCard';
+import ChartCard from './ChartCard';
+import OneSampleNote from './OneSampleNote';
 
 const TITLE_KEY = chartOf('pool').texts.titleKey;
 
 const typeOf = (latest, name) => latest.find(row => row.pool === name)?.pool_type || '';
 
 /**
- * One chart a pool, hyperweaver-ui's pool charts, titled by the pool's
- * name and its type, its three lines read, written and both, the lines
- * a person hid hidden in every chart; the line under them counts the
- * pools.
+ * One chart a pool, titled by the pool's name and its type, its three
+ * lines read, written and both, each a `ChartCard` whose pills are the
+ * page's, so a line hidden in one is hidden in every chart; the line
+ * under them counts the pools.
  */
-const PoolCharts = ({ pools, latest, visibility, host, emptyText, single, folds }) => {
+const PoolCharts = ({ pools, latest, visibility, onToggle, host, emptyText, single, folds }) => {
   const { t } = useTranslation();
   const names = Object.keys(pools)
     .filter(name => pools[name].total.length > 0)
@@ -32,16 +33,22 @@ const PoolCharts = ({ pools, latest, visibility, host, emptyText, single, folds 
       <div className="row g-3 mb-2">
         {names.map(name => (
           <div key={name} className="col-12 col-lg-6 col-xxl-4">
-            <NetworkingChartCard
+            <ChartCard
               chart={`pool:${name}`}
+              metric="pool"
               title={t(TITLE_KEY, { id: name })}
               chartTitle={typeOf(latest, name) ? `${name} (${typeOf(latest, name)})` : name}
-              host={host}
-              spec={poolSpec(pools[name], visibility, t)}
+              expandedTitle={t(TITLE_KEY, { id: name })}
+              spec={poolSpec(pools[name], t)}
+              visibility={visibility}
+              onToggle={onToggle}
               emptyText={emptyText}
-              single={single}
+              host={host}
               folds={folds}
-            />
+              fold={`chart-pool:${name}`}
+            >
+              <OneSampleNote single={single} />
+            </ChartCard>
           </div>
         ))}
       </div>
@@ -56,6 +63,7 @@ PoolCharts.propTypes = {
   pools: PropTypes.object.isRequired,
   latest: PropTypes.array.isRequired,
   visibility: PropTypes.objectOf(PropTypes.bool).isRequired,
+  onToggle: PropTypes.func.isRequired,
   host: PropTypes.string.isRequired,
   emptyText: PropTypes.string.isRequired,
   single: PropTypes.bool.isRequired,

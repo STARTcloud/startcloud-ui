@@ -57,11 +57,27 @@ const childRow = (page, parent, label) =>
 
 const ONE_SAMPLE = '[data-note="one-sample"]';
 
+const LEGEND_X = 26;
+
+const LEGEND_Y = 12;
+
 const panelOf = (page, name) => page.locator(`[data-panel="${name}"]`);
 
 const chartOf = (page, metric) => page.locator(`[data-chart="${metric}"]`);
 
 const seriesOf = (scope, group) => scope.locator(`[data-series="${group}"]`);
+
+const headingOf = page => page.locator('.host-frame-body .section-heading').first();
+
+const pauseOf = page => headingOf(page).locator('[data-tool="pause"]');
+
+const dialogOf = page => page.locator('.modal.show');
+
+const glyphOnly = async button => {
+  await expect(button).toHaveAttribute('aria-label', /.+/u);
+  await expect(button).toHaveAttribute('title', /.+/u);
+  await expect(button).toHaveText('');
+};
 
 const REGISTRY_FORM = '[data-form="server-add"]';
 
@@ -314,6 +330,26 @@ When('I expand the {string} chart', async ({ page }, metric) => {
   await chartOf(page, metric).locator('[data-tool="expand"]').click();
 });
 
+When('I click the legend of the {string} chart', async ({ page }, metric) => {
+  const box = chartOf(page, metric).locator('.chart-box');
+  const size = await box.boundingBox();
+  await box.click({ position: { x: LEGEND_X, y: size.height - LEGEND_Y } });
+});
+
+When('I pause the charts', async ({ page }) => {
+  await expect(pauseOf(page)).toHaveAttribute('aria-pressed', 'false');
+  await pauseOf(page).click();
+});
+
+When('I resume the charts', async ({ page }) => {
+  await expect(pauseOf(page)).toHaveAttribute('aria-pressed', 'true');
+  await pauseOf(page).click();
+});
+
+When("I click the chart dialog's backdrop", async ({ page }) => {
+  await dialogOf(page).click({ position: { x: 4, y: 4 } });
+});
+
 Then('the host page draws the {string} panel', async ({ page }, name) => {
   await expect(panelOf(page, name)).toBeVisible();
 });
@@ -351,6 +387,53 @@ Then('the {string} series of the {string} chart is hidden', async ({ page }, gro
 
 Then('the expanded chart draws', async ({ page }) => {
   await expect(page.locator('.modal .chart-box-lg canvas')).toBeVisible();
+});
+
+Then('no chart dialog is open', async ({ page }) => {
+  await expect(page.locator('.modal .chart-box-lg')).toHaveCount(0);
+});
+
+Then('the expanded chart offers CSV and PNG export', async ({ page }) => {
+  await glyphOnly(dialogOf(page).locator('.modal-header [data-tool="export-csv"]'));
+  await glyphOnly(dialogOf(page).locator('.modal-header [data-tool="export-png"]'));
+});
+
+Then('the {string} chart carries the pills {string}', async ({ page }, metric, list) => {
+  const pills = chartOf(page, metric).locator('.card-header [data-series]');
+  await expect(chartOf(page, metric).locator('canvas')).toBeVisible();
+  await expect(pills).toHaveCount(list ? list.split(', ').length : 0);
+  const keys = await pills.evaluateAll(nodes => nodes.map(node => node.dataset.series));
+  expect(keys.join(', ')).toBe(list);
+});
+
+Then('the {string} chart isolates one entity', async ({ page }, metric) => {
+  await expect(chartOf(page, metric)).toHaveAttribute('data-isolated', /.+/u);
+});
+
+Then('the {string} chart isolates no entity', async ({ page }, metric) => {
+  await expect(chartOf(page, metric)).toHaveAttribute('data-isolated', '');
+});
+
+Then('the {string} chart draws up to {string}', async ({ page }, metric, instant) => {
+  await expect(chartOf(page, metric)).toHaveAttribute(
+    'data-range-to',
+    String(new Date(instant).getTime())
+  );
+});
+
+Then('the chart controls are paused', async ({ page }) => {
+  await expect(pauseOf(page)).toHaveAttribute('aria-pressed', 'true');
+});
+
+Then('the chart controls are live', async ({ page }) => {
+  await expect(pauseOf(page)).toHaveAttribute('aria-pressed', 'false');
+});
+
+Then('the heading row carries the window select, Refresh and Pause as glyphs', async ({ page }) => {
+  await expect(headingOf(page).locator('select[name="window"]')).toBeVisible();
+  await glyphOnly(headingOf(page).locator('[data-tool="refresh"]'));
+  await glyphOnly(pauseOf(page));
+  await expect(headingOf(page).locator('.btn')).toHaveCount(2);
 });
 
 Then('the {string} series of the expanded chart is shown', async ({ page }, group) => {

@@ -5,6 +5,7 @@ import { formatIoRate, ioRates, poolTypeTone } from '../utils/StorageUtils';
 
 import NetworkingTable from './NetworkingTable';
 import { storageFoldShape, storageReadingShape, storageTableShape } from './PoolsTable';
+import { trendColumn } from './TrendCell';
 
 const badge = (tone, content) => <span className={`badge text-bg-${tone}`}>{content}</span>;
 
@@ -16,10 +17,16 @@ const timeWord = (row, ctx) =>
 /**
  * The columns of the pool I/O table, hyperweaver-ui's: the pool, its
  * type in its tone, the allocation and the free space, the read and the
- * write operations and rates, the total and the disk waits, read and
- * write together, and the instant of the sample.
+ * write operations and rates, the trend, the sparkline of the pool's
+ * total over the drawn range in the tone the host page's pool chart gives
+ * the pool, the total and the disk waits, read and write together, and
+ * the instant of the sample.
+ *
+ * @param {Object} options - The page's side
+ * @param {Object<string, Object>} options.pools - The points per pool of the `pool` chart's `series`
+ * @returns {Array<Object>} The columns
  */
-export const POOL_IO_COLUMNS = [
+export const poolIoColumnsFor = ({ pools }) => [
   {
     key: 'pool',
     kind: 'name',
@@ -79,6 +86,7 @@ export const POOL_IO_COLUMNS = [
     value: row => ioRates(row).write,
     render: row => badge('warning', formatIoRate(ioRates(row).write)),
   },
+  trendColumn({ entities: pools, nameOf: row => row.pool }),
   {
     key: 'totalWait',
     kind: 'text',
@@ -112,16 +120,16 @@ export const POOL_IO_COLUMNS = [
 /**
  * The pool I/O table of the storage page, hyperweaver-ui's card: the
  * heading counting the pools, the chevron that folds it, and the one
- * `SubTable` over the newest sample of each pool the page's one search
- * binding left.
+ * `SubTable` of `columns` over the newest sample of each pool the page's
+ * one search binding left.
  */
-const PoolIOTable = ({ table, reading, filtering, fold, ctx }) => {
+const PoolIOTable = ({ columns, table, reading, filtering, fold, ctx }) => {
   const { t } = useTranslation();
   return (
     <NetworkingTable
       panel="storage-pool-io"
       title={t('host.poolIOTable.title', { count: reading.rows.length })}
-      columns={POOL_IO_COLUMNS}
+      columns={columns}
       table={table}
       rowKey={row => String(row.pool)}
       ctx={ctx}
@@ -134,6 +142,7 @@ const PoolIOTable = ({ table, reading, filtering, fold, ctx }) => {
 };
 
 PoolIOTable.propTypes = {
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   table: storageTableShape.isRequired,
   reading: storageReadingShape.isRequired,
   filtering: PropTypes.bool.isRequired,

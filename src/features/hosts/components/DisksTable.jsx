@@ -6,6 +6,7 @@ import { diskKey, diskName, formatBytes, healthTone, temperatureTone } from '../
 
 import NetworkingTable from './NetworkingTable';
 import { storageFoldShape, storageReadingShape, storageTableShape } from './PoolsTable';
+import { trendColumn } from './TrendCell';
 
 const badge = (tone, content) => <span className={`badge text-bg-${tone}`}>{content}</span>;
 
@@ -64,10 +65,16 @@ TemperatureCell.propTypes = {
  * The columns of the disks table, hyperweaver-ui's: the device, the
  * model, the serial, the size, the type and the health in their tones,
  * the temperature in the tone of its heat, drawn only while a row
- * carries one, and the pool the disk belongs to, its availability where
- * it belongs to none.
+ * carries one, the pool the disk belongs to, its availability where it
+ * belongs to none, and the trend, the sparkline of the device's total I/O
+ * over the drawn range in the tone the summary charts give the device, a
+ * dash for a disk with no I/O sample.
+ *
+ * @param {Object} options - The page's side
+ * @param {Object<string, Object>} options.devices - The points per device of the `disk-io` chart's `series`
+ * @returns {Array<Object>} The columns
  */
-export const DISK_COLUMNS = [
+export const diskColumnsFor = ({ devices }) => [
   {
     key: 'device',
     kind: 'name',
@@ -137,21 +144,22 @@ export const DISK_COLUMNS = [
     value: poolWord,
     render: (row, ctx) => <PoolCell row={row} ctx={ctx} />,
   },
+  trendColumn({ entities: devices, nameOf: diskName }),
 ];
 
 /**
  * The disks table of the storage page, hyperweaver-ui's physical disks
  * card: the heading counting the disks, its button dropping the sort a
- * person chose, the chevron that folds it, and the one `SubTable` over
- * the disks the page's one search binding left.
+ * person chose, the chevron that folds it, and the one `SubTable` of
+ * `columns` over the disks the page's one search binding left.
  */
-const DisksTable = ({ table, reading, filtering, fold, ctx }) => {
+const DisksTable = ({ columns, table, reading, filtering, fold, ctx }) => {
   const { t } = useTranslation();
   return (
     <NetworkingTable
       panel="storage-disks"
       title={t('host.disksTable.titleWithCount', { count: reading.rows.length })}
-      columns={DISK_COLUMNS}
+      columns={columns}
       table={table}
       rowKey={diskKey}
       ctx={ctx}
@@ -165,6 +173,7 @@ const DisksTable = ({ table, reading, filtering, fold, ctx }) => {
 };
 
 DisksTable.propTypes = {
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired,
   table: storageTableShape.isRequired,
   reading: storageReadingShape.isRequired,
   filtering: PropTypes.bool.isRequired,

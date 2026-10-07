@@ -50,6 +50,23 @@ Feature: dashboard
     When I toggle the dashboard widget "quickActions"
     Then the dashboard draws the "quickActions" widget
 
+  Scenario: Dashboard: the Charts widget draws the overall CPU and the network total of every host that offers them from the host's series, each with its newest value
+    Given the host answers the agent fixture
+    And the host answers the agent-dashboard fixture
+    And the host answers the agent-overview fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then the dashboard draws the "charts" widget
+    And the dashboard draws the "cpu" chart of "self"
+    And the dashboard draws the "network" chart of "self"
+    And the dashboard's "cpu" chart of "self" reads "18%"
+    And the dashboard's "network" chart of "self" reads "4 Mbps"
+    And the host was sent GET to "/api/monitoring/system/cpu" 1 times
+    And the host was sent GET to "/api/monitoring/network/usage" 1 times
+    When I click "Refresh"
+    Then the host was sent GET to "/api/monitoring/system/cpu" 2 times
+    And the host was sent GET to "/api/monitoring/network/usage" 2 times
+
   Scenario: Dashboard: Refresh reads the stats and the health of every host again, and nothing is read on a clock
     Given the host answers the agent fixture
     And the host answers the agent-dashboard fixture
