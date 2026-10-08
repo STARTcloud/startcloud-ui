@@ -1,3 +1,5 @@
+import { randomInt } from 'node:crypto';
+
 import { ROLE_STATUS, featuresOf, hypervisorsOf, rowOf } from './fleet.js';
 import { AGENT_MODE, ok, problem, refusal } from './kit.js';
 import { queue, settles } from './tasks.js';
@@ -400,7 +402,7 @@ const vnicCreated = ctx => {
         link: body.name,
         over: body.link,
         speed: 0,
-        macaddress: body.mac_address || `02:08:20:cc:${pad(Math.floor(Math.random() * 99), 2)}:01`,
+        macaddress: body.mac_address || `02:08:20:cc:${pad(randomInt(99), 2)}:01`,
         macaddrtype: body.mac_address ? 'fixed' : 'random',
         vid: body.vlan_id || 0,
         mtu: Number(body.properties?.mtu) || 1500,

@@ -42,7 +42,7 @@ const SignIn = ({ onRetry }) => {
       <CodeSsoLogin
         disabled={false}
         start={() => session.begin({ method: 'code' })}
-        onSignIn={key => session.login(key).then(onRetry)}
+        onSignIn={() => session.adopt().then(onRetry)}
       />
     </div>
   );

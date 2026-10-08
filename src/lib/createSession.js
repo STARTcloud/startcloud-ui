@@ -40,7 +40,7 @@ const COOKIE_AUTH_PATHS = [
  * sign-in returns to with the device's code, which joins them as a bare
  * path, drawn without the column and the app section, `none` is no
  * session at all,
- * `apikey` is hyperweaver-agent's API key session with `/login` as the
+ * `apikey` is hyperweaver-agent's cookie session over its API keys with `/login` as the
  * sign-in page and its only auth path, anything else is the app's own
  * backend session with `/login` as the sign-in page.
  *

@@ -97,3 +97,8 @@ Then('the browser holds no {string}', async ({ page }, key) => {
 Then('the browser still holds {string}', async ({ page }, key) => {
   await expect.poll(() => storedOf(page, key)).not.toBeNull();
 });
+
+Then('the browser holds {string} carrying no {string}', async ({ page }, key, member) => {
+  await expect.poll(() => storedOf(page, key)).not.toBeNull();
+  expect(JSON.parse(await storedOf(page, key))).not.toHaveProperty(member);
+});

@@ -412,7 +412,11 @@ const announce = () => {
  * in `auth` and says `bootstrapAvailable` until the first-key bootstrap
  * is used, the account routes are not mounted, the agent having no
  * users, a request carries its key as `Authorization: Bearer` or
- * `X-API-Key`, and the sign-in page offers the agent's six paths: a
+ * `X-API-Key`, or rides the `__Host-hwa_session` cookie a sign-in sets,
+ * a cookie-borne write from another site refused 403 by its
+ * `Sec-Fetch-Site` and `Origin`, the cookie `Secure` and accepted by
+ * Chromium and Firefox on `localhost` over plain HTTP, and the
+ * sign-in page offers the agent's six paths: a
  * seeded key signs in as `hwk_seed_0001_initial` (admin) or
  * `hwk_seed_0002_ci` (operator), the bootstrap takes the setup token as
  * `setup_token`, `#tray=tray-demo-token` claims the tray handoff once,

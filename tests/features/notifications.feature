@@ -3,7 +3,7 @@ Feature: notifications live
   Scenario: Notifications live: a row created for the person appears in the open modal and the badge moves without a reopen
     Given the host answers the agent-profile fixture
     And the stream holds the inbox-created frames
-    And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
     When I open "/"
     Then the avatar badge reads 2
     And the host was sent GET to "/api/notifications/unread-count" 1 times
@@ -19,7 +19,7 @@ Feature: notifications live
   Scenario: Notifications live: read all from another tab empties the badge and reads every row of the open inbox page
     Given the host answers the agent-profile fixture
     And the stream holds the inbox-read-all frames
-    And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
     When I open "/notifications"
     Then the inbox page lists 3 rows
     And the inbox page draws 2 unread rows
@@ -46,7 +46,7 @@ Feature: notifications live
     Given the host answers the agent-profile fixture
     And the host answers the inbox-rebuild fixture
     And the stream holds the rebuild-success frames
-    And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
     When I open "/"
     And I open the account menu
     And I press the account menu's Rebuild row
@@ -63,7 +63,7 @@ Feature: notifications live
     Given the host answers the agent-profile fixture
     And the host answers the inbox-rebuild fixture
     And the stream holds the rebuild-failure frames
-    And the browser holds "apikey" as "{\"key\":\"hw_seed_0001_initial\",\"profile\":{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}}"
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
     When I open "/"
     And I open the account menu
     And I press the account menu's Rebuild row

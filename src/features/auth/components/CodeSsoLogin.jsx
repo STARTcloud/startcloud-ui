@@ -42,9 +42,10 @@ const messageOf = error => error?.data?.error || error?.message || '';
  * open until the flow ends or its life runs out, asked as soon as the
  * flow is held and again after every `pending` answer, never on a clock,
  * so a callback the agent took on its own machine signs the person in
- * with nothing pasted; an approved flow hands its key to `onSignIn`, a
- * denied, failed or expired one, and a handle already delivered, say so
- * with Retry, and Back forgets the flow.
+ * with nothing pasted; an approved flow, whose answer set the agent's
+ * session cookies, calls `onSignIn`, a denied, failed or expired one, and
+ * a handle already delivered, say so with Retry, and Back forgets the
+ * flow.
  */
 const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
   const { t } = useTranslation();
@@ -72,11 +73,11 @@ const CodeSsoLogin = ({ disabled, onSignIn, start }) => {
     let again = false;
     try {
       const answer = await deviceSsoStatus(grant.handle);
-      if (answer?.status === 'approved' && answer.api_key) {
+      if (answer?.status === 'approved') {
         forgetPending();
         setGrant(null);
         setPhase('idle');
-        await onSignIn(answer.api_key);
+        await onSignIn();
       } else if (answer?.status === 'denied') {
         fail(t('auth.deviceSso.denied'));
       } else if (answer?.status === 'failed') {

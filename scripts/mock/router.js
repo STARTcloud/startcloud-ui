@@ -1,11 +1,12 @@
 import { hostFor, offline } from './fleet.js';
 import { AGENT_MODE, APIKEY_MODE, denied, missing, typedProblem, unauthenticated } from './kit.js';
-import { credentialOf, isAdmin, sessionOf } from './people.js';
+import { credentialOf, forgedRequest, isAdmin, refusedCookies, sessionOf } from './people.js';
 
 const AGENT_PREFIX = AGENT_MODE ? '/api' : '/api/agents/:agent';
 const KEY_REQUIRED =
   'API key required - provide either X-API-Key header or Authorization: Bearer header';
 const INVALID_KEY = 'Invalid API key';
+const CROSS_SITE = 'Cross-site request refused';
 const AUTHENTICATION = {
   status: 401,
   name: 'authentication',
@@ -77,9 +78,10 @@ const noSession = req => {
   if (!APIKEY_MODE) {
     return unauthenticated('Sign in first.');
   }
-  return credentialOf(req)
-    ? agentRefusal(FORBIDDEN, INVALID_KEY)
-    : agentRefusal(AUTHENTICATION, KEY_REQUIRED);
+  if (credentialOf(req)) {
+    return agentRefusal(FORBIDDEN, INVALID_KEY);
+  }
+  return { ...agentRefusal(AUTHENTICATION, KEY_REQUIRED), headers: refusedCookies(req) };
 };
 
 const notAdmin = session => {
@@ -99,7 +101,11 @@ const notAdmin = session => {
  * 403 to a person without `ROLE_ADMIN`; on the `hyperweaver-agent` role
  * the refusals are the agent's middleware's own, a problem body of the
  * status's registry type with the sentence as `detail` and an empty
- * `errors` list, 401 with no credential, 403 for an unknown key and 403
+ * `errors` list, 403 on every route for a request riding the session
+ * cookie on a method but GET, HEAD and OPTIONS whose `Sec-Fetch-Site`
+ * names another site and whose `Origin` host differs from `Host`, 401
+ * with no credential, clearing the session cookie when the request
+ * carried a dead one, 403 for an unknown key and 403
  * for a role too low, while the sign-in routes of `agent-settings.js`
  * keep the `{ msg }` bodies of the agent's sign-in brief.
  *
@@ -108,6 +114,9 @@ const notAdmin = session => {
  * @returns {{ refused: Object|null, session: Object|null }} The refusal, or the session
  */
 export const admit = (gate, req) => {
+  if (forgedRequest(req)) {
+    return { refused: agentRefusal(FORBIDDEN, CROSS_SITE), session: null };
+  }
   const session = sessionOf(req);
   if (gate.session && !session) {
     return { refused: noSession(req), session: null };

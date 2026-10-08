@@ -1,7 +1,0 @@
-{
-  "type": "https://auth.startcloud.com/probs/forbidden",
-  "title": "The request is not allowed.",
-  "status": 403,
-  "detail": "Invalid API key",
-  "errors": []
-}

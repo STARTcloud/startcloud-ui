@@ -188,16 +188,17 @@ const silentProbeOf = ({ session, offered, loopback, silentSsoKey, urlParams }) 
  * with SSO, the authorization-code flow behind the `oidc` word and the
  * `oidc-code` token, the authorize URL opened in a new tab and a code
  * from the provider's code page pasted back when the browser never
- * reached the agent, with the key form demoted behind Use an API key
+ * reached the agent, the approved flow signed in with through
+ * `session.adopt()`, with the key form demoted behind Use an API key
  * instead; Login Locally, the desktop sign-in button on a loopback page,
  * `hwa://open` on the click alone; the API key form, the pasted key
- * proved and stored by `session.login`; the first-boot bootstrap while
- * the status says `bootstrapAvailable`, the key generated with
- * `POST /api/api-keys/bootstrap` under the `setup_token`, shown once and
- * signed in with on Saved, continue; the tray hand-off, a `#tray=` token
- * claimed through `session.complete()`, once per page load with the
- * fragment stripped first, a stored key that still validates outranking
- * the claim; and on a loopback page that offers the SSO the one silent
+ * handed to the agent's session through `session.login`; the first-boot
+ * bootstrap while the status says `bootstrapAvailable`, the key generated
+ * with `POST /api/api-keys/bootstrap` under the `setup_token`, shown once
+ * and signed in with on Saved, continue; the tray hand-off, a `#tray=`
+ * token claimed through `session.complete()`, once per page load with the
+ * fragment stripped first, a cached session that still validates
+ * outranking the claim; and on a loopback page that offers the SSO the one silent
  * probe per browser session, `session.begin({ method: 'silent' })`, run
  * once the claim has answered nothing and never from the
  * `?sso=unavailable` bounce, which draws the chooser with a quiet line
@@ -230,10 +231,10 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
     setTone(kind);
   };
 
-  const signInWithKey = async key => {
+  const signInThrough = async step => {
     setLoading(true);
     try {
-      await session.login(key);
+      await step();
       signedIn.current();
       return true;
     } catch (error) {
@@ -243,6 +244,10 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
       setLoading(false);
     }
   };
+
+  const signInWithKey = key => signInThrough(() => session.login(key));
+
+  const signInApproved = () => signInThrough(() => session.adopt());
 
   useEffect(() => {
     session
@@ -288,7 +293,7 @@ const AgentSignIns = ({ status, session, silentSsoKey, urlParams, onSignedIn }) 
       {offered.sso ? (
         <CodeSsoLogin
           disabled={loading}
-          onSignIn={signInWithKey}
+          onSignIn={signInApproved}
           start={() => session.begin({ method: 'code' })}
         />
       ) : null}
@@ -344,6 +349,7 @@ AgentSignIns.propTypes = {
   status: PropTypes.object.isRequired,
   session: PropTypes.shape({
     login: PropTypes.func.isRequired,
+    adopt: PropTypes.func.isRequired,
     begin: PropTypes.func.isRequired,
     complete: PropTypes.func.isRequired,
     restore: PropTypes.func.isRequired,

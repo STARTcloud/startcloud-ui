@@ -112,8 +112,10 @@ Last-Event-ID: 1757068800000-3       (a reconnect only)
   to the stream URL without its query, the identity provider's stream
   included, which admits the token carrying `notifications:read` exactly
   as `/api/notifications` does, `x-access-token` on a `backend`
-  UI backend, and on a `cookie` UI backend the session cookie alone, since
-  the cookie provider's `headers()` answers `{}` for a GET. A UI backend
+  UI backend, on a `cookie` UI backend the session cookie alone, since the
+  cookie provider's `headers()` answers `{}` for a GET, and on an `apikey`
+  UI backend its one session cookie alone, since that provider's
+  `headers()` answers `{}` for every method. A UI backend
   whose `auth.mode` is `none` accepts the request with no headers.
 - `Last-Event-ID` is sent on every reconnect with the id of the last frame
   the client processed; it is never sent on a first connection.

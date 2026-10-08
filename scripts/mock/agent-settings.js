@@ -3,15 +3,18 @@ import { randomBytes } from 'crypto';
 import { favoritesOf, savedFavorites } from './account.js';
 import { SETUP_TOKEN } from './config.js';
 import { featuresOf } from './fleet.js';
-import { APIKEY_MODE, ago, missing, now, ok, refusal } from './kit.js';
+import { APIKEY_MODE, ago, empty, missing, now, ok, refusal } from './kit.js';
 import {
   FIXTURE_PERSON,
   ISSUER,
   claimsOf,
+  clearedCookies,
   credentialOf,
   forgetApiKey,
   personById,
+  refusedCookies,
   registerApiKey,
+  sessionCookies,
 } from './people.js';
 import { queue } from './tasks.js';
 
@@ -171,7 +174,7 @@ const saveSecrets = ctx => {
 
 const selfHost = ctx => ctx.host || { id: 'self' };
 
-const msg = (status, text) => ok({ msg: text }, status);
+const msg = (status, text, headers = {}) => ok({ msg: text }, status, headers);
 
 /**
  * Whether the first-key bootstrap is still open on the `hyperweaver-agent`
@@ -200,7 +203,7 @@ const identityOf = row =>
 
 const keyInfo = ctx => {
   if (!credentialOf(ctx.req)) {
-    return msg(401, KEY_REQUIRED);
+    return msg(401, KEY_REQUIRED, refusedCookies(ctx.req));
   }
   const row = keyOf(ctx);
   if (!row) {
@@ -285,11 +288,22 @@ const trayClaim = ctx => {
     return msg(403, 'Invalid or expired tray token');
   }
   state.trayTokens.delete(token);
-  return ok({
-    api_key: mintKey(selfHost(ctx), 'Tray', 'Minted by the tray handoff').key,
-    message: 'Tray login successful',
-  });
+  return empty(
+    204,
+    sessionCookies(mintKey(selfHost(ctx), 'Tray', 'Minted by the tray handoff').key)
+  );
 };
+
+const openSession = ctx => {
+  const key = String(ctx.body.api_key || '');
+  const row = stateOf(selfHost(ctx)).keys.find(entry => entry.key && entry.key === key);
+  if (!row) {
+    return msg(401, 'Invalid API key', refusedCookies(ctx.req));
+  }
+  return empty(204, sessionCookies(row.key));
+};
+
+const closeSession = () => empty(204, clearedCookies());
 
 const deviceStart = ctx => {
   const state = stateOf(selfHost(ctx));
@@ -328,14 +342,17 @@ const deviceStatus = ctx => {
     issuer: ISSUER,
     subject: person.uuid,
   });
-  return ok({
-    status: 'approved',
-    api_key: row.key,
-    entity_id: row.id,
-    name: row.name,
-    role: row.role,
-    message: 'Login successful',
-  });
+  return ok(
+    {
+      status: 'approved',
+      entity_id: row.id,
+      name: row.name,
+      role: row.role,
+      message: 'Login successful',
+    },
+    200,
+    sessionCookies(row.key)
+  );
 };
 
 const silentStart = () =>
@@ -374,13 +391,18 @@ const codeExchange = ctx => {
  * its apply, a queued task, the secrets behind `secrets`, and the API
  * keys with their generate, bootstrap and delete;
  * and on the `hyperweaver-agent` role the six sign-in paths of its
- * brief, public and under `/api`: the profile of a key, read with the
- * key as its bearer and refused 401 without one and 403 for an unknown
- * one; the first-boot bootstrap under `setup_token`, open once; the tray
- * claim of the seeded token `tray-demo-token`; the device flow, approved
- * on its second status check and minting a key bound to the fixture's
- * person, whose profile then carries `auth_provider`, `email`,
- * `customer_id`, `issuer` and `subject`; the code flow, its start
+ * brief, public and under `/api`, every one that signs in answering the
+ * agent's session cookie and no key: the profile of a key, read with
+ * the key as its bearer or its session cookie and refused 401 without
+ * one, the cookie cleared, and 403 for an unknown one; a pasted key
+ * handed to `POST /api/auth/session`, answered 204 for a live key and 401
+ * for any other; `POST /api/auth/logout`, answered 204 with the cookie
+ * cleared; the first-boot bootstrap under `setup_token`, open once; the
+ * tray claim of the seeded token `tray-demo-token`, answered 204; the
+ * device flow, approved on its second status check and minting a key
+ * bound to the fixture's person, whose profile then carries
+ * `auth_provider`, `email`, `customer_id`, `issuer` and `subject`; the
+ * code flow, its start
  * answering a handle, an authorize URL and the same URL as the one a
  * person visits by hand, whose state the flow keeps, its status pending
  * until a code is pasted to
@@ -402,6 +424,8 @@ export const mountAgentSettings = ({ publicRoute, sessionRoute, agentRoute }) =>
     publicRoute('GET', '/api/api-keys/info', keyInfo);
     publicRoute('POST', '/api/api-keys/bootstrap', bootstrapFirstKey);
     publicRoute('POST', '/api/auth/tray-claim', trayClaim);
+    publicRoute('POST', '/api/auth/session', openSession);
+    publicRoute('POST', '/api/auth/logout', closeSession);
     publicRoute('POST', '/api/auth/oidc/device-start', deviceStart);
     publicRoute('GET', '/api/auth/oidc/device-status', deviceStatus);
     publicRoute('POST', '/api/auth/oidc/code-start', codeStart);

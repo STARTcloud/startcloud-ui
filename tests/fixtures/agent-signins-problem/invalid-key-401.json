@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/authentication",
+  "title": "Authentication is required.",
+  "status": 401,
+  "detail": "Invalid API key",
+  "errors": []
+}

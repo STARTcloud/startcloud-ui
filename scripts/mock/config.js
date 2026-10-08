@@ -169,13 +169,22 @@ const uploaded = ctx => {
   return ok({ path: `${UPLOADS}/${file}` });
 };
 
+const hostOf = value => {
+  const text = String(value).trim();
+  try {
+    return new URL(text).hostname;
+  } catch {
+    return text.split(/[:/]/u)[0];
+  }
+};
+
 const unreachableIn = (values, base = '') =>
   Object.entries(isObject(values) ? values : {}).flatMap(([key, value]) => {
     const pointer = `${base}/${key}`;
     if (isObject(value)) {
       return unreachableIn(value, pointer);
     }
-    return String(value).includes(UNREACHABLE) ? [pointer] : [];
+    return hostOf(value) === UNREACHABLE ? [pointer] : [];
   });
 
 const tested = ctx => {

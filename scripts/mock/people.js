@@ -439,8 +439,9 @@ const FAR_FUTURE_S = 4102444800;
 
 /**
  * Register an agent API key a page may sign in with: a request carrying
- * it as `Authorization: Bearer` or `X-API-Key` on the `hyperweaver-agent`
- * role, and as `x-access-token` on the server role, is the fixture's
+ * it as `Authorization: Bearer`, `X-API-Key` or the `__Host-hwa_session`
+ * cookie on the `hyperweaver-agent` role, and as `x-access-token` on the
+ * server role, is the fixture's
  * person, a super-admin, under the key's name, the key's own role kept
  * beside it for the agent's refusals.
  *
@@ -469,23 +470,109 @@ const apiKeyPayload = token =>
       }
     : null;
 
+const SESSION_COOKIE = '__Host-hwa_session';
+const COOKIE_RULES = 'HttpOnly; Secure; SameSite=Strict; Path=/';
+const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+const OWN_SITES = ['same-origin', 'none'];
+
 const bearerOf = req => {
   const header = String(req.headers.authorization || '');
   return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : '';
 };
 
+const cookieEntry = entry => {
+  const split = entry.indexOf('=');
+  return [entry.slice(0, split), decodeURIComponent(entry.slice(split + 1))];
+};
+
+const cookiesOf = req =>
+  Object.fromEntries(
+    String(req.headers.cookie || '')
+      .split(';')
+      .map(entry => entry.trim())
+      .filter(entry => entry.includes('='))
+      .map(cookieEntry)
+  );
+
+const headerKeyOf = req => bearerOf(req) || String(req.headers['x-api-key'] || '');
+
+const cookieKeyOf = req => {
+  const key = cookiesOf(req)[SESSION_COOKIE] || '';
+  return apiKeys.has(key) ? key : '';
+};
+
 /**
  * The credential a request carries: on the `hyperweaver-agent` role the
- * key of `Authorization: Bearer` or of `X-API-Key`, on every other role
- * the token of `x-access-token`; empty when the request carries none.
+ * key of `Authorization: Bearer` or of `X-API-Key`, else the live key of
+ * the `__Host-hwa_session` cookie, on every other role the token of
+ * `x-access-token`; empty when the request carries none.
  *
  * @param {Object} req - The request
  * @returns {string} The credential
  */
 export const credentialOf = req =>
-  APIKEY_MODE
-    ? bearerOf(req) || String(req.headers['x-api-key'] || '')
-    : String(req.headers['x-access-token'] || '');
+  APIKEY_MODE ? headerKeyOf(req) || cookieKeyOf(req) : String(req.headers['x-access-token'] || '');
+
+/**
+ * The `Set-Cookie` header the agent's sign-ins answer: the key as the one
+ * `__Host-hwa_session` cookie, `HttpOnly`, `Secure`, `SameSite=Strict`
+ * and `Path=/`.
+ *
+ * @param {string} key - The key the session stands for
+ * @returns {Object} The headers
+ */
+export const sessionCookies = key => ({
+  'Set-Cookie': `${SESSION_COOKIE}=${key}; ${COOKIE_RULES}`,
+});
+
+/**
+ * The `Set-Cookie` header that clears the agent's session cookie.
+ *
+ * @returns {Object} The headers
+ */
+export const clearedCookies = () => ({
+  'Set-Cookie': `${SESSION_COOKIE}=; Max-Age=0; ${COOKIE_RULES}`,
+});
+
+/**
+ * The headers a `401` of the agent answers: the cleared cookie while the
+ * request carried a session cookie, nothing otherwise.
+ *
+ * @param {Object} req - The request
+ * @returns {Object} The headers
+ */
+export const refusedCookies = req =>
+  APIKEY_MODE && cookiesOf(req)[SESSION_COOKIE] ? clearedCookies() : {};
+
+const hostOf = value => String(value || '').toLowerCase();
+
+const originHostOf = req => {
+  try {
+    return hostOf(new URL(String(req.headers.origin)).host);
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Whether a request rides the agent's session cookie, with no header
+ * credential, on a method but GET, HEAD and OPTIONS from another site: a
+ * `Sec-Fetch-Site` present and neither `same-origin` nor `none`, and an
+ * `Origin` whose host differs from the request's `Host`.
+ *
+ * @param {Object} req - The request
+ * @returns {boolean} True for a request the agent refuses `403`
+ */
+export const forgedRequest = req => {
+  if (!APIKEY_MODE || headerKeyOf(req) || !cookieKeyOf(req) || SAFE_METHODS.includes(req.method)) {
+    return false;
+  }
+  const site = String(req.headers['sec-fetch-site'] || '');
+  if (!site || OWN_SITES.includes(site)) {
+    return false;
+  }
+  return originHostOf(req) !== hostOf(req.headers.host);
+};
 
 export const readToken = req => {
   const token = credentialOf(req);

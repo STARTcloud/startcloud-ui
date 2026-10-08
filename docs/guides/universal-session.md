@@ -301,16 +301,27 @@ invite nor a return path.
 `createApiKeySession({ baseUrl, events, storageKey })` is hyperweaver-agent's
 shape, chosen when the UI backend's first `auth` token is `apikey`, `oidc`
 as its second token meaning the federated paths are on and never the
-session kind: the agent's API key and, of the profile
-`GET /api/api-keys/info` answered for it, the members the session reads
-stored together under `storageKey` (`apikey`), never a member that moves
-on every request, so a profile read again writes the same record, every
-request carrying the key as `Authorization: Bearer`, `retryAuth()` false
-because a key has no refresh, `load()` the profile read again with the
-stored key, a `401` or `403` there a dead credential that clears the
-record while any other failure keeps it and a `403` on any other route a
-role too low that touches the session not at all, `login(key)` the pasted
-key proved by that read and stored, `begin({ method: 'silent' })` the
+session kind: the session is the agent's one cookie, `__Host-hwa_session`,
+`HttpOnly`, `Secure`, `SameSite=Strict` and `Path=/`, set by every sign-in
+and carried by the browser with its same-origin credentials on every
+request and on `GET /api/events`, and the browser never holds the key;
+there is no CSRF cookie and no CSRF header, `headers()` answering `{}` for
+every method, because the agent guards every method but `GET`, `HEAD` and
+`OPTIONS` by the headers the browser sets itself, `Sec-Fetch-Site`
+`same-origin` or `none`, else an `Origin` whose host equals `Host`, else a
+`403` problem; the `Secure` cookie means the agent serves the UI over HTTPS
+alone. Of the profile
+`GET /api/api-keys/info` answers, the display members the session reads
+are cached under `storageKey` (`apikey`), never the key and never a
+member that moves on every request, so a profile read again writes the
+same record; `retryAuth()` false because the session has no refresh,
+`load()` the profile read again while a record is cached, a `401` there a
+dead session, the agent clearing the cookie, that clears the record
+while any other failure keeps it, and a `403` on any other route a role
+too low that touches the session not at all; `login(key)` the pasted key
+handed to `POST /api/auth/session` `{ api_key }`, answered `204` with the
+cookie set or `401`, then the profile read; `adopt()` the profile read
+of the session the cookie already carries; `begin({ method: 'silent' })` the
 `prompt=none` authorize URL of `POST /api/auth/oidc/silent-start` followed
 as a top-level navigation, `begin({ method: 'code' })` the RFC 8252
 authorization-code flow of `POST /api/auth/oidc/code-start` while the
@@ -323,20 +334,23 @@ person pastes from that page, `code#state`, handed to
 `POST /api/auth/oidc/code` with the flow's handle, the approval of either
 read with `GET /api/auth/oidc/device-status`, one request the agent holds
 open until the flow ends or its life runs out, asked again after every
-`pending` answer and never on a clock; the device grant is the agent's
-own, for the machine's notifications and its joins, and the page offers it
-to no person; `complete()` the `#tray=`
+`pending` answer and never on a clock, the approved answer carrying no key
+and setting the cookie, the session then taken through `adopt()`; the
+device grant is the agent's own, for the machine's notifications and its
+joins, and the page offers it to no person; `complete()` the `#tray=`
 claim of a tray Open or an `hwa://open`, once per page load with the
-fragment stripped before `POST /api/auth/tray-claim` is sent and a stored
-key that still validates outranking it, the claimed session answered once
+fragment stripped before `POST /api/auth/tray-claim` `{ token }` is sent,
+answered `204` with the cookie set, and a cached session that still
+validates outranking it, the claimed session answered once
 and never after the record was forgotten, the hand-off told to the other
 tabs of the origin over the `BroadcastChannel` `hw-auth`, `auth-ping`
 which every open tab answers with `auth-pong` and `auth-updated` on which
-a tab signed out or holding another key reloads into the session, the tab
+a tab signed out or holding another key's session, the cached profile's
+`id` differing from its own, reloads into the session, the tab
 the tray or the hand-off opened closing itself the moment a pong arrives
 and staying open while none does, so a tab a person opened is never closed
-and nothing waits on a clock, `claims()` null; once the key
-is proved, `GET /api/user` read with the same bearer and held in memory,
+and nothing waits on a clock, `claims()` null; once the profile
+is read, `GET /api/user` read on the same session and held in memory,
 the person's record in the identity provider's shape without its
 `preferred_*` members, because the agent keeps no user preferences: the
 mode, the theme, the motion switch and the language are the browser's
@@ -349,7 +363,7 @@ patch's `timezone` under that key and sending nothing; a pick of the
 `shi` theme on this host writes `ui.shi_mode` true through
 `PUT /api/config/app` beside the browser's `theme` key, and a pick of
 any other theme writes it false, so the agent's tray swaps its icon on
-that save; the stored
+that save; the cached
 record carries the profile's `issuer` and `subject`, the
 identity provider's origin and the account's stable id on a key a
 federated login minted, and the session's `issuerUrl` is that issuer, so
@@ -358,16 +372,16 @@ provider link point at it, the menu's Preferences row opening the local
 `/profile/preferences` as the sidebar's row does, the profile page at
 `/profile` drawing the record `readOnly` on every key because the agent
 serves no write of it;
-both sign-outs forgetting the record, the agent having no sign-out
-route, and `endSession()` ending the session on the bus only while a
-record is stored, so the refusals of requests sent after a sign-out end
-no session twice; the key's own role is mapped onto the hosts feature's ladder, the
+both sign-outs forgetting the record and sending `POST /api/auth/logout`,
+answered `204` with the cookie cleared, and `endSession()` ending the
+session on the bus only while a record is cached, so the refusals of
+requests sent after a sign-out end no session twice; the key's own role is mapped onto the hosts feature's ladder, the
 agent's `admin`, its highest role, to `super-admin`, `operator` to `admin`
 and `viewer` to `user`, with `ROLE_ADMIN` beside an `admin` key's record
 because the agent's configuration routes are admin-only; a handoff tells
 the other tabs over the `BroadcastChannel` `hw-auth` with `auth-updated`,
 the `storage` event the fallback, and a tab that hears it while signed out
-or holding another key reloads. Its `authPaths` are `/login` alone.
+or holding another key's session reloads. Its `authPaths` are `/login` alone.
 
 ---
 

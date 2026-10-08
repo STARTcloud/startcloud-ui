@@ -42,14 +42,11 @@ Then('the page navigated to {string} {int} times', async ({ page }, pathname, co
   expect(moves.filter(move => move === pathname)).toHaveLength(count);
 });
 
-Then(
-  'every {word} to {string} carried the header {string}',
-  ({ host }, method, pathname, header) => {
-    const calls = host.answered(method, pathname);
-    expect(calls.length).toBeGreaterThan(0);
-    expect(calls.every(call => Boolean(call.headers[header.toLowerCase()]))).toBe(true);
-  }
-);
+Then('no {word} to {string} carried the header {string}', ({ host }, method, pathname, header) => {
+  const calls = host.answered(method, pathname);
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.some(call => Boolean(call.headers[header.toLowerCase()]))).toBe(false);
+});
 
 Then('the page draws the sign-in placard', async ({ page }) => {
   await expect(page.locator('.app-scroll .sign-in').first()).toBeVisible();
