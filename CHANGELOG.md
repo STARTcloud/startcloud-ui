@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.56.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.55.0...v0.56.0) (2026-10-09)
+
+
+### Features
+
+* the agent's session the one HttpOnly __Host-hwa_session cookie the browser carries with its same-origin credentials on every request and on the event stream, the browser never holding the key and the cached record the profile's display members alone, a pasted key handed to POST /api/auth/session, the tray claim and the code flow's approved answer setting the cookie and the profile then read, both sign-outs sending POST /api/auth/logout, a 401 on the profile read clearing the record and any other failure keeping it, no CSRF cookie or header because the agent guards its writes by the browser's own Sec-Fetch-Site and Origin; the mock agent serving the same cookie, its forged-write refusal and its cleared cookie on a dead key; the mock's reachability test comparing the parsed host and its minted MAC drawn from crypto's randomInt; the session and events contracts, the sign-in fixtures, the feature steps and the unit tests following ([90c6f69](https://github.com/STARTcloud/startcloud-ui/commit/90c6f69073d413d201fdeaa20f2f8e57aa898ba6))
+* the Discourse keyboard shortcuts on the shared UI, one listener with the editable-target guard and g chords resolved on the next keydown, / or Ctrl+Alt+F opening search in place of Ctrl+K, ? opening the Keyboard Shortcuts modal with its filter and categories, the keyboard button in the sidebar foot and the row in the user menu, = p c . and the jump, navigation, selection and action rows, each feature exporting its own shortcuts behind the tokens it serves, the binding table in the navbar contract; the validation rules document read only where the host lists rules, the token in the feature table and the mock, a host without it validating on the client's own defaults; the Update page the versions, date and links in a side card with the release's own notes rendered as markdown beside them and an Assets fold listing the check's assets with sizes and checksums, folded by default and kept in the page's prefs, the mock answering notes and assets; the English and Spanish keys, the fixtures, the scenarios and the unit tests following ([f862a9f](https://github.com/STARTcloud/startcloud-ui/commit/f862a9f6992ddbda172b44502fd84fe17b06a680))
+
+
+### Bug Fixes
+
+* the provisioner card's byline the organization's name alone, the avatar before it gone, and every link in the Update page's release notes opening its own tab ([bad0596](https://github.com/STARTcloud/startcloud-ui/commit/bad059674fea0361f1cf8fcab9c3841653bd5cec))
+
 ## [0.55.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.54.0...v0.55.0) (2026-10-07)
 
 
