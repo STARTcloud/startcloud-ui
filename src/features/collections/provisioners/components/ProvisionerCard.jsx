@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { FaCheck, FaChevronDown, FaChevronRight, FaDownload, FaRegCopy } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
-import { OrgLogo } from '../../../../components/layout/OrgSwitcherModal';
 import { copyToClipboard } from '../../../../lib/clipboard';
 import { itemShape } from '../../../../utils/itemShape';
 import { itemPath } from '../../../../utils/routes';
@@ -17,8 +16,8 @@ import { QualityPanel, QualitySignal } from './Quality';
 const LISTED_VERSIONS = 5;
 
 /**
- * The line under a provisioner card's title: the organization's logo and
- * name, the family's name in monospace, and a button that copies it.
+ * The line under a provisioner card's title: the organization's name,
+ * the family's name in monospace, and a button that copies it.
  */
 export const CardByline = ({ item }) => {
   const { t } = useTranslation();
@@ -26,7 +25,6 @@ export const CardByline = ({ item }) => {
   const label = t(copied ? 'copyButton.copied' : 'provisioners.card.copyName');
   return (
     <div className="byline small text-body-secondary" data-field="byline">
-      <OrgLogo org={item.organization} size={16} className="org-avatar" fallback={null} />
       <span>{item.organization.name}</span>
       <span aria-hidden="true">·</span>
       <code className="checksum">{item.name}</code>

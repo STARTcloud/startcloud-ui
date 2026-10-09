@@ -20,7 +20,7 @@ import { formatRelativeTime } from '../../utils/relativeTime';
 
 import ConfirmModal from './ConfirmModal';
 import { absoluteTime } from './InboxList';
-import MarkdownArticle from './MarkdownArticle';
+import MarkdownText from './MarkdownText';
 import { httpsUrl } from './MethodList';
 import SectionCard, { foldsShape } from './SectionCard';
 import SectionHeading from './SectionHeading';
@@ -159,7 +159,7 @@ const ReleaseNotes = ({ notes, version }) => {
   return (
     <>
       <div className="upd-label">{t('hosts.nav.updateNotes', { version })}</div>
-      <MarkdownArticle markdown={notes} className="upd-notes" />
+      <MarkdownText text={notes} className="prose upd-notes" />
     </>
   );
 };
@@ -270,7 +270,8 @@ UpdateButton.propTypes = {
  * only while the check carries its member; beside it the release notes,
  * `release_notes` of the check rendered as markdown under a small
  * heading naming the version they describe, the latest while an update
- * is available and the installed one when up to date, and under them the
+ * is available and the installed one when up to date, every link in them
+ * opening its own tab, and under them the
  * Assets fold listing `assets` of the check, each a name link with its
  * size and its checksum where one is carried, folded until opened, the
  * fold kept under `prefsKey` like the page's other folds.
