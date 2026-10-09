@@ -1,0 +1,7 @@
+{
+  "type": "https://hyperweaver.example.com/problems/validation",
+  "title": "The catalog source did not pass validation.",
+  "status": 422,
+  "detail": "url must be reachable",
+  "errors": [{ "pointer": "/url", "rule": "reachable", "params": {} }]
+}

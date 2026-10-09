@@ -42,6 +42,13 @@ Then("the wizard's provisioner card reads {string}", async ({ page }, state) => 
   );
 });
 
+Then("the wizard's box registry card reads {string}", async ({ page }, state) => {
+  await expect(wizardOf(page).locator('[data-note="box-source"]')).toHaveAttribute(
+    'data-state',
+    state
+  );
+});
+
 Then('the open dialog offers {string}', async ({ page }, action) => {
   await expect(dialogOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();
 });

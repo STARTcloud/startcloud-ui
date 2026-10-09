@@ -25,6 +25,7 @@ import { HostMachinesContext } from '../hooks/useHostMachines';
 import { useHostRow } from '../hooks/useHostRow';
 import { useMachineTools } from '../hooks/useMachineTools';
 import { useProvisionerInstall } from '../hooks/useProvisionerInstall';
+import { useTemplateSource } from '../hooks/useTemplateSource';
 import {
   flattenBoxCatalog,
   pickDefaultSource,
@@ -43,6 +44,7 @@ import {
   emptyDiskConfig,
   emptySettings,
   nextServerIdOf,
+  seedBoxOf,
   seedFamilyOf,
   stepProblemOf,
 } from '../utils/machineCreate';
@@ -137,7 +139,9 @@ const templateAvailablePoolsOf = ({ templates, settings, agentDefaults }) => {
  * of a VirtualBox host, the uplinks and the free addresses, each read
  * when its step is entered, so a picker is never older than the visit to
  * its step, the provisioners again through `loadProvisioners` once a
- * handed family is installed, and nothing reads on a clock.
+ * handed family is installed, the registries and their catalogs again
+ * through `loadCatalogs` once a handed box's registry is added, and
+ * nothing reads on a clock.
  */
 const useCreateFeeds = ({ status, id, server, t }) => {
   const [feeds, setFeeds] = useState({
@@ -149,6 +153,8 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     templates: [],
     remoteBoxes: [],
     sourceChoices: [],
+    templateSources: [],
+    sourcesLoaded: false,
     catalogNote: '',
     artifacts: null,
     isoOptions: [],
@@ -204,10 +210,16 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     sources => {
       const enabled = sources.filter(source => source.enabled !== false);
       if (enabled.length === 0) {
-        patch({ catalogNote: t('machineEdit.machineCreateModal.noTemplateSourcesConfigured') });
+        patch({
+          templateSources: sources,
+          sourcesLoaded: true,
+          catalogNote: t('machineEdit.machineCreateModal.noTemplateSourcesConfigured'),
+        });
         return;
       }
       patch({
+        templateSources: sources,
+        sourcesLoaded: true,
         sourceChoices: enabled.map(source => ({
           value: sourceKeyOf(source),
           label: sourceLabelOf(source),
@@ -287,7 +299,15 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     loadMedia();
   }, [status, id, templated, cached, patch, loadProvisioners, loadCatalogs, loadZfs, loadMedia]);
 
-  return { ...feeds, loadProvisioners, loadZfs, loadMedia, loadUplinks, loadIpSuggestions };
+  return {
+    ...feeds,
+    loadProvisioners,
+    loadCatalogs,
+    loadZfs,
+    loadMedia,
+    loadUplinks,
+    loadIpSuggestions,
+  };
 };
 
 /**
@@ -552,6 +572,8 @@ const StepBody = ({ wizard }) => {
     bhyveBootDevices,
     spec,
     openBoxVault,
+    source,
+    seedBox,
   } = wizard;
   return (
     <>
@@ -601,6 +623,8 @@ const StepBody = ({ wizard }) => {
           setBoxPickCustom={setter('boxPickCustom')}
           bootSource={form.bootSource}
           setBootSource={setter('bootSource')}
+          registry={source}
+          seededBox={seedBox}
           onBrowseBoxVault={aggregated ? openBoxVault : null}
           advanced={showAdvanced}
           loading={busy}
@@ -702,15 +726,21 @@ StepBody.propTypes = {
  * entered. On the server role Browse BoxVault opens the picker of the
  * server's per-user proxy and the owning organization is chosen among
  * the ones the person manages; `seed`, the Deploy hand-off's query, lands
- * its box members on the box fields as a custom pick and its provisioner
+ * its box on the box fields as a custom pick, BoxVault's `box` members or
+ * the catalog's `box_<provider>` member the host's hypervisors pick
+ * through `seedBoxOf`, and its provisioner
  * on the Provisioning step, the host's family named by the part after the
  * handed `provisioner`'s slash, picked once the provisioners have
  * answered, and the version named, or the family's first, picked once the
  * family is, so the version's manifest is read as a person's pick reads
  * it; a family the host does not hold puts `useProvisionerInstall`'s card
  * on the Provisioning step, its press installing the family through the
- * host's catalog and the provisioners read again, so the same picks land.
- * Create stays the one machine write.
+ * host's catalog and the provisioners read again, so the same picks land;
+ * a handed box whose registry the host does not hold puts
+ * `useTemplateSource`'s card on the Box step, its press writing the
+ * registry and the registries read again, so the agent's create downloads
+ * the box, which the notice says when the answer carries
+ * `requires_download`. Create stays the one machine write.
  */
 const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const { t } = useTranslation();
@@ -741,6 +771,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const seeded = useRef(false);
   const provisionerSeeded = useRef('');
   const seedFamily = seedFamilyOf(seed?.provisioner);
+  const seedBox = useMemo(() => seedBoxOf(seed, server?.capabilities?.hypervisors), [seed, server]);
   const install = useProvisionerInstall({
     status,
     id,
@@ -749,6 +780,14 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     provisioners: feeds.provisioners,
     loaded: feeds.provisionersLoaded,
     onInstalled: feeds.loadProvisioners,
+  });
+  const source = useTemplateSource({
+    status,
+    id,
+    box: seedBox,
+    sources: feeds.templateSources,
+    loaded: feeds.sourcesLoaded,
+    onAdded: feeds.loadCatalogs,
   });
 
   useEffect(() => {
@@ -778,21 +817,15 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   }, [aggregated, organization, set]);
 
   useEffect(() => {
-    if (!seed?.box || seeded.current) {
+    if (!seedBox || seeded.current) {
       return;
     }
     seeded.current = true;
     update(current => ({
       boxPickCustom: true,
-      settings: {
-        ...current.settings,
-        box: seed.box,
-        box_version: seed.box_version || '',
-        box_arch: seed.box_arch || '',
-        box_url: seed.box_url || '',
-      },
+      settings: { ...current.settings, ...seedBox },
     }));
-  }, [seed, update]);
+  }, [seedBox, update]);
 
   const { changeFamily, changeVersion, family: pickedFamily } = picked;
 
@@ -962,6 +995,12 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
         t('machineEdit.machineCreateModal.createdInOrder', { names: made.names.join(', ') })
       );
     }
+    if (made.requiresDownload) {
+      notify(
+        'info',
+        t('machineEdit.machineCreateModal.templateDownloadQueued', { box: form.settings.box })
+      );
+    }
     onClose();
   };
 
@@ -992,6 +1031,8 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     bhyveBootDevices,
     spec,
     openBoxVault: () => setBoxVaultOpen(true),
+    source,
+    seedBox,
   };
 
   const submit = event => {

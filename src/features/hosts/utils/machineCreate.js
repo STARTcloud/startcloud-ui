@@ -1,5 +1,6 @@
 import { hostHasFeature } from './capabilities';
 import { withAddressing, cdromEntry, filesystemEntries } from './machineHelpers';
+import { SOURCE_FORM } from './manageCatalog';
 import { canCreateMachines } from './permissions';
 
 export const CREATE_STEPS = [
@@ -51,6 +52,14 @@ const SEED_KEYS = [
   'provisioner_url',
   'provisioner_catalog',
 ];
+const BOX_PROVIDER = /^box_[a-z0-9_-]+$/u;
+const BOX_PICKS = {
+  virtualbox: ['box_virtualbox'],
+  bhyve: ['box_zone', 'box_bhyve'],
+  utm: ['box_utm', 'box_virtualbox'],
+};
+const SOURCE_ID_CHARS = /[^a-z0-9]+/gu;
+const SOURCE_ID_EDGES = /^_+|_+$/gu;
 const BOOT_TYPES = { template: 'template', scratch: 'blank', existing: 'image', none: 'none' };
 const NUMERIC_SETTINGS = ['setup_wait', 'consoleport'];
 const BOOLEAN_SETTINGS = [
@@ -120,12 +129,18 @@ export const hostCreates = (server, role) =>
   hostHasFeature(server, 'machines') &&
   hostHasFeature(server, 'machine-create');
 
+const isBoxProviderKey = key => BOX_PROVIDER.test(key) && !SEED_KEYS.includes(key);
+
+const providerKeysOf = keys => [...new Set(keys)].filter(isBoxProviderKey).sort();
+
 /**
  * What a `?create=machine` deep link seeds the wizard with, the Deploy
  * hand-off's two seeds: BoxVault's `box`, `box_version`, `box_arch` and
  * `box_url`, and the catalog's `provisioner`, `provisioner_version`,
- * `provisioner_url` and `provisioner_catalog`, each member empty where
- * the query leaves it out, or null while the query asks for no machine.
+ * `provisioner_url`, `provisioner_catalog` and its `box_<provider>`
+ * members, each fixed member empty where the query leaves it out and a
+ * `box_<provider>` member present only where the query carries it, or
+ * null while the query asks for no machine.
  *
  * @param {URLSearchParams} params - The route's search params
  * @returns {Object|null} The seed, one member a key of the two seeds
@@ -134,14 +149,22 @@ export const createSeedOf = params => {
   if (params.get(CREATE_PARAM) !== CREATE_WORD) {
     return null;
   }
-  return Object.fromEntries(SEED_KEYS.map(key => [key, params.get(key) || '']));
+  return {
+    ...Object.fromEntries(SEED_KEYS.map(key => [key, params.get(key) || ''])),
+    ...Object.fromEntries(
+      providerKeysOf([...params.keys()])
+        .filter(key => params.get(key))
+        .map(key => [key, params.get(key)])
+    ),
+  };
 };
 
 /**
  * The route a door to the wizard navigates to, the host's own page with
- * the `create=machine` query and the seed's members where given, the one
- * way the wizard opens, so a deep link and a row of a menu open it the
- * same way.
+ * the `create=machine` query and the seed's members where given, the
+ * fixed members first and the `box_<provider>` members after them sorted
+ * by key, the one way the wizard opens, so a deep link and a row of a
+ * menu open it the same way.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {Object|null} [seed] - The seed of `createSeedOf`
@@ -149,7 +172,7 @@ export const createSeedOf = params => {
  */
 export const createRouteOf = (id, seed = null) => {
   const params = new URLSearchParams({ [CREATE_PARAM]: CREATE_WORD });
-  SEED_KEYS.forEach(key => {
+  [...SEED_KEYS, ...providerKeysOf(Object.keys(seed || {}))].forEach(key => {
     if (seed?.[key]) {
       params.set(key, seed[key]);
     }
@@ -158,17 +181,121 @@ export const createRouteOf = (id, seed = null) => {
 };
 
 /**
- * The route's search params with the deep link's members taken out, what
- * the page keeps once the wizard has opened, so a reload opens it again
- * only when asked.
+ * The route's search params with the deep link's members taken out, the
+ * `box_<provider>` members with them, what the page keeps once the wizard
+ * has opened, so a reload opens it again only when asked.
  *
  * @param {URLSearchParams} params - The route's search params
  * @returns {URLSearchParams} The params left
  */
 export const withoutCreateSeed = params => {
   const next = new URLSearchParams(params);
-  [CREATE_PARAM, ...SEED_KEYS].forEach(key => next.delete(key));
+  [CREATE_PARAM, ...SEED_KEYS, ...providerKeysOf([...params.keys()])].forEach(key =>
+    next.delete(key)
+  );
   return next;
+};
+
+/**
+ * The box a handed `box_<provider>` member lands on the Box step for a
+ * host, picked by the host's hypervisors in their order: a VirtualBox
+ * host takes `box_virtualbox`, a bhyve host `box_zone` then `box_bhyve`,
+ * a UTM host `box_utm` then `box_virtualbox`; the member's
+ * `organization/name@version@architecture@url` parsed into the four box
+ * settings, the URL the rest after the third `@`. Null while no member
+ * fits the host.
+ *
+ * @param {Object|null} seed - The seed of `createSeedOf`
+ * @param {Array<string>} hypervisors - The host's `capabilities.hypervisors`
+ * @returns {{ box: string, box_version: string, box_arch: string, box_url: string }|null} The box
+ */
+export const seedBoxFor = (seed, hypervisors) => {
+  const key = (Array.isArray(hypervisors) ? hypervisors : [])
+    .flatMap(hypervisor => BOX_PICKS[hypervisor] || [])
+    .find(candidate => seed?.[candidate]);
+  if (!key) {
+    return null;
+  }
+  const [box, version, architecture, ...rest] = String(seed[key]).split('@');
+  if (!box) {
+    return null;
+  }
+  return {
+    box,
+    box_version: version || '',
+    box_arch: architecture || '',
+    box_url: rest.join('@'),
+  };
+};
+
+/**
+ * The box a handed seed lands on the Box step: the plain `box` seed of
+ * BoxVault with its three members while the seed carries one, else the
+ * catalog's `box_<provider>` member the host's hypervisors pick through
+ * `seedBoxFor`, null while neither names a box.
+ *
+ * @param {Object|null} seed - The seed of `createSeedOf`
+ * @param {Array<string>} hypervisors - The host's `capabilities.hypervisors`
+ * @returns {{ box: string, box_version: string, box_arch: string, box_url: string }|null} The box
+ */
+export const seedBoxOf = (seed, hypervisors) => {
+  if (seed?.box) {
+    return {
+      box: seed.box,
+      box_version: seed.box_version || '',
+      box_arch: seed.box_arch || '',
+      box_url: seed.box_url || '',
+    };
+  }
+  return seedBoxFor(seed, hypervisors);
+};
+
+/**
+ * The registry the agent downloads a box from, the way the agent resolves
+ * `settings.box_url` at a create: the enabled source whose URL the box
+ * URL starts with, the default enabled source while the box URL is empty,
+ * null while none fits.
+ *
+ * @param {Array<Object>} sources - The sources of `GET templates/sources`
+ * @param {string} boxUrl - The box's `box_url`
+ * @returns {Object|null} The source
+ */
+export const templateSourceFor = (sources, boxUrl) => {
+  const enabled = (Array.isArray(sources) ? sources : []).filter(
+    source => source && source.enabled !== false
+  );
+  if (!boxUrl) {
+    return enabled.find(source => source.default === true) || null;
+  }
+  return (
+    enabled.find(
+      source => typeof source.url === 'string' && source.url && boxUrl.startsWith(source.url)
+    ) || null
+  );
+};
+
+/**
+ * The registry form that adds the registry a handed box is fetched from,
+ * the shape the Templates section's registry dialog hands up: the id its
+ * host lowercased with every run of other characters as one underscore,
+ * the display name its host, the URL its origin, not the default and
+ * with no credential; null while the box URL is no URL.
+ *
+ * @param {string} boxUrl - The box's `box_url`
+ * @returns {Object|null} The form, the shape of `SOURCE_FORM`
+ */
+export const templateSourceFormOf = boxUrl => {
+  let parsed;
+  try {
+    parsed = new URL(boxUrl);
+  } catch {
+    return null;
+  }
+  const name = parsed.host.toLowerCase().replace(SOURCE_ID_CHARS, '_').replace(SOURCE_ID_EDGES, '');
+  if (!name) {
+    return null;
+  }
+  return { ...SOURCE_FORM, name, displayName: parsed.host, url: parsed.origin };
 };
 
 /**

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaXmark } from 'react-icons/fa6';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import EmptyState from '../../../components/common/EmptyState';
 import PageHeader from '../../../components/common/PageHeader';
 import SubTable from '../../../components/common/SubTable';
+import { useNotify } from '../../../contexts/NoticeContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
@@ -123,13 +124,14 @@ const useAdding = asked => {
  * form under the heading and reads Cancel while it is open, and the
  * `add=host` query, the Datacenter node's Add host, opens the form on
  * arrival and is dropped from the route, the way the `tab` query of the
- * retired settings page was. The `create=machine` query, BoxVault's deep
- * link, moves to the page of the first host that offers a create,
- * `hostCreates`, the query and its box members kept, and stays on the
- * list while no host does.
+ * retired settings page was. The `create=machine` query, the Deploy
+ * hand-off's deep link, moves to the page of the first host that offers a
+ * create, `hostCreates`, the query and its seed kept, and stays on the
+ * list with one warning notice while no host does.
  */
 const HostsPage = ({ context }) => {
   const { t, i18n } = useTranslation();
+  const notify = useNotify();
   const { servers, loaded, failed, refresh } = useServers();
   const [searchParams, setSearchParams] = useSearchParams();
   const asked = searchParams.get(ADD_QUERY) === ADD_HOST;
@@ -141,6 +143,7 @@ const HostsPage = ({ context }) => {
   const creating = seed
     ? servers.find(server => hostCreates(server, context.user?.role)) || null
     : null;
+  const noticed = useRef(false);
   const ctx = { ...context, t, language: i18n.language, ...registry.ctx };
   const search = useDetailSearch({
     rows: manages ? registry.rows : servers,
@@ -161,6 +164,14 @@ const HostsPage = ({ context }) => {
       setSearchParams(withoutAdd(searchParams), { replace: true });
     }
   }, [asked, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!seed || !loaded || creating || noticed.current) {
+      return;
+    }
+    noticed.current = true;
+    notify('warning', t('hosts.deploy.noHostCreates'));
+  }, [seed, loaded, creating, notify, t]);
 
   if (!loaded) {
     return (

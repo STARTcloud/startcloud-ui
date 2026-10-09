@@ -100,6 +100,90 @@ Feature: machine create
     Then the wizard is on the step "box"
     And the field "machine-setting-box" reads "startcloud/debian13"
 
+  Scenario: Create wizard: the deep link of the catalog on an agent role, `/?create=machine` with a provisioner and the box of its provider moves to the one serving agent, lands the box on the Box step and picks the family and the version
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    Then the path is "/hosts/self?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    And the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I check the field "machine-create-advanced"
+    And I send the open dialog
+    Then the wizard is on the step "box"
+    And the open dialog notes "box-seeded"
+    And the open dialog notes no "box-source"
+    And the field "machine-setting-box" reads "STARTcloud/debian13"
+    And the field "machine-setting-box_version" reads "13.1.0"
+    And the field "machine-setting-box_arch" reads "amd64"
+    And the field "machine-setting-box_url" reads "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
+    When I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the field "machine-create-provisioner" reads "startcloud"
+    And the field "machine-create-version" reads "0.1.27"
+    And the host was sent GET to "/api/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
+
+  Scenario: Create wizard: the deep link of BoxVault wins over the catalog's box_<provider> member when a query carries both
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self?create=machine&box=startcloud%2Fdebian13&box_version=13.0.0&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    Then the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    Then the wizard is on the step "box"
+    And the field "machine-setting-box" reads "startcloud/debian13"
+    And the field "machine-setting-box_version" reads "13.0.0"
+
+  Scenario: Create wizard: the deep link of the catalog on a bhyve host picks box_zone over box_virtualbox
+    Given the host answers the zones fixture
+    And the host answers the zones-machines fixture
+    And the host answers the zones-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self?create=machine&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox&box_zone=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fzone"
+    Then the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I check the field "machine-create-advanced"
+    And I send the open dialog
+    Then the wizard is on the step "box"
+    And the field "machine-setting-box" reads "STARTcloud/debian13"
+    And the field "machine-setting-box_url" reads "https://boxvault.example.com/STARTcloud/debian13/13.1.0/zone"
+    And the open dialog notes no "box-source"
+
+  Scenario: Create wizard: the deep link of the catalog on the server role, `/?create=machine` with a provisioner and its box moves to the first host that creates with every member kept
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    Then the path is "/hosts/1?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    And the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    Then the wizard is on the step "box"
+    And the field "machine-setting-box" reads "STARTcloud/debian13"
+    And the field "machine-setting-box_version" reads "13.1.0"
+
+  Scenario: Create wizard: the deep link on the server role stays on the hosts list with one warning notice while no host offers a create
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    Then I see "Desk"
+    And the path is "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    And the page raised 1 warning notice
+    And no dialog is open
+
   Scenario: Create wizard: the deep link of the catalog, `?create=machine` with a provisioner picks the family named after its slash and the named version on the Provisioning step and reads the version's manifest once
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -187,6 +271,138 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying "provisioner-catalog.example.com" at "/display_name"
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" carrying "provisioner_catalog_example_com_api_private_0b7c1d52_6f0e_4c0a_9a54_3c1f6f2a9e11_catalog" at "/source_name"
     And the wizard's provisioner card reads "installing"
+
+  Scenario: Create wizard: the deep link of the catalog, a source add the host refuses says the provisioner was not found at its catalog with the agent's word and Retry, and nothing installs
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-create-uncatalogued fixture
+    And the host answers the hosts-events fixture
+    And the host refuses the next POST to "/api/agents/1/provisioning/catalog/sources"
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine&provisioner=acme%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fapi%2Fprivate%2F0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11%2Fcatalog"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard's provisioner card reads "add"
+    When I press the open dialog's "provisioner-add-source" action
+    Then the host was sent POST to "/api/agents/1/provisioning/catalog/sources" 1 times
+    And the wizard's provisioner card reads "failed"
+    And I see "url must be reachable"
+    And the open dialog offers "provisioner-retry"
+    And the host was not sent POST to "/api/agents/1/provisioning/catalog/install"
+
+  Scenario: Create wizard: the deep link of the catalog, a private catalog the agent's own sign-in cannot read puts Sign in with SSO to continue on the card and installs nothing
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-create-signin fixture
+    And the host answers the hosts-events fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine&provisioner=acme%2Fprivate_only_provisioner&provisioner_version=1.0.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard's provisioner card reads "signin"
+    And the host was sent GET to "/api/agents/1/provisioning/catalog" 1 times
+    And the host was not sent POST to "/api/agents/1/provisioning/catalog/install"
+    And the host was not sent POST to "/api/agents/1/provisioning/catalog/sources"
+
+  Scenario: Create wizard: the whole hand-off on an agent role, the box's registry added on Add registry and continue, the family installed on Install and continue, and Create queued with the box's download in front of the build
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the host answers the agent-create-deploy fixture
+    And the stream holds the catalog-install-agent frames
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/?create=machine&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_url=https%3A%2F%2Fgithub.com%2FSTARTcloud%2Fhcl_domino_additional_provisioner%2Freleases%2Fdownload%2Fv0.3.0%2Fhcl_domino_additional_provisioner-0.3.0.tar.gz&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    Then the path is "/hosts/self?create=machine&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_url=https%3A%2F%2Fgithub.com%2FSTARTcloud%2Fhcl_domino_additional_provisioner%2Freleases%2Fdownload%2Fv0.3.0%2Fhcl_domino_additional_provisioner-0.3.0.tar.gz&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    And the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    Then the wizard is on the step "box"
+    And the field "machine-setting-box" reads "STARTcloud/debian13"
+    And the field "machine-setting-box_version" reads "13.1.0"
+    And the wizard's box registry card reads "add"
+    And the host was not sent PUT to "/api/config/storage"
+    When the host answers the agent-create-deployed fixture
+    And I press the open dialog's "box-source-add" action
+    Then the host was sent PUT to "/api/config/storage" carrying "https://boxvault.example.com" at "/template_sources/sources/boxvault_example_com/url"
+    And the host was sent PUT to "/api/config/storage" carrying "boxvault.example.com" at "/template_sources/sources/boxvault_example_com/display_name"
+    And the host was sent PUT to "/api/config/storage" carrying "false" at "/template_sources/sources/boxvault_example_com/default"
+    And the host was sent PUT to "/api/config/storage" 1 times
+    And the host was sent GET to "/api/templates/sources" 2 times
+    And the open dialog notes no "box-source"
+    When I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the wizard's provisioner card reads "install"
+    When I press the open dialog's "provisioner-install" action
+    Then the host was sent POST to "/api/provisioning/catalog/install" carrying "hcl_domino_additional_provisioner" at "/name"
+    And the host was sent POST to "/api/provisioning/catalog/install" carrying "0.3.0" at "/version"
+    And the wizard's provisioner card reads "installing"
+    When the stream releases its frames
+    Then the field "machine-create-provisioner" reads "hcl_domino_additional_provisioner"
+    And the field "machine-create-version" reads "0.3.0"
+    And the field "prov-field-domino_server_name" reads "additional"
+    And the open dialog notes no "provisioner-install"
+    When I send the open dialog
+    Then the wizard is on the step "confirm"
+    And the wizard's confirm rows include "STARTcloud/debian13"
+    And the wizard's confirm rows include "hcl_domino_additional_provisioner/0.3.0"
+    When I send the open dialog
+    Then the host was sent POST to "/api/machines" carrying "STARTcloud/debian13" at "/settings/box"
+    And the host was sent POST to "/api/machines" carrying "13.1.0" at "/settings/box_version"
+    And the host was sent POST to "/api/machines" carrying "amd64" at "/settings/box_arch"
+    And the host was sent POST to "/api/machines" carrying "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox" at "/settings/box_url"
+    And the host was sent POST to "/api/machines" carrying "template" at "/disks/boot/type"
+    And the host was sent POST to "/api/machines" carrying "hcl_domino_additional_provisioner" at "/provisioner/name"
+    And the host was sent POST to "/api/machines" 1 times
+    And the page raised 1 success notice
+    And the page raised 1 info notice
+    And no dialog is open
+
+  Scenario: Create wizard: a registry add the host refuses says so with the agent's word and Retry, and nothing is created
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the host answers the agent-create-deploy fixture
+    And the host refuses the next PUT to "/api/config/storage"
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self?create=machine&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    Then the wizard's box registry card reads "add"
+    When I press the open dialog's "box-source-add" action
+    Then the host was sent PUT to "/api/config/storage" 1 times
+    And the wizard's box registry card reads "failed"
+    And I see "url must be reachable"
+    And the open dialog offers "box-source-retry"
+    And the host was not sent POST to "/api/machines"
+
+  Scenario: Create wizard: the deep link on an agent role stays on the dashboard with one warning notice while the agent offers no create
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    Then the path is "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    And the page raised 1 warning notice
+    And no dialog is open
 
   Scenario: Create wizard: the deep link of the catalog, an install that fails says the provisioner was not found at its catalog with the agent's word and Retry reads the catalogs again
     Given the host answers the hosts fixture

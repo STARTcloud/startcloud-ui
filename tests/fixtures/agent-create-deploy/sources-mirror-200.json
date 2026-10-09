@@ -1,0 +1,11 @@
+{
+  "sources": [
+    {
+      "id": "mirror",
+      "name": "Mirror",
+      "url": "https://mirror.example.com",
+      "enabled": true,
+      "default": true
+    }
+  ]
+}

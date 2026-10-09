@@ -72,10 +72,30 @@ Feature: deploy target
     And the page raised 1 warning notice
     And the warning notice's action links to "hwa://open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=http%3A%2F%2F127.0.0.1%3A4173"
 
-  Scenario: Deploy: the provisioners collection sends the provisioner seed with the catalog the family came from
+  Scenario: Deploy: a visitor signed out with no agent answering sees the one dialog, Install Hyperweaver Agent, Join a Hyperweaver server and Support
+    Given the host answers the deploy-target fixture
+    And the host answers the deploy-target-idp fixture
+    And the local agent does not answer
+    When I open "/"
+    And I press the Deploy glyph
+    Then the local agent was asked its status
+    And the no-agent dialog offers "install-agent" linking to "https://github.com/Makr91/hyperweaver-agent/releases/latest"
+    And the no-agent dialog offers "join-server" linking to "https://auth.example.com/user/integrations/hyperweaver"
+    And the no-agent dialog offers "support" linking to "https://support.example.com/tickets/new?source=hyperweaver&req=sso&customerId=A1B2C3&context=boxvault%7C0.77.0"
+
+  Scenario: Deploy: the provisioners collection sends the provisioner seed with the catalog the family came from, and no box for a version the catalog verified with none
     Given the host answers the deploy-target-catalog fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
     When I open "/"
     Then I see "hcl-domino"
     And the Deploy glyph links to "https://hw.example.com/?create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json"
+    And the Deploy glyph opens in a new tab
+
+  Scenario: Deploy: the provisioners collection sends the verified box of each provider after the provisioner seed, one box_<provider> member a provider
+    Given the host answers the deploy-target-catalog fixture
+    And the host answers the deploy-target-catalog-boxes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then I see "hcl-domino"
+    And the Deploy glyph links to "https://hw.example.com/?create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json&box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fvirtualbox&box_zone=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2FSTARTcloud%2Fdebian13%2F13.1.0%2Fzone"
     And the Deploy glyph opens in a new tab

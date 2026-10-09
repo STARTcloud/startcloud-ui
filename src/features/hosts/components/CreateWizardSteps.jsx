@@ -8,6 +8,7 @@ import { boxOptionsOf } from '../utils/machineCreate';
 import { agentDefaultLabel, zfsDatasetOptions, zfsPoolOptions } from '../utils/machineHelpers';
 import { humanSize } from '../utils/zfsUtils';
 
+import BoxSourceCard from './BoxSourceCard';
 import {
   CpuTopologyInputs,
   HARDWARE_SECTIONS,
@@ -527,10 +528,12 @@ BoxAdvancedFields.propTypes = {
 
 /**
  * The OS / Box step: the boot media, a box template, a blank disk, an
- * existing image or no disk; on a template boot the registry filter, each
- * registry by its key and drawn by its display name, the
- * one merged image list of every registry's catalog and the local
- * templates with Custom for a hand-typed image, the version, under
+ * existing image or no disk; on a template boot the registry card of a
+ * handed box whose registry the host does not hold, `registry` the state
+ * of `useTemplateSource`, the line naming the handed box, `seededBox`, the
+ * registry filter, each registry by its key and drawn by its display
+ * name, the one merged image list of every registry's catalog and the
+ * local templates with Custom for a hand-typed image, the version, under
  * Advanced the architecture and the registry URL, and Browse BoxVault
  * where the server role offers it.
  */
@@ -548,6 +551,8 @@ export const BoxStep = ({
   setBoxPickCustom,
   bootSource,
   setBootSource,
+  registry = null,
+  seededBox = null,
   onBrowseBoxVault = null,
   advanced,
   loading,
@@ -603,6 +608,22 @@ export const BoxStep = ({
       )}
       {bootSource === 'template' ? (
         <>
+          {registry ? (
+            <div className="col-12">
+              <BoxSourceCard source={registry} />
+            </div>
+          ) : null}
+          {seededBox && boxPickCustom ? (
+            <div className="col-12">
+              <p className="form-text text-muted mb-0" data-note="box-seeded">
+                {t('machineEdit.createWizardSteps.seededBox', {
+                  box: seededBox.box,
+                  version: seededBox.box_version,
+                  arch: seededBox.box_arch,
+                })}
+              </p>
+            </div>
+          ) : null}
           {catalogNote ? (
             <div className="col-12">
               <p className="form-text text-warning mb-0" data-note="catalog">
@@ -690,6 +711,13 @@ BoxStep.propTypes = {
   setBoxPickCustom: PropTypes.func.isRequired,
   bootSource: PropTypes.string.isRequired,
   setBootSource: PropTypes.func.isRequired,
+  registry: PropTypes.object,
+  seededBox: PropTypes.shape({
+    box: PropTypes.string.isRequired,
+    box_version: PropTypes.string.isRequired,
+    box_arch: PropTypes.string.isRequired,
+    box_url: PropTypes.string.isRequired,
+  }),
   onBrowseBoxVault: PropTypes.func,
   advanced: PropTypes.bool,
   loading: PropTypes.bool,

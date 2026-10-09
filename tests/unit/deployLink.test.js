@@ -5,6 +5,7 @@ import {
   deployHref,
   deployQuery,
   deployTargetOf,
+  isBoxProviderKey,
   isLocalTarget,
   probeOriginOf,
 } from '../../src/features/deploy/utils/deployLink.js';
@@ -51,6 +52,41 @@ describe('deployQuery', () => {
       'box_arch',
       'box_url',
     ]);
+  });
+
+  it('carries the box_<provider> members after the fixed ones sorted by key, an empty one left out', () => {
+    const query = deployQuery({
+      ...provisionerSeed,
+      box_zone: 'STARTcloud/debian13@13.1.0@amd64@https://boxvault.example.com/z',
+      box_virtualbox: 'STARTcloud/debian13@13.1.0@amd64@https://boxvault.example.com/v',
+      box_utm: '',
+    });
+    expect([...new URLSearchParams(query).keys()]).toEqual([
+      'create',
+      'provisioner',
+      'provisioner_version',
+      'provisioner_url',
+      'provisioner_catalog',
+      'box_virtualbox',
+      'box_zone',
+    ]);
+    expect(query).toContain(
+      'box_virtualbox=STARTcloud%2Fdebian13%4013.1.0%40amd64%40https%3A%2F%2Fboxvault.example.com%2Fv'
+    );
+  });
+
+  it('refuses a provider name outside the vocabulary and never doubles a fixed box member', () => {
+    expect(isBoxProviderKey('box_virtualbox')).toBe(true);
+    expect(isBoxProviderKey('box_zone-x_1')).toBe(true);
+    expect(isBoxProviderKey('box_version')).toBe(false);
+    expect(isBoxProviderKey('box_arch')).toBe(false);
+    expect(isBoxProviderKey('box_url')).toBe(false);
+    expect(isBoxProviderKey('box')).toBe(false);
+    expect(isBoxProviderKey('box_Virtual')).toBe(false);
+    expect(isBoxProviderKey('box_')).toBe(false);
+    expect(deployQuery({ box: 'a/b', box_Virtual: 'x', boxes: 'y' })).toBe(
+      'create=machine&box=a%2Fb'
+    );
   });
 });
 
@@ -102,13 +138,19 @@ describe('deployHref', () => {
     );
   });
 
-  it('keeps the query under the agent limit for the two seeds, a private catalog URL included', () => {
+  it('keeps the query under the agent limit for the two seeds, a private catalog URL and two boxes included', () => {
     expect(deployHref('local', boxSeed).length).toBeLessThan(2048);
     expect(
       deployHref('local', {
         ...provisionerSeed,
+        provisioner_url:
+          'https://github.com/STARTcloud/hcl_domino_additional_provisioner/releases/download/v0.3.0/hcl_domino_additional_provisioner-0.3.0.tar.gz',
         provisioner_catalog:
           'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog',
+        box_virtualbox:
+          'STARTcloud/debian13@13.1.0@amd64@https://boxvault.startcloud.com/STARTcloud/debian13/13.1.0/virtualbox',
+        box_zone:
+          'STARTcloud/debian13@13.1.0@amd64@https://boxvault.startcloud.com/STARTcloud/debian13/13.1.0/zone',
       }).length
     ).toBeLessThan(2048);
   });

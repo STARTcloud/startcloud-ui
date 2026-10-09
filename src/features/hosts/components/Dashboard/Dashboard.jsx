@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ButtonGroup, Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaTableColumns } from 'react-icons/fa6';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
 import PageHeader from '../../../../components/common/PageHeader';
+import { useNotify } from '../../../../contexts/NoticeContext';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../../hooks/useDetailSearch';
 import { useFolds } from '../../../../hooks/useFolds';
@@ -185,11 +186,12 @@ const useHeld = () => {
  * query, the Deploy hand-off landing on `/`, moves to the page of the
  * first host that offers a create, `hostCreates`, the query and its seed
  * kept, the way the hosts page moves it on the server role, and stays on
- * the dashboard while no host does.
+ * the dashboard with one warning notice while no host does.
  */
 const Dashboard = ({ context }) => {
   const { t } = useTranslation();
   const status = useStatus();
+  const notify = useNotify();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const seed = createSeedOf(searchParams);
@@ -228,10 +230,19 @@ const Dashboard = ({ context }) => {
   const machines = servers.some(server => hostHasFeature(server, 'machines'));
   const firstMachines = servers.find(server => hostHasFeature(server, 'machines'));
   const firstCreates = servers.find(server => hostCreates(server, context.user?.role));
+  const noticed = useRef(false);
 
   useEffect(() => {
     document.title = `${t('dashboard.dashboard.infrastructureOverview')} · ${context.appName}`;
   }, [t, context.appName]);
+
+  useEffect(() => {
+    if (!seed || !loaded || firstCreates || noticed.current) {
+      return;
+    }
+    noticed.current = true;
+    notify('warning', t('hosts.deploy.noHostCreates'));
+  }, [seed, loaded, firstCreates, notify, t]);
 
   const refresh = () => {
     refreshServers();

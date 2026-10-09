@@ -21,10 +21,19 @@ import {
   installOfferOf,
   nextServerIdOf,
   parseVboxPassthrough,
+  seedBoxFor,
+  seedBoxOf,
   seedFamilyOf,
   stepProblemOf,
+  templateSourceFor,
+  templateSourceFormOf,
   withoutCreateSeed,
 } from '../../src/features/hosts/utils/machineCreate.js';
+
+const VBOX_BOX =
+  'STARTcloud/debian13@13.1.0@amd64@https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox';
+const ZONE_BOX =
+  'STARTcloud/debian13@13.1.0@amd64@https://boxvault.example.com/STARTcloud/debian13/13.1.0/zone';
 
 const hostOf = (hypervisors, features) => ({ capabilities: { hypervisors, features } });
 
@@ -107,9 +116,49 @@ describe('the deep link', () => {
 
   it('takes the deep link out of the query and leaves the rest', () => {
     const params = new URLSearchParams(
-      'tab=x&create=machine&box=a&box_version=1&provisioner=p&provisioner_version=2&provisioner_url=u&provisioner_catalog=c'
+      'tab=x&create=machine&box=a&box_version=1&provisioner=p&provisioner_version=2&provisioner_url=u&provisioner_catalog=c&box_virtualbox=v&box_zone=z'
     );
     expect(withoutCreateSeed(params).toString()).toBe('tab=x');
+  });
+
+  it('reads the box_<provider> members of the catalog beside the fixed ones and no other box_ key', () => {
+    const seed = createSeedOf(
+      new URLSearchParams(
+        `create=machine&provisioner=STARTcloud%2Fstartcloud&box_zone=${encodeURIComponent(ZONE_BOX)}&box_virtualbox=${encodeURIComponent(VBOX_BOX)}&box_Virtual=x&box_utm=`
+      )
+    );
+    expect(seed).toMatchObject({
+      box: '',
+      provisioner: 'STARTcloud/startcloud',
+      box_virtualbox: VBOX_BOX,
+      box_zone: ZONE_BOX,
+    });
+    expect(seed).not.toHaveProperty('box_Virtual');
+    expect(seed).not.toHaveProperty('box_utm');
+    expect(Object.keys(seed)).toEqual([
+      'box',
+      'box_version',
+      'box_arch',
+      'box_url',
+      'provisioner',
+      'provisioner_version',
+      'provisioner_url',
+      'provisioner_catalog',
+      'box_virtualbox',
+      'box_zone',
+    ]);
+  });
+
+  it('routes the box_<provider> members after the fixed ones, sorted by key', () => {
+    expect(
+      createRouteOf('self', {
+        box_zone: 'z',
+        provisioner: 'a/b',
+        box_virtualbox: 'v',
+        box_utm: '',
+        box_version: '',
+      })
+    ).toBe('/hosts/self?create=machine&provisioner=a%2Fb&box_virtualbox=v&box_zone=z');
   });
 
   it('names the host family by the part of the handed provisioner after its slash', () => {
@@ -134,6 +183,105 @@ describe('the deep link', () => {
     ).toBe(
       '/hosts/self?create=machine&provisioner=a%2Fb&provisioner_catalog=https%3A%2F%2Fc%2Fcatalog.json'
     );
+  });
+});
+
+describe('the box of the host', () => {
+  const seed = { box: '', box_virtualbox: VBOX_BOX, box_zone: ZONE_BOX };
+
+  it('picks the member of the host hypervisor, box_virtualbox on VirtualBox and box_zone then box_bhyve on bhyve', () => {
+    expect(seedBoxFor(seed, ['virtualbox'])).toEqual({
+      box: 'STARTcloud/debian13',
+      box_version: '13.1.0',
+      box_arch: 'amd64',
+      box_url: 'https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox',
+    });
+    expect(seedBoxFor(seed, ['bhyve']).box_url).toBe(
+      'https://boxvault.example.com/STARTcloud/debian13/13.1.0/zone'
+    );
+    expect(seedBoxFor({ box_bhyve: 'a/b@1@arm64@https://x' }, ['bhyve'])).toEqual({
+      box: 'a/b',
+      box_version: '1',
+      box_arch: 'arm64',
+      box_url: 'https://x',
+    });
+  });
+
+  it('picks box_utm then box_virtualbox on UTM, in the order of the host hypervisors', () => {
+    expect(
+      seedBoxFor({ box_utm: 'a/b@1@arm64@u', box_virtualbox: VBOX_BOX }, ['utm']).box_url
+    ).toBe('u');
+    expect(seedBoxFor({ box_virtualbox: VBOX_BOX }, ['utm']).box_arch).toBe('amd64');
+    expect(seedBoxFor(seed, ['bhyve', 'virtualbox']).box_url).toContain('/zone');
+  });
+
+  it('answers null while no member fits the host, the host names no hypervisor or the member names no box', () => {
+    expect(seedBoxFor(seed, ['xen'])).toBeNull();
+    expect(seedBoxFor(seed, [])).toBeNull();
+    expect(seedBoxFor(seed, undefined)).toBeNull();
+    expect(seedBoxFor(null, ['virtualbox'])).toBeNull();
+    expect(seedBoxFor({ box_virtualbox: '@1@amd64@u' }, ['virtualbox'])).toBeNull();
+    expect(seedBoxFor({ box_virtualbox: 'a/b' }, ['virtualbox'])).toEqual({
+      box: 'a/b',
+      box_version: '',
+      box_arch: '',
+      box_url: '',
+    });
+  });
+
+  it('lets a plain box seed win over the box_<provider> members', () => {
+    expect(
+      seedBoxOf({ ...seed, box: 'startcloud/debian13', box_version: '13.0.0' }, ['virtualbox'])
+    ).toEqual({ box: 'startcloud/debian13', box_version: '13.0.0', box_arch: '', box_url: '' });
+    expect(seedBoxOf(seed, ['virtualbox']).box).toBe('STARTcloud/debian13');
+    expect(seedBoxOf(null, ['virtualbox'])).toBeNull();
+  });
+});
+
+describe('the registry of a handed box', () => {
+  const sources = [
+    {
+      id: 'mirror',
+      name: 'Mirror',
+      url: 'https://mirror.example.com',
+      enabled: true,
+      default: false,
+    },
+    {
+      id: 'boxvault',
+      name: 'BoxVault',
+      url: 'https://boxvault.example.com',
+      enabled: true,
+      default: true,
+    },
+    { id: 'old', name: 'Old', url: 'https://old.example.com', enabled: false, default: false },
+  ];
+
+  it('finds the enabled source the box URL starts with, the default one for no URL, none otherwise', () => {
+    expect(templateSourceFor(sources, 'https://boxvault.example.com/STARTcloud/debian13').id).toBe(
+      'boxvault'
+    );
+    expect(templateSourceFor(sources, '').id).toBe('boxvault');
+    expect(templateSourceFor(sources, 'https://old.example.com/x')).toBeNull();
+    expect(templateSourceFor(sources, 'https://elsewhere.example.com/x')).toBeNull();
+    expect(templateSourceFor([], 'https://boxvault.example.com/x')).toBeNull();
+    expect(templateSourceFor(null, '')).toBeNull();
+  });
+
+  it('shapes the registry form from the box URL, its host the id and the display name and its origin the URL', () => {
+    expect(
+      templateSourceFormOf('https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox')
+    ).toEqual({
+      name: 'boxvault_example_com',
+      displayName: 'boxvault.example.com',
+      url: 'https://boxvault.example.com',
+      isDefault: false,
+      auth_token: '',
+      ca_file: '',
+    });
+    expect(templateSourceFormOf('http://127.0.0.1:4173/x').name).toBe('127_0_0_1_4173');
+    expect(templateSourceFormOf('not a url')).toBeNull();
+    expect(templateSourceFormOf('')).toBeNull();
   });
 });
 

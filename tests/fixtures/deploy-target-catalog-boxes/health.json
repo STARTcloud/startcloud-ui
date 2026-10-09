@@ -1,0 +1,39 @@
+{
+  "provisioners": {
+    "hcl-domino": {
+      "tier": "silver",
+      "rules": {},
+      "failed_rules": [],
+      "presentation": { "label": "HCL Domino" },
+      "health": {
+        "downloads": 12,
+        "artifacts_ok": true,
+        "sidecars_ok": true,
+        "versions": {
+          "2.0.0": {
+            "providers": ["virtualbox", "zones"],
+            "tier": "silver",
+            "rules": {},
+            "failed_rules": [],
+            "boxes": {
+              "virtualbox": {
+                "organization": "STARTcloud",
+                "name": "debian13",
+                "version": "13.1.0",
+                "architecture": "amd64",
+                "url": "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
+              },
+              "zone": {
+                "organization": "STARTcloud",
+                "name": "debian13",
+                "version": "13.1.0",
+                "architecture": "amd64",
+                "url": "https://boxvault.example.com/STARTcloud/debian13/13.1.0/zone"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

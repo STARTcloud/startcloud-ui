@@ -1,0 +1,25 @@
+{
+  "name": "STARTcloud provisioner catalog",
+  "format_version": 1,
+  "updated": "2026-09-27T00:00:00.000Z",
+  "provisioners": [
+    {
+      "name": "hcl_domino_additional_provisioner",
+      "repo": "STARTcloud/hcl_domino_additional_provisioner",
+      "description": "An additional HCL Domino server beside an existing one",
+      "versions": [
+        {
+          "version": "0.3.0",
+          "released_at": "2026-09-26",
+          "artifacts": [
+            {
+              "url": "https://github.com/STARTcloud/hcl_domino_additional_provisioner/releases/download/v0.3.0/hcl_domino_additional_provisioner-0.3.0.tar.gz",
+              "checksum_type": "sha256",
+              "checksum": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

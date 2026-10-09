@@ -1,0 +1,37 @@
+{
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "metadata": {
+        "label": "STARTcloud",
+        "description": "The STARTcloud provisioner"
+      },
+      "valid": true,
+      "versions": [
+        {
+          "version": "0.1.27",
+          "dir": "startcloud/0.1.27"
+        },
+        {
+          "version": "0.1.26",
+          "dir": "startcloud/0.1.26"
+        }
+      ]
+    },
+    {
+      "name": "hcl_domino_additional_provisioner",
+      "metadata": {
+        "label": "HCL Domino additional server",
+        "description": "An additional HCL Domino server beside an existing one"
+      },
+      "valid": true,
+      "versions": [
+        {
+          "version": "0.3.0",
+          "dir": "hcl_domino_additional_provisioner/0.3.0"
+        }
+      ]
+    }
+  ],
+  "total": 2
+}

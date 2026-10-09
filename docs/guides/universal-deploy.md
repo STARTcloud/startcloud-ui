@@ -73,11 +73,22 @@ each key at most once, the whole at most 2048 bytes.
 | `provisioner_version` | the family's version                                  | the catalog  |
 | `provisioner_url`     | the URL of the version's package                      | the catalog  |
 | `provisioner_catalog` | the URL of the catalog document that lists the family | the catalog  |
+| `box_<provider>`      | the box the version is verified with on one provider  | the catalog  |
 
 `provisioner_catalog` is the document a host takes as a catalog source,
 fetched as given: `<catalog origin>/catalog.json` for the public catalog,
 `<catalog origin>/api/private/<organization uuid>/catalog` for an
 organization's private one.
+
+`box_<provider>` is one member per provider the catalog verified the
+version with, `<provider>` the provider's name in lowercase letters,
+digits, underscores and hyphens, `box_virtualbox`, `box_zone`,
+`box_bhyve`, `box_utm`; its value is
+`organization/name@version@architecture@url`, the box's four members
+joined by `@`, the URL everything after the third `@`, the whole value
+encoded once as the query encodes it. A version the catalog verified with
+no box sends none. The members follow the fixed ones, sorted by key, so
+a query reads the same from every sender.
 
 A sender sends the members it has and no other; a member it does not have
 is left out, never sent empty. A receiver reads `create` first and treats
@@ -165,10 +176,10 @@ The control is one link whose `href` is the target rule's link over the
 seed of that item and version. Nothing is read to draw it beyond the
 status, the session and the item.
 
-| Collection           | Seed                                                                           |
-| -------------------- | ------------------------------------------------------------------------------ |
-| BoxVault boxes       | `box`, `box_version`, `box_arch`, `box_url`                                    |
-| catalog provisioners | `provisioner`, `provisioner_version`, `provisioner_url`, `provisioner_catalog` |
+| Collection           | Seed                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| BoxVault boxes       | `box`, `box_version`, `box_arch`, `box_url`                                                      |
+| catalog provisioners | `provisioner`, `provisioner_version`, `provisioner_url`, `provisioner_catalog`, `box_<provider>` |
 
 A press asks `GET /api/status` of the target from the browser before it
 follows the link, and waits on no clock:
@@ -206,14 +217,31 @@ the query to the page of the first host whose row lists `machines` and
 stays on the list while no host does.
 
 On either, the host page opens the create wizard over itself while the
-host offers a create, the query's members seeding the wizard: the box
-members land on the Box step as a custom pick; `provisioner` names the
+host offers a create, the query's members seeding the wizard, and stays
+where it is with one notice while no host offers one: the box
+members land on the Box step as a custom pick, `box` with its three
+members where the query carries it, else the `box_<provider>` member the
+host's hypervisor picks, a VirtualBox host `box_virtualbox`, a bhyve host
+`box_zone` then `box_bhyve`, a UTM host `box_utm` then `box_virtualbox`,
+its four parts the box, the version, the architecture and the registry
+URL, so the Box step shows the box the catalog verified the version with;
+`provisioner` names the
 host's family by the part after its slash, picked on the Provisioning
 step once the host's provisioners have answered, and
 `provisioner_version` its version, or the family's first, once the family
 is picked, so the version's manifest is read as a person's own pick reads
 it. Closing the wizard takes the query out of the route, so a reload opens
 it again only when asked.
+
+A handed box whose registry the host does not hold, none of the host's
+template sources being one the box's URL starts with, puts one card on
+the Box step, **Add registry and continue**, whose press writes the
+registry through the host's `PUT config/storage`, the registry's host as
+its id and display name and its origin as its URL, and reads the
+registries again; a refused write says so with Retry. The agent's create resolves `settings.box_url` against its
+registries and chains the box's download in front of the build,
+answering `requires_download`, which the wizard's notice says, so the
+machine is built from a box the host never held.
 
 A family the host does not hold puts one card on the Provisioning step,
 while the host's task events reach the page:
@@ -256,11 +284,15 @@ A sender:
 
 A receiver:
 
-- reads `create` and refuses or ignores any key outside the table;
-- moves `/?<query>` to the first host that creates, or `self`;
-- opens the wizard seeded, asks, and writes nothing on its own;
-- installs a family it does not hold only on the person's press, through
-  its catalog install.
+- reads `create` and refuses or ignores any key outside the table, the
+  `box_<provider>` family inside it;
+- moves `/?<query>` to the first host that creates, or `self`, and says
+  so while none does;
+- opens the wizard seeded, the box of the host's hypervisor on the Box
+  step, asks, and writes nothing on its own;
+- installs a family it does not hold and adds a registry it does not hold
+  only on the person's press, through its catalog install and its storage
+  configuration.
 
 The identity provider:
 

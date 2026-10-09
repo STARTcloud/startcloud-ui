@@ -2998,6 +2998,9 @@
       "updateChangelog": "Registro de cambios",
       "updateNotes": "Notas de la versión · {{version}}",
       "updateAssets": "Artefactos"
+    },
+    "deploy": {
+      "noHostCreates": "Ningún host de aquí ofrece la creación de máquinas, así que el traspaso de Deploy se queda en esta página."
     }
   },
   "pages": {
@@ -11087,7 +11090,8 @@
       "existingBootNeedsPath": "Un disco de arranque existente necesita la ruta de su imagen.",
       "selectVersionOrNone": "Selecciona una versión para el aprovisionador elegido — o vuelve a establecerlo en Ninguno.",
       "fixHighlightedFields": "Corrige el campo de configuración resaltado: {{names}}.",
-      "fixHighlightedFields_plural": "Corrige los campos de configuración resaltados: {{names}}."
+      "fixHighlightedFields_plural": "Corrige los campos de configuración resaltados: {{names}}.",
+      "templateDownloadQueued": "La box {{box}} se descarga primero; la máquina se crea cuando llegue."
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11331,7 +11335,12 @@
       "provisionerSignIn": "Inicia sesión con SSO para continuar",
       "provisionerNotFound": "No se encontró este aprovisionador en su catálogo",
       "retry": "Reintentar",
-      "provisionerNoStream": "Este host no informa del progreso de las tareas; instala {{name}} desde la página del catálogo de aprovisionadores."
+      "provisionerNoStream": "Este host no informa del progreso de las tareas; instala {{name}} desde la página del catálogo de aprovisionadores.",
+      "boxSourceMissing": "Este host no tiene un registro de plantillas para {{host}}, así que la box no se puede descargar.",
+      "addRegistryAndContinue": "Agregar registro y continuar",
+      "boxSourceAdding": "Agregando el registro {{host}}…",
+      "boxSourceFailed": "No se pudo agregar el registro {{host}}.",
+      "seededBox": "Entregada por el catálogo: {{box}} {{version}} ({{arch}})"
     },
     "resources": {
       "hint": "Controles de recursos de zonecfg — «Establecer» reemplaza el recurso completo, «Eliminar» lo borra, «Sin cambios» no toca nada. Se aplica en el próximo arranque / ciclo de energía como el resto de cambios de infraestructura.",

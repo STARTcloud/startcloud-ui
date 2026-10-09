@@ -156,6 +156,22 @@ const failedOf = rules =>
       .filter(([, passed]) => !passed)
       .map(([name]) => `${tier}.${name}`)
   );
+const BOX_URL = 'https://boxvault.startcloud.com';
+const boxOf = provider => ({
+  organization: 'STARTcloud',
+  name: 'debian13',
+  version: '13.1.0',
+  architecture: 'amd64',
+  url: `${BOX_URL}/STARTcloud/debian13/13.1.0/${provider}`,
+});
+const BOX_PROVIDERS = { virtualbox: 'virtualbox', bhyve: 'zone', zones: 'zone', utm: 'utm' };
+const boxesOf = list =>
+  Object.fromEntries(
+    [...new Set(list.map(provider => BOX_PROVIDERS[provider]).filter(Boolean))].map(provider => [
+      provider,
+      boxOf(provider),
+    ])
+  );
 const versionHealth = ([version, list, tier]) => {
   const rules = rulesFor(tier);
   return [
@@ -165,15 +181,7 @@ const versionHealth = ([version, list, tier]) => {
       tier,
       rules,
       failed_rules: failedOf(rules),
-      boxes: {
-        virtualbox: {
-          organization: 'STARTcloud',
-          name: 'debian13',
-          version: '13.1.0',
-          architecture: 'amd64',
-          url: 'https://boxvault.startcloud.com/STARTcloud/debian13/13.1.0/virtualbox',
-        },
-      },
+      boxes: boxesOf(list),
     },
   ];
 };

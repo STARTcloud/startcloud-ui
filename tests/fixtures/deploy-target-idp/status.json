@@ -1,0 +1,20 @@
+{
+  "role": "boxvault",
+  "version": "0.77.0",
+  "brand": { "name": "BoxVault", "logo_url": "/brand/boxvault/mark.svg" },
+  "auth": ["backend"],
+  "idp": {
+    "issuer": "https://auth.example.com",
+    "client_id": "boxvault",
+    "scopes": "openid profile email",
+    "storage_prefix": "boxvault"
+  },
+  "collections": ["boxes"],
+  "features": ["deploy", "watches", "landing"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": {
+    "base_url": "https://support.example.com/tickets/new?source=hyperweaver",
+    "req_type": "sso",
+    "fallback_customer_id": "A1B2C3"
+  }
+}

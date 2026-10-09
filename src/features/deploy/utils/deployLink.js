@@ -8,6 +8,7 @@ const SEED_KEYS = [
   'provisioner_url',
   'provisioner_catalog',
 ];
+const BOX_PROVIDER = /^box_[a-z0-9_-]+$/u;
 const SERVICE = 'hyperweaver';
 const LOCAL = 'local';
 // Do not change this scheme without reading docs/guides/universal-deploy.md, "The agent's scheme".
@@ -18,17 +19,34 @@ export const AGENT_ORIGIN = 'https://127.0.0.1:9421';
 export const AGENT_DOWNLOAD_URL = 'https://github.com/Makr91/hyperweaver-agent/releases/latest';
 
 /**
+ * Whether a seed key is a `box_<provider>` member, the catalog's verified
+ * box of one provider, a provider name of lowercase letters, digits,
+ * underscores and hyphens; the fixed box members, `box_version`,
+ * `box_arch` and `box_url`, are never one.
+ *
+ * @param {string} key - The seed key
+ * @returns {boolean} True for a `box_<provider>` member
+ */
+export const isBoxProviderKey = key => BOX_PROVIDER.test(key) && !SEED_KEYS.includes(key);
+
+const providerKeysOf = seed =>
+  Object.keys(seed || {})
+    .filter(key => isBoxProviderKey(key) && seed[key])
+    .sort();
+
+/**
  * The query of the Deploy hand-off, `create=machine` first and then the
  * seed's members in the agent's order, `box`, `box_version`, `box_arch`,
  * `box_url`, `provisioner`, `provisioner_version`, `provisioner_url`,
- * `provisioner_catalog`, an empty member left out, each given once.
+ * `provisioner_catalog`, then the `box_<provider>` members sorted by key,
+ * an empty member left out, each given once.
  *
  * @param {Object} seed - The seed, one member a key of the two seeds
  * @returns {string} The query, without the leading `?`
  */
 export const deployQuery = seed => {
   const params = new URLSearchParams({ create: 'machine' });
-  SEED_KEYS.forEach(key => {
+  [...SEED_KEYS, ...providerKeysOf(seed)].forEach(key => {
     if (seed?.[key]) {
       params.set(key, String(seed[key]));
     }

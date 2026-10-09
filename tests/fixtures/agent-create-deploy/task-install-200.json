@@ -1,0 +1,22 @@
+{
+  "id": "c1000000-0000-4000-8000-000000000031",
+  "machine_name": "system",
+  "operation": "provisioner_catalog_install",
+  "status": "pending",
+  "priority": 60,
+  "created_by": "mark",
+  "depends_on": null,
+  "parent_task_id": null,
+  "error_message": null,
+  "created_at": "2026-09-27T12:00:00.000Z",
+  "started_at": null,
+  "completed_at": null,
+  "updatedAt": "2026-09-27T12:00:00.000Z",
+  "metadata": {
+    "name": "hcl_domino_additional_provisioner",
+    "version": "0.3.0",
+    "source_name": "startcloud"
+  },
+  "progress_percent": 0,
+  "progress_info": null
+}

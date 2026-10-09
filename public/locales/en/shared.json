@@ -2998,6 +2998,9 @@
       "updateChangelog": "Changelog",
       "updateNotes": "Release notes · {{version}}",
       "updateAssets": "Assets"
+    },
+    "deploy": {
+      "noHostCreates": "No host here offers a machine create, so the Deploy hand-off stays on this page."
     }
   },
   "pages": {
@@ -11087,7 +11090,8 @@
       "existingBootNeedsPath": "An existing boot disk needs its image path.",
       "selectVersionOrNone": "Select a version for the chosen provisioner — or set it back to None.",
       "fixHighlightedFields": "Fix the highlighted configuration field: {{names}}.",
-      "fixHighlightedFields_plural": "Fix the highlighted configuration fields: {{names}}."
+      "fixHighlightedFields_plural": "Fix the highlighted configuration fields: {{names}}.",
+      "templateDownloadQueued": "The box {{box}} is downloaded first; the machine is built when it lands."
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11331,7 +11335,12 @@
       "provisionerSignIn": "Sign in with SSO to continue",
       "provisionerNotFound": "Couldn't find this provisioner at its catalog",
       "retry": "Retry",
-      "provisionerNoStream": "This host does not report task progress; install {{name}} from the Provisioner catalog page."
+      "provisionerNoStream": "This host does not report task progress; install {{name}} from the Provisioner catalog page.",
+      "boxSourceMissing": "This host has no box registry for {{host}}, so the box cannot be downloaded.",
+      "addRegistryAndContinue": "Add registry and continue",
+      "boxSourceAdding": "Adding the registry {{host}}…",
+      "boxSourceFailed": "Couldn't add the registry {{host}}.",
+      "seededBox": "Handed by the catalog: {{box}} {{version}} ({{arch}})"
     },
     "resources": {
       "hint": "zonecfg resource controls — set replaces the whole resource, remove deletes it, unchanged touches nothing. Applies at the next boot / power cycle like other infrastructure changes.",
