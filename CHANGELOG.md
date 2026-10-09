@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.57.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.56.0...v0.57.0) (2026-10-09)
+
+
+### Features
+
+* the Deploy hand-off carrying the box each provisioner version is verified with, one query member per provider, the create wizard picking the member for the host's hypervisor and landing it on the Box step as the catalog's pick beside the family and the version, BoxVault's own box seed winning where handed, a host with no box registry for that box offering Add registry and continue over the storage config, Create downloading the box first and saying so, the hosts page and the dashboard keeping the hand-off with one notice where no host creates, the server role carrying every member to the first host that creates, a refused source or registry add ending in Couldn't find with Retry, and every case of the deploy flow proven by a scenario; the provisioner card's byline the organization's name alone; every link in the Update page's release notes opening its own tab; the deploy contract, the mock's verified boxes, the fixtures, the English and Spanish keys and the unit tests following ([f3339c1](https://github.com/STARTcloud/startcloud-ui/commit/f3339c13193dc18015f81c4b51c44025f8b636a6))
+* the Deploy hand-off vocabulary grown to four words, machine, provisioner, template and source, each with its own keys and its own landing, the Deploy control a split control whose glyph stays the one press for a machine and whose chevron opens Deploy a machine, Install on my agent or Pull as a template, and Add this catalog or registry as a source, every row through the target rule and the status probe; the hosts page on cards and table by the person's toggle, a hand-off on a server with several hosts drawn as a keyed banner over it with every host that can take it a press and every other greyed with its reason, one host jumping straight and none staying on the banner; the Provisioner catalog page landing an install with the family's card marked and gaining an Add source dialog, the Templates page landing a pull with its dialog filled behind the registry card and a registry add with its dialog filled; the deploy, pages and navbar contracts, the asks to the agent, the server, the catalog and BoxVault, the fixtures, thirteen scenarios, the unit tests and the English and Spanish keys following ([393cbe6](https://github.com/STARTcloud/startcloud-ui/commit/393cbe614ca94cc9357cadcd1a4165ca2b6373bc))
+
 ## [0.56.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.55.0...v0.56.0) (2026-10-09)
 
 
