@@ -13,6 +13,7 @@ import {
   sourceKeyOf,
   sourceLabelOf,
 } from '../utils/boxCatalog';
+import { templateSourceFor } from '../utils/machineCreate';
 import {
   EXPORT_FORM,
   PULL_FORM,
@@ -28,6 +29,7 @@ import {
   templatePublishProblem,
 } from '../utils/manageCatalog';
 
+import BoxSourceCard from './BoxSourceCard';
 import { PathInput } from './PathPicker';
 import ToolFormDialog from './ToolFormDialog';
 
@@ -158,19 +160,50 @@ MachineSelect.propTypes = {
 };
 
 /**
+ * The pull form a handed box fills: the organization and the box from
+ * `organization/name`, the version and the architecture as handed.
+ *
+ * @param {{ box: string, box_version: string, box_arch: string }} seed - The handed box
+ * @returns {Object} The form, the shape of `PULL_FORM`
+ */
+export const pullFormOfSeed = seed => {
+  const [organization, ...name] = String(seed.box || '').split('/');
+  return {
+    organization: name.length > 0 ? organization : '',
+    boxName: name.length > 0 ? name.join('/') : organization,
+    version: seed.box_version || '',
+    architecture: seed.box_arch || '',
+  };
+};
+
+/**
  * The pull dialog, hyperweaver-ui's: the registry, opening on the
  * default one, picked by its key and drawn by its display name, its
  * catalog at `templates/remote/{key}` read once a registry is picked and again on
  * a change, the box picked from it filling the organization, the box,
  * the version among its versions and the architecture among its
  * architectures, each typed otherwise; the submit hands the body of
- * `pullBody` up, a queued task.
+ * `pullBody` up, a queued task. A handed box, `seed`, fills the fields
+ * and opens the dialog on the registry its `box_url` names,
+ * `templateSourceFor`, and `registry`, the state of `useTemplateSource`,
+ * draws the registry card over the fields and holds the submit while the
+ * host lacks that registry.
  */
-export const PullModal = ({ id, sources, busy, onClose, onSubmit }) => {
+export const PullModal = ({
+  id,
+  sources,
+  busy,
+  onClose,
+  onSubmit,
+  seed = null,
+  registry = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [source, setSource] = useState(() => sourceKeyOf(pickDefaultSource(sources)));
-  const [form, setForm] = useState(PULL_FORM);
+  const [chosen, setChosen] = useState(null);
+  const handedKey = seed ? sourceKeyOf(templateSourceFor(sources, seed.box_url)) : '';
+  const source = chosen ?? (handedKey || sourceKeyOf(pickDefaultSource(sources)));
+  const [form, setForm] = useState(() => (seed ? pullFormOfSeed(seed) : PULL_FORM));
   const [pick, setPick] = useState('');
   const [problem, setProblem] = useState('');
   const catalog = useManageRead(
@@ -206,10 +239,12 @@ export const PullModal = ({ id, sources, busy, onClose, onSubmit }) => {
       title={t('host.templatesManagement.pullTemplate')}
       submitKey="host.templatesManagement.queueDownload"
       problemKey={problem}
+      disabled={Boolean(registry?.offered)}
       busy={busy}
       onClose={onClose}
       onSubmit={submit}
     >
+      {registry ? <BoxSourceCard source={registry} /> : null}
       <div className="row g-3">
         <div className="col-12 col-md-6">
           <SourceSelect
@@ -218,7 +253,7 @@ export const PullModal = ({ id, sources, busy, onClose, onSubmit }) => {
             sources={sources}
             value={source}
             onChange={value => {
-              setSource(value);
+              setChosen(value);
               setPick('');
             }}
             disabled={busy}
@@ -342,6 +377,13 @@ PullModal.propTypes = {
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+  seed: PropTypes.shape({
+    box: PropTypes.string.isRequired,
+    box_version: PropTypes.string.isRequired,
+    box_arch: PropTypes.string.isRequired,
+    box_url: PropTypes.string.isRequired,
+  }),
+  registry: PropTypes.object,
 };
 
 /**
@@ -571,22 +613,33 @@ MoveModal.propTypes = {
  * switch, the API key and the CA file with the browse button, blank
  * credentials keeping the existing ones on an edit; the submit hands the
  * form up, and `errors`, the refusal's entries by form field, draws each
- * under the field it names.
+ * under the field it names; `seed`, the form of a handed registry URL,
+ * fills a new registry's fields.
  */
-export const SourceModal = ({ id, server, editing, errors = {}, busy, onClose, onSubmit }) => {
+export const SourceModal = ({
+  id,
+  server,
+  editing,
+  errors = {},
+  busy,
+  onClose,
+  onSubmit,
+  seed = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [form, setForm] = useState(() =>
-    editing
-      ? {
-          ...SOURCE_FORM,
-          name: sourceKeyOf(editing),
-          displayName: sourceDisplayNameOf(editing),
-          url: editing.url || '',
-          isDefault: Boolean(editing.default),
-        }
-      : SOURCE_FORM
-  );
+  const [form, setForm] = useState(() => {
+    if (editing) {
+      return {
+        ...SOURCE_FORM,
+        name: sourceKeyOf(editing),
+        displayName: sourceDisplayNameOf(editing),
+        url: editing.url || '',
+        isDefault: Boolean(editing.default),
+      };
+    }
+    return seed || SOURCE_FORM;
+  });
   const [problem, setProblem] = useState('');
   const patch = changes => setForm(current => ({ ...current, ...changes }));
   const submit = () => {
@@ -713,4 +766,5 @@ SourceModal.propTypes = {
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+  seed: PropTypes.object,
 };

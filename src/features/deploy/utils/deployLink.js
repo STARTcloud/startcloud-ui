@@ -13,6 +13,22 @@ const SERVICE = 'hyperweaver';
 const LOCAL = 'local';
 // Do not change this scheme without reading docs/guides/universal-deploy.md, "The agent's scheme".
 const SCHEME = 'hwa://open';
+const MACHINE = 'machine';
+const SOURCE = 'source';
+
+/**
+ * The seed keys of each word of the Deploy hand-off, in the agent's order:
+ * `machine` every fixed member, `provisioner` the family's four,
+ * `template` the box's four and `source` the one catalog or registry URL.
+ */
+export const WORD_KEYS = {
+  machine: SEED_KEYS,
+  provisioner: ['provisioner', 'provisioner_version', 'provisioner_url', 'provisioner_catalog'],
+  template: ['box', 'box_version', 'box_arch', 'box_url'],
+  source: ['provisioner_catalog', 'box_url'],
+};
+
+export const DEPLOY_WORDS = Object.keys(WORD_KEYS);
 
 export const AGENT_ORIGIN = 'https://127.0.0.1:9421';
 
@@ -34,19 +50,28 @@ const providerKeysOf = seed =>
     .filter(key => isBoxProviderKey(key) && seed[key])
     .sort();
 
+const keysOf = (seed, word) => {
+  const keys = WORD_KEYS[word] || SEED_KEYS;
+  if (word === SOURCE) {
+    return keys.filter(key => seed?.[key]).slice(0, 1);
+  }
+  return word === MACHINE ? [...keys, ...providerKeysOf(seed)] : keys;
+};
+
 /**
- * The query of the Deploy hand-off, `create=machine` first and then the
- * seed's members in the agent's order, `box`, `box_version`, `box_arch`,
- * `box_url`, `provisioner`, `provisioner_version`, `provisioner_url`,
- * `provisioner_catalog`, then the `box_<provider>` members sorted by key,
- * an empty member left out, each given once.
+ * The query of the Deploy hand-off: `create=<word>` first and then the
+ * word's own seed members in the agent's order, an empty member left out,
+ * each given once; `machine` carries the `box_<provider>` members sorted
+ * by key after the fixed ones, and `source` carries the one URL the seed
+ * holds, `provisioner_catalog` before `box_url`.
  *
  * @param {Object} seed - The seed, one member a key of the two seeds
+ * @param {string} [word] - The word under `create`, `machine` unless given
  * @returns {string} The query, without the leading `?`
  */
-export const deployQuery = seed => {
-  const params = new URLSearchParams({ create: 'machine' });
-  [...SEED_KEYS, ...providerKeysOf(seed)].forEach(key => {
+export const deployQuery = (seed, word = MACHINE) => {
+  const params = new URLSearchParams({ create: word });
+  keysOf(seed, word).forEach(key => {
     if (seed?.[key]) {
       params.set(key, String(seed[key]));
     }
@@ -70,16 +95,18 @@ export const deployTargetOf = claims => {
 };
 
 /**
- * The link the Deploy glyph opens: `hwa://open?<query>` for the `local`
+ * The link a Deploy control opens: `hwa://open?<query>` for the `local`
  * target, the agent's protocol scheme of the Universal Deploy Contract,
- * else `<origin>/?<query>`, the origin with no trailing slash.
+ * else `<origin>/?<query>`, the origin with no trailing slash, the query
+ * that of `deployQuery` for the seed and the word.
  *
  * @param {string} target - `local` or the origin, from `deployTargetOf`
  * @param {Object} seed - The seed of `deployQuery`
+ * @param {string} [word] - The word under `create`, `machine` unless given
  * @returns {string} The link
  */
-export const deployHref = (target, seed) => {
-  const query = deployQuery(seed);
+export const deployHref = (target, seed, word = MACHINE) => {
+  const query = deployQuery(seed, word);
   if (target === LOCAL) {
     return `${SCHEME}?${query}`;
   }

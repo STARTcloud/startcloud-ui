@@ -29,7 +29,9 @@ export const ManageRefreshContext = createContext(0);
  * `ManageRefreshContext`, and on `refresh`, the read a section asks
  * for after a write's answer; never on a clock. `message` is the
  * agent's own word for a read that failed. A section the host does not
- * offer asks for nothing and holds nothing.
+ * offer asks for nothing and holds nothing. `refresh` answers a promise
+ * of the data the read answered, null for a read that failed or that the
+ * host does not offer.
  *
  * @param {Function} read - The request, answering a promise of the data
  * @param {boolean} offered - Whether the host offers the read
@@ -43,16 +45,17 @@ export const useManageRead = (read, offered) => {
 
   const ask = useCallback(() => {
     if (!offered) {
-      return;
+      return Promise.resolve(null);
     }
     turn.current += 1;
     const own = turn.current;
-    readRef
+    return readRef
       .current()
       .then(data => {
         if (own === turn.current) {
           setState({ data, loaded: true, failed: false, message: '' });
         }
+        return data;
       })
       .catch(error => {
         log.api.error('Manage read failed', { error: error.message });
@@ -64,6 +67,7 @@ export const useManageRead = (read, offered) => {
             message: error.message || '',
           }));
         }
+        return null;
       });
   }, [offered]);
 

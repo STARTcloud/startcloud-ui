@@ -9,6 +9,10 @@ const AGENT_STATUS = { role: 'agent', version: '1.0.0', brand: { name: 'Hyperwea
 
 const glyphOf = page => page.locator('a[data-deploy]').first();
 
+const menuOf = page => page.locator('.deploy-split.show [data-menu="deploy"]');
+
+const rowOf = (page, word) => menuOf(page).locator(`[data-deploy-row="${word}"]`);
+
 const agentDialogOf = page => page.locator('[data-dialog="deploy-agent"]');
 
 const asked = new WeakMap();
@@ -55,6 +59,35 @@ Given('the server {string} does not answer', async ({ page }, origin) => {
 
 When('I press the Deploy glyph', async ({ page }) => {
   await glyphOf(page).click();
+});
+
+When('I open the Deploy menu', async ({ page }) => {
+  await page
+    .locator('.deploy-split [data-action="deploy-more"]')
+    .filter({ visible: true })
+    .first()
+    .click();
+  await expect(menuOf(page)).toBeVisible();
+});
+
+When("I press the Deploy menu's {string} row", async ({ page }, word) => {
+  await rowOf(page, word).click();
+});
+
+Then('the Deploy menu offers {string} linking to {string}', async ({ page }, word, href) => {
+  await expect(rowOf(page, word)).toHaveAttribute('href', href);
+});
+
+Then('the Deploy menu offers {int} rows', async ({ page }, count) => {
+  await expect(menuOf(page).locator('[data-deploy-row]')).toHaveCount(count);
+});
+
+Then('the Deploy menu row {string} opens in this window', async ({ page }, word) => {
+  await expect(rowOf(page, word)).not.toHaveAttribute('target');
+});
+
+Then('the Deploy menu row {string} opens in a new tab', async ({ page }, word) => {
+  await expect(rowOf(page, word)).toHaveAttribute('target', '_blank');
 });
 
 Then('the Deploy glyph links to {string}', async ({ page }, href) => {

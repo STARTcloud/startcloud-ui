@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AGENT_ORIGIN,
+  DEPLOY_WORDS,
+  WORD_KEYS,
   deployHref,
   deployQuery,
   deployTargetOf,
@@ -86,6 +88,61 @@ describe('deployQuery', () => {
     expect(isBoxProviderKey('box_')).toBe(false);
     expect(deployQuery({ box: 'a/b', box_Virtual: 'x', boxes: 'y' })).toBe(
       'create=machine&box=a%2Fb'
+    );
+  });
+});
+
+describe('the words', () => {
+  const full = {
+    ...provisionerSeed,
+    ...boxSeed,
+    box_virtualbox: 'STARTcloud/debian13@13.1.0@amd64@https://boxvault.example.com/v',
+  };
+
+  it('names the four words and the keys of each', () => {
+    expect(DEPLOY_WORDS).toEqual(['machine', 'provisioner', 'template', 'source']);
+    expect(WORD_KEYS.provisioner).toEqual([
+      'provisioner',
+      'provisioner_version',
+      'provisioner_url',
+      'provisioner_catalog',
+    ]);
+    expect(WORD_KEYS.template).toEqual(['box', 'box_version', 'box_arch', 'box_url']);
+    expect(WORD_KEYS.source).toEqual(['provisioner_catalog', 'box_url']);
+  });
+
+  it('writes create=provisioner with the family members alone, no box and no box_<provider>', () => {
+    expect(deployQuery(full, 'provisioner')).toBe(
+      'create=provisioner&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=https%3A%2F%2Fcatalog.example.com%2Fcatalog.json'
+    );
+  });
+
+  it('writes create=template with the box members alone', () => {
+    expect(deployQuery(full, 'template')).toBe(
+      'create=template&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
+    );
+  });
+
+  it('writes create=source with exactly one URL, the catalog before the registry', () => {
+    expect(deployQuery(provisionerSeed, 'source')).toBe(
+      'create=source&provisioner_catalog=https%3A%2F%2Fcatalog.example.com%2Fcatalog.json'
+    );
+    expect(deployQuery(boxSeed, 'source')).toBe(
+      'create=source&box_url=https%3A%2F%2Fboxvault.example.com'
+    );
+    expect(deployQuery(full, 'source')).toBe(
+      'create=source&provisioner_catalog=https%3A%2F%2Fcatalog.example.com%2Fcatalog.json'
+    );
+    expect(deployQuery({}, 'source')).toBe('create=source');
+  });
+
+  it('keeps machine as the word deployQuery writes unless given another', () => {
+    expect(deployQuery(boxSeed)).toBe(deployQuery(boxSeed, 'machine'));
+    expect(deployHref('local', provisionerSeed, 'provisioner')).toBe(
+      `hwa://open?${deployQuery(provisionerSeed, 'provisioner')}`
+    );
+    expect(deployHref('https://hw.example.com/', boxSeed, 'template')).toBe(
+      `https://hw.example.com/?${deployQuery(boxSeed, 'template')}`
     );
   });
 });

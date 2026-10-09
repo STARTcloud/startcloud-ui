@@ -540,6 +540,52 @@ DetailRow.propTypes = {
   detail: PropTypes.node,
 };
 
+const OWN_CONTROLS = 'a, button, input, select, textarea, label';
+
+const pressedRow = press => event => {
+  if (!event.target.closest(OWN_CONTROLS)) {
+    press();
+  }
+};
+
+const pressedKey = press => event => {
+  if (event.key === 'Enter' && event.target === event.currentTarget) {
+    press();
+  }
+};
+
+/**
+ * The attributes a row carries from `rowPick`: a row that is a press is a
+ * link by role, focusable, pressed by a click outside its own controls
+ * and by Enter, and a held row says so with `aria-disabled`; a row
+ * `rowPick` answers nothing for carries none.
+ *
+ * @param {{ press: Function|null, held: boolean }|null} pick - What `rowPick` answered for the row
+ * @param {Function|null} rowRef - The arrival ref the row takes focus for
+ * @returns {Object} The attributes of the `tr`
+ */
+const pickProps = (pick, rowRef) => {
+  const press = pick?.press || null;
+  if (press) {
+    return {
+      role: 'link',
+      tabIndex: 0,
+      onClick: pressedRow(press),
+      onKeyDown: pressedKey(press),
+      'data-pick': 'press',
+    };
+  }
+  return {
+    tabIndex: rowRef ? -1 : undefined,
+    ...(pick?.held ? { 'aria-disabled': 'true', 'data-pick': 'held' } : {}),
+  };
+};
+
+const rowClassOf = (rowClass, pick, row) =>
+  [rowClass ? rowClass(row) : '', pick?.press ? 'row-press' : '', pick?.held ? 'row-held' : '']
+    .filter(Boolean)
+    .join(' ') || undefined;
+
 const BodyRow = ({
   row,
   drawn,
@@ -553,6 +599,7 @@ const BodyRow = ({
   rowRef,
   rowProp,
   rowClass,
+  rowPick,
   selection,
   watches,
   LeadActions,
@@ -568,13 +615,14 @@ const BodyRow = ({
   const key = rowKey(row);
   const expanded = Boolean(Detail && expandedKeys && expandedKeys.has(key));
   const open = foldCell && openKeys.has(key);
+  const pick = rowPick ? rowPick(row) : null;
   return (
     <>
       <tr
         ref={rowRef ? rowRef(key) : undefined}
-        tabIndex={rowRef ? -1 : undefined}
         id={rowId ? rowId(row) : undefined}
-        className={rowClass ? rowClass(row) : undefined}
+        className={rowClassOf(rowClass, pick, row)}
+        {...pickProps(pick, rowRef)}
       >
         {foldCell ? (
           <td className="col-fold">
@@ -637,6 +685,7 @@ BodyRow.propTypes = {
   rowRef: PropTypes.func,
   rowProp: PropTypes.string.isRequired,
   rowClass: PropTypes.func,
+  rowPick: PropTypes.func,
   selection: selectionShape,
   watches: watchesShape,
   LeadActions: PropTypes.elementType,
@@ -876,7 +925,10 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * row gets (a download), rendered with `ctx` plus the row under `rowProp`
  * and drawn first, `RowActions` the host's own, rendered with
  * `actionsProps` plus the row under `rowProp`, the class `rowClass`
- * answers on each row, one full-width detail row under every row whose
+ * answers on each row, the pick `rowPick` answers on each row, `{ press,
+ * held }`, a row with a `press` being one link by role, focused by Tab,
+ * pressed by a click outside its own controls and by Enter, and a `held`
+ * row greyed with `aria-disabled`, one full-width detail row under every row whose
  * key is in `expandedKeys` (rendering `Detail` with `detailProps` plus
  * the row under `rowProp`), one `tbody` per group with a `GroupHeading`
  * row when `groups` is given (`collapsed[group.key]` folding it through
@@ -922,6 +974,7 @@ const FullTable = ({
   actionsProps = {},
   rowProp = 'row',
   rowClass = null,
+  rowPick = null,
   Detail = null,
   detailProps = {},
   expandedKeys = null,
@@ -983,6 +1036,7 @@ const FullTable = ({
     rowRef,
     rowProp,
     rowClass,
+    rowPick,
     selection,
     watches,
     LeadActions,
@@ -1050,6 +1104,7 @@ const tableShape = {
   actionsProps: PropTypes.object,
   rowProp: PropTypes.string,
   rowClass: PropTypes.func,
+  rowPick: PropTypes.func,
   Detail: PropTypes.elementType,
   detailProps: PropTypes.object,
   expandedKeys: PropTypes.instanceOf(Set),

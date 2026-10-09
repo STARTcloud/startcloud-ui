@@ -2914,6 +2914,14 @@
         "disabled": "Repositorio {{name}} deshabilitado",
         "deleted": "Eliminación del repositorio {{name}} en cola",
         "failed": "El repositorio falló: {{message}}"
+      },
+      "catalog": {
+        "sourceFailed": "No se pudo agregar la fuente del catálogo: {{message}}",
+        "sourceRequired": "Se requieren un nombre visible y una URL.",
+        "sourceUrl": "URL del catálogo",
+        "sourceAuth": "Autenticación",
+        "authNone": "Ninguna",
+        "authOidc": "Iniciar sesión con SSO"
       }
     },
     "storage": {
@@ -3000,7 +3008,25 @@
       "updateAssets": "Artefactos"
     },
     "deploy": {
-      "noHostCreates": "Ningún host de aquí ofrece la creación de máquinas, así que el traspaso de Deploy se queda en esta página."
+      "noHostCreates": "Ningún host de aquí ofrece la creación de máquinas, así que el traspaso de Deploy se queda en esta página.",
+      "pick": {
+        "machine": "Elige el host que crea la máquina. La box y el aprovisionador van con ella; un host que no los tenga los instala por el camino.",
+        "provisioner": "Elige el host que recibe el aprovisionador. No se crea ninguna máquina.",
+        "template": "Elige el host que descarga la plantilla. No se crea ninguna máquina.",
+        "source": "Elige el host que recibe la fuente."
+      },
+      "title": {
+        "machine": "Desplegar {{name}} {{version}}",
+        "provisioner": "Instalar {{name}} {{version}}",
+        "template": "Descargar {{name}} {{version}}",
+        "source": "Agregar {{name}} como fuente"
+      },
+      "reason": {
+        "noCreate": "no puede crear máquinas",
+        "noRegistry": "sin registro de aprovisionadores",
+        "noTemplates": "sin plantillas"
+      },
+      "none": "Ningún host de este servidor puede recibirlo."
     }
   },
   "pages": {
@@ -3223,7 +3249,16 @@
       "joinServer": "Unirse a un servidor Hyperweaver",
       "support": "Soporte",
       "serverDown": "Tu servidor Hyperweaver no responde",
-      "openLocal": "Abrir en esta máquina"
+      "openLocal": "Abrir en esta máquina",
+      "more": "Más formas de enviar {{version}}",
+      "sendTo": "Enviar {{version}} a mi Hyperweaver",
+      "words": {
+        "machine": "Desplegar una máquina",
+        "provisioner": "Instalar en mi agente",
+        "template": "Descargar como plantilla",
+        "sourceCatalog": "Agregar este catálogo como fuente",
+        "sourceRegistry": "Agregar este registro como fuente"
+      }
     },
     "about": {
       "startHere": "Empieza aquí",
@@ -7800,7 +7835,9 @@
       "deleteFamilyTitle": "Eliminar familia de aprovisionadores",
       "deleteVersionMessage": "¿Eliminar {{name}}/{{version}}? El agente lo rechaza mientras alguna máquina lo referencie.",
       "deleteFamilyMessage": "¿Eliminar toda la familia {{name}} (todas las versiones)? El agente lo rechaza mientras alguna máquina la referencie.",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "addSource": "Agregar fuente",
+      "sourceAdded": "Fuente de catálogo {{name}} agregada"
     },
     "provisioningNetworkPanel": {
       "loadFailed": "No se pudo cargar el estado de la red de aprovisionamiento: {{message}}",

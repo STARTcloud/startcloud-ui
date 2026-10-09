@@ -17,7 +17,13 @@ import { useHostStats, useHostStatsRefresh } from '../../hooks/useHostStats';
 import { useServers } from '../../hooks/useServers';
 import { hostHasFeature } from '../../utils/capabilities';
 import { isServerRole } from '../../utils/hosts';
-import { createRouteOf, createSeedOf, hostCreates } from '../../utils/machineCreate';
+import {
+  createRouteOf,
+  handoffOf,
+  handoffRouteOf,
+  hostCreates,
+  hostTakes,
+} from '../../utils/machineCreate';
 import { nounKeyOf } from '../../utils/machines';
 import { hostHasNetworking } from '../../utils/networking';
 import TopologyPanel from '../NetworkTopology/TopologyPanel';
@@ -175,18 +181,20 @@ const useHeld = () => {
  * context holds, read once as the page draws, again when the stream
  * opens fresh or answers `reset`, renewed by the `hosts` topic between
  * reads and on Refresh, which reads the list of servers, every host's
- * stats, its held reads and the series its charts draw again; hyperweaver-ui's thirty-second timer
- * is not carried over. View details opens the host's page, New machine
+ * stats, its held reads and the series its charts draw again, never on a
+ * clock. View details opens the host's page, New machine
  * the create wizard of the first host that offers it, Manage machines
  * the machines of the first host that lists them, Add host the hosts
  * page with the registry panel's form open and Settings the agent's
  * API keys page, the first page of its Agent group, on an agent role
  * and the server's own configuration at `/admin/config` on the server
- * role. The `create=machine`
- * query, the Deploy hand-off landing on `/`, moves to the page of the
- * first host that offers a create, `hostCreates`, the query and its seed
- * kept, the way the hosts page moves it on the server role, and stays on
- * the dashboard with one warning notice while no host does.
+ * role. The `create` query, the Deploy hand-off landing on `/`, moves to
+ * the landing route of the first host that can take its word,
+ * `hostTakes` and `handoffRouteOf`, the query and its seed kept, the
+ * create wizard for `machine`, the Provisioner catalog page for
+ * `provisioner` and a catalog `source`, the Templates page for `template`
+ * and a registry `source`, and stays on the dashboard with one warning
+ * notice while no host can.
  */
 const Dashboard = ({ context }) => {
   const { t } = useTranslation();
@@ -194,7 +202,7 @@ const Dashboard = ({ context }) => {
   const notify = useNotify();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const seed = createSeedOf(searchParams);
+  const handoff = handoffOf(searchParams);
   const { servers, loaded, failed, refresh: refreshServers } = useServers();
   const refreshStats = useHostStatsRefresh();
   const refreshReadings = useHostReadingsRefresh();
@@ -230,6 +238,9 @@ const Dashboard = ({ context }) => {
   const machines = servers.some(server => hostHasFeature(server, 'machines'));
   const firstMachines = servers.find(server => hostHasFeature(server, 'machines'));
   const firstCreates = servers.find(server => hostCreates(server, context.user?.role));
+  const taker = handoff
+    ? servers.find(server => hostTakes(server, handoff.word, handoff.seed, context.user?.role))
+    : null;
   const noticed = useRef(false);
 
   useEffect(() => {
@@ -237,12 +248,15 @@ const Dashboard = ({ context }) => {
   }, [t, context.appName]);
 
   useEffect(() => {
-    if (!seed || !loaded || firstCreates || noticed.current) {
+    if (!handoff || !loaded || taker || noticed.current) {
       return;
     }
     noticed.current = true;
-    notify('warning', t('hosts.deploy.noHostCreates'));
-  }, [seed, loaded, firstCreates, notify, t]);
+    notify(
+      'warning',
+      t(handoff.word === 'machine' ? 'hosts.deploy.noHostCreates' : 'hosts.deploy.none')
+    );
+  }, [handoff, loaded, taker, notify, t]);
 
   const refresh = () => {
     refreshServers();
@@ -272,8 +286,8 @@ const Dashboard = ({ context }) => {
     );
   }
 
-  if (seed && firstCreates) {
-    return <Navigate to={createRouteOf(firstCreates.id, seed)} replace />;
+  if (handoff && taker) {
+    return <Navigate to={handoffRouteOf(taker.id, handoff.word, handoff.seed)} replace />;
   }
 
   if (servers.length === 0) {

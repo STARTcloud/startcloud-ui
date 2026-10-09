@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "name": "ubuntu2404",
+    "description": "Ubuntu 24.04 base box",
+    "isPublic": true,
+    "organization": { "id": 1, "name": "startcloud" },
+    "versions": [
+      {
+        "versionNumber": "24.04.2",
+        "providers": [
+          { "name": "virtualbox", "architectures": [{ "name": "amd64" }, { "name": "arm64" }] }
+        ]
+      },
+      {
+        "versionNumber": "24.04.1",
+        "providers": [{ "name": "virtualbox", "architectures": [{ "name": "amd64" }] }]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "debian13",
+    "description": "Debian 13 base box",
+    "isPublic": true,
+    "organization": { "id": 1, "name": "startcloud" },
+    "versions": [
+      {
+        "versionNumber": "13.1.0",
+        "providers": [{ "name": "virtualbox", "architectures": [{ "name": "amd64" }] }]
+      }
+    ]
+  }
+]

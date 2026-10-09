@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck, FaChevronDown, FaChevronRight, FaDownload, FaRegCopy } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
@@ -126,8 +126,8 @@ HealthStrip.propTypes = {
   version: PropTypes.object,
 };
 
-const Fold = ({ title, signal, kind, children }) => (
-  <details className={`q-fold pt-2 border-top ${kind}`} data-fold={kind}>
+const Fold = ({ title, signal, kind, open = false, children }) => (
+  <details className={`q-fold pt-2 border-top ${kind}`} data-fold={kind} open={open}>
     <summary className="q-summary card-above">
       <FaChevronDown className="fold-chevron" aria-hidden="true" />
       <h3 className="h6 mb-0">{title}</h3>
@@ -141,6 +141,7 @@ Fold.propTypes = {
   title: PropTypes.node.isRequired,
   signal: PropTypes.node.isRequired,
   kind: PropTypes.string.isRequired,
+  open: PropTypes.bool,
   children: PropTypes.node.isRequired,
 };
 
@@ -276,6 +277,11 @@ VersionList.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+const handedVersionOf = (item, handed) =>
+  handed?.version && item.versions.some(entry => entry.version === handed.version)
+    ? handed.version
+    : item.versions[0]?.version || '';
+
 /**
  * The body of a provisioner card under its description, for one action a
  * version, `VersionAction`, and one card glyph, `Glyph`: the health strip,
@@ -285,7 +291,9 @@ VersionList.propTypes = {
  * passed and Versions the newest version and the count; the versions
  * newest first in a frame of about five rows, a row's click selecting it
  * so the strip and Quality follow it; and the links row with the glyph at
- * its right.
+ * its right. A card whose family `ctx.handed` names opens with the handed
+ * version selected and the Versions fold open, carries `data-handed` and
+ * scrolls into view.
  *
  * @param {Object} options - The card's actions
  * @param {Function} [options.VersionAction] - Drawn on each version row, given `{ item, version, ctx }`
@@ -295,7 +303,10 @@ VersionList.propTypes = {
 export const cardBodyWith = ({ VersionAction = null, Glyph = null }) => {
   const CardBody = ({ item, ctx }) => {
     const { t } = useTranslation();
-    const [selected, setSelected] = useState(item.versions[0]?.version || '');
+    const handed = ctx.handed?.name === item.name ? ctx.handed : null;
+    const marked = Boolean(handed);
+    const body = useRef(null);
+    const [selected, setSelected] = useState(() => handedVersionOf(item, handed));
     const version = item.versions.find(entry => entry.version === selected) || null;
     const quality = qualityOf(item, version);
     const versionsSignal = (
@@ -306,8 +317,20 @@ export const cardBodyWith = ({ VersionAction = null, Glyph = null }) => {
         </span>
       </>
     );
+
+    useEffect(() => {
+      if (marked && body.current) {
+        body.current.scrollIntoView({ block: 'center' });
+      }
+    }, [marked]);
+
     return (
-      <div className="d-flex flex-column gap-2" data-card="provisioner">
+      <div
+        ref={body}
+        className="d-flex flex-column gap-2"
+        data-card="provisioner"
+        data-handed={marked ? 'true' : undefined}
+      >
         <HealthStrip item={item} version={version} />
         <div className="card-folds">
           <Fold
@@ -317,7 +340,12 @@ export const cardBodyWith = ({ VersionAction = null, Glyph = null }) => {
           >
             <QualityPanel quality={quality} />
           </Fold>
-          <Fold kind="versions-fold" title={t('pages.item.versions')} signal={versionsSignal}>
+          <Fold
+            kind="versions-fold"
+            title={t('pages.item.versions')}
+            signal={versionsSignal}
+            open={marked}
+          >
             <VersionList
               item={item}
               selected={selected}

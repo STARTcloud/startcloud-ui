@@ -17,7 +17,12 @@ import {
   emptyCloudInit,
   emptyDiskConfig,
   emptySettings,
+  handoffOf,
+  handoffReasonKey,
+  handoffRouteOf,
+  handoffTitleOf,
   hostCreates,
+  hostTakes,
   installOfferOf,
   nextServerIdOf,
   parseVboxPassthrough,
@@ -183,6 +188,154 @@ describe('the deep link', () => {
     ).toBe(
       '/hosts/self?create=machine&provisioner=a%2Fb&provisioner_catalog=https%3A%2F%2Fc%2Fcatalog.json'
     );
+  });
+});
+
+describe('the words of the hand-off', () => {
+  const registry = hostOf(['virtualbox'], ['machines', 'provisioner-registry']);
+  const templated = hostOf(['bhyve'], ['templates']);
+  const catalogUrl = 'https://provisioner-catalog.startcloud.com/catalog.json';
+  const boxUrl = 'https://boxvault.example.com';
+
+  it('reads each word with its own keys and no other, and refuses a word outside the four', () => {
+    expect(
+      handoffOf(
+        new URLSearchParams(
+          'create=provisioner&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.28&box=a%2Fb&box_virtualbox=x'
+        )
+      )
+    ).toEqual({
+      word: 'provisioner',
+      seed: {
+        provisioner: 'STARTcloud/startcloud',
+        provisioner_version: '0.1.28',
+        provisioner_url: '',
+        provisioner_catalog: '',
+      },
+    });
+    expect(
+      handoffOf(new URLSearchParams('create=template&box=startcloud%2Fdebian13&box_version=13.1.0'))
+    ).toEqual({
+      word: 'template',
+      seed: { box: 'startcloud/debian13', box_version: '13.1.0', box_arch: '', box_url: '' },
+    });
+    expect(handoffOf(new URLSearchParams('create=machine&box=a%2Fb&box_zone=z'))).toMatchObject({
+      word: 'machine',
+      seed: { box: 'a/b', box_zone: 'z' },
+    });
+    expect(handoffOf(new URLSearchParams('create=zone'))).toBeNull();
+    expect(handoffOf(new URLSearchParams(''))).toBeNull();
+  });
+
+  it('reads a source with exactly one URL and refuses neither or both', () => {
+    expect(
+      handoffOf(new URLSearchParams(`create=source&provisioner_catalog=${catalogUrl}`))
+    ).toEqual({
+      word: 'source',
+      seed: { provisioner_catalog: catalogUrl, box_url: '' },
+    });
+    expect(handoffOf(new URLSearchParams(`create=source&box_url=${boxUrl}`)).seed).toEqual({
+      provisioner_catalog: '',
+      box_url: boxUrl,
+    });
+    expect(handoffOf(new URLSearchParams('create=source'))).toBeNull();
+    expect(
+      handoffOf(
+        new URLSearchParams(`create=source&provisioner_catalog=${catalogUrl}&box_url=${boxUrl}`)
+      )
+    ).toBeNull();
+  });
+
+  it('lands each word on its page with the word and its seed kept', () => {
+    expect(
+      handoffRouteOf('1', 'provisioner', {
+        provisioner: 'STARTcloud/startcloud',
+        provisioner_version: '0.1.28',
+        provisioner_url: '',
+        provisioner_catalog: catalogUrl,
+      })
+    ).toBe(
+      '/hosts/1/provisioning/catalog?create=provisioner&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.28&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
+    );
+    expect(
+      handoffRouteOf('self', 'template', {
+        box: 'startcloud/debian13',
+        box_version: '13.1.0',
+        box_arch: 'amd64',
+        box_url: boxUrl,
+      })
+    ).toBe(
+      '/hosts/self/provisioning/templates?create=template&box=startcloud%2Fdebian13&box_version=13.1.0&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
+    );
+    expect(handoffRouteOf('1', 'source', { provisioner_catalog: catalogUrl, box_url: '' })).toBe(
+      '/hosts/1/provisioning/catalog?create=source&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
+    );
+    expect(handoffRouteOf('1', 'source', { provisioner_catalog: '', box_url: boxUrl })).toBe(
+      '/hosts/1/provisioning/templates?create=source&box_url=https%3A%2F%2Fboxvault.example.com'
+    );
+    expect(handoffRouteOf('1', 'machine', { box: 'a/b' })).toBe(createRouteOf('1', { box: 'a/b' }));
+  });
+
+  it('counts the hosts that can take each word by the token of its landing page and the role', () => {
+    expect(hostTakes(vbox, 'machine', {}, 'admin')).toBe(true);
+    expect(hostTakes(registry, 'machine', {}, 'admin')).toBe(false);
+    expect(hostTakes(registry, 'provisioner', {}, 'admin')).toBe(true);
+    expect(hostTakes(registry, 'provisioner', {}, 'user')).toBe(false);
+    expect(hostTakes(vbox, 'provisioner', {}, 'admin')).toBe(false);
+    expect(hostTakes(templated, 'template', {}, 'admin')).toBe(true);
+    expect(hostTakes(registry, 'template', {}, 'admin')).toBe(false);
+    expect(hostTakes(registry, 'source', { provisioner_catalog: catalogUrl }, 'admin')).toBe(true);
+    expect(hostTakes(templated, 'source', { provisioner_catalog: catalogUrl }, 'admin')).toBe(
+      false
+    );
+    expect(hostTakes(templated, 'source', { box_url: boxUrl }, 'admin')).toBe(true);
+    expect(hostTakes(null, 'template', {}, 'admin')).toBe(false);
+  });
+
+  it('names the one reason a host cannot take a word', () => {
+    expect(handoffReasonKey('machine', {})).toBe('hosts.deploy.reason.noCreate');
+    expect(handoffReasonKey('provisioner', {})).toBe('hosts.deploy.reason.noRegistry');
+    expect(handoffReasonKey('template', {})).toBe('hosts.deploy.reason.noTemplates');
+    expect(handoffReasonKey('source', { provisioner_catalog: catalogUrl })).toBe(
+      'hosts.deploy.reason.noRegistry'
+    );
+    expect(handoffReasonKey('source', { box_url: boxUrl })).toBe('hosts.deploy.reason.noTemplates');
+  });
+
+  it('names the banner by the thing handed, the URL host for a source', () => {
+    expect(
+      handoffTitleOf('provisioner', { provisioner: 'STARTcloud/x', provisioner_version: '1' })
+    ).toEqual({ name: 'STARTcloud/x', version: '1' });
+    expect(handoffTitleOf('template', { box: 'a/b', box_version: '2' })).toEqual({
+      name: 'a/b',
+      version: '2',
+    });
+    expect(handoffTitleOf('machine', { box: 'a/b', box_version: '2', provisioner: '' })).toEqual({
+      name: 'a/b',
+      version: '2',
+    });
+    expect(
+      handoffTitleOf('machine', { box: '', provisioner: 'o/p', provisioner_version: '3' })
+    ).toEqual({ name: 'o/p', version: '3' });
+    expect(handoffTitleOf('source', { provisioner_catalog: catalogUrl })).toEqual({
+      name: 'provisioner-catalog.startcloud.com',
+      version: '',
+    });
+    expect(handoffTitleOf('source', { box_url: 'not a url' })).toEqual({
+      name: 'not a url',
+      version: '',
+    });
+  });
+
+  it('takes every word out of the query', () => {
+    expect(
+      withoutCreateSeed(
+        new URLSearchParams(`tab=x&create=source&provisioner_catalog=${catalogUrl}`)
+      ).toString()
+    ).toBe('tab=x');
+    expect(
+      withoutCreateSeed(new URLSearchParams('create=template&box=a&box_url=u&page=2')).toString()
+    ).toBe('page=2');
   });
 });
 

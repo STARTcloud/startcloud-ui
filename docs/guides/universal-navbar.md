@@ -828,7 +828,10 @@ agent role):
   at `/?add=host` with the registry panel's form open, the registry of
   agents being the hosts page's own table for that role, its columns
   and row actions joining the hosts columns and Add host its heading's
-  action; on a
+  action, the hosts page drawing its hosts as the one table or as one
+  card a host by the view toggle of its heading's action pane, the view
+  kept in the page's `table_prefs_hosts` beside its sort and hidden
+  columns; on a
   configuration file's node Open alone and no menu on the Configuration
   node, which has no route; every verb gated by the person's role as
   the Controls menu's row of the same name is. A power row sends its one
@@ -1120,8 +1123,21 @@ server role, `/api/…` on an agent role).
   the box fields, and its `provisioner`, `provisioner_version` and
   `provisioner_catalog`, the catalog's deep link, picking the provisioner
   on the Provisioning step, or offering its install there through the
-  host's catalog while the host does not hold it; on the home route the
-  same query moves to the page of the first host that creates. The wizard is a form dialog of eight
+  host's catalog while the host does not hold it. The `create` query is
+  the Deploy hand-off of the Universal Deploy Contract and carries one of
+  four words: `machine` the wizard, `provisioner` the host's Provisioner
+  catalog page with the handed family's card marked and its version
+  selected, `template` the host's Templates page with the pull dialog
+  filled, and `source` the Provisioner catalog page's Add source dialog
+  for a `provisioner_catalog` or the Templates page's Add registry dialog
+  for a `box_url`, each filled from the URL; a host takes a word while
+  its own row lists the word's token, `machines` and `machine-create`,
+  `provisioner-registry` or `templates`. On the home route the same query
+  moves to the landing of the one host that takes its word, and on the
+  hyperweaver-server role with several hosts that take it the hosts page
+  is the pick under the hand-off's banner, a host that can take it its
+  whole row or card one press to its landing and a host that cannot
+  greyed with its one reason, the banner's dismiss dropping the query. The wizard is a form dialog of eight
   steps, General, OS / Box, System, Disks, CPU & Memory, Network,
   Provisioning and Confirm, Next the primary action until Confirm, where
   Create sends the one request, `POST machines`, and closes the dialog

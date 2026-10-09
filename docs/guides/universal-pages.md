@@ -397,21 +397,26 @@ adapter, registers the search binding, and renders:
   after Name and before Visibility, present only while the UI backend
   advertises `deploy` and a row has a deployable version, signed in or
   not, its `when` receiving `(rows, ctx)` with
-  `ctx.status` carrying the host's payload; each cell is the bare
-  Hyperweaver glyph link of `features/deploy` at text size, `DeployGlyph`,
-  aimed at the row's newest non-deprecated version, and a card draws the
-  same glyph at the right of its links row through `CardGlyph`, on every
-  box or provisioner alike. The collection's `components/deploy.jsx` supplies only the
-  seed of the deep link: boxes
-  `box`, `box_version`, `box_arch=amd64` and `box_url`, provisioners
-  `provisioner`, `provisioner_version`, `provisioner_url` and
-  `provisioner_catalog`. Where the link goes is the session's
-  `integrations` claim: signed out, no `hyperweaver` entry, or a
-  `deploy_target` of `local`, is the agent's
-  `hwa://open?create=machine&…` link opened in
-  this window, and any other `deploy_target` is that origin's
-  `/?create=machine&…` page opened in a new tab; a press asks the target's
-  status first, as the Universal Deploy Contract says. A host that relays
+  `ctx.status` carrying the host's payload; each cell is the split
+  Deploy control of `features/deploy` at text size, `DeployGlyph`: the
+  bare Hyperweaver glyph link aimed at the row's newest non-deprecated
+  version, the `create=machine` hand-off, and at its right a 14px
+  borderless chevron that opens the menu of the collection's other
+  words, headed "Send {version} to my Hyperweaver", one row a word with
+  its label and its glyph alone, Deploy a machine first, then the
+  collection's own; a card draws the same control at the right of its
+  links row through `CardGlyph`, on every box or provisioner alike. The
+  collection's `components/deploy.jsx` supplies only the seed of the deep
+  link and its words: boxes `box`, `box_version`, `box_arch=amd64` and
+  `box_url` with Pull as a template and Add this registry as a source,
+  provisioners `provisioner`, `provisioner_version`, `provisioner_url`
+  and `provisioner_catalog` with Install on my agent and Add this catalog
+  as a source. Where every link goes is the session's `integrations`
+  claim: signed out, no `hyperweaver` entry, or a `deploy_target` of
+  `local`, is the agent's `hwa://open?create=…` link opened in this
+  window, and any other `deploy_target` is that origin's `/?create=…`
+  page opened in a new tab; a press of the glyph or of a row asks the
+  target's status first, as the Universal Deploy Contract says. A host that relays
   a catalog draws the same provisioners collection on its Provisioner
   catalog page with Install in place of Deploy.
 - **Home is home.** A box or ISO is created inside an organization, so
@@ -945,12 +950,12 @@ adds its own foldable section to an item page (the catalog's Quality).
   flat on one at `/<org>/<segment>`; the heading row carries the actions
   and the toggle; the listing is keyed by the collection and the
   organization, so a change of either remounts it.
-- **ItemPage**: PageHeader (its action row opens with the bare Deploy
-  glyph link, `DeployGlyph`, for the newest non-deprecated version
+- **ItemPage**: PageHeader (its action row opens with the split Deploy
+  control, `DeployGlyph`, for the newest non-deprecated version
   whenever the host advertises `deploy`, signed in or not, on boxes and
   provisioners alike), the
   `ItemExtras` slot (BoxVault's use-this strip with the version select
-  and the same glyph beside it for the selected version, opening
+  and the same control beside it for the selected version, opening
   Hyperweaver with the box pre-selected),
   the facts panel (from `metadata`)
   and the README side by side when present, the versions table newest

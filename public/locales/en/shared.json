@@ -2914,6 +2914,14 @@
         "disabled": "Repository {{name}} disabled",
         "deleted": "Repository {{name}} removal queued",
         "failed": "Repository failed: {{message}}"
+      },
+      "catalog": {
+        "sourceFailed": "The catalog source could not be added: {{message}}",
+        "sourceRequired": "A display name and a URL are required.",
+        "sourceUrl": "Catalog URL",
+        "sourceAuth": "Authentication",
+        "authNone": "None",
+        "authOidc": "Sign in with SSO"
       }
     },
     "storage": {
@@ -3000,7 +3008,25 @@
       "updateAssets": "Assets"
     },
     "deploy": {
-      "noHostCreates": "No host here offers a machine create, so the Deploy hand-off stays on this page."
+      "noHostCreates": "No host here offers a machine create, so the Deploy hand-off stays on this page.",
+      "pick": {
+        "machine": "Pick the host that makes the machine. The box and the provisioner come along; a host that lacks them installs them on the way.",
+        "provisioner": "Pick the host that gets the provisioner. No machine is made.",
+        "template": "Pick the host that pulls the template. No machine is made.",
+        "source": "Pick the host that gets the source."
+      },
+      "title": {
+        "machine": "Deploy {{name}} {{version}}",
+        "provisioner": "Install {{name}} {{version}}",
+        "template": "Pull {{name}} {{version}}",
+        "source": "Add {{name}} as a source"
+      },
+      "reason": {
+        "noCreate": "cannot create machines",
+        "noRegistry": "no provisioner registry",
+        "noTemplates": "no templates"
+      },
+      "none": "No host on this server can take it."
     }
   },
   "pages": {
@@ -3223,7 +3249,16 @@
       "joinServer": "Join a Hyperweaver server",
       "support": "Support",
       "serverDown": "Your Hyperweaver server isn't answering",
-      "openLocal": "Open on this machine"
+      "openLocal": "Open on this machine",
+      "more": "More ways to send {{version}}",
+      "sendTo": "Send {{version}} to my Hyperweaver",
+      "words": {
+        "machine": "Deploy a machine",
+        "provisioner": "Install on my agent",
+        "template": "Pull as a template",
+        "sourceCatalog": "Add this catalog as a source",
+        "sourceRegistry": "Add this registry as a source"
+      }
     },
     "about": {
       "startHere": "Start here",
@@ -7800,7 +7835,9 @@
       "deleteFamilyTitle": "Delete Provisioner Family",
       "deleteVersionMessage": "Delete {{name}}/{{version}}? The agent refuses while any machine references it.",
       "deleteFamilyMessage": "Delete the whole {{name}} family (every version)? The agent refuses while any machine references it.",
-      "delete": "Delete"
+      "delete": "Delete",
+      "addSource": "Add source",
+      "sourceAdded": "Catalog source {{name}} added"
     },
     "provisioningNetworkPanel": {
       "loadFailed": "Failed to load the provisioning network status: {{message}}",

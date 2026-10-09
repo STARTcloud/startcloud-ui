@@ -21,7 +21,9 @@ import { deleteTemplate, moveTemplate, pullTemplate } from '../api/provisioning'
 import { exportTemplate, publishTemplate } from '../api/templates';
 import { useHostMachines } from '../hooks/useHostMachines';
 import { useManageSend, useTaskFollow } from '../hooks/useHostManage';
+import { useTemplateSource } from '../hooks/useTemplateSource';
 import { sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
+import { templateSourceFormOf } from '../utils/machineCreate';
 import { exportBody } from '../utils/machineTools';
 import {
   formatSize,
@@ -233,6 +235,25 @@ SourceRow.propTypes = {
 
 const rowKey = row => templateKey(row);
 
+/**
+ * The dialog a hand-off opens as it lands: the pull dialog filled with
+ * the handed box, or the registry dialog filled from the handed registry
+ * URL; null while the hand-off names neither.
+ *
+ * @param {{ box: Object|null, registryUrl: string }|null} handoff - The page's hand-off
+ * @returns {Object|null} The dialog
+ */
+const handoffDialogOf = handoff => {
+  if (handoff?.box) {
+    return { kind: 'pull', seed: handoff.box, handoff: true };
+  }
+  if (handoff?.registryUrl) {
+    const seed = templateSourceFormOf(handoff.registryUrl);
+    return seed ? { kind: 'source-add', seed, handoff: true } : null;
+  }
+  return null;
+};
+
 const TemplateDialog = ({ dialog, id, server, rows, machines, busy, sourceErrors, on }) => {
   switch (dialog?.kind) {
     case 'pull':
@@ -240,6 +261,8 @@ const TemplateDialog = ({ dialog, id, server, rows, machines, busy, sourceErrors
         <PullModal
           id={id}
           sources={rows.sources}
+          seed={dialog.seed || null}
+          registry={dialog.registry || null}
           busy={busy}
           onClose={on.close}
           onSubmit={on.pull}
@@ -277,6 +300,7 @@ const TemplateDialog = ({ dialog, id, server, rows, machines, busy, sourceErrors
           id={id}
           server={server}
           editing={dialog.source || null}
+          seed={dialog.seed || null}
           errors={sourceErrors}
           busy={busy}
           onClose={on.close}
@@ -320,20 +344,56 @@ TemplateDialog.propTypes = {
  * binding, and on each row Move and Delete behind the typed
  * confirmation. Every mutation is a queued task followed on
  * `task-updated` and the templates read again at its end, the notice
- * carrying View task. Nothing polls.
+ * carrying View task. Nothing polls. A `handoff` opens its dialog as it
+ * lands: the pull dialog filled with the handed box, the registry the
+ * box's URL names picked and, while the host holds no such registry, the
+ * registry card of `useTemplateSource` over the fields, its press writing
+ * the registry through the same patch; or the registry dialog filled from
+ * the handed registry URL; `onHandoffDone` is called as that dialog
+ * closes.
  */
-const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) => {
+const TemplatesSection = ({
+  id,
+  server,
+  ctx,
+  table,
+  reads,
+  rows,
+  filtering,
+  handoff = null,
+  onHandoffDone = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
   const { send, busy, task, closeTask } = useManageSend(id);
   const { machines } = useHostMachines(id);
-  const [dialog, setDialogState] = useState(null);
+  const handoffStamp = handoff ? JSON.stringify(handoff) : '';
+  const [held, setHeld] = useState({ stamp: '', dialog: null });
+  if (held.stamp !== handoffStamp) {
+    setHeld({ stamp: handoffStamp, dialog: handoffDialogOf(handoff) });
+  }
+  const { dialog } = held;
   const [sourceErrors, setSourceErrors] = useState({});
   const setDialog = next => {
     setSourceErrors({});
-    setDialogState(next);
+    setHeld(current => ({ ...current, dialog: next }));
   };
   const follow = useTaskFollow({ id, onEnd: () => reads.templates.refresh() });
+  const registry = useTemplateSource({
+    status,
+    id,
+    box: dialog?.kind === 'pull' && dialog.seed ? dialog.seed : null,
+    sources: rows.sources,
+    loaded: reads.sources.loaded,
+    onAdded: reads.sources.refresh,
+  });
+
+  const closeDialog = () => {
+    if (dialog?.handoff && onHandoffDone) {
+      onHandoffDone();
+    }
+    setDialog(null);
+  };
 
   const queue = async ({ call, doneKey, values = {} }) => {
     const { answer, error } = await send({
@@ -343,7 +403,7 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
       failKey: 'hosts.manage.templates.failed',
     });
     if (!error) {
-      setDialog(null);
+      closeDialog();
       follow(answer);
       reads.templates.refresh();
     }
@@ -358,7 +418,7 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
       failKey: 'hosts.manage.templates.sourceFailed',
     });
     if (!error) {
-      setDialog(null);
+      closeDialog();
       reads.sources.refresh();
       return;
     }
@@ -479,7 +539,7 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
         filtering={filtering}
       />
       <TemplateDialog
-        dialog={dialog}
+        dialog={dialog?.kind === 'pull' && dialog.seed ? { ...dialog, registry } : dialog}
         id={id}
         server={server}
         rows={rows}
@@ -487,7 +547,7 @@ const TemplatesSection = ({ id, server, ctx, table, reads, rows, filtering }) =>
         busy={busy}
         sourceErrors={sourceErrors}
         on={{
-          close: () => setDialog(null),
+          close: closeDialog,
           pull: body =>
             queue({
               call: () => pullTemplate(status, id, body),
@@ -583,6 +643,11 @@ TemplatesSection.propTypes = {
     sources: PropTypes.array.isRequired,
   }).isRequired,
   filtering: PropTypes.bool.isRequired,
+  handoff: PropTypes.shape({
+    box: PropTypes.object,
+    registryUrl: PropTypes.string.isRequired,
+  }),
+  onHandoffDone: PropTypes.func,
 };
 
 export default TemplatesSection;

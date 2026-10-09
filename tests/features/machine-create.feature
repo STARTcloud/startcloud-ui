@@ -174,14 +174,15 @@ Feature: machine create
     And the field "machine-setting-box" reads "STARTcloud/debian13"
     And the field "machine-setting-box_version" reads "13.1.0"
 
-  Scenario: Create wizard: the deep link on the server role stays on the hosts list with one warning notice while no host offers a create
+  Scenario: Create wizard: the deep link on the server role stays on the hosts list under the hand-off banner alone while no host offers a create
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
     Then I see "Desk"
     And the path is "/?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
-    And the page raised 1 warning notice
+    And the hand-off banner draws for "machine"
+    And the hosts page draws no pick
     And no dialog is open
 
   Scenario: Create wizard: the deep link of the catalog, `?create=machine` with a provisioner picks the family named after its slash and the named version on the Provisioning step and reads the version's manifest once

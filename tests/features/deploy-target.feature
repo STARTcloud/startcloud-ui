@@ -91,6 +91,48 @@ Feature: deploy target
     And the Deploy glyph links to "https://hw.example.com/?create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json"
     And the Deploy glyph opens in a new tab
 
+  Scenario: Deploy: the chevron beside a box's glyph opens the box words, Deploy a machine, Pull as a template and Add this registry as a source, each a link of the target rule
+    Given the host answers the deploy-target fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I open the Deploy menu
+    Then the Deploy menu offers 3 rows
+    And the Deploy menu offers "machine" linking to "hwa://open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=http%3A%2F%2F127.0.0.1%3A4173"
+    And the Deploy menu offers "template" linking to "hwa://open?create=template&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=http%3A%2F%2F127.0.0.1%3A4173"
+    And the Deploy menu offers "source" linking to "hwa://open?create=source&box_url=http%3A%2F%2F127.0.0.1%3A4173"
+    And the Deploy menu row "template" opens in this window
+
+  Scenario: Deploy: the chevron's rows go to a hyperweaver-server target in a new tab
+    Given the host answers the deploy-target fixture
+    And the host answers the deploy-target-server fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I open the Deploy menu
+    Then the Deploy menu offers "template" linking to "https://hw.example.com/?create=template&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=http%3A%2F%2F127.0.0.1%3A4173"
+    And the Deploy menu offers "source" linking to "https://hw.example.com/?create=source&box_url=http%3A%2F%2F127.0.0.1%3A4173"
+    And the Deploy menu row "template" opens in a new tab
+
+  Scenario: Deploy: a row's press asks the target's status first, the agent's silence opening the one dialog
+    Given the host answers the deploy-target fixture
+    And the local agent does not answer
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I open the Deploy menu
+    And I press the Deploy menu's "template" row
+    Then the local agent was asked its status
+    And the no-agent dialog offers "install-agent" linking to "https://github.com/Makr91/hyperweaver-agent/releases/latest"
+
+  Scenario: Deploy: the chevron beside a provisioner's glyph opens the catalog words, Install on my agent and Add this catalog as a source, each carrying that word's keys alone
+    Given the host answers the deploy-target-catalog fixture
+    And the host answers the deploy-target-catalog-boxes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I open the Deploy menu
+    Then the Deploy menu offers 3 rows
+    And the Deploy menu offers "provisioner" linking to "https://hw.example.com/?create=provisioner&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json"
+    And the Deploy menu offers "source" linking to "https://hw.example.com/?create=source&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json"
+    And the Deploy menu row "provisioner" opens in a new tab
+
   Scenario: Deploy: the provisioners collection sends the verified box of each provider after the provisioner seed, one box_<provider> member a provider
     Given the host answers the deploy-target-catalog fixture
     And the host answers the deploy-target-catalog-boxes fixture

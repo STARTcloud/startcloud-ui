@@ -52,6 +52,23 @@ const SEED_KEYS = [
   'provisioner_url',
   'provisioner_catalog',
 ];
+
+/**
+ * The seed keys of each word of the Deploy hand-off, in the agent's order:
+ * `machine` every fixed member, `provisioner` the family's four,
+ * `template` the box's four and `source` the one catalog or registry URL.
+ */
+export const WORD_KEYS = {
+  machine: SEED_KEYS,
+  provisioner: ['provisioner', 'provisioner_version', 'provisioner_url', 'provisioner_catalog'],
+  template: ['box', 'box_version', 'box_arch', 'box_url'],
+  source: ['provisioner_catalog', 'box_url'],
+};
+
+export const CREATE_WORDS = Object.keys(WORD_KEYS);
+
+const CATALOG_PAGE = 'provisioning/catalog';
+const TEMPLATES_PAGE = 'provisioning/templates';
 const BOX_PROVIDER = /^box_[a-z0-9_-]+$/u;
 const BOX_PICKS = {
   virtualbox: ['box_virtualbox'],
@@ -133,6 +150,41 @@ const isBoxProviderKey = key => BOX_PROVIDER.test(key) && !SEED_KEYS.includes(ke
 
 const providerKeysOf = keys => [...new Set(keys)].filter(isBoxProviderKey).sort();
 
+const sourceUrlOf = seed => seed?.provisioner_catalog || seed?.box_url || '';
+
+/**
+ * The Deploy hand-off a route carries, read from its `create` query: the
+ * word, one of `machine`, `provisioner`, `template` and `source`, and the
+ * seed of that word's own keys, each fixed member empty where the query
+ * leaves it out, the `box_<provider>` members read under `machine` alone
+ * and present only where the query carries them; null while the query
+ * asks for nothing, names a word outside the four, or asks for a `source`
+ * with neither or both of `provisioner_catalog` and `box_url`.
+ *
+ * @param {URLSearchParams} params - The route's search params
+ * @returns {{ word: string, seed: Object }|null} The hand-off
+ */
+export const handoffOf = params => {
+  const word = params.get(CREATE_PARAM);
+  if (!WORD_KEYS[word]) {
+    return null;
+  }
+  const seed = {
+    ...Object.fromEntries(WORD_KEYS[word].map(key => [key, params.get(key) || ''])),
+    ...(word === CREATE_WORD
+      ? Object.fromEntries(
+          providerKeysOf([...params.keys()])
+            .filter(key => params.get(key))
+            .map(key => [key, params.get(key)])
+        )
+      : {}),
+  };
+  if (word === 'source' && Boolean(seed.provisioner_catalog) === Boolean(seed.box_url)) {
+    return null;
+  }
+  return { word, seed };
+};
+
 /**
  * What a `?create=machine` deep link seeds the wizard with, the Deploy
  * hand-off's two seeds: BoxVault's `box`, `box_version`, `box_arch` and
@@ -146,17 +198,22 @@ const providerKeysOf = keys => [...new Set(keys)].filter(isBoxProviderKey).sort(
  * @returns {Object|null} The seed, one member a key of the two seeds
  */
 export const createSeedOf = params => {
-  if (params.get(CREATE_PARAM) !== CREATE_WORD) {
-    return null;
-  }
-  return {
-    ...Object.fromEntries(SEED_KEYS.map(key => [key, params.get(key) || ''])),
-    ...Object.fromEntries(
-      providerKeysOf([...params.keys()])
-        .filter(key => params.get(key))
-        .map(key => [key, params.get(key)])
-    ),
-  };
+  const handoff = handoffOf(params);
+  return handoff?.word === CREATE_WORD ? handoff.seed : null;
+};
+
+const handoffQuery = (word, seed) => {
+  const params = new URLSearchParams({ [CREATE_PARAM]: word });
+  const keys =
+    word === CREATE_WORD
+      ? [...SEED_KEYS, ...providerKeysOf(Object.keys(seed || {}))]
+      : WORD_KEYS[word];
+  keys.forEach(key => {
+    if (seed?.[key]) {
+      params.set(key, seed[key]);
+    }
+  });
+  return params;
 };
 
 /**
@@ -170,20 +227,36 @@ export const createSeedOf = params => {
  * @param {Object|null} [seed] - The seed of `createSeedOf`
  * @returns {string} The route
  */
-export const createRouteOf = (id, seed = null) => {
-  const params = new URLSearchParams({ [CREATE_PARAM]: CREATE_WORD });
-  [...SEED_KEYS, ...providerKeysOf(Object.keys(seed || {}))].forEach(key => {
-    if (seed?.[key]) {
-      params.set(key, seed[key]);
-    }
-  });
-  return `/hosts/${encodeURIComponent(id)}?${params}`;
+export const createRouteOf = (id, seed = null) =>
+  `/hosts/${encodeURIComponent(id)}?${handoffQuery(CREATE_WORD, seed)}`;
+
+/**
+ * The route a hand-off lands on for one host, the word's query and seed
+ * kept: `machine` the host's own page, the create wizard's door;
+ * `provisioner` the host's Provisioner catalog page; `template` the host's
+ * Templates page; `source` the Provisioner catalog page for a
+ * `provisioner_catalog` and the Templates page for a `box_url`.
+ *
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} word - The word of `handoffOf`
+ * @param {Object|null} seed - The seed of `handoffOf`
+ * @returns {string} The route
+ */
+export const handoffRouteOf = (id, word, seed) => {
+  if (word === CREATE_WORD) {
+    return createRouteOf(id, seed);
+  }
+  const catalog =
+    word === 'provisioner' || (word === 'source' && Boolean(seed?.provisioner_catalog));
+  const page = catalog ? CATALOG_PAGE : TEMPLATES_PAGE;
+  return `/hosts/${encodeURIComponent(id)}/${page}?${handoffQuery(word, seed)}`;
 };
 
 /**
- * The route's search params with the deep link's members taken out, the
- * `box_<provider>` members with them, what the page keeps once the wizard
- * has opened, so a reload opens it again only when asked.
+ * The route's search params with the hand-off's members taken out, every
+ * word's keys and the `box_<provider>` members with them, what a page
+ * keeps once the hand-off has landed, so a reload opens it again only
+ * when asked.
  *
  * @param {URLSearchParams} params - The route's search params
  * @returns {URLSearchParams} The params left
@@ -194,6 +267,78 @@ export const withoutCreateSeed = params => {
     next.delete(key)
   );
   return next;
+};
+
+const hostHolds = (server, role, token) => canCreateMachines(role) && hostHasFeature(server, token);
+
+const handoffToken = (word, seed) => {
+  if (word === 'provisioner' || (word === 'source' && Boolean(seed?.provisioner_catalog))) {
+    return 'provisioner-registry';
+  }
+  return 'templates';
+};
+
+/**
+ * Whether a host can take a hand-off: `machine` while `hostCreates`;
+ * `provisioner`, and `source` with a `provisioner_catalog`, while the
+ * host's own row lists `provisioner-registry` for a person who may
+ * create; `template`, and `source` with a `box_url`, while it lists
+ * `templates` for that person.
+ *
+ * @param {Object|null} server - The registry row, or the one serving agent's
+ * @param {string} word - The word of `handoffOf`
+ * @param {Object|null} seed - The seed of `handoffOf`
+ * @param {string} [role] - The person's role
+ * @returns {boolean} True when the host takes it
+ */
+export const hostTakes = (server, word, seed, role) =>
+  word === CREATE_WORD
+    ? hostCreates(server, role)
+    : hostHolds(server, role, handoffToken(word, seed));
+
+/**
+ * The key of the one reason a host cannot take a hand-off: it cannot
+ * create machines, it lists no provisioner registry, or it lists no
+ * templates.
+ *
+ * @param {string} word - The word of `handoffOf`
+ * @param {Object|null} seed - The seed of `handoffOf`
+ * @returns {string} The locale key
+ */
+export const handoffReasonKey = (word, seed) => {
+  if (word === CREATE_WORD) {
+    return 'hosts.deploy.reason.noCreate';
+  }
+  return handoffToken(word, seed) === 'provisioner-registry'
+    ? 'hosts.deploy.reason.noRegistry'
+    : 'hosts.deploy.reason.noTemplates';
+};
+
+const hostOf = url => {
+  try {
+    return new URL(url).host || url;
+  } catch {
+    return url;
+  }
+};
+
+/**
+ * The words a hand-off's banner names: the thing handed, the family or
+ * the box as `organization/name` and its version, or for a `source` the
+ * host of the catalog or registry URL and no version.
+ *
+ * @param {string} word - The word of `handoffOf`
+ * @param {Object|null} seed - The seed of `handoffOf`
+ * @returns {{ name: string, version: string }} The words
+ */
+export const handoffTitleOf = (word, seed) => {
+  if (word === 'source') {
+    return { name: hostOf(sourceUrlOf(seed)), version: '' };
+  }
+  if (word === 'template' || (word === CREATE_WORD && !seed?.provisioner)) {
+    return { name: seed?.box || '', version: seed?.box_version || '' };
+  }
+  return { name: seed?.provisioner || '', version: seed?.provisioner_version || '' };
 };
 
 /**

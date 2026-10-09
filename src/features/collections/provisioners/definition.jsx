@@ -223,7 +223,7 @@ QualitySection.propTypes = {
 };
 
 const VersionDeploy = ({ item, version, ctx }) => (
-  <DeployGlyph user={ctx.user} item={item} version={version} />
+  <DeployGlyph user={ctx.user} item={item} version={version} bare />
 );
 
 VersionDeploy.propTypes = {

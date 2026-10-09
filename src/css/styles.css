@@ -1089,6 +1089,59 @@ button::-moz-focus-inner {
   z-index: 2;
 }
 
+.deploy-split {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.deploy-split .deploy-glyph {
+  line-height: 1;
+  text-decoration: none;
+}
+
+.deploy-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 20px;
+  margin-left: 2px;
+  padding: 0 0 0 3px;
+  border: 0;
+  border-left: 1px solid var(--bs-border-color);
+  background: none;
+  color: var(--bs-secondary-color);
+  font-size: 0.62rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.deploy-chevron:hover,
+.deploy-chevron[aria-expanded='true'] {
+  color: var(--bs-primary);
+}
+
+.bg-dark .deploy-chevron {
+  border-left-color: #555;
+  color: #aaa;
+}
+
+.deploy-split .dropdown-menu {
+  min-width: 260px;
+}
+
+.deploy-split .dropdown-item svg {
+  flex-shrink: 0;
+}
+
+.catalog-card:has(.deploy-split.show),
+.col:has(.deploy-split.show),
+td:has(.deploy-split.show) {
+  position: relative;
+  z-index: 30;
+}
+
 .catalog-search {
   max-width: 560px;
 }
@@ -2150,6 +2203,60 @@ details.meter .tier-badge {
 .items-table th {
   white-space: nowrap;
   position: relative;
+}
+
+.items-table tr.row-press {
+  cursor: pointer;
+}
+
+.items-table tr.row-press:hover td {
+  background: var(--bs-primary-bg-subtle);
+}
+
+.items-table tr.row-press:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
+.items-table tr.row-held {
+  opacity: 0.5;
+}
+
+.host-card .card-media {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bs-secondary-bg);
+  color: var(--bs-secondary-color);
+}
+
+.host-card .card-media svg {
+  width: 20px;
+  height: 20px;
+}
+
+.host-cards .pick .host-card {
+  cursor: pointer;
+  transition:
+    box-shadow 0.12s,
+    border-color 0.12s;
+}
+
+.host-cards .pick .host-card:hover,
+.host-cards .pick .host-card:focus-within {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 2px var(--bs-primary);
+}
+
+.host-cards .held .host-card {
+  opacity: 0.5;
+}
+
+.host-reason {
+  font-size: 0.8rem;
+  color: var(--bs-warning-text-emphasis);
 }
 
 .items-table td .cell {

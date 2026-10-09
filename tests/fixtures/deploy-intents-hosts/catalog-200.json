@@ -1,0 +1,22 @@
+{
+  "name": "STARTcloud provisioner catalog",
+  "format_version": 1,
+  "updated": "2026-09-20T00:00:00.000Z",
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "repo": "STARTcloud/startcloud-provisioner",
+      "description": "The STARTcloud provisioner",
+      "versions": [
+        { "version": "0.1.28", "released_at": "2026-09-18", "artifacts": [] },
+        { "version": "0.1.27", "released_at": "2026-08-30", "artifacts": [] }
+      ]
+    },
+    {
+      "name": "hcl-domino",
+      "repo": "STARTcloud/hcl-domino-provisioner",
+      "description": "HCL Domino on any box",
+      "versions": [{ "version": "2.0.0", "released_at": "2026-07-11", "artifacts": [] }]
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { FaDownload, FaPlus } from 'react-icons/fa6';
+
 import { createDeployControls, deployableVersion } from '../../../deploy';
 
 export { deployableVersion };
@@ -61,4 +63,9 @@ export const seedFor = ({ item, version }) => ({
   ...boxSeedOf(item.versions.find(entry => entry.version === version)),
 });
 
-export const { DeployGlyph, deployColumn, CardGlyph } = createDeployControls({ seedFor });
+const words = [
+  { word: 'provisioner', labelKey: 'pages.deploy.words.provisioner', Icon: FaDownload },
+  { word: 'source', labelKey: 'pages.deploy.words.sourceCatalog', Icon: FaPlus },
+];
+
+export const { DeployGlyph, deployColumn, CardGlyph } = createDeployControls({ seedFor, words });

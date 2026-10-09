@@ -1,0 +1,25 @@
+{
+  "sources": [
+    {
+      "id": "mirror",
+      "name": "Mirror",
+      "url": "https://mirror.example.com",
+      "enabled": true,
+      "default": false
+    },
+    {
+      "id": "boxvault",
+      "name": "BoxVault",
+      "url": "https://boxvault.example.com",
+      "enabled": true,
+      "default": true
+    },
+    {
+      "id": "vagrant_example_com",
+      "name": "vagrant.example.com",
+      "url": "https://vagrant.example.com",
+      "enabled": true,
+      "default": false
+    }
+  ]
+}
