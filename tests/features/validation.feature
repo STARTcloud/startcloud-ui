@@ -33,3 +33,11 @@ Feature: validation contract
     Then the error summary is focused
     And the error summary lists "Enter HTTPS port of at most 65535."
     And the host was not sent PUT to "/api/config/app"
+
+  Scenario: a host that lists no rules token is never asked for /api/rules and validates on the client's own defaults
+    When I open "/admin/config/app"
+    Then I see "Application"
+    When I fill "HTTPS port" with "70000"
+    And I press "Tab"
+    Then I see "Enter HTTPS port of at most 65535."
+    And the host was not sent GET to "/api/rules"

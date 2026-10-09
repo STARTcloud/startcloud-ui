@@ -213,6 +213,58 @@
       "verifyInvalid": "Configuración NO válida",
       "failed": "La solicitud falló",
       "resultOutput": "Salida"
+    },
+    "shortcuts": {
+      "title": "Atajos de teclado",
+      "menu": "Atajos de teclado",
+      "filter": "Buscar un atajo por descripción o combinación de teclas",
+      "noMatches": "Ningún atajo coincide",
+      "or": "o",
+      "keys": {
+        "ctrl": "Ctrl",
+        "alt": "Alt",
+        "shift": "Mayús",
+        "enter": "Intro"
+      },
+      "category": {
+        "jump": "Ir a",
+        "application": "Aplicación",
+        "navigation": "Navegación",
+        "actions": "Acciones",
+        "search": "Búsqueda"
+      },
+      "row": {
+        "home": "Inicio",
+        "profile": "Perfil",
+        "inbox": "Bandeja de entrada",
+        "inboxUnread": "Bandeja de entrada, no leídas",
+        "favorites": "Favoritos",
+        "watched": "Seguidas",
+        "collections": "Colecciones",
+        "help": "Abrir la ayuda de atajos de teclado",
+        "sidebar": "Mostrar u ocultar la barra lateral",
+        "userMenu": "Abrir el menú de usuario",
+        "logout": "Cerrar sesión",
+        "down": "Mover la selección hacia abajo",
+        "up": "Mover la selección hacia arriba",
+        "open": "Abrir la fila seleccionada",
+        "openTab": "Abrir la fila seleccionada en una pestaña nueva",
+        "back": "Atrás",
+        "nextSection": "Sección siguiente",
+        "previousSection": "Sección anterior",
+        "search": "Abrir la búsqueda",
+        "filters": "Mostrar u ocultar los filtros",
+        "nextHost": "Siguiente host",
+        "previousHost": "Host anterior",
+        "create": "Crear",
+        "refresh": "Actualizar",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "bulkSelect": "Activar o desactivar la selección en bloque",
+        "toggleRow": "Marcar o desmarcar la fila seleccionada",
+        "dismiss": "Descartar la selección",
+        "watch": "Seguir o dejar de seguir"
+      }
     }
   },
   "user": {
@@ -2943,7 +2995,9 @@
       "updateLatestVersion": "Versión más reciente",
       "updatePublished": "Publicado",
       "updateReleaseNotes": "Notas de la versión",
-      "updateChangelog": "Registro de cambios"
+      "updateChangelog": "Registro de cambios",
+      "updateNotes": "Notas de la versión · {{version}}",
+      "updateAssets": "Artefactos"
     }
   },
   "pages": {

@@ -16,6 +16,7 @@ export { controlCommands } from './controlCommands';
 export { footerPane } from './footerPane';
 export { useHostSearchSources } from './hooks/useHostSearch';
 export { hostCrumbs, searchKinds } from './pages';
+export { shortcuts } from './shortcuts';
 export { sidebar } from './sidebar';
 export { filtersByOrganization } from './utils/organizations';
 

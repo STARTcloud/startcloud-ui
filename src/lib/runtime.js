@@ -144,16 +144,8 @@ let rulesPromise = null;
 
 export const fetchHealth = () => client.get('/api/health', PUBLIC);
 
-/**
- * Fetch the host's validation rules once, `GET /api/rules` without auth,
- * into the live `rules` binding every form reads through `useFormRules`;
- * a host that answers 404 has none, any other failure is logged, and in
- * both cases `rules` stays null and the app starts without them.
- *
- * @returns {Promise<Object|null>} The JSON Schema document, or null
- */
-export const loadRules = () => {
-  rulesPromise ||= client.get('/api/rules', PUBLIC).then(
+const fetchRules = () =>
+  client.get('/api/rules', PUBLIC).then(
     document => {
       rules = document;
       return document;
@@ -165,6 +157,20 @@ export const loadRules = () => {
       return null;
     }
   );
+
+/**
+ * Fetch the host's validation rules once, `GET /api/rules` without auth,
+ * into the live `rules` binding every form reads through `useFormRules`,
+ * while the status lists the `rules` feature; a host that lists no
+ * `rules` is never asked, a host that answers 404 has none, any other
+ * failure is logged, and in every case `rules` stays null and the app
+ * starts without them.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @returns {Promise<Object|null>} The JSON Schema document, or null
+ */
+export const loadRules = status => {
+  rulesPromise ||= hasFeature(status, 'rules') ? fetchRules() : Promise.resolve(null);
   return rulesPromise;
 };
 

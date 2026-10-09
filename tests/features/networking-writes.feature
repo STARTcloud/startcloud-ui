@@ -89,13 +89,13 @@ Feature: networking writes
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/links"
     Then the "vnics" section of the networking page lists 2 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic1"
     Then the "vnics" section of the networking page lists 1 rows
     And the "vlans" section of the networking page says "filtered"
     When I open "/hosts/3/network/addresses"
     Then the "managed-addresses" section of the networking page lists 3 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic1"
     Then the "managed-addresses" section of the networking page lists 1 rows
 

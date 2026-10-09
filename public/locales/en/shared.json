@@ -213,6 +213,58 @@
       "verifyInvalid": "Configuration INVALID",
       "failed": "Request failed",
       "resultOutput": "Output"
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "menu": "Keyboard shortcuts",
+      "filter": "Search for a shortcut by description or key combination",
+      "noMatches": "No shortcuts match",
+      "or": "or",
+      "keys": {
+        "ctrl": "Ctrl",
+        "alt": "Alt",
+        "shift": "Shift",
+        "enter": "Enter"
+      },
+      "category": {
+        "jump": "Jump to",
+        "application": "Application",
+        "navigation": "Navigation",
+        "actions": "Actions",
+        "search": "Search"
+      },
+      "row": {
+        "home": "Home",
+        "profile": "Profile",
+        "inbox": "Inbox",
+        "inboxUnread": "Inbox, unread",
+        "favorites": "Favorites",
+        "watched": "Watched",
+        "collections": "Collections",
+        "help": "Open keyboard shortcuts help",
+        "sidebar": "Toggle sidebar",
+        "userMenu": "Open user menu",
+        "logout": "Log out",
+        "down": "Move selection down",
+        "up": "Move selection up",
+        "open": "Open selected row",
+        "openTab": "Open selected row in a new tab",
+        "back": "Back",
+        "nextSection": "Next section",
+        "previousSection": "Previous section",
+        "search": "Open search",
+        "filters": "Toggle filters",
+        "nextHost": "Next host",
+        "previousHost": "Previous host",
+        "create": "Create",
+        "refresh": "Refresh",
+        "edit": "Edit",
+        "delete": "Delete",
+        "bulkSelect": "Toggle bulk select",
+        "toggleRow": "Toggle selection of the selected row",
+        "dismiss": "Dismiss selected",
+        "watch": "Watch or unwatch"
+      }
     }
   },
   "user": {
@@ -2943,7 +2995,9 @@
       "updateLatestVersion": "Latest version",
       "updatePublished": "Published",
       "updateReleaseNotes": "Release notes",
-      "updateChangelog": "Changelog"
+      "updateChangelog": "Changelog",
+      "updateNotes": "Release notes · {{version}}",
+      "updateAssets": "Assets"
     }
   },
   "pages": {

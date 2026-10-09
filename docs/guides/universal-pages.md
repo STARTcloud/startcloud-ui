@@ -408,7 +408,7 @@ adapter, registers the search binding, and renders:
   `provisioner_catalog`. Where the link goes is the session's
   `integrations` claim: signed out, no `hyperweaver` entry, or a
   `deploy_target` of `local`, is the agent's
-  `com.startcloud.hyperweaver-agent:/open?create=machine&…` link opened in
+  `hwa://open?create=machine&…` link opened in
   this window, and any other `deploy_target` is that origin's
   `/?create=machine&…` page opened in a new tab; a press asks the target's
   status first, as the Universal Deploy Contract says. A host that relays

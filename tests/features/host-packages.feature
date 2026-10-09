@@ -22,7 +22,7 @@ Feature: host packages
     And the browser records its requests
     When I open "/hosts/3/updates/packages"
     Then the "packages" table of the section page lists 4 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the section page for "ooce"
     Then the "packages" table of the section page lists 1 rows
     When I search the section page for ""

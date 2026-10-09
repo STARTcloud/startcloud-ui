@@ -71,8 +71,9 @@ citation, never with the author.
 
 ## The rule set
 
-A UI backend that accepts writes answers `GET /api/rules`, before login, without
-auth, with one JSON Schema 2020-12 document:
+A UI backend that accepts writes lists `rules` in its `/api/status` `features`
+and answers `GET /api/rules`, before login, without auth, with one JSON Schema
+2020-12 document:
 
 ```json
 {
@@ -165,12 +166,18 @@ auth, with one JSON Schema 2020-12 document:
 - The password rule carries the UI backend's own minimum, so the form enforces the
   policy the route enforces; the default is 15 (NIST SP 800-63B rev 4
   §3.1.1.2).
+- The `rules` feature token gates the read: the UI asks for the document
+  only while the status lists `rules`, and a UI backend that lists no
+  `rules` is never asked and has none, because a host without the route
+  has nothing to answer.
 - The document is cached for the session: the UI fetches it once after
   `/api/status`, before the first render, through `loadRules`, and every
   form reads it through `useFormRules`. A
   UI backend that answers 404 has no rules. Any other failure is logged and the
   app starts without rules, since the route still evaluates every write;
-  the document is never a reason not to draw the page.
+  the document is never a reason not to draw the page. Without the
+  document every form validates on the client's own defaults, the
+  page's `required` and the `$defs` fallback.
 
 ### Forms
 
@@ -475,7 +482,7 @@ One implementation in the STARTcloud UI, every form drawn through it:
 | Piece              | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | the evaluator      | `DEFS`, the named patterns as the fallback document; `validateValue(schema, value, document)` and `validateObject(schema, values, document)` over the vocabulary, answering `[{ pointer, rule, params }]`, nested objects and `additionalProperties` maps walked, a property hidden by `dependsOn`/`showWhen` skipped, `equals` and `custom` honored; `isVisible`, `scopesFor`; `messageFor(error, label, t)` mapping to `validation.<rule>`; `refusalMessage({ error, labels, t })`, the row action bars' one sentence over an `ApiError`'s `errors[]` |
-| the runtime        | `rules`, the UI backend's `/api/rules` fetched once by `loadRules()` before the first render; `null` on 404 or any failure                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| the runtime        | `rules`, the UI backend's `/api/rules` fetched once by `loadRules(status)` before the first render while the status lists `rules`; `null` without the token, on 404 or any failure                                                                                                                                                                                                                                                                                                                                                                      |
 | `useFormRules`     | `useFormRules({ formKey, schema, values, labels, idPrefix })` → `{ errors, touched, summary, onBlur, validateAll, applyServerErrors, clear, reset, idFor, labelFor }`: the UI backend's entry merged onto the page's declaration, the blur and submit timing, the server's `errors[]` merged by pointer with entries matching no field kept for the summary, a server error cleared when its value changes                                                                                                                                              |
 | `Field`            | the label, the control as a render prop receiving `{ id, aria-invalid, aria-describedby, aria-errormessage }`, the hint while there is no error, `FieldError` while there is                                                                                                                                                                                                                                                                                                                                                                            |
 | `FieldError`       | the inline error with its id, the hidden prefix and the danger rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |

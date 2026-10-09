@@ -24,6 +24,7 @@ import { useEventStream } from '../../../hooks/useEventStream';
 import { useInboxEvents } from '../../../hooks/useInboxEvents';
 import { useListSearch } from '../../../hooks/useListSearch';
 import { useSelection } from '../../../hooks/useSelection';
+import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { applyInboxPage } from '../../../utils/inboxEvents';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 
@@ -31,6 +32,8 @@ const PREFS_KEY = 'table_prefs_inbox';
 const EMPTY_LISTING = { rows: [], total: 0, totalPages: 0 };
 const NO_GROUPS = [];
 const DEFAULT_SORT = [{ column: 'time', direction: 'desc' }];
+const QUERY_KEY = 'q';
+const FILTER_KEYS = ['read', 'type'];
 
 const FILTER_GROUPS = [
   {
@@ -288,7 +291,12 @@ const BulkPane = ({ count, onClear, onMarkRead, onMarkUnread, onDelete }) => {
       <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onMarkUnread}>
         {t('inbox.bulk.markUnread')}
       </button>
-      <button type="button" className="btn btn-sm btn-outline-danger" onClick={onDelete}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        data-action="dismiss-selected"
+        onClick={onDelete}
+      >
         {t('inbox.bulk.delete')}
       </button>
     </>
@@ -307,7 +315,9 @@ BulkPane.propTypes = {
  * The full inbox at `/notifications`, the one table of the estate over
  * the hub's paged shape: the navbar search bound with a query over the
  * loaded rows by title and body, the Status (`unread`, `read`) and Type
- * groups narrowing the loaded rows client-side, the Per page group (25,
+ * groups narrowing the loaded rows client-side, each held in the URL as
+ * `read` and `type` so `/notifications?read=unread` opens on the unread
+ * rows, the Per page group (25,
  * 50, 100, 250) resetting the page to 0 on a change and the Columns
  * group, the sort, the hidden columns, the widths and the size under
  * `table_prefs_inbox`; a `SectionHeading` carrying the total as muted
@@ -354,6 +364,7 @@ const InboxPage = ({ notifications }) => {
   );
   const [showDeleteAll, setShowDeleteAll] = useState(false);
   const selection = useSelection(entries, { labelOf: row => row.title });
+  const url = useUrlNarrowing({ queryKey: QUERY_KEY, filterKeys: FILTER_KEYS });
 
   const needle = query.trim().toLowerCase();
   const searched = useMemo(
@@ -366,6 +377,7 @@ const InboxPage = ({ notifications }) => {
     placeholderKey: 'inbox.search',
     groups: NO_GROUPS,
     clientGroups: FILTER_GROUPS,
+    url,
     onClearFilters: keepServerFilters,
     action: null,
     rows: searched,

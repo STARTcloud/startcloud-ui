@@ -18,27 +18,6 @@ import { parseQuery, rowKeyOf, searchRowPath } from '../../utils/searchRow';
 import { LIST_ID, optionIdOf, optionOrder } from './SearchPanel';
 
 const HOVER_DWELL_MS = 400;
-const EDITABLE = 'input,select,textarea,[contenteditable]';
-
-const isFindShortcut = event =>
-  event.key.toLowerCase() === 'k' && (event.ctrlKey || event.metaKey) && !event.altKey;
-
-const useFindShortcut = ({ on, open }) => {
-  useEffect(() => {
-    if (!on) {
-      return undefined;
-    }
-    const onKeyDown = event => {
-      if (!isFindShortcut(event) || event.target?.closest?.(EDITABLE)) {
-        return;
-      }
-      event.preventDefault();
-      open();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [on, open]);
-};
 
 const SearchIconButton = ({ filtersOn, onOpen, onMouseEnter, onMouseLeave }) => {
   const { t } = useTranslation();
@@ -206,9 +185,8 @@ SearchBox.propTypes = {
  * first result link, Alt+Down leaves the focus in the input, Enter opens
  * the highlighted result or the first; Escape returns to this-app mode
  * with the query kept, then clears the query, then folds the box back
- * into the icon. Ctrl+K,
- * or Cmd+K on a Mac, pressed outside any input, select, textarea or
- * editable element expands the box and puts focus in it.
+ * into the icon. The `/` and Ctrl+Alt+F shortcuts of the shell expand the
+ * box through the context's `openBox`.
  */
 export const NavbarSearchControl = () => {
   const { t } = useTranslation();
@@ -220,23 +198,14 @@ export const NavbarSearchControl = () => {
   const dwell = useRef(null);
   const drawn = Boolean(context) && hasFeature(status, 'search');
 
-  const open = () => {
-    if (expanded) {
-      context.inputRef.current?.focus();
-      return;
-    }
-    context.setAppQuery(context.store.get()?.query || '');
-    context.setExpanded(true);
-  };
-
   useEffect(() => () => clearTimeout(dwell.current), []);
-  useFindShortcut({ on: drawn, open });
 
   if (!drawn) {
     return null;
   }
 
   const { store, setExpanded, panelOpen, setPanelOpen, setAppQuery, setPinned, inputRef } = context;
+  const open = context.openBox;
   const { appSearch, run, activeKey, setActiveKey, everywhere, setEverywhere } = context;
   const appName = t('search.appPlaceholder', { app: status.brand.name });
   const query = context.appQuery;

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaLayerGroup, FaRightToBracket, FaSliders, FaTicket } from 'react-icons/fa6';
+import { FaKeyboard, FaLayerGroup, FaRightToBracket, FaSliders, FaTicket } from 'react-icons/fa6';
 
 import { useUnread } from '../../contexts/UnreadContext';
 
@@ -198,9 +198,66 @@ ActiveOrgItem.propTypes = {
 const dropProps = drop => ({ align: drop === 'up' ? 'start' : 'end', drop });
 
 /**
+ * The rows under the app section: Notifications while an adapter and the
+ * push adapter are given, Help while a ticket URL is, and Keyboard
+ * shortcuts while `onShortcuts` is, under one divider while any draws.
+ */
+const SupportRows = ({
+  notifications,
+  push,
+  viewAllUrl,
+  viewAllTo,
+  LinkComponent,
+  ticketUrl,
+  onShortcuts,
+}) => {
+  const { t } = useTranslation();
+  if (!notifications && !ticketUrl && !onShortcuts) {
+    return null;
+  }
+  return (
+    <>
+      <Dropdown.Divider />
+      {notifications && push ? (
+        <NotificationsItem
+          notifications={notifications}
+          push={push}
+          viewAllUrl={viewAllUrl}
+          viewAllTo={viewAllTo}
+          LinkComponent={LinkComponent}
+        />
+      ) : null}
+      {ticketUrl ? (
+        <Dropdown.Item href={ticketUrl} target="_blank" rel="noopener noreferrer">
+          <FaTicket className="me-2" />
+          {t('navbar.help')}
+        </Dropdown.Item>
+      ) : null}
+      {onShortcuts ? (
+        <Dropdown.Item as="button" type="button" data-tool="shortcuts" onClick={onShortcuts}>
+          <FaKeyboard className="me-2" />
+          {t('navbar.shortcuts.menu')}
+        </Dropdown.Item>
+      ) : null}
+    </>
+  );
+};
+
+SupportRows.propTypes = {
+  notifications: notificationsAdapterShape,
+  push: pushAdapterShape.isRequired,
+  viewAllUrl: PropTypes.string.isRequired,
+  viewAllTo: PropTypes.string.isRequired,
+  LinkComponent: PropTypes.elementType.isRequired,
+  ticketUrl: PropTypes.string.isRequired,
+  onShortcuts: PropTypes.func,
+};
+
+/**
  * The user menu of the navbar contract's User menu section, the identity
  * card, the organization row, Preferences, the favorites, the app
- * section, Notifications, Help and Logout under one toggle of the
+ * section, Notifications, Help, Keyboard shortcuts (the row `onShortcuts`
+ * opens the modal of) and Logout under one toggle of the
  * person's name and avatar; `allOrganizations`, on a host that narrows
  * by organization, draws the organization row from one membership on and
  * the All organizations row first in the switcher; `drop` opens it
@@ -235,6 +292,7 @@ const UserMenu = ({
   viewAllTo = '',
   LinkComponent = 'a',
   ticketUrl,
+  onShortcuts = null,
   onSignOut,
   onSignOutEverywhere,
   drop = 'down',
@@ -317,22 +375,15 @@ const UserMenu = ({
             </>
           ) : null}
 
-          {notifications || ticketUrl ? <Dropdown.Divider /> : null}
-          {notifications && push ? (
-            <NotificationsItem
-              notifications={notifications}
-              push={push}
-              viewAllUrl={viewAllUrl}
-              viewAllTo={viewAllTo}
-              LinkComponent={LinkComponent}
-            />
-          ) : null}
-          {ticketUrl ? (
-            <Dropdown.Item href={ticketUrl} target="_blank" rel="noopener noreferrer">
-              <FaTicket className="me-2" />
-              {t('navbar.help')}
-            </Dropdown.Item>
-          ) : null}
+          <SupportRows
+            notifications={notifications}
+            push={push}
+            viewAllUrl={viewAllUrl}
+            viewAllTo={viewAllTo}
+            LinkComponent={LinkComponent}
+            ticketUrl={ticketUrl}
+            onShortcuts={onShortcuts}
+          />
 
           <Dropdown.Divider />
           <LogoutItem oidc={oidc} onSignOut={onSignOut} onSignOutEverywhere={onSignOutEverywhere} />
@@ -382,6 +433,7 @@ UserMenu.propTypes = {
   viewAllTo: PropTypes.string,
   LinkComponent: PropTypes.elementType,
   ticketUrl: PropTypes.string.isRequired,
+  onShortcuts: PropTypes.func,
   onSignOut: PropTypes.func.isRequired,
   onSignOutEverywhere: PropTypes.func.isRequired,
   drop: PropTypes.oneOf(['down', 'up']),

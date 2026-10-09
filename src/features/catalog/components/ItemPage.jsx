@@ -60,6 +60,7 @@ const WatchStar = ({ watched, busy, onToggle }) => {
     <button
       type="button"
       className="btn btn-link p-0 text-warning d-inline-flex"
+      data-action="watch"
       onClick={onToggle}
       disabled={busy}
       title={label}

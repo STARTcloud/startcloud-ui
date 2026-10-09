@@ -71,6 +71,57 @@ Then('the agent page offers {string}', async ({ page }, action) => {
   await expect(frameOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();
 });
 
+Then('the agent page offers no {string}', async ({ page }, action) => {
+  await expect(frameOf(page)).toBeVisible();
+  await expect(frameOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+Then('the agent page heading is in the {string} tone', async ({ page }, tone) => {
+  await expect(frameOf(page).locator(`.section-heading .text-${tone}`)).toBeVisible();
+});
+
+Then(
+  'the agent page draws the release notes with {int} headings and {int} items',
+  async ({ page }, headings, items) => {
+    const notes = frameOf(page).locator('[data-panel="update"] .upd-notes');
+    await expect(notes).toBeVisible();
+    await expect(notes.locator('h3')).toHaveCount(headings);
+    await expect(notes.locator('li')).toHaveCount(items);
+  }
+);
+
+Then('the agent page draws no release notes', async ({ page }) => {
+  await expect(frameOf(page).locator('[data-panel="update"] .card')).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel="update"] .upd-label')).toHaveCount(0);
+  await expect(frameOf(page).locator('[data-panel="update"] .upd-notes')).toHaveCount(0);
+});
+
+When('I fold the {string} section of the agent page', async ({ page }, name) => {
+  await frameOf(page).locator(`[data-panel="${name}"] .section-card-chevron`).click();
+});
+
+Then('the {string} section of the agent page is folded', async ({ page }, name) => {
+  await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveAttribute(
+    'data-folded',
+    'true'
+  );
+});
+
+Then('the {string} section of the agent page is open', async ({ page }, name) => {
+  await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveAttribute(
+    'data-folded',
+    'false'
+  );
+});
+
+Then('the agent page lists the asset {string}', async ({ page }, name) => {
+  await expect(frameOf(page).locator('.upd-asset').filter({ hasText: name }).first()).toBeVisible();
+});
+
+Then('the agent page lists no asset', async ({ page }) => {
+  await expect(frameOf(page).locator('.upd-asset:visible')).toHaveCount(0);
+});
+
 Then('the agent page field {string} reads {string}', async ({ page }, id, value) => {
   await expect(frameOf(page).locator(`[id="${id}"]`)).toHaveValue(value);
 });

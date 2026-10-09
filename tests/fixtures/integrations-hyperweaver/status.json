@@ -26,7 +26,8 @@
     "health",
     "events",
     "footer",
-    "sidebar"
+    "sidebar",
+    "rules"
   ],
   "links": { "docs": "", "contact": "" },
   "ticket": null

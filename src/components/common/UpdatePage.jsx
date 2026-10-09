@@ -1,37 +1,76 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaArrowUpRightFromSquare, FaCircleUp, FaListCheck, FaRotate } from 'react-icons/fa6';
+import {
+  FaArrowUpRightFromSquare,
+  FaCircleUp,
+  FaFile,
+  FaListCheck,
+  FaRotate,
+} from 'react-icons/fa6';
 
 import { useGuard } from '../../contexts/GuardContext';
 import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { useEventStream } from '../../hooks/useEventStream';
+import { useFolds } from '../../hooks/useFolds';
 import { log } from '../../lib/logger';
+import { formatFileSize } from '../../utils/formatFileSize';
 import { formatRelativeTime } from '../../utils/relativeTime';
 
 import ConfirmModal from './ConfirmModal';
 import { absoluteTime } from './InboxList';
+import MarkdownArticle from './MarkdownArticle';
 import { httpsUrl } from './MethodList';
-import RecordRows from './RecordRows';
+import SectionCard, { foldsShape } from './SectionCard';
 import SectionHeading from './SectionHeading';
 
 const EMPTY = { data: null, loaded: false, failed: false };
+
+const ASSETS_OPEN = 'update-assets-open';
 
 const ADMIN_CONFIRM = {
   titleKey: 'admin.update.confirmTitle',
   messageKey: 'admin.update.confirmMessage',
 };
 
+const assetShape = PropTypes.shape({
+  name: PropTypes.string.isRequired,
+  url: PropTypes.string.isRequired,
+  size: PropTypes.number.isRequired,
+  checksum: PropTypes.string.isRequired,
+});
+
+/**
+ * The release assets a check carries: every entry of `assets` with a
+ * name, as `{ name, url, size, checksum }`, the size in bytes and the
+ * url and the checksum empty strings while the entry holds none; an
+ * absent or null `assets` is no asset.
+ *
+ * @param {Array|null|undefined} list - The `assets` member of the check
+ * @returns {Array<{ name: string, url: string, size: number, checksum: string }>} The assets
+ */
+export const assetsOf = list =>
+  Array.isArray(list)
+    ? list
+        .filter(asset => asset && typeof asset === 'object' && asset.name)
+        .map(asset => ({
+          name: String(asset.name),
+          url: String(asset.url ?? ''),
+          size: Number(asset.size) || 0,
+          checksum: String(asset.checksum ?? ''),
+        }))
+    : [];
+
 /**
  * The update a check offers: the current and the latest version with the
- * release URL, the release date and the changelog URL, each empty while
- * the answer holds none, while the answer says `update_available`, null
- * otherwise, so a backend that is current or answers no check draws no
- * Update button.
+ * release URL, the release date, the changelog URL, the release notes as
+ * markdown and the release assets, each empty while the answer holds
+ * none, while the answer says `update_available`, null otherwise, so a
+ * backend that is current or answers no check draws no Update button.
  *
  * @param {Object|null} answer - The answer of `GET app/updates/check`
- * @returns {{ current: string, latest: string, releaseUrl: string, releaseDate: string, changelog: string }|null} The update
+ * @returns {{ current: string, latest: string, releaseUrl: string, releaseDate: string, changelog: string, releaseNotes: string, assets: Array }|null} The update
  */
 export const updateOf = answer =>
   answer?.update_available
@@ -41,76 +80,145 @@ export const updateOf = answer =>
         releaseUrl: String(answer.release_url ?? ''),
         releaseDate: String(answer.release_date ?? ''),
         changelog: String(answer.changelog ?? ''),
+        releaseNotes: String(answer.release_notes ?? ''),
+        assets: assetsOf(answer.assets),
       }
     : null;
 
-const OutboundLink = ({ href, label, Icon }) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
-  >
+const FootLink = ({ href, label, Icon }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer">
     <Icon aria-hidden />
     {label}
   </a>
 );
 
-OutboundLink.propTypes = {
+FootLink.propTypes = {
   href: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
   Icon: PropTypes.elementType.isRequired,
 };
 
-const detailRowsOf = ({ data, t, language }) => {
-  const published = String(data?.release_date ?? '');
-  const release = httpsUrl(data?.release_url);
-  const changelog = httpsUrl(data?.changelog);
-  return [
-    ...(published
-      ? [
-          {
-            key: 'published',
-            label: t('hosts.nav.updatePublished'),
-            value: (
-              <span title={absoluteTime(published, language)}>
-                {formatRelativeTime(published, language)}
-              </span>
-            ),
-          },
-        ]
-      : []),
-    ...(release
-      ? [
-          {
-            key: 'release',
-            label: t('hosts.nav.updateReleaseNotes'),
-            value: (
-              <OutboundLink
+const SideCard = ({ data, language }) => {
+  const { t } = useTranslation();
+  const published = String(data.release_date ?? '');
+  const release = httpsUrl(data.release_url);
+  const changelog = httpsUrl(data.changelog);
+  return (
+    <div className="card upd-side-card">
+      <div className="card-body">
+        <dl className="upd-side-rows">
+          <dt>{t('hosts.nav.updateCurrentVersion')}</dt>
+          <dd>
+            <code>{String(data.current_version ?? '')}</code>
+          </dd>
+          <dt>{t('hosts.nav.updateLatestVersion')}</dt>
+          <dd>
+            <code>{String(data.latest_version ?? '')}</code>
+          </dd>
+          {published ? (
+            <>
+              <dt>{t('hosts.nav.updatePublished')}</dt>
+              <dd>
+                <span title={absoluteTime(published, language)}>
+                  {formatRelativeTime(published, language)}
+                </span>
+              </dd>
+            </>
+          ) : null}
+        </dl>
+        {release || changelog ? (
+          <div className="upd-foot-links">
+            {release ? (
+              <FootLink
                 href={release}
                 label={t('hosts.nav.updateReleaseNotes')}
                 Icon={FaArrowUpRightFromSquare}
               />
-            ),
-          },
-        ]
-      : []),
-    ...(changelog
-      ? [
-          {
-            key: 'changelog',
-            label: t('hosts.nav.updateChangelog'),
-            value: (
-              <OutboundLink
+            ) : null}
+            {changelog ? (
+              <FootLink
                 href={changelog}
                 label={t('hosts.nav.updateChangelog')}
                 Icon={FaListCheck}
               />
-            ),
-          },
-        ]
-      : []),
-  ];
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+SideCard.propTypes = {
+  data: PropTypes.object.isRequired,
+  language: PropTypes.string.isRequired,
+};
+
+const ReleaseNotes = ({ notes, version }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div className="upd-label">{t('hosts.nav.updateNotes', { version })}</div>
+      <MarkdownArticle markdown={notes} className="upd-notes" />
+    </>
+  );
+};
+
+ReleaseNotes.propTypes = {
+  notes: PropTypes.string.isRequired,
+  version: PropTypes.string.isRequired,
+};
+
+const AssetRow = ({ asset }) => {
+  const url = httpsUrl(asset.url);
+  return (
+    <li className="upd-asset">
+      <FaFile className="upd-asset-glyph" aria-hidden />
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer">
+          {asset.name}
+        </a>
+      ) : (
+        <span className="upd-asset-name">{asset.name}</span>
+      )}
+      {asset.checksum ? (
+        <code className="checksum upd-asset-checksum" title={asset.checksum}>
+          {asset.checksum}
+        </code>
+      ) : null}
+      <span className="upd-asset-size">{formatFileSize(asset.size)}</span>
+    </li>
+  );
+};
+
+AssetRow.propTypes = {
+  asset: assetShape.isRequired,
+};
+
+const Assets = ({ assets, folds }) => {
+  const { t } = useTranslation();
+  const folded = !folds.folded(ASSETS_OPEN);
+  return (
+    <div data-panel="update-assets" data-folded={folded}>
+      <SectionCard
+        title={t('hosts.nav.updateAssets')}
+        badge={<span className="badge text-bg-secondary rounded-pill">{assets.length}</span>}
+        folded={folded}
+        onFold={() => folds.toggle(ASSETS_OPEN)}
+      >
+        <ul className="upd-asset-list">
+          {assets.map(asset => (
+            <AssetRow key={`${asset.name} ${asset.url}`} asset={asset} />
+          ))}
+        </ul>
+      </SectionCard>
+    </div>
+  );
+};
+
+Assets.propTypes = {
+  assets: PropTypes.arrayOf(assetShape).isRequired,
+  folds: foldsShape.isRequired,
 };
 
 const stateOf = ({ check, available, t }) => {
@@ -152,20 +260,29 @@ UpdateButton.propTypes = {
 };
 
 /**
- * The shared Update page of one backend: whether a newer release is
- * published, with Update behind the typed confirmation while one is, the
- * current and the latest version as record rows, and under them the
- * published date as a relative time with the absolute time in its
- * tooltip, the release link and the changelog link as outbound links,
- * each row drawn only while the check carries its member.
+ * The shared Update page of one backend: the heading reading whether a
+ * newer release is published, in the success or the warning tone, with
+ * Update behind the typed confirmation while one is, then Refresh in its
+ * pane; under it two columns, stacked under the large breakpoint: at the
+ * side a card with the current and the latest version, the published
+ * date as a relative time with the absolute time in its tooltip, and the
+ * release link and the changelog link as small text links, each drawn
+ * only while the check carries its member; beside it the release notes,
+ * `release_notes` of the check rendered as markdown under a small
+ * heading naming the version they describe, the latest while an update
+ * is available and the installed one when up to date, and under them the
+ * Assets fold listing `assets` of the check, each a name link with its
+ * size and its checksum where one is carried, folded until opened, the
+ * fold kept under `prefsKey` like the page's other folds.
  *
  * It takes `update`, the adapter `{ check, apply }`, `check` answering
  * `{ current_version, latest_version, update_available, release_url,
- * release_date, changelog }` and `apply` answering
+ * release_date, changelog, release_notes, assets }` and `apply` answering
  * `{ message, task_id, target_version }`; `title`, the heading;
- * `confirm`, `{ titleKey, messageKey }`, the keys of the confirmation,
- * given `app`, `currentVersion` and `latestVersion`, the `admin.update.*`
- * keys by default; and `onRefresh`, called beside the page's own check on
+ * `prefsKey`, the localStorage key of the page's prefs; `confirm`,
+ * `{ titleKey, messageKey }`, the keys of the confirmation, given `app`,
+ * `currentVersion` and `latestVersion`, the `admin.update.*` keys by
+ * default; and `onRefresh`, called beside the page's own check on
  * Refresh. The check is read once as the page draws, again when the event
  * stream opens fresh or answers `reset`, and on Refresh; Update is one
  * request and one notice.
@@ -176,15 +293,17 @@ UpdateButton.propTypes = {
  * @param {Object} props
  * @param {{ check: Function, apply: Function }} props.update - The update adapter
  * @param {import('react').ReactNode} props.title - The heading
+ * @param {string} props.prefsKey - The localStorage key of the page's prefs
  * @param {{ titleKey: string, messageKey: string }} [props.confirm] - The confirmation's keys
  * @param {Function|null} [props.onRefresh] - Called on Refresh
  * @returns {import('react').ReactElement} The page
  */
-const UpdatePage = ({ update, title, confirm = ADMIN_CONFIRM, onRefresh = null }) => {
+const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefresh = null }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
   const guard = useGuard();
+  const folds = useFolds(prefsKey);
   const [check, setCheck] = useState(EMPTY);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -252,20 +371,6 @@ const UpdatePage = ({ update, title, confirm = ADMIN_CONFIRM, onRefresh = null }
     }
   };
 
-  const rows = [
-    {
-      key: 'current',
-      label: t('hosts.nav.updateCurrentVersion'),
-      value: <code>{String(check.data?.current_version ?? '')}</code>,
-    },
-    {
-      key: 'latest',
-      label: t('hosts.nav.updateLatestVersion'),
-      value: <code>{String(check.data?.latest_version ?? '')}</code>,
-    },
-    ...detailRowsOf({ data: check.data, t, language: i18n.language }),
-  ];
-
   const actions = (
     <>
       <UpdateButton update={available} busy={busy} onUpdate={() => setConfirming(true)} />
@@ -282,10 +387,26 @@ const UpdatePage = ({ update, title, confirm = ADMIN_CONFIRM, onRefresh = null }
     latestVersion: available?.latest,
   };
 
+  const notes = String(check.data?.release_notes ?? '');
+  const notesVersion = available ? available.latest : String(check.data?.current_version ?? '');
+  const assets = assetsOf(check.data?.assets);
+
   return (
     <>
       <SectionHeading title={title} count={count} state={state} actions={actions} />
-      <div data-panel="update">{check.data ? <RecordRows rows={rows} /> : null}</div>
+      <div data-panel="update">
+        {check.data ? (
+          <div className="row g-3">
+            <div className="col-lg-4 col-xl-3">
+              <SideCard data={check.data} language={i18n.language} />
+            </div>
+            <div className="col-lg-8 col-xl-9">
+              {notes ? <ReleaseNotes notes={notes} version={notesVersion} /> : null}
+              {assets.length ? <Assets assets={assets} folds={folds} /> : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
       <ConfirmModal
         show={confirming}
         handleClose={() => setConfirming(false)}
@@ -306,6 +427,7 @@ UpdatePage.propTypes = {
     apply: PropTypes.func.isRequired,
   }).isRequired,
   title: PropTypes.node.isRequired,
+  prefsKey: PropTypes.string.isRequired,
   confirm: PropTypes.shape({
     titleKey: PropTypes.string.isRequired,
     messageKey: PropTypes.string.isRequired,

@@ -260,8 +260,8 @@ const announce = () => {
  * The status starts from the role's fixture under `tests/fixtures` and
  * adds every token of the shared chrome a hyperweaver backend can answer:
  * `local-accounts`, `setup`, `admin`, `org-console`, `discover`,
- * `invitations`, `favorites`, `notifications`, `search`, `health` and
- * `events`, with `links.docs`, `links.contact`, `links.community`,
+ * `invitations`, `favorites`, `notifications`, `search`, `rules`, `health`
+ * and `events`, with `links.docs`, `links.contact`, `links.community`,
  * `brand.repo`, `brand.changelog`, the config names `app`, `auth`, `db`
  * and `mail`, and the topics `session`, `notifications`, `health`,
  * `profile`, `tasks`, `hosts` and `monitoring`. The ticket system answers

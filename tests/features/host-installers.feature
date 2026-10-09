@@ -22,7 +22,7 @@ Feature: host installer files and provisioners
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
     Then the "installers" table of the section page lists 4 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the section page for "domino"
     Then the "installers" table of the section page lists 2 rows
     When I search the section page for ""

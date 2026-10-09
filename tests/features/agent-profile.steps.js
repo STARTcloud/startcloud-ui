@@ -8,8 +8,9 @@ const menuOf = page => page.locator('.user-menu .dropdown-menu.show');
 
 const cardOf = page => menuOf(page).locator('.user-card');
 
-const notificationsRowOf = page =>
-  menuOf(page).locator('button.dropdown-item:not(.text-danger)').first();
+const ROW_BUTTONS = 'button.dropdown-item:not(.text-danger):not([data-tool="shortcuts"])';
+
+const notificationsRowOf = page => menuOf(page).locator(ROW_BUTTONS).first();
 
 const modalOf = page => page.locator('.notifications-modal');
 
@@ -59,7 +60,7 @@ Then("the account menu's Notifications row carries the count {int}", async ({ pa
 
 Then('the account menu offers no Notifications row', async ({ page }) => {
   await expect(menuOf(page)).toBeVisible();
-  await expect(menuOf(page).locator('button.dropdown-item:not(.text-danger)')).toHaveCount(0);
+  await expect(menuOf(page).locator(ROW_BUTTONS)).toHaveCount(0);
 });
 
 Then('the inbox page lists {int} rows', async ({ page }, count) => {

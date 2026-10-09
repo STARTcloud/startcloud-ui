@@ -87,9 +87,9 @@ describe('deployTargetOf', () => {
 });
 
 describe('deployHref', () => {
-  it('answers the reverse-domain protocol link of RFC 8252 for the local target', () => {
+  it('answers the agent protocol link hwa://open for the local target', () => {
     expect(deployHref('local', boxSeed)).toBe(
-      'com.startcloud.hyperweaver-agent:/open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
+      'hwa://open?create=machine&box=STARTcloud%2Fdebian12-server&box_version=1.2.3&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
     );
   });
 

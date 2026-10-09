@@ -65,6 +65,7 @@ import AppRoutes, {
   routeCrumbParent,
   routeTitleKey,
   searchKindsFor,
+  shortcutEntries,
   sidebarEntries,
 } from './router';
 
@@ -260,6 +261,10 @@ const App = ({ getSupportedLanguages }) => {
       }),
     [status, user, oidc, issuerUrl, memberships, collections]
   );
+  const shortcuts = useMemo(
+    () => shortcutEntries({ status, account: { user }, collections }),
+    [status, user, collections]
+  );
   const actionMenu = actionMenuFor({ status, account: { user } });
   const controlCommands = controlCommandsFor({ status, account: { user } });
   const footerPane = footerPaneFor({ status, account: { user } });
@@ -325,6 +330,7 @@ const App = ({ getSupportedLanguages }) => {
               footerPane={footerPane}
               routeTitleKey={routeTitleKey}
               routeCrumbParent={routeCrumbParent}
+              shortcuts={shortcuts}
               {...flags}
             >
               <AppRoutes

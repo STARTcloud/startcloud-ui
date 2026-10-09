@@ -62,6 +62,7 @@ import {
   collectionShape,
   pageContextShape,
   searchKinds as catalogSearchKinds,
+  shortcuts as catalogShortcuts,
   sidebar as catalogSidebar,
 } from '../features/catalog';
 import { ErrorPage, hasServerFault } from '../features/errors';
@@ -80,6 +81,7 @@ import {
   hostCrumbs,
   isServerRole,
   searchKinds as hostsSearchKinds,
+  shortcuts as hostsShortcuts,
   sidebar as hostsSidebar,
 } from '../features/hosts';
 import {
@@ -106,7 +108,7 @@ import {
   LinkAccountPage,
   LogoutConfirmPage,
 } from '../features/interstitials';
-import { InboxPage } from '../features/notifications';
+import { InboxPage, shortcuts as notificationsShortcuts } from '../features/notifications';
 import {
   AccountTypeStep,
   BackupCodesPage,
@@ -814,6 +816,23 @@ export const searchKindsFor = ({ status, account, collections }) => {
     {}
   );
 };
+
+/**
+ * Every mounted feature's `shortcuts` rows in the order hosts,
+ * notifications, catalog, the keyboard shortcuts the shell adds to its
+ * own and the Keyboard Shortcuts modal lists.
+ *
+ * @param {Object} options - The shell's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {Object} options.account - The session state from `useSession`
+ * @param {Array<Object>} options.collections - The host's mounted collection definitions
+ * @returns {Array<Object>} The rows `AppShell` takes as `shortcuts`
+ */
+export const shortcutEntries = ({ status, account, collections }) => [
+  ...hostsShortcuts(status, account),
+  ...notificationsShortcuts(status, account),
+  ...catalogShortcuts(status, account, collections),
+];
 
 /**
  * The first non-null `actionMenu(status, account)` answer of the mounted

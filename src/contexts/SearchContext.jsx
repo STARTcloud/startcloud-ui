@@ -387,8 +387,9 @@ const useScopeChip = scopeOf => {
  * everywhere or this app, the scope chip of the route while the page's
  * binding gives the panel something to draw, the run over the
  * app search's sources, the results page's request while that page is
- * mounted and the box's otherwise, and the refs of the box's input and the
- * results list. In this-app mode the box's run asks the sources of the
+ * mounted and the box's otherwise, the refs of the box's input and the
+ * results list, and `openBox`, which expands the box holding the page's
+ * query or puts the focus in it while it is expanded. In this-app mode the box's run asks the sources of the
  * serving backend and the rows the browser holds, and the chip's host
  * alone while a host chip is set; everywhere, every
  * source, each host through its own promise; the results page asks every
@@ -427,12 +428,21 @@ export const NavbarSearchProvider = ({ appSearch, children }) => {
           limit: APP_SEARCH_LIMIT,
         }
   );
+  const openBox = useCallback(() => {
+    if (expanded) {
+      inputRef.current?.focus();
+      return;
+    }
+    setAppQuery(store.get()?.query || '');
+    setExpanded(true);
+  }, [expanded, store]);
   const value = useMemo(
     () => ({
       store,
       pageStore,
       expanded,
       setExpanded,
+      openBox,
       panelOpen,
       setPanelOpen,
       appSearch,
@@ -457,6 +467,7 @@ export const NavbarSearchProvider = ({ appSearch, children }) => {
       store,
       pageStore,
       expanded,
+      openBox,
       panelOpen,
       appSearch,
       appQuery,

@@ -10,7 +10,12 @@ import { FaRotate } from 'react-icons/fa6';
 const RefreshButton = ({ onRefresh }) => {
   const { t } = useTranslation();
   return (
-    <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onRefresh}>
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-secondary"
+      data-action="refresh"
+      onClick={onRefresh}
+    >
       <FaRotate className="me-1" aria-hidden="true" />
       {t('hosts.page.refresh')}
     </button>

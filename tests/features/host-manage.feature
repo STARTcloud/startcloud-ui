@@ -107,12 +107,12 @@ Feature: host-manage
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/system/services"
     Then the "services" table of the section page lists 5 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the section page for "cron"
     Then the "services" table of the section page lists 1 rows
     When I open "/hosts/3/system/users"
     Then the "users" table of the section page lists 3 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the section page for "cron"
     Then the "users" table of the section page says "filtered"
     When I pick the tab "groups" of the section page

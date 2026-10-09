@@ -69,6 +69,58 @@ Feature: agent-settings
     Then the host was sent POST to "/api/agents/1/app/updates/apply" 1 times
     And I see "Update to 1.3.0 queued"
 
+  Scenario: Agent pages: the Update page draws the release notes as rendered markdown beside the versions, the assets under a fold folded until opened and kept over a reload
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the agent page heading is in the "warning" tone
+    And the agent page offers "settings-update"
+    And the agent page draws the release notes with 2 headings and 3 items
+    And I see "Hosts.yml Editor"
+    And I do not see "###"
+    And the agent page draws the "update-assets" panel
+    And the "update-assets" section of the agent page is folded
+    And the agent page lists no asset
+    When I fold the "update-assets" section of the agent page
+    Then the "update-assets" section of the agent page is open
+    And the agent page lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
+    And the agent page lists the asset "checksums.txt"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/hyperweaver-agent-1.3.0-linux-amd64.deb"
+    And I see "36.9 MB"
+    And I see "486 Bytes"
+    When I load the page again
+    Then the "update-assets" section of the agent page is open
+    And the agent page lists the asset "checksums.txt"
+
+  Scenario: Agent pages: a check without notes and assets draws the versions and the links alone, no notes heading and no Assets fold
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-agent-update-plain fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the agent page offers "settings-update"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0"
+    And the agent page draws no release notes
+    And the section page draws no "update-assets" panel
+
+  Scenario: Agent pages: an agent that is up to date draws the heading in the success tone with Refresh alone and the installed version's notes
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-agent-update-current fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the section page "update" draws
+    And the agent page heading is in the "success" tone
+    And the agent page offers no "settings-update"
+    And I see "1.3.0"
+    And the agent page draws the release notes with 1 headings and 2 items
+    And the agent page draws the "update-assets" panel
+    And the host was sent GET to "/api/agents/1/app/updates/check" 1 times
+
   Scenario: Agent pages: the Secrets page reads the document as it opens, saves one category as one PUT and reads again, and Reload reads again
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture

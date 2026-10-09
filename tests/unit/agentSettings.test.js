@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { updateOf } from '../../src/components/common/UpdatePage.jsx';
+import { assetsOf, updateOf } from '../../src/components/common/UpdatePage.jsx';
 import {
   SECRET_CATEGORIES,
   apiKeysOf,
@@ -29,6 +29,8 @@ describe('updateOf', () => {
       releaseUrl: '',
       releaseDate: '',
       changelog: '',
+      releaseNotes: '',
+      assets: [],
     });
     expect(
       updateOf({
@@ -38,6 +40,16 @@ describe('updateOf', () => {
         release_url: 'https://example.test/releases/1.3.0',
         release_date: '2026-10-01T00:00:00Z',
         changelog: 'https://example.test/CHANGELOG.md',
+        release_notes: '### Features\n\n* one',
+        assets: [
+          {
+            name: 'agent-1.3.0-linux-amd64.deb',
+            url: 'https://example.test/agent-1.3.0-linux-amd64.deb',
+            size: 38692454,
+            checksum: 'abc',
+          },
+          { name: 'checksums.txt', url: 'https://example.test/checksums.txt', size: 486 },
+        ],
       })
     ).toEqual({
       current: '1.2.0',
@@ -45,9 +57,55 @@ describe('updateOf', () => {
       releaseUrl: 'https://example.test/releases/1.3.0',
       releaseDate: '2026-10-01T00:00:00Z',
       changelog: 'https://example.test/CHANGELOG.md',
+      releaseNotes: '### Features\n\n* one',
+      assets: [
+        {
+          name: 'agent-1.3.0-linux-amd64.deb',
+          url: 'https://example.test/agent-1.3.0-linux-amd64.deb',
+          size: 38692454,
+          checksum: 'abc',
+        },
+        {
+          name: 'checksums.txt',
+          url: 'https://example.test/checksums.txt',
+          size: 486,
+          checksum: '',
+        },
+      ],
     });
     expect(updateOf({ update_available: false, current_version: '1.3.0' })).toBeNull();
     expect(updateOf(null)).toBeNull();
+  });
+
+  it('reads null notes and null assets as none', () => {
+    expect(
+      updateOf({
+        update_available: true,
+        current_version: '1.2.0',
+        latest_version: '1.3.0',
+        release_notes: null,
+        assets: null,
+      })
+    ).toMatchObject({ releaseNotes: '', assets: [] });
+  });
+});
+
+describe('assetsOf', () => {
+  it('keeps the entries that carry a name, the size a number and the checksum a string', () => {
+    expect(
+      assetsOf([
+        { name: 'a.deb', url: 'https://example.test/a.deb', size: '12', checksum: null },
+        { url: 'https://example.test/nameless' },
+        null,
+        { name: 'b.txt' },
+      ])
+    ).toEqual([
+      { name: 'a.deb', url: 'https://example.test/a.deb', size: 12, checksum: '' },
+      { name: 'b.txt', url: '', size: 0, checksum: '' },
+    ]);
+    expect(assetsOf(null)).toEqual([]);
+    expect(assetsOf(undefined)).toEqual([]);
+    expect(assetsOf('x')).toEqual([]);
   });
 });
 

@@ -31,7 +31,7 @@ Feature: host recipes and provisioning network
     And the browser records its requests
     When I open "/hosts/3/provisioning/recipes"
     Then the "recipes" table of the section page lists 3 rows
-    When I press "Control+k"
+    When I press "/"
     And I open the filter panel
     And I toggle the request pill "windows"
     Then the host was asked "/api/agents/3/provisioning/recipes" with "os_family" as "windows"

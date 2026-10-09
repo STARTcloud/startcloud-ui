@@ -110,14 +110,14 @@ Feature: host storage
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/pools"
     Then the "pools" table of the storage page lists 2 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the storage page for "tank"
     Then the "pools" table of the storage page lists 1 rows
     And the "datasets" table of the storage page lists 2 rows
     And the "pool-io" table of the storage page lists 1 rows
     When I open "/hosts/3/storage/disks"
     Then the "disks" table of the storage page lists 9 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the storage page for "tank"
     Then the "disks" table of the storage page lists 4 rows
     And the "disk-io" table of the storage page lists 4 rows
@@ -128,7 +128,7 @@ Feature: host storage
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/storage/disks"
     Then the "disks" table of the storage page lists 9 rows
-    When I press "Control+k"
+    When I press "/"
     And I open the filter panel
     And I toggle the filter pill "NVMe"
     Then the "disks" table of the storage page lists 1 rows

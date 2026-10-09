@@ -1,16 +1,18 @@
 import PropTypes from 'prop-types';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBook, FaBuilding, FaCircleInfo, FaCode, FaEnvelope, FaGear } from 'react-icons/fa6';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { POWERED_BY } from '../../config/brand';
 import { ColumnContext } from '../../contexts/ColumnContext';
 import { useCrumb } from '../../contexts/CrumbContext';
 import { useNotify } from '../../contexts/NoticeContext';
+import { NavbarSearchContext, hasPanel, useNavbarSearch } from '../../contexts/SearchContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { sessionStateShape } from '../../hooks/useSession';
+import { useShortcuts } from '../../hooks/useShortcuts';
 import { useSidebarBadges } from '../../hooks/useSidebarBadges';
 import { useSidebarSize } from '../../hooks/useSidebarSize';
 import { reportRenderError } from '../../lib/logger';
@@ -35,12 +37,18 @@ import Header from './Header';
 import { NoticeCards } from './Notices';
 import { notificationsAdapterShape, pushAdapterShape } from './NotificationsModal';
 import { OrgLogo, organizationShape } from './OrgSwitcherModal';
+import { shellShortcutRows } from './shortcutRows';
+import ShortcutsModal, { shortcutRowShape } from './ShortcutsModal';
 import Sidebar, { sidebarGroupShape } from './Sidebar';
 import UserMenu from './UserMenu';
 
 const SESSION_ENDED_KEY = 'session-ended';
 
 const DISCOVER_PATH = '/organizations/discover';
+
+const NARROW_QUERY = '(max-width: 899.98px)';
+
+const USER_MENU_TOGGLE = '.user-menu > .nav-link';
 
 const LOCAL_PROFILE_PATHS = { backend: '/profile', cookie: '/user/profile', apikey: '/profile' };
 
@@ -253,6 +261,73 @@ const useSidebarOverlay = pathname => {
   };
 };
 
+const openUserMenu = () => document.querySelector(USER_MENU_TOGGLE)?.click();
+
+/**
+ * The keyboard shortcuts of the shell: the one keydown listener over the
+ * shell's rows and the mounted features' rows, and the Keyboard Shortcuts
+ * modal's state. `/` and Ctrl+Alt+F open the navbar search through the
+ * context's `openBox`, Ctrl+/ toggles its filter panel while the page
+ * registered filter groups, `=` collapses the sidebar to the rail and
+ * back, or under 900px opens and closes the overlay, `p` opens the user
+ * menu, `?` the modal, Shift+Z then Shift+Z runs the logout action, the
+ * identity provider's everywhere while the session is its own.
+ *
+ * @param {Object} options - The shell's side
+ * @returns {{ rows: Array<Object>, show: boolean, open: Function, close: Function }} The rows and the modal's state
+ */
+const useShellShortcuts = ({
+  status,
+  account,
+  signedIn,
+  collections,
+  discoverTo,
+  notifications,
+  showSidebar,
+  overlay,
+  sidebarSize,
+  onSignOut,
+  shortcuts,
+}) => {
+  const navigate = useNavigate();
+  const [show, setShow] = useState(false);
+  const search = useContext(NavbarSearchContext);
+  const binding = useNavbarSearch(search?.store);
+  const searchOn = signedIn && Boolean(search) && hasFeature(status, 'search');
+  const rows = [
+    ...shellShortcutRows({
+      status,
+      signedIn,
+      collections,
+      discoverTo,
+      profile: {
+        to: localProfileFor(status)?.to || '',
+        href: account.issuerUrl ? `${account.issuerUrl}/user/profile` : '',
+      },
+      inboxTo: hasFeature(status, 'inbox') && notifications ? '/notifications' : '',
+      search: {
+        on: searchOn,
+        filters: searchOn && hasPanel(binding) && !search.everywhere,
+        open: () => search?.openBox(),
+        toggleFilters: () => search?.setPanelOpen(current => !current),
+      },
+      sidebar: {
+        on: showSidebar,
+        toggle: () =>
+          window.matchMedia(NARROW_QUERY).matches
+            ? overlay.toggle()
+            : sidebarSize.toggleMinimized(),
+      },
+      help: () => setShow(true),
+      userMenu: openUserMenu,
+      logout: () => (account.oidc ? account.signOutEverywhere() : onSignOut()),
+    }),
+    ...shortcuts,
+  ];
+  useShortcuts(rows, { navigate, root: document });
+  return { rows, show, open: () => setShow(true), close: () => setShow(false) };
+};
+
 const menuFor = ({ cookie, issuerUrl, localProfile, onAuthPage, rows, adapters }) => ({
   appRows: cookie && onAuthPage ? null : rows,
   showPreferences: cookie || Boolean(issuerUrl) || Boolean(localProfile),
@@ -420,9 +495,12 @@ const zoomModalOnHeaderDoubleClick = event => {
  * under the header and above the footer the way the sidebar stands beside
  * the stack, the scroll region with the page inside its own error
  * boundary, the footer while the host lists `footer`, with its pane
- * while `footerPane` answers a view, and the double-click on any modal's
+ * while `footerPane` answers a view, the double-click on any modal's
  * header that zooms the dialog to 95% of the viewport, a second one
- * returning it.
+ * returning it, and the keyboard shortcuts of `useShellShortcuts` with
+ * the mounted features' `shortcuts` rows, the Keyboard Shortcuts modal
+ * opened by `?`, the sidebar foot's keyboard button and the user menu's
+ * Keyboard shortcuts row.
  *
  * The crumbs come from the route. With a column: the crumbs of the
  * sidebar row the route matches, else the crumbs `routeCrumbParent`
@@ -466,6 +544,7 @@ const AppShell = ({
   footerPane,
   routeTitleKey = null,
   routeCrumbParent = null,
+  shortcuts,
   children,
 }) => {
   const { t, i18n } = useTranslation();
@@ -553,6 +632,20 @@ const AppShell = ({
   const gates = columnGates({ cookie, showAbout, showOrgConsole });
   const discoverTo = hasFeature(status, 'discover') ? DISCOVER_PATH : '';
 
+  const keys = useShellShortcuts({
+    status,
+    account,
+    signedIn,
+    collections,
+    discoverTo,
+    notifications,
+    showSidebar,
+    overlay,
+    sidebarSize,
+    onSignOut,
+    shortcuts,
+  });
+
   const userMenu = buildUserMenu({
     account,
     status,
@@ -572,7 +665,7 @@ const AppShell = ({
         apiRows,
         t,
       }),
-      adapters: { notifications, push, ticketUrl, onSignOut },
+      adapters: { notifications, push, ticketUrl, onSignOut, onShortcuts: keys.open },
     }),
   });
 
@@ -628,6 +721,7 @@ const AppShell = ({
         pane={footerPane}
         sidebar={showSidebar ? sidebarSize : null}
       />
+      <ShortcutsModal show={keys.show} rows={keys.rows} onHide={keys.close} />
     </>
   );
 
@@ -646,6 +740,7 @@ const AppShell = ({
         size={sidebarSize}
         readout={readout}
         foot={slots.foot}
+        onShortcuts={keys.open}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>
@@ -685,6 +780,7 @@ AppShell.propTypes = {
   footerPane: PropTypes.func,
   routeTitleKey: PropTypes.func,
   routeCrumbParent: PropTypes.func,
+  shortcuts: PropTypes.arrayOf(shortcutRowShape).isRequired,
   children: PropTypes.node.isRequired,
 };
 

@@ -282,6 +282,7 @@ const WatchStar = ({ watched, onToggle }) => {
     <button
       type="button"
       className="btn btn-link btn-sm p-0 text-warning"
+      data-action="watch"
       onClick={onToggle}
       title={label}
       aria-label={label}

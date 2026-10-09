@@ -47,6 +47,7 @@ Feature: integrations hyperweaver
     When I type "ftp://bad host" into the Hyperweaver field "origin"
     And I press the Hyperweaver card's "server-add" action
     Then the Hyperweaver field "origin" is invalid
+    And the host was sent GET to "/api/rules"
     And the host was not sent PATCH to "/api/user/integrations/hyperweaver"
     And the host was not sent POST to "/api/user/integrations/hyperweaver/connect"
 

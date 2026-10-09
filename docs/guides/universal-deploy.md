@@ -99,17 +99,47 @@ the Hyperweaver servers they attached and `settings.deploy_target` one of
 `integrations` scope carries the service on the token's `integrations`
 claim, so a sender reads the target from the claims it already holds.
 
-| The claim says                                                           | The link                                         |
-| ------------------------------------------------------------------------ | ------------------------------------------------ |
-| signed out, no `hyperweaver` entry, or `deploy_target` absent or `local` | `com.startcloud.hyperweaver-agent:/open?<query>` |
-| `deploy_target` an origin                                                | `<origin>/?<query>`                              |
+| The claim says                                                           | The link             |
+| ------------------------------------------------------------------------ | -------------------- |
+| signed out, no `hyperweaver` entry, or `deploy_target` absent or `local` | `hwa://open?<query>` |
+| `deploy_target` an origin                                                | `<origin>/?<query>`  |
 
-The desktop agent registers `hwa`, `hyperweaver-agent` and
-`com.startcloud.hyperweaver-agent`; a sender writes
-`com.startcloud.hyperweaver-agent:/open`, the reverse-domain private-use
-form of RFC 8252 section 7.1. A server link opens in a new tab; a
-protocol link opens in place, because the operating system hands it to
-the agent and the page stays.
+A server link opens in a new tab; a protocol link opens in place, because
+the operating system hands it to the agent and the page stays.
+
+### The agent's scheme
+
+The desktop agent's protocol scheme is `hwa`. It is the name every
+installed agent registers with the operating system, on Windows, Linux
+and macOS, and the name the shared UI's own desktop sign-in button opens,
+so one link form reaches every agent ever installed.
+
+| Name                               | Registered by the agent | Written by a sender | Accepted by the agent |
+| ---------------------------------- | ----------------------- | ------------------- | --------------------- |
+| `hwa`                              | yes                     | yes                 | yes                   |
+| `hyperweaver-agent`                | yes                     | no                  | yes                   |
+| `com.startcloud.hyperweaver-agent` | yes                     | no                  | yes                   |
+
+Every reader of a protocol link, the agent and any page or test that
+checks one, accepts all three names and both forms, `<scheme>://open` and
+`<scheme>:/open`; every writer of one writes `hwa://open`. The two longer
+names exist so the macOS bundle identifier and a plain launch name resolve
+to the agent as well; neither is a link a sender builds.
+
+`hwa://open` is the form, not the reverse-domain single-slash form of RFC
+8252 section 7.1, because that section describes an OAuth redirect URI of
+a native app and not a link that launches one: a protocol link needs only
+a scheme name the operating system has registered, RFC 7595 section 3.8's
+reversed-domain naming is a SHOULD that the registered short-name schemes
+of the industry (`vscode`, `steam`, `slack`, `notes`, `ms-*`) do not
+follow, `//` is legal syntax under RFC 3986 section 3, and a link that
+names a scheme the installed agent never registered opens nothing. The
+Universal Identity Contract records `hwa://` as the estate's desktop
+hand-off scheme and the reverse-domain form as a recorded deviation.
+
+A change to the scheme a sender writes changes this section first, then
+the one constant each sender holds, and nothing else; the constant's own
+note points here.
 
 A person edits the servers and the target on their profile's Preferences
 section and on the service's own page at `/user/integrations/hyperweaver`,
@@ -164,7 +194,7 @@ requests the `integrations` scope.
 Two receivers exist, and a person reaches one or the other by the target
 rule alone.
 
-**The desktop agent** receives `com.startcloud.hyperweaver-agent:/open?<query>`, validates the query
+**The desktop agent** receives `hwa://open?<query>`, validates the query
 against the table above, mints its tray token and opens the signed-in UI
 at `/?<query>#tray=…`; the UI claims the fragment, strips it, and the
 hosts feature moves `/?<query>` to the create wizard of the one serving

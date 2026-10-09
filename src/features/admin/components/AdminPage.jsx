@@ -56,7 +56,11 @@ const AdminPage = ({ session, returnTo, allowed, admin, page }) => {
         {page === 'config' ? <ConfigPage config={admin.config || null} /> : null}
         {page === 'system' && admin.storage ? <AdminStorage storage={admin.storage} /> : null}
         {page === 'update' && admin.update && allowed ? (
-          <UpdatePage update={admin.update} title={t('hosts.nav.update')} />
+          <UpdatePage
+            update={admin.update}
+            title={t('hosts.nav.update')}
+            prefsKey="table_prefs_admin_update"
+          />
         ) : null}
       </div>
     </div>

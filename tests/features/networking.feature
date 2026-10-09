@@ -96,7 +96,7 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/network/addresses"
     Then the "addresses" table of the networking page lists 4 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "10.0.0.12"
     Then the "addresses" table of the networking page lists 1 rows
     And I see "10.0.0.12"
@@ -437,12 +437,12 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/interfaces"
     Then the "interfaces" table of the networking page lists 3 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic0"
     Then the "interfaces" table of the networking page lists 1 rows
     When I open "/hosts/3/network/addresses"
     Then the "addresses" table of the networking page lists 4 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic0"
     Then the "addresses" table of the networking page lists 1 rows
 
@@ -453,12 +453,12 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/routes"
     Then the "routes" table of the networking page lists 3 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic0"
     Then the "routes" table of the networking page lists 1 rows
     When I open "/hosts/3/network/bandwidth"
     Then the "bandwidth" table of the networking page lists 2 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the networking page for "vnic0"
     Then the "bandwidth" table of the networking page lists 1 rows
 
@@ -469,7 +469,7 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/addresses"
     Then the "addresses" table of the networking page lists 4 rows
-    When I press "Control+k"
+    When I press "/"
     And I open the filter panel
     And I toggle the filter pill "v6"
     Then the "addresses" table of the networking page lists 1 rows
@@ -488,7 +488,7 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/addresses"
     Then the "addresses" table of the networking page draws the "address" column
-    When I press "Control+k"
+    When I press "/"
     And I open the filter panel
     And I toggle column 2 of the Columns group of the "addresses" table
     Then the "addresses" table of the networking page draws no "address" column

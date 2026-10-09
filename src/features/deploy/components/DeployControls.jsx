@@ -102,7 +102,7 @@ const openServer = ({ href, origin, localHref, notify, t }) => {
  * session's `integrations` claim, read once through the runtime session's
  * memoized `claims()` and held: signed out, no `hyperweaver` entry, or a
  * `deploy_target` of `local` or none, is the agent's
- * `com.startcloud.hyperweaver-agent:/open?<query>` link, and any other
+ * `hwa://open?<query>` link, and any other
  * `deploy_target` is that origin's `/?<query>` page in a new tab. A press
  * asks the target's `GET /api/status` first: the local agent answering
  * follows the link in this window and its silence opens the dialog that

@@ -11,6 +11,7 @@ import { agentSignInsOf, isLoopback } from '../utils/agentSignIns';
 
 import CodeSsoLogin from './CodeSsoLogin';
 
+// Do not change this scheme without reading docs/guides/universal-deploy.md, "The agent's scheme".
 const DESKTOP_HANDOFF = 'hwa://open';
 
 const SSO_UNAVAILABLE = 'unavailable';

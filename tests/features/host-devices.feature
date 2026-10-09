@@ -67,7 +67,7 @@ Feature: host devices
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices table lists 8 rows
-    When I press "Control+k"
+    When I press "/"
     And I search the devices page for "intel"
     Then the devices table lists 3 rows
     And the passthrough table lists 2 rows
@@ -78,7 +78,7 @@ Feature: host devices
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices table lists 8 rows
-    When I press "Control+k"
+    When I press "/"
     And I open the filter panel
     And I toggle the filter pill "Storage"
     Then the devices table lists 3 rows

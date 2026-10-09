@@ -49,6 +49,7 @@ const SHARED_FEATURES = [
   'health',
 ];
 const SEARCH_FEATURES = ['search'];
+const RULES_FEATURES = ['rules'];
 const SEARCH_KINDS = AGENT_MODE ? ['machine', 'config'] : ['organization', 'user', 'host'];
 const SEARCH_PATH = '/api/search';
 const QUERY_MIN = 2;
@@ -82,9 +83,14 @@ const health = { phase: 0 };
 
 const sharedFeatures = () => {
   if (APIKEY_MODE) {
-    return SEARCH_FEATURES;
+    return [...SEARCH_FEATURES, ...RULES_FEATURES];
   }
-  return [...SHARED_FEATURES, ...SEARCH_FEATURES, ...(ZONE_MODE ? [] : STREAM_FEATURES)];
+  return [
+    ...SHARED_FEATURES,
+    ...SEARCH_FEATURES,
+    ...RULES_FEATURES,
+    ...(ZONE_MODE ? [] : STREAM_FEATURES),
+  ];
 };
 
 const eventsOf = () => {

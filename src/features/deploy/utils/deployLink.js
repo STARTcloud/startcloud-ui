@@ -10,7 +10,8 @@ const SEED_KEYS = [
 ];
 const SERVICE = 'hyperweaver';
 const LOCAL = 'local';
-const SCHEME = 'com.startcloud.hyperweaver-agent:/open';
+// Do not change this scheme without reading docs/guides/universal-deploy.md, "The agent's scheme".
+const SCHEME = 'hwa://open';
 
 export const AGENT_ORIGIN = 'https://127.0.0.1:9421';
 
@@ -51,8 +52,8 @@ export const deployTargetOf = claims => {
 };
 
 /**
- * The link the Deploy glyph opens: `com.startcloud.hyperweaver-agent:/open?<query>`
- * for the `local` target, the agent's reverse-domain private-use scheme,
+ * The link the Deploy glyph opens: `hwa://open?<query>` for the `local`
+ * target, the agent's protocol scheme of the Universal Deploy Contract,
  * else `<origin>/?<query>`, the origin with no trailing slash.
  *
  * @param {string} target - `local` or the origin, from `deployTargetOf`

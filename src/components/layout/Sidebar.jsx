@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCaretDown, FaCaretRight, FaChevronLeft } from 'react-icons/fa6';
+import { FaCaretDown, FaCaretRight, FaChevronLeft, FaKeyboard } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { useCssVar } from '../../hooks/useCssVar';
@@ -332,6 +332,8 @@ const TreeNode = ({ node, inset, tree, current }) => {
         title={node.label}
         aria-expanded={branch ? open : undefined}
         data-sidebar-row
+        data-node={node.key}
+        data-to={node.to}
         onClick={onClick}
         onKeyDown={onKeyDown}
         onContextMenu={onContextMenu}
@@ -535,16 +537,30 @@ const sizeShape = PropTypes.shape({
  * node the shell hands while a feature's action menu holds the header's
  * account slot, a function of the rail state drawn in a row under the
  * nav and above the resize handle, the user menu as a drop-up with the
- * avatar alone while minimized, the foot as tall as the footer's row.
+ * avatar alone while minimized, the foot as tall as the footer's row, and
+ * for the keyboard glyph `onShortcuts` opens, the Keyboard Shortcuts
+ * modal's button at the foot's right end.
  * The width and the rail are `size`, the shell's `useSidebarSize`, so the
  * column's own edge and the footer's corner handle move one value. Every
  * entry comes from the mounted
  * features' `sidebar(status, account)` exports; the column decides nothing.
  * The entries' `nav` carries the host's name, version and hostname as
  * `data-app`, `data-version` and `data-host`, the same three the header
- * row carries, drawn by nothing until a pack's rules give them a place.
+ * row carries, drawn by nothing until a pack's rules give them a place;
+ * a tree node's row carries its key as `data-node` and its route as
+ * `data-to`.
  */
-const Sidebar = ({ entries, brand, badges, open, onClose, size, readout = null, foot = null }) => {
+const Sidebar = ({
+  entries,
+  brand,
+  badges,
+  open,
+  onClose,
+  size,
+  readout = null,
+  foot = null,
+  onShortcuts = null,
+}) => {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
   const navRef = useRef(null);
@@ -626,7 +642,25 @@ const Sidebar = ({ entries, brand, badges, open, onClose, size, readout = null, 
             ))}
           </div>
         </nav>
-        {foot ? <ul className="nav sidebar-foot">{foot(minimized)}</ul> : null}
+        {foot || onShortcuts ? (
+          <ul className="nav sidebar-foot">
+            {foot ? foot(minimized) : null}
+            {onShortcuts ? (
+              <li className="nav-item sidebar-foot-keys">
+                <button
+                  type="button"
+                  className="btn btn-link nav-link"
+                  title={t('navbar.shortcuts.menu')}
+                  aria-label={t('navbar.shortcuts.menu')}
+                  data-tool="shortcuts"
+                  onClick={onShortcuts}
+                >
+                  <FaKeyboard aria-hidden />
+                </button>
+              </li>
+            ) : null}
+          </ul>
+        ) : null}
         {minimized ? null : (
           <div
             className="sidebar-resize"
@@ -664,6 +698,7 @@ Sidebar.propTypes = {
     host: PropTypes.string.isRequired,
   }),
   foot: PropTypes.func,
+  onShortcuts: PropTypes.func,
 };
 
 export default Sidebar;

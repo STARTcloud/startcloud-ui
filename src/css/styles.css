@@ -335,6 +335,49 @@ button::-moz-focus-inner {
   margin-bottom: 0;
 }
 
+.shortcuts-modal .shortcut-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem 1.5rem;
+}
+
+.shortcuts-modal .shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 4px 0;
+  font-size: 13.5px;
+}
+
+.shortcuts-modal .shortcut-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.shortcuts-modal .shortcut-sequence {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.shortcuts-modal kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--bs-border-color);
+  border-bottom-width: 2px;
+  border-radius: var(--bs-border-radius-sm);
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+  font-size: 12px;
+}
+
+.app-scroll .kbd-cursor {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
 .modal-dialog.modal-zoomed {
   width: 95vw;
   max-width: 95vw;
@@ -694,6 +737,31 @@ button::-moz-focus-inner {
 
 .sidebar-rail .sidebar-foot .user-menu {
   flex: 0 0 auto;
+}
+
+.sidebar-foot .sidebar-foot-keys {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.sidebar-foot .sidebar-foot-keys .nav-link {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--bs-border-radius-sm);
+  color: var(--bs-secondary-color);
+}
+
+.sidebar-foot .sidebar-foot-keys .nav-link:hover,
+.sidebar-foot .sidebar-foot-keys .nav-link:focus-visible {
+  background: var(--bs-secondary-bg);
+  color: var(--bs-emphasis-color);
+}
+
+.sidebar-rail .sidebar-foot .sidebar-foot-keys {
+  display: none;
 }
 
 .sidebar-resize {
@@ -7452,4 +7520,148 @@ button.hw-bay:focus-visible {
 
 .host-nav-resize:hover {
   background: rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.upd-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+  margin: 0 0 8px;
+}
+
+.upd-notes {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.upd-notes h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.upd-notes h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+}
+
+.upd-notes > h3:first-child {
+  margin-top: 0;
+}
+
+.upd-notes ul {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.upd-notes li {
+  margin-bottom: 0.25rem;
+}
+
+.upd-notes li a {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.85em;
+}
+
+.upd-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 12.5px;
+}
+
+.upd-foot-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+
+.upd-foot-links a:hover,
+.upd-foot-links a:focus-visible {
+  color: var(--bs-primary);
+  text-decoration: underline;
+}
+
+.upd-side-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upd-side-rows {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.upd-side-rows dt {
+  font-weight: 600;
+  color: var(--bs-secondary-color);
+}
+
+.upd-side-rows dd {
+  margin: 0;
+}
+
+.upd-asset-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius-sm);
+}
+
+.upd-asset {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+.upd-asset:first-child {
+  border-top: 0;
+}
+
+.upd-asset a,
+.upd-asset-name {
+  font-family: var(--bs-font-monospace);
+  font-size: 12.5px;
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upd-asset a:hover {
+  text-decoration: underline;
+}
+
+.upd-asset-checksum {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upd-asset-size {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--bs-secondary-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.upd-asset-glyph {
+  color: var(--bs-secondary-color);
+  flex-shrink: 0;
 }

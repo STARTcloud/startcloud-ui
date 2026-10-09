@@ -157,6 +157,7 @@ const WatchStar = ({ item, watches }) => {
     <button
       type="button"
       className="btn btn-link p-0 text-warning card-above"
+      data-action="watch"
       onClick={() => watches.toggle(item)}
       title={watched ? t('pages.watch.unwatch') : t('pages.watch.watch')}
       aria-pressed={watched}

@@ -40,7 +40,7 @@ const boot = status => {
   });
   log.app.info('STARTcloud UI starting', { role: status.role, version: status.version });
   const { i18n, ready, getSupportedLanguages } = createI18n({ loadSupportedLanguages });
-  return Promise.all([ready, loadRules()]).then(() => {
+  return Promise.all([ready, loadRules(status)]).then(() => {
     root.render(
       <AppProvider i18n={i18n} status={status}>
         <App getSupportedLanguages={getSupportedLanguages} />
