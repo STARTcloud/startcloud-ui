@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/features/hosts/api/provisioning.js', () => ({
@@ -45,8 +46,15 @@ const { provisioners } = await import('../../src/features/collections/provisione
 const { fetchCatalog, fetchCatalogHealth } =
   await import('../../src/features/hosts/api/provisioning.js');
 const { hostCatalogAdapter } = await import('../../src/features/hosts/utils/hostCatalog.js');
-const { HeldControl, VersionHeld, heldDeployColumn, heldProvisionerCollection, heldStatusColumn } =
-  await import('../../src/features/hosts/components/HostCatalogInstall.jsx');
+const {
+  HeldControl,
+  VersionHeld,
+  addingOf,
+  heldDeployColumn,
+  heldProvisionerCollection,
+  heldStatusColumn,
+  toggledAddOf,
+} = await import('../../src/features/hosts/components/HostCatalogInstall.jsx');
 
 const keysOf = columns => columns.map(column => column.key);
 
@@ -130,18 +138,34 @@ describe('the host catalog install', () => {
     handed: null,
   });
 
-  it('draws the version line Install greyed for a version the host holds, Install for one it does not, and the machine button while the host creates', () => {
+  it('draws the version line Delete in red for a version the host holds, Install for one it does not, and the machine button while the host creates', () => {
     const item = itemOf();
-    const ctx = ctxOf(['0.1.27']);
+    const ctx = ctxOf(['0.1.27'], { onDelete: vi.fn() });
     const held = render(createElement(VersionHeld, { item, version: '0.1.27', ctx }));
-    expect(held).toContain('data-note="installed"');
-    expect(held).toContain('disabled=""');
+    expect(held).toContain('data-action="version-delete"');
+    expect(held).toContain('class="btn btn-outline-danger version-action"');
+    expect(held).toContain('data-version="0.1.27"');
+    expect(held).not.toContain('disabled=""');
     expect(held).not.toContain('data-action="version-install"');
     expect(held).not.toContain('data-action="version-create"');
     const install = render(createElement(VersionHeld, { item, version: '0.1.28', ctx }));
     expect(install).toContain('data-action="version-install"');
     expect(install).toContain('data-version="0.1.28"');
     expect(install).toContain('class="btn btn-outline-secondary version-action"');
+    expect(install).not.toContain('data-action="version-delete"');
+    const creates = render(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(VersionHeld, {
+          item,
+          version: '0.1.28',
+          ctx: ctxOf([], { creates: true, createRouteOf: () => '/hosts/1?create=machine' }),
+        })
+      )
+    );
+    expect(creates).toContain('data-action="version-create"');
+    expect(creates).toContain('href="/hosts/1?create=machine"');
   });
 
   it('draws the split control: the Update glyph with its dot behind the catalog, the Install glyph while missing, the glyph greyed at the newest, the chevron on every row, and the Status badge', () => {
@@ -165,6 +189,46 @@ describe('the host catalog install', () => {
       'hosts.manage.held.updateAvailable'
     );
     expect(heldStatusColumn.value(item, ctxOf([]))).toBe('');
+  });
+
+  it('draws the glyph greyed and titled no version listed, with the chevron and no Install press, on an item whose source lists no version', () => {
+    const item = { ...itemOf(), versions: [] };
+    const markup = render(
+      createElement(HeldControl, {
+        item,
+        ctx: ctxOf([], {
+          entriesOf: () => ({
+            fetch: [{ key: 'source', action: 'held-add-source', label: 'Add', onClick: vi.fn() }],
+            remove: [],
+          }),
+        }),
+      })
+    );
+    expect(markup).toContain('data-note="no-version"');
+    expect(markup).toContain('hosts.manage.held.noVersion');
+    expect(markup).toContain('data-action="held-more"');
+    expect(markup).not.toContain('data-action="catalog-install"');
+    expect(heldDeployColumn.value(item, ctxOf([]))).toBe('');
+  });
+
+  it('reads Add as the held group off and flips the group off and back on Installed', () => {
+    expect(addingOf({ held: new Set(['held']) })).toBe(false);
+    expect(addingOf({ held: new Set() })).toBe(true);
+    expect(addingOf({})).toBe(false);
+    expect([...toggledAddOf({ held: new Set(['held']) })]).toEqual([]);
+    expect([...toggledAddOf({ held: new Set() })]).toEqual(['held']);
+    const host = heldProvisionerCollection({ adapter: {} });
+    const missing = {
+      ...itemOf(),
+      versions: [{ version: '0.1.28', artifacts: [], providers: [] }],
+    };
+    expect(
+      host.rowPick(missing, { ...ctxOf([]), filters: { held: new Set() }, handed: null }).held
+    ).toBe(true);
+    expect(
+      host.rowPick(missing, { ...ctxOf([]), filters: { held: new Set(['held']) }, handed: null })
+        .held
+    ).toBe(false);
   });
 });
 
@@ -207,12 +271,37 @@ describe('hostCatalogAdapter', () => {
     }).listAll();
     expect(items[0].extras.tier).toBe('unrated');
     fetchCatalog.mockImplementationOnce(() => Promise.reject(new Error('502')));
-    expect(
-      await hostCatalogAdapter({
-        status: {},
-        id: '1',
-        sources: [{ id: 'main', url: '' }],
-      }).listAll()
-    ).toEqual([]);
+    const none = await hostCatalogAdapter({
+      status: {},
+      id: '1',
+      sources: [{ id: 'main', url: '' }],
+    }).listAll();
+    expect(none).toEqual([]);
+    expect(none.notice).toBeUndefined();
+  });
+
+  it('skips a disabled source and names a source that answers 401 with the agent message in one warning notice', async () => {
+    fetchCatalog.mockClear();
+    const refused = Object.assign(new Error('the catalog requires a signed-in account'), {
+      status: 401,
+    });
+    fetchCatalog.mockImplementationOnce(() => Promise.reject(refused));
+    const items = await hostCatalogAdapter({
+      status: {},
+      id: '1',
+      sources: [
+        { id: 'probe', name: 'Probe catalog', url: 'https://p', default: true, enabled: true },
+        { id: 'off', name: 'Off', url: 'https://o', default: false, enabled: false },
+        ...sources,
+      ],
+    }).listAll();
+    expect(fetchCatalog).toHaveBeenCalledTimes(3);
+    expect(fetchCatalog).not.toHaveBeenCalledWith({}, '1', 'off');
+    expect(items).toHaveLength(1);
+    expect(items.notice).toEqual({
+      type: 'warning',
+      key: 'hosts.manage.held.sourceRefused',
+      values: { sources: 'Probe catalog: the catalog requires a signed-in account' },
+    });
   });
 });

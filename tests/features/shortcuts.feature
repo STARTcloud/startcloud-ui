@@ -26,16 +26,12 @@ Feature: keyboard shortcuts
     When I press "Escape"
     Then no shortcuts modal is open
 
-  Scenario: Keyboard shortcuts: the sidebar foot's keyboard button and the user menu's row open the modal
+  Scenario: Keyboard shortcuts: the user menu's Keyboard shortcuts row opens the modal
     Given the host answers the hosts fixture
     And the host answers the hosts-devices fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/devices"
     Then the devices table lists 8 rows
-    When I press the sidebar foot's keyboard button
-    Then the shortcuts modal is open
-    When I press "Escape"
-    Then no shortcuts modal is open
     When I open the account menu
     And I press the account menu's keyboard shortcuts row
     Then the shortcuts modal is open

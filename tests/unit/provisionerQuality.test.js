@@ -138,12 +138,12 @@ describe('the provisioner card body', () => {
     language: 'en',
     t: key => key,
     collection: host,
-    held: { versionsOf: () => ['0.1.25'], busy: false, onFetch: () => null },
+    held: { versionsOf: () => ['0.1.25'], busy: false, onFetch: () => null, onDelete: () => null },
     handed: null,
   };
   const render = item => renderToStaticMarkup(createElement(host.slots.CardBody, { item, ctx }));
 
-  it('draws the strip with both checks and the newest providers, the two folds folded, one line a version with Install greyed on the held one, and Update in the links line', () => {
+  it('draws the strip with both checks and the newest providers, the two folds folded, one line a version with Delete on the held one, and Update in the links line', () => {
     const [item] = publicItemsFrom(DATA);
     const markup = render(item);
     expect(markup).toContain('data-check="artifacts" data-ok="true"');
@@ -158,7 +158,7 @@ describe('the provisioner card body', () => {
       'data-action="version-install" data-family="startcloud_generic_provisioner" data-version="0.1.26"'
     );
     expect(markup).toContain(
-      'data-note="installed" data-family="startcloud_generic_provisioner" data-version="0.1.25"'
+      'data-action="version-delete" data-family="startcloud_generic_provisioner" data-version="0.1.25"'
     );
     expect(markup).toContain('data-action="catalog-update"');
     expect(markup).toContain('data-note="update-available"');

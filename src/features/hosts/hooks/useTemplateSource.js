@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { patchConfigFile } from '../api/manage';
 import { templateSourceFor, templateSourceFormOf } from '../utils/machineCreate';
-import { sourceEntryPatch } from '../utils/manageCatalog';
+import { TEMPLATE_SOURCES, sourceEntryPatch } from '../utils/manageCatalog';
 
 const IDLE = { state: '', message: '' };
 
@@ -38,7 +38,12 @@ export const useTemplateSource = ({ status, id, box, sources, loaded, onAdded })
       return Promise.resolve();
     }
     setHeld({ state: 'adding', message: '' });
-    return patchConfigFile(status, id, 'storage', sourceEntryPatch(sources, form, '')).then(
+    return patchConfigFile(
+      status,
+      id,
+      'storage',
+      sourceEntryPatch(sources, form, '', TEMPLATE_SOURCES)
+    ).then(
       () => Promise.resolve(onAdded()).then(() => setHeld(IDLE)),
       error => setHeld({ state: 'failed', message: error.message || '' })
     );

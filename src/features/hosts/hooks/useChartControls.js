@@ -1,19 +1,14 @@
-import { createContext, useCallback, useContext, useId, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import { newestOf } from '../../../utils/chart';
 import { windowMs } from '../utils/monitoring';
 
 export const ChartControlsContext = createContext(null);
 
-const LIVE = { paused: false, held: null };
-
 const NO_CONTROLS = {
-  ...LIVE,
+  paused: false,
   windowMs: 0,
-  group: '',
   toggle: () => undefined,
-  pan: () => undefined,
-  respan: () => undefined,
 };
 
 const sameRange = (first, second) =>
@@ -22,53 +17,26 @@ const sameRange = (first, second) =>
 /**
  * The chart controls of one page, the value its `ChartControlsContext`
  * provides to every chart on it: `paused`, whether the charts hold their
- * drawn range while samples keep landing in the store; `held`, the one
- * range every chart draws after a pan or a zoom, null while each follows
- * its own; `windowMs`, the page's window; `group`, the name the page's
- * charts share their crosshair under; `toggle`, Pause and Resume;
- * `pan(range, atEnd)`, a pan or a zoom, which holds the range and pauses
- * unless it reached the newest sample, when the charts follow live
- * again; and `respan(ms)`, the held range widened or narrowed to a new
- * window from its end.
+ * drawn range while samples keep landing in the store; `windowMs`, the
+ * page's window; and `toggle`, Pause and Resume.
  *
  * @param {string} window - The page's window key
  * @returns {Object} The controls
  */
 export const useChartControlsState = window => {
-  const [state, setState] = useState(LIVE);
-  const group = useId();
+  const [paused, setPaused] = useState(false);
   const span = windowMs(window);
 
   const toggle = useCallback(() => {
-    setState(current => (current.paused ? LIVE : { paused: true, held: null }));
+    setPaused(current => !current);
   }, []);
 
-  const pan = useCallback((range, atEnd) => {
-    setState(current => {
-      if (atEnd) {
-        return current.paused || current.held ? LIVE : current;
-      }
-      return sameRange(current.held, range) ? current : { paused: true, held: range };
-    });
-  }, []);
-
-  const respan = useCallback(ms => {
-    setState(current =>
-      current.held
-        ? { ...current, held: { from: current.held.to - ms, to: current.held.to } }
-        : current
-    );
-  }, []);
-
-  return useMemo(
-    () => ({ ...state, windowMs: span, group, toggle, pan, respan }),
-    [state, span, group, toggle, pan, respan]
-  );
+  return useMemo(() => ({ paused, windowMs: span, toggle }), [paused, span, toggle]);
 };
 
 /**
- * The chart controls of the page a chart sits on, live and unpaused with
- * no group where the page provides none.
+ * The chart controls of the page a chart sits on, live and unpaused
+ * where the page provides none.
  *
  * @returns {Object} The controls of `useChartControlsState`
  */
@@ -92,9 +60,9 @@ export const useHeld = (value, held) => {
 };
 
 /**
- * The range one chart draws: the page's held range after a pan or a
- * zoom; otherwise the window before the newest point its series hold,
- * frozen while the page is paused; null while no series holds a point.
+ * The range one chart draws under the page's controls: the window before
+ * the newest point its series hold, frozen while the page is paused;
+ * null while no series holds a point.
  *
  * @param {Array<Object>} series - The chart's series
  * @param {Object} controls - The page's chart controls
@@ -106,6 +74,45 @@ export const useDrawnRange = (series, controls) => {
     () => (newest === null ? null : { from: newest - controls.windowMs, to: newest }),
     [newest, controls.windowMs]
   );
-  const frozen = useHeld(live, controls.paused);
-  return controls.held || frozen;
+  return useHeld(live, controls.paused);
+};
+
+/**
+ * The range one chart draws and the pan that moves it, the chart's own:
+ * the range a drag or a wheel inside this chart reached, held for this
+ * chart alone until a pan back to the newest point releases it, re-spanned
+ * from its end when the page's window changes; otherwise the range of
+ * `useDrawnRange`.
+ *
+ * @param {Array<Object>} series - The chart's series
+ * @param {Object} controls - The page's chart controls
+ * @returns {{ range: { from: number, to: number }|null, pan: Function }} The range and `pan(range, atEnd)`
+ */
+export const useChartRange = (series, controls) => {
+  const drawn = useDrawnRange(series, controls);
+  const [held, setHeld] = useState(null);
+  const span = controls.windowMs;
+
+  const pan = useCallback(
+    (range, atEnd) => {
+      setHeld(current => {
+        if (atEnd) {
+          return null;
+        }
+        return current && sameRange(current.range, range) ? current : { range, windowMs: span };
+      });
+    },
+    [span]
+  );
+
+  if (held && held.windowMs !== span) {
+    const respanned = {
+      range: { from: held.range.to - span, to: held.range.to },
+      windowMs: span,
+    };
+    setHeld(respanned);
+    return { range: respanned.range, pan };
+  }
+
+  return { range: held ? held.range : drawn, pan };
 };

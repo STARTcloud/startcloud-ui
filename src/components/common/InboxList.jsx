@@ -41,6 +41,7 @@ export const notificationShape = PropTypes.shape({
   type: PropTypes.string,
   severity: PropTypes.string,
   navigate: PropTypes.string,
+  system: PropTypes.string,
   created_at: PropTypes.string,
   read_at: PropTypes.string,
 });
@@ -93,9 +94,10 @@ NotificationGlyph.propTypes = {
 /**
  * One notification row: the type icon colored by severity, the title
  * (bold while unread, with the open-in glyph when the row carries a link
- * the page may follow), the body, the relative time with the absolute
- * time in its tooltip, the unread dot, and the mark-read and delete
- * controls.
+ * the page may follow), the row's `system`, the origin host's brand name,
+ * as a muted word after the title, the body, the relative time with the
+ * absolute time in its tooltip, the unread dot, and the mark-read and
+ * delete controls.
  */
 export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels }) => {
   const { i18n } = useTranslation();
@@ -114,6 +116,11 @@ export const NotificationRow = ({ entry, onSelect, onMarkRead, onDismiss, labels
             {entry.title}
             {linkOf(entry) ? (
               <FaArrowUpRightFromSquare className="ms-1 small text-body-secondary" aria-hidden />
+            ) : null}
+            {entry.system ? (
+              <span className="notification-item-system ms-1 small text-body-secondary">
+                {entry.system}
+              </span>
             ) : null}
           </span>
           {entry.body ? <span className="notification-item-text">{entry.body}</span> : null}

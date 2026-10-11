@@ -756,6 +756,20 @@ Feature: hosts
     Then the chart controls are live
     And the "cpu" chart draws up to "2026-09-27T12:00:05.000Z"
 
+  Scenario: Host overview: a drag inside one chart pans that chart's range alone, every other chart following the newest sample and the page's controls live
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    Then the host page draws the "cpu" chart
+    And the host page draws the "network" chart
+    And the "cpu" chart draws up to "2026-09-27T12:00:00.000Z"
+    And the "network" chart draws up to "2026-09-27T12:00:00.000Z"
+    When I drag the "cpu" chart 120 right
+    Then the "cpu" chart does not draw up to "2026-09-27T12:00:00.000Z"
+    And the "network" chart draws up to "2026-09-27T12:00:00.000Z"
+    And the chart controls are live
+
   Scenario: Host overview: the expand glyph opens the chart in the expanded dialog with the same pills and Export, a backdrop click closing it
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture

@@ -2,8 +2,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { FaPause, FaPlay, FaRotate } from 'react-icons/fa6';
 
-import { windowMs } from '../utils/monitoring';
-
 import QuerySelects from './QuerySelects';
 
 const PauseButton = ({ controls }) => {
@@ -37,20 +35,16 @@ PauseButton.propTypes = {
  * window the host's series are read over and, after Refresh, Pause and
  * Resume, both drawn while the host offers a series, and Refresh, a
  * glyph, which reads again everything the page draws. A change of the
- * window hands the member to `onQuery` and re-spans the range the
- * charts hold; Pause holds the drawn range of every chart on the page
- * while samples keep landing in the store, Resume follows live again.
+ * window hands the member to `onQuery`; Pause holds the drawn range of
+ * every chart on the page while samples keep landing in the store,
+ * Resume follows live again.
  */
 const ChartControls = ({ query, onQuery, scope, series, controls, onRefresh }) => {
   const { t } = useTranslation();
   const refresh = t('hosts.page.refresh');
-  const change = patch => {
-    onQuery(patch);
-    controls.respan(windowMs(patch.window));
-  };
   return (
     <>
-      {series ? <QuerySelects query={query} onChange={change} scope={scope} /> : null}
+      {series ? <QuerySelects query={query} onChange={onQuery} scope={scope} /> : null}
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary btn-glyph"
@@ -76,7 +70,6 @@ ChartControls.propTypes = {
   controls: PropTypes.shape({
     paused: PropTypes.bool.isRequired,
     toggle: PropTypes.func.isRequired,
-    respan: PropTypes.func.isRequired,
   }).isRequired,
   onRefresh: PropTypes.func.isRequired,
 };

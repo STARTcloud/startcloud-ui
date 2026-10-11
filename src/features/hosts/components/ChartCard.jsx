@@ -10,7 +10,7 @@ import LinePills from '../../../components/common/LinePills';
 import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
 import { isolatedAfter } from '../../../utils/chart';
 import { chartOf } from '../charts/registry';
-import { useChartControls, useDrawnRange, useHeld } from '../hooks/useChartControls';
+import { useChartControls, useChartRange, useHeld } from '../hooks/useChartControls';
 import { chartPills, visibleSeries } from '../utils/chartSpecs';
 
 const toggled = (visibility, key) => ({ ...visibility, [key]: visibility[key] === false });
@@ -21,9 +21,10 @@ const toggled = (visibility, key) => ({ ...visibility, [key]: visibility[key] ==
  * folds under `fold`, its header carrying the title, `badges` after it
  * and in its actions the pills of the chart's lines, Refresh as a glyph
  * where the card has one, and the glyph that opens the chart at size;
- * under it the one `Chart` over `spec` in the page's crosshair group,
- * over the range the page's controls fix, its lines frozen while the
- * page is paused, and `children`, the notes under the chart. The pills
+ * under it the one `Chart` over `spec`, over the page's window before
+ * its newest point or the range a drag or a wheel inside this chart
+ * alone reached, its lines frozen while the page is paused, and
+ * `children`, the notes under the chart. The pills
  * are the registry entry's, kept by the card unless `visibility` and
  * `onToggle` are given, and the entity a click on the legend isolates
  * is the card's own; the expanded dialog draws the same lines, pills and
@@ -57,7 +58,7 @@ const ChartCard = ({
   const shown = visibility ?? own;
   const pills = useMemo(() => chartPills(metric, drawn.series, t), [metric, drawn.series, t]);
   const series = useMemo(() => visibleSeries(drawn.series, shown), [drawn.series, shown]);
-  const range = useDrawnRange(drawn.series, controls);
+  const { range, pan } = useChartRange(drawn.series, controls);
   const toggle = onToggle ?? (key => setOwn(current => toggled(current, key)));
   const isolate = useCallback(name => setIsolated(current => isolatedAfter(current, name)), []);
   const expand = t('hosts.charts.expand');
@@ -111,10 +112,9 @@ const ChartCard = ({
           series={series}
           axes={drawn.axes}
           range={range}
-          group={controls.group}
           isolated={isolated}
           onIsolate={isolate}
-          onRange={controls.pan}
+          onRange={pan}
           emptyText={emptyText}
         />
         {children}

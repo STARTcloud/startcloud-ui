@@ -2916,11 +2916,16 @@
       },
       "catalog": {
         "sourceFailed": "The catalog source could not be added: {{message}}",
-        "sourceRequired": "A display name and a URL are required.",
         "sourceUrl": "Catalog URL",
         "sourceAuth": "Authentication",
         "authNone": "None",
-        "authOidc": "Sign in with SSO"
+        "authOidc": "Sign in with SSO",
+        "makeDefault": "Make this the default catalog",
+        "sourceUpdated": "Catalog source {{name}} updated",
+        "sourceRemoved": "Catalog source {{name}} removed",
+        "sourceEnabled": "Catalog source {{name}} enabled",
+        "sourceDisabled": "Catalog source {{name}} disabled",
+        "sourceDefault": "{{name}} is now the default catalog"
       },
       "held": {
         "installed": "Installed",
@@ -2934,7 +2939,9 @@
         "installOlder": "Install an older version…",
         "createWith": "Create a machine with {{version}}",
         "deleteVersion": "Delete {{version}}",
-        "moveVersion": "Move {{version}}…"
+        "moveVersion": "Move {{version}}…",
+        "noVersion": "No version is listed",
+        "sourceRefused": "A catalog source refused this host's sign-in: {{sources}}"
       },
       "sources": {
         "key": "Key",
@@ -3026,8 +3033,11 @@
       "updatePublished": "Published",
       "updateReleaseNotes": "Release notes",
       "updateChangelog": "Changelog",
-      "updateNotes": "Release notes · {{version}}",
-      "updateAssets": "Assets"
+      "updateAssets": "Assets",
+      "updateReleases": "Releases",
+      "updateLatest": "Latest",
+      "updatePrerelease": "Pre-release",
+      "updateReleasedThis": "released this"
     },
     "deploy": {
       "noHostCreates": "No host here offers a machine create, so the Deploy hand-off stays on this page.",
@@ -3232,7 +3242,25 @@
       "updated": "Updated",
       "downloads": "Downloads",
       "show": "Show",
-      "hide": "Hide"
+      "hide": "Hide",
+      "edit": "Edit facts",
+      "save": "Save facts",
+      "saved": "Facts saved",
+      "cancel": "Cancel",
+      "unset": "Not set",
+      "distro": "Distribution",
+      "distroVersion": "Distribution version",
+      "osName": "OS name",
+      "vmType": "VM type",
+      "kind": "Server or desktop",
+      "memoryMb": "Memory (MB)",
+      "cdroms": "CD-ROMs",
+      "name": "Name",
+      "controller": "Controller",
+      "addDisk": "Add disk",
+      "addCdrom": "Add CD-ROM",
+      "removeDisk": "Remove disk",
+      "removeCdrom": "Remove CD-ROM"
     },
     "version": {
       "title": "Version {{version}}",
@@ -7852,7 +7880,10 @@
       "deleteFamilyMessage": "Delete the whole {{name}} family (every version)? The agent refuses while any machine references it.",
       "delete": "Delete",
       "addSource": "Add source",
-      "sourceAdded": "Catalog source {{name}} added"
+      "sourceAdded": "Catalog source {{name}} added",
+      "editSource": "Edit source {{name}}",
+      "removeSource": "Remove catalog source",
+      "removeSourceConfirm": "Remove the catalog source {{name}}?"
     },
     "provisioningNetworkPanel": {
       "loadFailed": "Failed to load the provisioning network status: {{message}}",

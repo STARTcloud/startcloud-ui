@@ -143,10 +143,13 @@ Then('the open dialog draws the panel {string}', async ({ page }, name) => {
 
 const hostCatalogOf = page => tableOf(page, 'provisioner-catalog');
 
-const versionActionOf = (page, family, version) =>
+const versionButtonOf = (page, action, family, version) =>
   hostCatalogOf(page).locator(
-    `[data-action="version-install"][data-family="${family}"][data-version="${version}"]`
+    `[data-action="${action}"][data-family="${family}"][data-version="${version}"]`
   );
+
+const versionActionOf = (page, family, version) =>
+  versionButtonOf(page, 'version-install', family, version);
 
 Then('the provisioner catalog draws {int} cards', async ({ page }, count) => {
   await expect(hostCatalogOf(page).locator('.catalog-card')).toHaveCount(count);
@@ -173,20 +176,25 @@ Then(
   }
 );
 
-Then(
-  'the provisioner catalog notes Installed on {string} {string}',
-  async ({ page }, family, version) => {
-    await expect(
-      hostCatalogOf(page).locator(`[data-note="installed"][data-version="${version}"]`).first()
-    ).toBeAttached();
-    await expect(versionActionOf(page, family, version)).toHaveCount(0);
-  }
-);
+Then('the provisioner catalog holds {string} {string}', async ({ page }, family, version) => {
+  await expect(versionButtonOf(page, 'version-delete', family, version).first()).toBeAttached();
+  await expect(versionActionOf(page, family, version)).toHaveCount(0);
+});
 
 When(
   'I press Install on {string} {string} in the provisioner catalog',
   async ({ page }, family, version) => {
     await versionActionOf(page, family, version).filter({ visible: true }).first().click();
+  }
+);
+
+When(
+  'I press Delete on {string} {string} in the provisioner catalog',
+  async ({ page }, family, version) => {
+    await versionButtonOf(page, 'version-delete', family, version)
+      .filter({ visible: true })
+      .first()
+      .click();
   }
 );
 
@@ -241,6 +249,51 @@ Then(
   }
 );
 
+Then(
+  'the card {string} of the {string} listing offers {string}',
+  async ({ page }, text, name, action) => {
+    await expect(
+      listingCardOf(page, name, text).locator(`[data-action="${action}"]`).first()
+    ).toBeAttached();
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing offers no {string}',
+  async ({ page }, text, name, action) => {
+    await expect(listingCardOf(page, name, text)).toBeVisible();
+    await expect(listingCardOf(page, name, text).locator(`[data-action="${action}"]`)).toHaveCount(
+      0
+    );
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing notes {string}',
+  async ({ page }, text, name, note) => {
+    await expect(
+      listingCardOf(page, name, text).locator(`[data-note="${note}"]`).first()
+    ).toBeAttached();
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing draws the initial {string}',
+  async ({ page }, text, name, initial) => {
+    await expect(listingCardOf(page, name, text).locator('[data-initial]').first()).toHaveText(
+      initial
+    );
+  }
+);
+
+Then('the page raised {int} {word} banner(s)', async ({ page }, count, kind) => {
+  await expect(page.locator(`.notice-banner-${kind}`)).toHaveCount(count);
+});
+
+Then('the {word} banner reads {string}', async ({ page }, kind, text) => {
+  await expect(page.locator(`.notice-banner-${kind}`).first()).toContainText(text);
+});
+
 Then('the card {string} of the {string} listing is marked', async ({ page }, text, name) => {
   await expect(
     listingCardOf(page, name, text).locator('[data-card][data-handed="true"]')
@@ -259,6 +312,48 @@ When(
   async ({ page }, text, name) => {
     await listingCardOf(page, name, text).locator('[data-action="held-more"]').first().click();
     await expect(openMenuOf(page)).toBeVisible();
+  }
+);
+
+When(
+  'I open the {string} fold of the card {string} of the {string} listing',
+  async ({ page }, fold, text, name) => {
+    await listingCardOf(page, name, text).locator(`[data-fold="${fold}"] > summary`).click();
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing version {string} offers {string}',
+  async ({ page }, text, name, version, action) => {
+    await expect(
+      listingCardOf(page, name, text).locator(
+        `[data-version="${version}"] [data-action="${action}"]`
+      )
+    ).toBeAttached();
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing version {string} offers no {string}',
+  async ({ page }, text, name, version, action) => {
+    await expect(
+      listingCardOf(page, name, text).locator(`[data-version="${version}"]`).first()
+    ).toBeAttached();
+    await expect(
+      listingCardOf(page, name, text).locator(
+        `[data-version="${version}"] [data-action="${action}"]`
+      )
+    ).toHaveCount(0);
+  }
+);
+
+When(
+  'I press {string} on the version {string} of the card {string} of the {string} listing',
+  async ({ page }, action, version, text, name) => {
+    await listingCardOf(page, name, text)
+      .locator(`[data-version="${version}"] [data-action="${action}"]`)
+      .first()
+      .click();
   }
 );
 
@@ -285,6 +380,27 @@ const cardOf = (page, name) =>
     .filter({
       has: page.locator('[data-field="byline"] code', { hasText: new RegExp(`^${name}$`, 'u') }),
     });
+
+Then('the provisioner catalog draws the card {string} plain', async ({ page }, name) => {
+  await expect(cardOf(page, name)).toBeVisible();
+  await expect(
+    hostCatalogOf(page)
+      .locator('.held .catalog-card')
+      .filter({
+        has: page.locator('[data-field="byline"] code', { hasText: new RegExp(`^${name}$`, 'u') }),
+      })
+  ).toHaveCount(0);
+});
+
+Then('the provisioner catalog greys the card {string}', async ({ page }, name) => {
+  await expect(
+    hostCatalogOf(page)
+      .locator('.held .catalog-card')
+      .filter({
+        has: page.locator('[data-field="byline"] code', { hasText: new RegExp(`^${name}$`, 'u') }),
+      })
+  ).toBeVisible();
+});
 
 Then('the card {string} health reads {string} as {string}', async ({ page }, name, check, ok) => {
   await expect(cardOf(page, name).locator(`[data-check="${check}"]`)).toHaveAttribute(

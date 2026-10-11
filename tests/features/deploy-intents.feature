@@ -105,6 +105,37 @@ Feature: deploy intents
     And the section page offers "provisioner-add-source"
     And the host was sent GET to "/api/provisioning/catalog/sources" 2 times
 
+  Scenario: Install on my agent on the live agent status: the api-key session's dashboard moves the hand-off to the Provisioners page, the handed family's card marked, and no wizard opens
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the host answers the agent-create-deploy fixture
+    And the host answers the agent-live fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/?create=provisioner&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    Then the path is "/hosts/self/provisioning/provisioners?create=provisioner&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    And the section page "provisioners" draws
+    And no dialog is open
+    And the provisioner catalog marks "hcl_domino_additional_provisioner" with "0.3.0" selected
+    And the provisioner catalog offers Install on "hcl_domino_additional_provisioner" "0.3.0"
+    And the host was not sent GET to "/api/machines/defaults"
+
+  Scenario: Pull as a template on the live agent status: the api-key session's dashboard moves the hand-off to the Templates page, no wizard opens, and a registry the agent lacks draws the Add registry card over the listing
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the host answers the agent-create-deploy fixture
+    And the host answers the agent-live fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/?create=template&box=startcloud%2Fdebian13&box_version=13.1.0&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com"
+    Then the path is "/hosts/self/provisioning/templates?create=template&box=startcloud%2Fdebian13&box_version=13.1.0&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com"
+    And the section page "templates" draws
+    And no dialog is open
+    And the section page notes "box-source"
+    And the section page offers "box-source-add"
+    And the host was sent GET to "/api/templates/sources" 1 times
+    And the host was not sent GET to "/api/machines/defaults"
+
   Scenario: Pull as a template: the Templates page lands with the handed box's card marked whatever the panel says, and Install sends the handed version and architecture on the box's registry, dropping the hand-off from the route
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
@@ -138,44 +169,47 @@ Feature: deploy intents
     And the host was sent GET to "/api/agents/1/templates/remote/vagrant_example_com"
     And the card "windows-server-2025" of the "box-registry" listing is marked
 
-  Scenario: Add this catalog as a source: the Provisioners page opens its Sources modal with the form filled, one Save press away, and the sources are read again
+  Scenario: Add this catalog as a source: the Provisioners page opens its Sources modal with the form filled, one Save press away, the add one merge patch of the storage file under the catalog's id, and the sources are read again
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
-    And the host answers the deploy-intents-catalog fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners?create=source&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fapi%2Fprivate%2F0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11%2Fcatalog"
     Then the section page "provisioners" draws
     And the catalog dialog "catalog-source" draws
-    And the field "catalog-source-display-name" reads "provisioner-catalog.example.com"
-    And the field "catalog-source-url" reads "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog"
-    And the field "catalog-source-auth" reads "oidc"
+    And the field "source-name" of the catalog dialog "catalog-source" reads "provisioner_catalog_example_com"
+    And the field "source-display-name" of the catalog dialog "catalog-source" reads "provisioner-catalog.example.com"
+    And the field "source-url" of the catalog dialog "catalog-source" reads "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog"
+    And the field "source-auth" of the catalog dialog "catalog-source" reads "oidc"
     When I submit the catalog dialog "catalog-source"
-    Then the host was sent POST to "/api/agents/3/provisioning/catalog/sources" carrying "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog" at "/url"
-    And the host was sent POST to "/api/agents/3/provisioning/catalog/sources" carrying "oidc" at "/auth"
-    And the host was sent POST to "/api/agents/3/provisioning/catalog/sources" carrying "provisioner-catalog.example.com" at "/display_name"
+    Then the host was sent PUT to "/api/agents/3/config/storage" carrying "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog" at "/catalog_sources/sources/provisioner_catalog_example_com/url"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying "oidc" at "/catalog_sources/sources/provisioner_catalog_example_com/auth"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying "provisioner-catalog.example.com" at "/catalog_sources/sources/provisioner_catalog_example_com/display_name"
+    And the host was not sent POST to "/api/agents/3/provisioning/catalog/sources"
     And the catalog dialog "catalog-source" is gone
     And the catalog dialog "catalog-sources" draws
     And the path is "/hosts/3/provisioning/provisioners"
     And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 2 times
+    And the host was not sent GET to "/api/agents/3/config/storage"
     And the page raised 1 success notice
 
   Scenario: Add source on the person's own Provisioners page opens the same form empty under the Sources modal's table, no hand-off needed
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
-    And the host answers the deploy-intents-catalog fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
     And I press the section page's "catalog-sources" action
     And I press the open dialog's "catalog-source-add" action
     Then the catalog dialog "catalog-source" draws
-    And the field "catalog-source-url" reads ""
+    And the field "source-url" of the catalog dialog "catalog-source" reads ""
     When I submit the catalog dialog "catalog-source"
     Then the catalog dialog "catalog-source" says why it cannot be sent
-    And the host was not sent POST to "/api/agents/3/provisioning/catalog/sources"
-    When I type "Public catalog" into the field "catalog-source-display-name"
-    And I type "https://provisioner-catalog.startcloud.com/catalog.json" into the field "catalog-source-url"
+    And the host was not sent PUT to "/api/agents/3/config/storage"
+    When I type "public_catalog" into the field "source-name"
+    And I type "Public catalog" into the field "source-display-name"
+    And I type "https://provisioner-catalog.startcloud.com/catalog.json" into the field "source-url"
     And I submit the catalog dialog "catalog-source"
-    Then the host was sent POST to "/api/agents/3/provisioning/catalog/sources" carrying "none" at "/auth"
+    Then the host was sent PUT to "/api/agents/3/config/storage" carrying "none" at "/catalog_sources/sources/public_catalog/auth"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying "false" at "/catalog_sources/sources/public_catalog/default"
     And the catalog dialog "catalog-source" is gone
 
   Scenario: Add this registry as a source: the Templates page opens its Registries modal with the form filled from the handed URL, and the add is the one merge patch under the registry's id

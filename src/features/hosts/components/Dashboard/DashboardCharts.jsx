@@ -26,7 +26,7 @@ export const dashboardTiles = servers =>
 /**
  * The dashboard's Charts widget: one `ChartWidget` a tile of
  * `dashboardTiles`, every tile under one set of chart controls over the
- * first host's window, so every tile reads one instant under the pointer.
+ * first host's window, each tile's tooltip its own.
  */
 const DashboardCharts = ({ servers }) => {
   const { query } = useHostSeriesQuery(String(servers[0].id));

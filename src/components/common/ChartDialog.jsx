@@ -10,8 +10,6 @@ import Chart from './Chart';
 import { axisShape, pillShape, rangeShape, seriesShape } from './chartShapes';
 import LinePills from './LinePills';
 
-const GROUP = 'chart-dialog';
-
 const NO_PILLS = [];
 
 const NO_VISIBILITY = {};
@@ -84,7 +82,6 @@ const ChartDialog = ({
           range={range}
           emptyText={emptyText}
           size="lg"
-          group={GROUP}
           isolated={isolated}
           onIsolate={onIsolate}
           apiRef={apiRef}

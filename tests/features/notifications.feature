@@ -10,6 +10,7 @@ Feature: notifications live
     When I open the account menu
     And I press the account menu's Notifications row
     Then the notifications modal lists 3 rows
+    And the notifications modal's row "New sign-in to your account" carries the system "Hyperweaver"
     When the stream releases its frames
     Then the notifications modal lists 4 rows
     And the notifications modal's first row reads "The backup of lab-1 finished"
@@ -22,6 +23,7 @@ Feature: notifications live
     And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
     When I open "/notifications"
     Then the inbox page lists 3 rows
+    And the inbox page's row "New sign-in to your account" carries the system "Hyperweaver"
     And the inbox page draws 2 unread rows
     And the avatar badge reads 2
     When the stream releases its frames

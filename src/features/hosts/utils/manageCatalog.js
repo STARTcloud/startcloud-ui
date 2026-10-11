@@ -662,6 +662,21 @@ export const SOURCE_FORM = {
   ca_file: '',
 };
 
+export const CATALOG_SOURCE_FORM = {
+  name: '',
+  displayName: '',
+  url: '',
+  isDefault: false,
+  auth: 'none',
+  ca_file: '',
+};
+
+export const CATALOG_AUTHS = ['none', 'oidc'];
+
+export const TEMPLATE_SOURCES = 'template_sources';
+
+export const CATALOG_SOURCES = 'catalog_sources';
+
 const SOURCE_ID = /^[a-z0-9_]+$/u;
 
 export const PULL_FORM = { organization: '', boxName: '', version: '', architecture: '' };
@@ -784,13 +799,14 @@ export const templatePublishProblem = form =>
 export const exportable = row => String(row.status || '').toLowerCase() !== 'running';
 
 /**
- * The merge patch of `PUT config/storage` over the registries map,
- * `/template_sources/sources`, the given entries under their ids.
+ * The merge patch of `PUT config/storage` over one sources map,
+ * `/<map>/sources`, the given entries under their ids.
  *
  * @param {Object<string, Object|null>} entries - The entries by id, null for one removed
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object} The patch
  */
-export const sourcesPatch = entries => ({ template_sources: { sources: entries } });
+export const sourcesPatch = (entries, map) => ({ [map]: { sources: entries } });
 
 const undefaulted = (sources, keptId) =>
   Object.fromEntries(
@@ -800,87 +816,101 @@ const undefaulted = (sources, keptId) =>
   );
 
 /**
- * The patch that adds or edits one registry, the agent's entry keys:
- * `display_name`, `url` and `default` from the form, the API key and the
- * CA file where typed, a blank one leaving the stored value untouched;
- * an edit under a new id removes the old entry with `null`; while the
- * form makes it the default every other default entry is unset.
+ * The patch that adds or edits one source, the agent's entry keys:
+ * `display_name`, `url` and `default` from the form, `auth` where the
+ * form carries one, the API key and the CA file where typed, a blank one
+ * leaving the stored value untouched; an edit under a new id removes the
+ * old entry with `null`; while the form makes it the default every other
+ * default entry is unset.
  *
- * @param {Array<Object>} sources - The sources of `GET templates/sources`
- * @param {Object} form - The form, the shape of `SOURCE_FORM`
+ * @param {Array<Object>} sources - The sources the map holds
+ * @param {Object} form - The form, the shape of `SOURCE_FORM` or `CATALOG_SOURCE_FORM`
  * @param {string} editing - The id of the source edited, empty for a new one
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object} The patch
  */
-export const sourceEntryPatch = (sources, form, editing) => {
+export const sourceEntryPatch = (sources, form, editing, map) => {
   const id = form.name.trim();
   const entry = {
     display_name: form.displayName.trim(),
     url: form.url.trim(),
     default: form.isDefault,
-    ...optionalText('auth_token', form.auth_token),
-    ...optionalText('ca_file', form.ca_file),
+    ...(form.auth ? { auth: form.auth } : {}),
+    ...optionalText('auth_token', form.auth_token || ''),
+    ...optionalText('ca_file', form.ca_file || ''),
   };
-  return sourcesPatch({
-    ...(form.isDefault ? undefaulted(sources, id) : {}),
-    ...(editing && editing !== id ? { [editing]: null } : {}),
-    [id]: entry,
-  });
+  return sourcesPatch(
+    {
+      ...(form.isDefault ? undefaulted(sources, id) : {}),
+      ...(editing && editing !== id ? { [editing]: null } : {}),
+      [id]: entry,
+    },
+    map
+  );
 };
 
 /**
- * The patch that enables a disabled registry or disables an enabled one.
+ * The patch that enables a disabled source or disables an enabled one.
  *
  * @param {Object} source - The source toggled
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object} The patch
  */
-export const sourceTogglePatch = source =>
-  sourcesPatch({ [sourceKeyOf(source)]: { enabled: source.enabled === false } });
+export const sourceTogglePatch = (source, map) =>
+  sourcesPatch({ [sourceKeyOf(source)]: { enabled: source.enabled === false } }, map);
 
 /**
- * The patch that makes one registry the default and unsets every other
+ * The patch that makes one source the default and unsets every other
  * that is.
  *
- * @param {Array<Object>} sources - The sources of `GET templates/sources`
+ * @param {Array<Object>} sources - The sources the map holds
  * @param {Object} source - The source made default
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object} The patch
  */
-export const sourceDefaultPatch = (sources, source) =>
-  sourcesPatch({
-    ...undefaulted(sources, sourceKeyOf(source)),
-    [sourceKeyOf(source)]: { default: true },
-  });
+export const sourceDefaultPatch = (sources, source, map) =>
+  sourcesPatch(
+    {
+      ...undefaulted(sources, sourceKeyOf(source)),
+      [sourceKeyOf(source)]: { default: true },
+    },
+    map
+  );
 
 /**
- * The patch that removes one registry, `null` under its id.
+ * The patch that removes one source, `null` under its id.
  *
  * @param {Object} source - The source removed
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object} The patch
  */
-export const sourceRemovePatch = source => sourcesPatch({ [sourceKeyOf(source)]: null });
+export const sourceRemovePatch = (source, map) =>
+  sourcesPatch({ [sourceKeyOf(source)]: null }, map);
 
 const SOURCE_FIELDS = {
   display_name: 'displayName',
   url: 'url',
   default: 'isDefault',
+  auth: 'auth',
   auth_token: 'auth_token',
   ca_file: 'ca_file',
 };
 
-const SOURCES_POINTER = '/template_sources/sources/';
-
 /**
- * The field of the registry form each entry of a refused `PUT config/storage`
- * names, read from its JSON Pointer: `/template_sources/sources/<id>/<member>`
- * on the field of that member, a `propertyNames` refusal of the map and an
- * entry at `/template_sources/sources/<id>` on the id, and a `required`
- * entry with `params.required` on each member it lists; the first entry a
- * field is named by is kept.
+ * The field of the source form each entry of a refused `PUT config/storage`
+ * names, read from its JSON Pointer: `/<map>/sources/<id>/<member>` on
+ * the field of that member, a `propertyNames` refusal of the map and an
+ * entry at `/<map>/sources/<id>` on the id, and a `required` entry with
+ * `params.required` on each member it lists; the first entry a field is
+ * named by is kept.
  *
  * @param {Object|null} error - The `ApiError` of the write
  * @param {string} id - The id the form sent
+ * @param {string} map - `TEMPLATE_SOURCES` or `CATALOG_SOURCES`
  * @returns {Object<string, { rule: string, params: Object }>} The errors by form field
  */
-export const sourceFieldErrorsOf = (error, id) => {
+export const sourceFieldErrorsOf = (error, id, map) => {
+  const pointerOf = `/${map}/sources/`;
   const entries = Array.isArray(error?.fieldErrors) ? error.fieldErrors : [];
   const fields = {};
   const keep = (field, entry) => {
@@ -890,7 +920,7 @@ export const sourceFieldErrorsOf = (error, id) => {
   };
   entries.forEach(entry => {
     const pointer = String(entry.pointer || '');
-    if (entry.rule === 'propertyNames' || pointer === `${SOURCES_POINTER}${id}`) {
+    if (entry.rule === 'propertyNames' || pointer === `${pointerOf}${id}`) {
       if (entry.rule === 'required' && Array.isArray(entry.params?.required)) {
         entry.params.required.forEach(member =>
           keep(SOURCE_FIELDS[member], { rule: 'required', params: {} })
@@ -900,8 +930,8 @@ export const sourceFieldErrorsOf = (error, id) => {
       keep('name', entry);
       return;
     }
-    if (pointer.startsWith(`${SOURCES_POINTER}${id}/`)) {
-      keep(SOURCE_FIELDS[pointer.slice(`${SOURCES_POINTER}${id}/`.length)], entry);
+    if (pointer.startsWith(`${pointerOf}${id}/`)) {
+      keep(SOURCE_FIELDS[pointer.slice(`${pointerOf}${id}/`.length)], entry);
     }
   });
   return fields;
@@ -911,7 +941,7 @@ export const sourceFieldErrorsOf = (error, id) => {
  * Why a source cannot be saved: an id, a display name and a URL, the id
  * lowercase letters, digits and underscores alone, the agent's key rule.
  *
- * @param {Object} form - The form, the shape of `SOURCE_FORM`
+ * @param {Object} form - The form, the shape of `SOURCE_FORM` or `CATALOG_SOURCE_FORM`
  * @returns {string} The locale key, or the empty string
  */
 export const sourceProblem = form => {

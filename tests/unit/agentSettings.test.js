@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { assetsOf, updateOf } from '../../src/components/common/UpdatePage.jsx';
+import {
+  assetsOf,
+  latestTagOf,
+  releaseAssetsOf,
+  releasesOf,
+  updateOf,
+} from '../../src/components/common/UpdatePage.jsx';
 import {
   SECRET_CATEGORIES,
   apiKeysOf,
@@ -106,6 +112,149 @@ describe('assetsOf', () => {
     expect(assetsOf(null)).toEqual([]);
     expect(assetsOf(undefined)).toEqual([]);
     expect(assetsOf('x')).toEqual([]);
+  });
+});
+
+describe('releasesOf', () => {
+  it('answers every release of the list in the order answered, each string empty while absent', () => {
+    expect(
+      releasesOf({
+        latest_version: '1.3.0',
+        releases: [
+          {
+            tag: 'v1.4.0-beta.1',
+            name: 'v1.4.0-beta.1',
+            prerelease: true,
+            published_at: '2026-10-02T08:00:00Z',
+            author: 'Makr91',
+            html_url: 'https://example.test/releases/v1.4.0-beta.1',
+            body: '### Features\n\n* one',
+            assets: [
+              {
+                name: 'agent-1.4.0-beta.1.deb',
+                browser_download_url: 'https://example.test/agent-1.4.0-beta.1.deb',
+                size: 39116800,
+                sha256: null,
+              },
+            ],
+          },
+          { tag: 'v1.3.0', body: null, assets: null },
+          { name: 'tagless' },
+          null,
+        ],
+      })
+    ).toEqual([
+      {
+        tag: 'v1.4.0-beta.1',
+        name: 'v1.4.0-beta.1',
+        prerelease: true,
+        publishedAt: '2026-10-02T08:00:00Z',
+        author: 'Makr91',
+        url: 'https://example.test/releases/v1.4.0-beta.1',
+        body: '### Features\n\n* one',
+        assets: [
+          {
+            name: 'agent-1.4.0-beta.1.deb',
+            url: 'https://example.test/agent-1.4.0-beta.1.deb',
+            size: 39116800,
+            checksum: '',
+          },
+        ],
+      },
+      {
+        tag: 'v1.3.0',
+        name: '',
+        prerelease: false,
+        publishedAt: '',
+        author: '',
+        url: '',
+        body: '',
+        assets: [],
+      },
+    ]);
+  });
+
+  it('answers the one release the check names while it lists no releases, and none without a version', () => {
+    expect(
+      releasesOf({
+        update_available: true,
+        current_version: '1.2.0',
+        latest_version: '1.3.0',
+        release_url: 'https://example.test/releases/1.3.0',
+        release_date: '2026-10-01T00:00:00Z',
+        release_notes: '### Features\n\n* one',
+        assets: [{ name: 'a.deb', url: 'https://example.test/a.deb', size: 12, checksum: 'abc' }],
+      })
+    ).toEqual([
+      {
+        tag: '1.3.0',
+        name: '',
+        prerelease: false,
+        publishedAt: '2026-10-01T00:00:00Z',
+        author: '',
+        url: 'https://example.test/releases/1.3.0',
+        body: '### Features\n\n* one',
+        assets: [{ name: 'a.deb', url: 'https://example.test/a.deb', size: 12, checksum: 'abc' }],
+      },
+    ]);
+    expect(
+      releasesOf({
+        update_available: true,
+        latest_version: '1.3.0',
+        release_notes: null,
+        assets: null,
+      })
+    ).toEqual([
+      {
+        tag: '1.3.0',
+        name: '',
+        prerelease: false,
+        publishedAt: '',
+        author: '',
+        url: '',
+        body: '',
+        assets: [],
+      },
+    ]);
+    expect(
+      releasesOf({ update_available: false, current_version: '1.3.0', latest_version: null })
+    ).toEqual([]);
+    expect(releasesOf(null)).toEqual([]);
+  });
+});
+
+describe('releaseAssetsOf', () => {
+  it('reads the browser download url and the sha256 of every named entry', () => {
+    expect(
+      releaseAssetsOf([
+        {
+          name: 'a.deb',
+          browser_download_url: 'https://example.test/a.deb',
+          size: '12',
+          sha256: 'abc',
+        },
+        { browser_download_url: 'https://example.test/nameless' },
+        { name: 'b.txt', sha256: null },
+      ])
+    ).toEqual([
+      { name: 'a.deb', url: 'https://example.test/a.deb', size: 12, checksum: 'abc' },
+      { name: 'b.txt', url: '', size: 0, checksum: '' },
+    ]);
+    expect(releaseAssetsOf(null)).toEqual([]);
+  });
+});
+
+describe('latestTagOf', () => {
+  it('names the first release that is not a pre-release, or nothing', () => {
+    expect(
+      latestTagOf([
+        { tag: 'v1.4.0-beta.1', prerelease: true },
+        { tag: 'v1.3.0', prerelease: false },
+        { tag: 'v1.2.0', prerelease: false },
+      ])
+    ).toBe('v1.3.0');
+    expect(latestTagOf([{ tag: 'v1.4.0-beta.1', prerelease: true }])).toBe('');
+    expect(latestTagOf([])).toBe('');
   });
 });
 

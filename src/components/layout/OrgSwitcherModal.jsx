@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBuilding, FaCheck, FaCrown, FaLayerGroup } from 'react-icons/fa6';
 
+import { useCssVar } from '../../hooks/useCssVar';
 import { gravatarProfile } from '../../utils/gravatar';
 import MarkdownText from '../common/MarkdownText';
 
@@ -70,6 +71,34 @@ OrgLogo.propTypes = {
   size: PropTypes.number,
   className: PropTypes.string,
   fallback: PropTypes.node,
+};
+
+/**
+ * The organization's initial in a circle, the mark an organization with
+ * no logo and no Gravatar draws where a host's own mark would say the
+ * wrong name: the first letter of its display name or its name, upper
+ * case, in a muted disc `size` pixels across, the size reaching the
+ * stylesheet's `org-initial` class as `--org-initial-size`.
+ */
+export const OrgInitial = ({ org, size = 20, className = '' }) => {
+  const disc = useRef(null);
+  useCssVar(disc, '--org-initial-size', `${size}px`);
+  return (
+    <span
+      ref={disc}
+      className={className ? `org-initial ${className}` : 'org-initial'}
+      aria-hidden="true"
+      data-initial
+    >
+      {(org.displayName || org.name || '').charAt(0).toUpperCase()}
+    </span>
+  );
+};
+
+OrgInitial.propTypes = {
+  org: PropTypes.shape({ name: PropTypes.string, displayName: PropTypes.string }).isRequired,
+  size: PropTypes.number,
+  className: PropTypes.string,
 };
 
 export const byPersonalLastThenName = (a, b) =>

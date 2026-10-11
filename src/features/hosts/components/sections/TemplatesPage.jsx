@@ -6,7 +6,6 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useStatus } from '../../../../contexts/StatusContext';
 import { pageContextShape } from '../../../../utils/itemShape';
-import { patchConfigFile } from '../../api/manage';
 import { deleteTemplate, moveTemplate, pullTemplate } from '../../api/provisioning';
 import { exportTemplate, publishTemplate } from '../../api/templates';
 import { useHostMachines } from '../../hooks/useHostMachines';
@@ -14,7 +13,7 @@ import { useManageSend, useTaskFollow } from '../../hooks/useHostManage';
 import { useManageCatalogData } from '../../hooks/useManageCatalogData';
 import { useTemplateSource } from '../../hooks/useTemplateSource';
 import { sectionTitle } from '../../pages';
-import { firstArchitectureOf, sourceKeyOf, sourceLabelOf } from '../../utils/boxCatalog';
+import { firstArchitectureOf } from '../../utils/boxCatalog';
 import { heldBoxTemplatesOf, heldBoxVersionsOf, remoteBoxesAdapter } from '../../utils/hostCatalog';
 import {
   createRouteOf,
@@ -24,20 +23,23 @@ import {
   withoutCreateSeed,
 } from '../../utils/machineCreate';
 import { exportBody } from '../../utils/machineTools';
-import {
-  pullBody,
-  sourceDefaultPatch,
-  sourceEntryPatch,
-  sourceFieldErrorsOf,
-  sourceRemovePatch,
-  sourceTogglePatch,
-} from '../../utils/manageCatalog';
+import { TEMPLATE_SOURCES, pullBody } from '../../utils/manageCatalog';
 import BoxSourceCard from '../BoxSourceCard';
-import { HeldListing, useSourcesPanel } from '../HeldListing';
+import { HeldListing, useSameRows, useSourceWrites, useSourcesPanel } from '../HeldListing';
 import { PaneButton, heldBoxesCollection } from '../HostCatalogInstall';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import { TemplateDialogsOf, pullFormOfSeed } from '../TemplateDialogs';
+
+const SOURCE_KEYS = {
+  added: 'hosts.manage.templates.sourceAdded',
+  updated: 'hosts.manage.templates.sourceUpdated',
+  removed: 'hosts.manage.templates.sourceRemoved',
+  enabled: 'hosts.manage.templates.sourceEnabled',
+  disabled: 'hosts.manage.templates.sourceDisabled',
+  default: 'hosts.manage.templates.sourceDefault',
+  failed: 'hosts.manage.templates.sourceFailed',
+};
 
 const seedOf = url => ({ editing: null, seed: templateSourceFormOf(url) });
 
@@ -77,41 +79,50 @@ const versionLabelOf = (row, rows) =>
     ? `${row.version} (${row.architecture})`
     : row.version;
 
+const firstAnswerOf = answers => (answers.length === 1 ? answers[0] : null);
+
 /**
  * The Templates page of a host: every box the host's enabled registries
  * list, BoxVault's boxes collection drawn by the one listing over
- * `GET templates/remote/{source}` of each, cards by default and the table
- * as the toggle, with what the host holds of each from `GET templates`:
- * in the Deploy glyph's place the split control, the glyph the Install
- * press on a box the host lacks, the Update press with its dot on one it
- * holds an older version of and greyed on one it holds at the newest, the
- * chevron opening the menu of the version, Install, Install an older
- * version and Add this registry as a source on a missing box, Update to,
- * Move a held version and Delete a held version on a held one; each
- * version line Install and the machine the create wizard makes of it; the
- * Status column reading Installed or Update available, installed boxes
- * first; the navbar panel's Installed group on by default, and the
- * heading pane Add, flipping it to the missing boxes and back,
- * Registries, opening the one modal of the box registries with their
- * controls and the registry form under its table, Import, the pull by
- * name, Export machine, Publish, Refresh and the view toggle. Install and
+ * `GET templates/remote/{source}` of each, read once per registry per
+ * load, cards by default and the table as the toggle, each box's
+ * organization logo the registry's own, resolved against the registry's
+ * URL, its Gravatar else and its initial where neither loads, with what
+ * the host holds of each from `GET templates`: in the Deploy glyph's
+ * place the split control, the glyph the Install press on a box the host
+ * lacks, the Update press with its dot on one it holds an older version
+ * of and greyed on one it holds at the newest, greyed and titled no
+ * version listed on a box whose registry lists none, the chevron opening
+ * the menu of the version, Install or Update to, Install an older
+ * version, Add this registry as a source, Move of each held version, then
+ * Delete of every held version on a held one, one confirmation; each
+ * version line Install on a version the host lacks or Delete on one it
+ * holds, and the machine the create wizard makes of it; the Status
+ * column reading Installed or Update available, installed boxes first;
+ * the navbar panel's Installed group on when the page opens, and the
+ * heading pane Add, turning the group off so every box draws, the
+ * installed first and the missing greyed with their controls live, a
+ * second press turning it back on, Registries, opening the one modal of
+ * the box registries with their controls and the registry form under its
+ * table, Import, the pull by name, Export machine, Publish, Refresh and
+ * the view toggle; the heading's count the boxes shown. Install and
  * Update send `POST templates/pull` with the organization, the box, the
  * version, its first architecture and the box's registry, Move
- * `POST templates/{id}/move`, Delete `DELETE templates/{id}` behind the
- * typed confirmation, Export `POST templates/export` and Publish
- * `POST templates/publish`, each a queued task followed on `task-updated`
- * with the templates read again at its end, the notice carrying View
- * task; every write of a registry one merge patch of `PUT config/storage`
- * over the `/template_sources/sources` map keyed by each registry's key,
- * `null` removing an entry, the registries read again on success and a
- * refused form drawing each `errors[]` pointer on the field it names. The
- * route's `create=template` hand-off lands with the handed box's card
- * marked whatever the group says, Install sending the handed version and
- * architecture, and a host that holds no such registry drawing the Add
- * registry and continue card over the listing, whose press writes the
- * registry; `create=source` with a `box_url` opens the Registries modal
- * with the form filled; the hand-off leaves the route when its form
- * closes or the handed box's Install is pressed.
+ * `POST templates/{id}/move`, Delete `DELETE templates/{id}` a held row
+ * behind the typed confirmation, Export `POST templates/export` and
+ * Publish `POST templates/publish`, each a queued task followed on
+ * `task-updated` with the templates read again at its end, the notice
+ * carrying View task; every write of a registry one merge patch of
+ * `PUT config/storage` over the `/template_sources/sources` map keyed by
+ * each registry's key, `null` removing an entry, the registries read
+ * again on success and a refused form drawing each `errors[]` pointer on
+ * the field it names. The route's `create=template` hand-off lands with
+ * the handed box's card marked whatever the group says, Install sending
+ * the handed version and architecture, and a host that holds no such
+ * registry drawing the Add registry and continue card over the listing,
+ * whose press writes the registry; `create=source` with a `box_url`
+ * opens the Registries modal with the form filled; the hand-off leaves
+ * the route when its form closes or the handed box's Install is pressed.
  */
 const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
   const { t } = useTranslation();
@@ -120,20 +131,18 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
   const handoff = templatesHandoffOf(searchParams);
   const [asked, setAsked] = useState('');
   const [dialog, setDialog] = useState(null);
-  const [sourceErrors, setSourceErrors] = useState({});
   const dropHandoff = useCallback(
     () => setSearchParams(current => withoutCreateSeed(current), { replace: true }),
     [setSearchParams]
   );
-  const clearErrors = useCallback(() => setSourceErrors({}), []);
   const { panel, openSources, closeForm, closeSources } = useSourcesPanel({
     seedUrl: handoff?.registryUrl || '',
     seedOf,
     dropHandoff,
-    onReset: clearErrors,
   });
   const catalog = useManageCatalogData({ id, server, only: ['templates'] });
-  const { sources, templates } = catalog.rows;
+  const sources = useSameRows(catalog.rows.sources);
+  const { templates } = catalog.rows;
   const box = handoff?.box || null;
   const { send, busy, task, closeTask } = useManageSend(id);
   const { machines } = useHostMachines(id);
@@ -153,6 +162,25 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
   );
   const collections = useMemo(() => [collection], [collection]);
   const handed = useMemo(() => (box ? handedBoxOf(box) : null), [box]);
+  const writes = useSourceWrites({
+    id,
+    send,
+    map: TEMPLATE_SOURCES,
+    sources,
+    keys: SOURCE_KEYS,
+    onSaved: () => {
+      setDialog(null);
+      catalog.reads.sources.refresh();
+    },
+    closeForm,
+    onEdit: source => openSources({ editing: source, seed: null, handoff: false }),
+    onRemoveAsk: source => setDialog({ kind: 'source-remove', source }),
+  });
+
+  const openForm = form => {
+    writes.clearErrors();
+    openSources(form);
+  };
 
   const queue = async ({ call, doneKey, values = {} }) => {
     const { answer, error } = await send({
@@ -218,113 +246,64 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
       doneKey: 'hosts.manage.templates.moveQueued',
     });
 
-  const saveSources = async ({ patch, doneKey, values, id: sourceId = '' }) => {
-    setSourceErrors({});
-    const { error } = await send({
-      call: () => patchConfigFile(status, id, 'storage', patch),
-      doneKey,
-      values,
-      failKey: 'hosts.manage.templates.sourceFailed',
-    });
-    if (!error) {
-      closeForm();
-      setDialog(null);
-      catalog.reads.sources.refresh();
-      return;
-    }
-    setSourceErrors(sourceFieldErrorsOf(error, sourceId));
-  };
-
-  const onSaveSource = (form, editing) =>
-    saveSources({
-      patch: sourceEntryPatch(sources, form, editing ? sourceKeyOf(editing) : ''),
-      doneKey: editing
-        ? 'hosts.manage.templates.sourceUpdated'
-        : 'hosts.manage.templates.sourceAdded',
-      values: { name: form.displayName.trim() || form.name.trim() },
-      id: form.name.trim(),
-    });
-
-  const onRemoveSource = source =>
-    saveSources({
-      patch: sourceRemovePatch(source),
-      doneKey: 'hosts.manage.templates.sourceRemoved',
-      values: { name: sourceLabelOf(source) },
-    });
-
-  const onSourceAction = (action, source) => {
-    if (action === 'edit') {
-      openSources({ editing: source, seed: null, handoff: false });
-      return;
-    }
-    if (action === 'remove') {
-      setDialog({ kind: 'source-remove', source });
-      return;
-    }
-    if (action === 'toggle') {
-      saveSources({
-        patch: sourceTogglePatch(source),
-        doneKey:
-          source.enabled === false
-            ? 'hosts.manage.templates.sourceEnabled'
-            : 'hosts.manage.templates.sourceDisabled',
-        values: { name: sourceLabelOf(source) },
-      });
-      return;
-    }
-    saveSources({
-      patch: sourceDefaultPatch(sources, source),
-      doneKey: 'hosts.manage.templates.sourceDefault',
-      values: { name: sourceLabelOf(source) },
-    });
-  };
-
-  const removeTemplate = async () => {
-    const { row } = dialog;
-    const { answer, error } = await send({
-      call: () => deleteTemplate(status, id, row.id),
+  const removeTemplates = () =>
+    queue({
+      call: () =>
+        Promise.all(dialog.rows.map(row => deleteTemplate(status, id, row.id))).then(firstAnswerOf),
       doneKey: 'hosts.manage.templates.deleteQueued',
-      failKey: 'hosts.manage.templates.failed',
     });
-    setDialog(null);
-    if (!error) {
-      follow(answer);
-      refreshTemplates();
-    }
-  };
+
+  const addSourceEntryOf = item => ({
+    key: 'source',
+    action: 'held-add-source',
+    label: t('pages.deploy.words.sourceRegistry'),
+    onClick: () =>
+      openForm({
+        editing: null,
+        seed: templateSourceFormOf(item.extras.source?.url || ''),
+        handoff: false,
+      }),
+  });
 
   const entriesOf = item => {
     const rows = heldBoxTemplatesOf(templates, item);
     return {
-      fetch: rows.map(row => ({
-        key: `move-${row.id}`,
-        action: 'template-move',
-        label: t('hosts.manage.held.moveVersion', { version: versionLabelOf(row, rows) }),
-        onClick: () => setDialog({ kind: 'move', row }),
-      })),
-      remove: rows.map(row => ({
-        key: `delete-${row.id}`,
-        action: 'template-delete',
-        label: t('hosts.manage.held.deleteVersion', { version: versionLabelOf(row, rows) }),
-        onClick: () => setDialog({ kind: 'delete', row }),
-      })),
+      fetch: [
+        addSourceEntryOf(item),
+        ...rows.map(row => ({
+          key: `move-${row.id}`,
+          action: 'template-move',
+          label: t('hosts.manage.held.moveVersion', { version: versionLabelOf(row, rows) }),
+          onClick: () => setDialog({ kind: 'move', row }),
+        })),
+      ],
+      remove:
+        rows.length > 0
+          ? [
+              {
+                key: 'delete',
+                action: 'template-delete',
+                label: t('host.templatesManagement.delete'),
+                onClick: () => setDialog({ kind: 'delete', rows }),
+              },
+            ]
+          : [],
     };
   };
 
   const listingContext = {
     ...context,
+    orgMark: null,
     prefsPrefix: `${context.prefsPrefix}_host_registry`,
     held: {
       versionsOf: item => heldBoxVersionsOf(templates, item),
       busy,
       onFetch: onPull,
-      onAddSource: item =>
-        openSources({
-          editing: null,
-          seed: templateSourceFormOf(item.extras.source?.url || ''),
-          handoff: false,
+      onDelete: (item, version) =>
+        setDialog({
+          kind: 'delete',
+          rows: heldBoxTemplatesOf(templates, item).filter(row => row.version === version),
         }),
-      sourceWordKey: 'pages.deploy.words.sourceRegistry',
       entriesOf,
       creates: hostCreates(server, context.user?.role),
       createRouteOf: (item, version) =>
@@ -395,7 +374,7 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
         asked={asked}
         dialog={dialog}
         panel={panel}
-        sourceErrors={sourceErrors}
+        sourceErrors={writes.errors}
         task={task}
         onCloseAsked={() => setAsked('')}
         onCloseDialog={() => setDialog(null)}
@@ -403,11 +382,11 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
         onExport={onExport}
         onPublish={onPublish}
         onMove={onMove}
-        onDeleteTemplate={removeTemplate}
-        onAddSource={() => openSources({ editing: null, seed: null, handoff: false })}
-        onSourceAction={onSourceAction}
-        onSaveSource={onSaveSource}
-        onRemoveSource={onRemoveSource}
+        onDeleteTemplate={removeTemplates}
+        onAddSource={() => openForm({ editing: null, seed: null, handoff: false })}
+        onSourceAction={writes.onSourceAction}
+        onSaveSource={writes.onSaveSource}
+        onRemoveSource={writes.onRemoveSource}
         onCancelForm={closeForm}
         onCloseSources={closeSources}
         onCloseTask={closeTask}

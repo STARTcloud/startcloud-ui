@@ -21,18 +21,26 @@ const keyOf = request => {
   return `${request.method()} ${url.pathname}`;
 };
 
+const keysOf = request => {
+  const url = new URL(request.url());
+  const plain = keyOf(request);
+  return url.search ? [`${plain}${url.search}`, plain] : [plain];
+};
+
 /**
  * The fixture server of the testing contract: every request the shared UI
  * makes to `/api/*` is answered from `tests/fixtures/<contract>/index.js`,
- * keyed `"METHOD path"`, with the JSON file and status the key names; a
+ * keyed `"METHOD path"`, or `"METHOD path?query"` for one answer of a
+ * path the UI asks with a query, the keyed query matched before the bare
+ * path, with the JSON file and status the key names; a
  * write whose body the scenario marked as refused answers the `refused`
  * file with 422; the error reporter's `POST /api/client-errors` answers
  * 204 on every fixture, since a scenario's expected failures are shipped
  * like any other; a key the fixture lacks answers 404 with a problem
  * body, so a scenario never reaches a dev proxy target. Every call is
- * recorded with its key, its origin, its parsed body and its request
+ * recorded with its bare key, its origin, its parsed body and its request
  * headers, so a scenario can read the credential a request carried and
- * the host it went to.
+ * the host it went to and count a path's calls whatever their queries.
  */
 export class FixtureHost {
   constructor(page) {
@@ -74,7 +82,9 @@ export class FixtureHost {
       await route.fulfill({ status: 204 });
       return;
     }
-    const found = this.contracts.map(entry => [entry, entry.index[key]]).find(([, hit]) => hit);
+    const found = keysOf(request)
+      .flatMap(candidate => this.contracts.map(entry => [entry, entry.index[candidate]]))
+      .find(([, hit]) => hit);
     if (!found) {
       await route.fulfill({
         status: 404,

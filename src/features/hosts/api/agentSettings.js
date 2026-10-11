@@ -58,11 +58,14 @@ export const hostConfig = (status, id) => ({
 /**
  * Whether a newer agent is published, `GET app/updates/check`,
  * `{ current_version, latest_version, update_available, release_url,
- * release_date, changelog, release_notes, assets }`, `release_notes` the
- * release's markdown and `assets` an array of `{ name, url, size,
- * checksum }` with the size in bytes and the checksum optional, each of
- * the last five null while the agent holds none; an agent without the
- * surface refuses, which draws no button.
+ * release_date, changelog, release_notes, assets, releases }`,
+ * `release_notes` the release's markdown, `assets` an array of
+ * `{ name, url, size, checksum }` with the size in bytes and the checksum
+ * optional, and `releases` the repository's releases newest first, each
+ * `{ tag, name, prerelease, published_at, author, html_url, body, assets }`
+ * with `assets` an array of `{ name, size, sha256, browser_download_url }`,
+ * each of the last six null while the agent holds none; an agent without
+ * the surface refuses, which draws no button.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role

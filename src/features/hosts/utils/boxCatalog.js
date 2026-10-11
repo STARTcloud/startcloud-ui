@@ -11,7 +11,27 @@ const organizationOf = box =>
 const versionNumberOf = version =>
   typeof version === 'string'
     ? version
-    : version?.versionNumber || version?.version || version?.name || '';
+    : version?.version_number || version?.versionNumber || version?.version || version?.name || '';
+
+const absoluteUrl = (value, origin) => {
+  if (!value) {
+    return '';
+  }
+  try {
+    return new URL(value, origin || undefined).href;
+  } catch {
+    return '';
+  }
+};
+
+const organizationRecordOf = (box, origin) => {
+  const record = box?.organization && typeof box.organization === 'object' ? box.organization : {};
+  return {
+    name: organizationOf(box),
+    logo: absoluteUrl(record.logo, origin),
+    emailHash: record.email_hash || record.emailHash || '',
+  };
+};
 
 const architecturesOf = versionRows => [
   ...new Set(
@@ -53,9 +73,9 @@ const listOf = payload => {
  * The rows of the image picker from a registry's catalog, BoxVault's
  * discover answer as the agent relays it, filtered to what the host can
  * install: the bare array of boxes, or the same list under `boxes` or
- * `data`, each box read for its organization, its name, its versions and
- * the architectures its providers list; an entry without a name is
- * skipped.
+ * `data`, each box read for its organization, its name, its versions by
+ * their `version_number` and the architectures its providers list; an
+ * entry without a name is skipped.
  *
  * @param {Array|Object} payload - The catalog answer
  * @returns {Array<{ value: string, organization: string, boxName: string, versions: Array<string>, architectures: Array<string> }>} The rows
@@ -98,7 +118,7 @@ const latestOf = versions =>
     .sort()
     .pop() || null;
 
-const itemOf = box => {
+const itemOf = (box, origin) => {
   const organization = organizationOf(box);
   const name = box?.name || '';
   if (!name) {
@@ -110,7 +130,7 @@ const itemOf = box => {
   const isPublic = accessOf(box, 'is_public', 'isPublic');
   return {
     id: organization ? `${organization}/${name}` : name,
-    organization: { name: organization, logo: '' },
+    organization: organizationRecordOf(box, origin),
     name,
     label: name,
     description: box.short_description || box.shortDescription || box.description || '',
@@ -141,15 +161,21 @@ const itemOf = box => {
  * The boxes of a registry's catalog as the item shape every boxes listing
  * draws, BoxVault's discover answer as the agent relays it under
  * `templates/remote/{source}`: the bare array of boxes, or the list under
- * `boxes` or `data`, each box its organization, its name as its label,
- * its description, its visibility where the answer carries one, its
- * versions newest first with their providers and architectures, no
- * download counts and no links; an entry without a name is skipped.
+ * `boxes` or `data`, each box its organization with the organization's
+ * `logo` resolved against the registry's URL and its `email_hash` as
+ * `emailHash`, its name as its label, its description, its visibility
+ * where the answer carries one, its versions newest first with their
+ * providers and architectures, each version read from `version_number`,
+ * no download counts and no links; an entry without a name is skipped.
  *
  * @param {Array|Object} payload - The catalog answer
+ * @param {string} [origin] - The registry's URL the organization's logo resolves against
  * @returns {Array<Object>} The items
  */
-export const remoteBoxItemsOf = payload => listOf(payload).map(itemOf).filter(Boolean);
+export const remoteBoxItemsOf = (payload, origin = '') =>
+  listOf(payload)
+    .map(box => itemOf(box, origin))
+    .filter(Boolean);
 
 /**
  * The architecture a pull of one version of a box asks for when nobody

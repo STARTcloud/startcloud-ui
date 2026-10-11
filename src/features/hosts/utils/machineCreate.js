@@ -1,6 +1,6 @@
 import { hostHasFeature } from './capabilities';
 import { withAddressing, cdromEntry, filesystemEntries } from './machineHelpers';
-import { SOURCE_FORM } from './manageCatalog';
+import { CATALOG_SOURCE_FORM, SOURCE_FORM } from './manageCatalog';
 import { canCreateMachines } from './permissions';
 
 export const CREATE_STEPS = [
@@ -444,6 +444,48 @@ export const templateSourceFormOf = boxUrl => {
 };
 
 /**
+ * The body of `POST provisioning/catalog/sources` for a handed catalog:
+ * its host as the display name, the URL as given, and `auth` `oidc` for an
+ * organization's private catalog, `none` otherwise.
+ *
+ * @param {string} url - The handed `provisioner_catalog`
+ * @returns {{ display_name: string, url: string, auth: string }} The body
+ */
+export const catalogSourceBody = url => {
+  const parsed = new URL(url);
+  return {
+    display_name: parsed.host,
+    url,
+    auth: parsed.pathname.startsWith('/api/private/') ? 'oidc' : 'none',
+  };
+};
+
+/**
+ * The catalog source form that adds the catalog a handed URL names, the
+ * shape the Provisioners page's source form hands up: the id its host
+ * lowercased with every run of other characters as one underscore, the
+ * display name its host, the URL as given, not the default, and `auth`
+ * as `catalogSourceBody` picks it; null while the URL is no URL.
+ *
+ * @param {string} url - The handed `provisioner_catalog`
+ * @returns {Object|null} The form, the shape of `CATALOG_SOURCE_FORM`
+ */
+export const catalogSourceSeedOf = url => {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  const name = parsed.host.toLowerCase().replace(SOURCE_ID_CHARS, '_').replace(SOURCE_ID_EDGES, '');
+  if (!name) {
+    return null;
+  }
+  const body = catalogSourceBody(url);
+  return { ...CATALOG_SOURCE_FORM, name, displayName: body.display_name, url, auth: body.auth };
+};
+
+/**
  * The host's family a handed `provisioner` names, the part after its last
  * slash, the whole value while it carries none.
  *
@@ -501,23 +543,6 @@ export const installOfferOf = ({ sources, catalogs, name, version, catalogUrl })
     return { kind: 'add', source: '', version };
   }
   return { kind: 'missing', source: '', version };
-};
-
-/**
- * The body of `POST provisioning/catalog/sources` for a handed catalog:
- * its host as the display name, the URL as given, and `auth` `oidc` for an
- * organization's private catalog, `none` otherwise.
- *
- * @param {string} url - The handed `provisioner_catalog`
- * @returns {{ display_name: string, url: string, auth: string }} The body
- */
-export const catalogSourceBody = url => {
-  const parsed = new URL(url);
-  return {
-    display_name: parsed.host,
-    url,
-    auth: parsed.pathname.startsWith('/api/private/') ? 'oidc' : 'none',
-  };
 };
 
 const bootEntryOf = ({ diskConfig, bootSource, bhyve, vbox }) => {

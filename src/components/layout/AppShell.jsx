@@ -502,8 +502,7 @@ const zoomModalOnHeaderDoubleClick = event => {
  * header that zooms the dialog to 95% of the viewport, a second one
  * returning it, and the keyboard shortcuts of `useShellShortcuts` with
  * the mounted features' `shortcuts` rows, the Keyboard Shortcuts modal
- * opened by `?`, the sidebar foot's keyboard button and the user menu's
- * Keyboard shortcuts row.
+ * opened by `?` and the user menu's Keyboard shortcuts row.
  *
  * The crumbs come from the route. With a column: the crumbs of the
  * sidebar row the route matches, else the crumbs `routeCrumbParent`
@@ -745,7 +744,6 @@ const AppShell = ({
         size={sidebarSize}
         readout={readout}
         foot={slots.foot}
-        onShortcuts={keys.open}
       />
       <div className="app-stack d-flex flex-column flex-grow-1 min-width-0">{stack}</div>
     </div>

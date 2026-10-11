@@ -41,14 +41,24 @@ export default {
     status: 200,
     file: 'action-200.json',
   },
+  'DELETE /api/agents/3/provisioning/provisioners/startcloud/versions/0.1.27': {
+    status: 200,
+    file: 'action-200.json',
+  },
+  'PUT /api/agents/3/config/storage': { status: 200, file: 'config-saved-200.json' },
   'POST /api/agents/3/provisioning/provisioners/startcloud/refresh-from-source': {
     status: 202,
     file: 'queued-202.json',
   },
   'GET /api/agents/3/provisioning/catalog': { status: 200, file: 'agents-3-catalog.json' },
+  'GET /api/agents/3/provisioning/catalog?source=probe': { status: 401, file: 'catalog-401.json' },
   'GET /api/agents/3/provisioning/catalog/health': {
     status: 200,
     file: 'agents-3-catalog-health.json',
+  },
+  'GET /api/agents/3/provisioning/catalog/health?source=probe': {
+    status: 401,
+    file: 'catalog-401.json',
   },
   'GET /api/agents/3/provisioning/catalog/sources': {
     status: 200,

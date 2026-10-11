@@ -305,8 +305,10 @@ adding the handed catalog first, the same chain and the same words.
 **`template`** lands on the host's Templates page with the handed box's
 card marked with the handed version, scrolled into view and drawn
 whatever the panel's Installed group says, every registry's catalog read
-as the person, the forwarded person's token first, the host's bound
-account's token second and the registry's own key last; Install on that
+as the person, the forwarded person's token first, or on the agent's own
+UI the federated account the agent's session was signed in with, the
+host's bound account's token second and the registry's own key last;
+Install on that
 card sends `POST templates/pull` with the handed version and architecture
 on the box's registry as a person's own press sends it and drops the
 hand-off from the route. A host that holds no such registry draws the
@@ -317,15 +319,17 @@ registry and marks the card.
 
 **`source`** with a `provisioner_catalog` lands on the host's
 Provisioners page with the Sources modal open and its form filled under
-the table, the catalog's host as the display name, the URL as given and
-the authentication, `oidc` for an organization's private catalog and
-`none` otherwise; Save sends `POST provisioning/catalog/sources`, a `409`
-reading as already held, and the sources are read again. With a `box_url`
-it lands on the host's Templates page with the Registries modal open and
-its form filled, the registry's host lowercased as its id, its host as
-the display name and its origin as the URL; Save is the one merge patch
-of `PUT config/storage` the Templates page writes. Closing either form
-drops the hand-off from the route.
+the table, the catalog's host lowercased as its id, its host as the
+display name, the URL as given and the authentication, `oidc` for an
+organization's private catalog and `none` otherwise; Save is the one
+merge patch of `PUT config/storage` over `/catalog_sources/sources` the
+Provisioners page writes, and the sources are read again. With a
+`box_url` it lands on the host's Templates page with the Registries modal
+open and its form filled, the registry's host lowercased as its id, its
+host as the display name and its origin as the URL; Save is the one merge
+patch of `PUT config/storage` over `/template_sources/sources` the
+Templates page writes. Closing either form drops the hand-off from the
+route.
 
 ### The receiver's control
 
@@ -345,30 +349,38 @@ Update to.
   older version, its press Update to the newest; greyed and disabled
   while the host holds the newest. Beside it a chevron opens the menu
   headed by the newest version, plain entries, the fetch entries over a
-  divider and the delete entries under it. A missing provisioner offers
-  Install, Install an older version, which picks one of the versions the
-  host lacks, and Add this catalog as a source; a held provisioner Update
-  to while behind, Update from source while the family came from git or
-  a folder, then Delete of each held version and Delete family. A missing
-  box offers Install, Install an older version and Add this registry as a
-  source; a held box Update to while behind and Move of each held
-  version, then Delete of each held version. Every delete waits behind
-  the typed confirmation, and a refused provisioner delete names the
+  divider and the delete entries under it, and no entry a version. A
+  provisioner offers Install while missing or Update to while behind,
+  Install an older version while the host lacks one under the newest,
+  Update from source while the family came from git or a folder, Add
+  this catalog as a source, then Delete family while held. A box offers
+  Install while missing or Update to while behind, Install an older
+  version while the host lacks one under the newest, Add this registry as
+  a source, Move of each held version, then Delete while held, which
+  removes every held version of the box. Every delete waits behind one
+  typed confirmation, and a refused provisioner delete names the
   machines that reference it.
 - **The Versions fold** of a card lists every version with its date and
-  two square outlined buttons: the download glyph installs that version
-  onto the host, disabled and titled Installed on a version the host
-  holds, and the Hyperweaver mark opens the create wizard with that
-  version while the host creates machines. The catalog's and BoxVault's
-  own version lines draw the same two outlined buttons, Download and
-  Deploy.
+  two square outlined buttons: on a version the host lacks the download
+  glyph that installs it, on a version the host holds the red trash
+  glyph, titled Delete, that deletes that version behind the typed
+  confirmation, the provisioner version or the template rows of that
+  version, then the Hyperweaver mark that opens the create wizard with
+  that version while the host creates machines; no version line draws a
+  greyed button. The catalog's and BoxVault's own version lines draw the
+  same two outlined buttons, Download and Deploy.
 - **The listing** sorts installed entries first, the Status column the
   sort, descending, reading Installed, Update available or nothing; the
   navbar panel's Installed group, Installed and Not installed, is on
-  Installed when the page opens; with the group narrowing nothing every
-  entry draws and the missing ones are greyed; Add in the heading pane
-  flips the group to Not installed alone and a second press or Clear
-  filters flips it back, the heading's muted text reading Add meanwhile.
+  Installed when the page opens; Add in the heading pane turns the group
+  off, so every entry draws, the installed first and the missing ones
+  greyed with their split control and version buttons live, the person
+  adding one from there, and a second press or Clear filters turns it
+  back on; the heading's muted text counts the entries shown, never a
+  word. An entry whose source lists no version draws the split control
+  greyed and titled no version listed, its chevron over the page's own
+  entries alone, because the agent's pull and install refuse an empty
+  version.
 - **The heading pane** carries glyphs with titles alone: Provisioners
   Add, Sources, Import, Refresh and the view toggle; Templates Add,
   Registries, Import, Export machine, Publish, Refresh and the view
@@ -377,17 +389,29 @@ Update to.
   pull of a box by name.
 - **Sources and Registries** open one modal each: the title and the
   close button, a heading pane with the label and Add at its right, the
-  one table of the sources, Name, Key, URL, Default and Enabled where a
-  row carries it, each row's Make default, Enable or Disable, Edit and
-  Remove where the host offers a route for it, and under the table the
-  add or edit form while Add or Edit is pressed, so no dialog opens over
-  the modal. A catalog source offers Add alone and a box registry all
-  four over `PUT config/storage`, because the agent's catalog sources
-  answer `GET` and `POST` and no other verb.
-- **One read a source.** The page reads each source's catalog once as it
-  draws, the host's own families or templates once, and nothing else of
-  the catalog, because the listing is the one place the catalog is
-  shown.
+  one table of the sources the storage configuration file holds, Name,
+  Key, URL, Default and Enabled, each row's Make default, Enable or
+  Disable, Edit and Remove, and under the table the one source form
+  while Add or Edit is pressed, so no dialog opens over the modal. The
+  form is the id, the display name, the URL, the default switch, the
+  credential, a registry's API key or a catalog source's authentication,
+  None or OIDC, and the CA file with Browse; every write of either modal
+  is one merge patch of `PUT config/storage`, over
+  `/template_sources/sources` for a registry and `/catalog_sources/sources`
+  for a catalog source, `null` removing an entry, Remove behind the typed
+  confirmation, because the agent reads both maps live from that file.
+  Both modals list the rows the agent answers,
+  `GET provisioning/catalog/sources` and `GET templates/sources`, every
+  configured source with its `enabled`, and the listings read the enabled
+  ones alone, so a disabled source draws in the modal and lists nothing.
+- **One read a source.** The page reads each enabled source's catalog
+  once per load, the host's own families or templates once, and nothing
+  else of the catalog, because the listing is the one place the catalog
+  is shown; a read the event stream asks again rebuilds nothing while the
+  sources spell the same. A catalog source that answers 401, the catalog
+  refusing the host's sign-in, lists nothing and is named with the
+  agent's message in one warning banner, the other sources drawn whole,
+  never logged as an error, because an expected refusal is an answer.
 
 **`machine`** lands on the host's page, which opens the create wizard over
 itself while the host offers a create, the query's members seeding the
@@ -473,8 +497,7 @@ A receiver:
   its own;
 - installs a family it does not hold, pulls a template, adds a registry
   or a catalog source only on the person's press, through its catalog
-  install, its templates pull, its catalog sources and its storage
-  configuration;
+  install, its templates pull and its storage configuration;
 - drops the hand-off from the route as its dialog closes, its card's
   Install is pressed or its banner is dismissed.
 

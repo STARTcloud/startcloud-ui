@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ARTIFACT_TYPES,
+  CATALOG_SOURCES,
+  TEMPLATE_SOURCES,
   artifactFiltersOf,
   artifactStatusOf,
   buildSteps,
@@ -393,13 +395,21 @@ describe('the templates', () => {
   });
 
   it('adds a registry as one merge patch under its id, the default moved off the one that held it', () => {
-    expect(sourceEntryPatch(sources, sourceForm, '')).toEqual(
-      sourcesPatch({
-        boxvault: { default: false },
-        new: { display_name: 'New', url: 'https://n', default: true },
-      })
+    expect(sourceEntryPatch(sources, sourceForm, '', TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch(
+        {
+          boxvault: { default: false },
+          new: { display_name: 'New', url: 'https://n', default: true },
+        },
+        TEMPLATE_SOURCES
+      )
     );
-    const kept = sourceEntryPatch(sources, { ...sourceForm, isDefault: false }, '');
+    const kept = sourceEntryPatch(
+      sources,
+      { ...sourceForm, isDefault: false },
+      '',
+      TEMPLATE_SOURCES
+    );
     expect(kept.template_sources.sources).toEqual({
       new: { display_name: 'New', url: 'https://n', default: false },
     });
@@ -409,7 +419,8 @@ describe('the templates', () => {
     const edited = sourceEntryPatch(
       sources,
       { ...sourceForm, name: 'boxvault', isDefault: false, auth_token: ' t ', ca_file: '/ca' },
-      'boxvault'
+      'boxvault',
+      TEMPLATE_SOURCES
     );
     expect(edited.template_sources.sources).toEqual({
       boxvault: {
@@ -420,25 +431,60 @@ describe('the templates', () => {
         ca_file: '/ca',
       },
     });
-    const renamed = sourceEntryPatch(sources, { ...sourceForm, name: 'vault' }, 'boxvault');
+    const renamed = sourceEntryPatch(
+      sources,
+      { ...sourceForm, name: 'vault' },
+      'boxvault',
+      TEMPLATE_SOURCES
+    );
     expect(renamed.template_sources.sources).toEqual({
       boxvault: null,
       vault: { display_name: 'New', url: 'https://n', default: true },
     });
   });
 
+  it('writes a catalog source under the catalog map with its authentication, the API key never', () => {
+    const catalogForm = {
+      name: 'partner',
+      displayName: 'Partner',
+      url: 'https://p/catalog.json',
+      isDefault: false,
+      auth: 'oidc',
+      ca_file: '',
+    };
+    expect(sourceEntryPatch([], catalogForm, '', CATALOG_SOURCES)).toEqual({
+      catalog_sources: {
+        sources: {
+          partner: {
+            display_name: 'Partner',
+            url: 'https://p/catalog.json',
+            default: false,
+            auth: 'oidc',
+          },
+        },
+      },
+    });
+    expect(sourceRemovePatch({ id: 'partner' }, CATALOG_SOURCES)).toEqual({
+      catalog_sources: { sources: { partner: null } },
+    });
+  });
+
   it('toggles, defaults and removes a registry, each one patch of the map', () => {
-    expect(sourceTogglePatch(sources[0])).toEqual(sourcesPatch({ mirror: { enabled: false } }));
-    expect(sourceTogglePatch({ name: 'mirror', enabled: false })).toEqual(
-      sourcesPatch({ mirror: { enabled: true } })
+    expect(sourceTogglePatch(sources[0], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ mirror: { enabled: false } }, TEMPLATE_SOURCES)
     );
-    expect(sourceDefaultPatch(sources, sources[0])).toEqual(
-      sourcesPatch({ boxvault: { default: false }, mirror: { default: true } })
+    expect(sourceTogglePatch({ name: 'mirror', enabled: false }, TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ mirror: { enabled: true } }, TEMPLATE_SOURCES)
     );
-    expect(sourceDefaultPatch(sources, sources[1])).toEqual(
-      sourcesPatch({ boxvault: { default: true } })
+    expect(sourceDefaultPatch(sources, sources[0], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ boxvault: { default: false }, mirror: { default: true } }, TEMPLATE_SOURCES)
     );
-    expect(sourceRemovePatch(sources[0])).toEqual(sourcesPatch({ mirror: null }));
+    expect(sourceDefaultPatch(sources, sources[1], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ boxvault: { default: true } }, TEMPLATE_SOURCES)
+    );
+    expect(sourceRemovePatch(sources[0], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ mirror: null }, TEMPLATE_SOURCES)
+    );
   });
 
   it('keys a row that carries no id by its own name, as its agent answers it', () => {
@@ -446,10 +492,12 @@ describe('the templates', () => {
       { name: 'mirror', url: 'https://m', enabled: true, default: false },
       { name: 'boxvault', url: 'https://b', enabled: true, default: true },
     ];
-    expect(sourceDefaultPatch(zones, zones[0])).toEqual(
-      sourcesPatch({ boxvault: { default: false }, mirror: { default: true } })
+    expect(sourceDefaultPatch(zones, zones[0], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ boxvault: { default: false }, mirror: { default: true } }, TEMPLATE_SOURCES)
     );
-    expect(sourceRemovePatch(zones[1])).toEqual(sourcesPatch({ boxvault: null }));
+    expect(sourceRemovePatch(zones[1], TEMPLATE_SOURCES)).toEqual(
+      sourcesPatch({ boxvault: null }, TEMPLATE_SOURCES)
+    );
   });
 
   it('lays each entry of a refused save on the form field its pointer names', () => {
@@ -465,7 +513,7 @@ describe('the templates', () => {
         { pointer: '/template_sources/sources/mirror/url', rule: 'format', params: {} },
       ],
     };
-    expect(sourceFieldErrorsOf(error, 'boxvault')).toEqual({
+    expect(sourceFieldErrorsOf(error, 'boxvault', TEMPLATE_SOURCES)).toEqual({
       url: { rule: 'format', params: { format: 'uri' } },
       displayName: { rule: 'required', params: {} },
     });
@@ -476,7 +524,8 @@ describe('the templates', () => {
             { pointer: '/template_sources/sources', rule: 'propertyNames', params: { key: 'Bad' } },
           ],
         },
-        'Bad'
+        'Bad',
+        TEMPLATE_SOURCES
       )
     ).toEqual({ name: { rule: 'propertyNames', params: { key: 'Bad' } } });
     expect(
@@ -490,13 +539,25 @@ describe('the templates', () => {
             },
           ],
         },
-        'new'
+        'new',
+        TEMPLATE_SOURCES
       )
     ).toEqual({
       displayName: { rule: 'required', params: {} },
       url: { rule: 'required', params: {} },
     });
-    expect(sourceFieldErrorsOf(null, 'new')).toEqual({});
+    expect(
+      sourceFieldErrorsOf(
+        {
+          fieldErrors: [
+            { pointer: '/catalog_sources/sources/partner/auth', rule: 'enum', params: {} },
+          ],
+        },
+        'partner',
+        CATALOG_SOURCES
+      )
+    ).toEqual({ auth: { rule: 'enum', params: {} } });
+    expect(sourceFieldErrorsOf(null, 'new', TEMPLATE_SOURCES)).toEqual({});
   });
 
   it('refuses a registry without an id, a URL or a display name, and an id outside the key rule', () => {

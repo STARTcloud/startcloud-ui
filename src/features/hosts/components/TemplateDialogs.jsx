@@ -4,13 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useStatus } from '../../../contexts/StatusContext';
-import { messageFor } from '../../../utils/validation';
 import { fetchRemoteTemplates } from '../api/provisioning';
 import { useManageRead } from '../hooks/useHostManage';
 import {
   flattenBoxCatalog,
   pickDefaultSource,
-  sourceDisplayNameOf,
   sourceKeyOf,
   sourceLabelOf,
 } from '../utils/boxCatalog';
@@ -18,13 +16,11 @@ import { templateSourceFor } from '../utils/machineCreate';
 import {
   EXPORT_FORM,
   PULL_FORM,
-  SOURCE_FORM,
   TEMPLATE_PUBLISH_FORM,
   exportable,
   pullBody,
   pullFormOf,
   pullProblem,
-  sourceProblem,
   templateLabel,
   templatePublishBody,
   templatePublishProblem,
@@ -32,73 +28,11 @@ import {
 
 import BoxSourceCard from './BoxSourceCard';
 import { PathInput } from './PathPicker';
-import SourcesModal, { InlineForm } from './SourcesModal';
+import { HeldSourcesModal, TextField } from './SourcesModal';
 import TaskDialog from './TaskDialog';
 import ToolFormDialog from './ToolFormDialog';
 
-const OFFERS = { default: true, toggle: true, edit: true, remove: true };
-
-const sourceRowOf = source => ({
-  key: sourceKeyOf(source),
-  name: sourceLabelOf(source),
-  url: source.url || '',
-  isDefault: Boolean(source.default),
-  enabled: source.enabled !== false,
-  source,
-});
-
 const errorShape = PropTypes.shape({ rule: PropTypes.string.isRequired, params: PropTypes.object });
-
-const FieldError = ({ id, labelKey, error }) => {
-  const { t } = useTranslation();
-  if (!error) {
-    return null;
-  }
-  return (
-    <div id={`${id}-error`} className="invalid-feedback d-block" data-error={id}>
-      {messageFor(error, t(labelKey), t)}
-    </div>
-  );
-};
-
-FieldError.propTypes = {
-  id: PropTypes.string.isRequired,
-  labelKey: PropTypes.string.isRequired,
-  error: errorShape,
-};
-
-const TextField = ({ id, labelKey, value, onChange, disabled, placeholder = '', error = null }) => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <label className="form-label" htmlFor={id}>
-        {t(labelKey)}
-      </label>
-      <input
-        id={id}
-        className={error ? 'form-control is-invalid' : 'form-control'}
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        disabled={disabled}
-        aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-      />
-      <FieldError id={id} labelKey={labelKey} error={error} />
-    </>
-  );
-};
-
-TextField.propTypes = {
-  id: PropTypes.string.isRequired,
-  labelKey: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  disabled: PropTypes.bool.isRequired,
-  placeholder: PropTypes.string,
-  error: errorShape,
-};
 
 const SourceSelect = ({ id, labelKey, sources, value, onChange, disabled }) => {
   const { t } = useTranslation();
@@ -620,248 +554,22 @@ MoveModal.propTypes = {
   onSubmit: PropTypes.func.isRequired,
 };
 
-/**
- * The registry form of the Templates page's Registries modal, drawn under
- * its table, hyperweaver-ui's add and edit of a box registry: the id, the
- * agent's map key, seeded on an edit from the row's key, the display
- * name, seeded from the row's display name, the URL, the default switch,
- * the API key and the CA file with the browse button, blank credentials
- * keeping the existing ones on an edit; the submit hands the form up, and
- * `errors`, the refusal's entries by form field, draws each under the
- * field it names; `seed`, the form of a handed registry URL, fills a new
- * registry's fields.
- */
-export const SourceForm = ({
-  id,
-  server,
-  editing,
-  errors = {},
-  busy,
-  onCancel,
-  onSubmit,
-  seed = null,
-}) => {
-  const { t } = useTranslation();
-  const status = useStatus();
-  const [form, setForm] = useState(() => {
-    if (editing) {
-      return {
-        ...SOURCE_FORM,
-        name: sourceKeyOf(editing),
-        displayName: sourceDisplayNameOf(editing),
-        url: editing.url || '',
-        isDefault: Boolean(editing.default),
-      };
-    }
-    return seed || SOURCE_FORM;
-  });
-  const [problem, setProblem] = useState('');
-  const patch = changes => setForm(current => ({ ...current, ...changes }));
-  const submit = () => {
-    const why = sourceProblem(form);
-    setProblem(why);
-    if (!why) {
-      onSubmit(form);
-    }
-  };
-  return (
-    <InlineForm
-      dialog="template-source"
-      title={
-        editing
-          ? t('host.templatesManagement.editRegistry', { name: sourceLabelOf(editing) })
-          : t('host.templatesManagement.addBoxRegistry')
-      }
-      problemKey={problem}
-      busy={busy}
-      onCancel={onCancel}
-      onSubmit={submit}
-    >
-      <div className="row g-3">
-        <div className="col-12 col-md-4">
-          <TextField
-            id="source-name"
-            labelKey="host.templatesManagement.name"
-            placeholder={t('host.templatesManagement.boxvaultPlaceholder')}
-            value={form.name}
-            onChange={name => patch({ name })}
-            disabled={busy}
-            error={errors.name || null}
-          />
-        </div>
-        <div className="col-12 col-md-8">
-          <TextField
-            id="source-display-name"
-            labelKey="hosts.manage.templates.sourceDisplayName"
-            value={form.displayName}
-            onChange={displayName => patch({ displayName })}
-            disabled={busy}
-            error={errors.displayName || null}
-          />
-        </div>
-        <div className="col-12">
-          <TextField
-            id="source-url"
-            labelKey="host.templatesManagement.urlBoxVaultLabel"
-            placeholder={t('host.templatesManagement.urlPlaceholder')}
-            value={form.url}
-            onChange={url => patch({ url })}
-            disabled={busy}
-            error={errors.url || null}
-          />
-        </div>
-        <div className="col-12">
-          <div className="form-check form-switch">
-            <input
-              id="source-default"
-              className="form-check-input"
-              type="checkbox"
-              role="switch"
-              checked={form.isDefault}
-              onChange={event => patch({ isDefault: event.target.checked })}
-              disabled={busy}
-            />
-            <label className="form-check-label" htmlFor="source-default">
-              {t('host.templatesManagement.makeDefaultRegistryFeedsWizard')}
-            </label>
-          </div>
-          <FieldError
-            id="source-default"
-            labelKey="host.templatesManagement.makeDefaultRegistryFeedsWizard"
-            error={errors.isDefault || null}
-          />
-        </div>
-        <div className="col-12 col-md-6">
-          <TextField
-            id="source-token"
-            labelKey="host.templatesManagement.registryApiKey"
-            value={form.auth_token}
-            onChange={auth_token => patch({ auth_token })}
-            disabled={busy}
-            error={errors.auth_token || null}
-          />
-          <span className="form-text text-muted">
-            {t('host.templatesManagement.apiKeyHelp', {
-              blankKeepsExisting: editing ? t('host.templatesManagement.blankKeepsExisting') : '',
-            })}
-          </span>
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label" htmlFor="source-cafile">
-            {t('host.templatesManagement.caFileLabel')}
-          </label>
-          <PathInput
-            id="source-cafile"
-            value={form.ca_file}
-            onChange={ca_file => patch({ ca_file })}
-            status={status}
-            hostId={id}
-            server={server}
-            mode="file"
-            pickTitle={t('host.templatesManagement.pickCaFile')}
-            disabled={busy}
-          />
-          <FieldError
-            id="source-cafile"
-            labelKey="host.templatesManagement.caFileLabel"
-            error={errors.ca_file || null}
-          />
-        </div>
-      </div>
-    </InlineForm>
-  );
-};
-
-SourceForm.propTypes = {
-  id: PropTypes.string.isRequired,
-  server: PropTypes.object.isRequired,
-  editing: PropTypes.object,
-  errors: PropTypes.objectOf(errorShape),
-  busy: PropTypes.bool.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  seed: PropTypes.object,
-};
-
 const panelShape = PropTypes.shape({
   open: PropTypes.bool.isRequired,
   form: PropTypes.shape({ editing: PropTypes.object, seed: PropTypes.object }),
 });
 
-/**
- * The Registries modal of the Templates page: the one modal of the box
- * registries, each row with Make default, Enable or Disable, Edit and
- * Remove, and the registry form under its table while `panel.form` is
- * set; Save hands the form and the registry being edited to `onSave`.
- */
-const RegistriesModal = ({
-  id,
-  server,
-  sources,
-  panel,
-  errors,
-  busy,
-  onAdd,
-  onAction,
-  onSave,
-  onCancel,
-  onClose,
-}) => {
-  const { t } = useTranslation();
-  const editing = panel.form?.editing || null;
-  return (
-    <SourcesModal
-      kind="template"
-      title={t('host.templatesManagement.boxRegistries')}
-      label={t('hosts.manage.sources.registries')}
-      addLabelKey="host.templatesManagement.addRegistry"
-      addAction="source-add"
-      emptyKey="host.templatesManagement.noRegistriesConfigured"
-      rows={sources.map(sourceRowOf)}
-      offers={OFFERS}
-      busy={busy}
-      form={
-        panel.form ? (
-          <SourceForm
-            key={editing ? sourceKeyOf(editing) : 'new'}
-            id={id}
-            server={server}
-            editing={editing}
-            seed={panel.form.seed}
-            errors={errors}
-            busy={busy}
-            onCancel={onCancel}
-            onSubmit={form => onSave(form, editing)}
-          />
-        ) : null
-      }
-      onAdd={onAdd}
-      onAction={onAction}
-      onClose={onClose}
-    />
-  );
-};
-
-RegistriesModal.propTypes = {
-  id: PropTypes.string.isRequired,
-  server: PropTypes.object.isRequired,
-  sources: PropTypes.array.isRequired,
-  panel: panelShape.isRequired,
-  errors: PropTypes.objectOf(errorShape).isRequired,
-  busy: PropTypes.bool.isRequired,
-  onAdd: PropTypes.func.isRequired,
-  onAction: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired,
-};
+const deleteLabelOf = rows =>
+  rows.length === 1
+    ? templateLabel(rows[0])
+    : `${rows[0].organization}/${rows[0].box_name} ${rows.map(row => row.version).join(', ')}`;
 
 /**
  * Every dialog of the Templates page: the Import, Export and Publish
- * dialogs by `asked`, the Move dialog and the delete confirmation by
- * `dialog`, the Registries modal while `panel.open`, the registry remove
- * confirmation and the task dialog of the task last queued; each submit
- * hands its body to the page's handler of that name.
+ * dialogs by `asked`, the Move dialog and the delete confirmation of the
+ * held rows by `dialog`, the Registries modal while `panel.open`, the
+ * registry remove confirmation and the task dialog of the task last
+ * queued; each submit hands its body to the page's handler of that name.
  */
 export const TemplateDialogsOf = ({
   id,
@@ -924,12 +632,13 @@ export const TemplateDialogsOf = ({
         handleConfirm={onDeleteTemplate}
         title={t('host.templatesManagement.deleteTemplate')}
         message={t('host.templatesManagement.deleteTemplateConfirm', {
-          template: dialog?.row ? templateLabel(dialog.row) : '',
+          template: dialog?.rows?.length ? deleteLabelOf(dialog.rows) : '',
         })}
         confirmText={t('host.templatesManagement.delete')}
       />
       {panel.open ? (
-        <RegistriesModal
+        <HeldSourcesModal
+          variant="registry"
           id={id}
           server={server}
           sources={sources}
@@ -969,6 +678,7 @@ TemplateDialogsOf.propTypes = {
   dialog: PropTypes.shape({
     kind: PropTypes.string.isRequired,
     row: PropTypes.object,
+    rows: PropTypes.arrayOf(PropTypes.object),
     source: PropTypes.object,
   }),
   panel: panelShape.isRequired,

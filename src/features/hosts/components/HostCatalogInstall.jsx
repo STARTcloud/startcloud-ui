@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaChevronDown, FaDownload, FaPlus } from 'react-icons/fa6';
+import { FaChevronDown, FaDownload, FaPlus, FaTrash } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import { itemShape, sortVersionsNewestFirst } from '../../../utils/itemShape';
@@ -18,8 +18,10 @@ const WORDS = {
   held: 'hosts.manage.held.installed',
   missing: 'hosts.manage.held.notInstalled',
   fetchVersion: 'hosts.manage.held.installVersion',
+  deleteVersion: 'hosts.manage.held.deleteVersion',
   update: 'host.provisionerManagement.updateTo',
   updateAvailable: 'hosts.manage.held.updateAvailable',
+  noVersion: 'hosts.manage.held.noVersion',
 };
 
 const HELD_SORT = [{ column: 'status', direction: 'desc' }];
@@ -38,8 +40,7 @@ const heldCtxShape = PropTypes.shape({
     versionsOf: PropTypes.func.isRequired,
     busy: PropTypes.bool.isRequired,
     onFetch: PropTypes.func.isRequired,
-    onAddSource: PropTypes.func,
-    sourceWordKey: PropTypes.string,
+    onDelete: PropTypes.func,
     entriesOf: PropTypes.func,
     creates: PropTypes.bool,
     createRouteOf: PropTypes.func,
@@ -143,50 +144,39 @@ OlderVersionDialog.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
-const menuOf = ({ item, ctx, state, newest, held, version, t, onOlder }) => {
+const fetchEntryOf = ({ item, ctx, state, newest, version, t }) => {
   if (state === 'missing') {
     return {
-      fetch: [
-        {
-          key: 'install',
-          action: 'held-install',
-          label: t(WORDS.fetchVersion, { version }),
-          onClick: () => ctx.held.onFetch(item, version),
-        },
-        ...(olderVersionsOf(item, version, held).length > 0
-          ? [
-              {
-                key: 'older',
-                action: 'held-older',
-                label: t('hosts.manage.held.installOlder'),
-                onClick: onOlder,
-              },
-            ]
-          : []),
-        ...(ctx.held.onAddSource && ctx.held.sourceWordKey
-          ? [
-              {
-                key: 'source',
-                action: 'held-add-source',
-                label: t(ctx.held.sourceWordKey),
-                onClick: () => ctx.held.onAddSource(item),
-              },
-            ]
-          : []),
-      ],
-      remove: [],
+      key: 'install',
+      action: 'held-install',
+      label: t(WORDS.fetchVersion, { version }),
+      onClick: () => ctx.held.onFetch(item, version),
     };
   }
+  if (state === 'behind') {
+    return {
+      key: 'update',
+      action: 'held-update',
+      label: t(WORDS.update, { version: newest }),
+      onClick: () => ctx.held.onFetch(item, newest),
+    };
+  }
+  return null;
+};
+
+const menuOf = ({ item, ctx, state, newest, held, version, t, onOlder }) => {
   const own = ctx.held.entriesOf ? ctx.held.entriesOf(item) : NO_ENTRIES;
+  const fetch = fetchEntryOf({ item, ctx, state, newest, version, t });
   return {
     fetch: [
-      ...(state === 'behind'
+      ...(fetch ? [fetch] : []),
+      ...(olderVersionsOf(item, version, held).length > 0
         ? [
             {
-              key: 'update',
-              action: 'held-update',
-              label: t(WORDS.update, { version: newest }),
-              onClick: () => ctx.held.onFetch(item, newest),
+              key: 'older',
+              action: 'held-older',
+              label: t('hosts.manage.held.installOlder'),
+              onClick: onOlder,
             },
           ]
         : []),
@@ -213,18 +203,79 @@ MenuEntry.propTypes = {
   busy: PropTypes.bool.isRequired,
 };
 
+const HeldGlyph = ({ title, note }) => (
+  <span
+    className="deploy-glyph held-glyph d-inline-flex align-items-center opacity-50"
+    aria-disabled="true"
+    title={title}
+    data-note={note}
+  >
+    <HyperweaverGlyph />
+  </span>
+);
+
+HeldGlyph.propTypes = {
+  title: PropTypes.string.isRequired,
+  note: PropTypes.string.isRequired,
+};
+
+const SplitControl = ({ glyph, header, menu, busy, children = null }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Dropdown align="end" className="deploy-split card-above">
+        {glyph}
+        <Dropdown.Toggle
+          as="button"
+          type="button"
+          bsPrefix="deploy-chevron"
+          title={t('hosts.manage.held.more')}
+          aria-label={t('hosts.manage.held.more')}
+          data-action="held-more"
+        >
+          <FaChevronDown aria-hidden="true" />
+        </Dropdown.Toggle>
+        <Dropdown.Menu data-menu="held">
+          <Dropdown.Header>{header}</Dropdown.Header>
+          {menu.fetch.map(entry => (
+            <MenuEntry key={entry.key} entry={entry} busy={busy} />
+          ))}
+          {menu.fetch.length > 0 && menu.remove.length > 0 ? <Dropdown.Divider /> : null}
+          {menu.remove.map(entry => (
+            <MenuEntry key={entry.key} entry={entry} busy={busy} />
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+      {children}
+    </>
+  );
+};
+
+SplitControl.propTypes = {
+  glyph: PropTypes.node.isRequired,
+  header: PropTypes.string.isRequired,
+  menu: PropTypes.shape({
+    fetch: PropTypes.arrayOf(entryShape).isRequired,
+    remove: PropTypes.arrayOf(entryShape).isRequired,
+  }).isRequired,
+  busy: PropTypes.bool.isRequired,
+  children: PropTypes.node,
+};
+
 /**
  * The one control of an item in the Deploy glyph's place, the split
  * control: the Hyperweaver glyph at full colour as the Install press
  * while the host holds none of the item, at full colour with a small
  * exclamation dot as the Update press while it holds an older version,
  * and greyed and disabled while it holds the newest; beside it the
- * chevron opening the menu headed by the newest version, a missing item
- * offering Install, Install an older version and Add this catalog or
- * registry as a source, a held one Update to while behind and then the
- * page's own fetch entries, a divider, and its delete entries. A press
+ * chevron opening the menu headed by the newest version: Install while
+ * missing or Update to while behind, Install an older version while the
+ * host lacks one under the newest, then the page's own fetch entries of
+ * `ctx.held.entriesOf(item)`, a divider, and its delete entries. A press
  * hands the item and the version to `ctx.held.onFetch`, held while
- * `ctx.held.busy`.
+ * `ctx.held.busy`. An item whose source lists no version draws the glyph
+ * greyed, titled no version listed, and the chevron over the page's own
+ * entries alone, because the agent's pull refuses an empty version.
  */
 export const HeldControl = ({ item, ctx }) => {
   const { t } = useTranslation();
@@ -232,7 +283,15 @@ export const HeldControl = ({ item, ctx }) => {
   const { state, newest, held } = heldStateOf(item, ctx);
   const version = fetchVersionOf(item, ctx);
   if (!version) {
-    return null;
+    const own = ctx.held.entriesOf ? ctx.held.entriesOf(item) : NO_ENTRIES;
+    return (
+      <SplitControl
+        glyph={<HeldGlyph title={t(WORDS.noVersion)} note="no-version" />}
+        header={t(WORDS.noVersion)}
+        menu={own}
+        busy={ctx.held.busy}
+      />
+    );
   }
   const behind = state === 'behind';
   const current = state === 'current';
@@ -250,14 +309,7 @@ export const HeldControl = ({ item, ctx }) => {
     ? t(WORDS.update, { version: newest })
     : t(current ? WORDS.held : WORDS.fetchVersion, { version });
   const glyph = current ? (
-    <span
-      className="deploy-glyph held-glyph d-inline-flex align-items-center opacity-50"
-      aria-disabled="true"
-      title={title}
-      data-note="held-current"
-    >
-      <HyperweaverGlyph />
-    </span>
+    <HeldGlyph title={title} note="held-current" />
   ) : (
     <button
       type="button"
@@ -280,30 +332,12 @@ export const HeldControl = ({ item, ctx }) => {
     </button>
   );
   return (
-    <>
-      <Dropdown align="end" className="deploy-split card-above">
-        {glyph}
-        <Dropdown.Toggle
-          as="button"
-          type="button"
-          bsPrefix="deploy-chevron"
-          title={t('hosts.manage.held.more')}
-          aria-label={t('hosts.manage.held.more')}
-          data-action="held-more"
-        >
-          <FaChevronDown aria-hidden="true" />
-        </Dropdown.Toggle>
-        <Dropdown.Menu data-menu="held">
-          <Dropdown.Header>{t('hosts.manage.held.version', { version: newest })}</Dropdown.Header>
-          {menu.fetch.map(entry => (
-            <MenuEntry key={entry.key} entry={entry} busy={ctx.held.busy} />
-          ))}
-          {menu.fetch.length > 0 && menu.remove.length > 0 ? <Dropdown.Divider /> : null}
-          {menu.remove.map(entry => (
-            <MenuEntry key={entry.key} entry={entry} busy={ctx.held.busy} />
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
+    <SplitControl
+      glyph={glyph}
+      header={t('hosts.manage.held.version', { version: newest })}
+      menu={menu}
+      busy={ctx.held.busy}
+    >
       {picking ? (
         <OlderVersionDialog
           item={item}
@@ -312,7 +346,7 @@ export const HeldControl = ({ item, ctx }) => {
           onClose={() => setPicking(false)}
         />
       ) : null}
-    </>
+    </SplitControl>
   );
 };
 
@@ -322,12 +356,12 @@ HeldControl.propTypes = {
 };
 
 /**
- * The two square outlined buttons of one version line: the download
- * glyph that installs that version onto the host, greyed and disabled,
- * titled Installed, on a version the host holds, and the Hyperweaver mark
- * that opens the create wizard with that version while the host creates
- * machines; the install hands the item and the version to
- * `ctx.held.onFetch`.
+ * The two square outlined buttons of one version line: on a version the
+ * host lacks the download glyph that installs it, on one the host holds
+ * the red trash glyph that deletes it, each handing the item and the
+ * version to `ctx.held.onFetch` or `ctx.held.onDelete`, then the
+ * Hyperweaver mark that opens the create wizard with that version while
+ * the host creates machines.
  */
 export const VersionHeld = ({ item, version, ctx }) => {
   const { t } = useTranslation();
@@ -338,21 +372,21 @@ export const VersionHeld = ({ item, version, ctx }) => {
   const create =
     ctx.held.creates && ctx.held.createRouteOf ? ctx.held.createRouteOf(item, version) : '';
   const createTitle = t('hosts.manage.held.createWith', { version });
+  const title = t(held ? WORDS.deleteVersion : WORDS.fetchVersion, { version });
   return (
     <>
       <button
         type="button"
-        className="btn btn-outline-secondary version-action"
-        data-action={held ? undefined : 'version-install'}
-        data-note={held ? 'installed' : undefined}
+        className={`btn ${held ? 'btn-outline-danger' : 'btn-outline-secondary'} version-action`}
+        data-action={held ? 'version-delete' : 'version-install'}
         data-family={item.name}
         data-version={version}
-        title={t(held ? WORDS.held : WORDS.fetchVersion, { version })}
-        aria-label={t(held ? WORDS.held : WORDS.fetchVersion, { version })}
-        onClick={held ? undefined : () => ctx.held.onFetch(item, version)}
-        disabled={held || ctx.held.busy}
+        title={title}
+        aria-label={title}
+        onClick={() => (held ? ctx.held.onDelete(item, version) : ctx.held.onFetch(item, version))}
+        disabled={ctx.held.busy}
       >
-        <FaDownload aria-hidden="true" />
+        {held ? <FaTrash aria-hidden="true" /> : <FaDownload aria-hidden="true" />}
       </button>
       {create ? (
         <Link
@@ -461,24 +495,22 @@ const withStatus = columns => {
 };
 
 /**
- * Whether the panel's Installed group is on the missing entries alone,
- * the Add state of a host's listing.
+ * Whether the panel's Installed group is off, every entry drawn with the
+ * missing ones greyed, the Add state of a host's listing.
  *
  * @param {Object<string, Set>} filters - The collection's active sets by group key
  * @returns {boolean} True in the Add state
  */
-export const addingOf = filters =>
-  Boolean(filters?.held) && filters.held.size === 1 && filters.held.has('missing');
+export const addingOf = filters => Boolean(filters?.held) && filters.held.size === 0;
 
 /**
- * The active set of the held group after a press of Add: the missing
- * entries alone, or back to the held ones from the Add state.
+ * The active set of the held group after a press of Add: the group off,
+ * so every entry draws, or back on Installed from the Add state.
  *
  * @param {Object<string, Set>} filters - The collection's active sets by group key
  * @returns {Set<string>} The next active set
  */
-export const toggledAddOf = filters =>
-  addingOf(filters) ? new Set(['held']) : new Set(['missing']);
+export const toggledAddOf = filters => (addingOf(filters) ? new Set(['held']) : new Set());
 
 /**
  * One press of a host listing's heading pane: the glyph alone, its
@@ -523,8 +555,8 @@ PaneButton.propTypes = {
 
 /**
  * The Add press of a host's listing heading: on while the panel's held
- * group is on the missing entries alone, a press flipping the group there
- * and back.
+ * group is off and every entry draws, the missing ones greyed with their
+ * controls live, a press turning the group off and back on Installed.
  */
 export const AddButton = ({ filters, setFilter }) => (
   <PaneButton
@@ -542,18 +574,6 @@ AddButton.propTypes = {
   setFilter: PropTypes.func.isRequired,
 };
 
-/**
- * The muted text after a host's listing title: Add while the held group
- * is on the missing entries alone, else the count the binding left.
- *
- * @param {Object<string, Set>} filters - The collection's active sets by group key
- * @param {number|null} count - The items left, null until they answered
- * @param {Function} t - The translator
- * @returns {string|number|null} The text
- */
-export const headingCountOf = (filters, count, t) =>
-  addingOf(filters) ? t('hosts.manage.held.add') : count;
-
 const withHeld = collection => ({
   ...collection,
   columns: withStatus(collection.columns),
@@ -565,9 +585,10 @@ const withHeld = collection => ({
 /**
  * The catalog's provisioners collection as a host draws it: the held
  * control in the Deploy glyph's place and the two version buttons on each
- * version line, the Status column after Downloads, the Installed group on
- * by default, the status the default sort descending so the installed
- * families come first, and a missing family greyed while the group
+ * version line, install or delete and the create wizard's door, the
+ * Status column after Downloads, the Installed group on by default, the
+ * status the default sort descending so the installed families come
+ * first, and a missing family greyed, its controls live, while the group
  * narrows nothing.
  *
  * @param {Object} options - What differs per host
@@ -591,8 +612,8 @@ export const heldProvisionerCollection = ({ adapter }) =>
  * Deploy glyph's place, the box card body with the two version buttons on
  * each version line, the Status column in BoxVault's status column's
  * place, the Installed group on by default, the status the default sort
- * descending so the installed boxes come first, and a missing box greyed
- * while the group narrows nothing.
+ * descending so the installed boxes come first, and a missing box greyed,
+ * its controls live, while the group narrows nothing.
  *
  * @param {Object} options - What differs per host
  * @param {Object} options.adapter - The adapter of `remoteBoxesAdapter`

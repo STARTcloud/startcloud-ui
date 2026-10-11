@@ -198,21 +198,27 @@ ItemHeading.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+const factsShape = PropTypes.shape({
+  editable: PropTypes.bool.isRequired,
+  save: PropTypes.func,
+  notify: PropTypes.func.isRequired,
+});
+
 /**
  * The cards under an item's heading: the facts card while the item
  * carries metadata, the details card while it carries details, the
  * README card while it carries one; nothing while it carries none.
  */
-const ItemDetails = ({ item }) => {
-  const facts = Boolean(item.metadata);
-  if (!facts && !item.details && !item.readme) {
+const ItemDetails = ({ item, facts }) => {
+  const hasFacts = Boolean(item.metadata);
+  if (!hasFacts && !item.details && !item.readme) {
     return null;
   }
   return (
     <div className="row g-3 mb-4 mx-0 px-0">
-      {facts ? (
+      {hasFacts ? (
         <div className="col-lg-5 col-xl-4">
-          <ItemFacts item={item} />
+          <ItemFacts item={item} facts={facts} />
         </div>
       ) : null}
       {item.details ? (
@@ -231,6 +237,7 @@ const ItemDetails = ({ item }) => {
 
 ItemDetails.propTypes = {
   item: itemShape.isRequired,
+  facts: factsShape.isRequired,
 };
 
 const VersionsSection = ({ collection, item, columns, search, form, manage, org, ctx }) => {
@@ -382,6 +389,14 @@ const ItemPage = ({ collection, org, name, context }) => {
 
   const actions = ItemActions ? <ItemActions item={item} ctx={ctx} /> : null;
   const manage = managesItem(status, collection, item, context.user);
+  const { updateFacts } = collection.adapter;
+  const patchItem = patch =>
+    setData(current => ({ ...current, item: { ...current.item, ...patch } }));
+  const facts = {
+    editable: manage && Boolean(updateFacts),
+    save: updateFacts ? metadata => updateFacts(item, metadata).then(patchItem) : null,
+    notify,
+  };
 
   return (
     <div className="list row">
@@ -395,7 +410,7 @@ const ItemPage = ({ collection, org, name, context }) => {
         ctx={ctx}
       />
       {ItemExtras ? <ItemExtras item={item} ctx={ctx} /> : null}
-      <ItemDetails item={item} />
+      <ItemDetails item={item} facts={facts} />
       {collection.hasVersions ? (
         <VersionsSection
           collection={collection}

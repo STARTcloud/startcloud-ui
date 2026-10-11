@@ -8,10 +8,6 @@ const modalOf = page => page.locator('.shortcuts-modal');
 
 const searchBox = page => page.locator('.navbar-search input[type="search"]');
 
-When("I press the sidebar foot's keyboard button", async ({ page }) => {
-  await page.locator('.sidebar-foot [data-tool="shortcuts"]').click();
-});
-
 When("I press the account menu's keyboard shortcuts row", async ({ page }) => {
   await page.locator('.user-menu .dropdown-menu.show [data-tool="shortcuts"]').click();
 });

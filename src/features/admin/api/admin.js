@@ -67,9 +67,12 @@ export const storage = () => client.get('/api/system/storage');
  * adapter: `check` is `GET /api/app/updates/check`, answered
  * `{ current_version, latest_version, update_available }` and, where the
  * backend holds them, `release_url`, `release_date`, `changelog`,
- * `release_notes`, the release's markdown, and `assets`, an array of
+ * `release_notes`, the release's markdown, `assets`, an array of
  * `{ name, url, size, checksum }` with the size in bytes and the checksum
- * optional, each null while it holds none; and `apply` is
+ * optional, and `releases`, the repository's releases newest first, each
+ * `{ tag, name, prerelease, published_at, author, html_url, body, assets }`
+ * with `assets` an array of `{ name, size, sha256, browser_download_url }`,
+ * each null while it holds none; and `apply` is
  * `POST /api/app/updates/apply`, answered
  * `{ message, task_id, target_version }`.
  */

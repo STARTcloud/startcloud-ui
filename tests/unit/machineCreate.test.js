@@ -8,6 +8,7 @@ import {
   buildDisks,
   buildSpec,
   catalogSourceBody,
+  catalogSourceSeedOf,
   catalogVersionOf,
   cleanNetworks,
   createRouteOf,
@@ -500,6 +501,26 @@ describe('the install of a handed family', () => {
         'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
       ).auth
     ).toBe('oidc');
+  });
+
+  it('shapes the catalog source form from the handed URL, its host the id and the display name, the URL as given and the authentication picked', () => {
+    expect(
+      catalogSourceSeedOf(
+        'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
+      )
+    ).toEqual({
+      name: 'provisioner_catalog_example_com',
+      displayName: 'provisioner-catalog.example.com',
+      url: 'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog',
+      isDefault: false,
+      auth: 'oidc',
+      ca_file: '',
+    });
+    expect(
+      catalogSourceSeedOf('https://provisioner-catalog.startcloud.com/catalog.json').auth
+    ).toBe('none');
+    expect(catalogSourceSeedOf('not a url')).toBeNull();
+    expect(catalogSourceSeedOf('')).toBeNull();
   });
 });
 

@@ -12,14 +12,21 @@ import {
 
 const box = {
   name: 'debian13',
-  user: { username: 'mark', primaryOrganization: { name: 'startcloud' } },
+  organization: {
+    id: 1,
+    name: 'startcloud',
+    email_hash: 'abc',
+    logo: '/brand/startcloud/mark.svg',
+  },
   versions: [
     {
-      versionNumber: '13.1.0',
+      version_number: '13.1.0',
+      created_at: '2026-09-20T09:00:00.000Z',
       providers: [{ name: 'virtualbox', architectures: [{ name: 'amd64' }, { name: 'arm64' }] }],
     },
     {
-      versionNumber: '13.0.0',
+      version_number: '13.0.0',
+      created_at: '2026-08-01T09:00:00.000Z',
       providers: [{ name: 'virtualbox', architectures: [{ name: 'amd64' }] }],
     },
   ],
@@ -54,21 +61,38 @@ describe('flattenBoxCatalog', () => {
     expect(flattenBoxCatalog([{ name: 'a' }])[0]).toMatchObject({ value: 'a', organization: '' });
   });
 
-  it('reads versions spelled as strings, versionNumber, version or name', () => {
+  it('reads versions spelled as BoxVault answers them, version_number, and as strings, versionNumber, version or name', () => {
     const rows = flattenBoxCatalog([
-      { name: 'a', versions: ['1', { version: '2' }, { name: '3' }, { versionNumber: '4' }, {}] },
+      {
+        name: 'a',
+        versions: [
+          '1',
+          { version: '2' },
+          { name: '3' },
+          { versionNumber: '4' },
+          { version_number: '5' },
+          {},
+        ],
+      },
     ]);
-    expect(rows[0].versions).toEqual(['1', '2', '3', '4']);
+    expect(rows[0].versions).toEqual(['1', '2', '3', '4', '5']);
     expect(rows[0].architectures).toEqual([]);
   });
 });
 
 describe('remoteBoxItemsOf', () => {
-  it('reads a relayed box into the item shape with its versions, providers and architectures', () => {
-    const [item] = remoteBoxItemsOf([{ ...box, description: 'Debian 13', isPublic: true }]);
+  it('reads a relayed box into the item shape with its versions by version_number, their providers and architectures, and its organization with the logo resolved against the registry', () => {
+    const [item] = remoteBoxItemsOf(
+      [{ ...box, description: 'Debian 13', is_public: true }],
+      'https://boxvault.example.com'
+    );
     expect(item).toMatchObject({
       id: 'startcloud/debian13',
-      organization: { name: 'startcloud', logo: '' },
+      organization: {
+        name: 'startcloud',
+        logo: 'https://boxvault.example.com/brand/startcloud/mark.svg',
+        emailHash: 'abc',
+      },
       name: 'debian13',
       label: 'debian13',
       description: 'Debian 13',
@@ -76,14 +100,31 @@ describe('remoteBoxItemsOf', () => {
       published: null,
       downloads: null,
       os: null,
+      latestReleaseAt: '2026-09-20T09:00:00.000Z',
     });
     expect(item.versions.map(version => version.version)).toEqual(['13.1.0', '13.0.0']);
+    expect(item.versions[0].createdAt).toBe('2026-09-20T09:00:00.000Z');
     expect(item.versions[0].providers[0].architectures.map(entry => entry.name)).toEqual([
       'amd64',
       'arm64',
     ]);
     expect(firstArchitectureOf(item, '13.1.0')).toBe('amd64');
     expect(firstArchitectureOf(item, '9')).toBe('');
+  });
+
+  it('keeps an absolute logo, answers none for a box without one and a box without a version with no versions', () => {
+    const absolute = { ...box, organization: { name: 'acme', logo: 'https://cdn.example/a.png' } };
+    expect(remoteBoxItemsOf([absolute])[0].organization).toEqual({
+      name: 'acme',
+      logo: 'https://cdn.example/a.png',
+      emailHash: '',
+    });
+    expect(remoteBoxItemsOf([{ name: 'a', organization: 'acme' }])[0].organization).toEqual({
+      name: 'acme',
+      logo: '',
+      emailHash: '',
+    });
+    expect(remoteBoxItemsOf([{ ...box, versions: [] }])[0].versions).toEqual([]);
   });
 
   it('skips an entry without a name and reads the list under boxes or data', () => {

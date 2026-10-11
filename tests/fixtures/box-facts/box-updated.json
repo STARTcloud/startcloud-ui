@@ -1,0 +1,33 @@
+{
+  "id": 7,
+  "name": "debian12-server",
+  "description": "Debian 12 server image",
+  "shortDescription": "Debian 12 server image",
+  "isPublic": true,
+  "guestAccess": false,
+  "published": true,
+  "userId": 1,
+  "organizationId": 3,
+  "githubRepo": null,
+  "workflowFile": null,
+  "cicdUrl": null,
+  "readme": null,
+  "artwork": null,
+  "metadata": {
+    "distro": "debian",
+    "distro_version": "12",
+    "vm_type": "server",
+    "desktop": false,
+    "username": "startcloud",
+    "communicator": "ssh",
+    "cpus": 8,
+    "memory_mb": 8192,
+    "disks": [
+      { "name": "boot", "size": "32G", "controller": "sata" },
+      { "name": "data", "size": "20G" }
+    ],
+    "providers": ["virtualbox"]
+  },
+  "createdAt": "2026-08-01T10:00:00Z",
+  "updatedAt": "2026-10-11T10:00:00Z"
+}

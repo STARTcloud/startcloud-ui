@@ -20,16 +20,35 @@ Feature: host templates
     And the catalog source "boxvault" offers no "source-default"
     And the catalog source "mirror" offers "source-default"
 
-  Scenario: Templates: Add flips the panel to the boxes the host lacks, Install on one sends the newest version and its first architecture on the box's registry, the Installed pill off greys the missing boxes, and the table is the toggle
+  Scenario: Templates: a box with versions draws the Versions fold and the split control from the registry's snake wire, its organization logo resolved against the registry, and a box with no version draws the control greyed with no Install press
+    Given the host answers the hosts fixture
+    And the host answers the hosts-templates fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "catalog-add" action
+    And I open the "versions-fold" fold of the card "ubuntu2404" of the "box-registry" listing
+    Then the card "ubuntu2404" of the "box-registry" listing version "24.04.2" offers "version-install"
+    And the card "ubuntu2404" of the "box-registry" listing version "24.04.1" offers "version-install"
+    And the card "ubuntu2404" of the "box-registry" listing offers "catalog-install"
+    And the card "freebsd14" of the "box-registry" listing notes "no-version"
+    And the card "freebsd14" of the "box-registry" listing offers no "catalog-install"
+    And the card "freebsd14" of the "box-registry" listing offers "held-more"
+    And the card "freebsd14" of the "box-registry" listing offers no "version-install"
+    And the host was not sent POST to "/api/agents/1/templates/pull"
+
+  Scenario: Templates: Add turns the Installed group off so every box draws, the installed first and the missing greyed with their controls live, Install on a greyed box sends the newest version and its first architecture on the box's registry, a second Add turns the group back on, the Installed pill off greys the missing boxes, and the table is the toggle
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
     Then the "box-registry" listing of the section page draws 1 cards
+    And the section page heading reads "1"
     When I press the section page's "catalog-add" action
-    Then the section page heading reads "Add"
-    And the "box-registry" listing of the section page draws 1 cards
-    And the "box-registry" listing of the section page draws the card "ubuntu2404" plain
+    Then the section page heading reads "3"
+    And the "box-registry" listing of the section page draws 3 cards
+    And the "box-registry" listing of the section page draws the card "debian13" plain
+    And the "box-registry" listing of the section page greys the card "ubuntu2404"
+    And the "box-registry" listing of the section page greys the card "freebsd14"
     When I press "catalog-install" on the card "ubuntu2404" of the "box-registry" listing
     Then the host was sent POST to "/api/agents/1/templates/pull" carrying "box_name" as "ubuntu2404"
     And the host was sent POST to "/api/agents/1/templates/pull" carrying "organization" as "startcloud"
@@ -38,7 +57,8 @@ Feature: host templates
     And the host was sent POST to "/api/agents/1/templates/pull" carrying "source_name" as "boxvault"
     And the page raised 1 success notice
     When I press the section page's "catalog-add" action
-    Then the "box-registry" listing of the section page draws the card "debian13" plain
+    Then the "box-registry" listing of the section page draws 1 cards
+    And the "box-registry" listing of the section page draws the card "debian13" plain
     When I switch the "box-registry" listing of the section page to "table"
     Then the "box-registry" listing of the section page draws the table
     And the "box-registry" table of the section page draws the "deploy" column
@@ -47,16 +67,17 @@ Feature: host templates
     And I press "/"
     And I open the filter panel
     And I toggle the filter pill "Installed"
-    Then the "box-registry" listing of the section page draws 2 cards
+    Then the "box-registry" listing of the section page draws 3 cards
     And the "box-registry" listing of the section page greys the card "ubuntu2404"
 
-  Scenario: Templates: the chevron of a held box opens Move and Delete for each held version, Move sending the new root as a queued task and Delete waiting behind the typed confirmation
+  Scenario: Templates: the chevron of a held box opens Add this registry as a source, Move for each held version and one Delete, Move sending the new root as a queued task and Delete removing every held version behind one typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
     And I open the menu of the card "debian13" of the "box-registry" listing
-    Then the open menu offers "template-move"
+    Then the open menu offers "held-add-source"
+    And the open menu offers "template-move"
     And the open menu offers "template-delete"
     And the open menu offers no "held-update"
     When I press the menu entry "template-move"
@@ -69,7 +90,22 @@ Feature: host templates
     And I press the menu entry "template-delete"
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/1/templates/tpl-1"
+    And the host was sent DELETE to "/api/agents/1/templates/tpl-2"
     And the host was sent GET to "/api/agents/1/templates" 3 times
+
+  Scenario: Templates: a held version's line draws Delete in the install button's place, the delete of that version waiting behind the typed confirmation
+    Given the host answers the hosts fixture
+    And the host answers the hosts-templates fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/templates"
+    And I open the "versions-fold" fold of the card "debian13" of the "box-registry" listing
+    Then the card "debian13" of the "box-registry" listing version "13.1.0" offers "version-delete"
+    And the card "debian13" of the "box-registry" listing version "13.1.0" offers no "version-install"
+    When I press "version-delete" on the version "13.1.0" of the card "debian13" of the "box-registry" listing
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/1/templates/tpl-1"
+    And the host was not sent DELETE to "/api/agents/1/templates/tpl-2"
+    And the host was sent GET to "/api/agents/1/templates" 2 times
 
   Scenario: Templates: Import opens the pull by name over the default registry's catalog and queues the download
     Given the host answers the hosts fixture

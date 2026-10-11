@@ -29,8 +29,8 @@ const ONE_AXIS = [{}];
  * mode or theme, the box sized by a class, `sm` a panel's, `lg` the
  * expanded dialog's, `xs` a dashboard widget's, which draws `compact`, and
  * `spark` a table cell's, which draws the first series as a sparkline,
- * the chart following its box, and its crosshair
- * shared with every chart of its `group`. Apache ECharts draws it and is
+ * the chart following its box, and its tooltip and crosshair drawn on
+ * it alone, never on another chart. Apache ECharts draws it and is
  * loaded on demand, the first time a chart with a point draws, so a UI
  * backend that draws no chart never downloads it; while it loads the box
  * reads the loading line, and a chart without a point draws `emptyText`
@@ -44,7 +44,6 @@ const Chart = ({
   slider = false,
   compact = false,
   size = 'sm',
-  group = '',
   isolated = null,
   onIsolate = null,
   onRange = null,
@@ -72,7 +71,6 @@ const Chart = ({
         slider={slider}
         compact={compact}
         spark={size === 'spark'}
-        group={group}
         isolated={isolated}
         onIsolate={onIsolate}
         onRange={onRange}
@@ -91,7 +89,6 @@ Chart.propTypes = {
   slider: PropTypes.bool,
   compact: PropTypes.bool,
   size: PropTypes.oneOf(Object.keys(SIZES)),
-  group: PropTypes.string,
   isolated: PropTypes.string,
   onIsolate: PropTypes.func,
   onRange: PropTypes.func,

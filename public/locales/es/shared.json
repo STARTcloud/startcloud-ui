@@ -2916,11 +2916,16 @@
       },
       "catalog": {
         "sourceFailed": "No se pudo agregar la fuente del catálogo: {{message}}",
-        "sourceRequired": "Se requieren un nombre visible y una URL.",
         "sourceUrl": "URL del catálogo",
         "sourceAuth": "Autenticación",
         "authNone": "Ninguna",
-        "authOidc": "Iniciar sesión con SSO"
+        "authOidc": "Iniciar sesión con SSO",
+        "makeDefault": "Hacer este el catálogo predeterminado",
+        "sourceUpdated": "Fuente de catálogo {{name}} actualizada",
+        "sourceRemoved": "Fuente de catálogo {{name}} eliminada",
+        "sourceEnabled": "Fuente de catálogo {{name}} habilitada",
+        "sourceDisabled": "Fuente de catálogo {{name}} deshabilitada",
+        "sourceDefault": "{{name}} ahora es el catálogo predeterminado"
       },
       "held": {
         "installed": "Instalado",
@@ -2934,7 +2939,9 @@
         "installOlder": "Instalar una versión anterior…",
         "createWith": "Crear una máquina con {{version}}",
         "deleteVersion": "Eliminar {{version}}",
-        "moveVersion": "Mover {{version}}…"
+        "moveVersion": "Mover {{version}}…",
+        "noVersion": "No hay ninguna versión listada",
+        "sourceRefused": "Una fuente de catálogo rechazó el inicio de sesión de este host: {{sources}}"
       },
       "sources": {
         "key": "Clave",
@@ -3026,8 +3033,11 @@
       "updatePublished": "Publicado",
       "updateReleaseNotes": "Notas de la versión",
       "updateChangelog": "Registro de cambios",
-      "updateNotes": "Notas de la versión · {{version}}",
-      "updateAssets": "Artefactos"
+      "updateAssets": "Artefactos",
+      "updateReleases": "Lanzamientos",
+      "updateLatest": "Más reciente",
+      "updatePrerelease": "Prelanzamiento",
+      "updateReleasedThis": "publicó esto"
     },
     "deploy": {
       "noHostCreates": "Ningún host de aquí ofrece la creación de máquinas, así que el traspaso de Deploy se queda en esta página.",
@@ -3232,7 +3242,25 @@
       "updated": "Actualizado",
       "downloads": "Descargas",
       "show": "Mostrar",
-      "hide": "Ocultar"
+      "hide": "Ocultar",
+      "edit": "Editar datos",
+      "save": "Guardar datos",
+      "saved": "Datos guardados",
+      "cancel": "Cancelar",
+      "unset": "Sin establecer",
+      "distro": "Distribución",
+      "distroVersion": "Versión de la distribución",
+      "osName": "Nombre del SO",
+      "vmType": "Tipo de VM",
+      "kind": "Servidor o escritorio",
+      "memoryMb": "Memoria (MB)",
+      "cdroms": "CD-ROMs",
+      "name": "Nombre",
+      "controller": "Controlador",
+      "addDisk": "Agregar disco",
+      "addCdrom": "Agregar CD-ROM",
+      "removeDisk": "Quitar disco",
+      "removeCdrom": "Quitar CD-ROM"
     },
     "version": {
       "title": "Versión {{version}}",
@@ -7852,7 +7880,10 @@
       "deleteFamilyMessage": "¿Eliminar toda la familia {{name}} (todas las versiones)? El agente lo rechaza mientras alguna máquina la referencie.",
       "delete": "Eliminar",
       "addSource": "Agregar fuente",
-      "sourceAdded": "Fuente de catálogo {{name}} agregada"
+      "sourceAdded": "Fuente de catálogo {{name}} agregada",
+      "editSource": "Editar fuente {{name}}",
+      "removeSource": "Eliminar fuente de catálogo",
+      "removeSourceConfirm": "¿Eliminar la fuente de catálogo {{name}}?"
     },
     "provisioningNetworkPanel": {
       "loadFailed": "No se pudo cargar el estado de la red de aprovisionamiento: {{message}}",

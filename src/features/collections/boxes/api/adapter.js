@@ -59,6 +59,21 @@ const latestReleaseOf = versions =>
     .sort()
     .pop() || null;
 
+/**
+ * The two item members a box's facts block decides, `metadata` and the
+ * `os` chip read from it.
+ *
+ * @param {Object|null|undefined} metadata - The box's facts block
+ * @returns {{ metadata: Object|null, os: { label: string, iconUrl: string } }}
+ */
+const factsOf = metadata => ({
+  metadata: metadata || null,
+  os: {
+    label: getOsDisplayName(metadata),
+    iconUrl: getDistroIconUrl(metadata?.distro) || '',
+  },
+});
+
 const boxItem = (box, orgName, logo) => ({
   id: box.id ?? `${orgName}/${box.name}`,
   organization: { name: orgName, logo: logo || '' },
@@ -74,11 +89,7 @@ const boxItem = (box, orgName, logo) => ({
   updatedAt: box.updated_at || null,
   latestReleaseAt: latestReleaseOf((box.versions || []).map(versionSummary)),
   downloads: countOf(box.download_count),
-  os: {
-    label: getOsDisplayName(box.metadata),
-    iconUrl: getDistroIconUrl(box.metadata?.distro) || '',
-  },
-  metadata: box.metadata || null,
+  ...factsOf(box.metadata),
   readme: box.readme || null,
   links: {
     repo: box.github_repo ? `https://github.com/${box.github_repo}` : '',
@@ -244,6 +255,21 @@ export const deleteVersionCascade = (org, name, version) =>
     )
     .then(() => api.versions.remove(org, name, version));
 
+/**
+ * Write a box's facts block: `PUT …/box/{name} { metadata }`, the whole
+ * block as the one member, since the route replaces the block it holds
+ * with the one sent; resolves to the item members the answer's block
+ * decides, for the page to merge into the item.
+ *
+ * @param {Object} item - The item of the item shape
+ * @param {Object} metadata - The facts block to hold
+ * @returns {Promise<{ metadata: Object|null, os: { label: string, iconUrl: string } }>}
+ */
+const updateFacts = (item, metadata) =>
+  api.boxes
+    .update(item.organization.name, item.name, { metadata })
+    .then(box => factsOf(box.metadata));
+
 const watches = {
   list: () => api.boxes.watches().then(data => new Set(rows(data).map(entry => entry.box_id))),
   toggle: (item, next) =>
@@ -289,4 +315,5 @@ export const boxesAdapter = {
   getOrganization: fetchOrganization,
   bulk,
   watches,
+  updateFacts,
 };

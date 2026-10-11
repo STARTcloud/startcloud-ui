@@ -4,7 +4,7 @@ import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import { organizationShape } from '../../utils/itemShape';
-import { OrgLogo } from '../layout/OrgSwitcherModal';
+import { OrgInitial, OrgLogo } from '../layout/OrgSwitcherModal';
 
 import MarkdownText from './MarkdownText';
 
@@ -42,10 +42,11 @@ export const groupShape = PropTypes.shape({
 /**
  * The heading of one group of a table or a card grid: the fold button,
  * the organization's logo and link while the group is an organization's,
- * else the group's icon while it carries one and its label, the count
- * badge, and under the line the group's description as Markdown while it
- * carries one; a group carrying `groups` draws each of them the same way
- * beneath it, one level in.
+ * the logo falling to `orgMark` and, with none, to the organization's
+ * initial, else the group's icon while it carries one and its label, the
+ * count badge, and under the line the group's description as Markdown
+ * while it carries one; a group carrying `groups` draws each of them the
+ * same way beneath it, one level in.
  */
 const GroupHeading = ({ group, collapsed, onToggle, countLabel, orgMark }) => (
   <>
@@ -57,7 +58,7 @@ const GroupHeading = ({ group, collapsed, onToggle, countLabel, orgMark }) => (
             org={group.organization}
             size={30}
             className="rounded-circle avatar-lg"
-            fallback={orgMark}
+            fallback={orgMark || <OrgInitial org={group.organization} size={30} />}
           />
           <Link to={`/${group.organization.name}`} className="fw-semibold">
             {group.organization.name}

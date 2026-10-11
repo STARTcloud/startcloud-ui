@@ -4,7 +4,9 @@ import { fetchCatalog, fetchCatalogHealth, fetchRemoteTemplates } from '../api/p
 import { remoteBoxItemsOf, sourceKeyOf } from './boxCatalog';
 
 const defaultFirst = sources =>
-  [...sources].sort((a, b) => Number(Boolean(b.default)) - Number(Boolean(a.default)));
+  sources
+    .filter(source => source.enabled !== false)
+    .sort((a, b) => Number(Boolean(b.default)) - Number(Boolean(a.default)));
 
 const withSource = (items, source) =>
   items.map(item => ({ ...item, extras: { ...item.extras, source } }));
@@ -20,15 +22,35 @@ const firstOfEachId = lists => {
   });
 };
 
+const REFUSED_KEY = 'hosts.manage.held.sourceRefused';
+
+const refusedOf = (source, error) =>
+  error?.status === 401 ? { name: source.name || source.id, message: error.message || '' } : null;
+
+const withRefused = answers => {
+  const items = firstOfEachId(answers.map(answer => answer.items));
+  const refused = answers.map(answer => answer.refused).filter(Boolean);
+  if (refused.length > 0) {
+    items.notice = {
+      type: 'warning',
+      key: REFUSED_KEY,
+      values: { sources: refused.map(entry => `${entry.name}: ${entry.message}`).join('; ') },
+    };
+  }
+  return items;
+};
+
 /**
  * The adapter the host's Provisioners page lists through, the catalog
- * site's items read from what the host relays of every catalog source,
- * the default source first: `GET provisioning/catalog` and
+ * site's items read from what the host relays of every enabled catalog
+ * source, the default source first: `GET provisioning/catalog` and
  * `GET provisioning/catalog/health` with each source's id, a source that
  * publishes no health drawing its families unrated, a source that
- * answers nothing drawing none, a family two sources list drawn once
- * from the first; each item carries its source as `extras.source`,
- * `{ key, url }`. No watches, no bulk actions and no item pages.
+ * answers nothing drawing none, a source that answers 401 drawing none
+ * and naming itself with the agent's message in the items' `notice`, a
+ * family two sources list drawn once from the first; each item carries
+ * its source as `extras.source`, `{ key, url }`. No watches, no bulk
+ * actions and no item pages.
  *
  * @param {Object} options - The host and its sources
  * @param {Object} options.status - The payload from `probeStatus`
@@ -44,12 +66,16 @@ export const hostCatalogAdapter = ({ status, id, sources }) => {
           fetchCatalog(status, id, source.id),
           fetchCatalogHealth(status, id, source.id).catch(() => null),
         ])
-          .then(([catalog, health]) =>
-            withSource(publicItemsFrom({ catalog, health }), { key: source.id, url: source.url })
-          )
-          .catch(() => [])
+          .then(([catalog, health]) => ({
+            items: withSource(publicItemsFrom({ catalog, health }), {
+              key: source.id,
+              url: source.url,
+            }),
+            refused: null,
+          }))
+          .catch(error => ({ items: [], refused: refusedOf(source, error) }))
       )
-    ).then(firstOfEachId);
+    ).then(withRefused);
   return {
     listAll,
     listOrg: listAll,
@@ -61,7 +87,8 @@ export const hostCatalogAdapter = ({ status, id, sources }) => {
  * read from what the host relays of every enabled box registry, the
  * default registry first, `GET templates/remote/{source}` for each, a
  * registry that answers nothing drawing none, a box two registries list
- * drawn once from the first; each item carries its registry as
+ * drawn once from the first, each box's organization logo resolved
+ * against its registry's URL; each item carries its registry as
  * `extras.source`, `{ key, url }`. No watches, no bulk actions and no
  * item pages.
  *
@@ -74,9 +101,9 @@ export const hostCatalogAdapter = ({ status, id, sources }) => {
 export const remoteBoxesAdapter = ({ status, id, sources }) => {
   const listAll = () =>
     Promise.all(
-      defaultFirst(sources.filter(source => source.enabled !== false)).map(source =>
+      defaultFirst(sources).map(source =>
         fetchRemoteTemplates(status, id, sourceKeyOf(source))
-          .then(remoteBoxItemsOf)
+          .then(payload => remoteBoxItemsOf(payload, source.url || ''))
           .then(items => withSource(items, { key: sourceKeyOf(source), url: source.url || '' }))
           .catch(() => [])
       )

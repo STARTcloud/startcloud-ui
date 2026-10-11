@@ -1,0 +1,6 @@
+{
+  "type": "https://hyperweaver.startcloud.com/problems/authentication",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "the catalog requires a signed-in account: catalog Probe catalog answered HTTP 403"
+}

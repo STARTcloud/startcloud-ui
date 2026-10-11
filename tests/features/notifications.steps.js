@@ -27,6 +27,28 @@ Then("the notifications modal's first row reads {string}", async ({ page }, titl
   await expect(modalOf(page).locator('.notification-row').first()).toContainText(title);
 });
 
+Then(
+  "the notifications modal's row {string} carries the system {string}",
+  async ({ page }, title, system) => {
+    await expect(
+      modalOf(page)
+        .locator('.notification-row', { hasText: title })
+        .locator('.notification-item-system')
+    ).toHaveText(system);
+  }
+);
+
+Then(
+  "the inbox page's row {string} carries the system {string}",
+  async ({ page }, title, system) => {
+    await expect(
+      page
+        .locator('.page-column .items-table tbody tr', { hasText: title })
+        .locator('.notification-item-system')
+    ).toHaveText(system);
+  }
+);
+
 Then('the inbox page draws {int} unread rows', async ({ page }, count) => {
   await expect(
     page.locator('.page-column .items-table tbody tr .notification-item-dot')

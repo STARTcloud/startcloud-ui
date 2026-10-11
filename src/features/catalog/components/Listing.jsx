@@ -326,7 +326,9 @@ CollectionSection.propTypes = {
 
 /**
  * The one listing behind the home, organization and collection pages: loads
- * every collection it is given, registers the search binding, and draws one
+ * every collection it is given, an answer's `notice`, `{ type, key,
+ * values }`, raised once as a keyed banner through `t(key, values)`,
+ * registers the search binding, and draws one
  * heading row per collection carrying that collection's list actions, one
  * table or card grid per collection with organization group rows when the
  * page spans organizations and the host's status names no organization of
@@ -372,7 +374,7 @@ const Listing = ({
         (org ? collection.adapter.listOrg(org, { member }) : collection.adapter.listAll())
           .then(items => {
             if (items.notice && mounted) {
-              notify(items.notice.type, t(items.notice.key), {
+              notify(items.notice.type, t(items.notice.key, items.notice.values), {
                 tier: 'banner',
                 key: items.notice.key,
               });

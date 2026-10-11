@@ -34,7 +34,7 @@ const unitOf = (series, axes) => {
  * newest value its shown lines hold together in the header, and under it
  * the one `Chart` drawn `compact` in the `xs` box over the host series
  * the registry entry names, the lines of `groups` alone shown, over the
- * window of the page's chart controls and in their crosshair group.
+ * window of the page's chart controls.
  */
 const ChartWidget = ({ id, host, chart }) => {
   const { t } = useTranslation();
@@ -65,7 +65,6 @@ const ChartWidget = ({ id, host, chart }) => {
             series={series}
             axes={spec.axes}
             range={range}
-            group={controls.group}
             emptyText={t(emptyKeyOf({ loaded, failed, texts }))}
             size="xs"
             compact

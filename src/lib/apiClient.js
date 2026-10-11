@@ -115,7 +115,9 @@ export class ApiError extends Error {
  * resolves to `{ status, etag, date, data }`, `etag` the answer's `ETag`
  * header or `''`, `date` its `Date` header or `''`, the server's clock as
  * it answered, and `data` `null` on a `304`; every other request resolves
- * to the body as before.
+ * to the body as before. A request given `expected`, a list of statuses,
+ * still fails with `ApiError` on one of them but reaches `onError` with
+ * none of them, for a refusal the caller reads as an answer.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.baseUrl - The public origin the API is reached at, the one the session signs its headers for
@@ -175,6 +177,7 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
     responseType = 'json',
     skipAuthRefresh = false,
     messageKeys = {},
+    expected = [],
     etag,
   }) => {
     const url = resolve(path);
@@ -211,7 +214,9 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
         throw error;
       }
       const failure = new ApiError({ method, url, cause: error, messageKeys });
-      onError?.(failure);
+      if (!expected.includes(failure.status)) {
+        onError?.(failure);
+      }
       throw failure;
     }
   };

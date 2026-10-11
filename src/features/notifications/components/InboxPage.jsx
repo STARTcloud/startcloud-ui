@@ -100,6 +100,9 @@ const TitleCell = ({ entry, onSelect }) => {
       ) : (
         <span className={weight.trim()}>{entry.title}</span>
       )}
+      {entry.system ? (
+        <span className="notification-item-system small text-body-secondary">{entry.system}</span>
+      ) : null}
       {unread ? <span className="notification-item-dot flex-shrink-0" /> : null}
     </span>
   );
@@ -333,7 +336,8 @@ BulkPane.propTypes = {
  * some but not all rows are picked, the Title column the type icon
  * colored by severity, the title bold while unread and a link with the
  * open-in glyph while the row's `navigate` is an `https:` URL or a
- * same-origin path, and the unread dot, the Body column, the Time column
+ * same-origin path, the row's `system`, the origin host's brand name, as
+ * a muted word after the title, and the unread dot, the Body column, the Time column
  * the relative time with the absolute time in its tooltip, the Type
  * column a badge hidden by default; the row actions Mark as read while
  * unread, View details while the row carries a followable link, and

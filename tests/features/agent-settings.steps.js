@@ -64,7 +64,7 @@ Then('the agent page notes no {string}', async ({ page }, note) => {
 });
 
 Then('the agent page links to {string}', async ({ page }, href) => {
-  await expect(frameOf(page).locator(`a[href="${href}"]`)).toBeVisible();
+  await expect(frameOf(page).locator(`a[href="${href}"]`).first()).toBeVisible();
 });
 
 Then('the agent page offers {string}', async ({ page }, action) => {
@@ -91,7 +91,7 @@ Then(
 );
 
 Then('the agent page draws no release notes', async ({ page }) => {
-  await expect(frameOf(page).locator('[data-panel="update"] .card')).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel="update"] .upd-side-card')).toBeVisible();
   await expect(frameOf(page).locator('[data-panel="update"] .upd-label')).toHaveCount(0);
   await expect(frameOf(page).locator('[data-panel="update"] .upd-notes')).toHaveCount(0);
 });
@@ -120,6 +120,73 @@ Then('the agent page lists the asset {string}', async ({ page }, name) => {
 
 Then('the agent page lists no asset', async ({ page }) => {
   await expect(frameOf(page).locator('.upd-asset:visible')).toHaveCount(0);
+});
+
+const releaseOf = (page, tag) => frameOf(page).locator(`[data-release="${tag}"]`);
+
+Then('the agent page draws the releases {string}', async ({ page }, tags) => {
+  const expected = tags.split(',').map(tag => tag.trim());
+  const releases = frameOf(page).locator('[data-panel="update-releases"] [data-release]');
+  await expect(releases).toHaveCount(expected.length);
+  await Promise.all(
+    expected.map((tag, index) => expect(releases.nth(index)).toHaveAttribute('data-release', tag))
+  );
+});
+
+Then('the release {string} is marked {string}', async ({ page }, tag, mark) => {
+  await expect(releaseOf(page, tag)).toHaveAttribute(`data-${mark}`, 'true');
+});
+
+Then('the release {string} is not marked {string}', async ({ page }, tag, mark) => {
+  await expect(releaseOf(page, tag)).toHaveAttribute(`data-${mark}`, 'false');
+});
+
+Then('the release {string} is released by {string}', async ({ page }, tag, author) => {
+  await expect(releaseOf(page, tag).locator('.upd-release-author')).toContainText(author);
+});
+
+Then('the release {string} links to {string}', async ({ page }, tag, href) => {
+  await expect(releaseOf(page, tag).locator(`a[href="${href}"]`)).toBeVisible();
+});
+
+Then(
+  'the release {string} draws the notes with {int} headings and {int} items',
+  async ({ page }, tag, headings, items) => {
+    const notes = releaseOf(page, tag).locator('.upd-notes');
+    await expect(notes).toBeVisible();
+    await expect(notes.locator('h3')).toHaveCount(headings);
+    await expect(notes.locator('li')).toHaveCount(items);
+  }
+);
+
+When('I fold the assets of the release {string}', async ({ page }, tag) => {
+  await releaseOf(page, tag).locator('[data-panel="update-assets"] .section-card-chevron').click();
+});
+
+Then('the assets of the release {string} are folded', async ({ page }, tag) => {
+  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveAttribute(
+    'data-folded',
+    'true'
+  );
+});
+
+Then('the assets of the release {string} are open', async ({ page }, tag) => {
+  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveAttribute(
+    'data-folded',
+    'false'
+  );
+});
+
+Then('the release {string} lists the asset {string}', async ({ page }, tag, name) => {
+  await expect(
+    releaseOf(page, tag).locator('.upd-asset').filter({ hasText: name }).first()
+  ).toBeVisible();
+});
+
+Then('the release {string} shows the checksum {string}', async ({ page }, tag, checksum) => {
+  await expect(
+    releaseOf(page, tag).locator(`.upd-asset-checksum[title="${checksum}"]`)
+  ).toBeVisible();
 });
 
 Then('the agent page field {string} reads {string}', async ({ page }, id, value) => {

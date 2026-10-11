@@ -422,7 +422,22 @@ adapter, registers the search binding, and renders:
   its Templates page, each with the receiver's split control in place of
   Deploy. A card of either collection carries the Versions fold, each
   version line its date and two square outlined buttons, Download and
-  the collection's version action.
+  the collection's version action on the catalog and BoxVault, and on a
+  host Install of a version it lacks or a red Delete of one it holds,
+  then the create wizard's door. A card's media is the item's artwork or
+  icon, else the organization's logo, else the Gravatar of its email
+  hash, else the host's own mark on the host's own pages and the
+  organization's initial in a disc on a host's Templates and Provisioners
+  pages, because a box of STARTcloud drawn under Hyperweaver's mark says
+  the wrong name; a host's box card reads the registry's own
+  `organization.logo`, resolved against the registry's URL, and its
+  `organization.email_hash` from the discover document the agent relays,
+  and a box's versions by `version_number`, the member BoxVault answers.
+  A host's listing reads each enabled source once per load; a catalog
+  source that answers 401, the catalog refusing the host's sign-in, draws
+  no family and is named with the agent's message in one warning banner,
+  the page's other sources drawn whole, and nothing is logged as an
+  error for it.
 - **Home is home.** A box or ISO is created inside an organization, so
   create and delete actions live on the org page; home carries the toggle
   alone on its first heading row, Discover being the navbar's.
@@ -899,9 +914,11 @@ adds its own foldable section to an item page (the catalog's Quality).
   time axis over `range`, the drawn range, the zoom slider too while
   `slider`, every line thinned by Largest-Triangle-Three-Buckets to the
   pixels across the box, so the drawn points never outnumber the pixels
-  while the store keeps every sample, and its tooltip shared with every
-  chart of its `group`, so every chart of a page reads one instant under
-  the pointer. A feature hands it `series`,
+  while the store keeps every sample, and its tooltip and crosshair drawn
+  on the chart under the pointer alone, never on another chart of the
+  page, and a drag or a wheel moving the range of the chart under the
+  pointer alone, because a gesture on one chart is that chart's. A
+  feature hands it `series`,
   `[{ key, name, entity?, group?, points, tone?, dash?, width?, opacity?, axis?, unit?, digits?, hidden? }]`
   with `points` as `[[ms, value|null]]`, and `axes`,
   `[{ name?, min?, max?, unit? }]`, and never an option of the library,
@@ -963,7 +980,18 @@ adds its own foldable section to an item page (the catalog's Quality).
   `ItemExtras` slot (BoxVault's use-this strip with the version select
   and the same control beside it for the selected version, opening
   Hyperweaver with the box pre-selected),
-  the facts panel (from `metadata`)
+  the facts panel (from `metadata`; for a viewer `managesItem` answers
+  true for, on a collection whose adapter carries `updateFacts`, a pencil
+  on the card turns the facts into a form, every fact a field but
+  Providers, which come from the uploads, the Disks and CD-ROMs lists as
+  rows, one row an entry with a remove control and an add-row control
+  under the list, an entry the block holds as a string a name-only row
+  saved as a string and one it holds as an object its name, size and
+  controller saved as the object with its blank members dropped, Save
+  sending the whole facts block as the one changed member, BoxVault's
+  `PUT …/box/{name} { metadata }`, because the route replaces the block
+  it holds with the one sent, and the card redrawn from the block the
+  answer carries, the OS chip with it)
   and the README side by side when present, the versions table newest
   first unless the host's `sorts` names another order for the level
   (version, visibility and status where the host answers the row's

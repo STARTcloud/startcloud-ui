@@ -41,6 +41,27 @@ const assetShape = PropTypes.shape({
   checksum: PropTypes.string.isRequired,
 });
 
+const releaseShape = PropTypes.shape({
+  tag: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  prerelease: PropTypes.bool.isRequired,
+  publishedAt: PropTypes.string.isRequired,
+  author: PropTypes.string.isRequired,
+  body: PropTypes.string.isRequired,
+  url: PropTypes.string.isRequired,
+  assets: PropTypes.arrayOf(assetShape).isRequired,
+});
+
+const assetOf = (asset, url, checksum) => ({
+  name: String(asset.name),
+  url: String(url ?? ''),
+  size: Number(asset.size) || 0,
+  checksum: String(checksum ?? ''),
+});
+
+const namedAssets = list =>
+  Array.isArray(list) ? list.filter(asset => asset && typeof asset === 'object' && asset.name) : [];
+
 /**
  * The release assets a check carries: every entry of `assets` with a
  * name, as `{ name, url, size, checksum }`, the size in bytes and the
@@ -51,16 +72,74 @@ const assetShape = PropTypes.shape({
  * @returns {Array<{ name: string, url: string, size: number, checksum: string }>} The assets
  */
 export const assetsOf = list =>
-  Array.isArray(list)
-    ? list
-        .filter(asset => asset && typeof asset === 'object' && asset.name)
-        .map(asset => ({
-          name: String(asset.name),
-          url: String(asset.url ?? ''),
-          size: Number(asset.size) || 0,
-          checksum: String(asset.checksum ?? ''),
-        }))
-    : [];
+  namedAssets(list).map(asset => assetOf(asset, asset.url, asset.checksum));
+
+/**
+ * The assets of one release of the check's `releases`: every entry with
+ * a name, as `{ name, url, size, checksum }`, the url the entry's
+ * `browser_download_url` and the checksum its `sha256`, each an empty
+ * string while the entry holds none.
+ *
+ * @param {Array|null|undefined} list - The `assets` member of a release
+ * @returns {Array<{ name: string, url: string, size: number, checksum: string }>} The assets
+ */
+export const releaseAssetsOf = list =>
+  namedAssets(list).map(asset => assetOf(asset, asset.browser_download_url, asset.sha256));
+
+const releaseOf = release => ({
+  tag: String(release.tag),
+  name: String(release.name ?? ''),
+  prerelease: Boolean(release.prerelease),
+  publishedAt: String(release.published_at ?? ''),
+  author: String(release.author ?? ''),
+  body: String(release.body ?? ''),
+  url: String(release.html_url ?? ''),
+  assets: releaseAssetsOf(release.assets),
+});
+
+/**
+ * The releases a check lists, in the order the check answers them: every
+ * entry of `releases` with a tag, as `{ tag, name, prerelease,
+ * publishedAt, author, body, url, assets }`, each string empty while the
+ * entry holds none; a check that answers no `releases` is the one release
+ * its own members name, `latest_version` the tag, `release_date` the
+ * published time, `release_notes` the body, `release_url` the url and
+ * `assets` the assets, and no release at all while it names no version.
+ *
+ * @param {Object|null} answer - The answer of `GET app/updates/check`
+ * @returns {Array<Object>} The releases
+ */
+export const releasesOf = answer => {
+  if (Array.isArray(answer?.releases)) {
+    return answer.releases
+      .filter(release => release && typeof release === 'object' && release.tag)
+      .map(releaseOf);
+  }
+  if (!answer?.latest_version) {
+    return [];
+  }
+  return [
+    {
+      tag: String(answer.latest_version),
+      name: '',
+      prerelease: false,
+      publishedAt: String(answer.release_date ?? ''),
+      author: '',
+      body: String(answer.release_notes ?? ''),
+      url: String(answer.release_url ?? ''),
+      assets: assetsOf(answer.assets),
+    },
+  ];
+};
+
+/**
+ * The tag of the latest release of a list, the first one that is not a
+ * pre-release, empty while every release is one.
+ *
+ * @param {Array<Object>} releases - The releases `releasesOf` answered
+ * @returns {string} The tag, or empty
+ */
+export const latestTagOf = releases => releases.find(release => !release.prerelease)?.tag ?? '';
 
 /**
  * The update a check offers: the current and the latest version with the
@@ -154,21 +233,6 @@ SideCard.propTypes = {
   language: PropTypes.string.isRequired,
 };
 
-const ReleaseNotes = ({ notes, version }) => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <div className="upd-label">{t('hosts.nav.updateNotes', { version })}</div>
-      <MarkdownText text={notes} className="prose upd-notes" />
-    </>
-  );
-};
-
-ReleaseNotes.propTypes = {
-  notes: PropTypes.string.isRequired,
-  version: PropTypes.string.isRequired,
-};
-
 const AssetRow = ({ asset }) => {
   const url = httpsUrl(asset.url);
   return (
@@ -195,16 +259,17 @@ AssetRow.propTypes = {
   asset: assetShape.isRequired,
 };
 
-const Assets = ({ assets, folds }) => {
+const Assets = ({ assets, foldId, folds }) => {
   const { t } = useTranslation();
-  const folded = !folds.folded(ASSETS_OPEN);
+  const folded = !folds.folded(foldId);
   return (
     <div data-panel="update-assets" data-folded={folded}>
       <SectionCard
         title={t('hosts.nav.updateAssets')}
         badge={<span className="badge text-bg-secondary rounded-pill">{assets.length}</span>}
+        className="mb-0"
         folded={folded}
-        onFold={() => folds.toggle(ASSETS_OPEN)}
+        onFold={() => folds.toggle(foldId)}
       >
         <ul className="upd-asset-list">
           {assets.map(asset => (
@@ -218,7 +283,103 @@ const Assets = ({ assets, folds }) => {
 
 Assets.propTypes = {
   assets: PropTypes.arrayOf(assetShape).isRequired,
+  foldId: PropTypes.string.isRequired,
   folds: foldsShape.isRequired,
+};
+
+const ReleaseCard = ({ release, latest, folds, language }) => {
+  const { t } = useTranslation();
+  const url = httpsUrl(release.url);
+  const title = release.name || release.tag;
+  return (
+    <article
+      className="card mb-3 upd-release"
+      data-release={release.tag}
+      data-latest={latest}
+      data-prerelease={release.prerelease}
+    >
+      <div className="card-body">
+        <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
+          <h5 className="mb-0 upd-release-title">
+            {url ? (
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                {title}
+              </a>
+            ) : (
+              title
+            )}
+          </h5>
+          {release.name && release.name !== release.tag ? (
+            <code className="upd-release-tag">{release.tag}</code>
+          ) : null}
+          {latest ? (
+            <span className="badge text-bg-success">{t('hosts.nav.updateLatest')}</span>
+          ) : null}
+          {release.prerelease ? (
+            <span className="badge text-bg-warning">{t('hosts.nav.updatePrerelease')}</span>
+          ) : null}
+        </div>
+        {release.author || release.publishedAt ? (
+          <div className="small text-body-secondary mb-2 upd-release-byline">
+            {release.author ? (
+              <>
+                <span className="upd-release-author">{release.author}</span>
+                <span className="ms-1">{t('hosts.nav.updateReleasedThis')}</span>
+              </>
+            ) : null}
+            {release.publishedAt ? (
+              <span
+                className={release.author ? 'ms-1' : ''}
+                title={absoluteTime(release.publishedAt, language)}
+              >
+                {formatRelativeTime(release.publishedAt, language)}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {release.body ? <MarkdownText text={release.body} className="prose upd-notes" /> : null}
+        {release.assets.length ? (
+          <Assets assets={release.assets} foldId={`${ASSETS_OPEN}:${release.tag}`} folds={folds} />
+        ) : null}
+      </div>
+    </article>
+  );
+};
+
+ReleaseCard.propTypes = {
+  release: releaseShape.isRequired,
+  latest: PropTypes.bool.isRequired,
+  folds: foldsShape.isRequired,
+  language: PropTypes.string.isRequired,
+};
+
+const Releases = ({ releases, folds, language }) => {
+  const { t } = useTranslation();
+  const latestTag = latestTagOf(releases);
+  return (
+    <div data-panel="update-releases">
+      <SectionHeading
+        title={t('hosts.nav.updateReleases')}
+        count={releases.length}
+        className="mb-2"
+      />
+      {releases.map(release => (
+        <ReleaseCard
+          key={release.tag}
+          release={release}
+          latest={release.tag === latestTag}
+          folds={folds}
+          language={language}
+        />
+      ))}
+    </div>
+  );
+};
+
+Releases.propTypes = {
+  releases: PropTypes.arrayOf(releaseShape).isRequired,
+  folds: foldsShape.isRequired,
+  language: PropTypes.string.isRequired,
 };
 
 const stateOf = ({ check, available, t }) => {
@@ -267,19 +428,23 @@ UpdateButton.propTypes = {
  * side a card with the current and the latest version, the published
  * date as a relative time with the absolute time in its tooltip, and the
  * release link and the changelog link as small text links, each drawn
- * only while the check carries its member; beside it the release notes,
- * `release_notes` of the check rendered as markdown under a small
- * heading naming the version they describe, the latest while an update
- * is available and the installed one when up to date, every link in them
- * opening its own tab, and under them the
- * Assets fold listing `assets` of the check, each a name link with its
- * size and its checksum where one is carried, folded until opened, the
- * fold kept under `prefsKey` like the page's other folds.
+ * only while the check carries its member; beside it the releases, every
+ * release of the check's `releases` in the order answered under a
+ * heading counting them, each a card with its name or its tag as the
+ * title linking to its page where it names one, the tag beside a name,
+ * the Latest badge on the first release that is not a pre-release and
+ * the Pre-release badge on one that is, who released it and when as a
+ * relative time with the absolute time in its tooltip, its body rendered
+ * as markdown with every link opening its own tab, and its Assets fold
+ * listing the release's assets, each a name link with its size and its
+ * sha256 where one is carried, folded until opened, the fold kept per
+ * tag under `prefsKey` like the page's other folds; a check that answers
+ * no `releases` draws the one release its own members name.
  *
  * It takes `update`, the adapter `{ check, apply }`, `check` answering
  * `{ current_version, latest_version, update_available, release_url,
- * release_date, changelog, release_notes, assets }` and `apply` answering
- * `{ message, task_id, target_version }`; `title`, the heading;
+ * release_date, changelog, release_notes, assets, releases }` and `apply`
+ * answering `{ message, task_id, target_version }`; `title`, the heading;
  * `prefsKey`, the localStorage key of the page's prefs; `confirm`,
  * `{ titleKey, messageKey }`, the keys of the confirmation, given `app`,
  * `currentVersion` and `latestVersion`, the `admin.update.*` keys by
@@ -388,9 +553,7 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
     latestVersion: available?.latest,
   };
 
-  const notes = String(check.data?.release_notes ?? '');
-  const notesVersion = available ? available.latest : String(check.data?.current_version ?? '');
-  const assets = assetsOf(check.data?.assets);
+  const releases = releasesOf(check.data);
 
   return (
     <>
@@ -402,8 +565,9 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
               <SideCard data={check.data} language={i18n.language} />
             </div>
             <div className="col-lg-8 col-xl-9">
-              {notes ? <ReleaseNotes notes={notes} version={notesVersion} /> : null}
-              {assets.length ? <Assets assets={assets} folds={folds} /> : null}
+              {releases.length ? (
+                <Releases releases={releases} folds={folds} language={i18n.language} />
+              ) : null}
             </div>
           </div>
         ) : null}

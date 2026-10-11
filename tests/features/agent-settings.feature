@@ -94,7 +94,7 @@ Feature: agent-settings
     Then the "update-assets" section of the agent page is open
     And the agent page lists the asset "checksums.txt"
 
-  Scenario: Agent pages: a check without notes and assets draws the versions and the links alone, no notes heading and no Assets fold
+  Scenario: Agent pages: a check without notes and assets draws the versions, the links and the one release's card alone, no notes and no Assets fold
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -120,6 +120,36 @@ Feature: agent-settings
     And the agent page draws the release notes with 1 headings and 2 items
     And the agent page draws the "update-assets" panel
     And the host was sent GET to "/api/agents/1/app/updates/check" 1 times
+
+  Scenario: Agent pages: a check that lists releases draws every release in the order answered, each with its tag, its badge, who released it, its notes as markdown and its assets with size and sha256
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-agent-update-releases fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the agent page offers "settings-update"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md"
+    And the agent page draws the releases "v1.4.0-beta.1, v1.3.0"
+    And the release "v1.4.0-beta.1" is marked "prerelease"
+    And the release "v1.4.0-beta.1" is not marked "latest"
+    And the release "v1.3.0" is marked "latest"
+    And the release "v1.3.0" is not marked "prerelease"
+    And the release "v1.3.0" is released by "Makr91"
+    And the release "v1.3.0" links to "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0"
+    And the release "v1.4.0-beta.1" draws the notes with 1 headings and 1 items
+    And the release "v1.3.0" draws the notes with 2 headings and 2 items
+    And I do not see "###"
+    And the assets of the release "v1.3.0" are folded
+    When I fold the assets of the release "v1.3.0"
+    Then the assets of the release "v1.3.0" are open
+    And the release "v1.3.0" lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
+    And the release "v1.3.0" lists the asset "SHA256SUMS.txt"
+    And the release "v1.3.0" links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/SHA256SUMS.txt"
+    And the release "v1.3.0" shows the checksum "e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a3f0c9a1b7e4d2c8f5a6b1d0"
+    And I see "36.9 MB"
+    And I see "486 Bytes"
+    And the assets of the release "v1.4.0-beta.1" are folded
 
   Scenario: Agent pages: the Secrets page reads the document as it opens, saves one category as one PUT and reads again, and Reload reads again
     Given the host answers the hosts fixture

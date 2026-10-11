@@ -22,6 +22,7 @@ const DRAG_STEPS = 8;
 const TREE_STEP = 18;
 
 const dragBy = async (page, selector, right, up) => {
+  await page.locator(selector).scrollIntoViewIfNeeded();
   const box = await page.locator(selector).boundingBox();
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -336,6 +337,10 @@ When('I click the legend of the {string} chart', async ({ page }, metric) => {
   await box.click({ position: { x: LEGEND_X, y: size.height - LEGEND_Y } });
 });
 
+When('I drag the {string} chart {int} right', async ({ page }, metric, right) => {
+  await dragBy(page, `[data-chart="${metric}"] .chart-box`, right, 0);
+});
+
 When('I pause the charts', async ({ page }) => {
   await expect(pauseOf(page)).toHaveAttribute('aria-pressed', 'false');
   await pauseOf(page).click();
@@ -416,6 +421,14 @@ Then('the {string} chart isolates no entity', async ({ page }, metric) => {
 
 Then('the {string} chart draws up to {string}', async ({ page }, metric, instant) => {
   await expect(chartOf(page, metric)).toHaveAttribute(
+    'data-range-to',
+    String(new Date(instant).getTime())
+  );
+});
+
+Then('the {string} chart does not draw up to {string}', async ({ page }, metric, instant) => {
+  await expect(chartOf(page, metric)).toHaveAttribute('data-range-to', /.+/u);
+  await expect(chartOf(page, metric)).not.toHaveAttribute(
     'data-range-to',
     String(new Date(instant).getTime())
   );

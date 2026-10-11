@@ -19,7 +19,7 @@ import GroupHeading, { groupShape } from '../../../components/common/GroupHeadin
 import MarkdownText from '../../../components/common/MarkdownText';
 import { RowCheckbox, selectionShape } from '../../../components/common/SelectCheckbox';
 import StatusChips from '../../../components/common/StatusChips';
-import { OrgLogo } from '../../../components/layout/OrgSwitcherModal';
+import { OrgInitial, OrgLogo } from '../../../components/layout/OrgSwitcherModal';
 import {
   collectionShape,
   itemShape,
@@ -50,7 +50,9 @@ const CardMedia = ({ item, ctx }) => {
       org={item.organization}
       size={56}
       className="rounded-circle card-media"
-      fallback={ctx.orgMark}
+      fallback={
+        ctx.orgMark || <OrgInitial org={item.organization} size={56} className="card-media" />
+      }
     />
   );
 };
@@ -332,11 +334,7 @@ const heldOf = (rowPick, item) => Boolean(rowPick && rowPick(item)?.held);
 const CardGrid = ({ collection, items, watches, selection, rowPick, ctx }) => (
   <Row xs={1} md={2} xl={3} className="g-3 mb-3">
     {items.map(item => (
-      <Col
-        key={item.id}
-        className={heldOf(rowPick, item) ? 'held opacity-50' : undefined}
-        aria-disabled={heldOf(rowPick, item) ? 'true' : undefined}
-      >
+      <Col key={item.id} className={heldOf(rowPick, item) ? 'held opacity-50' : undefined}>
         <ItemCard
           collection={collection}
           item={item}
@@ -408,8 +406,10 @@ CardGroup.propTypes = {
 
 /**
  * The card grid of one collection, flat or one grid a group; a card whose
- * `rowPick` answers `held` is greyed with `aria-disabled`, the way a held
- * row of the table is.
+ * `rowPick` answers `held` is greyed, its controls live, the way a held
+ * row of the table is. The card's media is the item's artwork or icon,
+ * else the organization's logo, else the context's mark, else the
+ * organization's initial.
  */
 const ItemCards = ({
   collection,

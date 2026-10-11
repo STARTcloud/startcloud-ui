@@ -2025,7 +2025,9 @@ replays inside its window and a guessing run meets `429` with
   select-all for the page, never a button or link of its own, the row
   checkboxes its cells, the columns Title (the type icon colored by
   severity, the title bold while unread and a link with the open-in
-  glyph while the row's `navigate` is followable, the unread dot), Body,
+  glyph while the row's `navigate` is followable, the row's `system`,
+  the origin host's brand name, as a muted word after the title, the
+  unread dot), Body,
   Time (the relative time with the absolute time in its tooltip) and
   Type (a badge, hidden by default); the row actions as labeled outline
   buttons, Mark as read while unread, View details while the row carries

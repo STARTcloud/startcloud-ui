@@ -75,11 +75,15 @@ export const deleteProvisionerVersion = (status, id, name, version) =>
 
 const CATALOG_AUTH = { skipAuthRefresh: true };
 
+const CATALOG_READ = { ...CATALOG_AUTH, expected: [401] };
+
+const CATALOG_HEALTH_READ = { ...CATALOG_AUTH, expected: [401, 404] };
+
 /**
  * The provisioner catalog the agent relays, `GET provisioning/catalog`,
  * `source` naming a configured catalog source's id where given; a `401`
- * there is the catalog refusing the agent's own sign-in, so it never ends
- * the session.
+ * there is the catalog refusing the agent's own sign-in, an answer the
+ * page draws, so it never ends the session and is never logged.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -88,7 +92,7 @@ const CATALOG_AUTH = { skipAuthRefresh: true };
  */
 export const fetchCatalog = (status, id, source = '') =>
   client.get(agentPath(status, id, 'provisioning/catalog'), {
-    ...CATALOG_AUTH,
+    ...CATALOG_READ,
     params: source ? { source } : {},
   });
 
@@ -105,8 +109,9 @@ export const fetchCatalogSources = (status, id) =>
 /**
  * The `health.json` of one catalog source the agent relays,
  * `GET provisioning/catalog/health`, `source` naming the source's id
- * where given; 404 while the source publishes none, and a `401` never
- * ending the session.
+ * where given; 404 while the source publishes none and a `401` the
+ * catalog refusing the agent's sign-in, each an answer the page reads,
+ * never ending the session and never logged.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -115,7 +120,7 @@ export const fetchCatalogSources = (status, id) =>
  */
 export const fetchCatalogHealth = (status, id, source = '') =>
   client.get(agentPath(status, id, 'provisioning/catalog/health'), {
-    ...CATALOG_AUTH,
+    ...CATALOG_HEALTH_READ,
     params: source ? { source } : {},
   });
 

@@ -142,7 +142,7 @@ Feature: host installer files and provisioners
     Then the host was sent POST to "/api/agents/3/artifacts/11/move" carrying "destination_storage_location_id" as "loc-old"
     And the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page holds "move"
 
-  Scenario: Provisioners: the families of every catalog source as cards, read once a source, the installed ones alone when the page opens, the Update glyph on a family behind the catalog and the glyph greyed on one at its newest, Add flipping the panel to the missing families and the Installed pill off greying them
+  Scenario: Provisioners: the families of every enabled catalog source as cards, read once a source per load, a source that answers 401 drawing no family and named with the agent's message in one warning banner, the installed ones alone when the page opens, the Update glyph on a family behind the catalog and the glyph greyed on one at its newest, Add turning the Installed group off so every family draws with the missing greyed and their controls live, a second Add turning it back on, and the Installed pill off greying them
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -150,15 +150,23 @@ Feature: host installer files and provisioners
     Then the section page "provisioners" draws
     And the host row "provisioners" is the active one
     And the "provisioner-catalog" listing of the section page draws 2 cards
+    And the section page heading reads "2"
     And the section page notes "update-available"
     And the section page notes "held-current"
     And the provisioner catalog draws a "gold" pill
-    And the provisioner catalog notes Installed on "hcl-domino" "2.0.0"
+    And the provisioner catalog holds "hcl-domino" "2.0.0"
+    And the page raised 1 warning banner
+    And the warning banner reads "Probe catalog"
+    And the page raised 0 danger notices
     When I press the section page's "catalog-add" action
-    Then the section page heading reads "Add"
-    And the "provisioner-catalog" listing of the section page draws 1 cards
-    And the "provisioner-catalog" listing of the section page draws the card "windows" plain
+    Then the section page heading reads "3"
+    And the "provisioner-catalog" listing of the section page draws 3 cards
+    And the provisioner catalog draws the card "startcloud" plain
+    And the provisioner catalog greys the card "windows"
     And the provisioner catalog offers Install on "windows" "0.2.0"
+    When I press "catalog-install" on the card "windows" of the provisioner catalog
+    Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "name" as "windows"
+    And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.2.0"
     When I press the section page's "catalog-add" action
     Then the "provisioner-catalog" listing of the section page draws 2 cards
     When I switch the "provisioner-catalog" listing of the section page to "table"
@@ -168,11 +176,12 @@ Feature: host installer files and provisioners
     And I open the filter panel
     And I toggle the filter pill "Installed"
     Then the "provisioner-catalog" listing of the section page draws 3 cards
-    And the "provisioner-catalog" listing of the section page greys the card "windows"
-    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 1 times
-    And the host was sent GET to "/api/agents/3/provisioning/catalog" 2 times
-    And the host was sent GET to "/api/agents/3/provisioning/catalog/health" 2 times
+    And the provisioner catalog greys the card "windows"
+    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog" 3 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/health" 3 times
     And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 1 times
+    And the host was not sent GET to "/api/agents/3/config/storage"
 
   Scenario: Provisioners: the Update glyph on a family behind the catalog installs the catalog's newest, a queued task
     Given the host answers the hosts fixture
@@ -185,7 +194,7 @@ Feature: host installer files and provisioners
     And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "source_name" as "startcloud"
     And the page raised 1 success notice
 
-  Scenario: Provisioners: cards by default with tier pills, a version line's Install on a version the host lacks and its Install greyed on one it holds, and Install queues one
+  Scenario: Provisioners: cards by default with tier pills, a version line's Install on a version the host lacks and its Delete on one it holds, and Install queues one
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -194,15 +203,27 @@ Feature: host installer files and provisioners
     And the provisioner catalog draws a "gold" pill
     And the provisioner catalog draws a "silver" pill
     And the provisioner catalog offers Install on "startcloud" "0.1.28"
-    And the provisioner catalog notes Installed on "startcloud" "0.1.27"
-    And the provisioner catalog notes Installed on "hcl-domino" "2.0.0"
+    And the provisioner catalog holds "startcloud" "0.1.27"
+    And the provisioner catalog holds "hcl-domino" "2.0.0"
     When I open the "versions-fold" fold of the card "startcloud"
     And I press Install on "startcloud" "0.1.28" in the provisioner catalog
     Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "name" as "startcloud"
     And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
     And the page raised 1 success notice
 
-  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source and the deletes, Update from source queuing a re-import and each delete waiting behind the typed confirmation
+  Scenario: Provisioners: a held version's line draws Delete in the install button's place, the delete of that version waiting behind the typed confirmation
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/provisioners"
+    And I open the "versions-fold" fold of the card "startcloud"
+    Then the provisioner catalog holds "startcloud" "0.1.27"
+    When I press Delete on "startcloud" "0.1.27" in the provisioner catalog
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/startcloud/versions/0.1.27"
+    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times
+
+  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source, Add this catalog as a source and Delete family, Update from source queuing a re-import and the delete waiting behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -210,21 +231,18 @@ Feature: host installer files and provisioners
     And I open the menu of the card "startcloud" of the provisioner catalog
     Then the open menu offers "held-update"
     And the open menu offers "refresh-source"
-    And the open menu offers "delete-version"
+    And the open menu offers "held-add-source"
     And the open menu offers "delete-family"
+    And the open menu offers no "delete-version"
     When I press the menu entry "refresh-source"
     Then the host was sent POST to "/api/agents/3/provisioning/provisioners/startcloud/refresh-from-source"
     When I open the menu of the card "hcl-domino" of the provisioner catalog
     Then the open menu offers no "held-update"
     And the open menu offers no "refresh-source"
-    When I press the menu entry "delete-version"
-    And I confirm the open dialog
-    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino/versions/2.0.0"
-    When I open the menu of the card "hcl-domino" of the provisioner catalog
-    And I press the menu entry "delete-family"
+    When I press the menu entry "delete-family"
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino"
-    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 4 times
+    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 3 times
 
   Scenario: Provisioners: Import opens the import dialog and queues the import
     Given the host answers the hosts fixture
@@ -260,7 +278,7 @@ Feature: host installer files and provisioners
     When I open the details of the version "0.1.28" of the card "startcloud"
     Then the card "startcloud" version "0.1.28" links the box of "virtualbox" to "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
 
-  Scenario: Provisioners: the table is the toggle with the Deploy and Status columns, and Sources opens the one modal listing every catalog source
+  Scenario: Provisioners: the table is the toggle with the Deploy and Status columns, and Sources opens the one modal listing every catalog source the agent answers, enabled or not, with its controls
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -270,9 +288,38 @@ Feature: host installer files and provisioners
     And the "provisioner-catalog" table of the section page draws the "deploy" column
     And the "provisioner-catalog" table of the section page draws the "status" column
     And the section page notes "update-available"
+    And the host was not sent GET to "/api/agents/3/config/storage"
     When I press the section page's "catalog-sources" action
     Then the catalog dialog "catalog-sources" draws
-    And the open dialog lists 2 rows
+    And the open dialog lists 4 rows
+    And the catalog source "startcloud" offers no "source-default"
+    And the catalog source "partner" offers "source-default"
+    And the catalog source "partner" offers "source-toggle"
+    And the catalog source "partner" offers "source-edit"
+    And the catalog source "partner" offers "source-remove"
     And the catalog dialog "catalog-source" is gone
     When I press the open dialog's "catalog-source-add" action
     Then the catalog dialog "catalog-source" draws
+
+  Scenario: Provisioners: a catalog source's edit opens the form under the modal's table on its id, its display name and its authentication, and saves as one merge patch of the storage file under its id
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press the section page's "catalog-sources" action
+    And I press the action "source-edit" of the catalog source "staging"
+    Then the field "source-name" of the catalog dialog "catalog-source" reads "staging"
+    And the field "source-display-name" of the catalog dialog "catalog-source" reads "STARTcloud staging"
+    And the field "source-auth" of the catalog dialog "catalog-source" reads "none"
+    When I type "Staging catalog" into the field "source-display-name"
+    And I pick "oidc" in the catalog dialog select "source-auth"
+    And I submit the catalog dialog "catalog-source"
+    Then the host was sent PUT to "/api/agents/3/config/storage" carrying "Staging catalog" at "/catalog_sources/sources/staging/display_name"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying "oidc" at "/catalog_sources/sources/staging/auth"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying "https://provisioner-catalog-staging.startcloud.com/catalog.json" at "/catalog_sources/sources/staging/url"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying nothing at "/catalog_sources/sources/startcloud"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying nothing at "/catalog_sources/sources/staging/ca_file"
+    And the host was not sent POST to "/api/agents/3/provisioning/catalog/sources"
+    And the catalog dialog "catalog-source" is gone
+    And the catalog dialog "catalog-sources" draws
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 2 times
