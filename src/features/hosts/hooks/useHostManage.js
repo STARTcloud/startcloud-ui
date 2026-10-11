@@ -192,6 +192,37 @@ export const useTaskFollow = ({ id, onEnd }) => {
 };
 
 /**
+ * The end of every task of one host that runs one of `operations`,
+ * followed on the `tasks` topic whoever queued it: when `task-updated`
+ * pushes a row of this host in a terminal status whose `operation` is
+ * among them, `onEnd(row)` is called, so a copy held on one page follows
+ * a write made on another page or in another tab. On a host whose tasks
+ * do not reach the stream nothing arrives.
+ *
+ * @param {Object} options - The host, the operations and what runs at an end
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @param {Array<string>} options.operations - The task operations followed
+ * @param {Function} options.onEnd - Called with the task's row
+ */
+export const useTaskEnds = ({ id, operations, onEnd }) => {
+  const onEndRef = useRef(onEnd);
+
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  });
+
+  useEventStream('task-updated', data => {
+    if (agentIdOf(data) !== String(id)) {
+      return;
+    }
+    const row = withoutAgentId(data);
+    if (operations.includes(row.operation) && TERMINAL_TASK_STATUSES.includes(row.status)) {
+      onEndRef.current(row);
+    }
+  });
+};
+
+/**
  * One queued task of a host watched row by row on the `tasks` topic:
  * `watch(answer)` holds the task a queued answer names as `row` and reads
  * it once with `GET tasks/{id}`, so a task that ended before its answer

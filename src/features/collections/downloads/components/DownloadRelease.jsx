@@ -364,6 +364,8 @@ export const DownloadProvidersActions = ({ item, version, ctx }) => {
       visibility={upload.visibility}
       onVisibility={upload.setVisibility}
       onFile={upload.upload(options => api.pending.upload(org, options))}
+      fetching={upload.fetching}
+      onLink={upload.fetchLink(body => api.pending.fetch(org, body))}
     />
   );
 };

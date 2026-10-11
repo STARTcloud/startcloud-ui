@@ -52,7 +52,12 @@ const uploadPending = (organization, { file: picked, onUploadProgress }) => {
  * resolves to the response body and rejects with `ApiError`. Paths are built
  * from raw names through `encodePath`. A product owns releases, a release
  * owns patches and a patch owns files; a person's file lands in two steps
- * through `pending`, the bytes first and the placing form after them; the
+ * through `pending`, the bytes first and the placing form after them, the
+ * bytes sent by the person through `upload` or fetched by the server from
+ * a URL through `fetch`, whose body is `{ url, file_name, checksum,
+ * checksum_type }`, `url` alone required, and whose answer is the pending
+ * upload a completed upload answers, the request open until the bytes are
+ * stored; the
  * level upload routes are a program's and no page calls them. The
  * organization's `duplicates` answers every checksum more than one file
  * row carries, the largest group first, for a writer of the organization.
@@ -105,6 +110,8 @@ export const api = {
   },
   pending: {
     upload: uploadPending,
+    fetch: (organization, body) =>
+      client.post(`${pendingStore(organization)}/fetch`, body).then(pendingBody),
     place: (organization, id, body) => client.post(`${pendingItem(organization, id)}/place`, body),
     discard: (organization, id) => client.delete(pendingItem(organization, id)),
   },

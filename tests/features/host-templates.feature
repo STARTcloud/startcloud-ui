@@ -70,13 +70,13 @@ Feature: host templates
     Then the "box-registry" listing of the section page draws 3 cards
     And the "box-registry" listing of the section page greys the card "ubuntu2404"
 
-  Scenario: Templates: the chevron of a held box opens Add this registry as a source, Move for each held version and one Delete, Move sending the new root as a queued task and Delete removing every held version behind one typed confirmation
+  Scenario: Templates: the chevron of a held box opens Move for each held version and one Delete, Move sending the new root as a queued task and Delete removing every held version behind one typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
     And I open the menu of the card "debian13" of the "box-registry" listing
-    Then the open menu offers "held-add-source"
+    Then the open menu offers no "held-add-source"
     And the open menu offers "template-move"
     And the open menu offers "template-delete"
     And the open menu offers no "held-update"

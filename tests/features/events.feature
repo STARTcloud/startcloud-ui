@@ -19,6 +19,15 @@ Feature: events contract
     And I see "You were signed out."
     And I see "Your session ended. Sign in again to continue where you were."
 
+  Scenario: The session's headers on the request; an `x-refreshed-token` on the stream response is stored as the session's JWT before the frames are read
+    Given the host answers the hosts fixture
+    And the host answers the hosts-events fixture
+    And the stream answers the ready frames with the header "x-refreshed-token" as "t2"
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    Then the stream request carried "x-access-token" as "t"
+    And the browser holds "user" carrying "access_token" as "t2"
+
   Scenario: The session's headers on the request; `403` stops for good
     Given the stream answers 403
     When I open "/about"

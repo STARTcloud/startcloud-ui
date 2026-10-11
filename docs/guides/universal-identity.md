@@ -499,6 +499,12 @@ member is the site's own answer.
 | `show-mark`                     | `mark_enabled`                                  | set true or false, draws or hides the site's wordmark above the sign-in heading for that client's flow, overriding the site's `ui.show_mark`, which when set overrides the issuer's `application.ui.show_mark` the same way; unset, the member inherits the site's answer, and the site's inherits the issuer's |
 | `login-mode`                    | `login_mode`                                    | the mode shown first                                                                                                                                                                                                                                                                                            |
 
+Every `backend` UI backend answers `local_registration_enabled`,
+`password_reset_enabled` and `sign_in_link_enabled` per Host on the same
+route, and its sign-in page reads the three the same way, registration
+closed until its member opens it, the other two open while their member
+is absent, a closed link left out.
+
 `GET /api/auth/tfa`, session with `ROLE_2FA_REQUIRED`:
 
 ```json

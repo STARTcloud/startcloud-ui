@@ -395,6 +395,8 @@
     "reachable": "Introduce un host y un puerto que respondan para {{label}}; {{host}}:{{port}} no respondió.",
     "placeholder": "Define {{name}} en el entorno o da un valor predeterminado a {{label}}.",
     "withinParent": "Mantén {{label}} dentro de {{parent}}, el ajuste del nivel superior.",
+    "publicAddress": "{{label}} debe ser una dirección pública.",
+    "matchesContent": "{{label}} no coincide con el contenido.",
     "unknown": "Revisa {{label}}."
   },
   "session": {
@@ -3034,7 +3036,6 @@
       "updateReleaseNotes": "Notas de la versión",
       "updateChangelog": "Registro de cambios",
       "updateAssets": "Artefactos",
-      "updateReleases": "Lanzamientos",
       "updateLatest": "Más reciente",
       "updatePrerelease": "Prelanzamiento",
       "updateReleasedThis": "publicó esto"
@@ -3688,7 +3689,9 @@
     "upload": {
       "drop": "Suelte un archivo aquí o haga clic para elegir uno",
       "uploading": "Subiendo… {{percent}}%",
-      "done": "El archivo se subió."
+      "done": "El archivo se subió.",
+      "fromLink": "Agregar desde un enlace",
+      "fetching": "Obteniendo desde el enlace…"
     },
     "actions": {
       "docs": "Documentación",
@@ -3760,6 +3763,9 @@
       "docsUrl": "URL de la documentación",
       "notesUrl": "URL de las notas de la versión",
       "iconUrl": "URL del icono"
+    },
+    "fetch": {
+      "url": "URL"
     },
     "file": {
       "key": "Clave",

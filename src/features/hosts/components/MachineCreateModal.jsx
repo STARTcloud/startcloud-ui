@@ -22,6 +22,7 @@ import {
 import { fetchTemplateSources } from '../api/templates';
 import { getZfsDatasets, getZfsPools } from '../api/zfsAPI';
 import { HostMachinesContext } from '../hooks/useHostMachines';
+import { useManageRead, useTaskEnds } from '../hooks/useHostManage';
 import { useHostRow } from '../hooks/useHostRow';
 import { useMachineTools } from '../hooks/useMachineTools';
 import { useProvisionerInstall } from '../hooks/useProvisionerInstall';
@@ -36,6 +37,7 @@ import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
 import { isServerRole } from '../utils/hosts';
 import {
   CREATE_STEPS,
+  PROVISIONER_INSTALL_OPERATIONS,
   bridgeChoicesOf,
   buildSpec,
   createdOf,
@@ -71,7 +73,11 @@ import TaskDialog from './TaskDialog';
 
 const NO_ORGS = [];
 
+const NO_FAMILIES = [];
+
 const listOf = value => (Array.isArray(value) ? value : []);
+
+const familiesOf = data => (Array.isArray(data?.provisioners) ? data.provisioners : NO_FAMILIES);
 
 const settle = promise => promise.then(data => data ?? null).catch(() => null);
 
@@ -132,21 +138,22 @@ const templateAvailablePoolsOf = ({ templates, settings, agentDefaults }) => {
 
 /**
  * The feeds the wizard's pickers draw on, each one read of the host:
- * the provisioners, the defaults, the OS types, the next server id, the
- * local templates and every enabled registry's catalog, the artifacts
- * and the cached ISOs, all read once as the dialog opens; the pools,
- * datasets and volumes of a host that lists `zfs`, the registered media
- * of a VirtualBox host, the uplinks and the free addresses, each read
- * when its step is entered, so a picker is never older than the visit to
- * its step, the provisioners again through `loadProvisioners` once a
- * handed family is installed, the registries and their catalogs again
- * through `loadCatalogs` once a handed box's registry is added, and
- * nothing reads on a clock.
+ * the defaults, the OS types, the next server id, the local templates
+ * and every enabled registry's catalog, the artifacts and the cached
+ * ISOs, all read once as the dialog opens; the provisioners through the
+ * one read the Provisioners page uses, asked as the dialog opens, again
+ * when the event stream opens fresh or answers `reset`, at the end of
+ * every provisioner install task of the host on `task-updated`, whoever
+ * queued it, and through `loadProvisioners`, which answers the families;
+ * the pools, datasets and volumes of a host that lists `zfs`, the
+ * registered media of a VirtualBox host, the uplinks and the free
+ * addresses, each read when its step is entered, so a picker is never
+ * older than the visit to its step, the registries and their catalogs
+ * again through `loadCatalogs` once a handed box's registry is added,
+ * and nothing reads on a clock.
  */
 const useCreateFeeds = ({ status, id, server, t }) => {
   const [feeds, setFeeds] = useState({
-    provisioners: [],
-    provisionersLoaded: false,
     agentDefaults: null,
     osTypes: null,
     nextServerId: '',
@@ -164,9 +171,16 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     vboxMedia: [],
     bridgeChoices: [],
     ipSuggestions: null,
-    failure: '',
   });
   const patch = useCallback(next => setFeeds(current => ({ ...current, ...next })), []);
+  const held = useManageRead(
+    useCallback(() => fetchProvisioners(status, id), [status, id]),
+    true
+  );
+  const { refresh: refreshProvisioners } = held;
+  const provisioners = useMemo(() => familiesOf(held.data), [held.data]);
+
+  useTaskEnds({ id, operations: PROVISIONER_INSTALL_OPERATIONS, onEnd: refreshProvisioners });
   const zfs = hostHasFeature(server, 'zfs');
   const vbox = hostHasHypervisor(server, 'virtualbox');
   const templated = hostHasFeature(server, 'templates');
@@ -252,27 +266,11 @@ const useCreateFeeds = ({ status, id, server, t }) => {
   );
 
   const loadProvisioners = useCallback(
-    () =>
-      fetchProvisioners(status, id).then(
-        data => {
-          const provisioners = listOf(data?.provisioners);
-          patch({ provisioners, provisionersLoaded: true });
-          return provisioners;
-        },
-        failure => {
-          patch({
-            failure: t('machineEdit.machineCreateModal.failedToLoadProvisioners', {
-              message: failure.message,
-            }),
-          });
-          return [];
-        }
-      ),
-    [status, id, patch, t]
+    () => refreshProvisioners().then(familiesOf),
+    [refreshProvisioners]
   );
 
   useEffect(() => {
-    loadProvisioners();
     settle(fetchMachineDefaults(status, id)).then(data => patch({ agentDefaults: data }));
     settle(fetchMachineOsTypes(status, id)).then(data => {
       const list = listOf(data?.ostypes);
@@ -297,10 +295,15 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     }
     loadZfs();
     loadMedia();
-  }, [status, id, templated, cached, patch, loadProvisioners, loadCatalogs, loadZfs, loadMedia]);
+  }, [status, id, templated, cached, patch, loadCatalogs, loadZfs, loadMedia]);
 
   return {
     ...feeds,
+    provisioners,
+    provisionersLoaded: held.loaded && !held.failed,
+    failure: held.failed
+      ? t('machineEdit.machineCreateModal.failedToLoadProvisioners', { message: held.message })
+      : '',
     loadProvisioners,
     loadCatalogs,
     loadZfs,
@@ -735,7 +738,10 @@ StepBody.propTypes = {
  * family is, so the version's manifest is read as a person's pick reads
  * it; a family the host does not hold puts `useProvisionerInstall`'s card
  * on the Provisioning step, its press installing the family through the
- * host's catalog and the provisioners read again, so the same picks land;
+ * host's catalog and the provisioners read again, so the same picks land,
+ * and a family installed elsewhere while the dialog is open, on the
+ * Provisioners page or in another tab, lands the same way at its task's
+ * end on `task-updated`, the card gone and the family picked;
  * a handed box whose registry the host does not hold puts
  * `useTemplateSource`'s card on the Box step, its press writing the
  * registry and the registries read again, so the agent's create downloads

@@ -98,8 +98,8 @@ const installCardOf = install =>
  * Update press with its dot on one it holds an older version of and
  * greyed on one it holds at the newest, the chevron opening the menu of
  * the version, Install or Update to, Install an older version, Update
- * from source on a family imported from git or a folder, Add this
- * catalog as a source, then Delete family on a held one; each version
+ * from source on a family imported from git or a folder, then Delete
+ * family on a held one; each version
  * line Install on a version the host lacks or Delete on one it holds,
  * and the machine the create wizard makes of it; the Status column
  * reading Installed or Update available, installed families first; the
@@ -259,18 +259,6 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
 
   const families = catalog.rows.provisioners;
 
-  const addSourceEntryOf = item => ({
-    key: 'source',
-    action: 'held-add-source',
-    label: t('pages.deploy.words.sourceCatalog'),
-    onClick: () =>
-      openForm({
-        editing: null,
-        seed: catalogSourceSeedOf(item.extras.source?.url || ''),
-        handoff: false,
-      }),
-  });
-
   const entriesOf = item => {
     const family = families.find(entry => entry.name === item.name) || null;
     const refreshes = Boolean(family) && SOURCE_KINDS.includes(family.source?.source_type);
@@ -295,7 +283,6 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
               },
             ]
           : []),
-        addSourceEntryOf(item),
       ],
       remove: family
         ? [

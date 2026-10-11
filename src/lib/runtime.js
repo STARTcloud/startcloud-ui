@@ -177,7 +177,10 @@ export const loadRules = status => {
 /**
  * Open the tab's one event stream where `streamTargetFor` places it,
  * subscribed to its topics, the session's headers on the request signed
- * for the stream URL without its query; a 401 ends the session on the
+ * for the stream URL without its query, the stream response's headers
+ * handed to the session's `adoptResponse` before its frames are read, so
+ * a JWT rotated in `x-refreshed-token` there is stored as the API client
+ * stores one from any other answer; a 401 ends the session on the
  * bus. A path on any host but the serving origin and, on an `idp` host,
  * the identity provider's own `/api/events` is ignored, so the status
  * payload can never point the session's headers at another host.
@@ -194,6 +197,7 @@ export const connectEventStream = status => {
     topics: target.topics,
     headers: () => session.headers('GET', `${target.origin}${target.path}`),
     onUnauthorized: () => session.endSession(),
+    onResponse: responseHeaders => session.adoptResponse?.(responseHeaders),
   });
 };
 

@@ -358,7 +358,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
   const [methodsLoading, setMethodsLoading] = useState(true);
   const [defaultProvider, setDefaultProvider] = useState(null);
   const [silentLogin, setSilentLogin] = useState(false);
-  const [localRegistrationEnabled, setLocalRegistrationEnabled] = useState(false);
+  const [answer, setAnswer] = useState(null);
   const [chosenMode, setChosenMode] = useState(null);
 
   const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -410,9 +410,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
     [mode, localEnabled, providerParam, oidcMethods, visibleOidcMethods]
   );
 
-  const registrationOpen = signInAffordances({
-    local_registration_enabled: localRegistrationEnabled,
-  }).registration;
+  const affordances = useMemo(() => signInAffordances(answer), [answer]);
 
   const shouldAttemptSilent = useMemo(() => {
     if (methodsLoading || !silentLogin || !defaultProvider) {
@@ -466,7 +464,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
         setAuthMethods(result.methods || []);
         setDefaultProvider(result.default_provider || null);
         setSilentLogin(!!result.silent_login);
-        setLocalRegistrationEnabled(!!result.local_registration_enabled);
+        setAnswer(result);
       } catch (error) {
         if (!canceled) {
           log.auth.error('Error loading auth methods', {
@@ -595,7 +593,7 @@ const BackendLoginPage = ({ session, returnTo, auth, appName }) => {
         />
       )}
 
-      {!methodsLoading && registrationOpen && (
+      {!methodsLoading && affordances.registration && (
         <p className="auth-foot">
           {t('login.newHere', { app: appName })}{' '}
           <Link to="/register" className="auth-link">
@@ -622,9 +620,11 @@ BackendLoginPage.propTypes = {
  * attempt per browser session, the provider begun at once and no chooser
  * drawn while the host enables exactly one method and it is the default
  * provider, under the same guards as the silent attempt, and the return
- * path kept for the callback; Create an account is drawn only while the
- * host answers `local_registration_enabled`, never merely because a
- * provider exists; on hyperweaver-agent (`session.id` is `apikey`) the
+ * path kept for the callback; the closable affordances are read per
+ * `signInAffordances` from the host's `local_registration_enabled`,
+ * `password_reset_enabled` and `sign_in_link_enabled`, a closed link left
+ * out, Create an account drawn only while the host opens registration and
+ * never merely because a provider exists; on hyperweaver-agent (`session.id` is `apikey`) the
  * page is the agent's own sign-ins alone through `AgentSignIns`, the
  * paths of the `apikey` provider under the active theme's mark, no
  * methods read and no password form, a person whose adopted session is

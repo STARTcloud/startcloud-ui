@@ -2,15 +2,18 @@
   "id": 7,
   "name": "debian12-server",
   "description": "Debian 12 server image",
-  "shortDescription": "Debian 12 server image",
-  "isPublic": true,
-  "guestAccess": false,
+  "short_description": "Debian 12 server image",
+  "is_public": true,
+  "guest_access": false,
   "published": true,
-  "userId": 1,
-  "organizationId": 3,
-  "githubRepo": null,
-  "workflowFile": null,
-  "cicdUrl": null,
+  "user_id": 1,
+  "organization_id": 3,
+  "download_count": 12,
+  "created_at": "2026-08-01T10:00:00Z",
+  "updated_at": "2026-10-11T10:00:00Z",
+  "github_repo": null,
+  "workflow_file": null,
+  "cicd_url": null,
   "readme": null,
   "artwork": null,
   "metadata": {
@@ -27,7 +30,5 @@
       { "name": "data", "size": "20G" }
     ],
     "providers": ["virtualbox"]
-  },
-  "createdAt": "2026-08-01T10:00:00Z",
-  "updatedAt": "2026-10-11T10:00:00Z"
+  }
 }

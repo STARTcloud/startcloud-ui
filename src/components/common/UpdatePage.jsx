@@ -86,73 +86,91 @@ export const assetsOf = list =>
 export const releaseAssetsOf = list =>
   namedAssets(list).map(asset => assetOf(asset, asset.browser_download_url, asset.sha256));
 
-const releaseOf = release => ({
-  tag: String(release.tag),
-  name: String(release.name ?? ''),
-  prerelease: Boolean(release.prerelease),
-  publishedAt: String(release.published_at ?? ''),
-  author: String(release.author ?? ''),
-  body: String(release.body ?? ''),
-  url: String(release.html_url ?? ''),
-  assets: releaseAssetsOf(release.assets),
-});
-
 /**
- * The releases a check lists, in the order the check answers them: every
- * entry of `releases` with a tag, as `{ tag, name, prerelease,
- * publishedAt, author, body, url, assets }`, each string empty while the
- * entry holds none; a check that answers no `releases` is the one release
- * its own members name, `latest_version` the tag, `release_date` the
- * published time, `release_notes` the body, `release_url` the url and
- * `assets` the assets, and no release at all while it names no version.
+ * Whether a version is a pre-release, a version carrying a `-` suffix
+ * such as `0.2.1-dev` or `v1.4.0-beta.1`.
  *
- * @param {Object|null} answer - The answer of `GET app/updates/check`
- * @returns {Array<Object>} The releases
+ * @param {string|null|undefined} version - The version or tag
+ * @returns {boolean} Whether it is a pre-release
  */
-export const releasesOf = answer => {
-  if (Array.isArray(answer?.releases)) {
-    return answer.releases
-      .filter(release => release && typeof release === 'object' && release.tag)
-      .map(releaseOf);
+export const isPrerelease = version => String(version ?? '').includes('-');
+
+const bareTag = tag => String(tag ?? '').replace(/^v/u, '');
+
+const listedRelease = answer =>
+  Array.isArray(answer.releases)
+    ? answer.releases.find(
+        release =>
+          release &&
+          typeof release === 'object' &&
+          release.tag &&
+          bareTag(release.tag) === bareTag(answer.latest_version)
+      )
+    : undefined;
+
+const latestRelease = answer => {
+  const listed = listedRelease(answer);
+  if (listed) {
+    return {
+      tag: String(listed.tag),
+      name: String(listed.name ?? ''),
+      prerelease: Boolean(listed.prerelease),
+      publishedAt: String(listed.published_at ?? ''),
+      author: String(listed.author ?? ''),
+      body: String(listed.body ?? ''),
+      url: String(listed.html_url ?? ''),
+      assets: releaseAssetsOf(listed.assets),
+    };
   }
-  if (!answer?.latest_version) {
-    return [];
-  }
-  return [
-    {
-      tag: String(answer.latest_version),
-      name: '',
-      prerelease: false,
-      publishedAt: String(answer.release_date ?? ''),
-      author: '',
-      body: String(answer.release_notes ?? ''),
-      url: String(answer.release_url ?? ''),
-      assets: assetsOf(answer.assets),
-    },
-  ];
+  return {
+    tag: String(answer.latest_version),
+    name: '',
+    prerelease: isPrerelease(answer.latest_version),
+    publishedAt: String(answer.release_date ?? ''),
+    author: '',
+    body: String(answer.release_notes ?? ''),
+    url: String(answer.release_url ?? ''),
+    assets: assetsOf(answer.assets),
+  };
 };
 
 /**
- * The tag of the latest release of a list, the first one that is not a
- * pre-release, empty while every release is one.
+ * The one release a check offers, the release whose tag is the check's
+ * `latest_version`: the entry of `releases` with that tag, as
+ * `{ tag, name, prerelease, publishedAt, author, body, url, assets }`,
+ * each string empty while the entry holds none, and otherwise the
+ * release the check's own members name, `release_date` the published
+ * time, `release_notes` the body, `release_url` the url, `assets` the
+ * assets and a `-` suffix on the version the pre-release mark; null
+ * while the check names no version, and null while the release is a
+ * pre-release and the running `current_version` is not one, so a
+ * production install never sees a dev or pre-release.
  *
- * @param {Array<Object>} releases - The releases `releasesOf` answered
- * @returns {string} The tag, or empty
+ * @param {Object|null} answer - The answer of `GET app/updates/check`
+ * @returns {Object|null} The release, or null
  */
-export const latestTagOf = releases => releases.find(release => !release.prerelease)?.tag ?? '';
+export const releaseOf = answer => {
+  if (!answer?.latest_version) {
+    return null;
+  }
+  const release = latestRelease(answer);
+  return release.prerelease && !isPrerelease(answer.current_version) ? null : release;
+};
 
 /**
  * The update a check offers: the current and the latest version with the
  * release URL, the release date, the changelog URL, the release notes as
  * markdown and the release assets, each empty while the answer holds
- * none, while the answer says `update_available`, null otherwise, so a
- * backend that is current or answers no check draws no Update button.
+ * none, while the answer says `update_available` and the latest release
+ * is one the running version may take, null otherwise, so a backend that
+ * is current, answers no check or is offered a pre-release on a
+ * production version draws no Update button.
  *
  * @param {Object|null} answer - The answer of `GET app/updates/check`
  * @returns {{ current: string, latest: string, releaseUrl: string, releaseDate: string, changelog: string, releaseNotes: string, assets: Array }|null} The update
  */
 export const updateOf = answer =>
-  answer?.update_available
+  answer?.update_available && releaseOf(answer)
     ? {
         current: String(answer.current_version ?? ''),
         latest: String(answer.latest_version ?? ''),
@@ -287,15 +305,16 @@ Assets.propTypes = {
   folds: foldsShape.isRequired,
 };
 
-const ReleaseCard = ({ release, latest, folds, language }) => {
+const ReleaseCard = ({ release, folds, language }) => {
   const { t } = useTranslation();
   const url = httpsUrl(release.url);
   const title = release.name || release.tag;
   return (
     <article
       className="card mb-3 upd-release"
+      data-panel="update-release"
       data-release={release.tag}
-      data-latest={latest}
+      data-latest={!release.prerelease}
       data-prerelease={release.prerelease}
     >
       <div className="card-body">
@@ -312,12 +331,11 @@ const ReleaseCard = ({ release, latest, folds, language }) => {
           {release.name && release.name !== release.tag ? (
             <code className="upd-release-tag">{release.tag}</code>
           ) : null}
-          {latest ? (
-            <span className="badge text-bg-success">{t('hosts.nav.updateLatest')}</span>
-          ) : null}
           {release.prerelease ? (
             <span className="badge text-bg-warning">{t('hosts.nav.updatePrerelease')}</span>
-          ) : null}
+          ) : (
+            <span className="badge text-bg-success">{t('hosts.nav.updateLatest')}</span>
+          )}
         </div>
         {release.author || release.publishedAt ? (
           <div className="small text-body-secondary mb-2 upd-release-byline">
@@ -348,36 +366,6 @@ const ReleaseCard = ({ release, latest, folds, language }) => {
 
 ReleaseCard.propTypes = {
   release: releaseShape.isRequired,
-  latest: PropTypes.bool.isRequired,
-  folds: foldsShape.isRequired,
-  language: PropTypes.string.isRequired,
-};
-
-const Releases = ({ releases, folds, language }) => {
-  const { t } = useTranslation();
-  const latestTag = latestTagOf(releases);
-  return (
-    <div data-panel="update-releases">
-      <SectionHeading
-        title={t('hosts.nav.updateReleases')}
-        count={releases.length}
-        className="mb-2"
-      />
-      {releases.map(release => (
-        <ReleaseCard
-          key={release.tag}
-          release={release}
-          latest={release.tag === latestTag}
-          folds={folds}
-          language={language}
-        />
-      ))}
-    </div>
-  );
-};
-
-Releases.propTypes = {
-  releases: PropTypes.arrayOf(releaseShape).isRequired,
   folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
@@ -428,18 +416,21 @@ UpdateButton.propTypes = {
  * side a card with the current and the latest version, the published
  * date as a relative time with the absolute time in its tooltip, and the
  * release link and the changelog link as small text links, each drawn
- * only while the check carries its member; beside it the releases, every
- * release of the check's `releases` in the order answered under a
- * heading counting them, each a card with its name or its tag as the
+ * only while the check carries its member; beside it the one release
+ * whose tag is the check's `latest_version`, the entry of `releases`
+ * with that tag where the check lists them and the release the check's
+ * own members name otherwise, a card with its name or its tag as the
  * title linking to its page where it names one, the tag beside a name,
- * the Latest badge on the first release that is not a pre-release and
- * the Pre-release badge on one that is, who released it and when as a
- * relative time with the absolute time in its tooltip, its body rendered
- * as markdown with every link opening its own tab, and its Assets fold
- * listing the release's assets, each a name link with its size and its
- * sha256 where one is carried, folded until opened, the fold kept per
- * tag under `prefsKey` like the page's other folds; a check that answers
- * no `releases` draws the one release its own members name.
+ * the Pre-release badge on a pre-release and the Latest badge otherwise,
+ * who released it and when as a relative time with the absolute time in
+ * its tooltip, its body rendered as markdown with every link opening
+ * its own tab, and its Assets fold listing the release's assets, each a
+ * name link with its size and its sha256 where one is carried, folded
+ * until opened, the fold kept per tag under `prefsKey` like the page's
+ * other folds; no other release draws. A pre-release draws, and offers
+ * Update, only while the running version is itself a pre-release, one
+ * carrying a `-` suffix; on a production version the page says the
+ * host is current and draws no release.
  *
  * It takes `update`, the adapter `{ check, apply }`, `check` answering
  * `{ current_version, latest_version, update_available, release_url,
@@ -553,7 +544,7 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
     latestVersion: available?.latest,
   };
 
-  const releases = releasesOf(check.data);
+  const release = releaseOf(check.data);
 
   return (
     <>
@@ -565,8 +556,8 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
               <SideCard data={check.data} language={i18n.language} />
             </div>
             <div className="col-lg-8 col-xl-9">
-              {releases.length ? (
-                <Releases releases={releases} folds={folds} language={i18n.language} />
+              {release ? (
+                <ReleaseCard release={release} folds={folds} language={i18n.language} />
               ) : null}
             </div>
           </div>

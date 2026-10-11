@@ -19,6 +19,8 @@ const requests = new WeakMap();
 
 const gates = new WeakMap();
 
+const storedOf = (page, key) => page.evaluate(name => window.localStorage.getItem(name), key);
+
 const recorded = page => {
   if (!requests.has(page)) {
     requests.set(page, []);
@@ -48,6 +50,17 @@ Given('the stream answers the {word} frames', async ({ page }, name) => {
     body: fs.readFileSync(path.join(STREAM_DIR, `${name}.sse`), 'utf8'),
   });
 });
+
+Given(
+  'the stream answers the {word} frames with the header {string} as {string}',
+  async ({ page }, name, header, value) => {
+    await serveStream(page, {
+      status: 200,
+      headers: { ...STREAM_HEADERS, [header.toLowerCase()]: value },
+      body: fs.readFileSync(path.join(STREAM_DIR, `${name}.sse`), 'utf8'),
+    });
+  }
+);
 
 Given('the stream answers {int}', async ({ page }, status) => {
   await serveStream(page, { status, body: '' });
@@ -105,3 +118,12 @@ Then('the stream has been requested once', async ({ page }) => {
   await expect.poll(() => recorded(page).length).toBeGreaterThan(0);
   expect(recorded(page).length).toBe(1);
 });
+
+Then(
+  'the browser holds {string} carrying {string} as {string}',
+  async ({ page }, key, member, value) => {
+    await expect
+      .poll(async () => JSON.parse((await storedOf(page, key)) || 'null')?.[member])
+      .toBe(value);
+  }
+);

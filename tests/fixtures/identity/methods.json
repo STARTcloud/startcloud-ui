@@ -1,0 +1,24 @@
+{
+  "methods": [
+    { "id": "magic-link", "name": "Email link", "enabled": true },
+    { "id": "local", "name": "Password", "enabled": true },
+    {
+      "id": "oidc-github",
+      "name": "GitHub",
+      "enabled": true,
+      "icon_url": "/brand/providers/github.svg"
+    }
+  ],
+  "default_provider": null,
+  "silent_login": false,
+  "local_registration_enabled": true,
+  "password_reset_enabled": false,
+  "sign_in_link_enabled": true,
+  "remember_me_enabled": true,
+  "mark_enabled": false,
+  "login_mode": "password",
+  "cancel": false,
+  "policies": [],
+  "reset_link_ttl_minutes": 10,
+  "magic_link_ttl_minutes": 15
+}

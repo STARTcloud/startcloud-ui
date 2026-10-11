@@ -44,7 +44,7 @@ export const createEventHub = () => {
     }
   };
 
-  const connect = ({ url, topics, headers, onUnauthorized }) => {
+  const connect = ({ url, topics, headers, onUnauthorized, onResponse }) => {
     disconnect();
     stop = openEventStream({
       url,
@@ -55,6 +55,7 @@ export const createEventHub = () => {
       onReset: data => dispatch('reset', data, null),
       onStatus: setState,
       onUnauthorized,
+      onResponse,
     });
   };
 

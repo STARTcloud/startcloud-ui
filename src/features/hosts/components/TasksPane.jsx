@@ -11,6 +11,7 @@ import { useTaskPrefs, useTasks } from '../hooks/useTasks';
 import { taskMachineOf } from '../utils/machines';
 import {
   TASK_COLUMNS,
+  formatPercent,
   formatTaskDate,
   priorityKey,
   taskOperationLabel,
@@ -70,7 +71,7 @@ const ProgressCell = ({ task }) => {
     return '-';
   }
   if (task.status !== 'running') {
-    return known ? `${percent}%` : '-';
+    return known ? formatPercent(percent) : '-';
   }
   const transfer = transferProgressLine(task);
   if (!known) {
@@ -80,7 +81,7 @@ const ProgressCell = ({ task }) => {
     <div>
       <div className="d-flex align-items-center gap-2">
         <TaskProgress percent={percent} className="flex-grow-1" />
-        <span className="small">{percent}%</span>
+        <span className="small">{formatPercent(percent)}</span>
       </div>
       {transfer ? <span className="small text-body-secondary">{transfer}</span> : null}
     </div>

@@ -6,7 +6,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { session } from '../../../lib/runtime';
 import { authMethod } from '../../../utils/capabilities';
 import CodeSsoLogin from '../../auth/components/CodeSsoLogin';
-import { transferProgressLine } from '../utils/tasks';
+import { formatPercent, transferProgressLine } from '../utils/tasks';
 
 import { TaskProgress } from './TaskDialog';
 
@@ -22,7 +22,8 @@ const Progress = ({ row }) => {
     <div className="mt-2" data-note="provisioner-install-progress">
       <TaskProgress percent={percent} />
       <p className="small text-muted mb-0 mt-1">
-        {percent}%{transfer ? ` · ${transfer}` : ''}
+        {formatPercent(percent)}
+        {transfer ? ` · ${transfer}` : ''}
       </p>
     </div>
   );

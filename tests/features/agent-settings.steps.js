@@ -124,13 +124,15 @@ Then('the agent page lists no asset', async ({ page }) => {
 
 const releaseOf = (page, tag) => frameOf(page).locator(`[data-release="${tag}"]`);
 
-Then('the agent page draws the releases {string}', async ({ page }, tags) => {
-  const expected = tags.split(',').map(tag => tag.trim());
-  const releases = frameOf(page).locator('[data-panel="update-releases"] [data-release]');
-  await expect(releases).toHaveCount(expected.length);
-  await Promise.all(
-    expected.map((tag, index) => expect(releases.nth(index)).toHaveAttribute('data-release', tag))
-  );
+Then('the agent page draws the release {string} alone', async ({ page }, tag) => {
+  const releases = frameOf(page).locator('[data-panel="update-release"]');
+  await expect(releases).toHaveCount(1);
+  await expect(releases).toHaveAttribute('data-release', tag);
+});
+
+Then('the agent page draws no release', async ({ page }) => {
+  await expect(frameOf(page).locator('[data-panel="update"] .upd-side-card')).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel="update-release"]')).toHaveCount(0);
 });
 
 Then('the release {string} is marked {string}', async ({ page }, tag, mark) => {

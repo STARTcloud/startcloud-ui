@@ -385,7 +385,7 @@ uses it through the runtime; no feature opens a stream of its own.
 
 ### Stream reader
 
-`openEventStream({ url, topics, headers, onEvent, onReady, onReset, onStatus, onUnauthorized, signal })`
+`openEventStream({ url, topics, headers, onEvent, onReady, onReset, onStatus, onUnauthorized, onResponse, signal })`
 returns a stop function.
 
 - The spec parser over `fetch` and a `ReadableStream`: frames split on the
@@ -404,6 +404,13 @@ returns a stop function.
   `session.endSession()`; `403`, `204` and a wrong content type stop for
   good; `onReady({ id, topics })` and `onReset({ topics })` mirror the two
   control frames.
+- An accepted response's headers go to `onResponse` as one object of
+  lower-cased names before its first frame is read, which the runtime
+  binds to `session.adoptResponse`, so an `x-refreshed-token` the stream
+  response carries is stored as the session's JWT the way the API client
+  stores one from any other answer, because a UI backend that refreshes
+  the person's identity-provider token before the stream opens answers
+  the new JWT there and nowhere else.
 - `onStatus` reports `connecting`, `live`, `reconnecting`, `paused` and
   `stopped`, the words a page's live indicator reads.
 

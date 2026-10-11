@@ -19,6 +19,7 @@ import { agentIdOf, withoutAgentId } from '../utils/hosts';
 import { taskMachineOf } from '../utils/machines';
 import {
   ACTIVE_TASK_STATUSES,
+  formatPercent,
   formatTaskDate,
   priorityKey,
   taskOperationLabel,
@@ -189,7 +190,7 @@ const ProgressCard = ({ row }) => {
       <div className="card-body">
         <h6 className="fw-bold">{t('footer.task.progress')}</h6>
         <TaskProgress percent={percent} />
-        <p className="text-center mb-1">{percent}%</p>
+        <p className="text-center mb-1">{formatPercent(percent)}</p>
         {transfer ? (
           <p className="text-center small mb-1">
             <TransferIcon className="me-2" />
@@ -313,7 +314,9 @@ const SubtasksCard = ({ subtasks, onSelect }) => {
                   <StatusBadge status={subtask.status} />
                 </td>
                 <td>
-                  {hasPercent(subtask.progress_percent) ? `${subtask.progress_percent}%` : '-'}
+                  {hasPercent(subtask.progress_percent)
+                    ? formatPercent(subtask.progress_percent)
+                    : '-'}
                 </td>
               </tr>
             ))}

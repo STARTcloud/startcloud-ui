@@ -1,0 +1,39 @@
+{
+  "current_version": "1.4.0-dev",
+  "latest_version": "1.4.0-beta.1",
+  "update_available": true,
+  "release_url": "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.4.0-beta.1",
+  "release_date": "2026-10-02T08:00:00Z",
+  "changelog": "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md",
+  "release_notes": "### Features\n\n* utm support ([f564106](https://github.com/Makr91/hyperweaver-agent/commit/f564106e96277ffce9f5a1a7face4dd4c6593139))",
+  "assets": null,
+  "releases": [
+    {
+      "tag": "v1.4.0-beta.1",
+      "name": "v1.4.0-beta.1",
+      "prerelease": true,
+      "published_at": "2026-10-02T08:00:00Z",
+      "author": "Makr91",
+      "html_url": "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.4.0-beta.1",
+      "body": "### Features\n\n* utm support ([f564106](https://github.com/Makr91/hyperweaver-agent/commit/f564106e96277ffce9f5a1a7face4dd4c6593139))",
+      "assets": [
+        {
+          "name": "hyperweaver-agent-1.4.0-beta.1-linux-amd64.deb",
+          "browser_download_url": "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.4.0-beta.1/hyperweaver-agent-1.4.0-beta.1-linux-amd64.deb",
+          "size": 39116800,
+          "sha256": "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
+        }
+      ]
+    },
+    {
+      "tag": "v1.3.0",
+      "name": "v1.3.0",
+      "prerelease": false,
+      "published_at": "2026-09-20T10:00:00Z",
+      "author": "Makr91",
+      "html_url": "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0",
+      "body": "### Bug Fixes\n\n* Hosts.yml Editor ([9b7fcc5](https://github.com/Makr91/hyperweaver-agent/commit/9b7fcc5c8794d162c53bbdde8fbc3b542116e4b7))",
+      "assets": []
+    }
+  ]
+}

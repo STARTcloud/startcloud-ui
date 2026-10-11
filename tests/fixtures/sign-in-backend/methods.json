@@ -1,0 +1,16 @@
+{
+  "methods": [
+    { "id": "local", "name": "Local Account", "enabled": true },
+    {
+      "id": "oidc-github",
+      "name": "GitHub",
+      "enabled": true,
+      "icon_url": "/brand/providers/github.svg"
+    }
+  ],
+  "default_provider": null,
+  "silent_login": false,
+  "local_registration_enabled": false,
+  "password_reset_enabled": true,
+  "sign_in_link_enabled": true
+}

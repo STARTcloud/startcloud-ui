@@ -702,7 +702,7 @@ collection {
   canManage      (item, user) → boolean, for the write slots
   filterGroups   the collection's own groups for the navbar panel, a group's `defaultActive`
                  the values on while the page has saved none and after Clear filters
-  rowPick        optional (item, ctx) → { held }, a held item greyed in the table and the grid
+  rowPick        optional (item, ctx) → { held }, a held item's content greyed in the table and the grid, its controls at full strength
   columns        the collection's columns after the shared ones, the Deploy column of
                  features/deploy among them on a collection Hyperweaver deploys
   levels         per level (versions, providers, architectures): the label key
@@ -990,7 +990,7 @@ adds its own foldable section to an item page (the catalog's Quality).
   controller saved as the object with its blank members dropped, Save
   sending the whole facts block as the one changed member, BoxVault's
   `PUT …/box/{name} { metadata }`, because the route replaces the block
-  it holds with the one sent, and the card redrawn from the block the
+  it holds with the one sent, and the whole item redrawn from the box the
   answer carries, the OS chip with it)
   and the README side by side when present, the versions table newest
   first unless the host's `sorts` names another order for the level
@@ -1082,7 +1082,14 @@ adds its own foldable section to an item page (the catalog's Quality).
   (`POST …/download/pending/upload`, Hosting notes), where nothing is
   validated but the bytes, and the answer names the pending upload and the
   words the file name gave (product, release, patch, key, kind, platform,
-  architecture, language); when the send completes the zone gives way to
+  architecture, language); the zone offers Add from link beside the drop,
+  a URL with an optional file name and checksum with its type, sent as
+  `POST …/download/pending/fetch`, the server fetching the bytes into the
+  same pending store and answering what a completed upload answers, the
+  request open until the bytes are stored and the zone busy meanwhile, a
+  422 painted at the fields and every other refusal the notice, because a
+  file a vendor already serves at an address need not pass through the
+  person's browser; when the send completes the zone gives way to
   the placing form inline under the same heading row, the file's fields as
   the file form draws them, prefilled from those words and from the page
   the zone sits on (a patch page fills product, release and patch and
@@ -1579,7 +1586,12 @@ the "How it fits" section of
   validating nothing but the bytes, and its last chunk answers `{ id,
 file_name, size, guess: { product, release, patch, key, kind, platform,
 architecture, language } }`, the guess read from the file name and never
-  a rule; `GET …/download/pending/{id}/info` answers the assembled size
+  a rule; `POST …/download/pending/fetch` takes `{ url, file_name,
+checksum, checksum_type }`, `url` alone required, fetches the bytes from
+  that URL into the same store and answers the completed upload's body,
+  `422` at `/url`, `/checksum_type` or `/checksum`, `400` for a file name
+  not allowed, `413` past the size limit and `502` at `/url` when the
+  remote host fails; `GET …/download/pending/{id}/info` answers the assembled size
   for the zone's assembly poll; `POST …/download/pending/{id}/place` takes
   `product`, `release`, `patch` and the `downloadFile` form's members,
   creates the product, release and patch when absent, moves the file in,

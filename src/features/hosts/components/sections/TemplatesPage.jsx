@@ -94,8 +94,8 @@ const firstAnswerOf = answers => (answers.length === 1 ? answers[0] : null);
  * of and greyed on one it holds at the newest, greyed and titled no
  * version listed on a box whose registry lists none, the chevron opening
  * the menu of the version, Install or Update to, Install an older
- * version, Add this registry as a source, Move of each held version, then
- * Delete of every held version on a held one, one confirmation; each
+ * version, Move of each held version, then Delete of every held version
+ * on a held one, one confirmation; each
  * version line Install on a version the host lacks or Delete on one it
  * holds, and the machine the create wizard makes of it; the Status
  * column reading Installed or Update available, installed boxes first;
@@ -253,23 +253,10 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
       doneKey: 'hosts.manage.templates.deleteQueued',
     });
 
-  const addSourceEntryOf = item => ({
-    key: 'source',
-    action: 'held-add-source',
-    label: t('pages.deploy.words.sourceRegistry'),
-    onClick: () =>
-      openForm({
-        editing: null,
-        seed: templateSourceFormOf(item.extras.source?.url || ''),
-        handoff: false,
-      }),
-  });
-
   const entriesOf = item => {
     const rows = heldBoxTemplatesOf(templates, item);
     return {
       fetch: [
-        addSourceEntryOf(item),
         ...rows.map(row => ({
           key: `move-${row.id}`,
           action: 'template-move',

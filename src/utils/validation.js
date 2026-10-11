@@ -45,6 +45,8 @@ const RULE_KEYS = [
   'reachable',
   'placeholder',
   'withinParent',
+  'publicAddress',
+  'matchesContent',
 ];
 
 const isUri = value => {
@@ -517,8 +519,9 @@ const unknownMessage = (label, t) => t('validation.unknown', { label });
  * the contract's whitespace rule, a format and a type by theirs; the
  * config contract's `propertyNames` (`params.key`), `readOnly`,
  * `writable` (`params.user`), `reachable` (`params.host`, `params.port`),
- * `placeholder` (`params.name`) and the pages' `withinParent`
- * (`params.parent`) by their own keys; a rule the UI does
+ * `placeholder` (`params.name`), the pages' `withinParent`
+ * (`params.parent`) and the download fetch's `publicAddress` and
+ * `matchesContent` by their own keys; a rule the UI does
  * not know through
  * `validation.unknown` with the field's label, the error's `detail` never
  * shown.

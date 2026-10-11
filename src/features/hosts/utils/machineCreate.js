@@ -67,6 +67,13 @@ export const WORD_KEYS = {
 
 export const CREATE_WORDS = Object.keys(WORD_KEYS);
 
+/**
+ * The task operations that land a provisioner family on a host, the
+ * catalog install and the import, which Import and Update from source
+ * both queue, the ones whose end reads the host's families again.
+ */
+export const PROVISIONER_INSTALL_OPERATIONS = ['provisioner_catalog_install', 'provisioner_import'];
+
 const CATALOG_PAGE = 'provisioning/provisioners';
 const TEMPLATES_PAGE = 'provisioning/templates';
 const BOX_PROVIDER = /^box_[a-z0-9_-]+$/u;

@@ -1,0 +1,21 @@
+{
+  "message": "File upload completed",
+  "details": {
+    "is_complete": true,
+    "status": "complete",
+    "file_size": 365885440,
+    "id": "3f9c2a7e0b6d4e1f8a2c5d7b9e0f1a2b",
+    "file_name": "Domino_1451FP1_Linux.tar",
+    "size": 365885440,
+    "guess": {
+      "product": "domino-1451fp1-linux",
+      "release": "",
+      "patch": "release",
+      "key": "Domino_1451FP1_Linux.tar",
+      "kind": "other",
+      "platform": "linux",
+      "architecture": "any",
+      "language": "any"
+    }
+  }
+}

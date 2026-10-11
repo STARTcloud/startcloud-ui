@@ -223,7 +223,7 @@ Feature: host installer files and provisioners
     Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/startcloud/versions/0.1.27"
     And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times
 
-  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source, Add this catalog as a source and Delete family, Update from source queuing a re-import and the delete waiting behind the typed confirmation
+  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source and Delete family, Update from source queuing a re-import and the delete waiting behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -231,7 +231,7 @@ Feature: host installer files and provisioners
     And I open the menu of the card "startcloud" of the provisioner catalog
     Then the open menu offers "held-update"
     And the open menu offers "refresh-source"
-    And the open menu offers "held-add-source"
+    And the open menu offers no "held-add-source"
     And the open menu offers "delete-family"
     And the open menu offers no "delete-version"
     When I press the menu entry "refresh-source"

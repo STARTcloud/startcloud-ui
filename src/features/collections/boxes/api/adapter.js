@@ -258,17 +258,21 @@ export const deleteVersionCascade = (org, name, version) =>
 /**
  * Write a box's facts block: `PUT …/box/{name} { metadata }`, the whole
  * block as the one member, since the route replaces the block it holds
- * with the one sent; resolves to the item members the answer's block
- * decides, for the page to merge into the item.
+ * with the one sent; resolves to the whole item read from the box the
+ * answer carries, in the backend's snake_case wire names as the GET
+ * answers it, with the versions the item already holds, since the route
+ * answers the box alone.
  *
  * @param {Object} item - The item of the item shape
  * @param {Object} metadata - The facts block to hold
- * @returns {Promise<{ metadata: Object|null, os: { label: string, iconUrl: string } }>}
+ * @returns {Promise<Object>} The item of the item shape
  */
 const updateFacts = (item, metadata) =>
-  api.boxes
-    .update(item.organization.name, item.name, { metadata })
-    .then(box => factsOf(box.metadata));
+  api.boxes.update(item.organization.name, item.name, { metadata }).then(box => ({
+    ...boxItem(box, item.organization.name, item.organization.logo),
+    latestReleaseAt: item.latestReleaseAt,
+    versions: item.versions,
+  }));
 
 const watches = {
   list: () => api.boxes.watches().then(data => new Set(rows(data).map(entry => entry.box_id))),

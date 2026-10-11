@@ -87,7 +87,10 @@ const backoffMs = (retryMs, attempt) => {
  * told whether the connection carried a `Last-Event-ID`, captured before
  * the request because the `ready` frame's own id replaces the last id the
  * moment it is parsed, so a subscriber reads its snapshot on a fresh
- * connection and on `reset` and never on an in-ring reconnect.
+ * connection and on `reset` and never on an in-ring reconnect. `onResponse`
+ * is handed the accepted response's headers as one object of lower-cased
+ * names before the first frame is read, the shape the API client hands the
+ * session, so a token rotated on the stream response is adopted.
  *
  * @param {Object} options - The stream
  * @param {string} options.url - Where the request is sent
@@ -98,6 +101,7 @@ const backoffMs = (retryMs, attempt) => {
  * @param {(data: unknown) => void} [options.onReset] - The `reset` frame when the server could not replay from the last id
  * @param {(state: string) => void} [options.onStatus] - `connecting`, `live`, `reconnecting`, `paused`, `stopped`
  * @param {() => void} [options.onUnauthorized] - The response was a 401
+ * @param {(headers: Object) => void} [options.onResponse] - The accepted response's headers, before its frames are read
  * @param {AbortSignal} [options.signal] - Aborting it stops the stream
  * @returns {() => void} Stops the stream
  */
@@ -110,6 +114,7 @@ export const openEventStream = ({
   onReset = null,
   onStatus = null,
   onUnauthorized = null,
+  onResponse = null,
   signal = null,
 }) => {
   const target = withTopics(url, topics);
@@ -238,6 +243,7 @@ export const openEventStream = ({
         stop();
         return;
       }
+      onResponse?.(Object.fromEntries(response.headers));
       attempt = 0;
       setStatus('live');
       await readStream(response.body);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CREATE_STEPS,
+  PROVISIONER_INSTALL_OPERATIONS,
   boxOptionsOf,
   bridgeChoicesOf,
   buildCloudInit,
@@ -501,6 +502,13 @@ describe('the install of a handed family', () => {
         'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
       ).auth
     ).toBe('oidc');
+  });
+
+  it('names the catalog install and the import as the task operations whose end reads the families again', () => {
+    expect(PROVISIONER_INSTALL_OPERATIONS).toEqual([
+      'provisioner_catalog_install',
+      'provisioner_import',
+    ]);
   });
 
   it('shapes the catalog source form from the handed URL, its host the id and the display name, the URL as given and the authentication picked', () => {

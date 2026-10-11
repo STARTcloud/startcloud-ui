@@ -334,7 +334,7 @@ const heldOf = (rowPick, item) => Boolean(rowPick && rowPick(item)?.held);
 const CardGrid = ({ collection, items, watches, selection, rowPick, ctx }) => (
   <Row xs={1} md={2} xl={3} className="g-3 mb-3">
     {items.map(item => (
-      <Col key={item.id} className={heldOf(rowPick, item) ? 'held opacity-50' : undefined}>
+      <Col key={item.id} className={heldOf(rowPick, item) ? 'held' : undefined}>
         <ItemCard
           collection={collection}
           item={item}

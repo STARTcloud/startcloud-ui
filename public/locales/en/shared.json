@@ -395,6 +395,8 @@
     "reachable": "Enter a host and port that answer for {{label}}; {{host}}:{{port}} did not answer.",
     "placeholder": "Set {{name}} in the environment or give {{label}} a default.",
     "withinParent": "Keep {{label}} within {{parent}}, the setting one level up.",
+    "publicAddress": "{{label}} must be a public address.",
+    "matchesContent": "{{label}} does not match the content.",
     "unknown": "Check {{label}}."
   },
   "session": {
@@ -3034,7 +3036,6 @@
       "updateReleaseNotes": "Release notes",
       "updateChangelog": "Changelog",
       "updateAssets": "Assets",
-      "updateReleases": "Releases",
       "updateLatest": "Latest",
       "updatePrerelease": "Pre-release",
       "updateReleasedThis": "released this"
@@ -3688,7 +3689,9 @@
     "upload": {
       "drop": "Drop a file here or click to choose one",
       "uploading": "Uploading… {{percent}}%",
-      "done": "The file was uploaded."
+      "done": "The file was uploaded.",
+      "fromLink": "Add from link",
+      "fetching": "Fetching from link…"
     },
     "actions": {
       "docs": "Docs",
@@ -3760,6 +3763,9 @@
       "docsUrl": "Documentation URL",
       "notesUrl": "Release notes URL",
       "iconUrl": "Icon URL"
+    },
+    "fetch": {
+      "url": "URL"
     },
     "file": {
       "key": "Key",

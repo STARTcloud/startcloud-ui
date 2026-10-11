@@ -121,25 +121,24 @@ Feature: agent-settings
     And the agent page draws the "update-assets" panel
     And the host was sent GET to "/api/agents/1/app/updates/check" 1 times
 
-  Scenario: Agent pages: a check that lists releases draws every release in the order answered, each with its tag, its badge, who released it, its notes as markdown and its assets with size and sha256
+  Scenario: Agent pages: a check that lists releases draws the one release its latest version names alone, with its badge, who released it, its notes as markdown and its assets with size and sha256, and never the newer pre-release
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
     And the host answers the hosts-agent-update-releases fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/agent/update"
-    Then the agent page offers "settings-update"
+    Then the agent page heading is in the "warning" tone
+    And the agent page offers "settings-update"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md"
-    And the agent page draws the releases "v1.4.0-beta.1, v1.3.0"
-    And the release "v1.4.0-beta.1" is marked "prerelease"
-    And the release "v1.4.0-beta.1" is not marked "latest"
+    And the agent page draws the release "v1.3.0" alone
     And the release "v1.3.0" is marked "latest"
     And the release "v1.3.0" is not marked "prerelease"
     And the release "v1.3.0" is released by "Makr91"
     And the release "v1.3.0" links to "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0"
-    And the release "v1.4.0-beta.1" draws the notes with 1 headings and 1 items
     And the release "v1.3.0" draws the notes with 2 headings and 2 items
     And I do not see "###"
+    And I do not see "utm support"
     And the assets of the release "v1.3.0" are folded
     When I fold the assets of the release "v1.3.0"
     Then the assets of the release "v1.3.0" are open
@@ -149,7 +148,40 @@ Feature: agent-settings
     And the release "v1.3.0" shows the checksum "e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a3f0c9a1b7e4d2c8f5a6b1d0"
     And I see "36.9 MB"
     And I see "486 Bytes"
-    And the assets of the release "v1.4.0-beta.1" are folded
+
+  Scenario: Agent pages: a production version offered a pre-release says the host is current, offers no Update and draws no release
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-agent-update-prerelease fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the section page "update" draws
+    And the agent page heading is in the "success" tone
+    And the agent page offers no "settings-update"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md"
+    And the agent page draws no release
+    And I do not see "utm support"
+
+  Scenario: Agent pages: a dev version offered a pre-release draws that release with its Pre-release badge and offers Update
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-agent-update-dev fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the agent page heading is in the "warning" tone
+    And the agent page offers "settings-update"
+    And the agent page draws the release "v1.4.0-beta.1" alone
+    And the release "v1.4.0-beta.1" is marked "prerelease"
+    And the release "v1.4.0-beta.1" is not marked "latest"
+    And the release "v1.4.0-beta.1" is released by "Makr91"
+    And the release "v1.4.0-beta.1" draws the notes with 1 headings and 1 items
+    And I see "utm support"
+    When I fold the assets of the release "v1.4.0-beta.1"
+    Then the release "v1.4.0-beta.1" lists the asset "hyperweaver-agent-1.4.0-beta.1-linux-amd64.deb"
+    And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
+    And I see "37.3 MB"
 
   Scenario: Agent pages: the Secrets page reads the document as it opens, saves one category as one PUT and reads again, and Reload reads again
     Given the host answers the hosts fixture

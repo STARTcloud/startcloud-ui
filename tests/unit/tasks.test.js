@@ -7,6 +7,7 @@ import {
   columnsOf,
   floorOf,
   formatByteSize,
+  formatPercent,
   mergeTaskRow,
   mergeTasks,
   priorityKey,
@@ -110,6 +111,16 @@ describe('formatByteSize', () => {
     expect(formatByteSize(432013312)).toBe('412 MB');
     expect(formatByteSize(-1)).toBe('');
     expect(formatByteSize(Number.NaN)).toBe('');
+  });
+});
+
+describe('formatPercent', () => {
+  it('draws at most two decimals and drops the trailing zeros', () => {
+    expect(formatPercent(16.41545454154548)).toBe('16.42%');
+    expect(formatPercent(12.5)).toBe('12.5%');
+    expect(formatPercent(50)).toBe('50%');
+    expect(formatPercent(0)).toBe('0%');
+    expect(formatPercent(null)).toBe('0%');
   });
 });
 

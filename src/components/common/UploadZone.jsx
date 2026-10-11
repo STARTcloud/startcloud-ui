@@ -12,7 +12,8 @@ const HOVER_DWELL_MS = 400;
 /**
  * The one upload zone the estate's collections add a file through: a green
  * Add New that opens, on click or on a hover dwell, a full-width drop target
- * under the heading row with the caller's own fields above it, the shared
+ * under the heading row with the caller's own fields above it, the caller's
+ * `aside` beside the target in one row that wraps under 900px, the shared
  * `UploadProgress` block while a file is going up and a close control. The
  * zone is relative to the page it sits on: the caller decides where the
  * file lands.
@@ -27,6 +28,7 @@ const HOVER_DWELL_MS = 400;
  * @param {{ size: number }} [props.file] - The file the caller last picked
  * @param {string} [props.error] - The failure of the last send, translated
  * @param {React.ReactNode} [props.children] - The caller's own fields
+ * @param {React.ReactNode} [props.aside] - The caller's other way in, drawn beside the drop target
  * @returns {React.ReactNode} The zone
  */
 const UploadZone = ({
@@ -39,6 +41,7 @@ const UploadZone = ({
   file = null,
   error = '',
   children = null,
+  aside = null,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -103,20 +106,23 @@ const UploadZone = ({
         <FaXmark />
       </button>
       {children}
-      <button
-        type="button"
-        className="upload-zone-target"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={event => {
-          if (event.key === 'Escape' && !uploading) {
-            setOpen(false);
-          }
-        }}
-        disabled={uploading}
-      >
-        <FaUpload className="upload-zone-icon" aria-hidden />
-        <span>{uploading ? uploadingText : dropText}</span>
-      </button>
+      <div className="upload-zone-row">
+        <button
+          type="button"
+          className="upload-zone-target"
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={event => {
+            if (event.key === 'Escape' && !uploading) {
+              setOpen(false);
+            }
+          }}
+          disabled={uploading}
+        >
+          <FaUpload className="upload-zone-icon" aria-hidden />
+          <span>{uploading ? uploadingText : dropText}</span>
+        </button>
+        {aside ? <div className="upload-zone-aside">{aside}</div> : null}
+      </div>
       <input
         ref={inputRef}
         type="file"
@@ -165,6 +171,7 @@ UploadZone.propTypes = {
   file: PropTypes.shape({ size: PropTypes.number.isRequired }),
   error: PropTypes.string,
   children: PropTypes.node,
+  aside: PropTypes.node,
 };
 
 export default UploadZone;

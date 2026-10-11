@@ -302,6 +302,15 @@ export const formatByteSize = bytes => {
 };
 
 /**
+ * A task's progress percentage as every surface draws it, at most two
+ * decimals with trailing zeros dropped, `16.42%`.
+ *
+ * @param {number} value - The percentage
+ * @returns {string} The text
+ */
+export const formatPercent = value => `${parseFloat((Number(value) || 0).toFixed(2))}%`;
+
+/**
  * A task's `progress_info`, an object on the wire, or null.
  *
  * @param {Object} task - The task row

@@ -247,6 +247,43 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
     And the host was not sent POST to "/api/agents/1/machines"
 
+  Scenario: Create wizard: a family installed from the Provisioners page while the wizard is open lands at its task's end, no Install card, the family and the version picked, nothing installed twice
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-events fixture
+    And the stream holds the catalog-install frames
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/provisioners"
+    Then the section page "provisioners" draws
+    When I press the section page's "catalog-add" action
+    And I open the "versions-fold" fold of the card "hcl_domino_additional_provisioner" of the "provisioner-catalog" listing
+    And I press Install on "hcl_domino_additional_provisioner" "0.3.0" in the provisioner catalog
+    Then the host was sent POST to "/api/agents/1/provisioning/catalog/install" carrying "hcl_domino_additional_provisioner" at "/name"
+    And the page raised 1 success notice
+    When I press "version-create" on the version "0.3.0" of the card "hcl_domino_additional_provisioner" of the "provisioner-catalog" listing
+    Then the path is "/hosts/1?create=machine&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    And the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the wizard's provisioner card reads "install"
+    When the host answers the hosts-create-installed fixture
+    And the stream releases its frames
+    Then the open dialog notes no "provisioner-install"
+    And the field "machine-create-provisioner" reads "hcl_domino_additional_provisioner"
+    And the field "machine-create-version" reads "0.3.0"
+    And the field "prov-field-domino_server_name" reads "additional"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/hcl_domino_additional_provisioner/versions/0.3.0" 1 times
+    And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
+    And the host was not sent POST to "/api/agents/1/machines"
+
   Scenario: Create wizard: the deep link of the catalog, a family no source of the host lists adds the handed catalog as a source on Add source and install, then installs from it
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

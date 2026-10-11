@@ -198,7 +198,7 @@ describe('the host catalog install', () => {
         item,
         ctx: ctxOf([], {
           entriesOf: () => ({
-            fetch: [{ key: 'source', action: 'held-add-source', label: 'Add', onClick: vi.fn() }],
+            fetch: [{ key: 'own', action: 'refresh-source', label: 'Update', onClick: vi.fn() }],
             remove: [],
           }),
         }),

@@ -461,7 +461,11 @@ source, the family and the version, the agent verifying the package's
 checksum; the card shows the task's progress from `task-updated`, then
 the wizard reads the host's provisioners again and picks the family and
 the version, so the fields fill as a person's own pick fills them. The
-receiver never imports from a URL the query carries.
+wizard reads the host's families again at the end of any task that lands
+a family, a catalog install or an import, whoever queued it, so a family
+installed from the Provisioners page before the wizard opened is held
+when it opens and one installed while it is open lands without a second
+press. The receiver never imports from a URL the query carries.
 
 The wizard's Create is the one machine write, `POST machines` with the
 spec the person confirmed; the hand-off itself writes nothing, and the

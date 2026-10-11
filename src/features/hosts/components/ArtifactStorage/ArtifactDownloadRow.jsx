@@ -14,7 +14,7 @@ import {
 
 import { formatFileSize } from '../../../../utils/formatFileSize';
 import { transferStatusKey, transferTone } from '../../utils/artifacts';
-import { formatTaskDate } from '../../utils/tasks';
+import { formatPercent, formatTaskDate } from '../../utils/tasks';
 
 const MIB = 1024 * 1024;
 
@@ -96,7 +96,9 @@ export const TRANSFER_COLUMNS = [
     render: (row, ctx) => (
       <span className={`badge text-bg-${transferTone(row.status)}`}>
         {statusWord(row.status, ctx.t)}
-        {row.progress_percent > 0 && row.status === 'running' ? ` ${row.progress_percent}%` : ''}
+        {row.progress_percent > 0 && row.status === 'running'
+          ? ` ${formatPercent(row.progress_percent)}`
+          : ''}
       </span>
     ),
   },

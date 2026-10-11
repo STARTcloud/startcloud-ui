@@ -17,8 +17,8 @@ const AGENT_CONFIRM = {
  * The Update page of a host at `/hosts/{id}/agent/update`: the shared
  * `UpdatePage` over the pair bound to this host, `GET app/updates/check`
  * and `POST app/updates/apply` at the path the role fixes, headed by the
- * section's title and confirmed in the agent's words, the check's
- * `releases` drawn one card a release and each release's Assets fold
+ * section's title and confirmed in the agent's words, the one release
+ * the check's `latest_version` names drawn as a card and its Assets fold
  * kept per tag under the page's own prefs; Refresh calls `onRefresh`
  * beside the page's own read. Takes the host's `id` and row, the page
  * `context`, the `section` key and `onRefresh`; returns the page.

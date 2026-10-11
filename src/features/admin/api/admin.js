@@ -72,7 +72,8 @@ export const storage = () => client.get('/api/system/storage');
  * optional, and `releases`, the repository's releases newest first, each
  * `{ tag, name, prerelease, published_at, author, html_url, body, assets }`
  * with `assets` an array of `{ name, size, sha256, browser_download_url }`,
- * each null while it holds none; and `apply` is
+ * the page drawing the one whose tag is `latest_version`, each null while
+ * it holds none; and `apply` is
  * `POST /api/app/updates/apply`, answered
  * `{ message, task_id, target_version }`.
  */
