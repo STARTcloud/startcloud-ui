@@ -1142,6 +1142,30 @@ td:has(.deploy-split.show) {
   z-index: 30;
 }
 
+.held-glyph {
+  position: relative;
+}
+
+.held-glyph .glyph-dot {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--bs-warning);
+  color: #212529;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 11px;
+  text-align: center;
+}
+
+.version-action svg {
+  width: 14px;
+  height: 14px;
+}
+
 .catalog-search {
   max-width: 560px;
 }

@@ -6,7 +6,6 @@ import {
   artifactStatusOf,
   buildSteps,
   buildVariables,
-  catalogNewestOf,
   componentDetail,
   componentHealth,
   downloadBody,
@@ -59,7 +58,6 @@ import {
   templatePublishBody,
   templatePublishProblem,
   transferOptionsOf,
-  updateFor,
   uploadPrepareBody,
   versionNewer,
 } from '../../src/features/hosts/utils/manageCatalog.js';
@@ -522,23 +520,11 @@ describe('the provisioners', () => {
     { name: 'dev', versions: [{ version: '2.0.0-dev' }] },
   ];
 
-  it('compares dotted versions and finds the update of a family', () => {
+  it('compares dotted versions', () => {
     expect(versionNewer('0.1.28', '0.1.27')).toBe(true);
     expect(versionNewer('0.1.27', '0.1.27')).toBe(false);
     expect(versionNewer('1.0', '1.0.1')).toBe(false);
     expect(versionNewer('1.b', '1.a')).toBe(true);
-    const newest = catalogNewestOf({
-      provisioners: [
-        { name: 'startcloud', versions: [{ version: '0.1.28' }] },
-        { name: 'dev', versions: [{ version: '1.9.0' }] },
-        { name: 'empty', versions: [] },
-      ],
-    });
-    expect(newest).toEqual({ startcloud: '0.1.28', dev: '1.9.0' });
-    expect(updateFor(families[0], newest)).toBe('0.1.28');
-    expect(updateFor(families[1], newest)).toBeNull();
-    expect(updateFor(families[0], { startcloud: '0.1.27' })).toBeNull();
-    expect(catalogNewestOf(null)).toEqual({});
   });
 
   it('keys the installed versions and builds the import body', () => {

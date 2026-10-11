@@ -966,42 +966,6 @@ export const versionNewer = (a, b) => {
 };
 
 /**
- * The newest version of every family of the catalog, the catalog
- * serving them newest first; an empty map for an answer that carries
- * no family.
- *
- * @param {Object|null} catalog - The answer of `GET provisioning/catalog`
- * @returns {Object<string, string>} The newest version by family
- */
-export const catalogNewestOf = catalog =>
-  Object.fromEntries(
-    (Array.isArray(catalog?.provisioners) ? catalog.provisioners : [])
-      .filter(family => Array.isArray(family.versions) && family.versions.length > 0)
-      .map(family => [family.name, family.versions[0].version])
-  );
-
-/**
- * The version a family can update to, hyperweaver-ui's rule: the
- * catalog's newest while it is strictly newer than every installed
- * version and none installed is it; null otherwise.
- *
- * @param {Object} family - The family row
- * @param {Object<string, string>} newest - The map of `catalogNewestOf`
- * @returns {string|null} The version
- */
-export const updateFor = (family, newest) => {
-  const version = newest[family.name];
-  if (!version) {
-    return null;
-  }
-  const installed = (family.versions || []).map(entry => entry.version);
-  if (installed.includes(version)) {
-    return null;
-  }
-  return installed.every(entry => versionNewer(version, entry)) ? version : null;
-};
-
-/**
  * The keys of every installed version, `family/version`.
  *
  * @param {Array<Object>} families - The family rows

@@ -26,6 +26,7 @@ const SearchIconButton = ({ filtersOn, onOpen, onMouseEnter, onMouseLeave }) => 
       <button
         type="button"
         className={`btn btn-link nav-link cluster-btn${filtersOn ? ' filters-on' : ''}`}
+        data-tool="search"
         onClick={onOpen}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { selectGroup, switchGroup } from '../../../hooks/useClientFilters';
@@ -7,7 +7,6 @@ import { fetchPackages, searchPackages } from '../api/packages';
 import {
   fetchArtifactStoragePaths,
   fetchArtifacts,
-  fetchCatalog,
   fetchProvisioners,
   fetchRecipes,
   fetchTemplates,
@@ -22,7 +21,6 @@ import {
   PACKAGE_PARAMS,
   RECIPE_PARAMS,
   artifactFiltersOf,
-  catalogNewestOf,
   recipesOf,
   searchRowsOf,
 } from '../utils/manageCatalog';
@@ -30,8 +28,6 @@ import {
 import { useManageRead } from './useHostManage';
 
 const NO_ROWS = [];
-
-const NO_NEWEST = {};
 
 /**
  * The request filters the catalog sections open with.
@@ -213,16 +209,7 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
       useCallback(() => fetchProvisioners(status, id), [status, id]),
       gates.provisioners
     ),
-    catalog: useManageRead(
-      useCallback(() => fetchCatalog(status, id).catch(() => null), [status, id]),
-      gates.provisioners
-    ),
   };
-
-  const newest = useMemo(
-    () => (reads.catalog.data ? catalogNewestOf(reads.catalog.data) : NO_NEWEST),
-    [reads.catalog.data]
-  );
 
   const rows = {
     packages: rowsOf(reads.packages),
@@ -232,7 +219,6 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
     templates: listOf(reads.templates, 'templates'),
     sources: rowsOf(reads.sources),
     provisioners: listOf(reads.provisioners, 'provisioners'),
-    newest,
   };
 
   return { params, setParam, resetParams, reads, rows, gates };

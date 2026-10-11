@@ -267,19 +267,22 @@ const openUserMenu = () => document.querySelector(USER_MENU_TOGGLE)?.click();
  * The keyboard shortcuts of the shell: the one keydown listener over the
  * shell's rows and the mounted features' rows, and the Keyboard Shortcuts
  * modal's state. `/` and Ctrl+Alt+F open the navbar search through the
- * context's `openBox`, Ctrl+/ toggles its filter panel while the page
- * registered filter groups, `=` collapses the sidebar to the rail and
- * back, or under 900px opens and closes the overlay, `p` opens the user
- * menu, `?` the modal, Shift+Z then Shift+Z runs the logout action, the
- * identity provider's everywhere while the session is its own.
+ * context's `openBox` while the host lists `search` and the route is not
+ * an auth path, signed in or out, Ctrl+/ toggles its filter panel while
+ * the page registered filter groups, `=` collapses the sidebar to the
+ * rail and back, or under 900px opens and closes the overlay, `p` opens
+ * the user menu, `?` the modal, Shift+Z then Shift+Z runs the logout
+ * action, the identity provider's everywhere while the session is its
+ * own.
  *
  * @param {Object} options - The shell's side
- * @returns {{ rows: Array<Object>, show: boolean, open: Function, close: Function }} The rows and the modal's state
+ * @returns {{ rows: Array<Object>, searchOn: boolean, show: boolean, open: Function, close: Function }} The rows, whether the navbar search draws and the modal's state
  */
 const useShellShortcuts = ({
   status,
   account,
   signedIn,
+  onAuthPage,
   collections,
   discoverTo,
   notifications,
@@ -293,7 +296,7 @@ const useShellShortcuts = ({
   const [show, setShow] = useState(false);
   const search = useContext(NavbarSearchContext);
   const binding = useNavbarSearch(search?.store);
-  const searchOn = signedIn && Boolean(search) && hasFeature(status, 'search');
+  const searchOn = !onAuthPage && Boolean(search) && hasFeature(status, 'search');
   const rows = [
     ...shellShortcutRows({
       status,
@@ -325,7 +328,7 @@ const useShellShortcuts = ({
     ...shortcuts,
   ];
   useShortcuts(rows, { navigate, root: document });
-  return { rows, show, open: () => setShow(true), close: () => setShow(false) };
+  return { rows, searchOn, show, open: () => setShow(true), close: () => setShow(false) };
 };
 
 const menuFor = ({ cookie, issuerUrl, localProfile, onAuthPage, rows, adapters }) => ({
@@ -636,6 +639,7 @@ const AppShell = ({
     status,
     account,
     signedIn,
+    onAuthPage,
     collections,
     discoverTo,
     notifications,
@@ -697,6 +701,7 @@ const AppShell = ({
         }}
         language={{ languages: getSupportedLanguages(), onPick: changeLanguage }}
         signedIn={signedIn}
+        searchOn={keys.searchOn}
         onSignIn={signIn.onSignIn}
         signInTo={signIn.signInTo}
         userMenu={slots.userMenu}

@@ -8,19 +8,30 @@ import { sectionTitle } from '../pages';
  * The body column of one section page of a host: the heading row with
  * the section's title, the label of its row in `HOST_PAGES`, the count
  * or state as muted text after it and `actions` flush right, and the
- * section's body under it. `data-page` is `host-section` and
+ * section's body under it; a page whose body draws the heading row
+ * itself passes `headed` false. `data-page` is `host-section` and
  * `data-section` the section's key.
  */
-const SectionPane = ({ section, server, count = null, state = null, actions = null, children }) => {
+const SectionPane = ({
+  section,
+  server,
+  count = null,
+  state = null,
+  actions = null,
+  headed = true,
+  children,
+}) => {
   const { t } = useTranslation();
   return (
     <div className="list row" data-page="host-section" data-section={section}>
-      <SectionHeading
-        title={sectionTitle(section, server, '', t)}
-        count={count}
-        state={state}
-        actions={actions}
-      />
+      {headed ? (
+        <SectionHeading
+          title={sectionTitle(section, server, '', t)}
+          count={count}
+          state={state}
+          actions={actions}
+        />
+      ) : null}
       {children}
     </div>
   );
@@ -32,6 +43,7 @@ SectionPane.propTypes = {
   count: PropTypes.node,
   state: PropTypes.oneOf(['success', 'warning']),
   actions: PropTypes.node,
+  headed: PropTypes.bool,
   children: PropTypes.node.isRequired,
 };
 

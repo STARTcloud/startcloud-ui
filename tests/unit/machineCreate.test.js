@@ -255,7 +255,7 @@ describe('the words of the hand-off', () => {
         provisioner_catalog: catalogUrl,
       })
     ).toBe(
-      '/hosts/1/provisioning/catalog?create=provisioner&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.28&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
+      '/hosts/1/provisioning/provisioners?create=provisioner&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.28&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
     );
     expect(
       handoffRouteOf('self', 'template', {
@@ -268,7 +268,7 @@ describe('the words of the hand-off', () => {
       '/hosts/self/provisioning/templates?create=template&box=startcloud%2Fdebian13&box_version=13.1.0&box_arch=amd64&box_url=https%3A%2F%2Fboxvault.example.com'
     );
     expect(handoffRouteOf('1', 'source', { provisioner_catalog: catalogUrl, box_url: '' })).toBe(
-      '/hosts/1/provisioning/catalog?create=source&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
+      '/hosts/1/provisioning/provisioners?create=source&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json'
     );
     expect(handoffRouteOf('1', 'source', { provisioner_catalog: '', box_url: boxUrl })).toBe(
       '/hosts/1/provisioning/templates?create=source&box_url=https%3A%2F%2Fboxvault.example.com'

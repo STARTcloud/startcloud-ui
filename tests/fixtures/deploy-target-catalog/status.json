@@ -4,7 +4,7 @@
   "brand": { "name": "Provisioner Catalog", "logo_url": "/brand/catalog/mark.svg" },
   "auth": ["backend"],
   "collections": ["provisioners"],
-  "features": ["deploy", "watches", "landing"],
+  "features": ["deploy", "watches", "landing", "search"],
   "links": { "docs": "", "contact": "" },
   "ticket": null
 }

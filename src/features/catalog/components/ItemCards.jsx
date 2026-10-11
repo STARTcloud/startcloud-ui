@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   FaBook,
   FaBug,
+  FaChevronDown,
   FaGears,
   FaGithub,
   FaHouse,
@@ -107,12 +108,36 @@ CardLinks.propTypes = {
 };
 
 /**
+ * One fold of a card's folds block: a summary line with the chevron, the
+ * `title` and the `signal` at its right, over `children`, open while
+ * `open`; `kind` is the fold's `data-fold`.
+ */
+export const CardFold = ({ title, signal, kind, open = false, children }) => (
+  <details className={`q-fold pt-2 border-top ${kind}`} data-fold={kind} open={open}>
+    <summary className="q-summary card-above">
+      <FaChevronDown className="fold-chevron" aria-hidden="true" />
+      <h3 className="h6 mb-0">{title}</h3>
+      <span className="q-signal">{signal}</span>
+    </summary>
+    <div className="fold-body card-above">{children}</div>
+  </details>
+);
+
+CardFold.propTypes = {
+  title: PropTypes.node.isRequired,
+  signal: PropTypes.node.isRequired,
+  kind: PropTypes.string.isRequired,
+  open: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
+
+/**
  * The foot line of a card: how many versions or releases the item holds,
  * through the `countKey` of the collection's versions level, how long ago
  * the host says it last released, and the collection's card glyph at the
  * right; nothing while it holds none and the collection has no glyph.
  */
-const CardFoot = ({ collection, item, CardGlyph, ctx }) => {
+export const CardFoot = ({ collection, item, CardGlyph = null, ctx }) => {
   const { t } = useTranslation();
   const count = (item.versions || []).length;
   if (count === 0 && !CardGlyph) {
@@ -302,10 +327,16 @@ ItemCard.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
-const CardGrid = ({ collection, items, watches, selection, ctx }) => (
+const heldOf = (rowPick, item) => Boolean(rowPick && rowPick(item)?.held);
+
+const CardGrid = ({ collection, items, watches, selection, rowPick, ctx }) => (
   <Row xs={1} md={2} xl={3} className="g-3 mb-3">
     {items.map(item => (
-      <Col key={item.id}>
+      <Col
+        key={item.id}
+        className={heldOf(rowPick, item) ? 'held opacity-50' : undefined}
+        aria-disabled={heldOf(rowPick, item) ? 'true' : undefined}
+      >
         <ItemCard
           collection={collection}
           item={item}
@@ -323,6 +354,7 @@ CardGrid.propTypes = {
   items: PropTypes.arrayOf(itemShape).isRequired,
   watches: PropTypes.object,
   selection: selectionShape,
+  rowPick: PropTypes.func,
   ctx: PropTypes.object.isRequired,
 };
 
@@ -374,6 +406,11 @@ CardGroup.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+/**
+ * The card grid of one collection, flat or one grid a group; a card whose
+ * `rowPick` answers `held` is greyed with `aria-disabled`, the way a held
+ * row of the table is.
+ */
 const ItemCards = ({
   collection,
   items,
@@ -383,6 +420,7 @@ const ItemCards = ({
   watches,
   ctx,
   selection = null,
+  rowPick = null,
   emptyBody = null,
 }) => {
   const { t } = useTranslation();
@@ -401,6 +439,7 @@ const ItemCards = ({
         items={items}
         watches={watches}
         selection={selection}
+        rowPick={rowPick}
         ctx={ctx}
       />
     );
@@ -411,6 +450,7 @@ const ItemCards = ({
       items={list}
       watches={watches}
       selection={selection}
+      rowPick={rowPick}
       ctx={ctx}
     />
   );
@@ -437,6 +477,7 @@ ItemCards.propTypes = {
   watches: watchesShape,
   ctx: PropTypes.object.isRequired,
   selection: selectionShape,
+  rowPick: PropTypes.func,
   emptyBody: PropTypes.node,
 };
 

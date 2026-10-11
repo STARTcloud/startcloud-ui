@@ -2820,7 +2820,7 @@
         "sourceUpdated": "Registro {{name}} actualizado",
         "sourceAdded": "Registro {{name}} añadido",
         "sourceRemoved": "Registro {{name}} quitado",
-        "pullQueued": "Descarga en cola",
+        "installQueued": "Instalación en cola",
         "exportQueued": "Exportación en cola",
         "publishQueued": "Publicación en cola",
         "moveQueued": "Movimiento en cola",
@@ -2832,8 +2832,7 @@
         "sourceRequired": "Se requieren un nombre y una URL",
         "sourceDisplayName": "Nombre visible",
         "sourceIdInvalid": "El id del registro solo admite letras minúsculas, dígitos y guiones bajos.",
-        "sourceDisplayNameRequired": "Se requiere un nombre visible.",
-        "sourcesHelp": "Los registros son los catálogos de boxes que leen la creación de máquinas y Descargar"
+        "sourceDisplayNameRequired": "Se requiere un nombre visible."
       },
       "provisioners": {
         "failed": "La acción del provisioner fue rechazada: {{message}}",
@@ -2922,6 +2921,29 @@
         "sourceAuth": "Autenticación",
         "authNone": "Ninguna",
         "authOidc": "Iniciar sesión con SSO"
+      },
+      "held": {
+        "installed": "Instalado",
+        "notInstalled": "No instalado",
+        "updateAvailable": "Actualización disponible",
+        "add": "Agregar",
+        "installVersion": "Instalar {{version}}",
+        "catalogSources": "Fuentes del catálogo",
+        "more": "Más",
+        "version": "Versión {{version}}",
+        "installOlder": "Instalar una versión anterior…",
+        "createWith": "Crear una máquina con {{version}}",
+        "deleteVersion": "Eliminar {{version}}",
+        "moveVersion": "Mover {{version}}…"
+      },
+      "sources": {
+        "key": "Clave",
+        "url": "URL",
+        "default": "Predeterminado",
+        "enabled": "Habilitado",
+        "sources": "Fuentes",
+        "registries": "Registros",
+        "none": "Sin fuentes de catálogo"
       }
     },
     "storage": {
@@ -3296,7 +3318,6 @@
       "tabOrchestration": "Orquestación",
       "tabInstallerFiles": "Archivos de instalación",
       "tabDatabase": "Base de datos",
-      "tabProvisionerCatalog": "Catálogo de aprovisionadores",
       "titleAccessDenied": "Acceso denegado - Hyperweaver",
       "titleNoServerSelected": "Ningún servidor seleccionado - Hyperweaver",
       "titleManageHost": "Administrar {{hostname}} - Hyperweaver",
@@ -6709,10 +6730,8 @@
       "never": "Nunca"
     },
     "templatesManagement": {
-      "pullTemplate": "Descargar Plantilla",
-      "exportMachineTooltip": "Exportar una máquina detenida a un archivo .box local",
+      "importTemplate": "Importar plantilla",
       "exportMachine": "Exportar Máquina",
-      "publishTooltip": "Exportar una máquina y publicarla en un registro",
       "publish": "Publicar",
       "refresh": "Actualizar",
       "templatesCount": "{{count}} plantillas",
@@ -6720,7 +6739,6 @@
       "addRegistry": "Agregar Registro",
       "noRegistriesConfigured": "ninguno configurado — los menús desplegables de imágenes permanecen vacíos",
       "default": "predeterminado",
-      "disabled": "deshabilitado",
       "makeDefaultRegistry": "Hacer este el registro predeterminado",
       "enable": "Habilitar",
       "disable": "Deshabilitar",
@@ -7776,8 +7794,6 @@
     },
     "provisionerManagement": {
       "installFailed": "Error en la instalación: {{message}}",
-      "catalogSource": "Fuente del catálogo",
-      "default": "Predeterminado",
       "version": "Versión",
       "actions": "Acciones",
       "installed": "instalado",
@@ -7803,7 +7819,6 @@
       "referencedBy": "{{message}} — referenciado por: {{machines}}",
       "deleteFailed": "Error al eliminar: {{message}}",
       "importProvisioner": "Importar aprovisionador",
-      "browseCatalog": "Explorar catálogo",
       "refresh": "Actualizar",
       "familiesCount_one": "{{count}} familia",
       "familiesCount_other": "{{count}} familias",

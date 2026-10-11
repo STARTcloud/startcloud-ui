@@ -41,12 +41,11 @@ vi.mock('../../src/features/hosts/api/provisioning.js', () => ({
   ),
 }));
 
-const { provisionerCollection, provisioners } =
-  await import('../../src/features/collections/provisioners/definition.jsx');
+const { provisioners } = await import('../../src/features/collections/provisioners/definition.jsx');
 const { fetchCatalog, fetchCatalogHealth } =
   await import('../../src/features/hosts/api/provisioning.js');
 const { hostCatalogAdapter } = await import('../../src/features/hosts/utils/hostCatalog.js');
-const { installColumn, InstallGlyph, VersionInstall } =
+const { HeldControl, VersionHeld, heldDeployColumn, heldProvisionerCollection, heldStatusColumn } =
   await import('../../src/features/hosts/components/HostCatalogInstall.jsx');
 
 const keysOf = columns => columns.map(column => column.key);
@@ -86,27 +85,26 @@ describe('the provisioners collection', () => {
     ]);
   });
 
-  it('draws a host catalog with Install in the Deploy column place and no item page', () => {
-    const host = provisionerCollection({
-      adapter: {},
-      itemRoute: false,
-      actionColumn: installColumn,
-      CardGlyph: InstallGlyph,
-      VersionAction: VersionInstall,
-    });
+  it('draws a host catalog with the held control in the Deploy column place, Status after Downloads, the Installed group and no item page', () => {
+    const host = heldProvisionerCollection({ adapter: {} });
     expect(keysOf(host.columns)).toEqual([
       'label',
-      'install',
+      'deploy',
       'visibility',
       'downloads',
+      'status',
       'tier',
       'released',
       'versions',
       'providers',
     ]);
+    expect(host.columns[1]).toBe(heldDeployColumn);
+    expect(host.columns[4]).toBe(heldStatusColumn);
     expect(host.itemRoute).toBe(false);
     expect(host.slots.ItemActions).toBeUndefined();
-    expect(host.slots.CardGlyph).toBe(InstallGlyph);
+    expect(host.slots.CardGlyph).toBe(HeldControl);
+    expect(host.defaultSort).toEqual([{ column: 'status', direction: 'desc' }]);
+    expect(host.filterGroups.at(-1)).toMatchObject({ key: 'held', defaultActive: ['held'] });
   });
 
   it('draws the tier pill in its tier colour, never the brand primary', () => {
@@ -126,24 +124,64 @@ describe('the provisioners collection', () => {
 });
 
 describe('the host catalog install', () => {
-  const ctx = { installedKeys: new Set(['startcloud/0.1.27']), busy: false, onInstall: vi.fn() };
+  const ctxOf = (held, more = {}) => ({
+    t: key => key,
+    held: { versionsOf: () => held, busy: false, onFetch: vi.fn(), ...more },
+    handed: null,
+  });
 
-  it('draws Installed for a version the host holds and Install for one it does not', () => {
+  it('draws the version line Install greyed for a version the host holds, Install for one it does not, and the machine button while the host creates', () => {
     const item = itemOf();
-    expect(render(createElement(VersionInstall, { item, version: '0.1.27', ctx }))).toContain(
-      'data-note="installed"'
-    );
-    const install = render(createElement(VersionInstall, { item, version: '0.1.28', ctx }));
-    expect(install).toContain('data-action="catalog-install"');
+    const ctx = ctxOf(['0.1.27']);
+    const held = render(createElement(VersionHeld, { item, version: '0.1.27', ctx }));
+    expect(held).toContain('data-note="installed"');
+    expect(held).toContain('disabled=""');
+    expect(held).not.toContain('data-action="version-install"');
+    expect(held).not.toContain('data-action="version-create"');
+    const install = render(createElement(VersionHeld, { item, version: '0.1.28', ctx }));
+    expect(install).toContain('data-action="version-install"');
     expect(install).toContain('data-version="0.1.28"');
+    expect(install).toContain('class="btn btn-outline-secondary version-action"');
+  });
+
+  it('draws the split control: the Update glyph with its dot behind the catalog, the Install glyph while missing, the glyph greyed at the newest, the chevron on every row, and the Status badge', () => {
+    const item = itemOf();
+    const behind = render(createElement(HeldControl, { item, ctx: ctxOf(['0.1.27']) }));
+    expect(behind).toContain('data-action="catalog-update"');
+    expect(behind).toContain('data-note="update-available"');
+    expect(behind).toContain('class="glyph-dot"');
+    expect(behind).toContain('data-action="held-more"');
+    const missing = render(createElement(HeldControl, { item, ctx: ctxOf([]) }));
+    expect(missing).toContain('data-action="catalog-install"');
+    expect(missing).not.toContain('class="glyph-dot"');
+    const current = render(createElement(HeldControl, { item, ctx: ctxOf(['0.1.28']) }));
+    expect(current).toContain('data-note="held-current"');
+    expect(current).toContain('aria-disabled="true"');
+    expect(current).toContain('data-action="held-more"');
+    expect(heldDeployColumn.render(item, ctxOf(['0.1.28']))).not.toBeNull();
+    expect(heldDeployColumn.value(item, ctxOf(['0.1.28']))).toBe('0.1.28');
+    expect(heldStatusColumn.value(item, ctxOf(['0.1.28']))).toBe('hosts.manage.held.installed');
+    expect(heldStatusColumn.value(item, ctxOf(['0.1.27']))).toBe(
+      'hosts.manage.held.updateAvailable'
+    );
+    expect(heldStatusColumn.value(item, ctxOf([]))).toBe('');
   });
 });
 
 describe('hostCatalogAdapter', () => {
-  it('lists the relayed catalog of one source as the catalog site items, health and all', async () => {
-    const adapter = hostCatalogAdapter({ status: {}, id: '1', source: 'startcloud' });
+  const sources = [
+    { id: 'staging', url: 'https://s/catalog.json', default: false },
+    { id: 'startcloud', url: 'https://c/catalog.json', default: true },
+  ];
+
+  it('lists the relayed catalog of every source as the catalog site items, health and all, the default source first and a family listed twice drawn once with its source', async () => {
+    fetchCatalog.mockClear();
+    fetchCatalogHealth.mockClear();
+    const adapter = hostCatalogAdapter({ status: {}, id: '1', sources });
     const items = await adapter.listAll();
-    expect(fetchCatalog).toHaveBeenCalledWith({}, '1', 'startcloud');
+    expect(fetchCatalog).toHaveBeenCalledTimes(2);
+    expect(fetchCatalog).toHaveBeenNthCalledWith(1, {}, '1', 'startcloud');
+    expect(fetchCatalog).toHaveBeenNthCalledWith(2, {}, '1', 'staging');
     expect(fetchCatalogHealth).toHaveBeenCalledWith({}, '1', 'startcloud');
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
@@ -151,7 +189,7 @@ describe('hostCatalogAdapter', () => {
       name: 'hcl_domino_additional_provisioner',
       label: 'HCL Domino additional server',
       organization: { name: 'STARTcloud' },
-      extras: { tier: 'gold' },
+      extras: { tier: 'gold', source: { key: 'startcloud', url: 'https://c/catalog.json' } },
     });
     expect(items[0].versions[0]).toMatchObject({
       version: '0.3.0',
@@ -160,9 +198,21 @@ describe('hostCatalogAdapter', () => {
     });
   });
 
-  it('draws a source that publishes no health unrated', async () => {
+  it('draws a source that publishes no health unrated and a source that answers nothing as no family', async () => {
     fetchCatalogHealth.mockImplementationOnce(() => Promise.reject(new Error('404')));
-    const items = await hostCatalogAdapter({ status: {}, id: '1', source: '' }).listAll();
+    const items = await hostCatalogAdapter({
+      status: {},
+      id: '1',
+      sources: [{ id: 'main', url: '' }],
+    }).listAll();
     expect(items[0].extras.tier).toBe('unrated');
+    fetchCatalog.mockImplementationOnce(() => Promise.reject(new Error('502')));
+    expect(
+      await hostCatalogAdapter({
+        status: {},
+        id: '1',
+        sources: [{ id: 'main', url: '' }],
+      }).listAll()
+    ).toEqual([]);
   });
 });

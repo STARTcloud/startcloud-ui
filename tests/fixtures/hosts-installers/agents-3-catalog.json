@@ -17,6 +17,12 @@
       "repo": "STARTcloud/hcl-domino-provisioner",
       "description": "HCL Domino on any box",
       "versions": [{ "version": "2.0.0", "released_at": "2026-07-11", "artifacts": [] }]
+    },
+    {
+      "name": "windows",
+      "repo": "STARTcloud/windows-provisioner",
+      "description": "Windows Server and desktop provisioning over WinRM",
+      "versions": [{ "version": "0.2.0", "released_at": "2026-08-26", "artifacts": [] }]
     }
   ]
 }

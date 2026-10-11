@@ -1,50 +1,87 @@
 Feature: host templates
 
-  Scenario: Templates: the page behind `templates`, the registries card and the one table from the one read each
+  Scenario: Templates: the page behind `templates`, every enabled registry's boxes as cards from the one read each, the installed ones alone when the page opens, and Registries opening the one modal of the box registries
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
     Then the section page "templates" draws
     And the host row "templates" is the active one
-    And the catalog card "template-sources" lists 2 registries
-    And the section page notes "source-default"
-    And the "templates" table of the section page lists 3 rows
-    And the "templates" table of the section page draws the "downloaded_at" column
-    And the row "windows-server-2025" of the "templates" table of the section page offers "delete"
+    And the "box-registry" listing of the section page draws 1 cards
+    And the "box-registry" listing of the section page draws the card "debian13" plain
+    And the section page notes "held-current"
     And the host was sent GET to "/api/agents/1/templates" 1 times
     And the host was sent GET to "/api/agents/1/templates/sources" 1 times
+    And the host was sent GET to "/api/agents/1/templates/remote/boxvault" 1 times
+    And the host was sent GET to "/api/agents/1/templates/remote/mirror" 1 times
+    When I press the section page's "template-sources" action
+    Then the catalog dialog "template-sources" draws
+    And the open dialog lists 2 rows
+    And the catalog source "boxvault" offers no "source-default"
+    And the catalog source "mirror" offers "source-default"
 
-  Scenario: Templates: the page's one search narrows the table and the provider pill narrows it again
+  Scenario: Templates: Add flips the panel to the boxes the host lacks, Install on one sends the newest version and its first architecture on the box's registry, the Installed pill off greys the missing boxes, and the table is the toggle
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
-    Then the "templates" table of the section page lists 3 rows
-    When I press "/"
-    And I search the section page for "debian"
-    Then the "templates" table of the section page lists 2 rows
-    When I search the section page for ""
+    Then the "box-registry" listing of the section page draws 1 cards
+    When I press the section page's "catalog-add" action
+    Then the section page heading reads "Add"
+    And the "box-registry" listing of the section page draws 1 cards
+    And the "box-registry" listing of the section page draws the card "ubuntu2404" plain
+    When I press "catalog-install" on the card "ubuntu2404" of the "box-registry" listing
+    Then the host was sent POST to "/api/agents/1/templates/pull" carrying "box_name" as "ubuntu2404"
+    And the host was sent POST to "/api/agents/1/templates/pull" carrying "organization" as "startcloud"
+    And the host was sent POST to "/api/agents/1/templates/pull" carrying "version" as "24.04.2"
+    And the host was sent POST to "/api/agents/1/templates/pull" carrying "architecture" as "amd64"
+    And the host was sent POST to "/api/agents/1/templates/pull" carrying "source_name" as "boxvault"
+    And the page raised 1 success notice
+    When I press the section page's "catalog-add" action
+    Then the "box-registry" listing of the section page draws the card "debian13" plain
+    When I switch the "box-registry" listing of the section page to "table"
+    Then the "box-registry" listing of the section page draws the table
+    And the "box-registry" table of the section page draws the "deploy" column
+    And the "box-registry" table of the section page draws the "status" column
+    When I switch the "box-registry" listing of the section page to "cards"
+    And I press "/"
     And I open the filter panel
-    And I toggle the filter pill "utm"
-    Then the "templates" table of the section page lists 1 rows
+    And I toggle the filter pill "Installed"
+    Then the "box-registry" listing of the section page draws 2 cards
+    And the "box-registry" listing of the section page greys the card "ubuntu2404"
 
-  Scenario: Templates: the pull dialog opens on the default registry, reads its catalog, and a picked box fills the fields the pull sends
+  Scenario: Templates: the chevron of a held box opens Move and Delete for each held version, Move sending the new root as a queued task and Delete waiting behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
-    And I press the section page's "template-pull" action
+    And I open the menu of the card "debian13" of the "box-registry" listing
+    Then the open menu offers "template-move"
+    And the open menu offers "template-delete"
+    And the open menu offers no "held-update"
+    When I press the menu entry "template-move"
+    Then the catalog dialog "template-move" draws
+    When I type "/rpool/templates" into the field "template-move-path"
+    And I submit the catalog dialog "template-move"
+    Then the host was sent POST to "/api/agents/1/templates/tpl-1/move" carrying "target_path" as "/rpool/templates"
+    And the catalog dialog "template-move" is gone
+    When I open the menu of the card "debian13" of the "box-registry" listing
+    And I press the menu entry "template-delete"
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/1/templates/tpl-1"
+    And the host was sent GET to "/api/agents/1/templates" 3 times
+
+  Scenario: Templates: Import opens the pull by name over the default registry's catalog and queues the download
+    Given the host answers the hosts fixture
+    And the host answers the hosts-templates fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-import" action
     Then the catalog dialog "template-pull" draws
-    And the host was sent GET to "/api/agents/1/templates/remote/boxvault"
-    When I submit the catalog dialog "template-pull"
-    Then the catalog dialog "template-pull" says why it cannot be sent
     When I pick "startcloud/ubuntu2404" in the catalog dialog select "template-pull-catalog"
-    And I pick "arm64" in the catalog dialog select "template-pull-arch"
     And I submit the catalog dialog "template-pull"
     Then the host was sent POST to "/api/agents/1/templates/pull" carrying "box_name" as "ubuntu2404"
     And the host was sent POST to "/api/agents/1/templates/pull" carrying "version" as "24.04.2"
-    And the host was sent POST to "/api/agents/1/templates/pull" carrying "architecture" as "arm64"
     And the host was sent POST to "/api/agents/1/templates/pull" carrying "source_name" as "boxvault"
     And the catalog dialog "template-pull" is gone
 
@@ -77,25 +114,13 @@ Feature: host templates
     And the host was sent POST to "/api/agents/1/templates/publish" carrying "box_name" as "dev-golden"
     And the host was sent POST to "/api/agents/1/templates/publish" carrying "machine_name" as "dev-2"
 
-  Scenario: Templates: Move sends the new storage root and Delete behind the typed confirmation sends the delete, each a queued task
+  Scenario: Templates: a registry is added from the form under the modal's table as one merge patch of the storage file under its id, the default moved off the entry that held it and the rest untouched
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
-    And I press "move" on the row "13.1.0" of the "templates" table of the section page
-    And I type "/tank/templates" into the field "template-move-path"
-    And I submit the catalog dialog "template-move"
-    Then the host was sent POST to "/api/agents/1/templates/tpl-1/move" carrying "target_path" as "/tank/templates"
-    When I press "delete" on the row "13.0.0" of the "templates" table of the section page
-    And I confirm the open dialog
-    Then the host was sent DELETE to "/api/agents/1/templates/tpl-2"
-
-  Scenario: Templates: a registry is added as one merge patch of the storage file under its id, the default moved off the entry that held it and the rest untouched
-    Given the host answers the hosts fixture
-    And the host answers the hosts-templates fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/provisioning/templates"
-    And I press the section page's "source-add" action
+    And I press the section page's "template-sources" action
+    And I press the open dialog's "source-add" action
     And I submit the catalog dialog "template-source"
     Then the catalog dialog "template-source" says why it cannot be sent
     When I type "vagrant-cloud" into the field "source-name"
@@ -115,12 +140,15 @@ Feature: host templates
     And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/vagrant_cloud/auth_token"
     And the host was not sent GET to "/api/agents/1/config/storage"
     And the host was sent GET to "/api/agents/1/templates/sources" 2 times
+    And the catalog dialog "template-source" is gone
+    And the catalog dialog "template-sources" draws
 
-  Scenario: Templates: a registry's edit opens on its id and its display name, sends the entry under the id, and a refused save draws the pointer on its field
+  Scenario: Templates: a registry's edit opens the form under the table on its id and its display name, sends the entry under the id, and a refused save draws the pointer on its field
     Given the host answers the hosts fixture
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-sources" action
     Then I see "BoxVault"
     When I press the action "source-edit" of the catalog source "boxvault"
     Then the field "source-name" of the catalog dialog "template-source" reads "boxvault"
@@ -140,6 +168,7 @@ Feature: host templates
     And the host answers the hosts-templates fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/provisioning/templates"
+    And I press the section page's "template-sources" action
     And I press the action "source-toggle" of the catalog source "mirror"
     Then the host was sent PUT to "/api/agents/1/config/storage" carrying "false" at "/template_sources/sources/mirror/enabled"
     And the host was sent PUT to "/api/agents/1/config/storage" carrying nothing at "/template_sources/sources/boxvault"

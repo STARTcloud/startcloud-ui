@@ -21,7 +21,7 @@ import { itemShape } from '../../../utils/itemShape';
 
 import { catalogAdapter } from './api/adapter';
 import { CardGlyph, DeployGlyph, deployColumn, deployableVersion } from './components/deploy';
-import { CardByline, cardBodyWith } from './components/ProvisionerCard';
+import { CardByline, VersionDownload, cardBodyWith } from './components/ProvisionerCard';
 import { QualityPanel, QualitySignal, TierPill } from './components/Quality';
 import { qualityOf } from './utils/quality';
 
@@ -223,7 +223,10 @@ QualitySection.propTypes = {
 };
 
 const VersionDeploy = ({ item, version, ctx }) => (
-  <DeployGlyph user={ctx.user} item={item} version={version} bare />
+  <>
+    <VersionDownload item={item} version={version} />
+    <DeployGlyph user={ctx.user} item={item} version={version} bare />
+  </>
 );
 
 VersionDeploy.propTypes = {

@@ -1,0 +1,15 @@
+[
+  {
+    "id": 7,
+    "name": "windows-server-2025",
+    "description": "Windows Server 2025 base box",
+    "isPublic": true,
+    "organization": { "id": 3, "name": "acme" },
+    "versions": [
+      {
+        "versionNumber": "2025.1",
+        "providers": [{ "name": "virtualbox", "architectures": [{ "name": "amd64" }] }]
+      }
+    ]
+  }
+]

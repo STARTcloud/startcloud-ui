@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import { publicItemsFrom } from '../../src/features/collections/provisioners/api/adapter.js';
 import { QualityPanel } from '../../src/features/collections/provisioners/components/Quality.jsx';
-import { provisionerCollection } from '../../src/features/collections/provisioners/definition.jsx';
 import {
   boxLabelOf,
   boxUrlOf,
@@ -15,11 +14,7 @@ import {
   scoreOf,
   tierRulesOf,
 } from '../../src/features/collections/provisioners/utils/quality.js';
-import {
-  InstallGlyph,
-  VersionInstall,
-  installColumn,
-} from '../../src/features/hosts/components/HostCatalogInstall.jsx';
+import { heldProvisionerCollection } from '../../src/features/hosts/components/HostCatalogInstall.jsx';
 
 const RULES = {
   bronze: { description: true, label: true, semver_versions: true, latest_alias: true },
@@ -138,23 +133,17 @@ describe('the catalog items carry the rules and the per-version quality', () => 
 });
 
 describe('the provisioner card body', () => {
-  const host = provisionerCollection({
-    adapter: {},
-    itemRoute: false,
-    actionColumn: installColumn,
-    CardGlyph: InstallGlyph,
-    VersionAction: VersionInstall,
-  });
+  const host = heldProvisionerCollection({ adapter: {} });
   const ctx = {
     language: 'en',
+    t: key => key,
     collection: host,
-    installedKeys: new Set(),
-    busy: false,
-    onInstall: () => null,
+    held: { versionsOf: () => ['0.1.25'], busy: false, onFetch: () => null },
+    handed: null,
   };
   const render = item => renderToStaticMarkup(createElement(host.slots.CardBody, { item, ctx }));
 
-  it('draws the strip with both checks and the newest providers, the two folds folded, and a row a version', () => {
+  it('draws the strip with both checks and the newest providers, the two folds folded, one line a version with Install greyed on the held one, and Update in the links line', () => {
     const [item] = publicItemsFrom(DATA);
     const markup = render(item);
     expect(markup).toContain('data-check="artifacts" data-ok="true"');
@@ -165,7 +154,15 @@ describe('the provisioner card body', () => {
     expect(markup).not.toMatch(/<details class="q-fold[^"]*"[^>]*open/u);
     expect(markup.match(/class="list-group-item version-row/gu)).toHaveLength(2);
     expect(markup).toContain('class="list-group-item version-row selected" data-version="0.1.26"');
-    expect(markup).toContain('data-action="catalog-install"');
+    expect(markup).toContain(
+      'data-action="version-install" data-family="startcloud_generic_provisioner" data-version="0.1.26"'
+    );
+    expect(markup).toContain(
+      'data-note="installed" data-family="startcloud_generic_provisioner" data-version="0.1.25"'
+    );
+    expect(markup).toContain('data-action="catalog-update"');
+    expect(markup).toContain('data-note="update-available"');
+    expect(markup).not.toContain('data-action="version-download"');
     expect(markup).toContain(
       'href="https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"'
     );

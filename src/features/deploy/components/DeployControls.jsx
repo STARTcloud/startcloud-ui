@@ -124,8 +124,9 @@ const openServer = ({ href, origin, localHref, notify, t }) => {
  * listing column that draws it for each row's deployable version, that
  * version its `value` and so its sort, present only while the host
  * advertises `deploy` and a row has a deployable version; `CardGlyph`
- * draws that column's cell on a card. The collection supplies the seed of
- * one item version and the words of its menu.
+ * draws that column's cell on a card. The bare glyph is the outlined
+ * square button a version line draws its other action in. The collection
+ * supplies the seed of one item version and the words of its menu.
  *
  * @param {Object} app - The collection's side of Deploy
  * @param {(args: { item: Object, version: string }) => Object} app.seedFor - The seed of one item version, the members of `deployQuery`
@@ -166,7 +167,11 @@ export const createDeployControls = ({ seedFor, words = [] }) => {
     };
     const glyph = (
       <a
-        className={`deploy-glyph text-primary d-inline-flex align-items-center${bare ? ' me-2' : ''}`}
+        className={
+          bare
+            ? 'deploy-glyph btn btn-outline-secondary version-action'
+            : 'deploy-glyph text-primary d-inline-flex align-items-center'
+        }
         href={hrefOf(MACHINE)}
         {...external}
         title={title}

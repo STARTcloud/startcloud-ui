@@ -67,7 +67,7 @@ export const WORD_KEYS = {
 
 export const CREATE_WORDS = Object.keys(WORD_KEYS);
 
-const CATALOG_PAGE = 'provisioning/catalog';
+const CATALOG_PAGE = 'provisioning/provisioners';
 const TEMPLATES_PAGE = 'provisioning/templates';
 const BOX_PROVIDER = /^box_[a-z0-9_-]+$/u;
 const BOX_PICKS = {
@@ -233,8 +233,8 @@ export const createRouteOf = (id, seed = null) =>
 /**
  * The route a hand-off lands on for one host, the word's query and seed
  * kept: `machine` the host's own page, the create wizard's door;
- * `provisioner` the host's Provisioner catalog page; `template` the host's
- * Templates page; `source` the Provisioner catalog page for a
+ * `provisioner` the host's Provisioners page; `template` the host's
+ * Templates page; `source` the Provisioners page for a
  * `provisioner_catalog` and the Templates page for a `box_url`.
  *
  * @param {string} id - The registry id, or `self` on an agent role

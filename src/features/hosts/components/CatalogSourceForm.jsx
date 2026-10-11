@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { catalogSourceBody } from '../utils/machineCreate';
 
-import ToolFormDialog from './ToolFormDialog';
+import { InlineForm } from './SourcesModal';
 
 const AUTHS = ['none', 'oidc'];
 
@@ -34,7 +34,7 @@ export const catalogSourceFormOf = url => {
 };
 
 /**
- * The body of `POST provisioning/catalog/sources` the dialog sends: the
+ * The body of `POST provisioning/catalog/sources` the form sends: the
  * display name and the URL trimmed and the authentication chosen.
  *
  * @param {{ displayName: string, url: string, auth: string }} form - The form
@@ -57,18 +57,18 @@ export const catalogSourceProblem = form =>
   form.displayName.trim() && form.url.trim() ? '' : 'hosts.manage.catalog.sourceRequired';
 
 /**
- * The Add source dialog of the Provisioner catalog page, the form dialog
- * of a catalog source: the display name, the URL and the authentication,
+ * The Add source form of the Provisioners page's Sources modal, drawn
+ * under its table: the display name, the URL and the authentication,
  * `none` or `oidc`, filled from `seed`, a handed catalog URL, where one
  * is given; the submit hands the body of `catalogSourceBodyOf` up.
  *
  * @param {Object} props
  * @param {string} [props.seed] - The handed catalog URL the form opens filled from
  * @param {boolean} props.busy - Whether a request is in flight
- * @param {Function} props.onClose - Closes the dialog
+ * @param {Function} props.onCancel - Closes the form
  * @param {Function} props.onSubmit - Takes the body
  */
-const CatalogSourceDialog = ({ seed = '', busy, onClose, onSubmit }) => {
+export const CatalogSourceForm = ({ seed = '', busy, onCancel, onSubmit }) => {
   const { t } = useTranslation();
   const [form, setForm] = useState(() => catalogSourceFormOf(seed));
   const [problem, setProblem] = useState('');
@@ -81,13 +81,12 @@ const CatalogSourceDialog = ({ seed = '', busy, onClose, onSubmit }) => {
     }
   };
   return (
-    <ToolFormDialog
+    <InlineForm
       dialog="catalog-source"
       title={t('host.provisionerManagement.addSource')}
-      submitKey="host.provisionerManagement.addSource"
       problemKey={problem}
       busy={busy}
-      onClose={onClose}
+      onCancel={onCancel}
       onSubmit={submit}
     >
       <div className="row g-3">
@@ -136,15 +135,13 @@ const CatalogSourceDialog = ({ seed = '', busy, onClose, onSubmit }) => {
           />
         </div>
       </div>
-    </ToolFormDialog>
+    </InlineForm>
   );
 };
 
-CatalogSourceDialog.propTypes = {
+CatalogSourceForm.propTypes = {
   seed: PropTypes.string,
   busy: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
-
-export default CatalogSourceDialog;

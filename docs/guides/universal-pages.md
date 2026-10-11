@@ -417,8 +417,12 @@ adapter, registers the search binding, and renders:
   window, and any other `deploy_target` is that origin's `/?create=…`
   page opened in a new tab; a press of the glyph or of a row asks the
   target's status first, as the Universal Deploy Contract says. A host that relays
-  a catalog draws the same provisioners collection on its Provisioner
-  catalog page with Install in place of Deploy.
+  a catalog draws the same provisioners collection on its Provisioners
+  page, and one that relays box registries the same boxes collection on
+  its Templates page, each with the receiver's split control in place of
+  Deploy. A card of either collection carries the Versions fold, each
+  version line its date and two square outlined buttons, Download and
+  the collection's version action.
 - **Home is home.** A box or ISO is created inside an organization, so
   create and delete actions live on the org page; home carries the toggle
   alone on its first heading row, Discover being the navbar's.
@@ -681,7 +685,9 @@ collection {
   defaultView    'table' | 'cards'
   adapter        the functions above, or the subset the collection has
   canManage      (item, user) → boolean, for the write slots
-  filterGroups   the collection's own groups for the navbar panel
+  filterGroups   the collection's own groups for the navbar panel, a group's `defaultActive`
+                 the values on while the page has saved none and after Clear filters
+  rowPick        optional (item, ctx) → { held }, a held item greyed in the table and the grid
   columns        the collection's columns after the shared ones, the Deploy column of
                  features/deploy among them on a collection Hyperweaver deploys
   levels         per level (versions, providers, architectures): the label key
@@ -1404,8 +1410,8 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   its rules as named dots and every rule with its definition link and its
   description. The Versions body is a frame of about five rows, newest
   first: a fold cell, a dot in the tier the version held, the version, its
-  release date, a small Download button and the collection's version
-  action, Deploy on the catalog; the fold cell opens that version's
+  release date, and two square outlined buttons, Download and the
+  collection's version action, Deploy on the catalog; the fold cell opens that version's
   providers, each linking to its verified box where the catalog names one,
   and its sha256; a row's click selects the version, and the strip's
   providers and Quality follow it; "All versions (N)" links to the item

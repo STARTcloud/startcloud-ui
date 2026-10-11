@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  firstArchitectureOf,
   flattenBoxCatalog,
   pickDefaultSource,
+  remoteBoxItemsOf,
   sourceDisplayNameOf,
   sourceKeyOf,
   sourceLabelOf,
@@ -58,6 +60,37 @@ describe('flattenBoxCatalog', () => {
     ]);
     expect(rows[0].versions).toEqual(['1', '2', '3', '4']);
     expect(rows[0].architectures).toEqual([]);
+  });
+});
+
+describe('remoteBoxItemsOf', () => {
+  it('reads a relayed box into the item shape with its versions, providers and architectures', () => {
+    const [item] = remoteBoxItemsOf([{ ...box, description: 'Debian 13', isPublic: true }]);
+    expect(item).toMatchObject({
+      id: 'startcloud/debian13',
+      organization: { name: 'startcloud', logo: '' },
+      name: 'debian13',
+      label: 'debian13',
+      description: 'Debian 13',
+      isPublic: true,
+      published: null,
+      downloads: null,
+      os: null,
+    });
+    expect(item.versions.map(version => version.version)).toEqual(['13.1.0', '13.0.0']);
+    expect(item.versions[0].providers[0].architectures.map(entry => entry.name)).toEqual([
+      'amd64',
+      'arm64',
+    ]);
+    expect(firstArchitectureOf(item, '13.1.0')).toBe('amd64');
+    expect(firstArchitectureOf(item, '9')).toBe('');
+  });
+
+  it('skips an entry without a name and reads the list under boxes or data', () => {
+    expect(remoteBoxItemsOf({ boxes: [box, { versions: [] }] })).toHaveLength(1);
+    expect(remoteBoxItemsOf({ data: [box] })).toHaveLength(1);
+    expect(remoteBoxItemsOf(null)).toEqual([]);
+    expect(remoteBoxItemsOf([{ name: 'a' }])[0].isPublic).toBeNull();
   });
 });
 

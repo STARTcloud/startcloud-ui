@@ -213,7 +213,10 @@ const NO_WATCH = { ids: NO_IDS, toggle: null };
  * signed-out visitor with no filter on sees `pages.empty` as the
  * `SignInPlacard`, the hint and the Sign in control under it, because an
  * empty page with the only Sign in at the far right of the navbar reads
- * as an empty site.
+ * as an empty site. A `heading` node stands in for the collection's own
+ * heading, and `children` draw between the heading and the table or grid;
+ * the collection's `rowPick` greys the entries it holds, in the table and
+ * in the grid alike.
  */
 const CollectionSection = ({
   collection,
@@ -225,15 +228,19 @@ const CollectionSection = ({
   view,
   ctx,
   toggle = null,
+  heading = null,
+  children = null,
 }) => {
   const { t } = useTranslation();
   const selection = useSelection(items, { keyOf: itemKey, labelOf: item => item.name });
   const picked = items.filter(item => selection.selected.has(item.id));
   const { ListActions, RowActions } = collection.slots;
+  const rowPick = collection.rowPick ? item => collection.rowPick(item, ctx) : null;
   const shared = {
     collection,
     items,
     ctx,
+    rowPick,
     selection: bulkable ? selection.subtable : null,
     ...common,
   };
@@ -255,6 +262,7 @@ const CollectionSection = ({
           rows={items}
           rowKey={itemKey}
           rowProp="item"
+          rowPick={rowPick}
           RowActions={RowActions}
           actionsProps={{ ctx }}
           selection={shared.selection}
@@ -278,22 +286,25 @@ const CollectionSection = ({
   }
   return (
     <div className="mb-4">
-      <CollectionHeading collection={collection} count={items.length} picked={picked.length}>
-        {bulkable ? (
-          <BulkActions
-            collection={collection}
-            level="items"
-            groups={bulkGroupsOf(picked)}
-            onClear={selection.clear}
-            onDone={() => {
-              selection.clear();
-              reload();
-            }}
-          />
-        ) : null}
-        {ListActions ? <ListActions ctx={ctx} /> : null}
-        {toggle}
-      </CollectionHeading>
+      {heading || (
+        <CollectionHeading collection={collection} count={items.length} picked={picked.length}>
+          {bulkable ? (
+            <BulkActions
+              collection={collection}
+              level="items"
+              groups={bulkGroupsOf(picked)}
+              onClear={selection.clear}
+              onDone={() => {
+                selection.clear();
+                reload();
+              }}
+            />
+          ) : null}
+          {ListActions ? <ListActions ctx={ctx} /> : null}
+          {toggle}
+        </CollectionHeading>
+      )}
+      {children}
       {list}
     </div>
   );
@@ -309,6 +320,8 @@ CollectionSection.propTypes = {
   view: PropTypes.string.isRequired,
   ctx: PropTypes.object.isRequired,
   toggle: PropTypes.node,
+  heading: PropTypes.node,
+  children: PropTypes.node,
 };
 
 /**
@@ -323,9 +336,25 @@ CollectionSection.propTypes = {
  * the visible tables
  * share held at one width across them, and the one view toggle on the
  * header row when the page has a header, else on the first collection's
- * heading row.
+ * heading row. A page that lists one collection under a heading of its
+ * own hands `heading`, a function of `{ count, toggle, filters,
+ * setFilter, filtering }`, drawn in place of the first collection's
+ * heading, `count` null until the items answered, `filters` that
+ * collection's active sets by group key and `setFilter(groupKey, active)`
+ * their writer; `children` draw under that heading before the table or
+ * grid. Every column's `when` and every slot read the collection's active
+ * sets as `ctx.filters`.
  */
-const Listing = ({ collections, org, member, grouped, context, header = null }) => {
+const Listing = ({
+  collections,
+  org,
+  member,
+  grouped,
+  context,
+  header = null,
+  heading = null,
+  children = null,
+}) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
   const status = useStatus();
@@ -395,6 +424,8 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
     sort,
     setSort,
     groupBy,
+    filters,
+    setFilter,
     view,
     setView,
     collapsed,
@@ -410,8 +441,20 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
 
   const ctxFor = collection => ({
     ...baseCtxFor(collection, groupBy[collection.key]),
+    filters: filters[collection.key],
     filtering,
   });
+
+  const headingFor = (collection, count) =>
+    heading
+      ? heading({
+          count,
+          toggle,
+          filters: filters[collection.key],
+          setFilter: (groupKey, active) => setFilter(collection.key, groupKey, active),
+          filtering,
+        })
+      : null;
 
   const manages = org ? isOrgManager(context.user, org) : managesAnyOrganization(context.user);
 
@@ -451,7 +494,10 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
           onNeeds: collections.length > 1 ? shared.onNeedsFor(collection) : null,
         }}
         toggle={!header && index === 0 ? toggle : null}
-      />
+        heading={index === 0 ? headingFor(collection, items.length) : null}
+      >
+        {index === 0 ? children : null}
+      </CollectionSection>
     );
   };
 
@@ -463,7 +509,15 @@ const Listing = ({ collections, org, member, grouped, context, header = null }) 
           <div className="d-flex align-items-center gap-2 ms-auto">{toggle}</div>
         </div>
       ) : null}
-      {ready ? visible.map(renderCollection) : <div>{t('pages.loading')}</div>}
+      {ready ? (
+        visible.map(renderCollection)
+      ) : (
+        <>
+          {headingFor(collections[0], null)}
+          {children}
+          <div>{t('pages.loading')}</div>
+        </>
+      )}
     </div>
   );
 };
@@ -475,6 +529,8 @@ Listing.propTypes = {
   grouped: PropTypes.bool.isRequired,
   context: pageContextShape.isRequired,
   header: PropTypes.node,
+  heading: PropTypes.func,
+  children: PropTypes.node,
 };
 
 export default Listing;

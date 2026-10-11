@@ -28,6 +28,8 @@ const parse = key => {
 
 const setOf = values => new Set(Array.isArray(values) ? values : []);
 
+const defaultActiveOf = group => setOf(group.defaultActive);
+
 const isSortEntry = entry =>
   Boolean(entry) && typeof entry.column === 'string' && entry.column !== '';
 
@@ -98,7 +100,9 @@ export const readPrefs = (key, collections) => {
     filters[collection.key] = Object.fromEntries(
       filterGroupsOf(collection).map(group => [
         group.key,
-        setOf(saved.filters?.[collection.key]?.[group.key]),
+        saved.filters?.[collection.key]?.[group.key] === undefined
+          ? defaultActiveOf(group)
+          : setOf(saved.filters[collection.key][group.key]),
       ])
     );
     sort[collection.key] = sortStackOf(saved.sort?.[collection.key]);
@@ -223,11 +227,21 @@ export const writeFolds = (key, folds) => {
   localStorage.setItem(key, JSON.stringify({ ...parse(key), folds }));
 };
 
+/**
+ * The filters of a page with nothing picked: every group's active set
+ * empty, a group that names a `defaultActive` set back to it, and the
+ * Collection, Visibility and Watched sets empty.
+ *
+ * @param {Array} collections - The collections the page lists
+ * @returns {Object} The filter members of the page's prefs
+ */
 export const emptyFilters = collections => ({
   filters: Object.fromEntries(
     collections.map(collection => [
       collection.key,
-      Object.fromEntries(filterGroupsOf(collection).map(group => [group.key, new Set()])),
+      Object.fromEntries(
+        filterGroupsOf(collection).map(group => [group.key, defaultActiveOf(group)])
+      ),
     ])
   ),
   collection: new Set(),

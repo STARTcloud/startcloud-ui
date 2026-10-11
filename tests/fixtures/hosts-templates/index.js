@@ -12,6 +12,7 @@ export default {
   'POST /api/agents/1/templates/pull': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/1/templates/export': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/1/templates/publish': { status: 202, file: 'queued-202.json' },
+  'DELETE /api/agents/1/templates/tpl-1': { status: 202, file: 'queued-202.json' },
   'DELETE /api/agents/1/templates/tpl-2': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/1/templates/tpl-1/move': { status: 202, file: 'queued-202.json' },
   'GET /api/agents/1/config/storage': { status: 200, file: 'agents-1-config-storage.json' },

@@ -1,3 +1,5 @@
+import { getDistroIconUrl, getOsDisplayName } from '../../../utils/distroIcons';
+
 const organizationOf = box =>
   box?.user?.primaryOrganization?.name ||
   box?.organization?.name ||
@@ -39,6 +41,14 @@ const rowOf = box => {
   };
 };
 
+const listOf = payload => {
+  const list = Array.isArray(payload)
+    ? payload
+    : (Array.isArray(payload?.boxes) && payload.boxes) ||
+      (Array.isArray(payload?.data) && payload.data);
+  return Array.isArray(list) ? list : [];
+};
+
 /**
  * The rows of the image picker from a registry's catalog, BoxVault's
  * discover answer as the agent relays it, filtered to what the host can
@@ -50,16 +60,110 @@ const rowOf = box => {
  * @param {Array|Object} payload - The catalog answer
  * @returns {Array<{ value: string, organization: string, boxName: string, versions: Array<string>, architectures: Array<string> }>} The rows
  */
-export const flattenBoxCatalog = payload => {
-  const list = Array.isArray(payload)
-    ? payload
-    : (Array.isArray(payload?.boxes) && payload.boxes) ||
-      (Array.isArray(payload?.data) && payload.data);
-  if (!Array.isArray(list)) {
-    return [];
-  }
-  return list.map(rowOf).filter(Boolean);
+export const flattenBoxCatalog = payload => listOf(payload).map(rowOf).filter(Boolean);
+
+const dateOf = (entry, snake, camel) => entry?.[snake] || entry?.[camel] || null;
+
+const accessOf = (entry, snake, camel) => {
+  const value = entry?.[snake] ?? entry?.[camel];
+  return typeof value === 'boolean' ? value : null;
 };
+
+const providerOf = provider => ({
+  name: provider?.name || '',
+  description: provider?.description || '',
+  architectures: (Array.isArray(provider?.architectures) ? provider.architectures : [])
+    .filter(architecture => architecture?.name)
+    .map(architecture => ({ name: architecture.name })),
+});
+
+const versionOf = version => ({
+  version: versionNumberOf(version),
+  createdAt: dateOf(version, 'created_at', 'createdAt'),
+  updatedAt: dateOf(version, 'updated_at', 'updatedAt'),
+  description: typeof version === 'string' ? '' : version?.description || '',
+  releaseNotes: null,
+  deprecated: false,
+  deprecationReason: null,
+  providers: (Array.isArray(version?.providers) ? version.providers : [])
+    .map(providerOf)
+    .filter(provider => provider.name),
+  artifacts: [],
+});
+
+const latestOf = versions =>
+  versions
+    .map(version => version.createdAt)
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
+
+const itemOf = box => {
+  const organization = organizationOf(box);
+  const name = box?.name || '';
+  if (!name) {
+    return null;
+  }
+  const versions = (Array.isArray(box.versions) ? box.versions : [])
+    .map(versionOf)
+    .filter(version => version.version);
+  const isPublic = accessOf(box, 'is_public', 'isPublic');
+  return {
+    id: organization ? `${organization}/${name}` : name,
+    organization: { name: organization, logo: '' },
+    name,
+    label: name,
+    description: box.short_description || box.shortDescription || box.description || '',
+    icon: '',
+    artwork: '',
+    isPublic,
+    guestAccess: Boolean(accessOf(box, 'guest_access', 'guestAccess')),
+    published: null,
+    createdAt: dateOf(box, 'created_at', 'createdAt'),
+    updatedAt: dateOf(box, 'updated_at', 'updatedAt'),
+    latestReleaseAt: latestOf(versions),
+    downloads: null,
+    os: box.metadata
+      ? {
+          label: getOsDisplayName(box.metadata),
+          iconUrl: getDistroIconUrl(box.metadata.distro) || '',
+        }
+      : null,
+    metadata: box.metadata || null,
+    readme: null,
+    links: {},
+    extras: { raw: box },
+    versions,
+  };
+};
+
+/**
+ * The boxes of a registry's catalog as the item shape every boxes listing
+ * draws, BoxVault's discover answer as the agent relays it under
+ * `templates/remote/{source}`: the bare array of boxes, or the list under
+ * `boxes` or `data`, each box its organization, its name as its label,
+ * its description, its visibility where the answer carries one, its
+ * versions newest first with their providers and architectures, no
+ * download counts and no links; an entry without a name is skipped.
+ *
+ * @param {Array|Object} payload - The catalog answer
+ * @returns {Array<Object>} The items
+ */
+export const remoteBoxItemsOf = payload => listOf(payload).map(itemOf).filter(Boolean);
+
+/**
+ * The architecture a pull of one version of a box asks for when nobody
+ * picked one: the first architecture its providers list, empty while they
+ * list none.
+ *
+ * @param {Object} item - A box of the item shape
+ * @param {string} version - The version
+ * @returns {string} The architecture
+ */
+export const firstArchitectureOf = (item, version) =>
+  (item.versions.find(entry => entry.version === version)?.providers || []).flatMap(provider =>
+    provider.architectures.map(architecture => architecture.name)
+  )[0] || '';
 
 const carriesId = source => typeof source?.id === 'string' && source.id !== '';
 

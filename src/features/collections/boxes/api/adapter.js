@@ -6,7 +6,7 @@ import { readDeprecated, readDeprecationReason, readReleaseNotes } from '../util
 
 import { api } from './boxes';
 
-const { origin } = window.location;
+const originOf = () => window.location.origin;
 
 const rows = data => (Array.isArray(data) ? data : []);
 
@@ -66,7 +66,7 @@ const boxItem = (box, orgName, logo) => ({
   label: box.name,
   description: box.short_description || box.description || '',
   icon: '',
-  artwork: box.artwork ? `${origin}/api/organization/${orgName}/box/${box.name}/artwork` : '',
+  artwork: box.artwork ? `${originOf()}/api/organization/${orgName}/box/${box.name}/artwork` : '',
   isPublic: Boolean(box.is_public),
   guestAccess: Boolean(box.guest_access),
   published: Boolean(box.published),

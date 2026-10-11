@@ -17,7 +17,9 @@ const namedDialogOf = (page, name) => page.locator(`[data-dialog="${name}"]`);
 
 const locationOf = (page, id) => frameOf(page).locator(`[data-location="${id}"]`);
 
-const sourceOf = (page, name) => frameOf(page).locator(`[data-source="${name}"]`);
+const sourceOf = (page, name) => dialogOf(page).locator(`tr[id="source-${name}"]`);
+
+const openMenuOf = page => page.locator('.dropdown-menu.show[data-menu="held"]');
 
 When('I submit the catalog dialog {string}', async ({ page }, name) => {
   await namedDialogOf(page, name).locator('[data-action="submit"]').click();
@@ -68,8 +70,26 @@ Then('the catalog card {string} lists {int} locations', async ({ page }, panel, 
   await expect(frameOf(page).locator(`[data-panel="${panel}"] [data-location]`)).toHaveCount(count);
 });
 
-Then('the catalog card {string} lists {int} registries', async ({ page }, panel, count) => {
-  await expect(frameOf(page).locator(`[data-panel="${panel}"] [data-source]`)).toHaveCount(count);
+Then('the catalog source {string} offers {string}', async ({ page }, name, action) => {
+  await expect(sourceOf(page, name).locator(`[data-action="${action}"]`)).toBeVisible();
+});
+
+Then('the catalog source {string} offers no {string}', async ({ page }, name, action) => {
+  await expect(sourceOf(page, name)).toBeVisible();
+  await expect(sourceOf(page, name).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+When('I press the menu entry {string}', async ({ page }, action) => {
+  await openMenuOf(page).locator(`[data-action="${action}"]`).first().click();
+});
+
+Then('the open menu offers {string}', async ({ page }, action) => {
+  await expect(openMenuOf(page).locator(`[data-action="${action}"]`).first()).toBeVisible();
+});
+
+Then('the open menu offers no {string}', async ({ page }, action) => {
+  await expect(openMenuOf(page)).toBeVisible();
+  await expect(openMenuOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
 });
 
 Then('the catalog dialog {string} draws', async ({ page }, name) => {
@@ -125,7 +145,7 @@ const hostCatalogOf = page => tableOf(page, 'provisioner-catalog');
 
 const versionActionOf = (page, family, version) =>
   hostCatalogOf(page).locator(
-    `[data-action="catalog-install"][data-family="${family}"][data-version="${version}"]`
+    `[data-action="version-install"][data-family="${family}"][data-version="${version}"]`
   );
 
 Then('the provisioner catalog draws {int} cards', async ({ page }, count) => {
@@ -170,12 +190,93 @@ When(
   }
 );
 
+const VIEWS = ['table', 'cards'];
+
+const viewToggleOf = page => frameOf(page).locator('.section-heading [role="group"] button');
+
 When('I switch the provisioner catalog to the table', async ({ page }) => {
-  await hostCatalogOf(page).locator('[role="group"] button').first().click();
+  await viewToggleOf(page).first().click();
 });
 
-When('I pick {string} in the provisioner catalog source', async ({ page }, source) => {
-  await frameOf(page).locator('#catalog-source').selectOption(source);
+When(
+  'I switch the {string} listing of the section page to {string}',
+  async ({ page }, name, view) => {
+    await expect(tableOf(page, name)).toBeVisible();
+    await viewToggleOf(page).nth(VIEWS.indexOf(view)).click();
+  }
+);
+
+const listingCardOf = (page, name, text) =>
+  tableOf(page, name).locator('.catalog-card').filter({ hasText: text }).first();
+
+Then(
+  'the {string} listing of the section page draws {int} cards',
+  async ({ page }, name, count) => {
+    await expect(tableOf(page, name)).toBeVisible();
+    await expect(tableOf(page, name).locator('.catalog-card')).toHaveCount(count);
+  }
+);
+
+Then('the {string} listing of the section page draws the table', async ({ page }, name) => {
+  await expect(tableOf(page, name).locator('table').first()).toBeVisible();
+  await expect(tableOf(page, name).locator('.catalog-card')).toHaveCount(0);
+});
+
+Then(
+  'the {string} listing of the section page greys the card {string}',
+  async ({ page }, name, text) => {
+    await expect(
+      tableOf(page, name).locator('.held .catalog-card').filter({ hasText: text }).first()
+    ).toBeVisible();
+  }
+);
+
+Then(
+  'the {string} listing of the section page draws the card {string} plain',
+  async ({ page }, name, text) => {
+    await expect(listingCardOf(page, name, text)).toBeVisible();
+    await expect(
+      tableOf(page, name).locator('.held .catalog-card').filter({ hasText: text })
+    ).toHaveCount(0);
+  }
+);
+
+Then('the card {string} of the {string} listing is marked', async ({ page }, text, name) => {
+  await expect(
+    listingCardOf(page, name, text).locator('[data-card][data-handed="true"]')
+  ).toBeVisible();
+});
+
+When(
+  'I press {string} on the card {string} of the {string} listing',
+  async ({ page }, action, text, name) => {
+    await listingCardOf(page, name, text).locator(`[data-action="${action}"]`).first().click();
+  }
+);
+
+When(
+  'I open the menu of the card {string} of the {string} listing',
+  async ({ page }, text, name) => {
+    await listingCardOf(page, name, text).locator('[data-action="held-more"]').first().click();
+    await expect(openMenuOf(page)).toBeVisible();
+  }
+);
+
+Then(
+  'the card {string} of the {string} listing version {string} creates a machine at {string}',
+  async ({ page }, text, name, version, href) => {
+    await expect(
+      listingCardOf(page, name, text).locator(
+        `[data-version="${version}"] [data-action="version-create"]`
+      )
+    ).toHaveAttribute('href', href);
+  }
+);
+
+Then('the section page heading reads {string}', async ({ page }, text) => {
+  await expect(frameOf(page).locator('.section-heading .text-muted').first()).toHaveText(
+    new RegExp(`${text}$`, 'u')
+  );
 });
 
 const cardOf = (page, name) =>
@@ -206,6 +307,18 @@ Then('the card {string} folds are folded', async ({ page }, name) => {
 
 When('I open the {string} fold of the card {string}', async ({ page }, fold, name) => {
   await cardOf(page, name).locator(`[data-fold="${fold}"] > summary`).click();
+});
+
+When(
+  'I press {string} on the card {string} of the provisioner catalog',
+  async ({ page }, action, name) => {
+    await cardOf(page, name).locator(`[data-action="${action}"]`).first().click();
+  }
+);
+
+When('I open the menu of the card {string} of the provisioner catalog', async ({ page }, name) => {
+  await cardOf(page, name).locator('[data-action="held-more"]').first().click();
+  await expect(openMenuOf(page)).toBeVisible();
 });
 
 When('I select the version {string} of the card {string}', async ({ page }, version, name) => {
@@ -243,10 +356,6 @@ Then(
     ).toHaveAttribute('href', href);
   }
 );
-
-Then('the provisioner catalog is of the source {string}', async ({ page }, source) => {
-  await expect(hostCatalogOf(page)).toHaveAttribute('data-catalog-source', source);
-});
 
 Then('the catalog dialog {string} marks the field {string} invalid', async ({ page }, name, id) => {
   const dialog = namedDialogOf(page, name);

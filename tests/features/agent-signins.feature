@@ -83,6 +83,21 @@ Feature: agent-signins
     And the tab stays open
     And the host was not sent POST to "/api/auth/tray-claim"
 
+  Scenario: Agent sign-ins: an hwa://open lands in the tab already open, the opened tab handing its path over hw-auth and closing, the open tab moving to the word's landing
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-create fixture
+    And the host answers the agent-create-deploy fixture
+    And the host answers the agent-live fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/"
+    Then the chrome draws the account menu
+    And the host was sent GET to "/api/api-keys/info" 1 times
+    When I open "/?create=provisioner&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json#tray=tray-demo-token" in a second tab
+    Then the path is "/hosts/self/provisioning/provisioners?create=provisioner&provisioner=STARTcloud%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    And the section page "provisioners" draws
+    And the second tab is closed
+
   Scenario: Agent sign-ins: the ?sso=unavailable bounce draws the chooser with its quiet line and starts no silent probe
     Given the host answers the agent-signins fixture
     When I open "/login?sso=unavailable"

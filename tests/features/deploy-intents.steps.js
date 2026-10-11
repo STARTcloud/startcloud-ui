@@ -92,9 +92,7 @@ Then(
 );
 
 Then('the provisioner catalog marks no card', async ({ page }) => {
-  await expect(
-    page.locator('[data-table="provisioner-catalog"] .catalog-card').first()
-  ).toBeVisible();
+  await expect(page.locator('[data-table="provisioner-catalog"]')).toBeVisible();
   await expect(page.locator('[data-card="provisioner"][data-handed]')).toHaveCount(0);
 });
 

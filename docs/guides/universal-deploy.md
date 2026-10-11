@@ -250,9 +250,13 @@ rule alone.
 **The desktop agent** receives `hwa://open?<query>`, validates the query
 against the table above and the word's keys, mints its tray token and
 opens the signed-in UI at `/?<query>#tray=…`; the UI claims the fragment,
-strips it, and the hosts feature moves `/?<query>` to the word's landing
-on the one serving agent, `/hosts/self…?<query>`, or stays on the
-dashboard with one warning notice while the agent cannot take the word.
+strips it, and where a tab of the agent's UI is already open hands
+`/?<query>` to that tab over the session layer's `hw-auth` channel and
+closes the tab the agent opened, so the hand-off lands in the tab the
+person already has; the hosts feature then moves `/?<query>` to the
+word's landing on the one serving agent, `/hosts/self…?<query>`, or
+stays on the dashboard with one warning notice while the agent cannot
+take the word.
 
 **A server** receives `<origin>/?<query>` on its hosts page, which counts
 the hosts that can take the word for a person who may create: exactly one
@@ -266,12 +270,12 @@ A host takes a word while its own row lists the word's token, checked
 strictly, and the word lands on the page of the host that does it, the
 query and its seed kept on the route until the page has used them:
 
-| Word          | Token                                                                           | Landing                                            | What opens                                                                    |
-| ------------- | ------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `machine`     | `machines` and `machine-create`                                                 | `/hosts/<id>?<query>`, the host's page             | the create wizard                                                             |
-| `provisioner` | `provisioner-registry`                                                          | `/hosts/<id>/provisioning/catalog?<query>`         | the handed family's card marked, its version selected, Install one press away |
-| `template`    | `templates`                                                                     | `/hosts/<id>/provisioning/templates?<query>`       | the pull dialog filled with the box on the registry its URL names             |
-| `source`      | `provisioner-registry` for a `provisioner_catalog`, `templates` for a `box_url` | the Provisioner catalog page or the Templates page | the Add source dialog, or the Add registry dialog, filled from the URL        |
+| Word          | Token                                                                           | Landing                                         | What opens                                                                         |
+| ------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `machine`     | `machines` and `machine-create`                                                 | `/hosts/<id>?<query>`, the host's page          | the create wizard                                                                  |
+| `provisioner` | `provisioner-registry`                                                          | `/hosts/<id>/provisioning/provisioners?<query>` | the handed family's card marked, its version selected, Install one press away      |
+| `template`    | `templates`                                                                     | `/hosts/<id>/provisioning/templates?<query>`    | the handed box's card marked, Install one press away                               |
+| `source`      | `provisioner-registry` for a `provisioner_catalog`, `templates` for a `box_url` | the Provisioners page or the Templates page     | the Sources modal, or the Registries modal, open with its form filled from the URL |
 
 The banner on the hosts page is one notice of the banner tier, keyed, the
 word's glyph, the title naming what was handed, Deploy, Install, Pull or
@@ -289,37 +293,101 @@ machines", "no provisioner registry" or "no templates", the name plain
 text on its card and its own link to its page kept in the table. The
 banner's dismiss drops the hand-off from the route.
 
-**`provisioner`** lands on the host's Provisioner catalog page with the
-handed family's card marked, scrolled into view, its Versions fold open
-and the handed version selected, the listing opened on the handed catalog's
-source where the host holds it; Install on that version sends
-`POST provisioning/catalog/install` as a person's own press sends it and
-drops the hand-off from the route. A family no source of the host lists
-draws the Install card of the create wizard's Provisioning step over the
-listing, Add source and install adding the handed catalog first, the same
-chain and the same words.
+**`provisioner`** lands on the host's Provisioners page with the handed
+family's card marked, scrolled into view, its Versions fold open and the
+handed version selected, drawn whatever the panel's Installed group says;
+Install on that version sends `POST provisioning/catalog/install` as a
+person's own press sends it and drops the hand-off from the route. A
+family no source of the host lists draws the Install card of the create
+wizard's Provisioning step over the listing, Add source and install
+adding the handed catalog first, the same chain and the same words.
 
-**`template`** lands on the host's Templates page with the pull dialog
-open and filled, the organization and the box from `box`, the version and
-the architecture, the registry picked the one the box's URL starts with;
-a host that holds no such registry draws the Add registry and continue
-card over the dialog's fields and holds the submit until the registry is
-written, through the host's `PUT config/storage` as the create wizard
-writes it, and the dialog continues on the registry. The submit sends
-`POST templates/pull` as a person's own pull sends it. Closing the dialog
+**`template`** lands on the host's Templates page with the handed box's
+card marked with the handed version, scrolled into view and drawn
+whatever the panel's Installed group says, every registry's catalog read
+as the person, the forwarded person's token first, the host's bound
+account's token second and the registry's own key last; Install on that
+card sends `POST templates/pull` with the handed version and architecture
+on the box's registry as a person's own press sends it and drops the
+hand-off from the route. A host that holds no such registry draws the
+Add registry and continue card over the listing, whose press writes the
+registry through the host's `PUT config/storage` as the create wizard
+writes it and reads the registries again, so the listing reads the new
+registry and marks the card.
+
+**`source`** with a `provisioner_catalog` lands on the host's
+Provisioners page with the Sources modal open and its form filled under
+the table, the catalog's host as the display name, the URL as given and
+the authentication, `oidc` for an organization's private catalog and
+`none` otherwise; Save sends `POST provisioning/catalog/sources`, a `409`
+reading as already held, and the sources are read again. With a `box_url`
+it lands on the host's Templates page with the Registries modal open and
+its form filled, the registry's host lowercased as its id, its host as
+the display name and its origin as the URL; Save is the one merge patch
+of `PUT config/storage` the Templates page writes. Closing either form
 drops the hand-off from the route.
 
-**`source`** with a `provisioner_catalog` lands on the host's Provisioner
-catalog page with the Add source dialog open and filled, the catalog's
-host as the display name, the URL as given and the authentication, `oidc`
-for an organization's private catalog and `none` otherwise; the submit
-sends `POST provisioning/catalog/sources`, a `409` reading as already
-held, and the sources are read again. With a `box_url` it lands on the
-host's Templates page with the Add registry dialog open and filled, the
-registry's host lowercased as its id, its host as the display name and its
-origin as the URL; the submit is the one merge patch of
-`PUT config/storage` the Templates page writes. Closing either dialog
-drops the hand-off from the route.
+### The receiver's control
+
+A host's Provisioners page and its Templates page are the catalog's and
+BoxVault's own listings, the same card, the same table, cards by default
+and the view toggle last in the heading pane, over every family and
+every box the host's catalog sources and enabled box registries list,
+each drawn once from the first source that lists it, and each carrying
+the source it came from. The words are the same on both pages and never
+Pull or Downloaded: Installed, Not installed, Update available, Install,
+Update to.
+
+- **The Deploy slot** of every card foot and every table cell is one
+  split control: the Hyperweaver glyph at full colour while the host
+  holds none of the item, its press Install of the newest version; at
+  full colour with a small exclamation dot while the host holds only an
+  older version, its press Update to the newest; greyed and disabled
+  while the host holds the newest. Beside it a chevron opens the menu
+  headed by the newest version, plain entries, the fetch entries over a
+  divider and the delete entries under it. A missing provisioner offers
+  Install, Install an older version, which picks one of the versions the
+  host lacks, and Add this catalog as a source; a held provisioner Update
+  to while behind, Update from source while the family came from git or
+  a folder, then Delete of each held version and Delete family. A missing
+  box offers Install, Install an older version and Add this registry as a
+  source; a held box Update to while behind and Move of each held
+  version, then Delete of each held version. Every delete waits behind
+  the typed confirmation, and a refused provisioner delete names the
+  machines that reference it.
+- **The Versions fold** of a card lists every version with its date and
+  two square outlined buttons: the download glyph installs that version
+  onto the host, disabled and titled Installed on a version the host
+  holds, and the Hyperweaver mark opens the create wizard with that
+  version while the host creates machines. The catalog's and BoxVault's
+  own version lines draw the same two outlined buttons, Download and
+  Deploy.
+- **The listing** sorts installed entries first, the Status column the
+  sort, descending, reading Installed, Update available or nothing; the
+  navbar panel's Installed group, Installed and Not installed, is on
+  Installed when the page opens; with the group narrowing nothing every
+  entry draws and the missing ones are greyed; Add in the heading pane
+  flips the group to Not installed alone and a second press or Clear
+  filters flips it back, the heading's muted text reading Add meanwhile.
+- **The heading pane** carries glyphs with titles alone: Provisioners
+  Add, Sources, Import, Refresh and the view toggle; Templates Add,
+  Registries, Import, Export machine, Publish, Refresh and the view
+  toggle. Import on Provisioners is the import of a family from a
+  folder, an archive or a git repository; Import on Templates is the
+  pull of a box by name.
+- **Sources and Registries** open one modal each: the title and the
+  close button, a heading pane with the label and Add at its right, the
+  one table of the sources, Name, Key, URL, Default and Enabled where a
+  row carries it, each row's Make default, Enable or Disable, Edit and
+  Remove where the host offers a route for it, and under the table the
+  add or edit form while Add or Edit is pressed, so no dialog opens over
+  the modal. A catalog source offers Add alone and a box registry all
+  four over `PUT config/storage`, because the agent's catalog sources
+  answer `GET` and `POST` and no other verb.
+- **One read a source.** The page reads each source's catalog once as it
+  draws, the host's own families or templates once, and nothing else of
+  the catalog, because the listing is the one place the catalog is
+  shown.
 
 **`machine`** lands on the host's page, which opens the create wizard over
 itself while the host offers a create, the query's members seeding the

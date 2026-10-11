@@ -72,7 +72,7 @@ export const sessionStateShape = PropTypes.shape({
  * @param {boolean} [options.allOrganizations] - Whether All organizations, the empty uuid, is a choice and the one nothing stored falls to, decided by the app from the status
  * @param {Object} [options.push] - The functions from `createPush`
  * @param {Function} [options.onAdopt] - Called with the session, or null, before it is rendered
- * @param {Function} [options.loadFavorites] - Answers `GET /api/user/favorites` for the signed-in person
+ * @param {Function} [options.loadFavorites] - Called with the adopted session, answers the favorites `GET /api/user/favorites` lists for the signed-in person
  * @returns {Object} The session state and handlers
  */
 export const useSession = ({
@@ -124,29 +124,32 @@ export const useSession = ({
     [activeOrgKey]
   );
 
-  const readFavorites = useCallback(() => {
-    if (!loadFavorites) {
-      return;
-    }
-    const pending = loadFavorites()
-      .then(list => (Array.isArray(list) ? list : []))
-      .catch(() => []);
-    favoritesPromise.current = pending;
-    pending.then(list => {
-      if (favoritesPromise.current === pending) {
-        favoritesDeferred.current = false;
-        setFavorites(list);
+  const readFavorites = useCallback(
+    current => {
+      if (!loadFavorites) {
+        return;
       }
-    });
-  }, [loadFavorites]);
+      const pending = loadFavorites(current)
+        .then(list => (Array.isArray(list) ? list : []))
+        .catch(() => []);
+      favoritesPromise.current = pending;
+      pending.then(list => {
+        if (favoritesPromise.current === pending) {
+          favoritesDeferred.current = false;
+          setFavorites(list);
+        }
+      });
+    },
+    [loadFavorites]
+  );
 
   const readDeferredFavorites = useCallback(() => {
     if (!favoritesDeferred.current || !session.user) {
       return;
     }
     favoritesDeferred.current = false;
-    readFavorites();
-  }, [readFavorites, session.user]);
+    readFavorites(session);
+  }, [readFavorites, session]);
 
   const adopt = useCallback(
     next => {
@@ -169,7 +172,7 @@ export const useSession = ({
         if (returnTo.onAuthPage(window.location.pathname)) {
           favoritesDeferred.current = true;
         } else {
-          readFavorites();
+          readFavorites(next);
         }
       } else {
         favoritesDeferred.current = false;

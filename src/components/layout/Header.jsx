@@ -136,13 +136,15 @@ ModeButton.propTypes = {
  * ticket icon, the mode control (the cycling button over the mode alone,
  * the theme being the profile's Preferences page's to choose), language,
  * then the account menu or Sign in, each control drawn only in the state
- * it belongs to: search and the menu signed in, the ticket icon and Sign
- * in signed out, the rest in both; a feature's `actionMenu`, when the
+ * it belongs to: search in both states while `searchOn`, the host listing
+ * `search` off the auth paths, the menu signed in, the ticket icon and
+ * Sign in signed out, the rest in both; a feature's `actionMenu`, when the
  * shell hands one, draws in the account slot before the user menu or in
  * its place while the shell moved the user menu to the sidebar's foot.
  */
 const Cluster = ({
   signedIn,
+  searchOn,
   discoverTo,
   ticketUrl,
   mode,
@@ -154,7 +156,7 @@ const Cluster = ({
   LinkComponent,
 }) => (
   <ul className="nav nav-pills ms-auto align-items-center">
-    {signedIn ? <NavbarSearchControl /> : null}
+    {searchOn ? <NavbarSearchControl /> : null}
     {discoverTo ? <DiscoverButton to={discoverTo} LinkComponent={LinkComponent} /> : null}
     {!signedIn && ticketUrl ? <TicketButton href={ticketUrl} /> : null}
     <ModeButton mode={mode} />
@@ -174,6 +176,7 @@ const languageShape = PropTypes.shape({
 
 Cluster.propTypes = {
   signedIn: PropTypes.bool.isRequired,
+  searchOn: PropTypes.bool.isRequired,
   discoverTo: PropTypes.string.isRequired,
   ticketUrl: PropTypes.string.isRequired,
   mode: modeShape.isRequired,
@@ -192,6 +195,7 @@ const Header = ({
   mode,
   language,
   signedIn,
+  searchOn,
   onSignIn = null,
   signInTo = '',
   userMenu = null,
@@ -231,6 +235,7 @@ const Header = ({
 
         <Cluster
           signedIn={signedIn}
+          searchOn={searchOn}
           discoverTo={discoverTo}
           ticketUrl={ticketUrl}
           mode={mode}
@@ -243,7 +248,7 @@ const Header = ({
         />
       </div>
       <NoticeBanners LinkComponent={LinkComponent} />
-      <NavbarSearchPanel />
+      {searchOn ? <NavbarSearchPanel /> : null}
     </nav>
   );
 };
@@ -255,6 +260,7 @@ Header.propTypes = {
   mode: modeShape.isRequired,
   language: languageShape.isRequired,
   signedIn: PropTypes.bool.isRequired,
+  searchOn: PropTypes.bool.isRequired,
   onSignIn: PropTypes.func,
   signInTo: PropTypes.string,
   userMenu: PropTypes.object,

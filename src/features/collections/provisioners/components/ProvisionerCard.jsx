@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { copyToClipboard } from '../../../../lib/clipboard';
 import { itemShape } from '../../../../utils/itemShape';
 import { itemPath } from '../../../../utils/routes';
-import { CardLinks } from '../../../catalog/components/ItemCards';
+import { CardFold, CardLinks } from '../../../catalog/components/ItemCards';
 import { HEALTH_GUIDE, boxLabelOf, boxUrlOf, providerNamesOf, qualityOf } from '../utils/quality';
 
 import ProviderChips from './ProviderChips';
@@ -126,33 +126,41 @@ HealthStrip.propTypes = {
   version: PropTypes.object,
 };
 
-const Fold = ({ title, signal, kind, open = false, children }) => (
-  <details className={`q-fold pt-2 border-top ${kind}`} data-fold={kind} open={open}>
-    <summary className="q-summary card-above">
-      <FaChevronDown className="fold-chevron" aria-hidden="true" />
-      <h3 className="h6 mb-0">{title}</h3>
-      <span className="q-signal">{signal}</span>
-    </summary>
-    <div className="fold-body card-above">{children}</div>
-  </details>
-);
-
-Fold.propTypes = {
-  title: PropTypes.node.isRequired,
-  signal: PropTypes.node.isRequired,
-  kind: PropTypes.string.isRequired,
-  open: PropTypes.bool,
-  children: PropTypes.node.isRequired,
-};
-
 const releasedOn = (version, language) =>
   version.createdAt ? new Date(version.createdAt).toLocaleDateString(language) : '';
+
+/**
+ * The square outlined Download button of one version line, linking to the
+ * version's first artifact; nothing while the version has no artifact.
+ */
+export const VersionDownload = ({ item, version }) => {
+  const { t } = useTranslation();
+  const artifact = item.versions.find(entry => entry.version === version)?.artifacts[0] || null;
+  if (!artifact) {
+    return null;
+  }
+  return (
+    <a
+      href={artifact.downloadUrl}
+      className="btn btn-outline-secondary version-action"
+      title={t('provisioners.versions.download', { version })}
+      aria-label={t('provisioners.versions.download', { version })}
+      data-action="version-download"
+    >
+      <FaDownload aria-hidden="true" />
+    </a>
+  );
+};
+
+VersionDownload.propTypes = {
+  item: itemShape.isRequired,
+  version: PropTypes.string.isRequired,
+};
 
 const VersionRow = ({ item, version, selected, onSelect, VersionAction, ctx }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const quality = qualityOf(item, version);
-  const artifact = version.artifacts[0] || null;
   const toggleLabel = t('provisioners.versions.toggle', { version: version.version });
   return (
     <li
@@ -198,17 +206,6 @@ const VersionRow = ({ item, version, selected, onSelect, VersionAction, ctx }) =
         <strong className="version-number">{version.version}</strong>
         <span className="version-date">{releasedOn(version, ctx.language)}</span>
         <span className="version-actions">
-          {artifact ? (
-            <a
-              href={artifact.downloadUrl}
-              className="btn btn-outline-secondary version-action"
-              title={t('provisioners.versions.download', { version: version.version })}
-              aria-label={t('provisioners.versions.download', { version: version.version })}
-              data-action="version-download"
-            >
-              <FaDownload aria-hidden="true" />
-            </a>
-          ) : null}
           {VersionAction ? <VersionAction item={item} version={version.version} ctx={ctx} /> : null}
         </span>
       </div>
@@ -333,14 +330,14 @@ export const cardBodyWith = ({ VersionAction = null, Glyph = null }) => {
       >
         <HealthStrip item={item} version={version} />
         <div className="card-folds">
-          <Fold
+          <CardFold
             kind="quality-fold"
             title={t('provisioners.card.qualityHeading')}
             signal={<QualitySignal rules={quality.rules} />}
           >
             <QualityPanel quality={quality} />
-          </Fold>
-          <Fold
+          </CardFold>
+          <CardFold
             kind="versions-fold"
             title={t('pages.item.versions')}
             signal={versionsSignal}
@@ -353,7 +350,7 @@ export const cardBodyWith = ({ VersionAction = null, Glyph = null }) => {
               VersionAction={VersionAction}
               ctx={ctx}
             />
-          </Fold>
+          </CardFold>
         </div>
         <CardLinks item={item}>{Glyph ? <Glyph item={item} ctx={ctx} /> : null}</CardLinks>
       </div>

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { FaCube } from 'react-icons/fa6';
 
 import {
@@ -18,11 +19,12 @@ import {
   providerLevelColumns,
   versionLevelColumns,
 } from '../../../components/common/levelColumns';
-import { architectureNames, providerNames } from '../../../utils/itemShape';
+import { architectureNames, itemShape, providerNames } from '../../../utils/itemShape';
 import { canManageBox } from '../../../utils/permissions';
 import { ROW_BULK, VERSION_BULK } from '../bulkActions';
 
 import { boxesAdapter } from './api/adapter';
+import { cardBodyWith } from './components/BoxCard';
 import {
   BoxCicdBar,
   BoxItemActions,
@@ -43,7 +45,17 @@ import {
   BoxVersionBannerActions,
   BoxVersionNotesActions,
 } from './components/BoxVersion';
-import { CardGlyph, deployColumn } from './components/deploy';
+import { CardGlyph, DeployGlyph, deployColumn } from './components/deploy';
+
+const VersionDeploy = ({ item, version, ctx }) => (
+  <DeployGlyph user={ctx.user} item={item} version={version} bare />
+);
+
+VersionDeploy.propTypes = {
+  item: itemShape.isRequired,
+  version: PropTypes.string.isRequired,
+  ctx: PropTypes.shape({ user: PropTypes.object }).isRequired,
+};
 
 export const boxes = {
   key: 'boxes',
@@ -111,6 +123,7 @@ export const boxes = {
   slots: {
     ListActions: BoxListActions,
     CardGlyph,
+    CardBody: cardBodyWith({ VersionAction: VersionDeploy, Glyph: CardGlyph }),
     ItemActions: BoxItemActions,
     ItemHeaderExtra: BoxCicdBar,
     ItemExtras: BoxItemExtras,

@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useStatus } from '../../../contexts/StatusContext';
 import { messageFor } from '../../../utils/validation';
 import { fetchRemoteTemplates } from '../api/provisioning';
@@ -31,7 +32,20 @@ import {
 
 import BoxSourceCard from './BoxSourceCard';
 import { PathInput } from './PathPicker';
+import SourcesModal, { InlineForm } from './SourcesModal';
+import TaskDialog from './TaskDialog';
 import ToolFormDialog from './ToolFormDialog';
+
+const OFFERS = { default: true, toggle: true, edit: true, remove: true };
+
+const sourceRowOf = source => ({
+  key: sourceKeyOf(source),
+  name: sourceLabelOf(source),
+  url: source.url || '',
+  isDefault: Boolean(source.default),
+  enabled: source.enabled !== false,
+  source,
+});
 
 const errorShape = PropTypes.shape({ rule: PropTypes.string.isRequired, params: PropTypes.object });
 
@@ -177,17 +191,17 @@ export const pullFormOfSeed = seed => {
 };
 
 /**
- * The pull dialog, hyperweaver-ui's: the registry, opening on the
- * default one, picked by its key and drawn by its display name, its
- * catalog at `templates/remote/{key}` read once a registry is picked and again on
- * a change, the box picked from it filling the organization, the box,
- * the version among its versions and the architecture among its
- * architectures, each typed otherwise; the submit hands the body of
- * `pullBody` up, a queued task. A handed box, `seed`, fills the fields
- * and opens the dialog on the registry its `box_url` names,
- * `templateSourceFor`, and `registry`, the state of `useTemplateSource`,
- * draws the registry card over the fields and holds the submit while the
- * host lacks that registry.
+ * The Import dialog of the Templates page, hyperweaver-ui's pull by
+ * name: the registry, opening on the default one, picked by its key and
+ * drawn by its display name, its catalog at `templates/remote/{key}` read
+ * once a registry is picked and again on a change, the box picked from it
+ * filling the organization, the box, the version among its versions and
+ * the architecture among its architectures, each typed otherwise; the
+ * submit hands the body of `pullBody` up, a queued task. A handed box,
+ * `seed`, fills the fields and opens the dialog on the registry its
+ * `box_url` names, `templateSourceFor`, and `registry`, the state of
+ * `useTemplateSource`, draws the registry card over the fields and holds
+ * the submit while the host lacks that registry.
  */
 export const PullModal = ({
   id,
@@ -236,7 +250,7 @@ export const PullModal = ({
   return (
     <ToolFormDialog
       dialog="template-pull"
-      title={t('host.templatesManagement.pullTemplate')}
+      title={t('host.templatesManagement.importTemplate')}
       submitKey="host.templatesManagement.queueDownload"
       problemKey={problem}
       disabled={Boolean(registry?.offered)}
@@ -607,22 +621,23 @@ MoveModal.propTypes = {
 };
 
 /**
- * The registry dialog, hyperweaver-ui's add and edit of a box registry:
- * the id, the agent's map key, seeded on an edit from the row's key, the
- * display name, seeded from the row's display name, the URL, the default
- * switch, the API key and the CA file with the browse button, blank
- * credentials keeping the existing ones on an edit; the submit hands the
- * form up, and `errors`, the refusal's entries by form field, draws each
- * under the field it names; `seed`, the form of a handed registry URL,
- * fills a new registry's fields.
+ * The registry form of the Templates page's Registries modal, drawn under
+ * its table, hyperweaver-ui's add and edit of a box registry: the id, the
+ * agent's map key, seeded on an edit from the row's key, the display
+ * name, seeded from the row's display name, the URL, the default switch,
+ * the API key and the CA file with the browse button, blank credentials
+ * keeping the existing ones on an edit; the submit hands the form up, and
+ * `errors`, the refusal's entries by form field, draws each under the
+ * field it names; `seed`, the form of a handed registry URL, fills a new
+ * registry's fields.
  */
-export const SourceModal = ({
+export const SourceForm = ({
   id,
   server,
   editing,
   errors = {},
   busy,
-  onClose,
+  onCancel,
   onSubmit,
   seed = null,
 }) => {
@@ -650,17 +665,16 @@ export const SourceModal = ({
     }
   };
   return (
-    <ToolFormDialog
+    <InlineForm
       dialog="template-source"
       title={
         editing
           ? t('host.templatesManagement.editRegistry', { name: sourceLabelOf(editing) })
           : t('host.templatesManagement.addBoxRegistry')
       }
-      submitKey={editing ? 'host.templatesManagement.save' : 'host.templatesManagement.addRegistry'}
       problemKey={problem}
       busy={busy}
-      onClose={onClose}
+      onCancel={onCancel}
       onSubmit={submit}
     >
       <div className="row g-3">
@@ -754,17 +768,224 @@ export const SourceModal = ({
           />
         </div>
       </div>
-    </ToolFormDialog>
+    </InlineForm>
   );
 };
 
-SourceModal.propTypes = {
+SourceForm.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   editing: PropTypes.object,
   errors: PropTypes.objectOf(errorShape),
   busy: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   seed: PropTypes.object,
+};
+
+const panelShape = PropTypes.shape({
+  open: PropTypes.bool.isRequired,
+  form: PropTypes.shape({ editing: PropTypes.object, seed: PropTypes.object }),
+});
+
+/**
+ * The Registries modal of the Templates page: the one modal of the box
+ * registries, each row with Make default, Enable or Disable, Edit and
+ * Remove, and the registry form under its table while `panel.form` is
+ * set; Save hands the form and the registry being edited to `onSave`.
+ */
+const RegistriesModal = ({
+  id,
+  server,
+  sources,
+  panel,
+  errors,
+  busy,
+  onAdd,
+  onAction,
+  onSave,
+  onCancel,
+  onClose,
+}) => {
+  const { t } = useTranslation();
+  const editing = panel.form?.editing || null;
+  return (
+    <SourcesModal
+      kind="template"
+      title={t('host.templatesManagement.boxRegistries')}
+      label={t('hosts.manage.sources.registries')}
+      addLabelKey="host.templatesManagement.addRegistry"
+      addAction="source-add"
+      emptyKey="host.templatesManagement.noRegistriesConfigured"
+      rows={sources.map(sourceRowOf)}
+      offers={OFFERS}
+      busy={busy}
+      form={
+        panel.form ? (
+          <SourceForm
+            key={editing ? sourceKeyOf(editing) : 'new'}
+            id={id}
+            server={server}
+            editing={editing}
+            seed={panel.form.seed}
+            errors={errors}
+            busy={busy}
+            onCancel={onCancel}
+            onSubmit={form => onSave(form, editing)}
+          />
+        ) : null
+      }
+      onAdd={onAdd}
+      onAction={onAction}
+      onClose={onClose}
+    />
+  );
+};
+
+RegistriesModal.propTypes = {
+  id: PropTypes.string.isRequired,
+  server: PropTypes.object.isRequired,
+  sources: PropTypes.array.isRequired,
+  panel: panelShape.isRequired,
+  errors: PropTypes.objectOf(errorShape).isRequired,
+  busy: PropTypes.bool.isRequired,
+  onAdd: PropTypes.func.isRequired,
+  onAction: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+/**
+ * Every dialog of the Templates page: the Import, Export and Publish
+ * dialogs by `asked`, the Move dialog and the delete confirmation by
+ * `dialog`, the Registries modal while `panel.open`, the registry remove
+ * confirmation and the task dialog of the task last queued; each submit
+ * hands its body to the page's handler of that name.
+ */
+export const TemplateDialogsOf = ({
+  id,
+  server,
+  status,
+  sources,
+  machines,
+  busy,
+  asked,
+  dialog,
+  panel,
+  sourceErrors,
+  task,
+  onCloseAsked,
+  onCloseDialog,
+  onPull,
+  onExport,
+  onPublish,
+  onMove,
+  onDeleteTemplate,
+  onAddSource,
+  onSourceAction,
+  onSaveSource,
+  onRemoveSource,
+  onCancelForm,
+  onCloseSources,
+  onCloseTask,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {asked === 'import' ? (
+        <PullModal id={id} sources={sources} busy={busy} onClose={onCloseAsked} onSubmit={onPull} />
+      ) : null}
+      {asked === 'export' ? (
+        <ExportModal machines={machines} busy={busy} onClose={onCloseAsked} onSubmit={onExport} />
+      ) : null}
+      {asked === 'publish' ? (
+        <PublishModal
+          machines={machines}
+          sources={sources}
+          busy={busy}
+          onClose={onCloseAsked}
+          onSubmit={onPublish}
+        />
+      ) : null}
+      {dialog?.kind === 'move' ? (
+        <MoveModal
+          id={id}
+          server={server}
+          template={dialog.row}
+          busy={busy}
+          onClose={onCloseDialog}
+          onSubmit={path => onMove(dialog.row, path)}
+        />
+      ) : null}
+      <ConfirmModal
+        show={dialog?.kind === 'delete'}
+        handleClose={onCloseDialog}
+        handleConfirm={onDeleteTemplate}
+        title={t('host.templatesManagement.deleteTemplate')}
+        message={t('host.templatesManagement.deleteTemplateConfirm', {
+          template: dialog?.row ? templateLabel(dialog.row) : '',
+        })}
+        confirmText={t('host.templatesManagement.delete')}
+      />
+      {panel.open ? (
+        <RegistriesModal
+          id={id}
+          server={server}
+          sources={sources}
+          panel={panel}
+          errors={sourceErrors}
+          busy={busy}
+          onAdd={onAddSource}
+          onAction={onSourceAction}
+          onSave={onSaveSource}
+          onCancel={onCancelForm}
+          onClose={onCloseSources}
+        />
+      ) : null}
+      <ConfirmModal
+        show={dialog?.kind === 'source-remove'}
+        handleClose={onCloseDialog}
+        handleConfirm={() => onRemoveSource(dialog.source)}
+        title={t('host.templatesManagement.removeRegistry')}
+        message={t('host.templatesManagement.removeRegistryConfirm', {
+          name: dialog?.source ? sourceLabelOf(dialog.source) : '',
+        })}
+        confirmText={t('host.templatesManagement.remove')}
+      />
+      {task ? <TaskDialog status={status} id={id} task={task.row} onHide={onCloseTask} /> : null}
+    </>
+  );
+};
+
+TemplateDialogsOf.propTypes = {
+  id: PropTypes.string.isRequired,
+  server: PropTypes.object.isRequired,
+  status: PropTypes.object.isRequired,
+  sources: PropTypes.array.isRequired,
+  machines: PropTypes.array.isRequired,
+  busy: PropTypes.bool.isRequired,
+  asked: PropTypes.string.isRequired,
+  dialog: PropTypes.shape({
+    kind: PropTypes.string.isRequired,
+    row: PropTypes.object,
+    source: PropTypes.object,
+  }),
+  panel: panelShape.isRequired,
+  sourceErrors: PropTypes.objectOf(errorShape).isRequired,
+  task: PropTypes.shape({ row: PropTypes.object.isRequired }),
+  onCloseAsked: PropTypes.func.isRequired,
+  onCloseDialog: PropTypes.func.isRequired,
+  onPull: PropTypes.func.isRequired,
+  onExport: PropTypes.func.isRequired,
+  onPublish: PropTypes.func.isRequired,
+  onMove: PropTypes.func.isRequired,
+  onDeleteTemplate: PropTypes.func.isRequired,
+  onAddSource: PropTypes.func.isRequired,
+  onSourceAction: PropTypes.func.isRequired,
+  onSaveSource: PropTypes.func.isRequired,
+  onRemoveSource: PropTypes.func.isRequired,
+  onCancelForm: PropTypes.func.isRequired,
+  onCloseSources: PropTypes.func.isRequired,
+  onCloseTask: PropTypes.func.isRequired,
 };

@@ -2820,7 +2820,7 @@
         "sourceUpdated": "Registry {{name}} updated",
         "sourceAdded": "Registry {{name}} added",
         "sourceRemoved": "Registry {{name}} removed",
-        "pullQueued": "Pull queued",
+        "installQueued": "Install queued",
         "exportQueued": "Export queued",
         "publishQueued": "Publish queued",
         "moveQueued": "Move queued",
@@ -2832,8 +2832,7 @@
         "sourceRequired": "A name and a URL are required",
         "sourceDisplayName": "Display name",
         "sourceIdInvalid": "The registry id takes lowercase letters, digits and underscores alone.",
-        "sourceDisplayNameRequired": "A display name is required.",
-        "sourcesHelp": "Registries are the box catalogs machine creation and Pull read from"
+        "sourceDisplayNameRequired": "A display name is required."
       },
       "provisioners": {
         "failed": "The provisioner action was refused: {{message}}",
@@ -2922,6 +2921,29 @@
         "sourceAuth": "Authentication",
         "authNone": "None",
         "authOidc": "Sign in with SSO"
+      },
+      "held": {
+        "installed": "Installed",
+        "notInstalled": "Not installed",
+        "updateAvailable": "Update available",
+        "add": "Add",
+        "installVersion": "Install {{version}}",
+        "catalogSources": "Catalog sources",
+        "more": "More",
+        "version": "Version {{version}}",
+        "installOlder": "Install an older version…",
+        "createWith": "Create a machine with {{version}}",
+        "deleteVersion": "Delete {{version}}",
+        "moveVersion": "Move {{version}}…"
+      },
+      "sources": {
+        "key": "Key",
+        "url": "URL",
+        "default": "Default",
+        "enabled": "Enabled",
+        "sources": "Sources",
+        "registries": "Registries",
+        "none": "No catalog sources"
       }
     },
     "storage": {
@@ -3296,7 +3318,6 @@
       "tabOrchestration": "Orchestration",
       "tabInstallerFiles": "Installer Files",
       "tabDatabase": "Database",
-      "tabProvisionerCatalog": "Provisioner catalog",
       "titleAccessDenied": "Access Denied - Hyperweaver",
       "titleNoServerSelected": "No Server Selected - Hyperweaver",
       "titleManageHost": "Manage {{hostname}} - Hyperweaver",
@@ -6709,10 +6730,8 @@
       "never": "Never"
     },
     "templatesManagement": {
-      "pullTemplate": "Pull Template",
-      "exportMachineTooltip": "Export a stopped machine into a local .box",
+      "importTemplate": "Import template",
       "exportMachine": "Export Machine",
-      "publishTooltip": "Export a machine and publish it to a registry",
       "publish": "Publish",
       "refresh": "Refresh",
       "templatesCount": "{{count}} templates",
@@ -6720,7 +6739,6 @@
       "addRegistry": "Add Registry",
       "noRegistriesConfigured": "none configured — the image dropdowns stay empty",
       "default": "default",
-      "disabled": "disabled",
       "makeDefaultRegistry": "Make this the default registry",
       "enable": "Enable",
       "disable": "Disable",
@@ -7776,8 +7794,6 @@
     },
     "provisionerManagement": {
       "installFailed": "Install failed: {{message}}",
-      "catalogSource": "Catalog source",
-      "default": "Default",
       "version": "Version",
       "actions": "Actions",
       "installed": "installed",
@@ -7803,7 +7819,6 @@
       "referencedBy": "{{message}} — referenced by: {{machines}}",
       "deleteFailed": "Delete failed: {{message}}",
       "importProvisioner": "Import Provisioner",
-      "browseCatalog": "Browse Catalog",
       "refresh": "Refresh",
       "familiesCount_one": "{{count}} family",
       "familiesCount_other": "{{count}} families",

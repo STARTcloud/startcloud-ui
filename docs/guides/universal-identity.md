@@ -663,9 +663,8 @@ session contract's sign-in page) by the states the issuer has:
   Contact rows signed in), the language control, and the mode control
   beside it (the site's theme is the host's, chosen on the profile's
   Preferences page; the mode is the person's). No
-  search icon, because app-wide search needs a session and no auth page
-  binds the navbar search; no Sign in button on any auth path of any
-  host, because the page itself is the sign-in.
+  search icon and no Sign in button on any auth path of any host,
+  because the page itself is the sign-in.
 - **After `next`.** The page navigates in-router when `next` is a path
   whose first segment is a page of this contract or of the pages contract,
   and sets `window.location` otherwise (a saved `/oauth2/authorize`, an

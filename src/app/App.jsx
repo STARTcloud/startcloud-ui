@@ -120,6 +120,18 @@ const notificationsFor = ({ status, cookie, claims, user, memberships, notificat
   return notifications;
 };
 
+/**
+ * The favorites the user menu draws, read for a session the identity
+ * provider made, an `oidc` session or one that names its `issuerUrl`, and
+ * the empty list for any other, because favorites are the identity
+ * provider's OAuth apps a person marked.
+ *
+ * @param {Object} current - The adopted session
+ * @returns {Promise<Array>} The ordered favorites
+ */
+const menuFavoritesFor = current =>
+  current.oidc || current.issuerUrl ? menuFavorites() : Promise.resolve([]);
+
 const ownApiRows = status =>
   status.links?.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
 
@@ -196,7 +208,7 @@ const App = ({ getSupportedLanguages }) => {
     allOrganizations: orgFilter,
     push,
     onAdopt: hasFeature(status, 'private-catalogs') ? adoptMemberships : null,
-    loadFavorites: hasFeature(status, 'favorites') ? menuFavorites : null,
+    loadFavorites: hasFeature(status, 'favorites') ? menuFavoritesFor : null,
   });
   const {
     user,

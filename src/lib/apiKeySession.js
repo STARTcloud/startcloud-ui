@@ -11,6 +11,7 @@ const AUTH_CHANNEL = 'hw-auth';
 const AUTH_PING = 'auth-ping';
 const AUTH_PONG = 'auth-pong';
 const AUTH_UPDATED = 'auth-updated';
+const AUTH_HANDOFF = 'auth-handoff';
 const TRAY_TOKEN = /[#&]tray=(?<token>[A-Za-z0-9_-]+)/u;
 const UNAUTHORIZED = 401;
 const ROLES = { admin: 'super-admin', operator: 'admin', viewer: 'user' };
@@ -190,9 +191,15 @@ export const userOfAccount = (profile, account) => ({
  * changed, the `storage` event the fallback, a tab that hears it while
  * signed out or holding another key's session, the cached profile's `id`
  * differing from its own, reloading into the session; the tab the tray or
- * the hand-off opened closes itself the moment a pong arrives and stays
- * open while none does, so a tab a person opened is never closed and
- * nothing waits on a clock, the answer itself being the signal. Once the
+ * the hand-off opened hands the path the agent opened it at, `/?<query>` of an
+ * `hwa://open`, to the first tab that answered over `auth-handoff`
+ * addressed to it, that tab moving there in-router through the `navigate`
+ * `setNavigate(fn)` holds, or reloading into it while it holds another
+ * key's session, and the opened tab closes itself once the hand-off is
+ * posted and stays open while no pong arrives, so a tab a person opened
+ * is never closed and nothing waits on a clock, the answer itself being
+ * the signal; with `reuseTab` false the opened tab posts no hand-off,
+ * stays and lands the path itself. Once the
  * profile is read, `GET /api/user` is read on the same session and held
  * in memory, the person's record in the identity provider's shape without
  * its `preferred_*` members, because the agent keeps no user preferences:
@@ -217,14 +224,26 @@ export const userOfAccount = (profile, account) => ({
  * @param {string} options.baseUrl - The agent's origin, the one that served the page
  * @param {Object} options.events - The bus from `createSessionEvents`; `login` is awaited after a sign-in and `sessionEnded` emitted when the agent rejects the session
  * @param {string} [options.storageKey] - localStorage key of the cached profile
+ * @param {boolean} [options.reuseTab] - The agent's `ui.reuse_tab`; false keeps the opened tab and hands nothing to an open tab
  * @returns {Object} The session provider `useSession`, the API client and the sign-in page drive
  */
-export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) => {
+export const createApiKeySession = ({
+  baseUrl,
+  events,
+  storageKey = 'apikey',
+  reuseTab = true,
+}) => {
   let held = '';
   let account = null;
   let answered = null;
   let claimPending = null;
   let completePending = null;
+  let navigateHolder = null;
+  let openedPath = '';
+
+  const setNavigate = fn => {
+    navigateHolder = fn;
+  };
 
   const current = () => JSON.parse(localStorage.getItem(storageKey) || 'null');
 
@@ -308,7 +327,8 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
     return Boolean(stored) && stored !== held;
   };
 
-  const post = type => channel?.postMessage({ type, key: storageKey, senderId: TAB_ID });
+  const post = (type, extra = {}) =>
+    channel?.postMessage({ type, key: storageKey, senderId: TAB_ID, ...extra });
 
   const announce = () => {
     handingOff = true;
@@ -316,14 +336,26 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
     post(AUTH_UPDATED);
   };
 
-  const hear = ({ type, key, senderId }) => {
+  const moveTo = path => {
+    if (stale() || !navigateHolder) {
+      window.location.assign(path);
+      return;
+    }
+    navigateHolder(path);
+  };
+
+  const hear = ({ type, key, senderId, to, path }) => {
     if (key !== storageKey || senderId === TAB_ID) {
       return;
     }
     if (type === AUTH_PING) {
       post(AUTH_PONG);
-    } else if (type === AUTH_PONG && handingOff) {
+    } else if (type === AUTH_PONG && handingOff && reuseTab) {
+      handingOff = false;
+      post(AUTH_HANDOFF, { to: senderId, path: openedPath });
       window.close();
+    } else if (type === AUTH_HANDOFF && to === TAB_ID) {
+      moveTo(path);
     } else if (type === AUTH_UPDATED && stale()) {
       window.location.reload();
     }
@@ -379,6 +411,7 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
   const claim = () => {
     const token = trayTokenOf(window.location.hash);
     if (token && !trayClaim) {
+      openedPath = `${window.location.pathname}${window.location.search}`;
       trayClaim = claimOnce(token);
       claimPending = trayClaim;
       completePending = trayClaim;
@@ -405,7 +438,10 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
     }
   };
 
-  const load = async () => {
+  const load = async ({ navigate } = {}) => {
+    if (navigate) {
+      setNavigate(navigate);
+    }
     claim();
     if (claimPending) {
       const pending = claimPending;
@@ -490,6 +526,7 @@ export const createApiKeySession = ({ baseUrl, events, storageKey = 'apikey' }) 
     load,
     reload: load,
     refresh: load,
+    setNavigate,
     begin,
     login,
     adopt,

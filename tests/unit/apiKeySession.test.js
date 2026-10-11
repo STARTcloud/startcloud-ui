@@ -144,11 +144,19 @@ const closeSession = () => {
   return { status: 204, data: '' };
 };
 
-const freshProvider = async () => {
+const freshProvider = async (options = {}) => {
   vi.resetModules();
   const { createApiKeySession } = await import('../../src/lib/apiKeySession.js');
-  return createApiKeySession({ baseUrl: 'https://agent.test', events });
+  return createApiKeySession({ baseUrl: 'https://agent.test', events, ...options });
 };
+
+const ownIdOf = channel => {
+  channel.onmessage({ data: { type: 'auth-ping', key: 'apikey', senderId: 'other' } });
+  return channel.posted.find(message => message.type === 'auth-pong').senderId;
+};
+
+const handoffTo = (channel, to, path = '/?create=machine') =>
+  channel.onmessage({ data: { type: 'auth-handoff', key: 'apikey', senderId: 'other', to, path } });
 
 const hold = (record, key = 'hw_good') => {
   storage.set('apikey', JSON.stringify(record));
@@ -172,7 +180,7 @@ beforeEach(() => {
   location.search = '';
   location.assign.mockClear();
   location.reload.mockClear();
-  close.mockClear();
+  close.mockReset();
   history.replaceState.mockClear();
   events.emit.mockClear();
   events.endSession.mockClear();
@@ -528,21 +536,99 @@ describe('createApiKeySession', () => {
     expect(channels[0].posted.map(message => message.type)).toEqual(['auth-ping', 'auth-updated']);
   });
 
-  it('closes the hand-off tab the moment another tab answers the ping, and never a tab that handed nothing off', async () => {
+  it('hands the opened path to the first tab that answers the ping, then closes the hand-off tab once, and never a tab that handed nothing off', async () => {
     location.hash = '#tray=tok_6';
+    location.search = '?create=template&box=a%2Fb';
     answers.set('POST /api/auth/tray-claim', claimTray);
     const session = await freshProvider();
     const [channel] = channels;
     channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'other' } });
     expect(close).not.toHaveBeenCalled();
     await session.load();
+    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/?create=template&box=a%2Fb');
     const own = channel.posted[0].senderId;
     channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: own } });
     expect(close).not.toHaveBeenCalled();
     channel.onmessage({ data: { type: 'auth-pong', key: 'other-key', senderId: 'other' } });
     expect(close).not.toHaveBeenCalled();
+    const handoffs = () => channel.posted.filter(message => message.type === 'auth-handoff');
+    expect(handoffs()).toHaveLength(0);
+    close.mockImplementation(() => {
+      expect(handoffs()).toHaveLength(1);
+    });
     channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'other' } });
     expect(close).toHaveBeenCalledTimes(1);
+    expect(handoffs()).toEqual([
+      expect.objectContaining({
+        type: 'auth-handoff',
+        key: 'apikey',
+        senderId: own,
+        to: 'other',
+        path: '/?create=template&box=a%2Fb',
+      }),
+    ]);
+    channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'third' } });
+    expect(handoffs()).toHaveLength(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands nothing and stays open on a pong while reuseTab is false', async () => {
+    location.hash = '#tray=tok_7';
+    location.search = '?create=machine';
+    answers.set('POST /api/auth/tray-claim', claimTray);
+    const session = await freshProvider({ reuseTab: false });
+    const [channel] = channels;
+    await session.load();
+    expect(channel.posted.map(message => message.type)).toEqual(['auth-ping', 'auth-updated']);
+    channel.onmessage({ data: { type: 'auth-pong', key: 'apikey', senderId: 'other' } });
+    expect(channel.posted.map(message => message.type)).toEqual(['auth-ping', 'auth-updated']);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('moves to the handed path in-router when the hand-off is addressed to it', async () => {
+    const session = await freshProvider();
+    const [channel] = channels;
+    const navigate = vi.fn();
+    session.setNavigate(navigate);
+    handoffTo(channel, ownIdOf(channel));
+    expect(navigate).toHaveBeenCalledWith('/?create=machine');
+    expect(location.assign).not.toHaveBeenCalled();
+    expect(location.reload).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('ignores a hand-off addressed to another tab', async () => {
+    const session = await freshProvider();
+    const [channel] = channels;
+    const navigate = vi.fn();
+    session.setNavigate(navigate);
+    ownIdOf(channel);
+    handoffTo(channel, 'someone-else');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(location.assign).not.toHaveBeenCalled();
+    expect(location.reload).not.toHaveBeenCalled();
+  });
+
+  it("reloads into the handed path while it holds another key's session", async () => {
+    hold(PROFILE);
+    const session = await freshProvider();
+    const [channel] = channels;
+    const navigate = vi.fn();
+    session.setNavigate(navigate);
+    storage.set('apikey', JSON.stringify({ ...PROFILE, id: 13 }));
+    handoffTo(channel, ownIdOf(channel));
+    expect(location.assign).toHaveBeenCalledWith('/?create=machine');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('load hands navigate to the provider', async () => {
+    const session = await freshProvider();
+    const [channel] = channels;
+    const navigate = vi.fn();
+    await session.load({ navigate });
+    handoffTo(channel, ownIdOf(channel));
+    expect(navigate).toHaveBeenCalledWith('/?create=machine');
+    expect(location.assign).not.toHaveBeenCalled();
   });
 
   it("answers another tab's ping with a pong and ignores its own", async () => {

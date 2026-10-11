@@ -142,77 +142,109 @@ Feature: host installer files and provisioners
     Then the host was sent POST to "/api/agents/3/artifacts/11/move" carrying "destination_storage_location_id" as "loc-old"
     And the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page holds "move"
 
-  Scenario: Provisioners: the families over the one table with the update badge from the catalog's newest, the versions under a row, and the invalid badge
+  Scenario: Provisioners: the families of every catalog source as cards, read once a source, the installed ones alone when the page opens, the Update glyph on a family behind the catalog and the glyph greyed on one at its newest, Add flipping the panel to the missing families and the Installed pill off greying them
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
     Then the section page "provisioners" draws
     And the host row "provisioners" is the active one
-    And the "provisioners" table of the section page lists 3 rows
+    And the "provisioner-catalog" listing of the section page draws 2 cards
     And the section page notes "update-available"
-    And the section page notes "invalid"
-    And the row "STARTcloud" of the "provisioners" table of the section page offers "update"
-    And the row "STARTcloud" of the "provisioners" table of the section page offers "refresh-source"
-    And the row "HCL Domino" of the "provisioners" table of the section page offers no "refresh-source"
-    When I press "versions" on the row "STARTcloud" of the "provisioners" table of the section page
-    Then the "versions-startcloud" table of the section page lists 2 rows
-    And the host was sent GET to "/api/agents/3/provisioning/catalog" 1 times
+    And the section page notes "held-current"
+    And the provisioner catalog draws a "gold" pill
+    And the provisioner catalog notes Installed on "hcl-domino" "2.0.0"
+    When I press the section page's "catalog-add" action
+    Then the section page heading reads "Add"
+    And the "provisioner-catalog" listing of the section page draws 1 cards
+    And the "provisioner-catalog" listing of the section page draws the card "windows" plain
+    And the provisioner catalog offers Install on "windows" "0.2.0"
+    When I press the section page's "catalog-add" action
+    Then the "provisioner-catalog" listing of the section page draws 2 cards
+    When I switch the "provisioner-catalog" listing of the section page to "table"
+    Then the "provisioner-catalog" listing of the section page draws the table
+    When I switch the "provisioner-catalog" listing of the section page to "cards"
+    And I press "/"
+    And I open the filter panel
+    And I toggle the filter pill "Installed"
+    Then the "provisioner-catalog" listing of the section page draws 3 cards
+    And the "provisioner-catalog" listing of the section page greys the card "windows"
+    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 1 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog" 2 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/health" 2 times
+    And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 1 times
 
-  Scenario: Provisioners: Update to installs the catalog's newest and Update from source re-imports the family, each a queued task
+  Scenario: Provisioners: the Update glyph on a family behind the catalog installs the catalog's newest, a queued task
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
-    And I press "update" on the row "STARTcloud" of the "provisioners" table of the section page
-    Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
-    When I press "refresh-source" on the row "STARTcloud" of the "provisioners" table of the section page
-    Then the host was sent POST to "/api/agents/3/provisioning/provisioners/startcloud/refresh-from-source"
+    And I press "catalog-update" on the card "startcloud" of the provisioner catalog
+    Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "name" as "startcloud"
+    And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
+    And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "source_name" as "startcloud"
+    And the page raised 1 success notice
 
-  Scenario: Provisioners: the import dialog sends a git source with its branch and key, the key picked among the secrets
+  Scenario: Provisioners: cards by default with tier pills, a version line's Install on a version the host lacks and its Install greyed on one it holds, and Install queues one
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
-    And I press the section page's "provisioner-import" action
-    And I submit the catalog dialog "provisioner-import"
-    Then the catalog dialog "provisioner-import" says why it cannot be sent
-    When I pick "git" in the catalog dialog select "import-source-type"
-    And I type "https://github.com/example/provisioner" into the field "import-url"
-    And I type "release" into the field "import-branch"
-    And I pick "github-startcloud" in the catalog dialog select "import-token"
-    And I submit the catalog dialog "provisioner-import"
-    Then the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "source_type" as "git"
-    And the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "branch" as "release"
-    And the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "token_name" as "github-startcloud"
-
-  Scenario: Provisioner catalog: Browse catalog opens the host's catalog drawn as the catalog's own provisioners, cards by default with tier pills, Install on a version the host lacks and Installed on one it holds, and Install queues one
-    Given the host answers the hosts fixture
-    And the host answers the hosts-installers fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/provisioning/provisioners"
-    And I press the section page's "provisioner-catalog" action
-    Then the path is "/hosts/3/provisioning/catalog"
-    And the section page "provisioner-catalog" draws
-    And the host row "provisioner-catalog" is the active one
-    And the provisioner catalog draws 2 cards
+    Then the provisioner catalog draws 2 cards
     And the provisioner catalog draws a "gold" pill
     And the provisioner catalog draws a "silver" pill
     And the provisioner catalog offers Install on "startcloud" "0.1.28"
     And the provisioner catalog notes Installed on "startcloud" "0.1.27"
     And the provisioner catalog notes Installed on "hcl-domino" "2.0.0"
-    And the host was sent GET to "/api/agents/3/provisioning/catalog/health" 1 times
-    And the host was sent GET to "/api/agents/3/provisioning/catalog/sources" 1 times
-    When I press Install on "startcloud" "0.1.28" in the provisioner catalog
+    When I open the "versions-fold" fold of the card "startcloud"
+    And I press Install on "startcloud" "0.1.28" in the provisioner catalog
     Then the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "name" as "startcloud"
     And the host was sent POST to "/api/agents/3/provisioning/catalog/install" carrying "version" as "0.1.28"
     And the page raised 1 success notice
 
-  Scenario: Provisioner catalog: a card draws its health strip and its two folds folded, and a version row's click moves the providers and the quality to that version
+  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source and the deletes, Update from source queuing a re-import and each delete waiting behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/provisioning/catalog"
+    When I open "/hosts/3/provisioning/provisioners"
+    And I open the menu of the card "startcloud" of the provisioner catalog
+    Then the open menu offers "held-update"
+    And the open menu offers "refresh-source"
+    And the open menu offers "delete-version"
+    And the open menu offers "delete-family"
+    When I press the menu entry "refresh-source"
+    Then the host was sent POST to "/api/agents/3/provisioning/provisioners/startcloud/refresh-from-source"
+    When I open the menu of the card "hcl-domino" of the provisioner catalog
+    Then the open menu offers no "held-update"
+    And the open menu offers no "refresh-source"
+    When I press the menu entry "delete-version"
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino/versions/2.0.0"
+    When I open the menu of the card "hcl-domino" of the provisioner catalog
+    And I press the menu entry "delete-family"
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino"
+    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 4 times
+
+  Scenario: Provisioners: Import opens the import dialog and queues the import
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/provisioners"
+    And I press the section page's "provisioner-import" action
+    Then the catalog dialog "provisioner-import" draws
+    When I pick "git" in the catalog dialog select "import-source-type"
+    And I type "https://github.com/acme/acme-provisioner" into the field "import-url"
+    And I submit the catalog dialog "provisioner-import"
+    Then the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "url" as "https://github.com/acme/acme-provisioner"
+    And the host was sent POST to "/api/agents/3/provisioning/provisioners/import" carrying "source_type" as "git"
+    And the catalog dialog "provisioner-import" is gone
+
+  Scenario: Provisioners: a card draws its health strip and its two folds folded, and a version row's click moves the providers and the quality to that version
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/provisioners"
     Then the card "startcloud" health reads "artifacts" as "true"
     And the card "startcloud" health reads "sidecars" as "true"
     And the card "hcl-domino" health reads "artifacts" as "false"
@@ -228,28 +260,19 @@ Feature: host installer files and provisioners
     When I open the details of the version "0.1.28" of the card "startcloud"
     Then the card "startcloud" version "0.1.28" links the box of "virtualbox" to "https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox"
 
-  Scenario: Provisioner catalog: the table is the toggle and the source select reads the catalog of the source picked, sent by its id
-    Given the host answers the hosts fixture
-    And the host answers the hosts-installers fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/provisioning/catalog"
-    And I switch the provisioner catalog to the table
-    Then the provisioner catalog draws the table
-    And the provisioner catalog offers Install on "startcloud" "0.1.28"
-    When I pick "staging" in the provisioner catalog source
-    Then the provisioner catalog is of the source "staging"
-    And the host was sent GET to "/api/agents/3/provisioning/catalog" at least 2 times
-
-  Scenario: Provisioners: a family's delete behind the typed confirmation, refused while machines reference it, the refusal naming them
+  Scenario: Provisioners: the table is the toggle with the Deploy and Status columns, and Sources opens the one modal listing every catalog source
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/provisioners"
-    And I press "delete-family" on the row "STARTcloud" of the "provisioners" table of the section page
-    And I confirm the open dialog
-    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/startcloud"
-    And I see "db-1, web-1"
-    When I press "delete-family" on the row "HCL Domino" of the "provisioners" table of the section page
-    And I confirm the open dialog
-    Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/hcl-domino"
-    And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times
+    And I switch the provisioner catalog to the table
+    Then the provisioner catalog draws the table
+    And the "provisioner-catalog" table of the section page draws the "deploy" column
+    And the "provisioner-catalog" table of the section page draws the "status" column
+    And the section page notes "update-available"
+    When I press the section page's "catalog-sources" action
+    Then the catalog dialog "catalog-sources" draws
+    And the open dialog lists 2 rows
+    And the catalog dialog "catalog-source" is gone
+    When I press the open dialog's "catalog-source-add" action
+    Then the catalog dialog "catalog-source" draws

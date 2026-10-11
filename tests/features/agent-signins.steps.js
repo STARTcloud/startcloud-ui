@@ -1,12 +1,32 @@
 import { createBdd } from 'playwright-bdd';
 
-import { expect, test } from './support/fixtures.js';
+import { expect, FixtureHost, test } from './support/fixtures.js';
 
 const { When, Then } = createBdd(test);
+
+let second = null;
 
 const panelOf = page => page.locator('[data-panel="agent-sign-ins"]');
 
 const storedOf = (page, key) => page.evaluate(name => window.localStorage.getItem(name), key);
+
+When('I open {string} in a second tab', async ({ page, host }, pathname) => {
+  [second] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.evaluate(() => {
+      window.open('', '_blank');
+    }),
+  ]);
+  const mirror = new FixtureHost(second);
+  await [...host.contracts]
+    .reverse()
+    .reduce((chain, { contract }) => chain.then(() => mirror.serve(contract)), Promise.resolve());
+  await second.goto(pathname, { waitUntil: 'commit' });
+});
+
+Then('the second tab is closed', async () => {
+  await expect.poll(() => second.isClosed()).toBe(true);
+});
 
 When("I press the sign-in page's {string} action", async ({ page }, action) => {
   await page.locator(`[data-action="${action}"]`).first().click();

@@ -82,7 +82,11 @@ export const createSession = (status, events) => {
   }
   if (method === 'apikey') {
     return {
-      session: createApiKeySession({ baseUrl: window.location.origin, events }),
+      session: createApiKeySession({
+        baseUrl: window.location.origin,
+        events,
+        reuseTab: status.ui?.reuse_tab,
+      }),
       returnTo: createReturnTo({
         storageKey: STORAGE_KEY,
         signInPath: '/login',

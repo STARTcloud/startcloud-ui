@@ -202,9 +202,11 @@ const groupByGroup = ({ collection, groupBy, prefixed, setGroup, t }) => ({
 /**
  * The navbar search binding of a page that lists one or more collections:
  * the Collection, Visibility and Watched groups, each collection's own
- * groups, its Columns group in table view or Sort group in card view, and
- * its Group by group; filters, sorts, picks, view, hidden columns, widths
- * and folds kept under `prefsKey`.
+ * groups, their `values` given the collection's table context beside the
+ * watched ids, its Columns group in table view or Sort group in card view,
+ * and its Group by group; filters, sorts, picks, view, hidden columns,
+ * widths and folds kept under `prefsKey`; `setFilter(collectionKey,
+ * groupKey, active)` replaces one group's active set whole.
  *
  * @param {Object} options
  * @param {Array<Object>} options.collections - The collections the page lists
@@ -279,7 +281,8 @@ export const useCatalogSearch = ({
   let matched = 0;
   visible.forEach(collection => {
     const items = itemsByCollection[collection.key] || [];
-    const ctx = { watchedIds: idsFor(collection), t };
+    const tableCtx = ctxFor(collection, groupBy[collection.key]);
+    const ctx = { ...tableCtx, watchedIds: idsFor(collection), t };
     const shown = filterGroupsOf(collection).filter(group =>
       groupShown(group, { signedIn, org, items })
     );
@@ -293,7 +296,6 @@ export const useCatalogSearch = ({
         passesWatched(item, prefs.watched, ctx.watchedIds) &&
         passesGroups(item, shown, filters, ctx)
     );
-    const tableCtx = ctxFor(collection, groupBy[collection.key]);
     filtered[collection.key] = sortItems(
       passing,
       sort[collection.key],
@@ -352,6 +354,15 @@ export const useCatalogSearch = ({
 
   const setView = view => setPrefs(current => ({ ...current, view }));
 
+  const setFilter = (collectionKey, groupKey, active) =>
+    setPrefs(current => ({
+      ...current,
+      filters: {
+        ...current.filters,
+        [collectionKey]: { ...current.filters[collectionKey], [groupKey]: active },
+      },
+    }));
+
   const toggleCollapsed = groupKey =>
     setPrefs(current => ({
       ...current,
@@ -365,6 +376,8 @@ export const useCatalogSearch = ({
     sort,
     setSort,
     groupBy,
+    filters: prefs.filters,
+    setFilter,
     view: prefs.view,
     setView,
     collapsed: prefs.collapsed,

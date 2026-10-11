@@ -139,6 +139,7 @@ export const filterGroupShape = PropTypes.shape({
   pillClass: PropTypes.func,
   labelFor: PropTypes.func,
   order: PropTypes.arrayOf(PropTypes.string),
+  defaultActive: PropTypes.arrayOf(PropTypes.string),
   signedInOnly: PropTypes.bool,
   homeOnly: PropTypes.bool,
   orgOnly: PropTypes.bool,
@@ -277,6 +278,7 @@ export const collectionShape = PropTypes.shape({
   matches: PropTypes.func,
   canManage: PropTypes.func,
   groupsOf: PropTypes.func,
+  rowPick: PropTypes.func,
   slots: PropTypes.object.isRequired,
 });
 
