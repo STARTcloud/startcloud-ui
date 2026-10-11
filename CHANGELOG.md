@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.58.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.57.0...v0.58.0) (2026-10-11)
+
+
+### Features
+
+* one agent-provisioned tab per hwa://open, the opened tab handing its path over hw-auth to the tab already open and closing when the agent's ui.reuse_tab allows it; search drawn on every host that lists the search token off the auth paths, the session never the reason; Favorites drawn only on a host that lists favorites and only for a session the identity provider made; the host's Provisioners and Templates pages drawn as the catalog and BoxVault draw theirs, cards by default and the table as the toggle, every family and box the host's sources know with the host's hold on each, installed first, the Installed group on by default and Add flipping it, the Deploy slot the split control whose Hyperweaver mark is the one press, Install, Update with its dot or greyed when current, and whose chevron menu holds Install an older version, Add this catalog or registry as a source, Update to, Update from source, Move, Delete and Delete family over a divider, every version line the install button and the create-a-machine button, the catalog's own version-line mark outlined to match, the heading pane icons only with Add, Sources or Registries, Import, Export machine, Publish, Refresh and the toggle, the sources and registries managed in one modal with a table and the form drawn under it, the words converged on Install and Installed on both pages, the catalog route folded into Provisioners, the shared scaffolding of both pages held once, the double catalog read gone, the box card gaining the Versions fold, the adapter's origin read at call time; the deploy, pages, navbar, session and identity contracts, the asks to the agent, the server, the catalog and the issuer, the fixtures, the scenarios, the unit tests and the English and Spanish keys following ([4bb3bc5](https://github.com/STARTcloud/startcloud-ui/commit/4bb3bc533b59b3fcf0e6e68f65d3b208ecef9e93))
+
 ## [0.57.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.56.0...v0.57.0) (2026-10-09)
 
 
